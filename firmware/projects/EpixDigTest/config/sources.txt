@@ -1,0 +1,28 @@
+# PGP Must be first when used with evr
+vhdl work "_PROJ_DIR_/../../common/pgp2/rtl/core/Pgp2CorePackage.vhd"
+vhdl work "_PROJ_DIR_/../../common/pgp2/rtl/core/Pgp2Rx.vhd"
+vhdl work "_PROJ_DIR_/../../common/pgp2/rtl/core/Pgp2RxCell.vhd"
+vhdl work "_PROJ_DIR_/../../common/pgp2/rtl/core/Pgp2RxPhy.vhd"
+vhdl work "_PROJ_DIR_/../../common/pgp2/rtl/core/Pgp2Tx.vhd"
+vhdl work "_PROJ_DIR_/../../common/pgp2/rtl/core/Pgp2TxCell.vhd"
+vhdl work "_PROJ_DIR_/../../common/pgp2/rtl/core/Pgp2TxPhy.vhd"
+vhdl work "_PROJ_DIR_/../../common/pgp2/rtl/core/Pgp2TxSched.vhd"
+vhdl work "_PROJ_DIR_/../../common/pgp2/rtl/gtp/Pgp2GtpPackage.vhd"
+vhdl work "_PROJ_DIR_/../../common/pgp2/rtl/gtp/Pgp2GtpRxRst.vhd"
+vhdl work "_PROJ_DIR_/../../common/pgp2/rtl/gtp/Pgp2GtpTxRst.vhd"
+vhdl work "_PROJ_DIR_/../../common/pgp2/rtl/gtp/Pgp2Gtp16.vhd"
+vhdl work "_PROJ_DIR_/../../common/pgp2/rtl/applications/Pgp2AppPackage.vhd"
+vhdl work "_PROJ_DIR_/../../common/pgp2/rtl/applications/Pgp2CmdSlave.vhd"
+vhdl work "_PROJ_DIR_/../../common/pgp2/rtl/applications/Pgp2RegSlave.vhd"
+vhdl work "_PROJ_DIR_/../../common/pgp2/rtl/applications/Pgp2UsBuff.vhd"
+
+# Standard Library
+vhdl    work "_PROJ_DIR_/../../modules/StdLib/rtl/StdRtlPkg.vhd"
+vhdl    work "_PROJ_DIR_/../../modules/StdLib/rtl/RstSync.vhd"
+
+# Version Constant
+vhdl    work "_PROJ_DIR_/Version.vhd"
+
+# Local Files
+vhdl    work "_PROJ_DIR_/hdl/EpixDigTest.vhd"
+
