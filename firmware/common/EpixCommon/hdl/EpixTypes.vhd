@@ -31,5 +31,27 @@ package EpixTypes is
    subtype WORD6 is STD_LOGIC_VECTOR (5 downto 0);
    type word6_array is array ( NATURAL range <> ) of WORD6;
 
+   --------------------------------------------
+   -- Configuration Type
+   --------------------------------------------
+
+   -- Record
+   type EpixConfigType is record
+      daqTriggerEnable : std_logic;
+      runTriggerEnable : std_logic;
+      acqCountReset    : std_logic;
+      daqTriggerDelay  : std_logic_vector(31 downto 0);
+      runTriggerDelay  : std_logic_vector(31 downto 0);
+   end record;
+
+   -- Initialize
+   constant EpixConfigInit : EpixConfigType := ( 
+      daqTriggerEnable  <= '0',
+      runTriggerEnable  <= '0',
+      acqCountReset     <= '0',
+      runTriggerDelay   <= (others=>'0'),
+      acqTriggerDelay   <= (others=>'0'),
+   ); 
+   
 end EpixTypes;
 
