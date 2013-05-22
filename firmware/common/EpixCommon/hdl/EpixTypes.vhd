@@ -37,20 +37,20 @@ package EpixTypes is
 
    -- Record
    type EpixConfigType is record
-      daqTriggerEnable : std_logic;
       runTriggerEnable : std_logic;
-      acqCountReset    : std_logic;
-      daqTriggerDelay  : std_logic_vector(31 downto 0);
       runTriggerDelay  : std_logic_vector(31 downto 0);
+      daqTriggerDelay  : std_logic_vector(31 downto 0);
+      daqTriggerEnable : std_logic;
+      acqCountReset    : std_logic;
    end record;
 
    -- Initialize
    constant EpixConfigInit : EpixConfigType := ( 
-      daqTriggerEnable  <= '0',
       runTriggerEnable  <= '0',
-      acqCountReset     <= '0',
       runTriggerDelay   <= (others=>'0'),
-      acqTriggerDelay   <= (others=>'0'),
+      daqTriggerEnable  <= '0',
+      daqTriggerDelay   <= (others=>'0'),
+      acqCountReset     <= '0',
    ); 
    
 end EpixTypes;
