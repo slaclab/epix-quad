@@ -42,7 +42,7 @@ entity PgpFrontEnd is
       pgpRegIn         : in  RegSlaveInType;
 
       -- Local data transfer signals
-      frameTxIn        : in  UsBuffInType;
+      frameTxIn        : in  UsBuff32InType;
       frameTxOut       : in  UsBuffOutType;
 
       -- Gtp Serial Pins
@@ -203,7 +203,7 @@ begin
       );
 
    -- Return data, Lane 0, VC0
-   U_DataBuff: entity work.Pgp2UsBuff 
+   U_DataBuff: entity work.Pgp2Us32Buff 
       generic map ( 
          FifoType => "V5" 
       ) 
