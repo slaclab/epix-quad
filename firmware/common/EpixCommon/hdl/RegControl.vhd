@@ -73,7 +73,7 @@ entity RegControl is
       adcPdwn         : out   std_logic_vector(2 downto 0);
 
       -- Slow ADC Data
-      adcData         : in    word16_array(15 downto 0);
+      slowAdcData     : in    word16_array(15 downto 0);
 
       -- Power enable
       powerEnable     : out   std_logic_vector(1 downto 0)
@@ -208,7 +208,7 @@ begin
 
          -- Slow ADC, 0x000010 -  0x00001F
          elsif pgpRegOut.regAddr(23 downto 4) = x"000010" then
-            pgpRegIn.regDataIn(15 downto 0) <= adcData(conv_integer(pgpRegOut.regAddr(3 downto 0))) after TPD_G;
+            pgpRegIn.regDataIn(15 downto 0) <= slowAdcData(conv_integer(pgpRegOut.regAddr(3 downto 0))) after TPD_G;
 
          -- SACI Space, 0x800000
          elsif pgpRegOut.regAddr(23) = '1' then

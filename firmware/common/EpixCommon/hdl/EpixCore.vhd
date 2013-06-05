@@ -127,6 +127,7 @@ architecture EpixCore of EpixCore is
    signal readStart        : std_logic;
    signal adcValid         : std_logic_vector(23 downto 0);
    signal adcData          : word16_array(23 downto 0);
+   signal slowAdcData      : word16_array(15 downto 0);
 
    -- Register delay for simulation
    constant tpd:time := 0.5 ns;
@@ -253,7 +254,7 @@ begin
          adcSpiCsb      => adcSpiCsb,
          adcPdwn        => adcPdwn,
          powerEnable    => powerEnable,
-         adcData        => adcData
+         slowAdcData    => slowAdcData
       );
 
    -- OTHER
@@ -267,8 +268,8 @@ begin
          sysClkRst     => sysClkRst,
          adcChanCount  => "1111",
          adcStart      => '1',
-         adcData       => adcData,
-         adcStrobe     => adcStrobe,
+         adcData       => slowAdcData,
+         adcStrobe     => open,
          adcSclk       => slowAdcSclk,
          adcDout       => slowAdcDout,
          adcCsL        => slowAdcCsb,

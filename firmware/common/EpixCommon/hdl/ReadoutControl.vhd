@@ -42,6 +42,9 @@ entity ReadoutControl is
       adcValid            : in    std_logic_vector(23 downto 0);
       adcData             : in    word16_array(23 downto 0);
 
+      -- Slow ADC data
+      slowAdcData         : in    word16_array(15 downto 0);
+
       -- Data Out
       frameTxIn           : out   UsBuff32InType;
       frameTxOut          : in    UsBuffOutType;
