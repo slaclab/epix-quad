@@ -1,4 +1,4 @@
-# PGP Must be first when used with evr
+# PGP
 vhdl work "_PROJ_DIR_/../../common/pgp2/rtl/core/Pgp2CorePackage.vhd"
 vhdl work "_PROJ_DIR_/../../common/pgp2/rtl/core/Pgp2Rx.vhd"
 vhdl work "_PROJ_DIR_/../../common/pgp2/rtl/core/Pgp2RxCell.vhd"
@@ -15,11 +15,24 @@ vhdl work "_PROJ_DIR_/../../common/pgp2/rtl/applications/Pgp2AppPackage.vhd"
 vhdl work "_PROJ_DIR_/../../common/pgp2/rtl/applications/Pgp2AppTypesPkg.vhd"
 vhdl work "_PROJ_DIR_/../../common/pgp2/rtl/applications/Pgp2CmdSlave.vhd"
 vhdl work "_PROJ_DIR_/../../common/pgp2/rtl/applications/Pgp2RegSlave.vhd"
-vhdl work "_PROJ_DIR_/../../common/pgp2/rtl/applications/Pgp2UsBuff.vhd"
+vhdl work "_PROJ_DIR_/../../common/pgp2/rtl/applications/Pgp2Us32Buff.vhd"
 
 # Standard Library
 vhdl    work "_PROJ_DIR_/../../modules/StdLib/rtl/StdRtlPkg.vhd"
 vhdl    work "_PROJ_DIR_/../../modules/StdLib/rtl/RstSync.vhd"
+
+# EPIX COre
+vhdl    work "_PROJ_DIR_/../../modules/EpixCommon/hdl/EpixTypes.vhd
+vhdl    work "_PROJ_DIR_/../../modules/EpixCommon/hdl/AcqControl.vhd
+vhdl    work "_PROJ_DIR_/../../modules/EpixCommon/hdl/AdcCntrl.vhd
+vhdl    work "_PROJ_DIR_/../../modules/EpixCommon/hdl/AdcReadout.vhd
+vhdl    work "_PROJ_DIR_/../../modules/EpixCommon/hdl/AdcReadout3x.vhd
+vhdl    work "_PROJ_DIR_/../../modules/EpixCommon/hdl/DacCntrl.vhd
+vhdl    work "_PROJ_DIR_/../../modules/EpixCommon/hdl/PgpFrontEnd.vhd
+vhdl    work "_PROJ_DIR_/../../modules/EpixCommon/hdl/ReadoutControl.vhd
+vhdl    work "_PROJ_DIR_/../../modules/EpixCommon/hdl/RegControl.vhd
+vhdl    work "_PROJ_DIR_/../../modules/EpixCommon/hdl/TrigControl.vhd
+vhdl    work "_PROJ_DIR_/../../modules/EpixCommon/hdl/EpixCore.vhd
 
 # Version Constant
 vhdl    work "_PROJ_DIR_/Version.vhd"
