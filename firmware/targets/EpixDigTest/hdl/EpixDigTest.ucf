@@ -1,21 +1,24 @@
 
+# Define system clocks
+NET U_EpixCore/sysClk            TNM_NET = FFS sysClk;
+NET U_EpixCore/U_PgpCore/pgpClk  TNM_NET = FFS pgpClk;
 
-
-
-
+# Define system clocks
+TIMESPEC TS_sysClk      = PERIOD sysClk   125 Mhz HIGH 50%;
+TIMESPEC TS_pgpClk      = PERIOD pgpClk   157 Mhz HIGH 50%;
 
 # Clocks and reset
 NET "sysRstL"            LOC = "U4"     | IOSTANDARD = "LVCMOS33";
-NET "refClk156_25mhzP"   LOC = "C3"     | IOSTANDARD = "LVCMOS33";
-NET "refClk156_25mhzM"   LOC = "C4"     | IOSTANDARD = "LVCMOS33";
-NET "refClk125mhzP"      LOC = "J3"     | IOSTANDARD = "LVCMOS33";
-NET "refClk125mhzM"      LOC = "J4"     | IOSTANDARD = "LVCMOS33";
+NET "refClk156_25mhzP"   LOC = "C3"     | IOSTANDARD = "LVDSEXT_25";
+NET "refClk156_25mhzM"   LOC = "C4"     | IOSTANDARD = "LVDSEXT_25";
+NET "refClk125mhzP"      LOC = "J3"     | IOSTANDARD = "LVDSEXT_25";
+NET "refClk125mhzM"      LOC = "J4"     | IOSTANDARD = "LVDSEXT_25";
 
-# Fibter Interface
-NET "fiberTxp"           LOC = "A2"     | IOSTANDARD = "LVCMOS33";
-NET "fiberTxn"           LOC = "B2"     | IOSTANDARD = "LVCMOS33";
-NET "fiberRxp"           LOC = "B1"     | IOSTANDARD = "LVCMOS33";
-NET "fiberRxn"           LOC = "C1"     | IOSTANDARD = "LVCMOS33";
+# Fiber Interface
+NET "fiberTxp"           LOC = "A2";
+NET "fiberTxn"           LOC = "B2";
+NET "fiberRxp"           LOC = "B1";
+NET "fiberRxn"           LOC = "C1";
 
 # DAC
 NET "vguardDacSclk"      LOC = "V7"     | IOSTANDARD = "LVCMOS33";
@@ -34,8 +37,8 @@ NET "snIoAdcCard"        LOC = "V6"     | IOSTANDARD = "LVCMOS33";
 NET "serialNumberIo"     LOC = "U6"     | IOSTANDARD = "LVCMOS33";
 
 # Power Control
-NET "analogCardDigPwrEn" LOC = "K12"    | IOSTANDARD = "LVCMOS33";
-NET "analogCardAnaPwrEn" LOC = "L12"    | IOSTANDARD = "LVCMOS33";
+NET "analogCardDigPwrEn" LOC = "K12"    | IOSTANDARD = "LVCMOS25";
+NET "analogCardAnaPwrEn" LOC = "L12"    | IOSTANDARD = "LVCMOS25";
 
 # Slow ADC
 NET "slowAdcSclk"        LOC = "R7"     | IOSTANDARD = "LVCMOS33";
@@ -44,107 +47,107 @@ NET "slowAdcDin"         LOC = "P8"     | IOSTANDARD = "LVCMOS33";
 NET "slowAdcCsb"         LOC = "T7"     | IOSTANDARD = "LVCMOS33";
 
 # Fast ADC Control
-NET "adcSpiData"         LOC = "F18"    | IOSTANDARD = "LVCMOS33";
-NET "adcSpiClk"          LOC = "B18"    | IOSTANDARD = "LVCMOS33";
-NET "adcMonSpiCsb"       LOC = "F13"    | IOSTANDARD = "LVCMOS33";
-NET "adcMonPdwn"         LOC = "G13"    | IOSTANDARD = "LVCMOS33";
-NET "adc1SpiCsb"         LOC = "C18"    | IOSTANDARD = "LVCMOS33";
-NET "adc1Pdwn"           LOC = "D12"    | IOSTANDARD = "LVCMOS33";
-NET "adc0SpiCsb"         LOC = "F17"    | IOSTANDARD = "LVCMOS33";
-NET "adc0Pdwn"           LOC = "E12"    | IOSTANDARD = "LVCMOS33";
+NET "adcSpiData"         LOC = "F18"    | IOSTANDARD = "LVCMOS25"; #This line should be run as open drain.  There is a hardware pullup to 1.8 V on analog card.  This is the only line on the ADC that is not 2.5 V tolerant.
+NET "adcSpiClk"          LOC = "B18"    | IOSTANDARD = "LVCMOS25";
+NET "adcMonSpiCsb"       LOC = "F13"    | IOSTANDARD = "LVCMOS25";
+NET "adcMonPdwn"         LOC = "G13"    | IOSTANDARD = "LVCMOS25";
+NET "adc1SpiCsb"         LOC = "C18"    | IOSTANDARD = "LVCMOS25";
+NET "adc1Pdwn"           LOC = "D12"    | IOSTANDARD = "LVCMOS25";
+NET "adc0SpiCsb"         LOC = "F17"    | IOSTANDARD = "LVCMOS25";
+NET "adc0Pdwn"           LOC = "E12"    | IOSTANDARD = "LVCMOS25";
 
 # ASIC SACI Interface
-NET "asicSaciCmd"        LOC = "N18"    | IOSTANDARD = "LVCMOS33";
-NET "asicSaciClk"        LOC = "M18"    | IOSTANDARD = "LVCMOS33";
-NET "asic3SaciSel"       LOC = "K14"    | IOSTANDARD = "LVCMOS33";
-NET "asic3SaciRsp"       LOC = "J14"    | IOSTANDARD = "LVCMOS33";
-NET "asic2SaciSel"       LOC = "L14"    | IOSTANDARD = "LVCMOS33";
-NET "asic2SaciRsp"       LOC = "H13"    | IOSTANDARD = "LVCMOS33";
-NET "asic1SaciSel"       LOC = "M13"    | IOSTANDARD = "LVCMOS33";
-NET "asic1SaciRsp"       LOC = "K15"    | IOSTANDARD = "LVCMOS33";
-NET "asic0SaciSel"       LOC = "N13"    | IOSTANDARD = "LVCMOS33";
-NET "asic0SaciRsp"       LOC = "J15"    | IOSTANDARD = "LVCMOS33";
+NET "asicSaciCmd"        LOC = "N18"    | IOSTANDARD = "LVCMOS25";
+NET "asicSaciClk"        LOC = "M18"    | IOSTANDARD = "LVCMOS25";
+NET "asic3SaciSel"       LOC = "K14"    | IOSTANDARD = "LVCMOS25";
+NET "asic3SaciRsp"       LOC = "J14"    | IOSTANDARD = "LVCMOS25";
+NET "asic2SaciSel"       LOC = "L14"    | IOSTANDARD = "LVCMOS25";
+NET "asic2SaciRsp"       LOC = "H13"    | IOSTANDARD = "LVCMOS25";
+NET "asic1SaciSel"       LOC = "M13"    | IOSTANDARD = "LVCMOS25";
+NET "asic1SaciRsp"       LOC = "K15"    | IOSTANDARD = "LVCMOS25";
+NET "asic0SaciSel"       LOC = "N13"    | IOSTANDARD = "LVCMOS25";
+NET "asic0SaciRsp"       LOC = "J15"    | IOSTANDARD = "LVCMOS25";
 
 # Monitoring ADCs
-NET "adcMonClkP"         LOC = "H15"    | IOSTANDARD = "LVCMOS33";
-NET "adcMonClkM"         LOC = "H16"    | IOSTANDARD = "LVCMOS33";
-NET "adcMonDoClkP"       LOC = "K16"    | IOSTANDARD = "LVCMOS33";
-NET "adcMonDoClkM"       LOC = "L16"    | IOSTANDARD = "LVCMOS33";
-NET "adcMonFrameClkP"    LOC = "N16"    | IOSTANDARD = "LVCMOS33";
-NET "adcMonFrameClkM"    LOC = "M16"    | IOSTANDARD = "LVCMOS33";
-NET "asic0AdcDoMonP"     LOC = "H17"    | IOSTANDARD = "LVCMOS33";
-NET "asic0AdcDoMonM"     LOC = "G18"    | IOSTANDARD = "LVCMOS33";
-NET "asic1AdcDoMonP"     LOC = "H18"    | IOSTANDARD = "LVCMOS33";
-NET "asic1AdcDoMonM"     LOC = "J18"    | IOSTANDARD = "LVCMOS33";
-NET "asic2AdcDoMonP"     LOC = "J17"    | IOSTANDARD = "LVCMOS33";
-NET "asic2AdcDoMonM"     LOC = "K17"    | IOSTANDARD = "LVCMOS33";
-NET "asic3AdcDoMonP"     LOC = "L18"    | IOSTANDARD = "LVCMOS33";
-NET "asic3AdcDoMonM"     LOC = "L17"    | IOSTANDARD = "LVCMOS33";
+NET "adcMonClkP"         LOC = "H15"    | IOSTANDARD = "LVDS_25";
+NET "adcMonClkM"         LOC = "H16"    | IOSTANDARD = "LVDS_25";
+NET "adcMonDoClkP"       LOC = "K16"    | IOSTANDARD = "LVDS_25";
+NET "adcMonDoClkM"       LOC = "L16"    | IOSTANDARD = "LVDS_25";
+NET "adcMonFrameClkP"    LOC = "N16"    | IOSTANDARD = "LVDS_25";
+NET "adcMonFrameClkM"    LOC = "M16"    | IOSTANDARD = "LVDS_25";
+NET "asic0AdcDoMonP"     LOC = "H17"    | IOSTANDARD = "LVDS_25";
+NET "asic0AdcDoMonM"     LOC = "G18"    | IOSTANDARD = "LVDS_25";
+NET "asic1AdcDoMonP"     LOC = "H18"    | IOSTANDARD = "LVDS_25";
+NET "asic1AdcDoMonM"     LOC = "J18"    | IOSTANDARD = "LVDS_25";
+NET "asic2AdcDoMonP"     LOC = "J17"    | IOSTANDARD = "LVDS_25";
+NET "asic2AdcDoMonM"     LOC = "K17"    | IOSTANDARD = "LVDS_25";
+NET "asic3AdcDoMonP"     LOC = "L18"    | IOSTANDARD = "LVDS_25";
+NET "asic3AdcDoMonM"     LOC = "L17"    | IOSTANDARD = "LVDS_25";
 
 # ASIC 0/1 Data
-NET "adc0ClkP"           LOC = "V10"    | IOSTANDARD = "LVCMOS33";
-NET "adc0ClkM"           LOC = "U10"    | IOSTANDARD = "LVCMOS33";
-NET "adc0DoClkP"         LOC = "V18"    | IOSTANDARD = "LVCMOS33";
-NET "adc0DoClkM"         LOC = "V17"    | IOSTANDARD = "LVCMOS33";
-NET "adc0FrameClkP"      LOC = "T18"    | IOSTANDARD = "LVCMOS33";
-NET "adc0FrameClkM"      LOC = "U18"    | IOSTANDARD = "LVCMOS33";
-NET "asic0AdcDoAP"       LOC = "T17"    | IOSTANDARD = "LVCMOS33";
-NET "asic0AdcDoAM"       LOC = "T16"    | IOSTANDARD = "LVCMOS33";
-NET "asic0AdcDoBP"       LOC = "U16"    | IOSTANDARD = "LVCMOS33";
-NET "asic0AdcDoBM"       LOC = "U15"    | IOSTANDARD = "LVCMOS33";
-NET "asic0AdcDoCP"       LOC = "V16"    | IOSTANDARD = "LVCMOS33";
-NET "asic0AdcDoCM"       LOC = "V15"    | IOSTANDARD = "LVCMOS33";
-NET "asic0AdcDoDP"       LOC = "R14"    | IOSTANDARD = "LVCMOS33";
-NET "asic0AdcDoDM"       LOC = "T14"    | IOSTANDARD = "LVCMOS33";
-NET "asic1AdcDoAP"       LOC = "U14"    | IOSTANDARD = "LVCMOS33";
-NET "asic1AdcDoAM"       LOC = "T13"    | IOSTANDARD = "LVCMOS33";
-NET "asic1AdcDoBP"       LOC = "U13"    | IOSTANDARD = "LVCMOS33";
-NET "asic1AdcDoBM"       LOC = "V13"    | IOSTANDARD = "LVCMOS33";
-NET "asic1AdcDoCP"       LOC = "V12"    | IOSTANDARD = "LVCMOS33";
-NET "asic1AdcDoCM"       LOC = "V11"    | IOSTANDARD = "LVCMOS33";
-NET "asic1AdcDoDP"       LOC = "P12"    | IOSTANDARD = "LVCMOS33";
-NET "asic1AdcDoDM"       LOC = "P13"    | IOSTANDARD = "LVCMOS33";
+NET "adc0ClkP"           LOC = "V10"    | IOSTANDARD = "LVDS_25";
+NET "adc0ClkM"           LOC = "U10"    | IOSTANDARD = "LVDS_25";
+NET "adc0DoClkP"         LOC = "V18"    | IOSTANDARD = "LVDS_25";
+NET "adc0DoClkM"         LOC = "V17"    | IOSTANDARD = "LVDS_25";
+NET "adc0FrameClkP"      LOC = "T18"    | IOSTANDARD = "LVDS_25";
+NET "adc0FrameClkM"      LOC = "U18"    | IOSTANDARD = "LVDS_25";
+NET "asic0AdcDoAP"       LOC = "T17"    | IOSTANDARD = "LVDS_25";
+NET "asic0AdcDoAM"       LOC = "T16"    | IOSTANDARD = "LVDS_25";
+NET "asic0AdcDoBP"       LOC = "U16"    | IOSTANDARD = "LVDS_25";
+NET "asic0AdcDoBM"       LOC = "U15"    | IOSTANDARD = "LVDS_25";
+NET "asic0AdcDoCP"       LOC = "V16"    | IOSTANDARD = "LVDS_25";
+NET "asic0AdcDoCM"       LOC = "V15"    | IOSTANDARD = "LVDS_25";
+NET "asic0AdcDoDP"       LOC = "R14"    | IOSTANDARD = "LVDS_25";
+NET "asic0AdcDoDM"       LOC = "T14"    | IOSTANDARD = "LVDS_25";
+NET "asic1AdcDoAP"       LOC = "U14"    | IOSTANDARD = "LVDS_25";
+NET "asic1AdcDoAM"       LOC = "T13"    | IOSTANDARD = "LVDS_25";
+NET "asic1AdcDoBP"       LOC = "U13"    | IOSTANDARD = "LVDS_25";
+NET "asic1AdcDoBM"       LOC = "V13"    | IOSTANDARD = "LVDS_25";
+NET "asic1AdcDoCP"       LOC = "V12"    | IOSTANDARD = "LVDS_25";
+NET "asic1AdcDoCM"       LOC = "V11"    | IOSTANDARD = "LVDS_25";
+NET "asic1AdcDoDP"       LOC = "P12"    | IOSTANDARD = "LVDS_25";
+NET "asic1AdcDoDM"       LOC = "P13"    | IOSTANDARD = "LVDS_25";
 
 # ASIC 2/3 Data
-NET "adc1ClkP"           LOC = "A18"    | IOSTANDARD = "LVCMOS33";
-NET "adc1ClkM"           LOC = "A17"    | IOSTANDARD = "LVCMOS33";
-NET "adc1DoClkP"         LOC = "F16"    | IOSTANDARD = "LVCMOS33";
-NET "adc1DoClkM"         LOC = "G16"    | IOSTANDARD = "LVCMOS33";
-NET "adc1FrameClkP"      LOC = "E17"    | IOSTANDARD = "LVCMOS33";
-NET "adc1FrameClkM"      LOC = "E16"    | IOSTANDARD = "LVCMOS33";
-NET "asic2AdcDoAP"       LOC = "A11"    | IOSTANDARD = "LVCMOS33";
-NET "asic2AdcDoAM"       LOC = "A12"    | IOSTANDARD = "LVCMOS33";
-NET "asic2AdcDoBP"       LOC = "B13"    | IOSTANDARD = "LVCMOS33";
-NET "asic2AdcDoBM"       LOC = "A13"    | IOSTANDARD = "LVCMOS33";
-NET "asic2AdcDoCP"       LOC = "B14"    | IOSTANDARD = "LVCMOS33";
-NET "asic2AdcDoCM"       LOC = "A14"    | IOSTANDARD = "LVCMOS33";
-NET "asic2AdcDoDP"       LOC = "B16"    | IOSTANDARD = "LVCMOS33";
-NET "asic2AdcDoDM"       LOC = "A16"    | IOSTANDARD = "LVCMOS33";
-NET "asic3AdcDoAP"       LOC = "B11"    | IOSTANDARD = "LVCMOS33";
-NET "asic3AdcDoAM"       LOC = "C11"    | IOSTANDARD = "LVCMOS33";
-NET "asic3AdcDoBP"       LOC = "C12"    | IOSTANDARD = "LVCMOS33";
-NET "asic3AdcDoBM"       LOC = "C13"    | IOSTANDARD = "LVCMOS33";
-NET "asic3AdcDoCP"       LOC = "C15"    | IOSTANDARD = "LVCMOS33";
-NET "asic3AdcDoCM"       LOC = "B15"    | IOSTANDARD = "LVCMOS33";
-NET "asic3AdcDoDP"       LOC = "C17"    | IOSTANDARD = "LVCMOS33";
-NET "asic3AdcDoDM"       LOC = "C16"    | IOSTANDARD = "LVCMOS33";
+NET "adc1ClkP"           LOC = "A18"    | IOSTANDARD = "LVDS_25";
+NET "adc1ClkM"           LOC = "A17"    | IOSTANDARD = "LVDS_25";
+NET "adc1DoClkP"         LOC = "F16"    | IOSTANDARD = "LVDS_25";
+NET "adc1DoClkM"         LOC = "G16"    | IOSTANDARD = "LVDS_25";
+NET "adc1FrameClkP"      LOC = "E17"    | IOSTANDARD = "LVDS_25";
+NET "adc1FrameClkM"      LOC = "E16"    | IOSTANDARD = "LVDS_25";
+NET "asic2AdcDoAP"       LOC = "A11"    | IOSTANDARD = "LVDS_25";
+NET "asic2AdcDoAM"       LOC = "A12"    | IOSTANDARD = "LVDS_25";
+NET "asic2AdcDoBP"       LOC = "B13"    | IOSTANDARD = "LVDS_25";
+NET "asic2AdcDoBM"       LOC = "A13"    | IOSTANDARD = "LVDS_25";
+NET "asic2AdcDoCP"       LOC = "B14"    | IOSTANDARD = "LVDS_25";
+NET "asic2AdcDoCM"       LOC = "A14"    | IOSTANDARD = "LVDS_25";
+NET "asic2AdcDoDP"       LOC = "B16"    | IOSTANDARD = "LVDS_25";
+NET "asic2AdcDoDM"       LOC = "A16"    | IOSTANDARD = "LVDS_25";
+NET "asic3AdcDoAP"       LOC = "B11"    | IOSTANDARD = "LVDS_25";
+NET "asic3AdcDoAM"       LOC = "C11"    | IOSTANDARD = "LVDS_25";
+NET "asic3AdcDoBP"       LOC = "C12"    | IOSTANDARD = "LVDS_25";
+NET "asic3AdcDoBM"       LOC = "C13"    | IOSTANDARD = "LVDS_25";
+NET "asic3AdcDoCP"       LOC = "C15"    | IOSTANDARD = "LVDS_25";
+NET "asic3AdcDoCM"       LOC = "B15"    | IOSTANDARD = "LVDS_25";
+NET "asic3AdcDoDP"       LOC = "C17"    | IOSTANDARD = "LVDS_25";
+NET "asic3AdcDoDM"       LOC = "C16"    | IOSTANDARD = "LVDS_25";
 
 # ASIC Control
-NET "asicR0"             LOC = "M10"    | IOSTANDARD = "LVCMOS33";
-NET "asicPpmat"          LOC = "N11"    | IOSTANDARD = "LVCMOS33";
-NET "asicPpbe"           LOC = "P10"    | IOSTANDARD = "LVCMOS33";
-NET "asicGlblRst"        LOC = "R12"    | IOSTANDARD = "LVCMOS33";
-NET "asicAcq"            LOC = "N10"    | IOSTANDARD = "LVCMOS33";
-NET "asic0Dm2"           LOC = "U11"    | IOSTANDARD = "LVCMOS33";
-NET "asic0Dm1"           LOC = "T11"    | IOSTANDARD = "LVCMOS33";
-NET "asic0RoClkP"        LOC = "R15"    | IOSTANDARD = "LVCMOS33";
-NET "asic0RoClkM"        LOC = "R16"    | IOSTANDARD = "LVCMOS33";
-NET "asic1RoClkP"        LOC = "R17"    | IOSTANDARD = "LVCMOS33";
-NET "asic1RoClkM"        LOC = "P17"    | IOSTANDARD = "LVCMOS33";
-NET "asic2RoClkP"        LOC = "N15"    | IOSTANDARD = "LVCMOS33";
-NET "asic2RoClkM"        LOC = "M15"    | IOSTANDARD = "LVCMOS33";
-NET "asic3RoClkP"        LOC = "P18"    | IOSTANDARD = "LVCMOS33";
-NET "asic3RoClkM"        LOC = "N17"    | IOSTANDARD = "LVCMOS33";
+NET "asicR0"             LOC = "M10"    | IOSTANDARD = "LVCMOS25";
+NET "asicPpmat"          LOC = "N11"    | IOSTANDARD = "LVCMOS25";
+NET "asicPpbe"           LOC = "P10"    | IOSTANDARD = "LVCMOS25";
+NET "asicGlblRst"        LOC = "R12"    | IOSTANDARD = "LVCMOS25";
+NET "asicAcq"            LOC = "N10"    | IOSTANDARD = "LVCMOS25";
+NET "asic0Dm2"           LOC = "U11"    | IOSTANDARD = "LVCMOS25";
+NET "asic0Dm1"           LOC = "T11"    | IOSTANDARD = "LVCMOS25";
+NET "asic0RoClkP"        LOC = "R15"    | IOSTANDARD = "LVDS_25";
+NET "asic0RoClkM"        LOC = "R16"    | IOSTANDARD = "LVDS_25";
+NET "asic1RoClkP"        LOC = "R17"    | IOSTANDARD = "LVDS_25";
+NET "asic1RoClkM"        LOC = "P17"    | IOSTANDARD = "LVDS_25";
+NET "asic2RoClkP"        LOC = "N15"    | IOSTANDARD = "LVDS_25";
+NET "asic2RoClkM"        LOC = "M15"    | IOSTANDARD = "LVDS_25";
+NET "asic3RoClkP"        LOC = "P18"    | IOSTANDARD = "LVDS_25";
+NET "asic3RoClkM"        LOC = "N17"    | IOSTANDARD = "LVDS_25";
 
 # Prom Updates, Unused for now
 #NET "revSel(0)"          LOC = "T1"     | IOSTANDARD = "LVCMOS33";
