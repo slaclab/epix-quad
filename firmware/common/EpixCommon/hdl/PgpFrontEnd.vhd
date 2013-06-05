@@ -23,10 +23,16 @@ use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
 entity PgpFrontEnd is 
+   generic (
+      InterfaceType       : string := "PGP" -- PGP or ETH
+   );
    port ( 
       
       -- Reference Clock, Power on Reset
-      pgpRefClk        : in  std_logic;
+      pgpRefClkP       : in  std_logic;
+      pgpRefClkM       : in  std_logic;
+      ethRefClkP       : in    std_logic;
+      ethRefClkM       : in    std_logic;
       ponResetL        : in  std_logic;
       resetReq         : in  std_logic;
 
@@ -68,12 +74,16 @@ architecture PgpFrontEnd of PgpFrontEnd is
    signal ipgpClkRst         : std_logic;
    signal isysClk            : std_logic;
    signal isysClkRst         : std_logic;
+   signal pgpRefClk          : std_logic;
 
 begin
 
    -- Outputs
    sysClk     <= isysClk;
    sysClkRst  <= isysClkRst;
+
+   -- Reference Clock
+   U_RefClk : IBUFDS port map ( I => pgpRefClkP, IB => pgpRefClkM, O => pgpRefClk );
 
    -- Clock generation
    U_PgpClk: entity work.Pgp2GtpClk

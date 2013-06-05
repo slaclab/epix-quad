@@ -34,6 +34,7 @@ entity TrigControl is
       -- Inputs
       runTrigger    : in  std_logic;
       daqTrigger    : in  std_logic;
+      pgpCmd        : in  CmdSlaveOutType;
 
       -- Configuration
       epixConfig    : in  EpixConfigType;
@@ -41,7 +42,8 @@ entity TrigControl is
       -- Outputs
       acqCount      : out std_logic_vector(31 downto 0);
       acqStart      : out std_logic;
-      dataSend      : out std_logic
+      dataSend      : out std_logic;
+      triggerOut    : out std_logic
    );
 
 end TrigControl;
@@ -173,9 +175,10 @@ begin
    --------------------------------
    -- Acquisition Counter And Outputs
    --------------------------------
-   acqStart <= runTriggerOut;
-   dataSend <= daqTriggerOut;
-   acqCount <= intCount;
+   acqStart   <= runTriggerOut;
+   dataSend   <= daqTriggerOut;
+   acqCount   <= intCount;
+   triggerOut <= '0';
 
    process ( sysClk, sysClkRst ) begin
       if ( sysClkRst = '1' ) then

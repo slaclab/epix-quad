@@ -38,6 +38,7 @@ entity RegControl is
 
       -- Configuration
       epixConfig      : out EpixConfigType;
+      resetReq        : out std_logic;
 
       -- Status
       acqCount        : in  std_logic_vector(31 downto 0);
@@ -50,7 +51,32 @@ entity RegControl is
       saciClk         : out std_logic;
       saciSelL        : out std_logic_vector(3 downto 0);
       saciCmd         : out std_logic;
-      saciRsp         : in  std_logic_vector(3 downto 0)
+      saciRsp         : in  std_logic_vector(3 downto 0);
+
+      -- DAC
+      dacSclk         : out   std_logic;
+      dacDin          : out   std_logic;
+      dacCsb          : out   std_logic;
+      dacClrb         : out   std_logic;
+
+      -- Board IDs
+      serialIdOut     : out   std_logic_vector(1 downto 0);
+      serialIdEn      : out   std_logic_vector(1 downto 0);
+      serialIdIn      : in    std_logic_vector(1 downto 0);
+
+      -- Fast ADC Control
+      adcSpiClk       : out   std_logic;
+      adcSpiDataOut   : out   std_logic;
+      adcSpiDataIn    : in    std_logic;
+      adcSpiDataEn    : out   std_logic;
+      adcSpiCsb       : out   std_logic_vector(2 downto 0);
+      adcPdwn         : out   std_logic_vector(2 downto 0);
+
+      -- Slow ADC Data
+      adcData         : in    word16_array(15 downto 0);
+
+      -- Power enable
+      powerEnable     : out   std_logic_vector(1 downto 0)
    );
 
 end RegControl;
@@ -69,6 +95,9 @@ architecture RegControl of RegControl is
    signal intResp    : std_logic;
    signal saciCnt    : std_logic_vector(2 downto 0);
    signal intClk     : std_logic;
+   signal dacData    : std_logic_vector(15 downto 0);
+   signal dacStrobe  : std_logic;
+
 
    -- States
    signal   curState   : std_logic_vector(2 downto 0);
@@ -106,6 +135,10 @@ begin
          pgpRegIn.regFail   <= '0'            after TPD_G;
          pgpRegIn.regDataIn <= (others=>'0')  after TPD_G;
          saciRegIn.req      <= '0'            after TPD_G;
+         resetReq           <= '0'            after TPD_G;
+         dacData            <= (others=>'0')  after TPD_G;
+         dacStrobe          <= '0'            after TPD_G;
+         powerEnable        <= "00"           after TPD_G;
       elsif rising_edge(sysClk) then
 
          -- Defaults
@@ -114,10 +147,12 @@ begin
          pgpRegIn.regDataIn      <= (others=>'0')    after TPD_G;
          intConfig.acqCountReset <= '0'              after TPD_G;
          saciRegIn.req           <= '0'              after TPD_G;
+         dacStrobe               <= '0'              after TPD_G;
 
          -- Version register, 0x000000
          if pgpRegOut.regAddr = x"000000" then
             pgpRegIn.regDataIn <= FpgaVersion after TPD_G;
+            resetReq <= pgpRegIn.regReq and pgpRegIn.regOp after tpd; -- Reset request
 
          -- Run Trigger Enable, 0x000001
          elsif pgpRegOut.regAddr = x"000001" then
@@ -156,6 +191,24 @@ begin
             if pgpRegIn.regReq = '1' and pgpRegIn.regOp = '1' then
                intConfig.acqCountReset <= '1' after TPD_G;
             end if;
+
+         -- DAC Setting, 0x000007
+         elsif pgpRegOut.regAddr = x"000007" then
+            if pgpRegIn.regReq = '1' and pgpRegIn.regOp = '1' then
+               dacData   <= pgpRegIn.regDataOut after TPD_G;
+               dacStrobe <= '1'                 after TPD_G;
+            end if;
+
+         -- Power Enable, 0x000008
+         elsif pgpRegOut.regAddr = x"000008" then
+            if pgpRegIn.regReq = '1' and pgpRegIn.regOp = '1' then
+               powerEnable <= pgpRegIn.regDataOut(1 downto 0) after TPD_G;
+            end if;
+            pgpRegIn.regDataIn(1 downto 0) <= powerEnable after TPD_G;
+
+         -- Slow ADC, 0x000010 -  0x00001F
+         elsif pgpRegOut.regAddr(23 downto 4) = x"000010" then
+            pgpRegIn.regDataIn(15 downto 0) <= adcData(conv_integer(pgpRegOut.regAddr(3 downto 0))) after TPD_G;
 
          -- SACI Space, 0x800000
          elsif pgpRegOut.regAddr(23) = '1' then
@@ -310,6 +363,38 @@ begin
 
    -- Mask response
    intResp <= '0' when saciResp and (not intSelL) = 0 else '1';
+
+   -----------------------------------------------
+   -- DAC Controller
+   -----------------------------------------------
+   U_DacCntrl : entity work.DacCntrl 
+      port map ( 
+         sysClk          => sysClk,
+         sysClkRst       => sysClkRst,
+         dacData         => dacData,
+         dacStrobe       => dacStrobe,
+         dacDin          => dacDin,
+         dacSclk         => dacSclk,
+         dacCsL          => dacCsb,
+         dacClrL         => dacClrb
+      );
+
+   -----------------------------------------------
+   -- Board ID
+   -----------------------------------------------
+   serialIdOut   <= '0';
+   serialIdEn    <= '0';
+   --serialIdIn      : in    std_logic_vector(1 downto 0);
+
+   -----------------------------------------------
+   -- Fast ADC Control
+   -----------------------------------------------
+   adcSpiClk       <= '0';
+   adcSpiDataOut   <= '0';
+   adcSpiDataEn    <= '0';
+   adcSpiCsb       <= '1';
+   adcPdwn         <= "00";
+   --adcSpiDataIn    : in    std_logic;
 
 end RegControl;
 
