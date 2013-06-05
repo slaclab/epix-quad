@@ -60,11 +60,31 @@ architecture TrigControl of TrigControl is
    signal daqTriggerOut   : std_logic;
    signal countEnable     : std_logic;
    signal intCount        : std_logic_vector(31 downto 0);
+   signal swRun           : std_logic;
+   signal swRead          : std_logic;
 
    -- Register delay for simulation
    constant tpd:time := 0.5 ns;
 
 begin
+
+   --------------------------------
+   -- SW Input
+   --------------------------------
+   process ( sysClk, sysClkRst ) begin
+      if ( sysClkRst = '1' ) then
+         swRun  <= '0' after TPD_G;
+         swRead <= '0' after TPD_G;
+      elsif rising_edge(sysClk) then
+         if pgpCmd.cmdEn = '1' and pgpCmd.cmdOpCode = 0 then
+            swRun <= '1' after TPD_G;
+         else
+            swRun <= '0' after TPD_G;
+         end if;
+         swRead <= swRun after TPD_G;
+      end if;
+   end process;
+
 
    --------------------------------
    -- Run Input
@@ -175,8 +195,8 @@ begin
    --------------------------------
    -- Acquisition Counter And Outputs
    --------------------------------
-   acqStart   <= runTriggerOut;
-   dataSend   <= daqTriggerOut;
+   acqStart   <= runTriggerOut or swRun;
+   dataSend   <= daqTriggerOut or swRead;
    acqCount   <= intCount;
    triggerOut <= '0';
 
@@ -185,7 +205,7 @@ begin
          intCount    <= (others=>'0') after TPD_G;
          countEnable <= '0'           after TPD_G;
       elsif rising_edge(sysClk) then
-         countEnable <= runTriggerOut after TPD_G;
+         countEnable <= runTriggerOut or swRun after TPD_G;
 
          if epixConfig.intCountReset = '1' then
             intCount <= (others=>'0') after TPD_G;
