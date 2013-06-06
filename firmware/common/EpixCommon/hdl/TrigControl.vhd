@@ -21,6 +21,7 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 use work.EpixTypes.all;
+use work.Pgp2AppTypesPkg.all;
 library UNISIM;
 use UNISIM.vcomponents.all;
 
@@ -73,15 +74,15 @@ begin
    --------------------------------
    process ( sysClk, sysClkRst ) begin
       if ( sysClkRst = '1' ) then
-         swRun  <= '0' after TPD_G;
-         swRead <= '0' after TPD_G;
+         swRun  <= '0' after tpd;
+         swRead <= '0' after tpd;
       elsif rising_edge(sysClk) then
          if pgpCmd.cmdEn = '1' and pgpCmd.cmdOpCode = 0 then
-            swRun <= '1' after TPD_G;
+            swRun <= '1' after tpd;
          else
-            swRun <= '0' after TPD_G;
+            swRun <= '0' after tpd;
          end if;
-         swRead <= swRun after TPD_G;
+         swRead <= swRun after tpd;
       end if;
    end process;
 
@@ -102,39 +103,39 @@ begin
    -- Delay
    process ( sysClk, sysClkRst ) begin
       if ( sysClkRst = '1' ) then
-         runTriggerCnt  <= (others=>'0') after TPD_G;
-         runTriggerOut  <= '0'           after TPD_G;
+         runTriggerCnt  <= (others=>'0') after tpd;
+         runTriggerOut  <= '0'           after tpd;
       elsif rising_edge(sysClk) then
 
          -- Run trigger is disabled
          if epixConfig.runTriggerEnable = '0' then
-            runTriggerCnt  <= (others=>'0') after TPD_G;
-            runTriggerOut  <= '0'           after TPD_G;
+            runTriggerCnt  <= (others=>'0') after tpd;
+            runTriggerOut  <= '0'           after tpd;
 
          -- Edge detected
          elsif runTriggerEdge = '1' then
-            runTriggerCnt <= epixConfig.runTriggerDelay after TPD_G;
+            runTriggerCnt <= epixConfig.runTriggerDelay after tpd;
 
             -- Trigger immediatly if delay is set to zero
             if epixConfig.runTriggerDelay = 0 then
-               runTriggerOut <= '1' after TPD_G;
+               runTriggerOut <= '1' after tpd;
             else
-               runTriggerOut <= '0' after TPD_G;
+               runTriggerOut <= '0' after tpd;
             end if;
 
          -- Stop at zero
          elsif runTriggerCnt = 0 then
-            runTriggerOut <= '0' after TPD_G;
+            runTriggerOut <= '0' after tpd;
 
          -- About to reach zero
          elsif runTriggerCnt = 1 then
-            runTriggerOut <= '1'           after TPD_G;
-            runTriggerCnt <= (others=>'0') after TPD_G;
+            runTriggerOut <= '1'           after tpd;
+            runTriggerCnt <= (others=>'0') after tpd;
 
          -- Counting down
          else
-            runTriggerOut <= '0'               after TPD_G;
-            runTriggerCnt <= runTriggerCnt - 1 after TPD_G;
+            runTriggerOut <= '0'               after tpd;
+            runTriggerCnt <= runTriggerCnt - 1 after tpd;
          end if;
       end if;
    end process;
@@ -155,39 +156,39 @@ begin
    -- Delay
    process ( sysClk, sysClkRst ) begin
       if ( sysClkRst = '1' ) then
-         daqTriggerCnt  <= (others=>'0') after TPD_G;
-         daqTriggerOut  <= '0'           after TPD_G;
+         daqTriggerCnt  <= (others=>'0') after tpd;
+         daqTriggerOut  <= '0'           after tpd;
       elsif rising_edge(sysClk) then
 
          -- Run trigger is disabled
          if epixConfig.daqTriggerEnable = '0' then
-            daqTriggerCnt  <= (others=>'0') after TPD_G;
-            daqTriggerOut  <= '0'           after TPD_G;
+            daqTriggerCnt  <= (others=>'0') after tpd;
+            daqTriggerOut  <= '0'           after tpd;
 
          -- Edge detected
          elsif daqTriggerEdge = '1' then
-            daqTriggerCnt <= epixConfig.daqTriggerDelay after TPD_G;
+            daqTriggerCnt <= epixConfig.daqTriggerDelay after tpd;
 
             -- Trigger immediatly if delay is set to zero
             if epixConfig.daqTriggerDelay = 0 then
-               daqTriggerOut <= '1' after TPD_G;
+               daqTriggerOut <= '1' after tpd;
             else
-               daqTriggerOut <= '0' after TPD_G;
+               daqTriggerOut <= '0' after tpd;
             end if;
 
          -- Stop at zero
          elsif daqTriggerCnt = 0 then
-            daqTriggerOut <= '0' after TPD_G;
+            daqTriggerOut <= '0' after tpd;
 
          -- About to reach zero
          elsif daqTriggerCnt = 1 then
-            daqTriggerOut <= '1'           after TPD_G;
-            daqTriggerCnt <= (others=>'0') after TPD_G;
+            daqTriggerOut <= '1'           after tpd;
+            daqTriggerCnt <= (others=>'0') after tpd;
 
          -- Counting down
          else
-            daqTriggerOut <= '0'               after TPD_G;
-            daqTriggerCnt <= daqTriggerCnt - 1 after TPD_G;
+            daqTriggerOut <= '0'               after tpd;
+            daqTriggerCnt <= daqTriggerCnt - 1 after tpd;
          end if;
       end if;
    end process;
@@ -202,15 +203,15 @@ begin
 
    process ( sysClk, sysClkRst ) begin
       if ( sysClkRst = '1' ) then
-         intCount    <= (others=>'0') after TPD_G;
-         countEnable <= '0'           after TPD_G;
+         intCount    <= (others=>'0') after tpd;
+         countEnable <= '0'           after tpd;
       elsif rising_edge(sysClk) then
-         countEnable <= runTriggerOut or swRun after TPD_G;
+         countEnable <= runTriggerOut or swRun after tpd;
 
-         if epixConfig.intCountReset = '1' then
-            intCount <= (others=>'0') after TPD_G;
+         if epixConfig.acqCountReset = '1' then
+            intCount <= (others=>'0') after tpd;
          elsif countEnable = '1' then
-            intCount <= intCount + 1 after TPD_G;
+            intCount <= intCount + 1 after tpd;
          end if;
       end if;
    end process;

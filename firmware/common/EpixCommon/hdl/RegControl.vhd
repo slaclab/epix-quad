@@ -21,6 +21,8 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 use work.EpixTypes.all;
+use work.Pgp2AppTypesPkg.all;
+use work.SaciMasterPkg.all;
 use work.Version.all;
 library UNISIM;
 use UNISIM.vcomponents.all;
@@ -92,26 +94,27 @@ architecture RegControl of RegControl is
    signal saciSelIn  : SaciMasterInType;
    signal saciSelOut : SaciMasterOutType;
    signal intSelL    : std_logic_vector(3 downto 0);
-   signal intResp    : std_logic;
+   signal intRsp     : std_logic;
    signal saciCnt    : std_logic_vector(2 downto 0);
    signal intClk     : std_logic;
    signal dacData    : std_logic_vector(15 downto 0);
    signal dacStrobe  : std_logic;
+   signal ipowerEn   : std_logic_vector(1 downto 0);
 
 
    -- States
-   signal   curState   : std_logic_vector(2 downto 0);
-   signal   nxtState   : std_logic_vector(2 downto 0);
-   constant ST_IDLE    : std_logic_vector(2 downto 0) := "0000";
-   constant ST_REG     : std_logic_vector(2 downto 0) := "0001";
-   constant ST_CMD_0   : std_logic_vector(2 downto 0) := "0010";
-   constant ST_PAUSE_0 : std_logic_vector(2 downto 0) := "0011";
-   constant ST_CMD_1   : std_logic_vector(2 downto 0) := "0100";
-   constant ST_PAUSE_1 : std_logic_vector(2 downto 0) := "0101";
-   constant ST_CMD_2   : std_logic_vector(2 downto 0) := "0110";
-   constant ST_PAUSE_2 : std_logic_vector(2 downto 0) := "0111";
-   constant ST_CMD_3   : std_logic_vector(2 downto 0) := "1000";
-   constant ST_DONE    : std_logic_vector(2 downto 0) := "1001";
+   signal   curState   : std_logic_vector(3 downto 0);
+   signal   nxtState   : std_logic_vector(3 downto 0);
+   constant ST_IDLE    : std_logic_vector(3 downto 0) := "0000";
+   constant ST_REG     : std_logic_vector(3 downto 0) := "0001";
+   constant ST_CMD_0   : std_logic_vector(3 downto 0) := "0010";
+   constant ST_PAUSE_0 : std_logic_vector(3 downto 0) := "0011";
+   constant ST_CMD_1   : std_logic_vector(3 downto 0) := "0100";
+   constant ST_PAUSE_1 : std_logic_vector(3 downto 0) := "0101";
+   constant ST_CMD_2   : std_logic_vector(3 downto 0) := "0110";
+   constant ST_PAUSE_2 : std_logic_vector(3 downto 0) := "0111";
+   constant ST_CMD_3   : std_logic_vector(3 downto 0) := "1000";
+   constant ST_DONE    : std_logic_vector(3 downto 0) := "1001";
  
    -- Register delay for simulation
    constant tpd:time := 0.5 ns;
@@ -121,101 +124,101 @@ begin
    ------------------
    -- Outputs
    ------------------
-   epixConfig <= intConfig;
-   pgpRegIn   <= intRegIn;
-   saciSelL   <= intSelL;
+   epixConfig  <= intConfig;
+   saciSelL    <= intSelL;
+   powerEnable <= ipowerEn;
 
    --------------------------------
    -- Register control block
    --------------------------------
    process ( sysClk, sysClkRst ) begin
       if ( sysClkRst = '1' ) then
-         intConfig          <= EpixConfigInit after TPD_G;
-         pgpRegIn.regAck    <= '0'            after TPD_G;
-         pgpRegIn.regFail   <= '0'            after TPD_G;
-         pgpRegIn.regDataIn <= (others=>'0')  after TPD_G;
-         saciRegIn.req      <= '0'            after TPD_G;
-         resetReq           <= '0'            after TPD_G;
-         dacData            <= (others=>'0')  after TPD_G;
-         dacStrobe          <= '0'            after TPD_G;
-         powerEnable        <= "00"           after TPD_G;
+         intConfig          <= EpixConfigInit after tpd;
+         pgpRegIn.regAck    <= '0'            after tpd;
+         pgpRegIn.regFail   <= '0'            after tpd;
+         pgpRegIn.regDataIn <= (others=>'0')  after tpd;
+         saciRegIn.req      <= '0'            after tpd;
+         resetReq           <= '0'            after tpd;
+         dacData            <= (others=>'0')  after tpd;
+         dacStrobe          <= '0'            after tpd;
+         ipowerEn           <= "00"           after tpd;
       elsif rising_edge(sysClk) then
 
          -- Defaults
-         pgpRegIn.regAck         <= pgpRegOut.regReq after TPD_G;
-         pgpRegIn.regFail        <= '0'              after TPD_G;
-         pgpRegIn.regDataIn      <= (others=>'0')    after TPD_G;
-         intConfig.acqCountReset <= '0'              after TPD_G;
-         saciRegIn.req           <= '0'              after TPD_G;
-         dacStrobe               <= '0'              after TPD_G;
+         pgpRegIn.regAck         <= pgpRegOut.regReq after tpd;
+         pgpRegIn.regFail        <= '0'              after tpd;
+         pgpRegIn.regDataIn      <= (others=>'0')    after tpd;
+         intConfig.acqCountReset <= '0'              after tpd;
+         saciRegIn.req           <= '0'              after tpd;
+         dacStrobe               <= '0'              after tpd;
 
          -- Version register, 0x000000
          if pgpRegOut.regAddr = x"000000" then
-            pgpRegIn.regDataIn <= FpgaVersion after TPD_G;
-            resetReq <= pgpRegIn.regReq and pgpRegIn.regOp after tpd; -- Reset request
+            pgpRegIn.regDataIn <= FpgaVersion after tpd;
+            resetReq <= pgpRegOut.regReq and pgpRegOut.regOp after tpd; -- Reset request
 
          -- Run Trigger Enable, 0x000001
          elsif pgpRegOut.regAddr = x"000001" then
-            if pgpRegIn.regReq = '1' and pgpRegIn.regOp = '1' then
-               intConfig.runTriggerEnable <= pgpRegIn.regDataOut(0) after TPD_G;
+            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
+               intConfig.runTriggerEnable <= pgpRegOut.regDataOut(0) after tpd;
             end if;
-            pgpRegIn.regDataIn(0) <= intConfig.runTriggerEnable after TPD_G;
+            pgpRegIn.regDataIn(0) <= intConfig.runTriggerEnable after tpd;
 
          -- Run Trigger Delay, 0x000002
          elsif pgpRegOut.regAddr = x"000002" then
-            if pgpRegIn.regReq = '1' and pgpRegIn.regOp = '1' then
-               intConfig.runTriggerDelay <= pgpRegIn.regDataOut after TPD_G;
+            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
+               intConfig.runTriggerDelay <= pgpRegOut.regDataOut after tpd;
             end if;
-            pgpRegIn.regDataIn <= intConfig.runTriggerDelay after TPD_G;
+            pgpRegIn.regDataIn <= intConfig.runTriggerDelay after tpd;
 
          -- DAQ Trigger Enable, 0x000003
          elsif pgpRegOut.regAddr = x"000003" then
-            if pgpRegIn.regReq = '1' and pgpRegIn.regOp = '1' then
-               intConfig.daqTriggerEnable <= pgpRegIn.regDataOut(0) after TPD_G;
+            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
+               intConfig.daqTriggerEnable <= pgpRegOut.regDataOut(0) after tpd;
             end if;
-            pgpRegIn.regDataIn(0) <= intConfig.daqTriggerEnable after TPD_G;
+            pgpRegIn.regDataIn(0) <= intConfig.daqTriggerEnable after tpd;
 
          -- DAQ Trigger Delay, 0x000004
          elsif pgpRegOut.regAddr = x"000004" then
-            if pgpRegIn.regReq = '1' and pgpRegIn.regOp = '1' then
-               intConfig.daqTriggerDelay <= pgpRegIn.regDataOut after TPD_G;
+            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
+               intConfig.daqTriggerDelay <= pgpRegOut.regDataOut after tpd;
             end if;
-            pgpRegIn.regDataIn <= intConfig.daqTriggerDelay after TPD_G;
+            pgpRegIn.regDataIn <= intConfig.daqTriggerDelay after tpd;
 
          -- ACQ Counter, 0x000005
          elsif pgpRegOut.regAddr = x"000005" then
-            pgpRegIn.regDataIn <= acqCount after TPD_G;
+            pgpRegIn.regDataIn <= acqCount after tpd;
 
          -- ACQ Count Reset, 0x000006
          elsif pgpRegOut.regAddr = x"000006" then
-            if pgpRegIn.regReq = '1' and pgpRegIn.regOp = '1' then
-               intConfig.acqCountReset <= '1' after TPD_G;
+            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
+               intConfig.acqCountReset <= '1' after tpd;
             end if;
 
          -- DAC Setting, 0x000007
          elsif pgpRegOut.regAddr = x"000007" then
-            if pgpRegIn.regReq = '1' and pgpRegIn.regOp = '1' then
-               dacData   <= pgpRegIn.regDataOut after TPD_G;
-               dacStrobe <= '1'                 after TPD_G;
+            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
+               dacData   <= pgpRegOut.regDataOut(15 downto 0) after tpd;
+               dacStrobe <= '1'                               after tpd;
             end if;
 
          -- Power Enable, 0x000008
          elsif pgpRegOut.regAddr = x"000008" then
-            if pgpRegIn.regReq = '1' and pgpRegIn.regOp = '1' then
-               powerEnable <= pgpRegIn.regDataOut(1 downto 0) after TPD_G;
+            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
+               ipowerEn <= pgpRegOut.regDataOut(1 downto 0) after tpd;
             end if;
-            pgpRegIn.regDataIn(1 downto 0) <= powerEnable after TPD_G;
+            pgpRegIn.regDataIn(1 downto 0) <= ipowerEn after tpd;
 
          -- Slow ADC, 0x000010 -  0x00001F
          elsif pgpRegOut.regAddr(23 downto 4) = x"000010" then
-            pgpRegIn.regDataIn(15 downto 0) <= slowAdcData(conv_integer(pgpRegOut.regAddr(3 downto 0))) after TPD_G;
+            pgpRegIn.regDataIn(15 downto 0) <= slowAdcData(conv_integer(pgpRegOut.regAddr(3 downto 0))) after tpd;
 
          -- SACI Space, 0x800000
          elsif pgpRegOut.regAddr(23) = '1' then
-            slacRegIn.req      <= pgpRegIn.regReq   after TPD_G;
-            pgpRegIn.regDataIn <= saciRegOut.rdData after TPD_G;
-            pgpRegIn.regAck    <= saciRegOut.ack    after TPD_G;
-            pgpRegIn.regFail   <= saciRegOut.fail   after TPD_G;
+            saciRegin.req      <= pgpRegOut.regReq  after tpd;
+            pgpRegIn.regDataIn <= saciRegOut.rdData after tpd;
+            pgpRegIn.regAck    <= saciRegOut.ack    after tpd;
+            pgpRegIn.regFail   <= saciRegOut.fail   after tpd;
          end if;
 
       end if;
@@ -223,11 +226,11 @@ begin
 
    -- SACI Constants
    saciRegIn.reset  <= sysClkRst;
-   saciRegIn.chip   <= pgpRegIn.regAddr(21 downto 20);
-   saciRegIn.op     <= pgpRegIn.regOp;
-   saciRegIn.cmd    <= pgpRegIn.regAddr(18 downto 12);
-   saciRegIn.addr   <= pgpRegIn.regAddr(11 downto 0);
-   saciRegIn.wrData <= pgpRegIn.regDataOut;
+   saciRegIn.chip   <= pgpRegOut.regAddr(21 downto 20);
+   saciRegIn.op     <= pgpRegOut.regOp;
+   saciRegIn.cmd    <= pgpRegOut.regAddr(18 downto 12);
+   saciRegIn.addr   <= pgpRegOut.regAddr(11 downto 0);
+   saciRegIn.wrData <= pgpRegOut.regDataOut;
 
    -----------------------------------------------
    -- Readout Init Request
@@ -236,9 +239,9 @@ begin
    -- Sync states
    process ( sysClk, sysClkRst ) begin
       if ( sysClkRst = '1' ) then
-         curState <= ST_IDLE after TPD_G;
+         curState <= ST_IDLE after tpd;
       elsif rising_edge(sysClk) then
-         curState <= nxtState after TPD_G;
+         curState <= nxtState after tpd;
       end if;  
    end process;
 
@@ -279,7 +282,7 @@ begin
             saciSelIn.chip   <= "00";
 
             -- Transaction acked
-            if sacSelOut.ack = '1' then
+            if saciSelOut.ack = '1' then
                nxtState <= ST_PAUSE_0;
             end if;
 
@@ -292,7 +295,7 @@ begin
             saciSelIn.chip   <= "01";
 
             -- Transaction acked
-            if sacSelOut.ack = '1' then
+            if saciSelOut.ack = '1' then
                nxtState <= ST_PAUSE_0;
             end if;
 
@@ -305,7 +308,7 @@ begin
             saciSelIn.chip   <= "10";
 
             -- Transaction acked
-            if sacSelOut.ack = '1' then
+            if saciSelOut.ack = '1' then
                nxtState <= ST_PAUSE_2;
             end if;
 
@@ -318,7 +321,7 @@ begin
             saciSelIn.chip   <= "11";
 
             -- Transaction acked
-            if sacSelOut.ack = '1' then
+            if saciSelOut.ack = '1' then
                nxtState <= ST_DONE;
             end if;
 
@@ -339,14 +342,14 @@ begin
    -- Generate SACI Clock
    process ( sysClk, sysClkRst ) begin
       if ( sysClkRst = '1' ) then
-         saciCnt <= (others=>'0') after TPD_G;
+         saciCnt <= (others=>'0') after tpd;
       elsif rising_edge(sysClk) then
-         saciCnt <= saciCnt + 1 after TPD_G;
+         saciCnt <= saciCnt + 1 after tpd;
       end if;  
    end process;
 
    --- ~16Mhz
-   U_SaciClk: bufg port map ( I => saciCnt(3), O => intClk );
+   U_SaciClk: bufg port map ( I => saciCnt(2), O => intClk );
 
    -- Controller
    U_Saci : entity work.SaciMaster 
@@ -356,13 +359,13 @@ begin
        saciClk       => saciClk,
        saciSelL      => intSelL,
        saciCmd       => saciCmd,
-       saciRsp       => intResp,
+       saciRsp       => intRsp,
        saciMasterIn  => saciSelIn,
        saciMasterOut => saciSelOut
    );
 
    -- Mask response
-   intResp <= '0' when saciResp and (not intSelL) = 0 else '1';
+   intRsp <= '0' when (saciRsp and (not intSelL)) = 0 else '1';
 
    -----------------------------------------------
    -- DAC Controller
@@ -382,8 +385,8 @@ begin
    -----------------------------------------------
    -- Board ID
    -----------------------------------------------
-   serialIdOut   <= '0';
-   serialIdEn    <= '0';
+   serialIdOut   <= "00";
+   serialIdEn    <= "00";
    --serialIdIn      : in    std_logic_vector(1 downto 0);
 
    -----------------------------------------------
@@ -392,8 +395,8 @@ begin
    adcSpiClk       <= '0';
    adcSpiDataOut   <= '0';
    adcSpiDataEn    <= '0';
-   adcSpiCsb       <= '1';
-   adcPdwn         <= "00";
+   adcSpiCsb       <= "111";
+   adcPdwn         <= "000";
    --adcSpiDataIn    : in    std_logic;
 
 end RegControl;

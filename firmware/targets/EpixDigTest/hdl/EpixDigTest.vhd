@@ -157,8 +157,8 @@ entity EpixDigTest is
       asicPpbe            : out   std_logic;
       asicGlblRst         : out   std_logic;
       asicAcq             : out   std_logic;
-      asic0Dm2            : out   std_logic;
-      asic0Dm1            : out   std_logic;
+      asic0Dm2            : in    std_logic;
+      asic0Dm1            : in    std_logic;
       asic0RoClkP         : out   std_logic;
       asic0RoClkM         : out   std_logic;
       asic1RoClkP         : out   std_logic;
@@ -195,10 +195,10 @@ architecture EpixDigTest of EpixDigTest is
    signal adcFClkM            : std_logic_vector(2 downto 0);
    signal adcDClkP            : std_logic_vector(2 downto 0);
    signal adcDClkM            : std_logic_vector(2 downto 0);
-   signal adcChP              : std_logic_vector(23 downto 0);
-   signal adcChM              : std_logic_vector(23 downto 0);
+   signal adcChP              : std_logic_vector(19 downto 0);
+   signal adcChM              : std_logic_vector(19 downto 0);
    signal asicRoClkP          : std_logic_vector(3 downto 0);
-   signal asicRoClkM          : std_logic_vector(3 downto 0)
+   signal asicRoClkM          : std_logic_vector(3 downto 0);
 
    -- Register delay for simulation
    constant tpd:time := 0.5 ns;
@@ -252,7 +252,7 @@ begin
          adcDClkP             => adcDClkP,
          adcDClkM             => adcDClkM,
          adcChP               => adcChP,
-         adcChM               => adcChM
+         adcChM               => adcChM,
          asicR0               => asicR0,
          asicPpmat            => asicPpmat,
          asicPpbe             => asicPpbe,
@@ -266,9 +266,9 @@ begin
 
    -- Serial ID
    serialIdIn(0)  <= serialNumberIo;
-   serialNumberIo <= serialIdOut(0) when serialIdEn = '1' else 'Z';
+   serialNumberIo <= serialIdOut(0) when serialIdEn(0) = '1' else 'Z';
    serialIdIn(1)  <= snIoAdcCard;
-   snIoAdcCard    <= serialIdOut(1) when serialIdEn = '1' else 'Z';
+   snIoAdcCard    <= serialIdOut(1) when serialIdEn(1) = '1' else 'Z';
 
    -- Power control
    analogCardDigPwrEn <= powerEnable(0);
@@ -282,12 +282,12 @@ begin
    asic2SaciSel   <= saciSelL(2);
    asic3SaciSel   <= saciSelL(3);
    saciRsp(0)     <= asic0SaciRsp;
-   saciRsp(0)     <= asic1SaciRsp;
-   saciRsp(0)     <= asic2SaciRsp;
-   saciRsp(0)     <= asic3SaciRsp;
+   saciRsp(1)     <= asic1SaciRsp;
+   saciRsp(2)     <= asic2SaciRsp;
+   saciRsp(3)     <= asic3SaciRsp;
 
    -- ADC Configuration
-   ascSpiData   <= '0' when adcSpiDataOut = '0' and adcSpiDataEn = '1' else 'Z';
+   adcSpiData   <= '0' when adcSpiDataOut = '0' and adcSpiDataEn = '1' else 'Z';
    adcSpiDataIn <= adcSpiData;
    adc0SpiCsb   <= adcSpiCsb(0);
    adc1SpiCsb   <= adcSpiCsb(1);
@@ -300,9 +300,9 @@ begin
    adc0ClkP            <= adcClkP(0);
    adc0ClkM            <= adcClkM(0);
    adcDClkP(0)         <= adc0DoClkP;
-   adcDClkP(0)         <= adc0DoClkM;
+   adcDClkM(0)         <= adc0DoClkM;
    adcFClkP(0)         <= adc0FrameClkP;
-   adcFClkP(0)         <= adc0FrameClkM;
+   adcFClkM(0)         <= adc0FrameClkM;
    adcChP(0)           <= asic0AdcDoAP;
    adcChM(0)           <= asic0AdcDoAM;
    adcChP(1)           <= asic0AdcDoBP;
@@ -324,9 +324,9 @@ begin
    adc1ClkP            <= adcClkP(1);
    adc1ClkM            <= adcClkM(1);
    adcDClkP(1)         <= adc1DoClkP;
-   adcDClkP(1)         <= adc1DoClkM;
+   adcDClkM(1)         <= adc1DoClkM;
    adcFClkP(1)         <= adc1FrameClkP;
-   adcFClkP(1)         <= adc1FrameClkM;
+   adcFClkM(1)         <= adc1FrameClkM;
    adcChP(8)           <= asic2AdcDoAP;
    adcChM(8)           <= asic2AdcDoAM;
    adcChP(9)           <= asic2AdcDoBP;
@@ -348,9 +348,9 @@ begin
    adcMonClkP          <= adcClkP(2);
    adcMonClkM          <= adcClkM(2);
    adcDClkP(2)         <= adcMonDoClkP;
-   adcDClkP(2)         <= adcMonDoClkM;
+   adcDClkM(2)         <= adcMonDoClkM;
    adcFClkP(2)         <= adcMonFrameClkP;
-   adcFClkP(2)         <= adcMonFrameClkM;
+   adcFClkM(2)         <= adcMonFrameClkM;
    adcChP(16)          <= asic0AdcDoMonP;
    adcChM(16)          <= asic0AdcDoMonM;
    adcChP(17)          <= asic1AdcDoMonP;
@@ -359,14 +359,6 @@ begin
    adcChM(18)          <= asic2AdcDoMonM;
    adcChP(19)          <= asic3AdcDoMonP;
    adcChM(19)          <= asic3AdcDoMonM;
-   adcChP(20)          <= '0';
-   adcChM(20)          <= '1';
-   adcChP(21)          <= '0';
-   adcChM(21)          <= '1';
-   adcChP(22)          <= '0';
-   adcChM(22)          <= '1';
-   adcChP(23)          <= '0';
-   adcChM(23)          <= '1';
 
    -- ASIC Connections
    asic0RoClkP         <= asicRoClkP(0);

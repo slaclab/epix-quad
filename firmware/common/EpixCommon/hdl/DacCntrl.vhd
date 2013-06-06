@@ -17,7 +17,7 @@
 
 LIBRARY ieee;
 use work.all;
-use work.CspadPkg.all;
+use work.EpixTypes.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;

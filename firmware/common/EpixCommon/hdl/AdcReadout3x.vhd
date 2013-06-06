@@ -32,16 +32,16 @@ entity AdcReadout3x is
       sysClkRst     : in  std_logic;
 
       -- ADC Data Interface
-      adcValid      : out std_logic_vector(23 downto 0);
-      adcData       : out word16_array(23 downto 0);
+      adcValid      : out std_logic_vector(19 downto 0);
+      adcData       : out word16_array(19 downto 0);
       
       -- ADC Interface Signals
       adcFClkP      : in  std_logic_vector(2 downto 0);
       adcFClkM      : in  std_logic_vector(2 downto 0);
       adcDClkP      : in  std_logic_vector(2 downto 0);
       adcDClkM      : in  std_logic_vector(2 downto 0);
-      adcChP        : in  std_logic_vector(23 downto 0);
-      adcChM        : in  std_logic_vector(23 downto 0)
+      adcChP        : in  std_logic_vector(19 downto 0);
+      adcChM        : in  std_logic_vector(19 downto 0)
    );
 
 end AdcReadout3x;
@@ -53,12 +53,13 @@ architecture AdcReadout3x of AdcReadout3x is
 begin
 
    -- ADC
-   GenAdc : for i in 0 to 2 generate 
+   GenAdc : for i in 0 to 1 generate 
 
       U_AdcReadout: entity work.AdcReadout 
          generic map (
-            NUM_CHANNELS_G => 8
-         port map ( 
+            NUM_CHANNELS_G => 8,
+            EN_DELAY       => 0
+         ) port map ( 
             sysClk        => sysClk,
             sysClkRst     => sysClkRst,
             inputDelay    => (others=>'0'),
@@ -74,6 +75,26 @@ begin
             adcChM        => adcChM((i*8)+7 downto i*8)
          );
    end generate;
+
+   U_AdcMon: entity work.AdcReadout 
+      generic map (
+         NUM_CHANNELS_G => 4,
+         EN_DELAY       => 0
+      ) port map ( 
+         sysClk        => sysClk,
+         sysClkRst     => sysClkRst,
+         inputDelay    => (others=>'0'),
+         inputDelaySet => '0',
+         frameSwapOut  => open,
+         adcValid      => adcValid(19 downto 16),
+         adcData       => adcData(19 downto 16),
+         adcFClkP      => adcFClkP(2),
+         adcFClkM      => adcFClkM(2),
+         adcDClkP      => adcDClkP(2),
+         adcDClkM      => adcDClkM(2),
+         adcChP        => adcChP(19 downto 16),
+         adcChM        => adcChM(19 downto 16)
+      );
 
 end AdcReadout3x;
 

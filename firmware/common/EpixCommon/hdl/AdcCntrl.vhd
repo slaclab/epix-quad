@@ -63,7 +63,6 @@ architecture AdcCntrl of AdcCntrl is
    signal shiftEn      : std_logic;
    signal storeEn      : std_logic;
    signal intData      : word16_array(15 downto 0);
-   signal intAck       : std_logic;
    signal intCsL       : std_logic;
    signal nxtSclk      : std_logic;
    signal nxtCsL       : std_logic;
@@ -155,12 +154,11 @@ begin
    cntrlShift <= "0000110011" & chanCnt(0) & chanCnt(1) & chanCnt(2) & chanCnt(3) & "01";
 
    -- State machine control
-   process ( curState, adcStart, clkCnt, shiftCnt, chanCnt, cntrlShift ) begin
+   process ( curState, adcStart, clkCnt, shiftCnt, chanCnt, cntrlShift, adcChanCount ) begin
       case curState is
 
          -- IDLE, wait for request
          when ST_IDLE =>
-            intAck       <= '0';
             shiftCntEn   <= '0';
             shiftCntRst  <= '1';
             chanCntEn    <= '0';
@@ -182,7 +180,6 @@ begin
 
          -- CLK Setup period
          when ST_CLK_SET =>
-            intAck       <= '0';
             shiftCntEn   <= '0';
             shiftCntRst  <= '0';
             chanCntEn    <= '0';
@@ -206,7 +203,6 @@ begin
 
          -- CLK Hold period
          when ST_CLK_HOLD =>
-            intAck       <= '0';
             shiftCntEn   <= '0';
             shiftCntRst  <= '0';
             chanCntEn    <= '0';
@@ -229,7 +225,6 @@ begin
 
          -- Shift to next bit
          when ST_SHIFT =>
-            intAck       <= '0';
             chanCntRst   <= '0';
             shiftEn      <= '0';
             nxtSclk      <= '1';
@@ -262,7 +257,6 @@ begin
 
          -- WAIT between cycles
          when ST_WAIT =>
-            intAck       <= '0';
             chanCntEn    <= '0';
             chanCntRst   <= '0';
             shiftCntEn   <= '0';
@@ -285,7 +279,6 @@ begin
 
          -- Done
          when ST_DONE =>
-            intAck       <= '1';
             shiftCntEn   <= '0';
             shiftCntRst  <= '1';
             chanCntEn    <= '0';
@@ -300,7 +293,6 @@ begin
             nxtState     <= ST_IDLE;
 
          when others =>
-            intAck       <= '0';
             shiftCntEn   <= '0';
             shiftCntRst  <= '0';
             chanCntEn    <= '0';

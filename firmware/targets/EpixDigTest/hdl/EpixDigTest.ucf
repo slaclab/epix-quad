@@ -1,7 +1,7 @@
 
 # Define system clocks
-NET U_EpixCore/sysClk            TNM_NET = FFS sysClk;
-NET U_EpixCore/U_PgpCore/pgpClk  TNM_NET = FFS pgpClk;
+NET U_EpixCore/sysClk                 TNM_NET = FFS sysClk;
+NET U_EpixCore/U_PgpFrontEnd/ipgpClk  TNM_NET = FFS pgpClk;
 
 # Define system clocks
 TIMESPEC TS_sysClk      = PERIOD sysClk   125 Mhz HIGH 50%;

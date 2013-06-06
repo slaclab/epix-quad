@@ -21,6 +21,7 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 use work.EpixTypes.all;
+use work.Pgp2AppTypesPkg.all;
 library UNISIM;
 use UNISIM.vcomponents.all;
 
@@ -90,8 +91,8 @@ entity EpixCore is
       adcFClkM            : in    std_logic_vector(2 downto 0);
       adcDClkP            : in    std_logic_vector(2 downto 0);
       adcDClkM            : in    std_logic_vector(2 downto 0);
-      adcChP              : in    std_logic_vector(23 downto 0);
-      adcChM              : in    std_logic_vector(23 downto 0);
+      adcChP              : in    std_logic_vector(19 downto 0);
+      adcChM              : in    std_logic_vector(19 downto 0);
 
       -- ASIC Control
       asicR0              : out   std_logic;
@@ -125,9 +126,11 @@ architecture EpixCore of EpixCore is
    signal acqStart         : std_logic;
    signal dataSend         : std_logic;
    signal readStart        : std_logic;
-   signal adcValid         : std_logic_vector(23 downto 0);
-   signal adcData          : word16_array(23 downto 0);
+   signal adcValid         : std_logic_vector(19 downto 0);
+   signal adcData          : word16_array(19 downto 0);
    signal slowAdcData      : word16_array(15 downto 0);
+   signal saciReadoutReq   : std_logic;
+   signal saciReadoutAck   : std_logic;
 
    -- Register delay for simulation
    constant tpd:time := 0.5 ns;
@@ -192,9 +195,10 @@ begin
          sysClkRst      => sysClkRst,
          epixConfig     => epixConfig,
          readStart      => readStart,
-         dataRead       => dataRead,
+         dataSend       => dataSend,
          adcValid       => adcValid,
          adcData        => adcData,
+         slowAdcData    => slowAdcData,
          frameTxIn      => frameTxIn,
          frameTxOut     => frameTxOut,
          mpsOut         => mpsOut

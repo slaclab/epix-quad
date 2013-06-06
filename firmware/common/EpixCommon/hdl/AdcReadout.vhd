@@ -26,7 +26,9 @@ use UNISIM.vcomponents.all;
 
 entity AdcReadout is
    generic (
-      NUM_CHANNELS_G : integer range 1 to 8 := 8);
+      NUM_CHANNELS_G : integer range 1 to 8 := 8;
+      EN_DELAY       : integer range 0 to 1 := 1
+   );
    port ( 
 
       -- Master system clock, 125Mhz
@@ -178,52 +180,59 @@ begin
          O  => adcFramePad
       );
 
-   -- ADC frame delay
-   U_FrameDelay : IODELAY 
-      generic map (
-         DELAY_SRC             => "I",
-         HIGH_PERFORMANCE_MODE => true,
-         IDELAY_TYPE           => "VARIABLE",
-         IDELAY_VALUE          => 0, -- Here
-         ODELAY_VALUE          => 0,
-         REFCLK_FREQUENCY      => 200.0,
-         SIGNAL_PATTERN        => "DATA"
-      ) port map (
-         DATAOUT  => adcFrameDly,
-         C        => sysClk,
-         CE       => frameCe,
-         DATAIN   => '0',
-         IDATAIN  => adcFramePad,
-         INC      => '1',
-         ODATAIN  => '0',
-         RST      => frameRst,
-         T        => '0'
-      );
+   FDEL_GEN: if EN_DELAY = 1 generate
 
-   -- Frame delay adjust
-   process ( sysClk, sysClkRst ) begin
-      if ( sysClkRst = '1' ) then
-         frameCe    <= '0'           after tpd;
-         frameRst   <= '1'           after tpd;
-         frameCount <= (others=>'0') after tpd;
-      elsif rising_edge(sysClk) then
+      -- ADC frame delay
+      U_FrameDelay : IODELAY 
+         generic map (
+            DELAY_SRC             => "I",
+            HIGH_PERFORMANCE_MODE => true,
+            IDELAY_TYPE           => "VARIABLE",
+            IDELAY_VALUE          => 0, -- Here
+            ODELAY_VALUE          => 0,
+            REFCLK_FREQUENCY      => 200.0,
+            SIGNAL_PATTERN        => "DATA"
+         ) port map (
+            DATAOUT  => adcFrameDly,
+            C        => sysClk,
+            CE       => frameCe,
+            DATAIN   => '0',
+            IDATAIN  => adcFramePad,
+            INC      => '1',
+            ODATAIN  => '0',
+            RST      => frameRst,
+            T        => '0'
+         );
 
-         -- Idle
-         if frameCe = '0' and frameRst = '0' then
+      -- Frame delay adjust
+      process ( sysClk, sysClkRst ) begin
+         if ( sysClkRst = '1' ) then
+            frameCe    <= '0'           after tpd;
+            frameRst   <= '1'           after tpd;
             frameCount <= (others=>'0') after tpd;
-            frameRst   <= inputDelaySet after tpd;
-         else
-            frameRst   <= '0' after tpd;
+         elsif rising_edge(sysClk) then
 
-            if frameCount = inputDelay then
-               frameCe <= '0' after tpd;
+            -- Idle
+            if frameCe = '0' and frameRst = '0' then
+               frameCount <= (others=>'0') after tpd;
+               frameRst   <= inputDelaySet after tpd;
             else
-               frameCe    <= '1'            after tpd;
-               frameCount <= frameCount + 1 after tpd;
+               frameRst   <= '0' after tpd;
+
+               if frameCount = inputDelay then
+                  frameCe <= '0' after tpd;
+               else
+                  frameCe    <= '1'            after tpd;
+                  frameCount <= frameCount + 1 after tpd;
+               end if;
             end if;
          end if;
-      end if;
-   end process;
+      end process;
+   end generate;
+
+   FDEL_BP_GEN: if EN_DELAY = 0 generate
+      adcFrameDly <= adcFramePad;
+   end generate;
 
    -- Frame signal DDR input
    U_FrameDdr : IDDR 
@@ -298,52 +307,58 @@ begin
             O  => adcDataPad(i)
          );
 
-      -- ADC input delay
-      U_InDelay : IODELAY 
-         generic map (
-            DELAY_SRC             => "I",
-            HIGH_PERFORMANCE_MODE => true,
-            IDELAY_TYPE           => "VARIABLE",
-            IDELAY_VALUE          => 0,
-            ODELAY_VALUE          => 0,
-            REFCLK_FREQUENCY      => 200.0,
-            SIGNAL_PATTERN        => "DATA"
-         ) port map (
-            DATAOUT  => adcDataDly(i),
-            C        => sysClk,
-            CE       => inputCe(i),
-            DATAIN   => '0',
-            IDATAIN  => adcDataPad(i),
-            INC      => '1',
-            ODATAIN  => '0',
-            RST      => inputRst(i),
-            T        => '0'
-         );
+      DDEL_GEN: if EN_DELAY = 1 generate
+         -- ADC input delay
+         U_InDelay : IODELAY 
+            generic map (
+               DELAY_SRC             => "I",
+               HIGH_PERFORMANCE_MODE => true,
+               IDELAY_TYPE           => "VARIABLE",
+               IDELAY_VALUE          => 0,
+               ODELAY_VALUE          => 0,
+               REFCLK_FREQUENCY      => 200.0,
+               SIGNAL_PATTERN        => "DATA"
+            ) port map (
+               DATAOUT  => adcDataDly(i),
+               C        => sysClk,
+               CE       => inputCe(i),
+               DATAIN   => '0',
+               IDATAIN  => adcDataPad(i),
+               INC      => '1',
+               ODATAIN  => '0',
+               RST      => inputRst(i),
+               T        => '0'
+            );
 
-      -- Input delay adjust
-      process ( sysClk, sysClkRst ) begin
-         if ( sysClkRst = '1' ) then
-            inputCe(i)    <= '0'           after tpd;
-            inputRst(i)   <= '1'           after tpd;
-            inputCount(i) <= (others=>'0') after tpd;
-         elsif rising_edge(sysClk) then
-
-            -- Idle
-            if inputCe(i) = '0' and inputRst(i) = '0' then
+         -- Input delay adjust
+         process ( sysClk, sysClkRst ) begin
+            if ( sysClkRst = '1' ) then
+               inputCe(i)    <= '0'           after tpd;
+               inputRst(i)   <= '1'           after tpd;
                inputCount(i) <= (others=>'0') after tpd;
-               inputRst(i)   <= inputDelaySet after tpd;
-            else
-               inputRst(i)   <= '0' after tpd;
+            elsif rising_edge(sysClk) then
 
-               if inputCount(i) = inputDelay then
-                  inputCe(i) <= '0' after tpd;
+               -- Idle
+               if inputCe(i) = '0' and inputRst(i) = '0' then
+                  inputCount(i) <= (others=>'0') after tpd;
+                  inputRst(i)   <= inputDelaySet after tpd;
                else
-                  inputCe(i)    <= '1'               after tpd;
-                  inputCount(i) <= inputCount(i) + 1 after tpd;
+                  inputRst(i)   <= '0' after tpd;
+
+                  if inputCount(i) = inputDelay then
+                     inputCe(i) <= '0' after tpd;
+                  else
+                     inputCe(i)    <= '1'               after tpd;
+                     inputCount(i) <= inputCount(i) + 1 after tpd;
+                  end if;
                end if;
             end if;
-         end if;
-      end process;
+         end process;
+      end generate;
+
+      DDEL_BP_GEN: if EN_DELAY = 0 generate
+         adcDataDly(i) <= adcDataPad(i);
+      end generate;
 
       -- Data signal DDR input
       U_DataDdr : IDDR 

@@ -46,11 +46,11 @@ package EpixTypes is
 
    -- Initialize
    constant EpixConfigInit : EpixConfigType := ( 
-      runTriggerEnable  <= '0',
-      runTriggerDelay   <= (others=>'0'),
-      daqTriggerEnable  <= '0',
-      daqTriggerDelay   <= (others=>'0'),
-      acqCountReset     <= '0',
+      runTriggerEnable  => '0',
+      runTriggerDelay   => (others=>'0'),
+      daqTriggerEnable  => '0',
+      daqTriggerDelay   => (others=>'0'),
+      acqCountReset     => '0'
    ); 
    
 end EpixTypes;

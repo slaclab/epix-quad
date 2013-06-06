@@ -72,15 +72,15 @@ architecture AcqControl of AcqControl is
 begin
 
    -- ADC Clock outputs
-   U_AdcClk0 : IBUFDS port map ( I => adcClk, O => adcClkP(0), OB => adcClkM(0) );
-   U_AdcClk1 : IBUFDS port map ( I => adcClk, O => adcClkP(1), OB => adcClkM(1) );
-   U_AdcClk2 : IBUFDS port map ( I => adcClk, O => adcClkP(2), OB => adcClkM(2) );
+   U_AdcClk0 : OBUFDS port map ( I => adcClk, O => adcClkP(0), OB => adcClkM(0) );
+   U_AdcClk1 : OBUFDS port map ( I => adcClk, O => adcClkP(1), OB => adcClkM(1) );
+   U_AdcClk2 : OBUFDS port map ( I => adcClk, O => adcClkP(2), OB => adcClkM(2) );
 
    -- ASIC Clock Outputs
-   U_AsicClk0 : IBUFDS port map ( I => asicClk, O => asicRoClkP(0), OB => asicRoClkM(0) );
-   U_AsicClk1 : IBUFDS port map ( I => asicClk, O => asicRoClkP(1), OB => asicRoClkM(1) );
-   U_AsicClk2 : IBUFDS port map ( I => asicClk, O => asicRoClkP(2), OB => asicRoClkM(2) );
-   U_AsicClk3 : IBUFDS port map ( I => asicClk, O => asicRoClkP(3), OB => asicRoClkM(3) );
+   U_AsicClk0 : OBUFDS port map ( I => asicClk, O => asicRoClkP(0), OB => asicRoClkM(0) );
+   U_AsicClk1 : OBUFDS port map ( I => asicClk, O => asicRoClkP(1), OB => asicRoClkM(1) );
+   U_AsicClk2 : OBUFDS port map ( I => asicClk, O => asicRoClkP(2), OB => asicRoClkM(2) );
+   U_AsicClk3 : OBUFDS port map ( I => asicClk, O => asicRoClkP(3), OB => asicRoClkM(3) );
 
 
 

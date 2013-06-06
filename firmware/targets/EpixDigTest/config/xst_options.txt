@@ -7,3 +7,4 @@ run
 -opt_mode Speed
 -opt_level 1
 -netlist_hierarchy rebuilt
+-use_new_parser yes
