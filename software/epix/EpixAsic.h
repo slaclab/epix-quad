@@ -1,44 +1,26 @@
 //-----------------------------------------------------------------------------
-// File          : KpixAsic.h
+// File          : EpixAsic.h
 // Author        : Ryan Herbst  <rherbst@slac.stanford.edu>
-// Created       : 11/17/2011
-// Project       : Kpix ASIC
+// Created       : 06/06/2013
+// Project       : EPIX ASIC
 //-----------------------------------------------------------------------------
 // Description :
-// Kpix ASIC container
+// EPIX ASIC container
 //-----------------------------------------------------------------------------
-// Copyright (c) 2011 by SLAC. All rights reserved.
+// Copyright (c) 2013 by SLAC. All rights reserved.
 // Proprietary and confidential to SLAC.
 //-----------------------------------------------------------------------------
 // Modification history :
-// 11/17/2011: created
+// 06/06/2013: created
 //-----------------------------------------------------------------------------
-#ifndef __KPIX_ASIC_H__
-#define __KPIX_ASIC_H__
+#ifndef __EPIX_ASIC_H__
+#define __EPIX_ASIC_H__
 
 #include <Device.h>
 using namespace std;
 
 //! Class to contain Kpix ASIC
-class KpixAsic : public Device {
-
-      // Kpix is dummy
-      bool dummy_;
-
-      // Kpix version
-      uint version_;
-
-      // Time value to use for timing calculations
-      static const uint KpixAcqPeriod = 50;
-
-      // Function to convert dac value into a voltage
-      static double dacToVolt(uint dac);
-
-      // Function to convert dac value into a voltage
-      static string dacToVoltString(uint dac);
-
-      // Function to time value to string
-      static string timeString(uint period, uint value);
+class EpixAsic : public Device {
 
    public:
 
@@ -47,13 +29,12 @@ class KpixAsic : public Device {
        * \param destination Device destination
        * \param baseAddress Device base address
        * \param index       Device index
-       * \param dummy       Kpix is a dummy device
        * \param parent      Parent device
       */
-      KpixAsic ( uint destination, uint baseAddress, uint index, bool dummy, Device *parent );
+      EpixAsic ( uint destination, uint baseAddress, uint index, Device *parent );
 
       //! Deconstructor
-      ~KpixAsic ( );
+      ~EpixAsic ( );
 
       //! Method to read status registers and update variables
       /*! 
@@ -76,9 +57,6 @@ class KpixAsic : public Device {
 
       //! Verify hardware state of configuration
       void verifyConfig ( );
-
-      //! Channel count
-      uint channels();
 
 };
 #endif

@@ -1,19 +1,19 @@
 //-----------------------------------------------------------------------------
-// File          : KpixAsic.cpp
+// File          : EpixAsic.cpp
 // Author        : Ryan Herbst  <rherbst@slac.stanford.edu>
-// Created       : 11/17/2011
-// Project       : Kpix ASIC
+// Created       : 06/06/2013
+// Project       : Epix ASIC
 //-----------------------------------------------------------------------------
 // Description :
-// Kpix ASIC container
+// Epix ASIC container
 //-----------------------------------------------------------------------------
-// Copyright (c) 2011 by SLAC. All rights reserved.
+// Copyright (c) 2013 by SLAC. All rights reserved.
 // Proprietary and confidential to SLAC.
 //-----------------------------------------------------------------------------
 // Modification history :
-// 11/17/2011: created
+// 06/06/2013: created
 //-----------------------------------------------------------------------------
-#include <KpixAsic.h>
+#include <EpixAsic.h>
 #include <Register.h>
 #include <Variable.h>
 #include <Command.h>
@@ -23,55 +23,14 @@
 #include <iomanip>
 using namespace std;
 
-// Function to convert dac value into a voltage
-double KpixAsic::dacToVolt(uint dac) {
-   double       volt;
-
-   // Change to voltage
-   if ( dac >= 0xf6 ) volt = 2.5 - ((double)(0xff-dac))*50.0*0.0001;
-   else volt =(double)dac * 100.0 * 0.0001;
-
-   return(volt);
-}
-
-// Function to convert dac value into a voltage
-string KpixAsic::dacToVoltString(uint dac) {
-   stringstream tmp;
-   tmp.str("");
-   tmp << dacToVolt(dac) << " V";
-   return(tmp.str());
-}
-
-// Function to convert dac value into a voltage
-string KpixAsic::timeString(uint period, uint value) {
-   stringstream tmp;
-   tmp.str("");
-   tmp << ((value+1)*period) << " nS";
-   return(tmp.str());
-}
-
-// Channel count
-uint KpixAsic::channels() {
-   if ( dummy_ ) return(0);
-   switch(getVariable("Version")->getInt()) {
-      case  8: return(256);  break;
-      case  9: return(512);  break;
-      case 10: return(1024); break;
-      case 11: return(128);  break;
-      case 12: return(1024); break;
-      default: return(0);    break;
-   }
-}
-
 // Constructor
-KpixAsic::KpixAsic ( uint destination, uint baseAddress, uint index, bool dummy, Device *parent ) : 
+EpixAsic::EpixAsic ( uint destination, uint baseAddress, uint index, Device *parent ) : 
                      Device(destination,baseAddress,"kpixAsic",index,parent) {
    stringstream tmp;
    uint         x;
 
    // Description
-   desc_    = "Kpix ASIC Object.";
-   dummy_   = dummy;
+   desc_    = "Epix ASIC Object.";
 
    // Version value
    addVariable(new Variable("Version", Variable::Configuration));
@@ -459,10 +418,10 @@ KpixAsic::KpixAsic ( uint destination, uint baseAddress, uint index, bool dummy,
 }
 
 // Deconstructor
-KpixAsic::~KpixAsic ( ) { }
+EpixAsic::~EpixAsic ( ) { }
 
 // Method to read status registers and update variables
-void KpixAsic::readStatus ( ) {
+void EpixAsic::readStatus ( ) {
    REGISTER_LOCK
 
    // Read status register
@@ -476,7 +435,7 @@ void KpixAsic::readStatus ( ) {
 }
 
 // Method to read configuration registers and update variables
-void KpixAsic::readConfig ( ) {
+void EpixAsic::readConfig ( ) {
    stringstream tmp;
    stringstream regA;
    stringstream regB;
@@ -519,7 +478,7 @@ void KpixAsic::readConfig ( ) {
       getVariable("TimeDigitizeDelay")->setInt(getRegister("TimerF")->get(24,0xFF));
 
    }
-   else if ( getVariable("Enabled")->getInt() ) cout << "KpixAsic::readConfig -> Skipping read of version 8 timing registers A, B & F!" << endl;
+   else if ( getVariable("Enabled")->getInt() ) cout << "EpixAsic::readConfig -> Skipping read of version 8 timing registers A, B & F!" << endl;
 
    readRegister(getRegister("TimerC"));
    getVariable("TimePowerUpOn")->setInt(getRegister("TimerC")->get(0,0xFFFF));
@@ -566,7 +525,7 @@ void KpixAsic::readConfig ( ) {
 
       // Turn front end power on in kpix 9 before reading dacs
       if ( getVariable("Version")->getInt() == 9 && getVariable("Enabled")->getInt() == 1 ) {
-         cout << "KpixAsic::readConfig -> Forcing power on for DAC read!" << endl;
+         cout << "EpixAsic::readConfig -> Forcing power on for DAC read!" << endl;
          oldControl = getRegister("Control")->get();
          getRegister("Control")->set(1,24,0x1); // Disable power cycle
          writeRegister(getRegister("Control"),true);
@@ -638,7 +597,7 @@ void KpixAsic::readConfig ( ) {
 
       // Restore control register settings
       if ( getVariable("Version")->getInt() == 9 && getVariable("Enabled")->getInt() == 1 ) {
-         cout << "KpixAsic::readConfig -> Restoring power setting!" << endl;
+         cout << "EpixAsic::readConfig -> Restoring power setting!" << endl;
          getRegister("Control")->set(oldControl);
          writeRegister(getRegister("Control"),true);
       }
@@ -716,7 +675,7 @@ void KpixAsic::readConfig ( ) {
 }
 
 // Method to write configuration registers
-void KpixAsic::writeConfig ( bool force ) {
+void EpixAsic::writeConfig ( bool force ) {
    stringstream tmp;
    stringstream regA;
    stringstream regB;
@@ -747,7 +706,7 @@ void KpixAsic::writeConfig ( bool force ) {
 
    // Overwrite some values in kpix version 8
    if ( getVariable("Version")->getInt() == 8 ) {
-      if ( getVariable("Enabled")->getInt() ) cout << "KpixAsic::writeConfig -> Overwriting version 8 timing registers A, B & F!" << endl;
+      if ( getVariable("Enabled")->getInt() ) cout << "EpixAsic::writeConfig -> Overwriting version 8 timing registers A, B & F!" << endl;
       getVariable("TimeResetOn")->setInt(0x000e);
       getVariable("TimeResetOff")->setInt(0x0960);
       getVariable("TimeOffsetNullOff")->setInt(0x07da);
@@ -912,7 +871,7 @@ void KpixAsic::writeConfig ( bool force ) {
       // Real front end power mode will be updated when control
       // register is written later
       if ( getVariable("Version")->getInt() == 9 && dacStale && getVariable("Enabled")->getInt() == 1 ) {
-         cout << "KpixAsic::writeConfig -> Forcing power on for DAC update!" << endl;
+         cout << "EpixAsic::writeConfig -> Forcing power on for DAC update!" << endl;
          getRegister("Control")->set(1,24,0x1); // Disable power cycle
          writeRegister(getRegister("Control"),true);
       }
@@ -1032,7 +991,7 @@ void KpixAsic::writeConfig ( bool force ) {
 }
 
 // Verify hardware state of configuration
-void KpixAsic::verifyConfig ( ) {
+void EpixAsic::verifyConfig ( ) {
    stringstream tmp;
    uint         x;
    uint         oldControl;
@@ -1051,7 +1010,7 @@ void KpixAsic::verifyConfig ( ) {
       verifyRegister(getRegister("TimerB"));
       verifyRegister(getRegister("TimerF"));
    } 
-   else if ( getVariable("Enabled")->getInt() ) cout << "KpixAsic::verifyConfig -> Skipping verify of version 8 timing registers A, B & F!" << endl;
+   else if ( getVariable("Enabled")->getInt() ) cout << "EpixAsic::verifyConfig -> Skipping verify of version 8 timing registers A, B & F!" << endl;
 
    if ( !dummy_ ) {
 
@@ -1059,7 +1018,7 @@ void KpixAsic::verifyConfig ( ) {
 
       // Turn front end power on in kpix 9 before reading dacs
       if ( getVariable("Version")->getInt() == 9 && getVariable("Enabled")->getInt() == 1 ) {
-         cout << "KpixAsic::verifyConfig -> Forcing power on for DAC Verify!" << endl;
+         cout << "EpixAsic::verifyConfig -> Forcing power on for DAC Verify!" << endl;
          oldControl = getRegister("Control")->get();
          getRegister("Control")->set(1,24,0x1); // Disable power cycle
          writeRegister(getRegister("Control"),true);
@@ -1078,7 +1037,7 @@ void KpixAsic::verifyConfig ( ) {
 
       // Restore control register settings
       if ( getVariable("Version")->getInt() == 9 && getVariable("Enabled")->getInt() == 1 ) {
-         cout << "KpixAsic::verifyConfig -> Restoring power state!" << endl;
+         cout << "EpixAsic::verifyConfig -> Restoring power state!" << endl;
          getRegister("Control")->set(oldControl);
          writeRegister(getRegister("Control"),true);
       }
