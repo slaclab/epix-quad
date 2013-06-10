@@ -1,29 +1,26 @@
 //-----------------------------------------------------------------------------
-// File          : ConFpga.h
+// File          : DigFpga.h
 // Author        : Ryan Herbst  <rherbst@slac.stanford.edu>
-// Created       : 05/24/2012
-// Project       : Kpix ASIC
+// Created       : 06/07/2013
+// Project       : Digital FPGA
 //-----------------------------------------------------------------------------
 // Description :
-// Con FPGA container
+// Digital FPGA container
 //-----------------------------------------------------------------------------
-// Copyright (c) 2011 by SLAC. All rights reserved.
+// Copyright (c) 2013 by SLAC. All rights reserved.
 // Proprietary and confidential to SLAC.
 //-----------------------------------------------------------------------------
 // Modification history :
-// 05/24/2012: created
+// 06/07/2013: created
 //-----------------------------------------------------------------------------
-#ifndef __CON_FPGA_H__
-#define __CON_FPGA_H__
+#ifndef __DIG_FPGA_H__
+#define __DIG_FPGA_H__
 
 #include <Device.h>
 using namespace std;
 
 //! Class to contain APV25 
-class ConFpga : public Device {
-
-      // Number of kpix devices
-      unsigned int kpixCount;
+class DigFpga : public Device {
 
    public:
 
@@ -33,10 +30,10 @@ class ConFpga : public Device {
        * \param index       Device index
        * \param parent      Parent Device
       */
-      ConFpga ( uint destination, uint index, uint kpixCount, Device *parent );
+      DigFpga ( uint destination, uint index, Device *parent );
 
       //! Deconstructor
-      ~ConFpga ( );
+      ~DigFpga ( );
 
       //! Method to process a command
       /*!

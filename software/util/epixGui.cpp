@@ -46,7 +46,7 @@ int main (int argc, char **argv) {
 
    try {
       PgpLink       pgpLink; 
-      EpixControl   epix(&pgpLink,defFile,5);
+      EpixControl   epix(&pgpLink,defFile);
       int           pid;
 
       // Setup top level device
