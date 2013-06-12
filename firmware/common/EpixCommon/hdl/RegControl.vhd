@@ -100,7 +100,11 @@ architecture RegControl of RegControl is
    signal dacData    : std_logic_vector(15 downto 0);
    signal dacStrobe  : std_logic;
    signal ipowerEn   : std_logic_vector(1 downto 0);
-
+   signal adcRdData  : std_logic_vector(7 downto 0);
+   signal adcWrReq   : std_logic;
+   signal adcRdReq   : std_logic;
+   signal adcAck     : std_logic;
+   signal adcSel     : std_logic_vector(1 downto 0);
 
    -- States
    signal   curState   : std_logic_vector(3 downto 0);
@@ -142,6 +146,9 @@ begin
          dacData            <= (others=>'0')  after tpd;
          dacStrobe          <= '0'            after tpd;
          ipowerEn           <= "00"           after tpd;
+         adcWrReq           <= '0'            after tpd;
+         adcRdReq           <= '0'            after tpd;
+         adcSel             <= "00"           after tpd;
       elsif rising_edge(sysClk) then
 
          -- Defaults
@@ -151,6 +158,9 @@ begin
          intConfig.acqCountReset <= '0'              after tpd;
          saciRegIn.req           <= '0'              after tpd;
          dacStrobe               <= '0'              after tpd;
+         adcWrReq                <= '0'              after tpd;
+         adcRdReq                <= '0'              after tpd;
+         adcSel                  <= "00"             after tpd;
 
          -- Version register, 0x000000
          if pgpRegOut.regAddr = x"000000" then
@@ -212,6 +222,14 @@ begin
          -- Slow ADC, 0x000010 -  0x00001F
          elsif pgpRegOut.regAddr(23 downto 4) = x"000010" then
             pgpRegIn.regDataIn(15 downto 0) <= slowAdcData(conv_integer(pgpRegOut.regAddr(3 downto 0))) after tpd;
+
+         -- Fast ADCs, 0x008000 -  0x00FFFF
+         elsif pgpRegOut.regAddr(23 downto 16) = x"00" and pgpRegOut.regAddr(15) = '1' then
+            pgpRegIn.regDataIn(7 downto 0) <= adcRdData                                  after tpd;
+            adcSel                         <= pgpRegOut.regAddr(14 downto 13)            after tpd;
+            adcWrReq                       <= pgpRegOut.regReq and pgpRegOut.regOp       after tpd;
+            adcWrReq                       <= pgpRegOut.regReq and (not pgpRegOut.regOp) after tpd;
+            pgpRegIn.regAck                <= adcAck                                     after tpd;
 
          -- SACI Space, 0x800000
          elsif pgpRegOut.regAddr(23) = '1' then
@@ -392,12 +410,27 @@ begin
    -----------------------------------------------
    -- Fast ADC Control
    -----------------------------------------------
-   adcSpiClk       <= '0';
-   adcSpiDataOut   <= '0';
-   adcSpiDataEn    <= '0';
-   adcSpiCsb       <= "111";
+
+   -- ADC Control
+   U_AdcConfig : AdcConfig
+      port map (
+         sysClk     => sysClk,
+         sysClkRst  => sysClkRst,
+         adcWrData  => regDataOut(7 downto 0),
+         adcRdData  => adcRdData,
+         adcAddr    => regAddr(12 downto 0),
+         adcWrReq   => adcWrReq,
+         adcRdReq   => adcRdReq,
+         adcAck     => adcAck,
+         adcSel     => adcSel,
+         adcSClk    => adcSpiClk,
+         adcSDin    => adcSpiDataIn,
+         adcSDout   => adcSpiDataOut,
+         adcCsb     => adcSpiCsb
+      );
+
+   -- Never power down
    adcPdwn         <= "000";
-   --adcSpiDataIn    : in    std_logic;
 
 end RegControl;
 

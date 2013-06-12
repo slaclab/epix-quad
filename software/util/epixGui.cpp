@@ -14,6 +14,7 @@
 // 05/14/2013: created
 //----------------------------------------------------------------------------
 #include <PgpLink.h>
+#include <UdpLink.h>
 #include <EpixControl.h>
 #include <ControlServer.h>
 #include <Device.h>
@@ -45,17 +46,26 @@ int main (int argc, char **argv) {
    signal (SIGINT,&sigTerm);
 
    try {
-      PgpLink       pgpLink; 
-      EpixControl   epix(&pgpLink,defFile);
+      //PgpLink       pgpLink; 
+      //EpixControl   epix(&pgpLink,defFile);
+      UdpLink       udpLink; 
+      EpixControl   epix(&udpLink,defFile);
       int           pid;
 
       // Setup top level device
       epix.setDebug(true);
 
       // Create and setup PGP link
-      pgpLink.setMaxRxTx(500000);
-      pgpLink.setDebug(true);
-      pgpLink.open("/dev/pgpcard0");
+      //pgpLink.setMaxRxTx(500000);
+      //pgpLink.setDebug(true);
+      //pgpLink.open("/dev/pgpcard0");
+      //pgpLink.enableSharedMemory("epix",1);
+      //usleep(100);
+
+      // Create and setup PGP link
+      udpLink.setMaxRxTx(500000);
+      udpLink.setDebug(true);
+      udpLink.open(8090,1,"127.0.0.1");
       udpLink.enableSharedMemory("epix",1);
       usleep(100);
 

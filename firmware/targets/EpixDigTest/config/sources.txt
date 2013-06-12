@@ -32,6 +32,7 @@ vhdl    work "_PROJ_DIR_/../../common/Saci/SaciMaster.vhd"
 
 # EPIX Core
 vhdl    work "_PROJ_DIR_/../../common/EpixCommon/hdl/EpixTypes.vhd"
+vhdl    work "_PROJ_DIR_/../../common/EpixCommon/hdl/AdcConfig.vhd"
 vhdl    work "_PROJ_DIR_/../../common/EpixCommon/hdl/AcqControl.vhd"
 vhdl    work "_PROJ_DIR_/../../common/EpixCommon/hdl/AdcCntrl.vhd"
 vhdl    work "_PROJ_DIR_/../../common/EpixCommon/hdl/AdcReadout.vhd"

@@ -71,8 +71,8 @@ EpixAsic::EpixAsic ( uint destination, uint baseAddress, uint index, Device *par
    getVariable("Pulser")->setRange(0,0x3FF);
 
    addVariable(new Variable("PBit", Variable::Configuration));
-   getVariable("Pbit")->setDescription("PBit");
-   getVariable("Pbit")->setTrueFalse();
+   getVariable("PBit")->setDescription("PBit");
+   getVariable("PBit")->setTrueFalse();
 
    addVariable(new Variable("ATest", Variable::Configuration));
    getVariable("ATest")->setDescription("ATest");
@@ -212,7 +212,7 @@ EpixAsic::EpixAsic ( uint destination, uint baseAddress, uint index, Device *par
    getVariable("Ocb")->setDescription("");
    getVariable("Ocb")->setRange(0,7);
 
-   addVariable(new Variable("Monst", Variable::Configuration));
+   addVariable(new Variable("Monost", Variable::Configuration));
    getVariable("Monost")->setDescription("");
    getVariable("Monost")->setRange(0,7);
 
@@ -685,8 +685,8 @@ void EpixAsic::writeConfig ( bool force ) {
    getRegister("WriteMatrixData")->set(getVariable("PixelTest")->getInt(),0,0x1);
    getRegister("WriteMatrixData")->set(getVariable("PixelMask")->getInt(),1,0x1);
 
-   if ( force || getRegister("WriteMatrixData")->isStale() ) {
-      writeRegister(getRegister("PrepareMultiConfig",true);
+   if ( force || getRegister("WriteMatrixData")->stale() ) {
+      writeRegister(getRegister("PrepareMultiConfig"),true);
       writeRegister(getRegister("WriteMatrixData"),true);
    }
 

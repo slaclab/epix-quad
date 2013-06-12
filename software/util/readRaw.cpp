@@ -13,8 +13,6 @@
 // Modification history :
 // 12/02/2011: created
 //----------------------------------------------------------------------------
-#include <KpixEvent.h>
-#include <KpixSample.h>
 #include <iomanip>
 #include <fstream>
 #include <iostream>

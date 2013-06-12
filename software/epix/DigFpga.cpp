@@ -15,6 +15,7 @@
 //-----------------------------------------------------------------------------
 #include <DigFpga.h>
 #include <EpixAsic.h>
+#include <Ad9252.h>
 #include <Register.h>
 #include <Variable.h>
 #include <Command.h>
@@ -96,10 +97,13 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent ) :
    getCommand("AcqCountReset")->setDescription("Acquisition Count Reset");
 
    // Add sub-devices
-   addDevice(new EpixAsic(destination, 0x01800000, 0, this);
-   addDevice(new EpixAsic(destination, 0x01900000, 1, this);
-   addDevice(new EpixAsic(destination, 0x01A00000, 2, this);
-   addDevice(new EpixAsic(destination, 0x01B00000, 3, this);
+   addDevice(new   Ad9252(destination, 0x01008000, 0, this));
+   addDevice(new   Ad9252(destination, 0x0100A000, 1, this));
+   addDevice(new   Ad9252(destination, 0x0100C000, 2, this));
+   addDevice(new EpixAsic(destination, 0x01800000, 0, this));
+   addDevice(new EpixAsic(destination, 0x01900000, 1, this));
+   addDevice(new EpixAsic(destination, 0x01A00000, 2, this));
+   addDevice(new EpixAsic(destination, 0x01B00000, 3, this));
 
    getVariable("Enabled")->setHidden(true);
 }
@@ -128,6 +132,7 @@ void DigFpga::command ( string name, string arg) {
 // Method to read status registers and update variables
 void DigFpga::readStatus ( ) {
    stringstream tmp;
+   uint         x;
 
    REGISTER_LOCK
 
@@ -210,12 +215,12 @@ void DigFpga::writeConfig ( bool force ) {
 void DigFpga::verifyConfig ( ) {
    REGISTER_LOCK
 
-   writeRegister(getRegister("RunTrigEnable"));
-   writeRegister(getRegister("RunTrigDelay"));
-   writeRegister(getRegister("DaqTrigEnable"));
-   writeRegister(getRegister("DaqTrigDelay"));
-   writeRegister(getRegister("DaqSetting"));
-   writeRegister(getRegister("PowerEnable"));
+   verifyRegister(getRegister("RunTrigEnable"));
+   verifyRegister(getRegister("RunTrigDelay"));
+   verifyRegister(getRegister("DaqTrigEnable"));
+   verifyRegister(getRegister("DaqTrigDelay"));
+   verifyRegister(getRegister("DaqSetting"));
+   verifyRegister(getRegister("PowerEnable"));
 
    Device::verifyConfig();
    REGISTER_UNLOCK
