@@ -121,7 +121,7 @@ architecture EpixCore of EpixCore is
    signal epixConfig       : EpixConfigType;
    signal acqCount         : std_logic_vector(31 downto 0);
    signal frameTxIn        : UsBuff32InType;
-   signal frameTxOut       : UsBuffOutType;
+   signal frameTxOut       : UsBuff32OutType;
    signal pgpCmd           : CmdSlaveOutType;
    signal acqStart         : std_logic;
    signal dataSend         : std_logic;
