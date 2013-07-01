@@ -37,11 +37,20 @@ package EpixTypes is
 
    -- Record
    type EpixConfigType is record
-      runTriggerEnable : std_logic;
-      runTriggerDelay  : std_logic_vector(31 downto 0);
-      daqTriggerDelay  : std_logic_vector(31 downto 0);
-      daqTriggerEnable : std_logic;
-      acqCountReset    : std_logic;
+      runTriggerEnable  : std_logic;
+      runTriggerDelay   : std_logic_vector(31 downto 0);
+      daqTriggerDelay   : std_logic_vector(31 downto 0);
+      daqTriggerEnable  : std_logic;
+      acqCountReset     : std_logic;
+      acqToAsicR0Delay  : std_logic_vector(31 downto 0);
+      asicR0ToAsicAcq   : std_logic_vector(31 downto 0);
+      asicAcqWidth      : std_logic_vector(31 downto 0);
+      asicAcqLToPPmatL  : std_logic_vector(31 downto 0);
+      asicRoClkHalfT    : std_logic_vector(31 downto 0);
+      adcReadsPerPixel  : std_logic_vector(31 downto 0);
+      adcClkHalfT       : std_logic_vector(31 downto 0);
+      --Should this be a register or determined on the fly?
+      totalPixelsToRead : std_logic_vector(31 downto 0);
    end record;
 
    -- Initialize
@@ -50,7 +59,15 @@ package EpixTypes is
       runTriggerDelay   => (others=>'0'),
       daqTriggerEnable  => '0',
       daqTriggerDelay   => (others=>'0'),
-      acqCountReset     => '0'
+      acqCountReset     => '0',
+      acqToAsicR0Delay  => (others=>'0'),
+      asicR0ToAsicAcq   => (others=>'0'),
+      asicAcqWidth      => (others=>'0'),
+      asicAcqLToPPmatL  => (others=>'0'),
+      asicRoClkHalfT    => (others=>'0'),
+      adcReadsPerPixel  => (others=>'0'),
+      adcClkHalfT       => (others=>'0'),
+      totalPixelsToRead => (others=>'0')
    ); 
    
 end EpixTypes;
