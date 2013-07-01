@@ -52,7 +52,7 @@ entity PgpFrontEnd is
 
       -- Local data transfer signals
       frameTxIn        : in  UsBuff32InType;
-      frameTxOut       : out UsBuffOutType;
+      frameTxOut       : out UsBuff32OutType;
 
       -- Gtp Serial Pins
       pgpRxN           : in  std_logic;
