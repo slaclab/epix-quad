@@ -223,12 +223,48 @@ begin
          elsif pgpRegOut.regAddr(23 downto 4) = x"000010" then
             pgpRegIn.regDataIn(15 downto 0) <= slowAdcData(conv_integer(pgpRegOut.regAddr(3 downto 0))) after tpd;
 
+         -- ASIC acquisition control interfacing, 0x000020 -0x00002F
+         -- 0x000020: Cycles from delayed system ACQ (when PPmat turns on) to ASIC R0
+         -- 0x000021: Cycles from ASIC R0 coming high to ASIC ACQ coming high
+         -- 0x000022: Cycles to keep ASIC ACQ high
+         -- 0x000023: Cycles from ASIC ACQ dropping low to ASIC PPmat dropping low
+         -- 0x000024: Half-period of the minimum allowed ASIC readout clock in system clock cycles
+         -- 0x000025: Number of ADC values to read from the ASIC per pixel
+         -- 0x000026: Half-period of the clock to the ADC in system clock cycles
+         -- 0x000027: Total number of pixels to read from the ASIC
+         -- 0x000028-0x00002F unused
+         elsif pgpRegOut.regAddr(23 downto 8) = x"0000" and pgpRegOut.regAddr(7 downto 4) = x"2" then
+            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
+               case pgpRegOut.regAddr(3 downto 0) is
+                  when x"0" => intConfig.acqToAsicR0Delay  <= pgpRegOut.regDataOut after tpd;
+                  when x"1" => intConfig.asicR0ToAsicAcq   <= pgpRegOut.regDataOut after tpd;
+                  when x"2" => intConfig.asicAcqWidth      <= pgpRegOut.regDataOut after tpd; 
+                  when x"3" => intConfig.asicAcqLToPPmatL  <= pgpRegOut.regDataOut after tpd;
+                  when x"4" => intConfig.asicRoClkHalfT    <= pgpRegOut.regDataOut after tpd;
+                  when x"5" => intConfig.adcReadsPerPixel  <= pgpRegOut.regDataOut after tpd;
+                  when x"6" => intConfig.adcClkHalfT       <= pgpRegOut.regDataOut after tpd;
+                  when x"7" => intConfig.totalPixelsToRead <= pgpRegOut.regDataOut after tpd;
+                  when others => 
+               end case;
+            end if;
+            case pgpRegOut.regAddr(3 downto 0) is
+               when x"0"   => pgpRegIn.regDataIn <= intConfig.acqToAsicR0Delay  after tpd;
+               when x"1"   => pgpRegIn.regDataIn <= intConfig.asicR0ToAsicAcq   after tpd;
+               when x"2"   => pgpRegIn.regDataIn <= intConfig.asicAcqWidth      after tpd;
+               when x"3"   => pgpRegIn.regDataIn <= intConfig.asicAcqLToPPmatL  after tpd;
+               when x"4"   => pgpRegIn.regDataIn <= intConfig.asicRoClkHalfT    after tpd;
+               when x"5"   => pgpRegIn.regDataIn <= intConfig.adcReadsPerPixel  after tpd;
+               when x"6"   => pgpRegIn.regDataIn <= intConfig.adcClkHalfT       after tpd;
+               when x"7"   => pgpRegIn.regDataIn <= intConfig.totalPixelsToRead after tpd;
+               when others =>
+            end case;
+
          -- Fast ADCs, 0x008000 -  0x00FFFF
          elsif pgpRegOut.regAddr(23 downto 16) = x"00" and pgpRegOut.regAddr(15) = '1' then
             pgpRegIn.regDataIn(7 downto 0) <= adcRdData                                  after tpd;
             adcSel                         <= pgpRegOut.regAddr(14 downto 13)            after tpd;
             adcWrReq                       <= pgpRegOut.regReq and pgpRegOut.regOp       after tpd;
-            adcWrReq                       <= pgpRegOut.regReq and (not pgpRegOut.regOp) after tpd;
+            adcRdReq                       <= pgpRegOut.regReq and (not pgpRegOut.regOp) after tpd;  --KN: changed from adcWrReq duplicate to adcRdReq
             pgpRegIn.regAck                <= adcAck                                     after tpd;
 
          -- SACI Space, 0x800000
@@ -412,13 +448,13 @@ begin
    -----------------------------------------------
 
    -- ADC Control
-   U_AdcConfig : AdcConfig
+   U_AdcConfig : entity work.AdcConfig
       port map (
          sysClk     => sysClk,
          sysClkRst  => sysClkRst,
-         adcWrData  => regDataOut(7 downto 0),
+         adcWrData  => pgpRegOut.regDataOut(7 downto 0),
          adcRdData  => adcRdData,
-         adcAddr    => regAddr(12 downto 0),
+         adcAddr    => pgpRegOut.regAddr(12 downto 0),
          adcWrReq   => adcWrReq,
          adcRdReq   => adcRdReq,
          adcAck     => adcAck,
