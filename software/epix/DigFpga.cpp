@@ -27,7 +27,7 @@ using namespace std;
 
 // Constructor
 DigFpga::DigFpga ( uint destination, uint index, Device *parent ) : 
-                   Device(destination,0,"digitalFpga",index,parent) {
+                   Device(destination,0,"digFpga",index,parent) {
    stringstream tmp;
    uint         x;
 
@@ -171,8 +171,8 @@ void DigFpga::readConfig ( ) {
    readRegister(getRegister("DaqTrigDelay"));
    getVariable("DaqTrigDelay")->setInt(getRegister("DaqTrigDelay")->get());
 
-   readRegister(getRegister("DaqSetting"));
-   getVariable("DaqSetting")->setInt(getRegister("DaqSetting")->get(0,0xFFFF));
+   readRegister(getRegister("DacSetting"));
+   getVariable("DacSetting")->setInt(getRegister("DacSetting")->get(0,0xFFFF));
 
    readRegister(getRegister("PowerEnable"));
    getVariable("AnalogPowerEnable")->setInt(getRegister("PowerEnable")->get(0,0x1));
@@ -190,20 +190,20 @@ void DigFpga::writeConfig ( bool force ) {
    getRegister("RunTrigEnable")->set(getVariable("RunTrigEnable")->getInt(),0,0x1);
    writeRegister(getRegister("RunTrigEnable"),force);
 
-   getRegister("RunTrigEnable")->set(getVariable("RunTrigDelay")->getInt());
+   getRegister("RunTrigDelay")->set(getVariable("RunTrigDelay")->getInt());
    writeRegister(getRegister("RunTrigDelay"),force);
 
-   getRegister("RunTrigEnable")->set(getVariable("DaqTrigEnable")->getInt(),0,0x1);
+   getRegister("DaqTrigEnable")->set(getVariable("DaqTrigEnable")->getInt(),0,0x1);
    writeRegister(getRegister("DaqTrigEnable"),force);
 
-   getRegister("RunTrigEnable")->set(getVariable("DaqTrigDelay")->getInt());
+   getRegister("DaqTrigEnable")->set(getVariable("DaqTrigDelay")->getInt());
    writeRegister(getRegister("DaqTrigDelay"),force);
 
-   getRegister("RunTrigEnable")->set(getVariable("DaqSetting")->getInt(),0,0xFFFF);
-   writeRegister(getRegister("DaqSetting"),force);
+   getRegister("DacSetting")->set(getVariable("DacSetting")->getInt(),0,0xFFFF);
+   writeRegister(getRegister("DacSetting"),force);
 
-   getRegister("RunTrigEnable")->set(getVariable("AnalogPowerEnable")->getInt(),0,0x1);
-   getRegister("RunTrigEnable")->set(getVariable("DigitalPowerEnable")->getInt(),1,0x1);
+   getRegister("AnalogPowerEnable")->set(getVariable("AnalogPowerEnable")->getInt(),0,0x1);
+   getRegister("DigitalPowerEnable")->set(getVariable("DigitalPowerEnable")->getInt(),1,0x1);
    writeRegister(getRegister("PowerEnable"),force);
 
    // Sub devices
@@ -219,8 +219,9 @@ void DigFpga::verifyConfig ( ) {
    verifyRegister(getRegister("RunTrigDelay"));
    verifyRegister(getRegister("DaqTrigEnable"));
    verifyRegister(getRegister("DaqTrigDelay"));
-   verifyRegister(getRegister("DaqSetting"));
-   verifyRegister(getRegister("PowerEnable"));
+   verifyRegister(getRegister("DacSetting"));
+   verifyRegister(getRegister("AnalogPowerEnable"));
+   verifyRegister(getRegister("DigitalPowerEnable"));
 
    Device::verifyConfig();
    REGISTER_UNLOCK
