@@ -63,7 +63,7 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent ) :
    addVariable(new Variable("AcqCount", Variable::Status));
    getVariable("AcqCount")->setDescription("Acquisition Counter");
 
-   addRegister(new Register("AcqCountRst", 0x01000006));
+   addRegister(new Register("AcqCountReset", 0x01000006));
 
    addRegister(new Register("DacSetting", 0x01000007));
    addVariable(new Variable("DacSetting", Variable::Configuration));
@@ -74,11 +74,11 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent ) :
 
    addVariable(new Variable("AnalogPowerEnable", Variable::Configuration));
    getVariable("AnalogPowerEnable")->setDescription("Analog Power Enable");
-   getVariable("AnalogPowerEnable")->setRange(0,0xFFFF);
+   getVariable("AnalogPowerEnable")->setRange(0,0x0001);
 
    addVariable(new Variable("DigitalPowerEnable", Variable::Configuration));
    getVariable("DigitalPowerEnable")->setDescription("Digital Power Enable");
-   getVariable("DigitalPowerEnable")->setRange(0,0xFFFF);
+   getVariable("DigitalPowerEnable")->setRange(0,0x0001);
 
    for (x=0; x < 16; x++) {
       tmp.str("");
@@ -87,7 +87,7 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent ) :
       addRegister(new Register(tmp.str(), 0x01000010 + x));
 
       addVariable(new Variable(tmp.str(), Variable::Status));
-      getVariable("DigitalPowerEnable")->setDescription(tmp.str());
+      getVariable(tmp.str())->setDescription(tmp.str());
    }
 
    addCommand(new Command("MasterReset"));
@@ -176,7 +176,7 @@ void DigFpga::readConfig ( ) {
 
    readRegister(getRegister("PowerEnable"));
    getVariable("AnalogPowerEnable")->setInt(getRegister("PowerEnable")->get(0,0x1));
-   getVariable("DigitalPowerEnable")->setInt(getRegister("PowerEnable")->get(1,0x1));
+   getVariable("DigitalPowerEnable")->setInt(getRegister("PowerEnable")->get(1,0x2));
 
    // Sub devices
    Device::readConfig();
@@ -202,8 +202,8 @@ void DigFpga::writeConfig ( bool force ) {
    getRegister("DacSetting")->set(getVariable("DacSetting")->getInt(),0,0xFFFF);
    writeRegister(getRegister("DacSetting"),force);
 
-   getRegister("AnalogPowerEnable")->set(getVariable("AnalogPowerEnable")->getInt(),0,0x1);
-   getRegister("DigitalPowerEnable")->set(getVariable("DigitalPowerEnable")->getInt(),1,0x1);
+   getRegister("PowerEnable")->set(getVariable("AnalogPowerEnable")->getInt(),0,0x1);
+   getRegister("PowerEnable")->set(getVariable("DigitalPowerEnable")->getInt(),1,0x1);
    writeRegister(getRegister("PowerEnable"),force);
 
    // Sub devices
@@ -220,8 +220,7 @@ void DigFpga::verifyConfig ( ) {
    verifyRegister(getRegister("DaqTrigEnable"));
    verifyRegister(getRegister("DaqTrigDelay"));
    verifyRegister(getRegister("DacSetting"));
-   verifyRegister(getRegister("AnalogPowerEnable"));
-   verifyRegister(getRegister("DigitalPowerEnable"));
+   verifyRegister(getRegister("PowerEnable"));
 
    Device::verifyConfig();
    REGISTER_UNLOCK
