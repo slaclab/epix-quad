@@ -40,5 +40,12 @@ class EpixControl : public System {
       //! Method to perform hard reset
       void hardReset ( );
 
+      //! Method to set run state
+      /*!
+       * Set run state for the system. Default states are
+       * Stopped & Running. Stopped must always be supported.
+       * \param state    New run state
+      */
+      void setRunState ( string state );
 };
 #endif

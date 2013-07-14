@@ -193,6 +193,7 @@ Ad9252::Ad9252 ( uint destination, uint baseAddress, uint index, Device *parent 
    variables_["ChanPowerDown"]->setDescription("Set channel power down.");
    variables_["ChanPowerDown"]->setTrueFalse();
 
+   setInt("Enabled",0);  
 }
 
 // Deconstructor

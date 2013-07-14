@@ -389,6 +389,7 @@ EpixAsic::EpixAsic ( uint destination, uint baseAddress, uint index, Device *par
       // CMD = 6, Addr = 19 : Col start address[9:0]
       // CMD = 3, Addr = X  : Write Col with Data
 
+   setInt("Enabled",0);  
 }
 
 // Deconstructor
