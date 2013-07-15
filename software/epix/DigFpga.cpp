@@ -1,6 +1,5 @@
 //-----------------------------------------------------------------------------
-// File          : DigFpga.cpp
-// Author        : Ryan Herbst  <rherbst@slac.stanford.edu>
+// File          : DigFpga.cpp // Author        : Ryan Herbst  <rherbst@slac.stanford.edu>
 // Created       : 06/07/2013
 // Project       : Digital FPGA
 //-----------------------------------------------------------------------------
@@ -80,16 +79,66 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent ) :
    getVariable("DigitalPowerEnable")->setDescription("Digital Power Enable");
    getVariable("DigitalPowerEnable")->setRange(0,0x0001);
 
-   for (x=0; x < 16; x++) {
+   for (x=0; x < 6; x++) {
       tmp.str("");
       tmp << "AdcValue" << dec << setw(2) << setfill('0') << x;
 
-      addRegister(new Register(tmp.str(), 0x01000010 + x));
+      addRegister(new Register(tmp.str(), 0x01000100 + x));
 
       addVariable(new Variable(tmp.str(), Variable::Status));
       getVariable(tmp.str())->setDescription(tmp.str());
    }
 
+   addRegister(new Register("LocalTemp", 0x01000106));
+   addVariable(new Variable("LocalTemp", Variable::Status));
+   getVariable("LocalTemp")->setDescription("Local temp in degrees C");
+   addRegister(new Register("acqToAsicR0Delay", 0x01000020));
+
+   addRegister(new Register("Humidity", 0x01000107));
+   addVariable(new Variable("Humidity", Variable::Status));
+   getVariable("Humidity")->setDescription("Humidity in percent RH");
+ 
+   addVariable(new Variable("acqToAsicR0Delay", Variable::Configuration));
+   getVariable("acqToAsicR0Delay")->setDescription("");
+   getVariable("acqToAsicR0Delay")->setRange(0,0xFFFF);
+
+   addRegister(new Register("asicR0ToAsicAcq", 0x01000021));
+   addVariable(new Variable("asicR0ToAsicAcq", Variable::Configuration));
+   getVariable("asicR0ToAsicAcq")->setDescription("");
+   getVariable("asicR0ToAsicAcq")->setRange(0,0xFFFF);
+
+   addRegister(new Register("asicAcqWidth", 0x01000022));
+   addVariable(new Variable("asicAcqWidth", Variable::Configuration));
+   getVariable("asicAcqWidth")->setDescription("");
+   getVariable("asicAcqWidth")->setRange(0,0xFFFF);
+
+   addRegister(new Register("asicAcqLToPPmatL", 0x01000023));
+   addVariable(new Variable("asicAcqLToPPmatL", Variable::Configuration));
+   getVariable("asicAcqLToPPmatL")->setDescription("");
+   getVariable("asicAcqLToPPmatL")->setRange(0,0xFFFF);
+
+   addRegister(new Register("asicRoClkHalfT", 0x01000024));
+   addVariable(new Variable("asicRoClkHalfT", Variable::Configuration));
+   getVariable("asicRoClkHalfT")->setDescription("");
+   getVariable("asicRoClkHalfT")->setRange(0,0xFFFF);
+
+   addRegister(new Register("adcReadsPerPixel", 0x01000025));
+   addVariable(new Variable("adcReadsPerPixel", Variable::Configuration));
+   getVariable("adcReadsPerPixel")->setDescription("");
+   getVariable("adcReadsPerPixel")->setRange(0,0xFFFF);
+
+
+   addRegister(new Register("adcClkHalfT", 0x01000026));
+   addVariable(new Variable("adcClkHalfT", Variable::Configuration));
+   getVariable("adcClkHalfT")->setDescription("Half Period of ADC Clock");
+   getVariable("adcClkHalfT")->setRange(0,0xFFFF);
+
+   addRegister(new Register("totalPixelsToRead", 0x01000027));
+   addVariable(new Variable("totalPixelsToRead", Variable::Configuration));
+   getVariable("totalPixelsToRead")->setDescription("");
+   getVariable("totalPixelsToRead")->setRange(0,0xFFFF);
+
+   
    addCommand(new Command("MasterReset"));
    getCommand("MasterReset")->setDescription("Master Board Reset");
 
@@ -142,13 +191,23 @@ void DigFpga::readStatus ( ) {
    readRegister(getRegister("AcqCount"));
    getVariable("AcqCount")->setInt(getRegister("AcqCount")->get());
 
-   for (x=0; x < 16; x++) {
+   for (x=0; x < 6; x++) {
       tmp.str("");
       tmp << "AdcValue" << dec << setw(2) << setfill('0') << x;
 
       readRegister(getRegister(tmp.str()));
       getVariable(tmp.str())->setInt(getRegister(tmp.str())->get());
    }
+
+   uint y;
+   readRegister(getRegister("LocalTemp"));
+   y=getRegister("LocalTemp")->get();
+   getVariable("LocalTemp")->setIntDec(.000006*y*y-.0489*y+112.26);
+
+   y=(getRegister("Humidity")->get());
+   readRegister(getRegister("Humidity"));
+   getVariable("Humidity")->setIntDec((.0287*y-23.5));
+
 
    // Sub devices
    Device::readStatus();
@@ -176,7 +235,32 @@ void DigFpga::readConfig ( ) {
 
    readRegister(getRegister("PowerEnable"));
    getVariable("AnalogPowerEnable")->setInt(getRegister("PowerEnable")->get(0,0x1));
-   getVariable("DigitalPowerEnable")->setInt(getRegister("PowerEnable")->get(1,0x2));
+   getVariable("DigitalPowerEnable")->setInt(getRegister("PowerEnable")->get(1,0x1));
+
+   readRegister(getRegister("acqToAsicR0Delay"));
+   getVariable("acqToAsicR0Delay")->setInt(getRegister("acqToAsicR0Delay")->get(0,0xFFFFFFFF));
+
+   readRegister(getRegister("asicR0ToAsicAcq"));
+   getVariable("asicR0ToAsicAcq")->setInt(getRegister("asicR0ToAsicAcq")->get(0,0xFFFFFFFF));
+
+   readRegister(getRegister("asicAcqWidth"));
+   getVariable("asicAcqWidth")->setInt(getRegister("asicAcqWidth")->get(0,0xFFFFFFFF));
+
+   readRegister(getRegister("asicAcqLToPPmatL"));
+   getVariable("asicAcqLToPPmatL")->setInt(getRegister("asicAcqLToPPmatL")->get(0,0xFFFFFFFF));
+
+   readRegister(getRegister("asicRoClkHalfT"));
+   getVariable("asicRoClkHalfT")->setInt(getRegister("asicRoClkHalfT")->get(0,0xFFFFFFFF));
+
+   readRegister(getRegister("adcReadsPerPixel"));
+   getVariable("adcReadsPerPixel")->setInt(getRegister("adcReadsPerPixel")->get(0,0xFFFFFFFF));
+
+   readRegister(getRegister("adcClkHalfT"));
+   getVariable("adcClkHalfT")->setInt(getRegister("adcClkHalfT")->get(0,0xFFFFFFFF));
+
+   readRegister(getRegister("totalPixelsToRead"));
+   getVariable("totalPixelsToRead")->setInt(getRegister("totalPixelsToRead")->get(0,0xFFFFFFFF));
+
 
    // Sub devices
    Device::readConfig();
@@ -202,9 +286,31 @@ void DigFpga::writeConfig ( bool force ) {
    getRegister("DacSetting")->set(getVariable("DacSetting")->getInt(),0,0xFFFF);
    writeRegister(getRegister("DacSetting"),force);
 
-   getRegister("PowerEnable")->set(getVariable("AnalogPowerEnable")->getInt(),0,0x1);
-   getRegister("PowerEnable")->set(getVariable("DigitalPowerEnable")->getInt(),1,0x1);
+   getRegister("PowerEnable")->set(getVariable("AnalogPowerEnable")->getInt(),1,0x1);
+   getRegister("PowerEnable")->set(getVariable("DigitalPowerEnable")->getInt(),0,0x1);
    writeRegister(getRegister("PowerEnable"),force);
+
+   getRegister("acqToAsicR0Delay")->set(getVariable("acqToAsicR0Delay")->getInt(),0,0xFFFFFFFF);
+   writeRegister(getRegister("acqToAsicR0Delay"),force);
+
+   getRegister("asicR0ToAsicAcq")->set(getVariable("asicR0ToAsicAcq")->getInt(),0,0xFFFFFFFF);
+   writeRegister(getRegister("asicR0ToAsicAcq"),force);
+
+   getRegister("asicAcqWidth")->set(getVariable("asicAcqWidth")->getInt(),0,0xFFFFFFFF);
+   writeRegister(getRegister("asicAcqWidth"),force);
+
+   getRegister("asicAcqLToPPmatL")->set(getVariable("asicAcqLToPPmatL")->getInt(),0,0xFFFFFFFF);
+   writeRegister(getRegister("asicAcqLToPPmatL"),force);
+
+   getRegister("adcReadsPerPixel")->set(getVariable("adcReadsPerPixel")->getInt(),0,0xFFFFFFFF);
+   writeRegister(getRegister("adcReadsPerPixel"),force);
+
+   getRegister("adcClkHalfT")->set(getVariable("adcClkHalfT")->getInt(),0,0xFFFFFFFF);
+   writeRegister(getRegister("adcClkHalfT"),force);
+
+   getRegister("totalPixelsToRead")->set(getVariable("totalPixelsToRead")->getInt(),0,0xFFFFFFFF);
+   writeRegister(getRegister("totalPixelsToRead"),force);
+
 
    // Sub devices
    Device::writeConfig(force);
@@ -221,7 +327,13 @@ void DigFpga::verifyConfig ( ) {
    verifyRegister(getRegister("DaqTrigDelay"));
    verifyRegister(getRegister("DacSetting"));
    verifyRegister(getRegister("PowerEnable"));
-
+   verifyRegister(getRegister("adcClkHalfT"));
+   verifyRegister(getRegister("adcClkHalfT"));
+   verifyRegister(getRegister("adcClkHalfT"));
+   verifyRegister(getRegister("adcClkHalfT"));
+   verifyRegister(getRegister("adcClkHalfT"));
+   verifyRegister(getRegister("adcClkHalfT"));
+   verifyRegister(getRegister("adcClkHalfT"));
    Device::verifyConfig();
    REGISTER_UNLOCK
 }
