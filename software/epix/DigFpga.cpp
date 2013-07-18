@@ -79,7 +79,7 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent ) :
    getVariable("DigitalPowerEnable")->setDescription("Digital Power Enable");
    getVariable("DigitalPowerEnable")->setRange(0,0x0001);
 
-   for (x=0; x < 6; x++) {
+   for (x=0; x < 8; x++) {
       tmp.str("");
       tmp << "AdcValue" << dec << setw(2) << setfill('0') << x;
 
@@ -138,12 +138,28 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent ) :
    getVariable("totalPixelsToRead")->setDescription("");
    getVariable("totalPixelsToRead")->setRange(0,0xFFFF);
 
+   addRegister(new Register("digitalCardId0",0x01000030));
+   addRegister(new Register("digitalCardId1",0x01000031));
+   addVariable(new Variable("digitalCardId0", Variable::Status));
+   addVariable(new Variable("digitalCardId1", Variable::Status));
+   getVariable("digitalCardId0")->setDescription("Digital Card Serial Number (low 32 bits)");
+   getVariable("digitalCardId1")->setDescription("Digital Card Serial Number (high 32 bits)");
+
+   addRegister(new Register("analogCardId0",0x01000032));
+   addRegister(new Register("analogCardId1",0x01000033));
+   addVariable(new Variable("analogCardId0", Variable::Status));
+   addVariable(new Variable("analogCardId1", Variable::Status));
+   getVariable("analogCardId0")->setDescription("Analog Card Serial Number (low 32 bits)");
+   getVariable("analogCardId1")->setDescription("Analog Card Serial Number (high 32 bits)");
    
    addCommand(new Command("MasterReset"));
    getCommand("MasterReset")->setDescription("Master Board Reset");
 
    addCommand(new Command("AcqCountReset"));
    getCommand("AcqCountReset")->setDescription("Acquisition Count Reset");
+
+   addCommand(new Command("EpixRun",0x0));
+   getCommand("EpixRun")->setDescription("Epix run command");
 
    // Add sub-devices
    addDevice(new   Ad9252(destination, 0x01008000, 0, this));
@@ -191,13 +207,23 @@ void DigFpga::readStatus ( ) {
    readRegister(getRegister("AcqCount"));
    getVariable("AcqCount")->setInt(getRegister("AcqCount")->get());
 
-   for (x=0; x < 6; x++) {
+   for (x=0; x < 8; x++) {
       tmp.str("");
       tmp << "AdcValue" << dec << setw(2) << setfill('0') << x;
 
       readRegister(getRegister(tmp.str()));
       getVariable(tmp.str())->setInt(getRegister(tmp.str())->get());
    }
+
+   readRegister(getRegister("digitalCardId0"));
+   getVariable("digitalCardId0")->setInt(getRegister("digitalCardId0")->get());
+   readRegister(getRegister("digitalCardId1"));
+   getVariable("digitalCardId1")->setInt(getRegister("digitalCardId1")->get());
+
+   readRegister(getRegister("analogCardId0"));
+   getVariable("analogCardId0")->setInt(getRegister("analogCardId0")->get());
+   readRegister(getRegister("analogCardId1"));
+   getVariable("analogCardId1")->setInt(getRegister("analogCardId1")->get());
 
    uint y;
    readRegister(getRegister("LocalTemp"));

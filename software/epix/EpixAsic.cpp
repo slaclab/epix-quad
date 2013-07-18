@@ -25,7 +25,7 @@ using namespace std;
 
 // Constructor
 EpixAsic::EpixAsic ( uint destination, uint baseAddress, uint index, Device *parent ) : 
-                     Device(destination,baseAddress,"kpixAsic",index,parent) {
+                     Device(destination,baseAddress,"epixAsic",index,parent) {
 
    // Description
    desc_    = "Epix ASIC Object.";
@@ -289,7 +289,7 @@ EpixAsic::EpixAsic ( uint destination, uint baseAddress, uint index, Device *par
    //                    : Bit  1   = is_en
    //                    : Bit  2   = delEXEC
    //                    : Bit  3   = delCCkreg
-   addRegister(new Register("Config15", baseAddress_ + 0x0000100F));
+   addRegister(new Register("Config16", baseAddress_ + 0x00001010));
 
    addVariable(new Variable("TestBe", Variable::Configuration));
    getVariable("TestBe")->setDescription("");
@@ -419,8 +419,8 @@ void EpixAsic::readConfig ( ) {
    //                    : Bit 0 = Test
    //                    : Bit 1 = Mask
    readRegister(getRegister("PixelDummy"));
-   getVariable("DummlTest")->setInt(getRegister("PixelDummy")->get(0,0x1));
-   getVariable("DummlMask")->setInt(getRegister("PixelDummy")->get(1,0x1));
+   getVariable("DummyTest")->setInt(getRegister("PixelDummy")->get(0,0x1));
+   getVariable("DummyMask")->setInt(getRegister("PixelDummy")->get(1,0x1));
 
    // CMD = 1, Addr = 3  : Bits 9:0 = Pulser[9:0]
    //                    : Bit  10  = pbit
@@ -560,8 +560,8 @@ void EpixAsic::writeConfig ( bool force ) {
    // CMD = 1, Addr = 2  : Pixel dummy, write data
    //                    : Bit 0 = Test
    //                    : Bit 1 = Mask
-   getRegister("PixelDummy")->set(getVariable("DummlTest")->getInt(),0,0x1);
-   getRegister("PixelDummy")->set(getVariable("DummlMask")->getInt(),1,0x1);
+   getRegister("PixelDummy")->set(getVariable("DummyTest")->getInt(),0,0x1);
+   getRegister("PixelDummy")->set(getVariable("DummyMask")->getInt(),1,0x1);
    writeRegister(getRegister("PixelDummy"),force);
 
    // CMD = 1, Addr = 3  : Bits 9:0 = Pulser[9:0]
