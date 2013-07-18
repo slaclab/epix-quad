@@ -22,6 +22,7 @@
 #include <iostream>
 #include <string>
 #include <iomanip>
+#include "EpixUtility.h"
 using namespace std;
 
 // Constructor
@@ -151,7 +152,12 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent ) :
    addVariable(new Variable("analogCardId1", Variable::Status));
    getVariable("analogCardId0")->setDescription("Analog Card Serial Number (low 32 bits)");
    getVariable("analogCardId1")->setDescription("Analog Card Serial Number (high 32 bits)");
-   
+  
+   addVariable(new Variable("analogCRC", Variable::Status)); 
+   getVariable("analogCRC")->setTrueFalse();
+   addVariable(new Variable("digitalCRC", Variable::Status)); 
+   getVariable("digitalCRC")->setTrueFalse();
+
    addCommand(new Command("MasterReset"));
    getCommand("MasterReset")->setDescription("Master Board Reset");
 
@@ -214,16 +220,22 @@ void DigFpga::readStatus ( ) {
       readRegister(getRegister(tmp.str()));
       getVariable(tmp.str())->setInt(getRegister(tmp.str())->get());
    }
-
+   
+   bool temp;
    readRegister(getRegister("digitalCardId0"));
    getVariable("digitalCardId0")->setInt(getRegister("digitalCardId0")->get());
    readRegister(getRegister("digitalCardId1"));
    getVariable("digitalCardId1")->setInt(getRegister("digitalCardId1")->get());
+   temp = crc(getVariable("digitalCardId1")->getInt(),getVariable("digitalCardId0")->getInt());
+   getVariable("digitalCRC")->setInt(temp);
 
    readRegister(getRegister("analogCardId0"));
    getVariable("analogCardId0")->setInt(getRegister("analogCardId0")->get());
    readRegister(getRegister("analogCardId1"));
    getVariable("analogCardId1")->setInt(getRegister("analogCardId1")->get());
+   temp = crc(getVariable("analogCardId1")->getInt(),getVariable("analogCardId0")->getInt());
+   getVariable("analogCRC")->setInt(temp);
+
 
    uint y;
    readRegister(getRegister("LocalTemp"));
