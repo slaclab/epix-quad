@@ -24,6 +24,7 @@ use work.EpixTypes.all;
 use work.Pgp2AppTypesPkg.all;
 use work.SaciMasterPkg.all;
 use work.Version.all;
+use work.StdRtlPkg.all;
 library UNISIM;
 use UNISIM.vcomponents.all;
 
@@ -87,24 +88,31 @@ end RegControl;
 architecture RegControl of RegControl is
 
    -- Local Signals
-   signal intConfig  : EpixConfigType;
-   signal intRegIn   : RegSlaveInType;
-   signal saciRegIn  : SaciMasterInType;
-   signal saciRegOut : SaciMasterOutType;
-   signal saciSelIn  : SaciMasterInType;
-   signal saciSelOut : SaciMasterOutType;
-   signal intSelL    : std_logic_vector(3 downto 0);
-   signal intRsp     : std_logic;
-   signal saciCnt    : std_logic_vector(2 downto 0);
-   signal intClk     : std_logic;
-   signal dacData    : std_logic_vector(15 downto 0);
-   signal dacStrobe  : std_logic;
-   signal ipowerEn   : std_logic_vector(1 downto 0);
-   signal adcRdData  : std_logic_vector(7 downto 0);
-   signal adcWrReq   : std_logic;
-   signal adcRdReq   : std_logic;
-   signal adcAck     : std_logic;
-   signal adcSel     : std_logic_vector(1 downto 0);
+   signal intConfig   : EpixConfigType;
+   signal intRegIn    : RegSlaveInType;
+   signal saciRegIn   : SaciMasterInType;
+   signal saciRegOut  : SaciMasterOutType;
+   signal saciSelIn   : SaciMasterInType;
+   signal saciSelOut  : SaciMasterOutType;
+   signal intSelL     : std_logic_vector(3 downto 0);
+   signal intRsp      : std_logic;
+   signal saciCnt     : std_logic_vector(7 downto 0);
+   signal intClk      : std_logic;
+   signal dacData     : std_logic_vector(15 downto 0);
+   signal dacStrobe   : std_logic;
+   signal ipowerEn    : std_logic_vector(1 downto 0);
+   signal adcRdData   : std_logic_vector(7 downto 0);
+   signal adcWrReq    : std_logic;
+   signal adcRdReq    : std_logic;
+   signal adcAck      : std_logic;
+   signal adcSel      : std_logic_vector(1 downto 0);
+   type serNum is array(1 downto 0) of slv(63 downto 0);
+   signal serNumRaw   : serNum;
+   signal serNumReg   : serNum;
+   signal serNumValid : slv(1 downto 0);
+   signal serClkEn    : sl;
+   signal spiClkEn    : sl;
+   signal serNumValidEdge : slv(1 downto 0);
 
    -- States
    signal   curState   : std_logic_vector(3 downto 0);
@@ -232,8 +240,9 @@ begin
          -- 0x000025: Number of ADC values to read from the ASIC per pixel
          -- 0x000026: Half-period of the clock to the ADC in system clock cycles
          -- 0x000027: Total number of pixels to read from the ASIC
-         -- 0x000028-0x00002F unused
-         elsif pgpRegOut.regAddr(23 downto 8) = x"0000" and pgpRegOut.regAddr(7 downto 4) = x"2" then
+         -- 0x000028: Saci clock speed, counter bit position (0-7)
+         -- 0x000029-0x00002F unused
+         elsif pgpRegOut.regAddr(23 downto 4) = x"0002" then
             if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
                case pgpRegOut.regAddr(3 downto 0) is
                   when x"0" => intConfig.acqToAsicR0Delay  <= pgpRegOut.regDataOut after tpd;
@@ -244,6 +253,7 @@ begin
                   when x"5" => intConfig.adcReadsPerPixel  <= pgpRegOut.regDataOut after tpd;
                   when x"6" => intConfig.adcClkHalfT       <= pgpRegOut.regDataOut after tpd;
                   when x"7" => intConfig.totalPixelsToRead <= pgpRegOut.regDataOut after tpd;
+                  when x"8" => intConfig.saciClkBit        <= pgpRegOut.regDataOut after tpd;
                   when others => 
                end case;
             end if;
@@ -256,8 +266,20 @@ begin
                when x"5"   => pgpRegIn.regDataIn <= intConfig.adcReadsPerPixel  after tpd;
                when x"6"   => pgpRegIn.regDataIn <= intConfig.adcClkHalfT       after tpd;
                when x"7"   => pgpRegIn.regDataIn <= intConfig.totalPixelsToRead after tpd;
+               when x"8"   => pgpRegIn.regDataIn <= intConfig.saciClkBit        after tpd;
                when others =>
             end case;
+
+         -- Serial ID chip (digital card)
+         elsif pgpRegOut.regAddr = x"00030" then 
+            pgpRegIn.regDataIn <= serNumReg(0)(31 downto 0);
+         elsif pgpRegOut.regAddr = x"00031" then
+            pgpRegIn.regDataIn <= serNumReg(0)(63 downto 32);
+         -- Serial ID chip (analog card)
+         elsif pgpRegOut.regAddr = x"00032" then 
+            pgpRegIn.regDataIn <= serNumReg(1)(31 downto 0);
+         elsif pgpRegOut.regAddr = x"00033" then
+            pgpRegIn.regDataIn <= serNumReg(1)(63 downto 32);
 
          -- Fast ADCs, 0x008000 -  0x00FFFF
          elsif pgpRegOut.regAddr(23 downto 16) = x"00" and pgpRegOut.regAddr(15) = '1' then
@@ -402,8 +424,10 @@ begin
       end if;  
    end process;
 
-   --- ~16Mhz
-   U_SaciClk: bufg port map ( I => saciCnt(2), O => intClk );
+   --- ~1Mhz fixed
+   --U_SaciClk: bufg port map ( I => saciCnt(6), O => intClk );
+   --- Adjustable by register
+   U_SaciClk: bufg port map ( I => saciCnt(conv_integer(intConfig.saciClkBit(2 downto 0))) , O => intClk );
 
    -- Controller
    U_Saci : entity work.SaciMaster 
@@ -437,11 +461,83 @@ begin
       );
 
    -----------------------------------------------
-   -- Board ID
+   -- Serial Number IC Interfaces (1-wire)
    -----------------------------------------------
-   serialIdOut   <= "00";
-   serialIdEn    <= "00";
-   --serialIdIn      : in    std_logic_vector(1 downto 0);
+   U_SliceDimmIdAnalogCard : entity work.SliceDimmId
+      port map (
+         pgpClk    => sysClk,
+         pgpRst    => sysClkRst,
+--         pgpRst    => intConfig.acqCountReset,
+         serClkEn  => serClkEn,
+         fdSerDin  => serialIdIn(0),
+         fdSerDout => serialIdOut(0),
+         fdSerDenL => serialIdEn(0),
+         fdSerial  => serNumRaw(0),
+         fdValid   => serNumValid(0)
+      );
+   U_SliceDimmIdDigitalCard : entity work.SliceDimmId
+      port map (
+         pgpClk    => sysClk,
+         pgpRst    => sysClkRst,
+--         pgpRst    => intConfig.acqCountReset,
+         serClkEn  => serClkEn,
+         fdSerDin  => serialIdIn(1),
+         fdSerDout => serialIdOut(1),
+         fdSerDenL => serialIdEn(1),
+         fdSerial  => serNumRaw(1),
+         fdValid   => serNumValid(1)
+      );
+   --Edge detect for the valid signals
+   G_DataSendEdge : for i in 0 to 1 generate
+      U_DataSendEdge : entity work.SynchronizerEdge
+         port map (
+            clk     => sysClk,
+            sRst    => sysClkRst,
+            dataIn  => serNumValid(i),
+            dataOut => serNumValidEdge(i)
+         );
+   end generate;
+   --Clock the serial number into a register when it's valid
+   process(sysClk, sysClkRst) begin
+      for i in 0 to 1 loop
+         if rising_edge(sysClk) then
+            if sysClkRst = '1' then
+               serNumReg(i) <= (others => '0');
+            elsif serNumValidEdge(i) = '1' then
+               serNumReg(i) <= serNumRaw(i);
+            end if;
+         end if;
+      end loop;
+   end process;
+   --Generate a slow enable for the 1-wire interfaces
+   process(sysClk,sysClkRst) 
+      constant NCYCLES     : integer := 820;
+      constant NCYCLES_SPI : integer := 10;
+      variable counter     : integer range 0 to 1023 := 0;
+      variable counter_spi : integer range 0 to 127 := 0;
+   begin
+      if rising_edge(sysClk) then
+         if sysClkRst = '1' then
+            counter     := 0;
+            counter_spi := 0;
+         else
+            if (counter = NCYCLES) then
+               counter := 0;
+               serClkEn <= '1';
+            else 
+               counter := counter + 1;
+               serClkEn <= '0';
+            end if;
+	    if (counter_spi = NCYCLES_SPI) then
+               counter_spi := 0;
+               spiClkEn    <= '1';
+            else
+               counter_spi := counter_spi + 1;
+               spiClkEn    <= '0';
+            end if;
+         end if;
+      end if;
+   end process;
 
    -----------------------------------------------
    -- Fast ADC Control
@@ -452,6 +548,7 @@ begin
       port map (
          sysClk     => sysClk,
          sysClkRst  => sysClkRst,
+         sysClkEn   => spiClkEn,
          adcWrData  => pgpRegOut.regDataOut(7 downto 0),
          adcRdData  => adcRdData,
          adcAddr    => pgpRegOut.regAddr(12 downto 0),
@@ -462,6 +559,7 @@ begin
          adcSClk    => adcSpiClk,
          adcSDin    => adcSpiDataIn,
          adcSDout   => adcSpiDataOut,
+         adcSDEn    => adcSpiDataEn,
          adcCsb     => adcSpiCsb
       );
 

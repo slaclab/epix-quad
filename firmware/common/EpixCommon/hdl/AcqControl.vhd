@@ -285,10 +285,11 @@ begin
    --Process to clock the ADC at selected frequency (50-50 duty cycle)
    process(sysClk) begin
       if rising_edge(sysClk) then
-         adcCnt <= adcCnt + 1 after tpd;
-         if adcCnt = unsigned(ePixConfig.adcClkHalfT) then
+         if adcCnt >= unsigned(ePixConfig.adcClkHalfT)-1 then
+            adcClk <= not(AdcClk)     after tpd;
             adcCnt <= (others => '0') after tpd;
-            adcClk <= not(AdcClk) after tpd;
+         else
+            adcCnt <= adcCnt + 1 after tpd;
          end if;
       end if;
    end process;
@@ -299,7 +300,7 @@ begin
          if sysClkRst = '1' or adcSampCntRst = '1' then
             adcSampCnt <= (others => '0') after tpd;
          elsif adcSampCntEn = '1' and adcCnt = unsigned(ePixConfig.adcClkHalfT) and adcClk = '0' then
-            adcSampCnt <= adcSampCnt + 1;
+            adcSampCnt <= adcSampCnt + 1 after tpd;
          end if;
       end if;
    end process;

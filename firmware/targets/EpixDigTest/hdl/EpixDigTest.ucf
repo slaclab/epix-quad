@@ -33,7 +33,7 @@ NET "daqTg"              LOC = "U1"     | IOSTANDARD = "LVCMOS33";
 NET "tgOut"              LOC = "U8"     | IOSTANDARD = "LVCMOS33";
 
 # Board IDs
-NET "snIoAdcCard"        LOC = "V6"     | IOSTANDARD = "LVCMOS33";
+NET "snIoAdcCard"        LOC = "V6"     | IOSTANDARD = "LVCMOS33" | PULLUP;
 NET "serialNumberIo"     LOC = "U6"     | IOSTANDARD = "LVCMOS33";
 
 # Power Control
@@ -196,4 +196,8 @@ NET "asic3RoClkM"        LOC = "N17"    | IOSTANDARD = "LVDS_25";
 #NET "cfgA(20)"           LOC = "V3"     | IOSTANDARD = "LVCMOS33";
 #NET "fpgaCfgA(21)"       LOC = "V2"     | IOSTANDARD = "LVCMOS33";
 #NET "fpgaCfgA(22)"       LOC = "P3"     | IOSTANDARD = "LVCMOS33";
+
+#Spare pins
+NET "spare_jp7_p"        LOC = "G14"    | IOSTANDARD = "LVCMOS25";  
+NET "spare_jp7_m"        LOC = "G15"    | IOSTANDARD = "LVCMOS25";  
 

@@ -139,6 +139,11 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent ) :
    getVariable("totalPixelsToRead")->setDescription("");
    getVariable("totalPixelsToRead")->setRange(0,0xFFFF);
 
+   addRegister(new Register("saciClkBit", 0x01000028));
+   addVariable(new Variable("saciClkBit", Variable::Configuration));
+   getVariable("saciClkBit")->setDescription("Bit of 125 MHz counter to use for SACI clock");
+   getVariable("saciClkBit")->setRange(0,0x0007);
+
    addRegister(new Register("digitalCardId0",0x01000030));
    addRegister(new Register("digitalCardId1",0x01000031));
    addVariable(new Variable("digitalCardId0", Variable::Status));
@@ -299,6 +304,8 @@ void DigFpga::readConfig ( ) {
    readRegister(getRegister("totalPixelsToRead"));
    getVariable("totalPixelsToRead")->setInt(getRegister("totalPixelsToRead")->get(0,0xFFFFFFFF));
 
+   readRegister(getRegister("saciClkBit"));
+   getVariable("saciClkBit")->setInt(getRegister("saciClkBit")->get(0,0x7));
 
    // Sub devices
    Device::readConfig();
@@ -349,6 +356,8 @@ void DigFpga::writeConfig ( bool force ) {
    getRegister("totalPixelsToRead")->set(getVariable("totalPixelsToRead")->getInt(),0,0xFFFFFFFF);
    writeRegister(getRegister("totalPixelsToRead"),force);
 
+   getRegister("saciClkBit")->set(getVariable("saciClkBit")->getInt(),0,0x7);
+   writeRegister(getRegister("saciClkBit"),force);
 
    // Sub devices
    Device::writeConfig(force);

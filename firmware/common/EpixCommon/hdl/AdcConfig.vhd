@@ -27,6 +27,7 @@ entity AdcConfig is
       -- Master system clock, 125Mhz
       sysClk          : in  std_logic;
       sysClkRst       : in  std_logic;
+      sysClkEn        : in  std_logic;
 
       -- ADC Control
       adcWrData       : in  std_logic_vector(7  downto 0);
@@ -41,6 +42,7 @@ entity AdcConfig is
       adcSClk         : out std_logic;
       adcSDin         : in  std_logic;
       adcSDout        : out std_logic;
+      adcSDEn         : out std_logic;
       adcCsb          : out std_logic_vector(2 downto 0)
    );
 end AdcConfig;
@@ -77,6 +79,8 @@ begin
 
    -- ADC data
    adcSDout <= locSDout when adcSDir = '0' else '1';
+   -- Enable for the top level tri-state
+   adcSDEn  <= not(adcSDir);
 
    -- Chip select
    adcCsb(0) <= intCsb when adcSel = 0 else '1';
@@ -84,7 +88,7 @@ begin
    adcCsb(2) <= intCsb when adcSel = 2 else '1';
 
    -- Control shift memory register
-   process ( sysClk, sysClkRst ) begin
+   process ( sysClk, sysClkRst, sysClkEn ) begin
       if sysClkRst = '1' then
          adcAck       <= '0'           after tpd;
          adcSDir      <= '0'           after tpd;
@@ -96,7 +100,7 @@ begin
          shiftCntEn   <= '0'           after tpd;
          intShift     <= (others=>'0') after tpd;
          curState     <= ST_IDLE       after tpd;
-      elsif rising_edge(sysClk) then
+      elsif sysClkEn = '1' and rising_edge(sysClk) then
 
          -- Next state
          curState <= nxtState after tpd;

@@ -69,7 +69,8 @@ architecture DacCntrl of DacCntrl is
 begin
 
    -- Clear
-   dacClrL <= '0' when sysClkRst = '1' else 'Z';
+-- dacClrL <= '0' when sysClkRst = '1' else 'Z'; --Original
+   dacClrL <= '0' when sysClkRst = '1' else '1'; --Kurtis change: clrL is pulled low on the ePix analog card
 
    -- Latch data when strobe is asserted
    process ( sysClk, sysClkRst ) begin

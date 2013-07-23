@@ -87,8 +87,10 @@ void EpixControl::hardReset ( ) {
 }
 
 //! Method to set run state
-//void EpixControl::setRunState ( ) {
-//   // Set run command
-//   device("digFpga",0)->setRunCommand("EpixRun");
-//}
+void EpixControl::setRunState ( string state ) {
+   // Set run command
+   device("digFpga",0)->setRunCommand("EpixRun");
+   System::setRunState(state);
+   
+}
 

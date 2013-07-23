@@ -40,8 +40,8 @@ class EpixControl : public System {
       //! Method to perform hard reset
       void hardReset ( );
 
-//      //! Method to set run state
-//      void setRunState ( );
+      //! Method to set run state
+      void setRunState ( string state );
 
 };
 #endif

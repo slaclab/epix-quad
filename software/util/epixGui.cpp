@@ -76,6 +76,9 @@ int main (int argc, char **argv) {
       cntrlServer.setSystem(&epix);
       cout << "Control id = 1" << endl;
 
+      //Write out only the event data, no XML
+      pgpLink.setXmlStore(false);
+
       // Fork and start gui
       stop = false;
       switch (pid = fork()) {

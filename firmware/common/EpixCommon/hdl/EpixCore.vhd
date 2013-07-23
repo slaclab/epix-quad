@@ -131,6 +131,12 @@ architecture EpixCore of EpixCore is
    signal slowAdcData      : word16_array(15 downto 0);
    signal saciReadoutReq   : std_logic;
    signal saciReadoutAck   : std_logic;
+   --Local signals being kept for chipscope probing
+   attribute keep          : string;
+   signal iDm1             : std_logic;
+   attribute keep of iDm1  : signal is "true";
+   signal iDm2             : std_logic;
+   attribute keep of iDm2  : signal is "true";
 
    -- Register delay for simulation
    constant tpd:time := 0.5 ns;
@@ -142,8 +148,10 @@ begin
       port map ( 
          sysClk         => sysClk,
          sysClkRst      => sysClkRst,
-         runTrigger     => runTrigger,
-         daqTrigger     => daqTrigger,
+         --runTrigger     => runTrigger,
+         --daqTrigger     => daqTrigger,
+         runTrigger     => '0',
+         daqTrigger     => '0',
          pgpCmd         => pgpCmd,
          epixConfig     => epixConfig,
          acqCount       => acqCount,
@@ -262,8 +270,12 @@ begin
       );
 
    -- OTHER
-   --asic0Dm2
-   --asic0Dm1
+   process(sysClk) begin
+      if rising_edge(sysClk) then
+         iDm2 <= asic0Dm2;
+         iDm1 <= asic0Dm1;
+      end if;
+   end process;
 
    -- Slow ADC
    U_AdcCntrl : entity work.AdcCntrl 

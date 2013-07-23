@@ -49,6 +49,7 @@ package EpixTypes is
       asicRoClkHalfT    : std_logic_vector(31 downto 0);
       adcReadsPerPixel  : std_logic_vector(31 downto 0);
       adcClkHalfT       : std_logic_vector(31 downto 0);
+      saciClkBit        : std_logic_vector(31 downto 0);
       --Should this be a register or determined on the fly?
       totalPixelsToRead : std_logic_vector(31 downto 0);
    end record;
@@ -67,7 +68,8 @@ package EpixTypes is
       asicRoClkHalfT    => (others=>'0'),
       adcReadsPerPixel  => (others=>'0'),
       adcClkHalfT       => (others=>'0'),
-      totalPixelsToRead => (others=>'0')
+      totalPixelsToRead => (others=>'0'),
+      saciClkBit        => (others=>'0')
    ); 
    
 end EpixTypes;

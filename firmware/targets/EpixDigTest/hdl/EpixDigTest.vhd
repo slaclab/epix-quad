@@ -26,6 +26,10 @@ use UNISIM.vcomponents.all;
 entity EpixDigTest is
    port ( 
 
+      -- Temporary spares
+      spare_jp7_p : out std_logic;
+      spare_jp7_m : out std_logic;
+
       -- Clocks and reset
       sysRstL             : in    std_logic;
       refClk156_25mhzP    : in    std_logic;
@@ -205,6 +209,10 @@ architecture EpixDigTest of EpixDigTest is
 
 begin
 
+   -- Spare
+   spare_jp7_p <= adcSpiDataOut;
+   spare_jp7_m <= adcSpiDataEn;
+
    -- Core
    U_EpixCore: entity work.EpixCore
       generic map (
@@ -266,9 +274,9 @@ begin
 
    -- Serial ID
    serialIdIn(0)  <= serialNumberIo;
-   serialNumberIo <= serialIdOut(0) when serialIdEn(0) = '1' else 'Z';
+   serialNumberIo <= serialIdOut(0) when serialIdEn(0) = '0' else 'Z';
    serialIdIn(1)  <= snIoAdcCard;
-   snIoAdcCard    <= serialIdOut(1) when serialIdEn(1) = '1' else 'Z';
+   snIoAdcCard    <= serialIdOut(1) when serialIdEn(1) = '0' else 'Z';
 
    -- Power control
    analogCardDigPwrEn <= powerEnable(0);
