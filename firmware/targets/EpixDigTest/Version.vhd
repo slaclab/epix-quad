@@ -16,7 +16,7 @@ USE ieee.std_logic_1164.ALL;
 
 package Version is
 
-constant FpgaVersion : std_logic_vector(31 downto 0) := x"E0000001"; -- MAKE_VERSION
+constant FpgaVersion : std_logic_vector(31 downto 0) := x"E0000002"; -- MAKE_VERSION
 
 end Version;
 

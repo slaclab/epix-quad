@@ -38,6 +38,8 @@ entity ReadoutControl is
 
       -- Run control
       readStart           : in    sl;
+      readValid           : in    sl;
+      readDone            : in    sl;
       dataSend            : in    sl;
 
       -- ADC Data
@@ -153,23 +155,35 @@ begin
                   frameTxIn.frameTxEnable <= '1';
                end if;
             when ST_ADC =>
-             frameTxIn.frameTxData   <= x"0000" & adcData(conv_integer(epixConfig.totalPixelsToRead(4 downto 0)));
-             frameTxIn.frameTxEnable <= adcValid(conv_integer(epixConfig.totalPixelsToRead(4 downto 0)));
-             if adcValid(conv_integer(epixConfig.totalPixelsToRead(4 downto 0))) = '1' then
-                if (wordCnt < unsigned(epixConfig.adcReadsPerPixel)) then
-                   frameTxIn.frameTxEOF <= '0';
-                   wordCntEn            <= '1';
-                else 
-                   frameTxIn.frameTxEOF <= '1';
-                   wordCntEn            <= '0';
-                end if;
-             end if;
+               if readDone = '1' then
+                  frameTxIn.frameTxData   <= x"BEEFCAFE";
+                  frameTxIn.frameTxEnable <= '1';
+                  frameTxIn.frameTxEOF    <= '1';
+               else
+                  frameTxIn.frameTxData   <= x"0000" & adcData(conv_integer(epixConfig.totalPixelsToRead(4 downto 0)));
+                  frameTxIn.frameTxEnable <= adcValid(conv_integer(epixConfig.totalPixelsToRead(4 downto 0))) and readValid;
+               end if;
+--ADC data stream for a specific number of words
+--             frameTxIn.frameTxData   <= x"0000" & adcData(conv_integer(epixConfig.totalPixelsToRead(4 downto 0)));
+--             frameTxIn.frameTxEnable <= adcValid(conv_integer(epixConfig.totalPixelsToRead(4 downto 0)));
+--             if adcValid(conv_integer(epixConfig.totalPixelsToRead(4 downto 0))) = '1' then
+--                if (wordCnt < unsigned(epixConfig.adcReadsPerPixel)) then
+--                   frameTxIn.frameTxEOF <= '0';
+--                   wordCntEn            <= '1';
+--                else 
+--                   frameTxIn.frameTxEOF <= '1';
+--                   wordCntEn            <= '0';
+--                end if;
+--             end if;
+----
+--Sends counter data
 --               frameTxIn.frameTxData   <= slv(wordCnt);
 --               frameTxIn.frameTxEnable <= '1';
 --               wordCntEn               <= '1';
 --               if (wordCnt >= unsigned(epixConfig.adcReadsPerPixel)) then
 --                  frameTxIn.frameTxEOF <= '1';
 --               end if;
+----
             --Use defaults for uncaught cases
             when others =>
          end case;
@@ -185,9 +199,14 @@ begin
                nxtState <= ST_ADC;
             end if;
          when ST_ADC =>
-            if wordCnt < unsigned(epixConfig.adcReadsPerPixel) then
-               nxtState <= curState;
-            elsif adcValid(conv_integer(epixConfig.totalPixelsToRead(4 downto 0))) = '1' then
+-- For a specific number of words
+--            if wordCnt < unsigned(epixConfig.adcReadsPerPixel) then
+--               nxtState <= curState;
+--            elsif adcValid(conv_integer(epixConfig.totalPixelsToRead(4 downto 0))) = '1' then
+--               nxtState <= ST_IDLE;
+--            end if;
+-- For reading out test frames
+            if readDone = '1' then
                nxtState <= ST_IDLE;
             end if;
          when others =>

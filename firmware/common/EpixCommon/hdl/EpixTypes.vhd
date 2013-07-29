@@ -43,6 +43,7 @@ package EpixTypes is
       daqTriggerEnable  : std_logic;
       acqCountReset     : std_logic;
       acqToAsicR0Delay  : std_logic_vector(31 downto 0);
+      asicR0Width       : std_logic_vector(31 downto 0);
       asicR0ToAsicAcq   : std_logic_vector(31 downto 0);
       asicAcqWidth      : std_logic_vector(31 downto 0);
       asicAcqLToPPmatL  : std_logic_vector(31 downto 0);
@@ -50,6 +51,8 @@ package EpixTypes is
       adcReadsPerPixel  : std_logic_vector(31 downto 0);
       adcClkHalfT       : std_logic_vector(31 downto 0);
       saciClkBit        : std_logic_vector(31 downto 0);
+      asicPins          : std_logic_vector(31 downto 0);
+      manualPinControl  : std_logic_vector(31 downto 0);
       --Should this be a register or determined on the fly?
       totalPixelsToRead : std_logic_vector(31 downto 0);
    end record;
@@ -62,6 +65,7 @@ package EpixTypes is
       daqTriggerDelay   => (others=>'0'),
       acqCountReset     => '0',
       acqToAsicR0Delay  => (others=>'0'),
+      asicR0Width       => (others=>'0'),
       asicR0ToAsicAcq   => (others=>'0'),
       asicAcqWidth      => (others=>'0'),
       asicAcqLToPPmatL  => (others=>'0'),
@@ -69,7 +73,9 @@ package EpixTypes is
       adcReadsPerPixel  => (others=>'0'),
       adcClkHalfT       => (others=>'0'),
       totalPixelsToRead => (others=>'0'),
-      saciClkBit        => (others=>'0')
+      saciClkBit        => (others=>'0'),
+      asicPins          => (others=>'0'),
+      manualPinControl  => (others=>'0')
    ); 
    
 end EpixTypes;

@@ -210,8 +210,8 @@ architecture EpixDigTest of EpixDigTest is
 begin
 
    -- Spare
-   spare_jp7_p <= adcSpiDataOut;
-   spare_jp7_m <= adcSpiDataEn;
+   spare_jp7_p <= '0';
+   spare_jp7_m <= '0';
 
    -- Core
    U_EpixCore: entity work.EpixCore

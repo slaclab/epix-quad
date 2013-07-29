@@ -241,7 +241,10 @@ begin
          -- 0x000026: Half-period of the clock to the ADC in system clock cycles
          -- 0x000027: Total number of pixels to read from the ASIC
          -- 0x000028: Saci clock speed, counter bit position (0-7)
-         -- 0x000029-0x00002F unused
+         -- 0x000029: Pin status of ASIC pins (see next reg)
+         -- 0x00002A: Manual pin control for ASIC pins
+         -- 0x00002B: Width of ASIC R0 signal
+         -- 0x00002C-0x00002F unused
          elsif pgpRegOut.regAddr(23 downto 4) = x"0002" then
             if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
                case pgpRegOut.regAddr(3 downto 0) is
@@ -254,6 +257,9 @@ begin
                   when x"6" => intConfig.adcClkHalfT       <= pgpRegOut.regDataOut after tpd;
                   when x"7" => intConfig.totalPixelsToRead <= pgpRegOut.regDataOut after tpd;
                   when x"8" => intConfig.saciClkBit        <= pgpRegOut.regDataOut after tpd;
+                  when x"9" => intConfig.asicPins          <= pgpRegOut.regDataOut after tpd;
+                  when x"A" => intConfig.manualPinControl  <= pgpRegOut.regDataOut after tpd;
+                  when x"B" => intConfig.asicR0Width       <= pgpRegOut.regDataOut after tpd;
                   when others => 
                end case;
             end if;
@@ -267,6 +273,9 @@ begin
                when x"6"   => pgpRegIn.regDataIn <= intConfig.adcClkHalfT       after tpd;
                when x"7"   => pgpRegIn.regDataIn <= intConfig.totalPixelsToRead after tpd;
                when x"8"   => pgpRegIn.regDataIn <= intConfig.saciClkBit        after tpd;
+               when x"9"   => pgpRegIn.regDataIn <= intConfig.asicPins          after tpd;
+               when x"A"   => pgpRegIn.regDataIn <= intConfig.manualPinControl  after tpd;
+               when x"B"   => pgpRegIn.regDataIn <= intConfig.asicR0Width       after tpd;
                when others =>
             end case;
 
@@ -359,7 +368,8 @@ begin
 
             -- Transaction acked
             if saciSelOut.ack = '1' then
-               nxtState <= ST_PAUSE_0;
+--               nxtState <= ST_PAUSE_0;
+               nxtState <= ST_DONE;
             end if;
 
          when ST_PAUSE_0 =>
@@ -372,7 +382,7 @@ begin
 
             -- Transaction acked
             if saciSelOut.ack = '1' then
-               nxtState <= ST_PAUSE_0;
+               nxtState <= ST_PAUSE_1;
             end if;
 
          when ST_PAUSE_1 =>

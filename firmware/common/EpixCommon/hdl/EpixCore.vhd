@@ -96,6 +96,7 @@ entity EpixCore is
 
       -- ASIC Control
       asicR0              : out   std_logic;
+      --asicR0              : in   std_logic;
       asicPpmat           : out   std_logic;
       asicPpbe            : out   std_logic;
       asicGlblRst         : out   std_logic;
@@ -126,11 +127,15 @@ architecture EpixCore of EpixCore is
    signal acqStart         : std_logic;
    signal dataSend         : std_logic;
    signal readStart        : std_logic;
+   signal readValid        : std_logic;
+   signal readDone         : std_logic;
    signal adcValid         : std_logic_vector(19 downto 0);
    signal adcData          : word16_array(19 downto 0);
    signal slowAdcData      : word16_array(15 downto 0);
    signal saciReadoutReq   : std_logic;
    signal saciReadoutAck   : std_logic;
+   signal iPowerEnable     : std_logic_vector(1 downto 0);
+
    --Local signals being kept for chipscope probing
    attribute keep          : string;
    signal iDm1             : std_logic;
@@ -138,10 +143,17 @@ architecture EpixCore of EpixCore is
    signal iDm2             : std_logic;
    attribute keep of iDm2  : signal is "true";
 
+   --Internal copies of ASIC signals
+   signal iSaciClk     : std_logic;
+   signal iSaciSelL    : std_logic_vector(3 downto 0);
+   signal iSaciCmd     : std_logic; 
+
    -- Register delay for simulation
    constant tpd:time := 0.5 ns;
 
 begin
+
+   powerEnable <= iPowerEnable;
    
    -- Trigger control
    U_TrigControl : entity work.TrigControl 
@@ -160,14 +172,17 @@ begin
          triggerOut     => triggerOut
       );
 
-   -- Acq Control
-   U_AcqControl : entity work.AcqControl 
+      -- Acq Control
+      U_AcqControl : entity work.AcqControl 
       port map (
          sysClk         => sysClk,
          sysClkRst      => sysClkRst,
          epixConfig     => epixConfig,
+         epixDigPower   => iPowerEnable(0),
          acqStart       => acqStart,
          readStart      => readStart,
+         readValid      => readValid,
+         readDone       => readDone,
          saciReadoutReq => saciReadoutReq,
          saciReadoutAck => saciReadoutAck,
          adcClkP        => adcClkP,
@@ -203,6 +218,8 @@ begin
          sysClkRst      => sysClkRst,
          epixConfig     => epixConfig,
          readStart      => readStart,
+         readValid      => readValid,
+         readDone       => readDone,
          dataSend       => dataSend,
          adcValid       => adcValid,
          adcData        => adcData,
@@ -265,7 +282,7 @@ begin
          adcSpiDataEn   => adcSpiDataEn,
          adcSpiCsb      => adcSpiCsb,
          adcPdwn        => adcPdwn,
-         powerEnable    => powerEnable,
+         powerEnable    => iPowerEnable,
          slowAdcData    => slowAdcData
       );
 
