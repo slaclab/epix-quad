@@ -244,7 +244,9 @@ begin
          -- 0x000029: Pin status of ASIC pins (see next reg)
          -- 0x00002A: Manual pin control for ASIC pins
          -- 0x00002B: Width of ASIC R0 signal
-         -- 0x00002C-0x00002F unused
+         -- 0x00002C: ADC Pipeline Delay
+         -- 0x00002D: ADC channel to read
+         -- 0x00002E-0x00002F unused
          elsif pgpRegOut.regAddr(23 downto 4) = x"0002" then
             if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
                case pgpRegOut.regAddr(3 downto 0) is
@@ -260,6 +262,8 @@ begin
                   when x"9" => intConfig.asicPins          <= pgpRegOut.regDataOut after tpd;
                   when x"A" => intConfig.manualPinControl  <= pgpRegOut.regDataOut after tpd;
                   when x"B" => intConfig.asicR0Width       <= pgpRegOut.regDataOut after tpd;
+                  when x"C" => intConfig.pipelineDelay     <= pgpRegOut.regDataOut after tpd;
+                  when x"D" => intConfig.adcChannelToRead  <= pgpRegOut.regDataOut after tpd;
                   when others => 
                end case;
             end if;
@@ -276,6 +280,8 @@ begin
                when x"9"   => pgpRegIn.regDataIn <= intConfig.asicPins          after tpd;
                when x"A"   => pgpRegIn.regDataIn <= intConfig.manualPinControl  after tpd;
                when x"B"   => pgpRegIn.regDataIn <= intConfig.asicR0Width       after tpd;
+               when x"C"   => pgpRegIn.regDataIn <= intConfig.pipelineDelay     after tpd;
+               when x"D"   => pgpRegIn.regDataIn <= intConfig.adcChannelToRead  after tpd;
                when others =>
             end case;
 
@@ -501,10 +507,10 @@ begin
    G_DataSendEdge : for i in 0 to 1 generate
       U_DataSendEdge : entity work.SynchronizerEdge
          port map (
-            clk     => sysClk,
-            sRst    => sysClkRst,
-            dataIn  => serNumValid(i),
-            dataOut => serNumValidEdge(i)
+            clk        => sysClk,
+            sRst       => sysClkRst,
+            dataIn     => serNumValid(i),
+            risingEdge => serNumValidEdge(i)
          );
    end generate;
    --Clock the serial number into a register when it's valid

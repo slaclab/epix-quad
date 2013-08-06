@@ -111,14 +111,14 @@ begin
          clk     => sysClk,
          sRst    => sysClkRst,
          dataIn  => dataSend,
-         dataOut => dataSendEdge
+         risingEdge => dataSendEdge
       );
    U_ReadStartEdge : entity work.SynchronizerEdge
       port map (
          clk     => sysClk,
          sRst    => sysClkRst,
          dataIn  => readStart,
-         dataOut => readStartEdge
+         risingEdge => readStartEdge
       );
 
 
@@ -160,8 +160,8 @@ begin
                   frameTxIn.frameTxEnable <= '1';
                   frameTxIn.frameTxEOF    <= '1';
                else
-                  frameTxIn.frameTxData   <= x"0000" & adcData(conv_integer(epixConfig.totalPixelsToRead(4 downto 0)));
-                  frameTxIn.frameTxEnable <= adcValid(conv_integer(epixConfig.totalPixelsToRead(4 downto 0))) and readValid;
+                  frameTxIn.frameTxData   <= x"0000" & adcData(conv_integer(epixConfig.adcChannelToRead(4 downto 0)));
+                  frameTxIn.frameTxEnable <= adcValid(conv_integer(epixConfig.adcChannelToRead(4 downto 0))) and readValid;
                end if;
 --ADC data stream for a specific number of words
 --             frameTxIn.frameTxData   <= x"0000" & adcData(conv_integer(epixConfig.totalPixelsToRead(4 downto 0)));

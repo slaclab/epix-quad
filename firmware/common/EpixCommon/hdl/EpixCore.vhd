@@ -160,9 +160,9 @@ begin
       port map ( 
          sysClk         => sysClk,
          sysClkRst      => sysClkRst,
-         --runTrigger     => runTrigger,
+         runTrigger     => runTrigger,
          --daqTrigger     => daqTrigger,
-         runTrigger     => '0',
+         --runTrigger     => '0',
          daqTrigger     => '0',
          pgpCmd         => pgpCmd,
          epixConfig     => epixConfig,

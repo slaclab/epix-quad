@@ -94,10 +94,10 @@ begin
    -- Edge Detect
    U_RunEdge : entity work.SynchronizerEdge 
       port map (
-         clk     => sysClk,
-         sRst    => sysClkRst,
-         dataIn  => runTrigger,
-         dataOut => runTriggerEdge
+         clk        => sysClk,
+         sRst       => sysClkRst,
+         dataIn     => runTrigger,
+         risingEdge => runTriggerEdge
       );
   
    -- Delay
@@ -147,10 +147,10 @@ begin
    -- Edge Detect
    U_AcqEdge : entity work.SynchronizerEdge 
       port map (
-         clk     => sysClk,
-         sRst    => sysClkRst,
-         dataIn  => daqTrigger,
-         dataOut => daqTriggerEdge
+         clk        => sysClk,
+         sRst       => sysClkRst,
+         dataIn     => daqTrigger,
+         risingEdge => daqTriggerEdge
       );
    
    -- Delay

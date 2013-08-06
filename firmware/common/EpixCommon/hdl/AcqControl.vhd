@@ -68,6 +68,7 @@ architecture AcqControl of AcqControl is
 
    -- Local Signals
    signal adcClk        : std_logic             := '0';
+   signal adcClkEdge    : std_logic             := '0';
    signal asicClk       : std_logic             := '0';
    signal curState      : slv(3 downto 0)       := "0000";
    signal nxtState      : slv(3 downto 0)       := "0000";
@@ -82,6 +83,11 @@ architecture AcqControl of AcqControl is
    signal pixelCnt      : unsigned(31 downto 0) := (others => '0');
    signal pixelCntEn    : sl := '0';
    signal pixelCntRst   : sl := '0';
+   signal iReadValid       : sl               := '0';
+   signal readValidDelayed : slv(127 downto 0) := (others => '0');
+   signal firstPixel    : sl := '0';
+   signal firstPixelSet : sl := '0';
+   signal firstPixelRst : sl := '0';
 
    -- Multiplexed
    signal iAsicR0       : std_logic             := '0';
@@ -94,7 +100,7 @@ architecture AcqControl of AcqControl is
    -- This constant is locked to the ADC.  Not sure if this should
    -- sit here or elsewhere?
    --constant cAdcPipelineDly   : unsigned(31 downto 0) := x"00000008"; --Pipeline delay for AD9252 --Absolute minimum
-   constant cAdcPipelineDly   : unsigned(31 downto 0) := x"00000013"; --Pipeline delay for AD9252
+   --constant cAdcPipelineDly   : unsigned(31 downto 0) := x"00000013"; --Pipeline delay for AD9252
 
    -- State machine values
    constant ST_IDLE       : slv(3 downto 0) := "0000";
@@ -104,8 +110,10 @@ architecture AcqControl of AcqControl is
    constant ST_ACQ        : slv(3 downto 0) := "0100";
    constant ST_SACI_RST   : slv(3 downto 0) := "0101";
    constant ST_WAIT_PPMAT : slv(3 downto 0) := "0110";
-   constant ST_WAIT_ADC   : slv(3 downto 0) := "0111";
-   constant ST_NEXT_CELL  : slv(3 downto 0) := "1000";
+   constant ST_SYNC_TO_ADC: slv(3 downto 0) := "0111";
+   constant ST_WAIT_ADC   : slv(3 downto 0) := "1000";
+   constant ST_NEXT_CELL  : slv(3 downto 0) := "1001";
+   constant ST_DONE       : slv(3 downto 0) := "1010";
 
    -- Register delay for simulation
    constant tpd:time := 0.5 ns;
@@ -225,15 +233,16 @@ begin
       adcSampCntRst  <= '0' after tpd;
       adcSampCntEn   <= '0' after tpd;
       pixelCntEn     <= '0' after tpd;
-      pixelCntRst    <= '0' after tpd;
+      pixelCntRst    <= '1' after tpd;
       readDone       <= '0' after tpd;
+      firstPixelRst  <= '0' after tpd;
+      firstPixelSet  <= '0' after tpd;
       case curState is
          --Idle state, all signals zeroed out, counters reset
          when ST_IDLE =>
             stateCntRst     <= '1' after tpd;
-            pixelCntRst     <= '1' after tpd;
             adcSampCntRst   <= '1' after tpd;
-            readDone        <= '1' after tpd;
+            firstPixelRst   <= '1' after tpd;
          --Bring up PPmat through just before the asicClk
          when ST_WAIT_R0 =>
             iAsicPpmat      <= '1' after tpd;
@@ -281,25 +290,39 @@ begin
             else
                stateCntRst  <= '1' after tpd;
             end if;
+         --Synchronize phases of ASIC RoClk and ADC clk
+         when ST_SYNC_TO_ADC =>
          --Wait for the ADC to readout the desired number of samples
          --(or a minimum of the ASIC clock half period)
          when ST_WAIT_ADC =>
-            adcSampCntEn    <= '1' after tpd;
+            pixelCntRst  <= '0' after tpd;
+            adcSampCntEn  <= '1' after tpd;
+            firstPixelSet <= '1' after tpd;
             if stateCnt < unsigned(ePixConfig.asicRoClkHalfT) then
                stateCntEn      <= '1' after tpd;
-            elsif adcSampCnt > (unsigned(ePixConfig.adcReadsPerPixel) + cAdcPipelineDly) then
+            else
                stateCntRst     <= '1' after tpd;
-               adcSampCntRst   <= '1' after tpd;
                pixelCntEn      <= '1' after tpd;
             end if;
          --Clock once to the next cell
          when ST_NEXT_CELL =>
-            iAsicClk        <= '1' after tpd;
-            adcSampCntRst   <= '1' after tpd;
+            pixelCntRst  <= '0' after tpd;
+            adcSampCntEn <= '1';
+            iAsicClk     <= '1' after tpd;
             if stateCnt < unsigned(ePixConfig.asicRoClkHalfT) then
                stateCntEn      <= '1' after tpd;
             else 
+               adcSampCntRst   <= '1' after tpd;
                stateCntRst     <= '1' after tpd;
+            end if;
+         --Send the done signal
+         when ST_DONE =>
+            adcSampCntRst         <= '1' after tpd;
+            if stateCnt < 128 then
+               stateCntEn         <= '1' after tpd;
+            else
+               stateCntRst        <= '1' after tpd;
+               readDone           <= '1' after tpd;
             end if;
          --Undefined states: treat outputs same as IDLE state
          when others =>
@@ -355,17 +378,25 @@ begin
          --Ensure that the minimum hold off time has been enforced before dropping PPmat
          when ST_WAIT_PPMAT =>
             if stateCnt = unsigned(ePixConfig.asicAcqLToPPmatL) then
+               nxtState <= ST_SYNC_TO_ADC after tpd;
+            else
+               nxtState <= curState after tpd;
+            end if;
+         --Synchronize phases of ASIC RoClk and ADC clk
+         when ST_SYNC_TO_ADC =>
+            if adcClkEdge = '1' then
                nxtState <= ST_NEXT_CELL after tpd;
             else
                nxtState <= curState after tpd;
             end if;
          --Wait for 8+N valid ADC readouts.  If we're done with all pixels, finish.
          when ST_WAIT_ADC => 
-            if stateCnt >= unsigned(ePixConfig.asicRoClkHalfT) and adcSampCnt > cAdcPipelineDly + unsigned(ePixConfig.adcReadsPerPixel) then
+            if stateCnt >= unsigned(ePixConfig.asicRoClkHalfT) then
+--            if stateCnt >= unsigned(ePixConfig.asicRoClkHalfT) and adcSampCnt > cAdcPipelineDly + unsigned(ePixConfig.adcReadsPerPixel) then
                if pixelCnt < unsigned(ePixConfig.totalPixelsToRead)-1 then
                   nxtState <= ST_NEXT_CELL after tpd;
                else
-                  nxtState <= ST_IDLE after tpd;
+                  nxtState <= ST_DONE after tpd;
                end if;
             else
                nxtState <= curState after tpd;
@@ -376,6 +407,13 @@ begin
                nxtState <= ST_WAIT_ADC after tpd;
             else 
                nxtState <= curState after tpd;
+            end if;
+         --Send the done signal
+         when ST_DONE =>
+            if stateCnt = 128 then
+               nxtState <= ST_IDLE;
+            else
+               nxtState <= curState;
             end if;
          --Send back to IDLE if we end up in an undefined state
          when others =>
@@ -417,11 +455,11 @@ begin
       end if;
    end process;
    --Give a flag saying whether the samples are valid to read
-   process(adcSampCnt) begin
-      if adcSampCnt > cAdcPipelineDly and adcSampCnt <= (cAdcPipelineDly + unsigned(ePixConfig.adcReadsPerPixel)) then
-         readValid <= '1' after tpd;
+   process(adcSampCnt,epixConfig,firstPixel) begin
+      if adcSampCnt < unsigned(ePixConfig.adcReadsPerPixel)+1 and adcSampCnt > 0 and firstPixel = '0' then
+         iReadValid <= '1' after tpd;
       else
-         readValid <= '0' after tpd;
+         iReadValid <= '0' after tpd;
       end if;
    end process;
 
@@ -432,6 +470,17 @@ begin
             pixelCnt <= (others => '0') after tpd;
          elsif pixelCntEn = '1' then
             pixelCnt <= pixelCnt + 1;
+         end if;
+      end if;
+   end process;
+
+   --Flag the first pixel
+   process(sysClk) begin
+      if rising_edge(sysClk) then
+         if sysClkRst = '1' or firstPixelRst = '1' then
+            firstPixel <= '1' after tpd;
+         elsif firstPixelSet = '1' then
+            firstPixel <= '0';
          end if;
       end if;
    end process;
@@ -459,6 +508,32 @@ begin
       end if;
    end process;
 
+   --Pipeline for the valid signal
+   process(sysClk) begin
+      if (adcClkEdge = '1') then
+         if rising_edge(sysClk) then
+            if sysClkRst = '1' then
+               readValidDelayed <= (others => '0') after tpd;
+            else
+               for i in 1 to 127 loop
+                  readValidDelayed(i) <= readValidDelayed(i-1) after tpd; 
+               end loop;
+               readValidDelayed(0) <= iReadValid after tpd;
+            end if;
+         end if;
+      end if;
+   end process; 
+   --Wire up the delayed output
+   readValid <= readValidDelayed( conv_integer(epixConfig.pipelineDelay(6 downto 0)) );
+
+   -- Edge detection for signals that interface with other blocks
+   U_DataSendEdge : entity work.SynchronizerEdge
+      port map (
+         clk        => sysClk,
+         sRst       => sysClkRst,
+         dataIn     => adcClk,
+         risingEdge => adcClkEdge
+      );
 
 end AcqControl;
 

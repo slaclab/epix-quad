@@ -49,12 +49,13 @@ package EpixTypes is
       asicAcqLToPPmatL  : std_logic_vector(31 downto 0);
       asicRoClkHalfT    : std_logic_vector(31 downto 0);
       adcReadsPerPixel  : std_logic_vector(31 downto 0);
-      adcClkHalfT       : std_logic_vector(31 downto 0);
+      adcClkHalfT       : std_logic_vector(31 downto 0); 
+      totalPixelsToRead : std_logic_vector(31 downto 0); --Should this be a register or determined on the fly?
       saciClkBit        : std_logic_vector(31 downto 0);
       asicPins          : std_logic_vector(31 downto 0);
       manualPinControl  : std_logic_vector(31 downto 0);
-      --Should this be a register or determined on the fly?
-      totalPixelsToRead : std_logic_vector(31 downto 0);
+      pipelineDelay     : std_logic_vector(31 downto 0);
+      adcChannelToRead  : std_logic_vector(31 downto 0);
    end record;
 
    -- Initialize
@@ -75,7 +76,9 @@ package EpixTypes is
       totalPixelsToRead => (others=>'0'),
       saciClkBit        => (others=>'0'),
       asicPins          => (others=>'0'),
-      manualPinControl  => (others=>'0')
+      manualPinControl  => (others=>'0'),
+      pipelineDelay     => (others=>'0'),
+      adcChannelToRead  => (others=>'0')
    ); 
    
 end EpixTypes;
