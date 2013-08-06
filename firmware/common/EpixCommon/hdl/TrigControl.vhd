@@ -95,7 +95,7 @@ begin
    U_RunEdge : entity work.SynchronizerEdge 
       port map (
          clk        => sysClk,
-         sRst       => sysClkRst,
+         rst        => sysClkRst,
          dataIn     => runTrigger,
          risingEdge => runTriggerEdge
       );
@@ -148,7 +148,7 @@ begin
    U_AcqEdge : entity work.SynchronizerEdge 
       port map (
          clk        => sysClk,
-         sRst       => sysClkRst,
+         rst        => sysClkRst,
          dataIn     => daqTrigger,
          risingEdge => daqTriggerEdge
       );

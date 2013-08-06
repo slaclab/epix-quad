@@ -530,7 +530,7 @@ begin
    U_DataSendEdge : entity work.SynchronizerEdge
       port map (
          clk        => sysClk,
-         sRst       => sysClkRst,
+         rst        => sysClkRst,
          dataIn     => adcClk,
          risingEdge => adcClkEdge
       );

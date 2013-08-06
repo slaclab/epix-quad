@@ -108,16 +108,16 @@ begin
    -- Edge detection for signals that interface with other blocks
    U_DataSendEdge : entity work.SynchronizerEdge
       port map (
-         clk     => sysClk,
-         sRst    => sysClkRst,
-         dataIn  => dataSend,
+         clk        => sysClk,
+         rst        => sysClkRst,
+         dataIn     => dataSend,
          risingEdge => dataSendEdge
       );
    U_ReadStartEdge : entity work.SynchronizerEdge
       port map (
-         clk     => sysClk,
-         sRst    => sysClkRst,
-         dataIn  => readStart,
+         clk        => sysClk,
+         rst        => sysClkRst,
+         dataIn     => readStart,
          risingEdge => readStartEdge
       );
 
