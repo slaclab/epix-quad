@@ -110,10 +110,18 @@ architecture RegControl of RegControl is
    signal serNumRaw   : serNum;
    signal serNumReg   : serNum;
    signal serNumValid : slv(1 downto 0);
+   signal serNumValidEdge : slv(1 downto 0);
    signal serClkEn    : sl;
    signal spiClkEn    : sl;
-   signal serNumValidEdge : slv(1 downto 0);
-
+   signal memAddr     : std_logic_vector(15 downto 0);
+   signal memDataIn   : std_logic_vector(63 downto 0);
+   signal memDataOutRaw : std_logic_vector(63 downto 0);
+   signal memDataOutReg : std_logic_vector(63 downto 0);
+   signal memDataValid  : std_logic;
+   signal memReadReq  : std_logic;
+   signal memWriteReq : std_logic;
+   signal memDataValidEdge : sl;
+   signal sacibit : std_logic;
    -- States
    signal   curState   : std_logic_vector(3 downto 0);
    signal   nxtState   : std_logic_vector(3 downto 0);
@@ -145,7 +153,8 @@ begin
    --------------------------------
    process ( sysClk, sysClkRst ) begin
       if ( sysClkRst = '1' ) then
-         intConfig          <= EpixConfigInit after tpd;
+
+	 intConfig          <= EpixConfigInit after tpd;
          pgpRegIn.regAck    <= '0'            after tpd;
          pgpRegIn.regFail   <= '0'            after tpd;
          pgpRegIn.regDataIn <= (others=>'0')  after tpd;
@@ -227,7 +236,7 @@ begin
             end if;
             pgpRegIn.regDataIn(1 downto 0) <= ipowerEn after tpd;
 
-         -- Slow ADC, 0x000010 -  0x00001F
+         -- Slow ADC, 0x0000100 -  0x000010F
          elsif pgpRegOut.regAddr(23 downto 4) = x"000010" then
             pgpRegIn.regDataIn(15 downto 0) <= slowAdcData(conv_integer(pgpRegOut.regAddr(3 downto 0))) after tpd;
 
@@ -295,6 +304,32 @@ begin
             pgpRegIn.regDataIn <= serNumReg(1)(31 downto 0);
          elsif pgpRegOut.regAddr = x"00033" then
             pgpRegIn.regDataIn <= serNumReg(1)(63 downto 32);
+
+	 -- EEPROM (digital card)
+	 elsif pgpRegOut.regAddr = x"00034" then
+	    if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
+	       memAddr <= pgpRegOut.regDataOut (15 downto 0);
+    	    end if;
+	    pgpRegIn.regDataIn (15 downto 0) <= memAddr after tpd;
+	 elsif pgpRegOut.regAddr = x"00037" then
+	    if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
+	       memAddr <= pgpRegOut.regDataOut (15 downto 0);
+    	    end if;
+	    pgpRegIn.regDataIn (15 downto 0) <= memAddr after tpd;
+	 elsif pgpRegOut.regAddr = x"00035" then
+	    if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then 
+	       memDataIn (31 downto 0) <= pgpRegOut.regDataOut after tpd;
+	    end if;
+	    pgpRegIn.regDataIn <= memDataIn (31 downto 0) after tpd;
+	 elsif pgpRegOut.regAddr = x"00036" then
+	    if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then 
+	       memDataIn (63 downto 32)  <= pgpRegOut.regDataOut after tpd;
+	    end if;
+	    pgpRegIn.regDataIn <= memDataIn (63 downto 32) after tpd;
+	 elsif pgpRegOut.regAddr = x"00038" then
+	    pgpRegIn.regDataIn <= memDataOutReg(31 downto 0) after tpd;
+	 elsif pgpRegOut.regAddr = x"00039" then
+	    pgpRegIn.regDataIn <= memDataOutReg(63 downto 32) after tpd;
 
          -- Fast ADCs, 0x008000 -  0x00FFFF
          elsif pgpRegOut.regAddr(23 downto 16) = x"00" and pgpRegOut.regAddr(15) = '1' then
@@ -443,7 +478,8 @@ begin
    --- ~1Mhz fixed
    --U_SaciClk: bufg port map ( I => saciCnt(6), O => intClk );
    --- Adjustable by register
-   U_SaciClk: bufg port map ( I => saciCnt(conv_integer(intConfig.saciClkBit(2 downto 0))) , O => intClk );
+   sacibit <= saciCnt(conv_integer(intConfig.saciClkBit(2 downto 0)));
+   U_SaciClk: bufg port map ( I => sacibit , O => intClk );
 
    -- Controller
    U_Saci : entity work.SaciMaster 
@@ -477,21 +513,9 @@ begin
       );
 
    -----------------------------------------------
-   -- Serial Number IC Interfaces (1-wire)
+   -- Serial Number/EEPROM IC Interfaces (1-wire)
    -----------------------------------------------
    U_SliceDimmIdAnalogCard : entity work.SliceDimmId
-      port map (
-         pgpClk    => sysClk,
-         pgpRst    => sysClkRst,
---         pgpRst    => intConfig.acqCountReset,
-         serClkEn  => serClkEn,
-         fdSerDin  => serialIdIn(0),
-         fdSerDout => serialIdOut(0),
-         fdSerDenL => serialIdEn(0),
-         fdSerial  => serNumRaw(0),
-         fdValid   => serNumValid(0)
-      );
-   U_SliceDimmIdDigitalCard : entity work.SliceDimmId
       port map (
          pgpClk    => sysClk,
          pgpRst    => sysClkRst,
@@ -503,9 +527,27 @@ begin
          fdSerial  => serNumRaw(1),
          fdValid   => serNumValid(1)
       );
+   U_SliceDimmIdDigitalCard : entity work.EepromId
+      port map (
+         pgpClk    => sysClk,
+         pgpRst    => sysClkRst,
+--         pgpRst    => intConfig.acqCountReset,
+         serClkEn  => serClkEn,
+         fdSerDin  => serialIdIn(0),
+         fdSerDout => serialIdOut(0),
+         fdSerDenL => serialIdEn(0),
+         fdSerial  => serNumRaw(0),
+         fdValid   => serNumValid(0),
+	 address   => memAddr,
+	 dataIn    => memDataIn,
+	 dataOut   => memDataOutRaw,
+	 dataValid => memDataValid,
+	 readReq   => memReadReq,
+	 writeReq  => memWriteReq
+      );
    --Edge detect for the valid signals
-   G_DataSendEdge : for i in 0 to 1 generate
-      U_DataSendEdge : entity work.SynchronizerEdge
+   G_DataSendEdgeSer : for i in 0 to 1 generate
+      U_DataSendEdgeSer : entity work.SynchronizerEdge
          port map (
             clk        => sysClk,
             rst        => sysClkRst,
@@ -524,6 +566,24 @@ begin
             end if;
          end if;
       end loop;
+   end process;
+   --Edge detect for the valid signals
+   U_DataSendEdgeMem : entity work.SynchronizerEdge
+      port map (
+         clk        => sysClk,
+         rst        => sysClkRst,
+         dataIn     => memDataValid,
+         risingEdge => memDataValidEdge
+      );
+   --Clock the data into a register when it's valid
+   process(sysClk, sysClkRst) begin
+         if rising_edge(sysClk) then
+            if sysClkRst = '1' then
+               memDataOutReg <= (others => '0');
+            elsif memDataValidEdge = '1' then
+               memDataOutReg <= memDataOutRaw;
+            end if;
+         end if;
    end process;
    --Generate a slow enable for the 1-wire interfaces
    process(sysClk,sysClkRst) 
@@ -554,6 +614,42 @@ begin
          end if;
       end if;
    end process;
+   --Hold write or read request for slow enable
+   process(sysClk) 
+      constant NCYCLES     : integer := 820;
+      constant NCYCLES_SPI : integer := 10;
+      variable counter     : integer range 0 to 1023 := 0;
+      variable counter_spi : integer range 0 to 127 := 0;
+      variable RW	   : integer range 0 to 2 := 0;
+   begin
+   if rising_edge(sysClk) then   
+      if (pgpRegOut.regAddr = x"00034" and pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1')  then
+          RW := 1;
+      elsif (pgpRegOut.regAddr = x"00037" and pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1') then
+          RW := 2; 
+      end if;
+      if RW = 1 then
+         if counter = NCYCLES then
+	    counter := 0;
+	    memWriteReq <= '0';
+	    RW := 0;
+	 else
+	    counter := counter + 1;
+	    memWriteReq <= '1';
+	 end if;
+      elsif RW = 2 then
+         if counter = NCYCLES then
+	    counter := 0;
+	    memReadReq <= '0';
+	    RW := 0;
+	 else
+	    counter := counter + 1;
+	    memReadReq <= '1';
+	 end if;
+      end if;
+   end if;
+   end process;
+
 
    -----------------------------------------------
    -- Fast ADC Control

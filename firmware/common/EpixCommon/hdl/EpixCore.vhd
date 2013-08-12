@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- Title         : EPIX Core Block
--- Project       : EPXI Readout
+-- Project       : EPIX Readout
 -------------------------------------------------------------------------------
 -- File          : EpixCore.vhd
 -- Author        : Ryan Herbst, rherbst@slac.stanford.edu
@@ -154,7 +154,6 @@ architecture EpixCore of EpixCore is
 begin
 
    powerEnable <= iPowerEnable;
-   
    -- Trigger control
    U_TrigControl : entity work.TrigControl 
       port map ( 
