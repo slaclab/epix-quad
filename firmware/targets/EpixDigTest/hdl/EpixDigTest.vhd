@@ -204,14 +204,20 @@ architecture EpixDigTest of EpixDigTest is
    signal asicRoClkP          : std_logic_vector(3 downto 0);
    signal asicRoClkM          : std_logic_vector(3 downto 0);
 
+   signal iAsicR0             : std_logic;
+   signal iAsicAcq            : std_logic;
+
    -- Register delay for simulation
    constant tpd:time := 0.5 ns;
 
 begin
 
+   asicR0  <= iAsicR0;
+   asicAcq <= iAsicAcq;
+
    -- Spare
-   spare_jp7_p <= '0';
-   spare_jp7_m <= '0';
+   spare_jp7_p <= iAsicR0;
+   spare_jp7_m <= iAsicAcq;
 
    -- Core
    U_EpixCore: entity work.EpixCore
@@ -261,11 +267,11 @@ begin
          adcDClkM             => adcDClkM,
          adcChP               => adcChP,
          adcChM               => adcChM,
-         asicR0               => asicR0,
+         asicR0               => iAsicR0,
          asicPpmat            => asicPpmat,
          asicPpbe             => asicPpbe,
          asicGlblRst          => asicGlblRst,
-         asicAcq              => asicAcq,
+         asicAcq              => iAsicAcq,
          asic0Dm2             => asic0Dm2,
          asic0Dm1             => asic0Dm1,
          asicRoClkP           => asicRoClkP,

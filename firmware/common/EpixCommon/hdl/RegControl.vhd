@@ -154,7 +154,7 @@ begin
    process ( sysClk, sysClkRst ) begin
       if ( sysClkRst = '1' ) then
 
-	 intConfig          <= EpixConfigInit after tpd;
+         intConfig          <= EpixConfigInit after tpd;
          pgpRegIn.regAck    <= '0'            after tpd;
          pgpRegIn.regFail   <= '0'            after tpd;
          pgpRegIn.regDataIn <= (others=>'0')  after tpd;
@@ -305,31 +305,31 @@ begin
          elsif pgpRegOut.regAddr = x"00033" then
             pgpRegIn.regDataIn <= serNumReg(1)(63 downto 32);
 
-	 -- EEPROM (digital card)
-	 elsif pgpRegOut.regAddr = x"00034" then
-	    if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
-	       memAddr <= pgpRegOut.regDataOut (15 downto 0);
-    	    end if;
-	    pgpRegIn.regDataIn (15 downto 0) <= memAddr after tpd;
-	 elsif pgpRegOut.regAddr = x"00037" then
-	    if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
-	       memAddr <= pgpRegOut.regDataOut (15 downto 0);
-    	    end if;
-	    pgpRegIn.regDataIn (15 downto 0) <= memAddr after tpd;
-	 elsif pgpRegOut.regAddr = x"00035" then
-	    if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then 
-	       memDataIn (31 downto 0) <= pgpRegOut.regDataOut after tpd;
-	    end if;
-	    pgpRegIn.regDataIn <= memDataIn (31 downto 0) after tpd;
-	 elsif pgpRegOut.regAddr = x"00036" then
-	    if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then 
-	       memDataIn (63 downto 32)  <= pgpRegOut.regDataOut after tpd;
-	    end if;
-	    pgpRegIn.regDataIn <= memDataIn (63 downto 32) after tpd;
-	 elsif pgpRegOut.regAddr = x"00038" then
-	    pgpRegIn.regDataIn <= memDataOutReg(31 downto 0) after tpd;
-	 elsif pgpRegOut.regAddr = x"00039" then
-	    pgpRegIn.regDataIn <= memDataOutReg(63 downto 32) after tpd;
+         -- EEPROM (digital card)
+         elsif pgpRegOut.regAddr = x"00034" then
+            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
+               memAddr <= pgpRegOut.regDataOut (15 downto 0);
+            end if;
+            pgpRegIn.regDataIn (15 downto 0) <= memAddr after tpd;
+         elsif pgpRegOut.regAddr = x"00037" then
+            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
+               memAddr <= pgpRegOut.regDataOut (15 downto 0);
+            end if;
+            pgpRegIn.regDataIn (15 downto 0) <= memAddr after tpd;
+         elsif pgpRegOut.regAddr = x"00035" then
+            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then 
+               memDataIn (31 downto 0) <= pgpRegOut.regDataOut after tpd;
+            end if;
+            pgpRegIn.regDataIn <= memDataIn (31 downto 0) after tpd;
+         elsif pgpRegOut.regAddr = x"00036" then
+            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then 
+               memDataIn (63 downto 32)  <= pgpRegOut.regDataOut after tpd;
+            end if;
+            pgpRegIn.regDataIn <= memDataIn (63 downto 32) after tpd;
+         elsif pgpRegOut.regAddr = x"00038" then
+            pgpRegIn.regDataIn <= memDataOutReg(31 downto 0) after tpd;
+         elsif pgpRegOut.regAddr = x"00039" then
+            pgpRegIn.regDataIn <= memDataOutReg(63 downto 32) after tpd;
 
          -- Fast ADCs, 0x008000 -  0x00FFFF
          elsif pgpRegOut.regAddr(23 downto 16) = x"00" and pgpRegOut.regAddr(15) = '1' then
@@ -515,7 +515,7 @@ begin
    -----------------------------------------------
    -- Serial Number/EEPROM IC Interfaces (1-wire)
    -----------------------------------------------
-   U_SliceDimmIdAnalogCard : entity work.SliceDimmId
+   U_SliceDimmIdDigitalCard : entity work.SliceDimmId
       port map (
          pgpClk    => sysClk,
          pgpRst    => sysClkRst,
@@ -538,12 +538,12 @@ begin
          fdSerDenL => serialIdEn(0),
          fdSerial  => serNumRaw(0),
          fdValid   => serNumValid(0),
-	 address   => memAddr,
-	 dataIn    => memDataIn,
-	 dataOut   => memDataOutRaw,
-	 dataValid => memDataValid,
-	 readReq   => memReadReq,
-	 writeReq  => memWriteReq
+         address   => memAddr,
+         dataIn    => memDataIn,
+         dataOut   => memDataOutRaw,
+         dataValid => memDataValid,
+         readReq   => memReadReq,
+         writeReq  => memWriteReq
       );
    --Edge detect for the valid signals
    G_DataSendEdgeSer : for i in 0 to 1 generate
@@ -604,12 +604,12 @@ begin
                counter := counter + 1;
                serClkEn <= '0';
             end if;
-	    if (counter_spi = NCYCLES_SPI) then
+            if (counter_spi = NCYCLES_SPI) then
                counter_spi := 0;
                spiClkEn    <= '1';
             else
                counter_spi := counter_spi + 1;
-               spiClkEn    <= '0';
+              spiClkEn    <= '0';
             end if;
          end if;
       end if;
@@ -620,7 +620,7 @@ begin
       constant NCYCLES_SPI : integer := 10;
       variable counter     : integer range 0 to 1023 := 0;
       variable counter_spi : integer range 0 to 127 := 0;
-      variable RW	   : integer range 0 to 2 := 0;
+      variable RW          : integer range 0 to 2 := 0;
    begin
    if rising_edge(sysClk) then   
       if (pgpRegOut.regAddr = x"00034" and pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1')  then
@@ -630,22 +630,22 @@ begin
       end if;
       if RW = 1 then
          if counter = NCYCLES then
-	    counter := 0;
-	    memWriteReq <= '0';
-	    RW := 0;
-	 else
-	    counter := counter + 1;
-	    memWriteReq <= '1';
-	 end if;
+            counter := 0;
+            memWriteReq <= '0';
+            RW := 0;
+         else
+            counter := counter + 1;
+            memWriteReq <= '1';
+         end if;
       elsif RW = 2 then
          if counter = NCYCLES then
-	    counter := 0;
-	    memReadReq <= '0';
-	    RW := 0;
-	 else
-	    counter := counter + 1;
-	    memReadReq <= '1';
-	 end if;
+            counter := 0;
+            memReadReq <= '0';
+            RW := 0;
+         else
+            counter := counter + 1;
+            memReadReq <= '1';
+         end if;
       end if;
    end if;
    end process;
