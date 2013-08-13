@@ -225,6 +225,21 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent ) :
    addVariable(new Variable("digitalCRC", Variable::Status)); 
    getVariable("digitalCRC")->setTrueFalse();
 
+   addRegister(new Register("EepromWriteAddr", 0x01000034));
+   addVariable(new Variable("EepromWriteAddr", Variable::Configuration));
+   getVariable("EepromWriteAddr")->setRange(0,0xF);
+   addRegister(new Register("EepromDataIn0", 0x01000035));
+   addVariable(new Variable("EepromDataIn0", Variable::Configuration));
+   addRegister(new Register("EepromDataIn1", 0x01000036));
+   addVariable(new Variable("EepromDataIn1", Variable::Configuration));
+   addRegister(new Register("EepromReadAddr", 0x01000037));
+   addVariable(new Variable("EepromReadAddr", Variable::Configuration));
+   addVariable(new Variable("EepromAddr", Variable::Status));
+	getVariable("EepromReadAddr")->setRange(0,0xF);
+   addRegister(new Register("EepromDataOut0", 0x01000038));
+   addVariable(new Variable("EepromDataOut0", Variable::Status));
+	addRegister(new Register("EepromDataOut1", 0x01000039));
+   addVariable(new Variable("EepromDataOut1", Variable::Status));  
    addCommand(new Command("MasterReset"));
    getCommand("MasterReset")->setDescription("Master Board Reset");
 
@@ -233,6 +248,12 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent ) :
 
    addCommand(new Command("EpixRun",0x0));
    getCommand("EpixRun")->setDescription("Sends a single software run command");
+
+   addCommand(new Command("WriteData"));
+   getCommand("WriteData")->setDescription("Write data to EEPROM");
+
+   addCommand(new Command("ReadData"));
+   getCommand("ReadData")->setDescription("Read data from EEPROM");
 
    // Add sub-devices
    addDevice(new   Ad9252(destination, 0x01008000, 0, this));
@@ -264,6 +285,22 @@ void DigFpga::command ( string name, string arg) {
       writeRegister(getRegister("AcqCountReset"),true,true);
       REGISTER_UNLOCK
    }
+   else if ( name == "WriteData" ) {
+      REGISTER_LOCK
+      writeRegister(getRegister("EepromDataIn0"),true,true);
+      writeRegister(getRegister("EepromDataIn1"),true,true);
+      writeRegister(getRegister("EepromWriteAddr"),true,true);
+      REGISTER_UNLOCK
+   }
+   else if ( name == "ReadData" ) {
+      REGISTER_LOCK
+      writeRegister(getRegister("EepromReadAddr"),true,true);
+   	//readRegister(getRegister("EepromDataOut0"));
+	   //readRegister(getRegister("EepromDataOut1"));
+	   //getVariable("EepromDataOut0")->setInt(getRegister("EepromDataOut0")->get());
+		//getVariable("EepromDataOut1")->setInt(getRegister("EepromDataOut1")->get());
+      REGISTER_UNLOCK
+   }
    else Device::command(name, arg);
 }
 
@@ -288,6 +325,7 @@ void DigFpga::readStatus ( ) {
       getVariable(tmp.str())->setInt(getRegister(tmp.str())->get());
    }
    
+
    bool temp;
    readRegister(getRegister("digitalCardId0"));
    getVariable("digitalCardId0")->setInt(getRegister("digitalCardId0")->get());
@@ -303,16 +341,18 @@ void DigFpga::readStatus ( ) {
    temp = crc(getVariable("analogCardId1")->getInt(),getVariable("analogCardId0")->getInt());
    getVariable("analogCRC")->setInt(temp);
 
+ 
 
    uint y;
    readRegister(getRegister("LocalTemp"));
    y=getRegister("LocalTemp")->get();
    getVariable("LocalTemp")->setIntDec(.000006*y*y-.0489*y+112.26);
 
-   y=(getRegister("Humidity")->get());
-   readRegister(getRegister("Humidity"));
-   getVariable("Humidity")->setIntDec((.0287*y-23.5));
-
+   readRegister(getRegister("EepromDataOut0"));
+   readRegister(getRegister("EepromDataOut1"));
+   getVariable("EepromDataOut0")->setInt(getRegister("EepromDataOut0")->get());
+	getVariable("EepromDataOut1")->setInt(getRegister("EepromDataOut1")->get());
+   getVariable("EepromAddr")->setInt(getRegister("EepromReadAddr")->get());
 
    // Sub devices
    Device::readStatus();
@@ -379,8 +419,13 @@ void DigFpga::readConfig ( ) {
    readRegister(getRegister("adcClkHalfT"));
    getVariable("adcClkHalfT")->setInt(getRegister("adcClkHalfT")->get(0,0xFFFFFFFF));
 
-   readRegister(getRegister("totalPixelsToRead"));
-   getVariable("totalPixelsToRead")->setInt(getRegister("totalPixelsToRead")->get(0,0xFFFFFFFF));
+   getVariable("EepromReadAddr")->setInt(getRegister("EepromReadAddr")->get(0,0xFFFFFFFF)/8);
+
+   getVariable("EepromWriteAddr")->setInt(getRegister("EepromWriteAddr")->get(0,0xFFFFFFFF)/8);
+
+   getVariable("EepromDataIn0")->setInt(getRegister("EepromDataIn0")->get(0,0xFFFFFFFF));
+
+   getVariable("EepromDataIn1")->setInt(getRegister("EepromDataIn1")->get(0,0xFFFFFFFF));
 
    readRegister(getRegister("saciClkBit"));
    getVariable("saciClkBit")->setInt(getRegister("saciClkBit")->get(0,0x7));
@@ -418,8 +463,8 @@ void DigFpga::writeConfig ( bool force ) {
    getRegister("DacSetting")->set(getVariable("DacSetting")->getInt(),0,0xFFFF);
    writeRegister(getRegister("DacSetting"),force);
 
-   getRegister("PowerEnable")->set(getVariable("AnalogPowerEnable")->getInt(),1,0x1);
-   getRegister("PowerEnable")->set(getVariable("DigitalPowerEnable")->getInt(),0,0x1);
+   getRegister("PowerEnable")->set(getVariable("AnalogPowerEnable")->getInt(),0,0x1);
+   getRegister("PowerEnable")->set(getVariable("DigitalPowerEnable")->getInt(),1,0x1);
    writeRegister(getRegister("PowerEnable"),force);
 
    getRegister("AsicPins")->set(getVariable("AsicGR")->getInt(),0,0x1);
@@ -447,6 +492,10 @@ void DigFpga::writeConfig ( bool force ) {
    getRegister("asicAcqWidth")->set(getVariable("asicAcqWidth")->getInt(),0,0xFFFFFFFF);
    writeRegister(getRegister("asicAcqWidth"),force);
 
+   getRegister("asicRoClkHalfT")->set(getVariable("asicRoClkHalfT")->getInt(),0,0xFFFFFFFF);
+   writeRegister(getRegister("asicRoClkHalfT"),force);
+
+
    getRegister("asicAcqLToPPmatL")->set(getVariable("asicAcqLToPPmatL")->getInt(),0,0xFFFFFFFF);
    writeRegister(getRegister("asicAcqLToPPmatL"),force);
 
@@ -459,8 +508,13 @@ void DigFpga::writeConfig ( bool force ) {
    getRegister("adcClkHalfT")->set(getVariable("adcClkHalfT")->getInt(),0,0xFFFFFFFF);
    writeRegister(getRegister("adcClkHalfT"),force);
 
-   getRegister("totalPixelsToRead")->set(getVariable("totalPixelsToRead")->getInt(),0,0xFFFFFFFF);
-   writeRegister(getRegister("totalPixelsToRead"),force);
+   getRegister("EepromReadAddr")->set(8*getVariable("EepromReadAddr")->getInt(),0,0xFFFFFFFF);
+
+   getRegister("EepromWriteAddr")->set(8*getVariable("EepromWriteAddr")->getInt(),0,0xFFFFFFFF);
+
+   getRegister("EepromDataIn0")->set(getVariable("EepromDataIn0")->getInt(),0,0xFFFFFFFF);
+  
+   getRegister("EepromDataIn1")->set(getVariable("EepromDataIn1")->getInt(),0,0xFFFFFFFF);
 
    getRegister("saciClkBit")->set(getVariable("saciClkBit")->getInt(),0,0x7);
    writeRegister(getRegister("saciClkBit"),force);
