@@ -36,6 +36,15 @@ class EpixAsic : public Device {
       //! Deconstructor
       ~EpixAsic ( );
 
+      //! Method to process a command
+      /*!
+       * Returns status string if locally processed. Otherwise
+       * an empty string is returned.
+       * \param name     Command name
+       * \param arg      Optional arg
+      */
+      void command ( string name, string arg );
+
       //! Method to read status registers and update variables
       /*! 
        * Throws string on error.

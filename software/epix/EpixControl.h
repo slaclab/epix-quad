@@ -31,6 +31,15 @@ class EpixControl : public System {
       //! Deconstructor
       ~EpixControl ( );
 
+      //! Method to process a command
+      /*!
+       * Returns status string if locally processed. Otherwise
+       * an empty string is returned.
+       * \param name     Command name
+       * \param arg      Optional arg
+      */
+      void command ( string name, string arg );
+
       //! Return local state, specific to each implementation
       string localState();
 

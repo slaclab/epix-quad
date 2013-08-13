@@ -39,10 +39,51 @@ EpixControl::EpixControl ( CommLink *commLink, string defFile ) : System("EpixCo
 
    // Add sub-devices
    addDevice(new DigFpga(0, 0, this));
+
+   //Add commands
+   addCommand(new Command("SoftwareTrigger"));
+   getCommand("SoftwareTrigger")->setDescription("Prep for readout and software trigger");
+
+   addCommand(new Command("WriteMatrixData"));
+   getCommand("WriteMatrixData")->setDescription("Writes PixelTest and PixelMask to *all* pixels, then issues prepare for readout");
+
+   addCommand(new Command("WritePixelData"));
+   getCommand("WritePixelData")->setDescription("Writes PixelTest and PixelMask to *one* pixel");
+
+   addCommand(new Command("WriteRowCounter"));
+   getCommand("WriteRowCounter")->setDescription("Special command to write row variable to row counter");
+
+   addCommand(new Command("WriteRowData"));
+   getCommand("WriteRowData")->setDescription("Special command to write PixelTest and PixelMask to a row");
+
+   addCommand(new Command("PrepForRead"));
+   getCommand("PrepForRead")->setDescription("Sends SACI prepare for readout");
+
 }
 
 // Deconstructor
 EpixControl::~EpixControl ( ) { }
+
+// Method to process a command
+void EpixControl::command ( string name, string arg) {
+   stringstream tmp;
+
+   // Command is local
+   if ( name == "SoftwareTrigger" ) {
+      device("digFpga",0)->device("epixAsic",0)->command("PrepForRead","");
+      device("digFpga",0)->command("EpixRun","");
+   } else if ( name == "WriteMatrixData" ) {
+      device("digFpga",0)->device("epixAsic",0)->command("WriteMatrixData","");
+   } else if ( name == "WritePixelData" ) {
+      device("digFpga",0)->device("epixAsic",0)->command("WritePixelData","");
+   } else if ( name == "WriteRowCounter" ) {
+      device("digFpga",0)->device("epixAsic",0)->command("WriteRowCounter","");
+   } else if ( name == "PrepForRead" ) {
+      device("digFpga",0)->device("epixAsic",0)->command("PrepForRead","");
+   } else if ( name == "WriteRowData" ) {
+      device("digFpga",0)->device("epixAsic",0)->command("WriteRowData","");
+   } else System::command(name, arg);
+}
 
 //! Method to return state string
 string EpixControl::localState ( ) {
