@@ -515,11 +515,10 @@ begin
    -----------------------------------------------
    -- Serial Number/EEPROM IC Interfaces (1-wire)
    -----------------------------------------------
-   U_SliceDimmIdDigitalCard : entity work.SliceDimmId
+   U_SliceDimmIdAnalogCard : entity work.SliceDimmId
       port map (
          pgpClk    => sysClk,
          pgpRst    => sysClkRst,
---         pgpRst    => intConfig.acqCountReset,
          serClkEn  => serClkEn,
          fdSerDin  => serialIdIn(1),
          fdSerDout => serialIdOut(1),
@@ -527,11 +526,10 @@ begin
          fdSerial  => serNumRaw(1),
          fdValid   => serNumValid(1)
       );
-   U_SliceDimmIdDigitalCard : entity work.EepromId
+   U_IdAndEepromDigitalCard : entity work.EepromId
       port map (
          pgpClk    => sysClk,
          pgpRst    => sysClkRst,
---         pgpRst    => intConfig.acqCountReset,
          serClkEn  => serClkEn,
          fdSerDin  => serialIdIn(0),
          fdSerDout => serialIdOut(0),

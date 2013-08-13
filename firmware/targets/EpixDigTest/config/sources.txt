@@ -44,6 +44,7 @@ vhdl    work "_PROJ_DIR_/../../common/EpixCommon/hdl/RegControl.vhd"
 vhdl    work "_PROJ_DIR_/../../common/EpixCommon/hdl/TrigControl.vhd"
 vhdl    work "_PROJ_DIR_/../../common/EpixCommon/hdl/EpixCore.vhd"
 vhdl    work "_PROJ_DIR_/../../common/EpixCommon/hdl/SliceDimmId.vhd"
+vhdl    work "_PROJ_DIR_/../../common/EpixCommon/hdl/EepromId.vhd"
 
 # Version Constant
 vhdl    work "_PROJ_DIR_/Version.vhd"
