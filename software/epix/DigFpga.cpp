@@ -149,21 +149,26 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent ) :
    addVariable(new Variable("acqToAsicR0Delay", Variable::Configuration));
    getVariable("acqToAsicR0Delay")->setDescription("");
    getVariable("acqToAsicR0Delay")->setRange(0,0xFFFF);
+   getVariable("acqToAsicR0Delay")->setComp(0,.008,0,"us");
 
    addRegister(new Register("asicR0ToAsicAcq", 0x01000021));
    addVariable(new Variable("asicR0ToAsicAcq", Variable::Configuration));
    getVariable("asicR0ToAsicAcq")->setDescription("");
    getVariable("asicR0ToAsicAcq")->setRange(0,0xFFFF);
+   getVariable("asicR0ToAsicAcq")->setComp(0,.008,0,"us");
 
+   
    addRegister(new Register("asicAcqWidth", 0x01000022));
    addVariable(new Variable("asicAcqWidth", Variable::Configuration));
    getVariable("asicAcqWidth")->setDescription("");
    getVariable("asicAcqWidth")->setRange(0,0xFFFF);
+   getVariable("asicAcqWidth")->setComp(0,.008,0,"us");
 
    addRegister(new Register("asicAcqLToPPmatL", 0x01000023));
    addVariable(new Variable("asicAcqLToPPmatL", Variable::Configuration));
    getVariable("asicAcqLToPPmatL")->setDescription("");
    getVariable("asicAcqLToPPmatL")->setRange(0,0xFFFF);
+   getVariable("asicAcqLToPPmatL")->setComp(0,.008,0,"us");
 
    addRegister(new Register("asicRoClkHalfT", 0x01000024));
    addVariable(new Variable("asicRoClkHalfT", Variable::Configuration));
@@ -195,6 +200,7 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent ) :
    addVariable(new Variable("asicR0Width", Variable::Configuration));
    getVariable("asicR0Width")->setDescription("Width of R0 low pulse");
    getVariable("asicR0Width")->setRange(0,0xFFFF);
+   getVariable("asicR0Width")->setComp(0,.008,0,"us");
 
    addRegister(new Register("adcPipelineDelay", 0x0100002C));
    addVariable(new Variable("adcPipelineDelay", Variable::Configuration));
@@ -295,6 +301,7 @@ void DigFpga::command ( string name, string arg) {
    else if ( name == "ReadData" ) {
       REGISTER_LOCK
       writeRegister(getRegister("EepromReadAddr"),true,true);
+      getVariable("EepromAddr")->setInt(getRegister("EepromReadAddr")->get()/8);
    	//readRegister(getRegister("EepromDataOut0"));
 	   //readRegister(getRegister("EepromDataOut1"));
 	   //getVariable("EepromDataOut0")->setInt(getRegister("EepromDataOut0")->get());
@@ -352,8 +359,6 @@ void DigFpga::readStatus ( ) {
    readRegister(getRegister("EepromDataOut1"));
    getVariable("EepromDataOut0")->setInt(getRegister("EepromDataOut0")->get());
 	getVariable("EepromDataOut1")->setInt(getRegister("EepromDataOut1")->get());
-   getVariable("EepromAddr")->setInt(getRegister("EepromReadAddr")->get());
-
    // Sub devices
    Device::readStatus();
    REGISTER_UNLOCK
@@ -494,7 +499,6 @@ void DigFpga::writeConfig ( bool force ) {
 
    getRegister("asicRoClkHalfT")->set(getVariable("asicRoClkHalfT")->getInt(),0,0xFFFFFFFF);
    writeRegister(getRegister("asicRoClkHalfT"),force);
-
 
    getRegister("asicAcqLToPPmatL")->set(getVariable("asicAcqLToPPmatL")->getInt(),0,0xFFFFFFFF);
    writeRegister(getRegister("asicAcqLToPPmatL"),force);
