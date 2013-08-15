@@ -121,7 +121,10 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent ) :
    addVariable(new Variable("AsicRoClkControl", Variable::Configuration));
    getVariable("AsicRoClkControl")->setDescription("Manual ASIC RO Clock Enabled");
    getVariable("AsicRoClkControl")->setRange(0,0x1);
-
+   addVariable(new Variable("prepulseR0En", Variable::Configuration));
+   getVariable("prepulseR0En")->setDescription("Prepuls R0 Enable");
+   getVariable("prepulseR0En")->setRange(0,0x1);
+ 
    for (x=0; x < 8; x++) {
       tmp.str("");
       tmp << "AdcValue" << dec << setw(2) << setfill('0') << x;
@@ -180,7 +183,6 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent ) :
    getVariable("adcReadsPerPixel")->setDescription("");
    getVariable("adcReadsPerPixel")->setRange(0,0xFFFF);
 
-
    addRegister(new Register("adcClkHalfT", 0x01000026));
    addVariable(new Variable("adcClkHalfT", Variable::Configuration));
    getVariable("adcClkHalfT")->setDescription("Half Period of ADC Clock");
@@ -211,6 +213,18 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent ) :
    addVariable(new Variable("adcChannelToRead", Variable::Configuration));
    getVariable("adcChannelToRead")->setDescription("ADC channel to read out");
    getVariable("adcChannelToRead")->setRange(0,0xFF);
+
+   addRegister(new Register("prepulseR0Width", 0x0100002E));
+   addVariable(new Variable("prepulseR0Width", Variable::Configuration));
+   getVariable("prepulseR0Width")->setDescription("Width of R0 low prepulse");
+   getVariable("prepulseR0Width")->setRange(0,0xFFFF);
+   getVariable("prepulseR0Width")->setComp(0,.008,0,"us");
+
+   addRegister(new Register("prepulseR0Delay", 0x0100002F));
+   addVariable(new Variable("prepulseR0Delay", Variable::Configuration));
+   getVariable("prepulseR0Delay")->setDescription("Delay of R0 low prepulse");
+   getVariable("prepulseR0Delay")->setRange(0,0xFFFF);
+   getVariable("prepulseR0Delay")->setComp(0,.008,0,"us");
 
    addRegister(new Register("digitalCardId0",0x01000030));
    addRegister(new Register("digitalCardId1",0x01000031));
@@ -402,6 +416,7 @@ void DigFpga::readConfig ( ) {
    getVariable("AsicPpmatControl")->setInt(getRegister("AsicPinControl")->get(3,0x1));
    getVariable("AsicPpbeControl")->setInt(getRegister("AsicPinControl")->get(4,0x1));
    getVariable("AsicRoClkControl")->setInt(getRegister("AsicPinControl")->get(5,0x1));
+   getVariable("prepulseR0En")->setInt(getRegister("AsicPinControl")->get(6,0x1));
 
    readRegister(getRegister("acqToAsicR0Delay"));
    getVariable("acqToAsicR0Delay")->setInt(getRegister("acqToAsicR0Delay")->get(0,0xFFFFFFFF));
@@ -444,7 +459,13 @@ void DigFpga::readConfig ( ) {
    readRegister(getRegister("adcChannelToRead"));
    getVariable("adcChannelToRead")->setInt(getRegister("adcChannelToRead")->get(0,0xFF));
 
-   // Sub devices
+   readRegister(getRegister("prepulseR0Width"));
+   getVariable("prepulseR0Width")->setInt(getRegister("prepulseR0Width")->get(0,0xFFFF));
+
+   readRegister(getRegister("prepulseR0Delay"));
+   getVariable("prepulseR0Delay")->setInt(getRegister("prepulseR0Delay")->get(0,0xFFFF));
+
+ // Sub devices
    Device::readConfig();
    REGISTER_UNLOCK
 }
@@ -486,6 +507,7 @@ void DigFpga::writeConfig ( bool force ) {
    getRegister("AsicPinControl")->set(getVariable("AsicPpmatControl")->getInt(),3,0x1);
    getRegister("AsicPinControl")->set(getVariable("AsicPpbeControl")->getInt(),4,0x1);
    getRegister("AsicPinControl")->set(getVariable("AsicRoClkControl")->getInt(),5,0x1);
+   getRegister("AsicPinControl")->set(getVariable("prepulseR0En")->getInt(),6,0x1);
    writeRegister(getRegister("AsicPinControl"),force);
 
    getRegister("acqToAsicR0Delay")->set(getVariable("acqToAsicR0Delay")->getInt(),0,0xFFFFFFFF);
@@ -532,7 +554,13 @@ void DigFpga::writeConfig ( bool force ) {
    getRegister("adcChannelToRead")->set(getVariable("adcChannelToRead")->getInt(),0,0xFF);
    writeRegister(getRegister("adcChannelToRead"),force);
 
-   // Sub devices
+   getRegister("prepulseR0Width")->set(getVariable("prepulseR0Width")->getInt(),0,0xFFFF);
+   writeRegister(getRegister("prepulseR0Width"),force);
+
+   getRegister("prepulseR0Width")->set(getVariable("prepulseR0Width")->getInt(),0,0xFFFF);
+   writeRegister(getRegister("prepulseR0Width"),force);
+
+  // Sub devices
    Device::writeConfig(force);
    REGISTER_UNLOCK
 }
