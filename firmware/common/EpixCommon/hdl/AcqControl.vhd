@@ -88,8 +88,11 @@ architecture AcqControl of AcqControl is
    signal firstPixel    : sl := '0';
    signal firstPixelSet : sl := '0';
    signal firstPixelRst : sl := '0';
+   signal prePulseR0    : sl := '0';
 
-   -- Multiplexed
+   -- Multiplexed ASIC outputs.  These versions are the
+   -- automatic ones controlled by state machine.
+   -- You can override them with the manualPinControl config bits.
    signal iAsicR0       : std_logic             := '0';
    signal iAsicPpmat    : std_logic             := '0';
    signal iAsicPpbe     : std_logic             := '0';
@@ -97,23 +100,20 @@ architecture AcqControl of AcqControl is
    signal iAsicAcq      : std_logic             := '0';
    signal iAsicClk      : std_logic             := '0';
 
-   -- This constant is locked to the ADC.  Not sure if this should
-   -- sit here or elsewhere?
-   --constant cAdcPipelineDly   : unsigned(31 downto 0) := x"00000008"; --Pipeline delay for AD9252 --Absolute minimum
-   --constant cAdcPipelineDly   : unsigned(31 downto 0) := x"00000013"; --Pipeline delay for AD9252
-
    -- State machine values
-   constant ST_IDLE       : slv(3 downto 0) := "0000";
-   constant ST_WAIT_R0    : slv(3 downto 0) := "0001";
-   constant ST_PULSE_R0   : slv(3 downto 0) := "0010";
-   constant ST_WAIT_ACQ   : slv(3 downto 0) := "0011";
-   constant ST_ACQ        : slv(3 downto 0) := "0100";
-   constant ST_SACI_RST   : slv(3 downto 0) := "0101";
-   constant ST_WAIT_PPMAT : slv(3 downto 0) := "0110";
-   constant ST_SYNC_TO_ADC: slv(3 downto 0) := "0111";
-   constant ST_WAIT_ADC   : slv(3 downto 0) := "1000";
-   constant ST_NEXT_CELL  : slv(3 downto 0) := "1001";
-   constant ST_DONE       : slv(3 downto 0) := "1010";
+   constant ST_IDLE        : slv(3 downto 0) := "0000";
+   constant ST_PRE_R0      : slv(3 downto 0) := "0001";
+   constant ST_POST_PRE_R0 : slv(3 downto 0) := "0010";
+   constant ST_WAIT_R0     : slv(3 downto 0) := "0011";
+   constant ST_PULSE_R0    : slv(3 downto 0) := "0100";
+   constant ST_WAIT_ACQ    : slv(3 downto 0) := "0101";
+   constant ST_ACQ         : slv(3 downto 0) := "0110";
+   constant ST_SACI_RST    : slv(3 downto 0) := "0111";
+   constant ST_WAIT_PPMAT  : slv(3 downto 0) := "1000";
+   constant ST_SYNC_TO_ADC : slv(3 downto 0) := "1001";
+   constant ST_WAIT_ADC    : slv(3 downto 0) := "1010";
+   constant ST_NEXT_CELL   : slv(3 downto 0) := "1011";
+   constant ST_DONE        : slv(3 downto 0) := "1100";
 
    -- Register delay for simulation
    constant tpd:time := 0.5 ns;
@@ -157,67 +157,13 @@ begin
                   ePixConfig.asicPins(5) when ePixConfig.manualPinControl(5) = '1' else
                   'X';
 
+   --Use 6th bit of manual pin control to activate or deactivate pre-pulsing of R0
+   prePulseR0 <= ePixConfig.manualPinControl(6); 
+
    --Outputs not incorporated into state machine at the moment
   iAsicPpbe    <= '1'; 
 
 
-
---Simple version that just pulses Acq
---
---   process(curState,stateCnt,ePixConfig) begin
---      --Default
---      asicR0      <= '1' after tpd;
---      asicAcq     <= '0' after tpd;
---      stateCntRst <= '0' after tpd;
---      stateCntEn  <= '0' after tpd;
---      case curState is 
---         when ST_IDLE =>
---            stateCntRst <= '1' after tpd;
---         when ST_WAIT_R0 =>
---            if stateCnt < unsigned(ePixConfig.acqToAsicR0Delay) then
---               stateCntEn <= '1' after tpd;
---            else
---               stateCntRst <= '1' after tpd;
---            end if;
---         when ST_WAIT_ACQ =>
---            asicR0  <= '0';
---            asicAcq <= '1';
---            if stateCnt < unsigned(ePixConfig.asicAcqWidth) then
---               stateCntEn <= '1' after tpd;
---            else 
---               stateCntRst <= '0' after tpd;
---            end if;
---         when others =>
---      end case;
---   end process;
---   process(curState,stateCnt,ePixConfig) begin
---      case curState is
---         --Remain idle until we get the acqStart signal
---         when ST_IDLE =>
---            if acqStart = '1' then
---               nxtState <= ST_WAIT_R0 after tpd;
---            else
---               nxtState <= curState after tpd;
---            end if;
---         --ADC recording will begin immediately
---         --Wait a specified number of clock cycles before bringin asicR0 up
---         when ST_WAIT_R0 =>
---            if stateCnt = unsigned(ePixConfig.acqToAsicR0Delay) then
---               nxtState <= ST_WAIT_ACQ after tpd;
---            else
---               nxtState <= curState after tpd;
---            end if; 
---         when ST_WAIT_ACQ =>
---            if stateCnt = unsigned(ePixConfig.asicAcqWidth) then
---               nxtState <= ST_IDLE after tpd;
---            else
---               nxtState <= curState after tpd;
---            end if;
---         when others =>
---            nxtState <= ST_IDLE;
---      end case;
---   end process;
-----
 
 -- Normal path for taking data frames
    --Asynchronous state machine outputs
@@ -247,6 +193,23 @@ begin
          when ST_WAIT_R0 =>
             iAsicPpmat      <= '1' after tpd;
             if stateCnt < unsigned(ePixConfig.acqToAsicR0Delay) then
+               stateCntEn      <= '1' after tpd;
+            else
+               stateCntRst     <= '1' after tpd;
+            end if;
+         -- Prepulse R0
+         when ST_PRE_R0 =>
+            iAsicPpmat      <= '1' after tpd;
+            iAsicR0         <= '0' after tpd;
+            if stateCnt < unsigned(ePixConfig.prePulseR0Width) then
+               stateCntEn      <= '1' after tpd;
+            else
+               stateCntRst     <= '1' after tpd;
+            end if;
+         -- Hold off before rest of state machine
+         when ST_POST_PRE_R0 =>
+            iAsicPpmat      <= '1' after tpd;
+            if stateCnt < unsigned(ePixConfig.prePulseR0Delay) then
                stateCntEn      <= '1' after tpd;
             else
                stateCntRst     <= '1' after tpd;
@@ -330,7 +293,7 @@ begin
    end process;
 
    --Next state logic
-   process(curState,acqStart,stateCnt,saciReadoutAck,adcSampCnt,pixelCnt,ePixConfig) begin
+   process(curState,acqStart,stateCnt,saciReadoutAck,adcSampCnt,pixelCnt,ePixConfig,prePulseR0,adcClkEdge) begin
       case curState is
          --Remain idle until we get the acqStart signal
          when ST_IDLE =>
@@ -342,10 +305,28 @@ begin
          --Wait a specified number of clock cycles before bringing asicR0 up
          when ST_WAIT_R0 =>
             if stateCnt = unsigned(ePixConfig.acqToAsicR0Delay) then
-               nxtState <= ST_PULSE_R0 after tpd;
+               if (prePulseR0 = '0') then
+                  nxtState <= ST_PULSE_R0 after tpd;
+               else
+                  nxtState <= ST_PRE_R0 after tpd;
+               end if;
             else
                nxtState <= curState after tpd;
             end if; 
+         -- Prepulse R0
+         when ST_PRE_R0 =>
+            if stateCnt = unsigned(ePixConfig.prePulseR0Width) then
+               nxtState <= ST_POST_PRE_R0 after tpd;
+            else
+               nxtState <= curState after tpd;
+            end if;
+         -- Hold off before rest of state machine
+         when ST_POST_PRE_R0 =>
+            if stateCnt = unsigned(ePixConfig.prePulseR0Delay) then
+               nxtState <= ST_PULSE_R0 after tpd;
+            else
+               nxtState <= curState after tpd;
+            end if;
          --Pulse R0 low for a specified number of clock cycles
          when ST_PULSE_R0 =>
             if stateCnt = unsigned(ePixConfig.asicR0Width) then

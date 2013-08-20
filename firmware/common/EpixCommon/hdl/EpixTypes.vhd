@@ -56,6 +56,8 @@ package EpixTypes is
       manualPinControl  : std_logic_vector(31 downto 0);
       pipelineDelay     : std_logic_vector(31 downto 0);
       adcChannelToRead  : std_logic_vector(31 downto 0);
+      prePulseR0Width   : std_logic_vector(31 downto 0);
+      prePulseR0Delay   : std_logic_vector(31 downto 0);
    end record;
 
    -- Initialize
@@ -78,7 +80,9 @@ package EpixTypes is
       asicPins          => (others=>'0'),
       manualPinControl  => (others=>'0'),
       pipelineDelay     => (others=>'0'),
-      adcChannelToRead  => (others=>'0')
+      adcChannelToRead  => (others=>'0'),
+      prePulseR0Width   => (others => '0'),
+      prePulseR0Delay   => (others => '0')
    ); 
    
 end EpixTypes;
