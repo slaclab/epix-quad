@@ -114,6 +114,7 @@ architecture AcqControl of AcqControl is
    constant ST_WAIT_ADC    : slv(3 downto 0) := "1010";
    constant ST_NEXT_CELL   : slv(3 downto 0) := "1011";
    constant ST_DONE        : slv(3 downto 0) := "1100";
+   constant ST_TEST       : slv(3 downto 0) := "1011";
 
    -- Register delay for simulation
    constant tpd:time := 0.5 ns;
@@ -278,6 +279,14 @@ begin
                adcSampCntRst   <= '1' after tpd;
                stateCntRst     <= '1' after tpd;
             end if;
+         --Clock once to the next cell
+         when ST_TEST =>
+            if stateCnt < unsigned(ePixConfig.totalPixelsToRead) then
+               stateCntEn      <= '1' after tpd;
+					iReadValid      <= '1' after tpd;
+            else 
+               stateCntRst     <= '1' after tpd;
+            end if;
          --Send the done signal
          when ST_DONE =>
             adcSampCntRst         <= '1' after tpd;
@@ -298,7 +307,11 @@ begin
          --Remain idle until we get the acqStart signal
          when ST_IDLE =>
             if acqStart = '1' then
-               nxtState <= ST_WAIT_R0 after tpd;
+               if ePixConfig.manualPinControl(7) = '0' then
+                  nxtState <= ST_WAIT_R0 after tpd;
+               else
+                  nxtState <= ST_TEST after tpd;
+               end if;
             else
                nxtState <= curState after tpd;
             end if;
@@ -387,6 +400,12 @@ begin
             if stateCnt = unsigned(ePixConfig.asicRoClkHalfT) then
                nxtState <= ST_WAIT_ADC after tpd;
             else 
+               nxtState <= curState after tpd;
+            end if;
+         when ST_TEST =>
+            if stateCnt = unsigned(ePixConfig.totalPixelsToRead) then
+               nxtState <= ST_DONE after tpd;
+            else
                nxtState <= curState after tpd;
             end if;
          --Send the done signal
