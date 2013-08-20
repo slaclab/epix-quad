@@ -58,7 +58,7 @@ int main (int argc, char **argv) {
       // Create and setup PGP link
       pgpLink.setMaxRxTx(500000);
       pgpLink.setDebug(true);
-      pgpLink.open("/dev/pgpcard0");
+      pgpLink.open("/dev/pgpcard1");
       pgpLink.enableSharedMemory("epix",1);
       usleep(100);
 
