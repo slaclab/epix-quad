@@ -436,6 +436,8 @@ void DigFpga::readConfig ( ) {
    readRegister(getRegister("adcReadsPerPixel"));
    getVariable("adcReadsPerPixel")->setInt(getRegister("adcReadsPerPixel")->get(0,0xFFFFFFFF));
 
+   readRegister(getRegister("totalPixelsToRead"));
+   getVariable("totalPixelsToRead")->setInt(getRegister("totalPixelsToRead")->get(0,0xFFFFFFFF));
    readRegister(getRegister("adcClkHalfT"));
    getVariable("adcClkHalfT")->setInt(getRegister("adcClkHalfT")->get(0,0xFFFFFFFF));
 
@@ -528,6 +530,9 @@ void DigFpga::writeConfig ( bool force ) {
    getRegister("asicRoClkHalfT")->set(getVariable("asicRoClkHalfT")->getInt(),0,0xFFFFFFFF);
    writeRegister(getRegister("asicRoClkHalfT"),force);
 
+   getRegister("totalPixelsToRead")->set(getVariable("totalPixelsToRead")->getInt(),0,0xFFFFFFFF);
+   writeRegister(getRegister("totalPixelsToRead"),force);
+
    getRegister("adcReadsPerPixel")->set(getVariable("adcReadsPerPixel")->getInt(),0,0xFFFFFFFF);
    writeRegister(getRegister("adcReadsPerPixel"),force);
 
@@ -557,8 +562,8 @@ void DigFpga::writeConfig ( bool force ) {
    getRegister("prepulseR0Width")->set(getVariable("prepulseR0Width")->getInt(),0,0xFFFF);
    writeRegister(getRegister("prepulseR0Width"),force);
 
-   getRegister("prepulseR0Width")->set(getVariable("prepulseR0Width")->getInt(),0,0xFFFF);
-   writeRegister(getRegister("prepulseR0Width"),force);
+   getRegister("prepulseR0Delay")->set(getVariable("prepulseR0Delay")->getInt(),0,0xFFFF);
+   writeRegister(getRegister("prepulseR0Delay"),force);
 
   // Sub devices
    Device::writeConfig(force);
@@ -575,12 +580,6 @@ void DigFpga::verifyConfig ( ) {
    verifyRegister(getRegister("DaqTrigDelay"));
    verifyRegister(getRegister("DacSetting"));
    verifyRegister(getRegister("PowerEnable"));
-   verifyRegister(getRegister("adcClkHalfT"));
-   verifyRegister(getRegister("adcClkHalfT"));
-   verifyRegister(getRegister("adcClkHalfT"));
-   verifyRegister(getRegister("adcClkHalfT"));
-   verifyRegister(getRegister("adcClkHalfT"));
-   verifyRegister(getRegister("adcClkHalfT"));
    verifyRegister(getRegister("adcClkHalfT"));
    Device::verifyConfig();
    REGISTER_UNLOCK
