@@ -70,18 +70,24 @@ void EpixControl::command ( string name, string arg) {
 
    // Command is local
    if ( name == "SoftwareTrigger" ) {
-      device("digFpga",0)->device("epixAsic",0)->command("PrepForRead","");
+      for (int asic = 0; asic < NASICS; ++asic) 
+         device("digFpga",0)->device("epixAsic",asic)->command("PrepForRead","");
       device("digFpga",0)->command("EpixRun","");
    } else if ( name == "WriteMatrixData" ) {
-      device("digFpga",0)->device("epixAsic",0)->command("WriteMatrixData","");
+      for (int asic = 0; asic < NASICS; ++asic) 
+         device("digFpga",0)->device("epixAsic",asic)->command("WriteMatrixData","");
    } else if ( name == "WritePixelData" ) {
-      device("digFpga",0)->device("epixAsic",0)->command("WritePixelData","");
+      for (int asic = 0; asic < NASICS; ++asic) 
+         device("digFpga",0)->device("epixAsic",asic)->command("WritePixelData","");
    } else if ( name == "WriteRowCounter" ) {
-      device("digFpga",0)->device("epixAsic",0)->command("WriteRowCounter","");
+      for (int asic = 0; asic < NASICS; ++asic) 
+         device("digFpga",0)->device("epixAsic",asic)->command("WriteRowCounter","");
    } else if ( name == "PrepForRead" ) {
-      device("digFpga",0)->device("epixAsic",0)->command("PrepForRead","");
+      for (int asic = 0; asic < NASICS; ++asic) 
+         device("digFpga",0)->device("epixAsic",asic)->command("PrepForRead","");
    } else if ( name == "WriteRowData" ) {
-      device("digFpga",0)->device("epixAsic",0)->command("WriteRowData","");
+      for (int asic = 0; asic < NASICS; ++asic) 
+         device("digFpga",0)->device("epixAsic",asic)->command("WriteRowData","");
    } else System::command(name, arg);
 }
 

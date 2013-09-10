@@ -17,6 +17,8 @@
 #define __DIG_FPGA_H__
 
 #include <Device.h>
+
+#define NASICS 4
 using namespace std;
 
 //! Class to contain APV25 
