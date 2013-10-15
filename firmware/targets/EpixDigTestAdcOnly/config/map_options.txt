@@ -1,0 +1,24 @@
+##-----------------------------------------------------------------------------
+## Title         : Xilinx map options file
+##-----------------------------------------------------------------------------
+
+-intstyle silent
+#-ol high
+#-xe n
+#-t 8
+#-register_duplication on
+#-logic_opt on
+#-detail
+
+
+#-global_opt off
+#-equivalent_register_removal on
+#-u
+#-cm Area
+#-ir off
+#-pr off
+#-lc off
+#-mt 2
+
+
+
