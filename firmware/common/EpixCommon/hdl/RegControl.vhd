@@ -341,7 +341,7 @@ begin
             pgpRegIn.regDataIn(7 downto 0) <= adcRdData                                  after tpd;
             adcSel                         <= pgpRegOut.regAddr(14 downto 13)            after tpd;
             adcWrReq                       <= pgpRegOut.regReq and pgpRegOut.regOp       after tpd;
-            adcRdReq                       <= pgpRegOut.regReq and (not pgpRegOut.regOp) after tpd;  --KN: changed from adcWrReq duplicate to adcRdReq
+            adcRdReq                       <= pgpRegOut.regReq and (not pgpRegOut.regOp) after tpd;
             pgpRegIn.regAck                <= adcAck                                     after tpd;
 
          -- SACI Space, 0x800000

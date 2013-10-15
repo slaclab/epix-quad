@@ -67,28 +67,29 @@ end AcqControl;
 architecture AcqControl of AcqControl is
 
    -- Local Signals
-   signal adcClk        : std_logic             := '0';
-   signal adcClkEdge    : std_logic             := '0';
-   signal asicClk       : std_logic             := '0';
-   signal curState      : slv(3 downto 0)       := "0000";
-   signal nxtState      : slv(3 downto 0)       := "0000";
-   signal adcCnt        : unsigned(31 downto 0) := (others => '0');
-   signal adcSampCnt    : unsigned(31 downto 0) := (others => '0');
-   signal adcSampCntEn  : sl := '0';
-   signal adcSampCntRst : sl := '0';
-   signal rstCnt        : unsigned(25 downto 0) := (others => '0');  --width 26 for reality, small for simulation
-   signal stateCnt      : unsigned(31 downto 0) := (others => '0');
-   signal stateCntEn    : sl := '0';
-   signal stateCntRst   : sl := '0';
-   signal pixelCnt      : unsigned(31 downto 0) := (others => '0');
-   signal pixelCntEn    : sl := '0';
-   signal pixelCntRst   : sl := '0';
-   signal iReadValid       : sl               := '0';
-   signal readValidDelayed : slv(127 downto 0) := (others => '0');
-   signal firstPixel    : sl := '0';
-   signal firstPixelSet : sl := '0';
-   signal firstPixelRst : sl := '0';
-   signal prePulseR0    : sl := '0';
+   signal adcClk             : std_logic             := '0';
+   signal adcClkEdge         : std_logic             := '0';
+   signal asicClk            : std_logic             := '0';
+   signal curState           : slv(3 downto 0)       := "0000";
+   signal nxtState           : slv(3 downto 0)       := "0000";
+   signal adcCnt             : unsigned(31 downto 0) := (others => '0');
+   signal adcSampCnt         : unsigned(31 downto 0) := (others => '0');
+   signal adcSampCntEn       : sl := '0';
+   signal adcSampCntRst      : sl := '0';
+   signal rstCnt             : unsigned(25 downto 0) := (others => '0');  --width 26 for reality, small for simulation
+   signal stateCnt           : unsigned(31 downto 0) := (others => '0');
+   signal stateCntEn         : sl := '0';
+   signal stateCntRst        : sl := '0';
+   signal pixelCnt           : unsigned(31 downto 0) := (others => '0');
+   signal pixelCntEn         : sl := '0';
+   signal pixelCntRst        : sl := '0';
+   signal iReadValid         : sl := '0';
+   signal iReadValidTestMode : sl := '0';
+   signal readValidDelayed   : slv(127 downto 0) := (others => '0');
+   signal firstPixel         : sl := '0';
+   signal firstPixelSet      : sl := '0';
+   signal firstPixelRst      : sl := '0';
+   signal prePulseR0         : sl := '0';
 
    -- Multiplexed ASIC outputs.  These versions are the
    -- automatic ones controlled by state machine.
@@ -114,7 +115,7 @@ architecture AcqControl of AcqControl is
    constant ST_WAIT_ADC    : slv(3 downto 0) := "1010";
    constant ST_NEXT_CELL   : slv(3 downto 0) := "1011";
    constant ST_DONE        : slv(3 downto 0) := "1100";
-   constant ST_TEST       : slv(3 downto 0) := "1011";
+   constant ST_TEST        : slv(3 downto 0) := "1101";
 
    -- Register delay for simulation
    constant tpd:time := 0.5 ns;
@@ -170,20 +171,21 @@ begin
    --Asynchronous state machine outputs
    process(curState,stateCnt,adcSampCnt,ePixConfig) begin
       --All signals default to '0'.  Assign '1' in specific applicable states.
-      iAsicClk       <= '0' after tpd;
-      iAsicR0        <= '1' after tpd;
-      iAsicPpmat     <= '0' after tpd;
-      iAsicAcq       <= '0' after tpd;
+      iAsicClk           <= '0' after tpd;
+      iAsicR0            <= '1' after tpd;
+      iAsicPpmat         <= '0' after tpd;
+      iAsicAcq           <= '0' after tpd;
 --      saciReadoutReq <= '0' after tpd;
-      stateCntEn     <= '0' after tpd;
-      stateCntRst    <= '0' after tpd;
-      adcSampCntRst  <= '0' after tpd;
-      adcSampCntEn   <= '0' after tpd;
-      pixelCntEn     <= '0' after tpd;
-      pixelCntRst    <= '1' after tpd;
-      readDone       <= '0' after tpd;
-      firstPixelRst  <= '0' after tpd;
-      firstPixelSet  <= '0' after tpd;
+      stateCntEn         <= '0' after tpd;
+      stateCntRst        <= '0' after tpd;
+      adcSampCntRst      <= '0' after tpd;
+      adcSampCntEn       <= '0' after tpd;
+      pixelCntEn         <= '0' after tpd;
+      pixelCntRst        <= '1' after tpd;
+      readDone           <= '0' after tpd;
+      firstPixelRst      <= '0' after tpd;
+      firstPixelSet      <= '0' after tpd;
+      iReadValidTestMode <= '0' after tpd;
       case curState is
          --Idle state, all signals zeroed out, counters reset
          when ST_IDLE =>
@@ -282,10 +284,10 @@ begin
          --Clock once to the next cell
          when ST_TEST =>
             if stateCnt < unsigned(ePixConfig.totalPixelsToRead) then
-               stateCntEn      <= '1' after tpd;
-					iReadValid      <= '1' after tpd;
+               stateCntEn         <= '1' after tpd;
+					iReadValidTestMode <= '1' after tpd;
             else 
-               stateCntRst     <= '1' after tpd;
+               stateCntRst        <= '1' after tpd;
             end if;
          --Send the done signal
          when ST_DONE =>
@@ -518,7 +520,7 @@ begin
                for i in 1 to 127 loop
                   readValidDelayed(i) <= readValidDelayed(i-1) after tpd; 
                end loop;
-               readValidDelayed(0) <= iReadValid after tpd;
+               readValidDelayed(0) <= iReadValid or iReadValidTestMode after tpd;
             end if;
          end if;
       end if;
