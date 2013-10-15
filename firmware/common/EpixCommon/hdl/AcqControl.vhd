@@ -388,7 +388,6 @@ begin
          --Wait for 8+N valid ADC readouts.  If we're done with all pixels, finish.
          when ST_WAIT_ADC => 
             if stateCnt >= unsigned(ePixConfig.asicRoClkHalfT) then
---            if stateCnt >= unsigned(ePixConfig.asicRoClkHalfT) and adcSampCnt > cAdcPipelineDly + unsigned(ePixConfig.adcReadsPerPixel) then
                if pixelCnt < unsigned(ePixConfig.totalPixelsToRead)-1 then
                   nxtState <= ST_NEXT_CELL after tpd;
                else
