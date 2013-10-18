@@ -115,7 +115,6 @@ begin
             case (state) is
                ----------------------------------------------------------------------
                when IDLE_S =>
-                  ack <= '0';
                   if uAnd(req) = '1' then
                      frameTxIn.frameTxEnable <= '1';
                      frameTxIn.frameTxSOF    <= '1';
@@ -144,12 +143,13 @@ begin
                      chPntr <= chPntr + 1;
                      if chPntr = 7 then
                         chPntr <= 0;
-                        ack    <= '1';  --high for 2 cycles
+                        ack    <= '1';  --high for min. 2 cycles
                         state  <= STOP_S;
                      end if;
                   end if;
                   ----------------------------------------------------------------------
                when STOP_S =>
+                  ack                     <= '0';
                   frameTxIn.frameTxEnable <= '1';
                   frameTxIn.frameTxEOF    <= '1';
                   frameTxIn.frameTxData   <= x"BEEFCAFE";  --stop header             

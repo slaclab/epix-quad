@@ -48,6 +48,7 @@ architecture rtl of BurstBuffer is
    type StateType is (
       IDLE_S,
       COLLECT_S,
+      REQ_S,
       ACK_S);
    signal state : StateType := IDLE_S;
 
@@ -101,15 +102,20 @@ begin
                      if cnt = MAX_ADDR_C then
                         cnt   <= (others => '0');
                         req   <= '1';
-                        state <= ACK_S;
+                        state <= REQ_S;
                      end if;
                   end if;
                   ----------------------------------------------------------------------
-               when ACK_S =>
+               when REQ_S =>
                   if ack = '1' then
                      req   <= '0';
-                     state <= IDLE_S;
+                     state <= ACK_S;
                   end if;
+                  ----------------------------------------------------------------------
+               when ACK_S =>
+                  if ack = '0' then
+                     state <= IDLE_S;
+                  end if;                  
                   ----------------------------------------------------------------------
             end case;
          end if;
