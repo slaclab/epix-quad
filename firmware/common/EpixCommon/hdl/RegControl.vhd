@@ -94,6 +94,10 @@ architecture RegControl of RegControl is
    signal saciRegOut  : SaciMasterOutType;
    signal saciSelIn   : SaciMasterInType;
    signal saciSelOut  : SaciMasterOutType;
+   signal saciTimeout       : std_logic := '0';
+   signal saciTimeoutCnt    : unsigned (7 downto 0) := (others => '0');
+   signal saciTimeoutCntEn  : std_logic := '0';
+   signal saciTimeoutCntRst : std_logic := '0';
    signal intSelL     : std_logic_vector(3 downto 0);
    signal intRsp      : std_logic;
    signal saciCnt     : std_logic_vector(7 downto 0);
@@ -122,6 +126,7 @@ architecture RegControl of RegControl is
    signal memWriteReq : std_logic;
    signal memDataValidEdge : sl;
    signal sacibit : std_logic;
+   signal saciClkEdge : std_logic;
    -- States
    signal   curState   : std_logic_vector(3 downto 0);
    signal   nxtState   : std_logic_vector(3 downto 0);
@@ -346,7 +351,7 @@ begin
 
          -- SACI Space, 0x800000
          elsif pgpRegOut.regAddr(23) = '1' then
-            saciRegin.req      <= pgpRegOut.regReq  after tpd;
+            saciRegIn.req      <= pgpRegOut.regReq  after tpd;
             pgpRegIn.regDataIn <= saciRegOut.rdData after tpd;
             pgpRegIn.regAck    <= saciRegOut.ack    after tpd;
             pgpRegIn.regFail   <= saciRegOut.fail   after tpd;
@@ -372,7 +377,11 @@ begin
       if ( sysClkRst = '1' ) then
          curState <= ST_IDLE after tpd;
       elsif rising_edge(sysClk) then
-         curState <= nxtState after tpd;
+         if saciTimeout = '1' then
+            curState <= ST_DONE after tpd;
+         else 
+            curState <= nxtState after tpd;
+         end if;
       end if;  
    end process;
 
@@ -388,11 +397,15 @@ begin
       saciSelIn.addr    <= x"000";
       saciSelIn.wrData  <= x"00000000";
       saciReadoutAck    <= '0';
+      saciTimeoutCntEn  <= '1';
+      saciTimeoutCntRst <= '0';
       nxtState          <= curState;
 
       case curState is 
 
          when ST_IDLE =>
+            saciTimeoutCntEn  <= '0';
+            saciTimeoutCntRst <= '1';
             if saciRegIn.req = '1' then
                nxtState <= ST_REG;
             elsif saciReadoutReq = '1' then
@@ -412,53 +425,56 @@ begin
             saciSelIn.req    <= '1';
             saciSelIn.chip   <= "00";
 
-            -- Transaction acked
-            if saciSelOut.ack = '1' then
---               nxtState <= ST_PAUSE_0;
-               nxtState <= ST_DONE;
+            -- Transaction acked or failed
+            if saciSelOut.ack = '1' or saciSelOut.fail = '1' then
+               nxtState <= ST_PAUSE_0;
             end if;
 
          when ST_PAUSE_0 =>
             saciSelIn.req <= '0';
+            saciTimeoutCntRst <= '1';
             nxtState      <= ST_CMD_1;
 
          when ST_CMD_1 =>
             saciSelIn.req    <= '1';
             saciSelIn.chip   <= "01";
 
-            -- Transaction acked
-            if saciSelOut.ack = '1' then
+            -- Transaction acked or failed
+            if saciSelOut.ack = '1' or saciSelOut.fail = '1' then
                nxtState <= ST_PAUSE_1;
             end if;
 
          when ST_PAUSE_1 =>
             saciSelIn.req <= '0';
+            saciTimeoutCntRst <= '1';
             nxtState      <= ST_CMD_2;
 
          when ST_CMD_2 =>
             saciSelIn.req    <= '1';
             saciSelIn.chip   <= "10";
 
-            -- Transaction acked
-            if saciSelOut.ack = '1' then
+            -- Transaction acked or failed
+            if saciSelOut.ack = '1' or saciSelOut.fail = '1' then
                nxtState <= ST_PAUSE_2;
             end if;
 
          when ST_PAUSE_2 =>
             saciSelIn.req <= '0';
             nxtState      <= ST_CMD_3;
+            saciTimeoutCntRst <= '1';
 
          when ST_CMD_3 =>
             saciSelIn.req    <= '1';
             saciSelIn.chip   <= "11";
 
-            -- Transaction acked
-            if saciSelOut.ack = '1' then
+            -- Transaction acked or failed
+            if saciSelOut.ack = '1' or saciSelOut.fail = '1' then
                nxtState <= ST_DONE;
             end if;
 
          when ST_DONE =>
             saciReadoutAck <= '1';
+            saciTimeoutCntRst <= '1';
             if saciReadoutReq = '0' then
                nxtState <= ST_IDLE;
             end if;
@@ -466,6 +482,28 @@ begin
          when others =>
       end case;
    end process;
+
+   --Timeout logic for SACI
+   saciTimeout <= saciTimeoutCnt(7);
+   process( sysClk, sysClkRst, saciTimeoutCntRst ) begin
+      if ( sysClkRst = '1' or saciTimeoutCntRst = '1' ) then
+         saciTimeoutCnt <= (others => '0');
+      else
+         if rising_edge(sysClk) then
+            if saciTimeoutCntEn = '1' and saciClkEdge = '1' then
+               saciTimeoutCnt <= saciTimeoutCnt + 1;
+            end if;
+         end if;
+      end if;
+   end process;
+   --Edge detect for SACI clk
+   U_DataSaciClkEdge : entity work.SynchronizerEdge
+      port map (
+         clk        => sysClk,
+         rst        => sysClkRst,
+         dataIn     => sacibit,
+         risingEdge => saciClkEdge
+      );
 
    -----------------------------------------------
    -- SACI Controller

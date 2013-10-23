@@ -121,10 +121,12 @@ architecture EpixCore of EpixCore is
    signal pgpRegIn         : RegSlaveInType;
    signal epixConfig       : EpixConfigType;
    signal acqCount         : std_logic_vector(31 downto 0);
+   signal seqCount         : std_logic_vector(31 downto 0);
    signal frameTxIn        : UsBuff32InType;
    signal frameTxOut       : UsBuff32OutType;
    signal pgpCmd           : CmdSlaveOutType;
    signal acqStart         : std_logic;
+   signal acqBusy          : std_logic;
    signal dataSend         : std_logic;
    signal readStart        : std_logic;
    signal readValid        : std_logic;
@@ -160,12 +162,11 @@ begin
          sysClk         => sysClk,
          sysClkRst      => sysClkRst,
          runTrigger     => runTrigger,
-         --daqTrigger     => daqTrigger,
-         --runTrigger     => '0',
-         daqTrigger     => '0',
+         daqTrigger     => daqTrigger,
          pgpCmd         => pgpCmd,
          epixConfig     => epixConfig,
          acqCount       => acqCount,
+         seqCount       => seqCount,
          acqStart       => acqStart,
          dataSend       => dataSend,
          triggerOut     => triggerOut
@@ -179,9 +180,10 @@ begin
          epixConfig     => epixConfig,
          epixDigPower   => iPowerEnable(0),
          acqStart       => acqStart,
+         acqBusy        => acqBusy,
+         readDone       => readDone,
          readStart      => readStart,
          readValid      => readValid,
-         readDone       => readDone,
          saciReadoutReq => saciReadoutReq,
          saciReadoutAck => saciReadoutAck,
          adcClkP        => adcClkP,
@@ -216,9 +218,12 @@ begin
          sysClk         => sysClk,
          sysClkRst      => sysClkRst,
          epixConfig     => epixConfig,
+         acqCount       => acqCount,
+         seqCount       => seqCount,
          readStart      => readStart,
          readValid      => readValid,
          readDone       => readDone,
+         acqBusy        => acqBusy,
          dataSend       => dataSend,
          adcValid       => adcValid,
          adcData        => adcData,

@@ -42,6 +42,7 @@ entity TrigControl is
 
       -- Outputs
       acqCount      : out std_logic_vector(31 downto 0);
+      seqCount      : out std_logic_vector(31 downto 0);
       acqStart      : out std_logic;
       dataSend      : out std_logic;
       triggerOut    : out std_logic
@@ -199,6 +200,7 @@ begin
    acqStart   <= runTriggerOut or swRun;
    dataSend   <= daqTriggerOut or swRead;
    acqCount   <= intCount;
+   seqCount   <= daqTriggerCnt;
    triggerOut <= '0';
 
    process ( sysClk, sysClkRst ) begin
