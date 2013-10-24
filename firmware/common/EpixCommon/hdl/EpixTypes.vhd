@@ -31,6 +31,9 @@ package EpixTypes is
    subtype WORD6 is STD_LOGIC_VECTOR (5 downto 0);
    type word6_array is array ( NATURAL range <> ) of WORD6;
 
+   --Maximum oversampling rate supported
+   constant MAX_OVERSAMPLE : integer := 2;
+
    --------------------------------------------
    -- Configuration Type
    --------------------------------------------

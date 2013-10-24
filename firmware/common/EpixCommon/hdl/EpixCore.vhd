@@ -128,8 +128,8 @@ architecture EpixCore of EpixCore is
    signal acqStart         : std_logic;
    signal acqBusy          : std_logic;
    signal dataSend         : std_logic;
-   signal readStart        : std_logic;
-   signal readValid        : std_logic;
+   signal readTps          : std_logic;
+   signal readValid        : std_logic_vector(MAX_OVERSAMPLE-1 downto 0);
    signal readDone         : std_logic;
    signal adcValid         : std_logic_vector(19 downto 0);
    signal adcData          : word16_array(19 downto 0);
@@ -182,8 +182,8 @@ begin
          acqStart       => acqStart,
          acqBusy        => acqBusy,
          readDone       => readDone,
-         readStart      => readStart,
          readValid      => readValid,
+         readTps        => readTps,
          saciReadoutReq => saciReadoutReq,
          saciReadoutAck => saciReadoutAck,
          adcClkP        => adcClkP,
@@ -220,11 +220,12 @@ begin
          epixConfig     => epixConfig,
          acqCount       => acqCount,
          seqCount       => seqCount,
-         readStart      => readStart,
+         acqStart       => acqStart,
          readValid      => readValid,
          readDone       => readDone,
          acqBusy        => acqBusy,
          dataSend       => dataSend,
+         readTps        => readTps,
          adcValid       => adcValid,
          adcData        => adcData,
          slowAdcData    => slowAdcData,

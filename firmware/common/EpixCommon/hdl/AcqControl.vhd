@@ -36,8 +36,8 @@ entity AcqControl is
       acqStart            : in    std_logic;
       acqBusy             : out   std_logic;
       readDone            : in    std_logic;
-      readStart           : out   std_logic;
-      readValid           : out   std_logic;
+      readValid           : out   std_logic_vector(MAX_OVERSAMPLE-1 downto 0);
+      readTps             : out   std_logic;
 
       -- Configuration
       epixConfig          : in    EpixConfigType;
@@ -75,16 +75,16 @@ architecture AcqControl of AcqControl is
    signal adcSampCnt         : unsigned(31 downto 0) := (others => '0');
    signal adcSampCntEn       : sl := '0';
    signal adcSampCntRst      : sl := '0';
-   signal rstCnt             : unsigned(25 downto 0) := (others => '0');  --width 26 for reality, small for simulation
+   signal rstCnt             : unsigned(25 downto 0) := (others => '0');
    signal stateCnt           : unsigned(31 downto 0) := (others => '0');
    signal stateCntEn         : sl := '0';
    signal stateCntRst        : sl := '0';
    signal pixelCnt           : unsigned(31 downto 0) := (others => '0');
    signal pixelCntEn         : sl := '0';
    signal pixelCntRst        : sl := '0';
-   signal iReadValid         : sl := '0';
+   signal iReadValid         : slv(MAX_OVERSAMPLE-1 downto 0) := (others => '0');
    signal iReadValidTestMode : sl := '0';
-   signal readValidDelayed   : slv(127 downto 0) := (others => '0');
+   signal readValidDelayed   : Slv128Array(MAX_OVERSAMPLE-1 downto 0);
    signal firstPixel         : sl := '0';
    signal firstPixelSet      : sl := '0';
    signal firstPixelRst      : sl := '0';
@@ -135,9 +135,6 @@ begin
    U_AsicClk2 : OBUFDS port map ( I => asicClk, O => asicRoClkP(2), OB => asicRoClkM(2) );
    U_AsicClk3 : OBUFDS port map ( I => asicClk, O => asicRoClkP(3), OB => asicRoClkM(3) );
 
-
-  readStart <= acqStart; 
-
    --MUXes for manual control of ASIC signals
    asicGlblRst <= iAsicGlblRst           when ePixConfig.manualPinControl(0) = '0' else
                   ePixConfig.asicPins(0) when ePixConfig.manualPinControl(0) = '1' else
@@ -185,6 +182,7 @@ begin
       firstPixelRst      <= '0' after tpd;
       firstPixelSet      <= '0' after tpd;
       iReadValidTestMode <= '0' after tpd;
+      readTps            <= '0' after tpd;
       case curState is
          --Idle state, all signals zeroed out, counters reset
          when IDLE_S =>
@@ -248,8 +246,10 @@ begin
             iAsicPpmat      <= '1' after tpd;
             stateCntEn      <= '1' after tpd;
          --Ensure that the minimum hold off time has been enforced before dropping PPmat
+         --Send the signal to read the test point system here (last item before power down)
          when WAIT_PPMAT_S =>
             iAsicPpmat <= '1' after tpd;
+            readTps    <= '1' after tpd;
             if stateCnt < unsigned(ePixConfig.asicAcqLToPPmatL) then
                stateCntEn   <= '1' after tpd;
             else
@@ -260,7 +260,7 @@ begin
          --Wait for the ADC to readout the desired number of samples
          --(or a minimum of the ASIC clock half period)
          when WAIT_ADC_S =>
-            pixelCntRst  <= '0' after tpd;
+            pixelCntRst   <= '0' after tpd;
             adcSampCntEn  <= '1' after tpd;
             firstPixelSet <= '1' after tpd;
             if stateCnt < unsigned(ePixConfig.asicRoClkHalfT) then
@@ -457,10 +457,9 @@ begin
    end process;
    --Give a flag saying whether the samples are valid to read
    process(adcSampCnt,epixConfig,firstPixel) begin
+      iReadValid <= (others => '0');
       if adcSampCnt < unsigned(ePixConfig.adcReadsPerPixel)+1 and adcSampCnt > 0 and firstPixel = '0' then
-         iReadValid <= '1' after tpd;
-      else
-         iReadValid <= '0' after tpd;
+         iReadValid(conv_integer(adcSampCnt)-1) <= '1' after tpd;
       end if;
    end process;
 
@@ -514,18 +513,32 @@ begin
       if rising_edge(sysClk) then
          if (adcClkEdge = '1') then
             if sysClkRst = '1' then
-               readValidDelayed <= (others => '0') after tpd;
-            else
-               for i in 1 to 127 loop
-                  readValidDelayed(i) <= readValidDelayed(i-1) after tpd; 
+               for n in 0 to MAX_OVERSAMPLE-1 loop
+                  readValidDelayed(n) <= (others => '0') after tpd;
                end loop;
-               readValidDelayed(0) <= iReadValid or iReadValidTestMode after tpd;
+            else
+               --Shift register to allow picking off delayed samples
+               for n in 0 to MAX_OVERSAMPLE-1 loop
+                  for i in 1 to 127 loop
+                     readValidDelayed(n)(i) <= readValidDelayed(n)(i-1) after tpd; 
+                  end loop;
+               end loop;
+               --Assignment of shifted-in bits
+               --Test mode can only use the first oversampling shift register
+               readValidDelayed(0)(0) <= iReadValid(0) or iReadValidTestMode after tpd;
+               --The other shift registers can make use of the oversampling arrays
+               for n in 1 to MAX_OVERSAMPLE-1 loop
+                  --For normal mode, allow multiple samples
+                  readValidDelayed(n)(0) <= iReadValid(n) after tpd;
+               end loop;
             end if;
          end if;
       end if;
    end process; 
    --Wire up the delayed output
-   readValid <= readValidDelayed( conv_integer(epixConfig.pipelineDelay(6 downto 0)) );
+   G_ReadValidOut : for i in 0 to MAX_OVERSAMPLE-1 generate
+      readValid(i) <= readValidDelayed(i)( conv_integer(epixConfig.pipelineDelay(6 downto 0)) );
+   end generate;
 
    -- Edge detection for signals that interface with other blocks
    U_DataSendEdge : entity work.SynchronizerEdge
