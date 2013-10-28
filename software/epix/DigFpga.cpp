@@ -491,7 +491,7 @@ void DigFpga::writeConfig ( bool force ) {
    getRegister("DaqTrigEnable")->set(getVariable("DaqTrigEnable")->getInt(),0,0x1);
    writeRegister(getRegister("DaqTrigEnable"),force);
 
-   getRegister("DaqTrigEnable")->set(getVariable("DaqTrigDelay")->getInt());
+   getRegister("DaqTrigDelay")->set(getVariable("DaqTrigDelay")->getInt());
    writeRegister(getRegister("DaqTrigDelay"),force);
 
    getRegister("DacSetting")->set(getVariable("DacSetting")->getInt(),0,0xFFFF);
