@@ -33,11 +33,16 @@ entity ReadoutControl is
       sysClkRst   : in  sl;
       -- Configuration
       epixConfig  : in  EpixConfigType;
+      -- Data for headers
+      acqCount    : in  slv(31 downto 0);
+      seqCount    : in  slv(31 downto 0);
       -- Run control
-      readStart   : in  sl;
-      readValid   : in  sl;
-      readDone    : in  sl;
+      acqStart    : in  sl;
+      readValid   : in  slv(MAX_OVERSAMPLE-1 downto 0);
+      readDone    : out sl;
+      acqBusy     : in  sl;
       dataSend    : in  sl;
+      readTps     : in  sl;
       -- ADC Data
       adcValid    : in  slv(19 downto 0);
       adcData     : in  word16_array(19 downto 0);
@@ -105,6 +110,7 @@ begin
          frameTxIn.frameTxSOF    <= '0';
          frameTxIn.frameTxEOF    <= '0';
          frameTxIn.frameTxEOFE   <= '0';
+         readDone                <= '0';
          if sysClkRst = '1' then
             chPntr    <= 0;
             raddr     <= (others => '0');
@@ -152,7 +158,8 @@ begin
                   ack                     <= '0';
                   frameTxIn.frameTxEnable <= '1';
                   frameTxIn.frameTxEOF    <= '1';
-                  frameTxIn.frameTxData   <= x"BEEFCAFE";  --stop header             
+                  frameTxIn.frameTxData   <= x"BEEFCAFE";     --stop header 
+                  readDone                <= '1';
                   state                   <= IDLE_S;
                   ----------------------------------------------------------------------
             end case;

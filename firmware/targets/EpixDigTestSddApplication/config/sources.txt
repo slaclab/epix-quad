@@ -53,5 +53,5 @@ vhdl    work "_PROJ_DIR_/Version.vhd"
 # Local Files
 vhdl    work "_PROJ_DIR_/hdl/BurstBuffer.vhd"
 vhdl    work "_PROJ_DIR_/hdl/ReadoutControl.vhd"
-vhdl    work "_PROJ_DIR_/hdl/EpixDigTestAdcOnly.vhd"
+vhdl    work "_PROJ_DIR_/hdl/EpixDigTestSddApplication.vhd"
 

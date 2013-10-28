@@ -2,7 +2,7 @@
 -- Title         : EPIX Digital Test Top Level Block
 -- Project       : EPXI Readout
 -------------------------------------------------------------------------------
--- File          : EpixDigTestAdcOnly.vhd
+-- File          : EpixDigTestSddApplication.vhd
 -- Author        : Ryan Herbst, rherbst@slac.stanford.edu
 -- Created       : 06/03/2013
 -------------------------------------------------------------------------------
@@ -23,7 +23,7 @@ use ieee.std_logic_unsigned.all;
 library UNISIM;
 use UNISIM.vcomponents.all;
 
-entity EpixDigTestAdcOnly is
+entity EpixDigTestSddApplication is
    port ( 
 
       -- Temporary spares
@@ -173,11 +173,11 @@ entity EpixDigTestAdcOnly is
       asic3RoClkM         : out   std_logic
    );
 
-end EpixDigTestAdcOnly;
+end EpixDigTestSddApplication;
 
 
 -- Define architecture
-architecture EpixDigTestAdcOnly of EpixDigTestAdcOnly is
+architecture mapping of EpixDigTestSddApplication is
 
    -- Local Signals
    signal serialIdOut         : std_logic_vector(1 downto 0);
@@ -384,5 +384,5 @@ begin
    asic3RoClkP         <= asicRoClkP(3);
    asic3RoClkM         <= asicRoClkM(3);
 
-end EpixDigTestAdcOnly;
+end mapping;
 
