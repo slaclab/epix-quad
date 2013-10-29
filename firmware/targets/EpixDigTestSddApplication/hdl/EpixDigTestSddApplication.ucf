@@ -1,11 +1,13 @@
 
 # Define system clocks
+NET U_EpixCore/U_PgpFrontEnd/userClk  TNM_NET = FFS userClk;
 NET U_EpixCore/sysClk                 TNM_NET = FFS sysClk;
 NET U_EpixCore/U_PgpFrontEnd/ipgpClk  TNM_NET = FFS pgpClk;
 
 # Define system clocks
-TIMESPEC TS_sysClk      = PERIOD sysClk   125 Mhz HIGH 50%;
-TIMESPEC TS_pgpClk      = PERIOD pgpClk   157 Mhz HIGH 50%;
+TIMESPEC TS_userClk     = PERIOD userClk  125 Mhz HIGH 50%;
+TIMESPEC TS_sysClk      = PERIOD sysClk   200 Mhz HIGH 50%;
+TIMESPEC TS_pgpClk      = PERIOD pgpClk   156.25 Mhz HIGH 50%;
 
 # Clocks and reset
 NET "sysRstL"            LOC = "U4"     | IOSTANDARD = "LVCMOS33";
