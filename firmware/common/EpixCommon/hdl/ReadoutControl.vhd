@@ -79,6 +79,7 @@ architecture ReadoutControl of ReadoutControl is
                   ARMED_S, 
                   HEADER_S,
                   READ_FIFO_S,
+                  READ_FIFO_TEST_S,
                   TPS_DATA_S,
                   FOOTER_S);
 
@@ -152,7 +153,9 @@ begin
    --------------------------------------------------
    -- Simple state machine to just send ADC values --
    --------------------------------------------------
-   process (curState,adcFifoRdData,chCnt,adcFifoRdValid,fillCnt,wordCnt,acqCount,seqCount,overSmplCnt,fifoOflowAny,ePixConfig) begin
+   process (curState,adcFifoRdData,chCnt,adcFifoRdValid,fillCnt,wordCnt,
+            acqCount,seqCount,overSmplCnt,fifoOflowAny,ePixConfig,
+            frameTxOut,tpsAdcData) begin
          --Defaults
          frameTxIn.frameTxEnable <= '0' after tpd;
          frameTxIn.frameTxSOF    <= '0' after tpd;
@@ -177,6 +180,7 @@ begin
          --State specific outputs
          case curState is
             when IDLE_S =>
+               readDone      <= '1' after tpd;
                wordCntRst    <= '1' after tpd;
                clearFifos    <= '1' after tpd;
                timeoutCntRst <= '1' after tpd;
@@ -200,9 +204,10 @@ begin
                   when 7 => frameTxIn.frameTxData <= cZeroWord after tpd;
                   when others  => frameTxIn.frameTxData <= cZeroWord after tpd;
                end case;
+            --Readout data 1 full row at a time, suitable for ASIC readout
             when READ_FIFO_S =>
                wordCntRst <= '1' after tpd;
-               --Normal mode
+               --Normal data
                frameTxIn.frameTxData <= adcFifoRdData(conv_integer(overSmplCnt),conv_integer(chCnt)) after tpd;
                --Counter data, useful for debugging
                --frameTxIn.frameTxData <= acqCount(15 downto 0) & 
@@ -223,6 +228,19 @@ begin
                      end if;
                   end if;
                end if;
+            --Readout data 1 full channel at a time, suitable for ADC waveforms
+            when READ_FIFO_TEST_S =>
+               wordCntRst <= '1' after tpd;
+               frameTxIn.frameTxData <= adcFifoRdData(conv_integer(overSmplCnt),conv_integer(chCnt)) after tpd;
+               --Test mode, ADCs read out sequentially
+               if (adcFifoRdValid(conv_integer(overSmplCnt))(conv_integer(chCnt)) = '1' and frameTxOut.frameTxAFull = '0' and acqBusy = '0') then
+                  frameTxIn.frameTxEnable                                     <= '1' after tpd;
+                  adcFifoRdEn(conv_integer(overSmplCnt))(conv_integer(chCnt)) <= '1' after tpd;
+                  fillCntEn                                                   <= '1' after tpd;
+               end if;
+               if adcFifoEmpty(0)(conv_integer(chCnt)) = '1' then
+                  chCntEn    <= '1' after tpd;
+               end if;
             when TPS_DATA_S  =>
                wordCntEn               <= '1' after tpd;
                frameTxIn.frameTxEnable <= '1' after tpd;
@@ -232,7 +250,7 @@ begin
                   when others  => frameTxIn.frameTxData <= cZeroWord after tpd;
                end case;
             when FOOTER_S    =>
-               readDone <= '1' after tpd;
+               readDone                <= '1' after tpd;
                frameTxIn.frameTxData   <= cZeroWord after tpd;
                frameTxIn.frameTxEnable <= '1' after tpd; 
                frameTxIn.frameTxEOF    <= '1' after tpd;
@@ -242,7 +260,9 @@ begin
          end case;
    end process;
    --Next state logic
-   process (curState,acqStartEdge,wordCnt,adcFifoRdRdy,fillCnt,chCnt,overSmplCnt,acqBusy,fifoEmptyAll) begin
+   process (curState,acqStartEdge,wordCnt,adcFifoRdRdy,fillCnt,chCnt,
+            overSmplCnt,acqBusy,fifoEmptyAll,dataSendEdge,timeoutCnt,
+            fifoOflowAny,epixConfig) begin
       --Default is to remain in current state
       nxtState <= curState after tpd;
       --State specific next-states
@@ -259,9 +279,19 @@ begin
             end if; 
          when HEADER_S =>
             if (wordCnt = 7) then
-               nxtState <= READ_FIFO_S after tpd;
+               if (epixConfig.manualPinControl(7) = '1') then
+                  nxtState <= READ_FIFO_TEST_S after tpd;
+               else
+                  nxtState <= READ_FIFO_S after tpd;
+               end if;
             end if;
          when READ_FIFO_S =>
+            if acqBusy = '0' and fifoEmptyAll = '1' then
+               nxtState <= TPS_DATA_S;
+            elsif fifoOflowAny = '1' then
+               nxtState <= FOOTER_S;
+            end if;
+         when READ_FIFO_TEST_S =>
             if acqBusy = '0' and fifoEmptyAll = '1' then
                nxtState <= TPS_DATA_S;
             elsif fifoOflowAny = '1' then
@@ -343,8 +373,8 @@ begin
    begin
       if rising_edge(sysClk) then
          for i in 0 to 3 loop
-            if readTps = '1' and adcValid(15+i) = '1' then
-               tpsAdcData(i) <= adcData(15+i);
+            if readTps = '1' and adcValid(16+i) = '1' then
+               tpsAdcData(i) <= adcData(16+i);
             end if;
          end loop;
       end if;

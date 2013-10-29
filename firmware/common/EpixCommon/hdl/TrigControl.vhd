@@ -60,7 +60,9 @@ architecture TrigControl of TrigControl is
    signal runTriggerOut   : std_logic;
    signal daqTriggerOut   : std_logic;
    signal countEnable     : std_logic;
+   signal seqCountEnable  : std_logic;
    signal intCount        : std_logic_vector(31 downto 0);
+   signal intSeqCount     : std_logic_vector(31 downto 0);
    signal swRun           : std_logic;
    signal swRead          : std_logic;
 
@@ -199,7 +201,7 @@ begin
    acqStart   <= runTriggerOut or swRun;
    dataSend   <= daqTriggerOut or swRead;
    acqCount   <= intCount;
-   seqCount   <= daqTriggerCnt;
+   seqCount   <= intSeqCount;
 
    process ( sysClk, sysClkRst ) begin
       if ( sysClkRst = '1' ) then
@@ -212,6 +214,19 @@ begin
             intCount <= (others=>'0') after tpd;
          elsif countEnable = '1' then
             intCount <= intCount + 1 after tpd;
+         end if;
+      end if;
+   end process;
+
+   -- DAQ Trigger counter
+   process ( sysClk, sysClkRst ) begin
+      if ( sysClkRst = '1' ) then
+         intSeqCount <= (others => '0');
+         seqCountEnable <= '0'           after tpd;
+      elsif rising_edge(sysClk) then
+         seqCountEnable <= daqTriggerOut or swRead after tpd;
+         if seqCountEnable = '1' then
+            intSeqCount <= intSeqCount + 1 after tpd;
          end if;
       end if;
    end process;

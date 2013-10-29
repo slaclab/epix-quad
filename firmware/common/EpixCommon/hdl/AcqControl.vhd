@@ -113,8 +113,10 @@ architecture AcqControl of AcqControl is
                   SYNC_TO_ADC_S,
                   WAIT_ADC_S,
                   NEXT_CELL_S,
+                  WAIT_FOR_READOUT_S,
                   SACI_RESET_S,
                   DONE_S,
+                  SYNC_TEST_S,
                   TEST_S);
    signal curState           : state := IDLE_S;
    signal nxtState           : state := IDLE_S;
@@ -280,22 +282,28 @@ begin
                adcSampCntRst   <= '1' after tpd;
                stateCntRst     <= '1' after tpd;
             end if;
-         --Clock once to the next cell
+         --Synchronize phase of ADC to get repeatable number of ADC valids 
+         when SYNC_TEST_S =>
+         --Test readout mode for running at full ADC rate
          when TEST_S =>
-            if stateCnt < unsigned(ePixConfig.totalPixelsToRead) then
-               stateCntEn         <= '1' after tpd;
+            if adcSampCnt <= unsigned(ePixConfig.adcReadsPerPixel) then
+               adcSampCntEn       <= '1' after tpd;
 					iReadValidTestMode <= '1' after tpd;
-            else 
-               stateCntRst        <= '1' after tpd;
+            else
+               acqBusy            <= '0' after tpd;
             end if;
+         --Wait for readout to finish before sending SACI
+         --"prepare for readout."  This way we avoid cross-talk
+         --with the ADC lines.
+         when WAIT_FOR_READOUT_S =>
+            acqBusy        <= '0' after tpd;
          --Send SACI prepare for readout for the next event
          when SACI_RESET_S =>
             saciReadoutReq <= '1' after tpd;
-         --Send the done signal
+            acqBusy        <= '0' after tpd;
+         --Done
          when DONE_S =>
-            acqBusy       <= '0' after tpd;
-            adcSampCntRst <= '1' after tpd;
-            stateCntRst   <= '1' after tpd;
+            acqBusy        <= '0' after tpd;
          --Undefined states: treat with default
          when others =>
       end case;
@@ -310,7 +318,7 @@ begin
                if ePixConfig.manualPinControl(7) = '0' then
                   nxtState <= WAIT_R0_S after tpd;
                else
-                  nxtState <= TEST_S after tpd;
+                  nxtState <= SYNC_TEST_S after tpd;
                end if;
             else
                nxtState <= curState after tpd;
@@ -384,7 +392,7 @@ begin
                if pixelCnt < unsigned(ePixConfig.totalPixelsToRead)-1 then
                   nxtState <= NEXT_CELL_S after tpd;
                else
-                  nxtState <= SACI_RESET_S after tpd;
+                  nxtState <= WAIT_FOR_READOUT_S after tpd;
                end if;
             else
                nxtState <= curState after tpd;
@@ -396,9 +404,24 @@ begin
             else 
                nxtState <= curState after tpd;
             end if;
+         --Synchronize to phase of ADC
+         when SYNC_TEST_S =>
+            if adcClkEdge = '1' then
+               nxtState <= TEST_S after tpd;
+            else
+               nxtState <= curState after tpd;
+            end if;
+         --Test mode that just dumps out ADC data every sample
          when TEST_S =>
-            if stateCnt = unsigned(ePixConfig.totalPixelsToRead) then
+            if adcSampCnt > unsigned(ePixConfig.adcReadsPerPixel) and readDone = '1' then
                nxtState <= DONE_S after tpd;
+            else
+               nxtState <= curState after tpd;
+            end if;
+         --Wait for readout to finish before sending SACI commands
+         when WAIT_FOR_READOUT_S =>
+            if readDone = '1' then
+               nxtState <= SACI_RESET_S;
             else
                nxtState <= curState after tpd;
             end if;
@@ -409,13 +432,9 @@ begin
             else
                nxtState <= curState after tpd;
             end if;
-         --Send the done signal
+         --Wait for readout to be done
          when DONE_S =>
-            if readDone = '1' then
-               nxtState <= IDLE_S after tpd;
-            else
-               nxtState <= curState after tpd;
-            end if;
+            nxtState <= IDLE_S after tpd;
          --Send back to IDLE if we end up in an undefined state
          when others =>
             nxtState <= IDLE_S after tpd;

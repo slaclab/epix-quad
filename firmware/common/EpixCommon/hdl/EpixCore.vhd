@@ -138,6 +138,8 @@ architecture EpixCore of EpixCore is
    signal saciReadoutAck   : std_logic;
    signal iPowerEnable     : std_logic_vector(1 downto 0);
    signal iAsicAcq         : std_logic;
+   signal iRunTrigger      : std_logic;
+   signal iDaqTrigger      : std_logic;
 
    --Local signals being kept for chipscope probing
    attribute keep          : string;
@@ -160,14 +162,17 @@ begin
    asicAcq     <= iAsicAcq;
    -- Trigger out is tied to the integration window
    -- for the ASIC for ease of timing alignment.
-   triggerOut  <= iAsicAcq;
+   triggerOut  <= not(iAsicAcq);
+   -- Input triggers have inverters on analog card
+   iRunTrigger <= not(runTrigger);
+   iDaqTrigger <= not(daqTrigger);
    -- Trigger control
    U_TrigControl : entity work.TrigControl 
       port map ( 
          sysClk         => sysClk,
          sysClkRst      => sysClkRst,
-         runTrigger     => runTrigger,
-         daqTrigger     => daqTrigger,
+         runTrigger     => iRunTrigger,
+         daqTrigger     => iDaqTrigger,
          pgpCmd         => pgpCmd,
          epixConfig     => epixConfig,
          acqCount       => acqCount,
