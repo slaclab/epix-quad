@@ -9,6 +9,7 @@
 #include "TAxis.h"
 #include "TFrame.h"
 #include "TGraph.h"
+#include "TStyle.h"
 
 #include "XmlVariables.h"
 #include "DataRead.h"
@@ -35,7 +36,7 @@ using namespace std;
 
 /************************** Function Prototypes ******************************/
 void EventLoop(DataRead);
-void ReadDataFrame(uint *rawData, uint size);
+void ReadDataFrame(TCanvas *C, uint *rawData, uint size);
 double ConvToVoltage(uint16_t value);
 double ConvToDegC(double value);
 
@@ -53,7 +54,27 @@ int main(int argc, char **argv) {
 }
 
 void EventLoop(DataRead dataRead) {
-   Data event;
+   //modification of ROOT default style
+   gStyle->SetFrameBorderSize(5);
+   
+   gStyle->SetLabelSize(0.1,"x");
+   gStyle->SetLabelSize(0.1,"y");
+   
+   gStyle->SetTitleSize(0.09,"xyz");   
+   
+   gStyle->SetTitleOffset(1.1,"x");
+   gStyle->SetTitleOffset(0.6,"y");
+   
+   gStyle->SetPadBottomMargin(0.2); 
+   gStyle->SetTitleFontSize(0.09); 
+   
+   
+   
+      
+   Data event;   
+   TCanvas *C     = new TCanvas("C","SDD Waveform Viewer",1750,1000);
+   C->Divide(2,5);
+   C->SetFillColor(kBlack);
    
    while (1) {
       if (!dataRead.next(&event)) {
@@ -62,13 +83,12 @@ void EventLoop(DataRead dataRead) {
       else {
          uint *eventBuffer = event.data();
          uint size = event.size();   
-         ReadDataFrame(eventBuffer,size);
+         ReadDataFrame(C,eventBuffer,size);
       } 
    }   
 }
 
-void ReadDataFrame(uint *rawData, uint size) {
-   static TCanvas C;
+void ReadDataFrame(TCanvas *C, uint *rawData, uint size) {
    TGraph *gr[10];   
    
    uint i,j;
@@ -76,7 +96,8 @@ void ReadDataFrame(uint *rawData, uint size) {
    double sdd_V[8][BURST_SIZE_C];
    double time[BURST_SIZE_C];
    double temp_sample[8];
-  
+   char title[100];
+   
    //check the headers and frame size
    if ((rawData[0] == START_HDR_C)
       && (rawData[size-1] = STOP_HDR_C)
@@ -85,7 +106,7 @@ void ReadDataFrame(uint *rawData, uint size) {
       //get the temperature data
       for(i=0;i<8;i++){       
          temp_sample[i] = (double)i;
-         temp_V[i] = ConvToVoltage((uint16_t)((rawData[i+1] >> 16)&0xFFFF));
+         temp_V[i] = ConvToVoltage((uint16_t)((rawData[i+1] >> 0)&0xFFFF));
          temp_C[i] = ConvToDegC(temp_V[i]);
       }
       
@@ -95,53 +116,61 @@ void ReadDataFrame(uint *rawData, uint size) {
             if(i==0){
                time[j] = 1e+6*((double(j))/SPS_RATE_C);//us
             }
-            sdd_V[i][j] = ConvToVoltage((uint16_t)((rawData[(i*BURST_SIZE_C)+j+9] >> 16)&0xFFFF));
+            sdd_V[i][j] = ConvToVoltage((uint16_t)((rawData[(i*BURST_SIZE_C)+j+9] >> 0)&0xFFFF));
          }
       }
       
       //Graph data
       for(i=0;i<8;i++){ 
-         *gr[i] = TGraph(BURST_SIZE_C,time,sdd_V[i]);
+         gr[i] = new TGraph(BURST_SIZE_C,time,sdd_V[i]);
       }
-      *gr[8] = TGraph(8,temp_sample,temp_V);
-      *gr[9] = TGraph(8,temp_sample,temp_C);
+      gr[8] = new TGraph(8,temp_sample,temp_V);
+      gr[9] = new TGraph(8,temp_sample,temp_C);
       
       //plot the data
       for(i=0;i<8;i++){ 
-         C.cd(i);
+         C->cd(i+1);
+         sprintf(title,"SDD[%d]",(int)i);
+         gr[i]->SetTitle(title);
          gr[i]->GetXaxis()->SetTitle("Time (us)");
          gr[i]->GetXaxis()->CenterTitle();
-         gr[i]->GetXaxis()->SetTitleOffset(1.2);
         
          gr[i]->GetYaxis()->SetTitle("Voltage (V)");
          gr[i]->GetYaxis()->CenterTitle();               
          
-         gr[i]->Draw("AL*");      
+         gr[i]->Draw("AL");      
       }
       
-      C.cd(8);
+      sprintf(title,"SDD Temperatures");
+      
+      C->cd(8+1);
+      gr[8]->SetTitle(title);
       gr[8]->GetXaxis()->SetTitle("Channel Number");
       gr[8]->GetXaxis()->CenterTitle();
-      gr[8]->GetXaxis()->SetTitleOffset(1.2);
      
       gr[8]->GetYaxis()->SetTitle("Voltage (V)");
       gr[8]->GetYaxis()->CenterTitle();               
       
       gr[8]->Draw("AL*");  
 
-      C.cd(9);
+      C->cd(9+1);
+      gr[9]->SetTitle(title);
+      gr[9]->SetTitle(title);
       gr[9]->GetXaxis()->SetTitle("Channel Number");
       gr[9]->GetXaxis()->CenterTitle();
-      gr[9]->GetXaxis()->SetTitleOffset(1.2);
      
       gr[9]->GetYaxis()->SetTitle("Temperature (degC)");
       gr[9]->GetYaxis()->CenterTitle();               
       
       gr[9]->Draw("AL*");        
       
-      C.Update();
-      gSystem->ProcessEvents();      
-   }      
+      C->Update();
+      gSystem->ProcessEvents();   
+
+      for(i=0;i<10;i++){ 
+         delete gr[i];
+      }
+   }       
 }
 
 //convert from ADC counts to voltage
