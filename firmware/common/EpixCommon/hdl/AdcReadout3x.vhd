@@ -31,6 +31,8 @@ entity AdcReadout3x is
       sysClk        : in  std_logic;
       sysClkRst     : in  std_logic;
 
+      epixConfig    : in  EpixConfigType;
+
       -- ADC Data Interface
       adcValid      : out std_logic_vector(19 downto 0);
       adcData       : out word16_array(19 downto 0);
@@ -50,6 +52,10 @@ end AdcReadout3x;
 -- Define architecture
 architecture AdcReadout3x of AdcReadout3x is
 
+   signal iClkFb     : std_logic;
+   signal iClkFbBufG : std_logic;
+   signal iClk200MHz : std_logic;
+
 begin
 
    -- ADC
@@ -58,12 +64,12 @@ begin
       U_AdcReadout: entity work.AdcReadout 
          generic map (
             NUM_CHANNELS_G => 8,
-            EN_DELAY       => 0
+            EN_DELAY       => 1
          ) port map ( 
             sysClk        => sysClk,
             sysClkRst     => sysClkRst,
-            inputDelay    => (others=>'0'),
-            inputDelaySet => '0',
+            inputDelay    => epixConfig.adcDelay(i),
+            inputDelaySet => epixConfig.adcDelayUpdate,
             frameSwapOut  => open,
             adcValid      => adcValid((i*8)+7 downto i*8),
             adcData       => adcData((i*8)+7 downto i*8),
@@ -79,12 +85,12 @@ begin
    U_AdcMon: entity work.AdcReadout 
       generic map (
          NUM_CHANNELS_G => 4,
-         EN_DELAY       => 0
+         EN_DELAY       => 1
       ) port map ( 
          sysClk        => sysClk,
          sysClkRst     => sysClkRst,
-         inputDelay    => (others=>'0'),
-         inputDelaySet => '0',
+         inputDelay    => epixConfig.adcDelay(2),
+         inputDelaySet => epixConfig.adcDelayUpdate,
          frameSwapOut  => open,
          adcValid      => adcValid(19 downto 16),
          adcData       => adcData(19 downto 16),
@@ -95,6 +101,63 @@ begin
          adcChP        => adcChP(19 downto 16),
          adcChM        => adcChM(19 downto 16)
       );
+
+   U_IDelayCtrl : IDELAYCTRL
+      port map (
+         REFCLK => iClk200MHz,
+         RST    => sysClkRst,
+         RDY    => open
+      );
+
+   -- DCM for generating 200 MHz for IDelayCtrl
+   U_200MHzDcm : DCM_ADV
+   generic map( 
+      CLK_FEEDBACK          => "1X",
+      CLKDV_DIVIDE          => 2.0,
+      CLKFX_DIVIDE          => 5,
+      CLKFX_MULTIPLY        => 8,
+      CLKIN_DIVIDE_BY_2     => FALSE,
+      CLKIN_PERIOD          => 8.000,
+      CLKOUT_PHASE_SHIFT    => "NONE",
+      DCM_AUTOCALIBRATION   => TRUE,
+      DCM_PERFORMANCE_MODE  => "MAX_SPEED",
+      DESKEW_ADJUST         => "SYSTEM_SYNCHRONOUS",
+      DFS_FREQUENCY_MODE    => "HIGH",
+      DLL_FREQUENCY_MODE    => "HIGH",
+      DUTY_CYCLE_CORRECTION => TRUE,
+      FACTORY_JF            => x"F0F0",
+      PHASE_SHIFT           => 0,
+      STARTUP_WAIT          => FALSE,
+      SIM_DEVICE            => "VIRTEX5"
+   )
+   port map (
+      CLKFB    => iClkFbBufG,
+      CLKIN    => sysClk,
+      DADDR    => (others => '0'),
+      DCLK     => '0',
+      DEN      => '0',
+      DI       => (others => '0'),
+      DWE      => '0',
+      PSCLK    => '0',
+      PSEN     => '0',
+      PSINCDEC => '0',
+      RST      => sysClkRst,
+      CLKDV    => open,
+      CLKFX    => iClk200MHz,
+      CLKFX180 => open,
+      CLK0     => iClkFb,
+      CLK2X    => open,
+      CLK2X180 => open,
+      CLK90    => open,
+      CLK180   => open,
+      CLK270   => open,
+      DO       => open,
+      DRDY     => open,
+      LOCKED   => open,
+      PSDONE   => open
+   );
+
+   U_ClkFbBufG : BUFG port map ( I => iClkFb, O => iClkFbBufG );
 
 end AdcReadout3x;
 

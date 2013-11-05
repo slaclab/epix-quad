@@ -242,6 +242,16 @@ begin
             end if;
             pgpRegIn.regDataIn(1 downto 0) <= ipowerEn after tpd;
 
+         -- Fast ADC frame delay, 0x000009
+         elsif pgpRegOut.regAddr = x"000009" then
+            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
+               intConfig.adcDelay(0) <= pgpRegOut.regDataOut(5  downto 0);
+               intConfig.adcDelay(1) <= pgpRegOut.regDataOut(11 downto 6);
+               intConfig.adcDelay(2) <= pgpRegOut.regDataOut(17 downto 12);
+            end if;
+            intConfig.adcDelayUpdate <= pgpRegOut.regReq and pgpRegOut.regOp;
+            pgpRegIn.regDataIn <= x"000" & "00" & intConfig.adcDelay(2) & intConfig.adcDelay(1) & intConfig.adcDelay(0);
+
          -- Slow ADC, 0x0000100 -  0x000010F
          elsif pgpRegOut.regAddr(23 downto 4) = x"000010" then
             pgpRegIn.regDataIn(15 downto 0) <= slowAdcData(conv_integer(pgpRegOut.regAddr(3 downto 0))) after tpd;
@@ -275,8 +285,11 @@ begin
                   when x"6"   => intConfig.adcClkHalfT       <= pgpRegOut.regDataOut after tpd;
                   when x"7"   => intConfig.totalPixelsToRead <= pgpRegOut.regDataOut after tpd;
                   when x"8"   => intConfig.saciClkBit        <= pgpRegOut.regDataOut after tpd;
-                  when x"9"   => intConfig.asicPins          <= pgpRegOut.regDataOut after tpd;
-                  when x"A"   => intConfig.manualPinControl  <= pgpRegOut.regDataOut after tpd;
+                  when x"9"   => intConfig.asicPins          <= pgpRegOut.regDataOut(5 downto 0) after tpd;
+                  when x"A"   => intConfig.manualPinControl  <= pgpRegOut.regDataOut(5 downto 0) after tpd;
+                                 intConfig.prePulseR0        <= pgpRegOut.regDataOut(6) after tpd;
+                                 intConfig.adcStreamMode     <= pgpRegOut.regDataOut(7) after tpd;
+                                 intConfig.testPattern       <= pgpRegOut.regDataOut(8) after tpd;
                   when x"B"   => intConfig.asicR0Width       <= pgpRegOut.regDataOut after tpd;
                   when x"C"   => intConfig.pipelineDelay     <= pgpRegOut.regDataOut after tpd;
                   when x"D"   => intConfig.adcChannelToRead  <= pgpRegOut.regDataOut after tpd;
@@ -295,8 +308,13 @@ begin
                when x"6"   => pgpRegIn.regDataIn <= intConfig.adcClkHalfT       after tpd;
                when x"7"   => pgpRegIn.regDataIn <= intConfig.totalPixelsToRead after tpd;
                when x"8"   => pgpRegIn.regDataIn <= intConfig.saciClkBit        after tpd;
-               when x"9"   => pgpRegIn.regDataIn <= intConfig.asicPins          after tpd;
-               when x"A"   => pgpRegIn.regDataIn <= intConfig.manualPinControl  after tpd;
+               when x"9"   => pgpRegIn.regDataIn <= x"000000" & "00" & intConfig.asicPins          after tpd;
+               when x"A"   => pgpRegIn.regDataIn <= x"00000" & 
+                                                    "000"    & 
+                                                    intConfig.testPattern &
+                                                    intConfig.adcStreamMode & 
+                                                    intConfig.prePulseR0 & 
+                                                    intConfig.manualPinControl  after tpd;
                when x"B"   => pgpRegIn.regDataIn <= intConfig.asicR0Width       after tpd;
                when x"C"   => pgpRegIn.regDataIn <= intConfig.pipelineDelay     after tpd;
                when x"D"   => pgpRegIn.regDataIn <= intConfig.adcChannelToRead  after tpd;

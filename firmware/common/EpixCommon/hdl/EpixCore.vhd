@@ -211,6 +211,7 @@ begin
       port map ( 
          sysClk         => sysClk,
          sysClkRst      => sysClkRst,
+         epixConfig     => epixConfig,
          adcValid       => adcValid,
          adcData        => adcData,
          adcFClkP       => adcFClkP,

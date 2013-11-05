@@ -83,12 +83,14 @@ architecture AcqControl of AcqControl is
    signal pixelCntEn         : sl := '0';
    signal pixelCntRst        : sl := '0';
    signal iReadValid         : slv(MAX_OVERSAMPLE-1 downto 0) := (others => '0');
+   signal iReadValidWaiting  : sl := '0';
    signal iReadValidTestMode : sl := '0';
    signal readValidDelayed   : Slv128Array(MAX_OVERSAMPLE-1 downto 0);
    signal firstPixel         : sl := '0';
    signal firstPixelSet      : sl := '0';
    signal firstPixelRst      : sl := '0';
    signal prePulseR0         : sl := '0';
+   signal iAcqBusy           : sl := '0';
 
    -- Multiplexed ASIC outputs.  These versions are the
    -- automatic ones controlled by state machine.
@@ -158,11 +160,13 @@ begin
                   'X';
 
    --Use 6th bit of manual pin control to activate or deactivate pre-pulsing of R0
-   prePulseR0 <= ePixConfig.manualPinControl(6); 
+   prePulseR0 <= ePixConfig.prePulseR0; 
 
    --Outputs not incorporated into state machine at the moment
   iAsicPpbe    <= '1'; 
 
+   --Busy is internal busy or some ADC read still in the pipeline
+   acqBusy <= iAcqBusy or iReadValidWaiting;
 
 
 -- Normal path for taking data frames
@@ -180,7 +184,7 @@ begin
       adcSampCntEn       <= '0' after tpd;
       pixelCntEn         <= '0' after tpd;
       pixelCntRst        <= '1' after tpd;
-      acqBusy            <= '1' after tpd;
+      iAcqBusy           <= '1' after tpd;
       firstPixelRst      <= '0' after tpd;
       firstPixelSet      <= '0' after tpd;
       iReadValidTestMode <= '0' after tpd;
@@ -188,7 +192,7 @@ begin
       case curState is
          --Idle state, all signals zeroed out, counters reset
          when IDLE_S =>
-            acqBusy         <= '0' after tpd;
+            iAcqBusy         <= '0' after tpd;
             stateCntRst     <= '1' after tpd;
             adcSampCntRst   <= '1' after tpd;
             firstPixelRst   <= '1' after tpd;
@@ -290,20 +294,20 @@ begin
                adcSampCntEn       <= '1' after tpd;
 					iReadValidTestMode <= '1' after tpd;
             else
-               acqBusy            <= '0' after tpd;
+               iAcqBusy           <= '0' after tpd;
             end if;
          --Wait for readout to finish before sending SACI
          --"prepare for readout."  This way we avoid cross-talk
          --with the ADC lines.
          when WAIT_FOR_READOUT_S =>
-            acqBusy        <= '0' after tpd;
+            iAcqBusy       <= '0' after tpd;
          --Send SACI prepare for readout for the next event
          when SACI_RESET_S =>
             saciReadoutReq <= '1' after tpd;
-            acqBusy        <= '0' after tpd;
+            iAcqBusy       <= '0' after tpd;
          --Done
          when DONE_S =>
-            acqBusy        <= '0' after tpd;
+            iAcqBusy       <= '0' after tpd;
          --Undefined states: treat with default
          when others =>
       end case;
@@ -315,7 +319,7 @@ begin
          --Remain idle until we get the acqStart signal
          when IDLE_S =>
             if acqStart = '1' then
-               if ePixConfig.manualPinControl(7) = '0' then
+               if ePixConfig.adcStreamMode = '0' then
                   nxtState <= WAIT_R0_S after tpd;
                else
                   nxtState <= SYNC_TEST_S after tpd;
@@ -558,6 +562,20 @@ begin
    G_ReadValidOut : for i in 0 to MAX_OVERSAMPLE-1 generate
       readValid(i) <= readValidDelayed(i)( conv_integer(epixConfig.pipelineDelay(6 downto 0)) );
    end generate;
+   --Single bit signal that indicates whether there is anything left in the pipeline
+   process(sysClk)
+      variable runningOr : std_logic := '0';
+   begin
+      if rising_edge(sysClk) then
+         runningOr := '0';
+         for i in 0 to 127 loop
+            for j in 0 to MAX_OVERSAMPLE-1 loop
+               runningOr := runningOr or readValidDelayed(j)(i);
+            end loop;
+         end loop;
+         iReadValidWaiting <= runningOr;
+      end if;
+   end process;
 
    -- Edge detection for signals that interface with other blocks
    U_DataSendEdge : entity work.SynchronizerEdge
