@@ -140,6 +140,7 @@ architecture EpixCore of EpixCore is
    signal iAsicAcq         : std_logic;
    signal iRunTrigger      : std_logic;
    signal iDaqTrigger      : std_logic;
+   signal iDelayCtrlRdy    : std_logic;
 
    --Local signals being kept for chipscope probing
    attribute keep          : string;
@@ -212,6 +213,7 @@ begin
          sysClk         => sysClk,
          sysClkRst      => sysClkRst,
          epixConfig     => epixConfig,
+         iDelayCtrlRdy  => iDelayCtrlRdy,
          adcValid       => adcValid,
          adcData        => adcData,
          adcFClkP       => adcFClkP,
@@ -298,6 +300,7 @@ begin
          adcSpiCsb      => adcSpiCsb,
          adcPdwn        => adcPdwn,
          powerEnable    => iPowerEnable,
+         iDelayCtrlRdy  => iDelayCtrlRdy,
          slowAdcData    => slowAdcData
       );
 

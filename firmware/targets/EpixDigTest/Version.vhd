@@ -22,6 +22,7 @@ end Version;
 
 -------------------------------------------------------------------------------
 -- Revision History:
--- 05/07/2013 (0xDC000001): Initial Version
+--            (0xE0000004): Version used for original ASIC characterization.
+-- 11/05/2013 (0xE0000005): First version that supports "final" readout format.
 -------------------------------------------------------------------------------
 

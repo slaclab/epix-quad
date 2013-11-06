@@ -31,7 +31,10 @@ entity AdcReadout3x is
       sysClk        : in  std_logic;
       sysClkRst     : in  std_logic;
 
+      -- Configuration input for delays
+      -- IDELAYCTRL status output
       epixConfig    : in  EpixConfigType;
+      iDelayCtrlRdy : out std_logic;
 
       -- ADC Data Interface
       adcValid      : out std_logic_vector(19 downto 0);
@@ -55,6 +58,7 @@ architecture AdcReadout3x of AdcReadout3x is
    signal iClkFb     : std_logic;
    signal iClkFbBufG : std_logic;
    signal iClk200MHz : std_logic;
+   signal iDelayRst  : std_logic;
 
 begin
 
@@ -105,9 +109,26 @@ begin
    U_IDelayCtrl : IDELAYCTRL
       port map (
          REFCLK => iClk200MHz,
-         RST    => sysClkRst,
-         RDY    => open
+         RST    => iDelayRst,
+         RDY    => iDelayCtrlRdy
       );
+   --Generate a longer reset for IDELAYCTRL (minimum is 50 ns)
+   process(sysClk) 
+      variable counter : integer range 0 to 15 := 0;
+      constant delay   : integer := 10;
+   begin
+      if rising_edge(sysClk) then
+         if sysClkRst = '1' then
+            counter := delay;
+            iDelayRst <= '1';
+         elsif (counter > 0) then
+            iDelayRst <= '1';
+            counter := counter - 1;
+         else
+            iDelayRst <= '0';
+         end if;
+      end if;
+   end process;
 
    -- DCM for generating 200 MHz for IDelayCtrl
    U_200MHzDcm : DCM_ADV

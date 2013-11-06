@@ -426,7 +426,7 @@ begin
                if testPattern = '0' then
                   adcFifoWrData(i) <= adcMemRdData(0,i);
                else
-                  adcFifoWrData(i) <= std_logic_vector(to_unsigned(i,4)) & adcMemRdData(0,i)(11 downto 0);
+                  adcFifoWrData(i) <= "0000" & std_logic_vector(to_unsigned(i,4)) & adcMemRdData(0,i)(7 downto 0);
                end if;
             end loop;
          else

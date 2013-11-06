@@ -44,7 +44,7 @@ void EventLoop(DataRead dataRead) {
    TGaxis  *frameX  = NULL;
    TGaxis  *frameY  = NULL;
    TH1F    *pixHist = new TH1F("allPixels","",MAX_ADC-MIN_ADC+1,float(MIN_ADC)-0.5,float(MAX_ADC)+0.5);
-   Data     event, last_event;
+   Data     event, *last_event;
    TCanvas *C     = new TCanvas("C","Last Frame",500,1000);
    bool     first = true;
    C->Divide(1,2);
@@ -54,8 +54,7 @@ void EventLoop(DataRead dataRead) {
          gSystem->ProcessEvents();
       } else {
          int bytes_total = event.size()*sizeof(uint);
-         int bytes_matched = memcmp( (void*) &event, (void*) &last_event, event.size()*sizeof(uint));
-         if ( bytes_matched < bytes_total ) {
+         if ( last_event != &event ) {
             uint *eventBuffer = event.data();
             uint size = event.size();
             frame = ReadFrame(frame,pixHist,eventBuffer,size,0,MAX_ROW,0,MAX_COL);
@@ -81,7 +80,7 @@ void EventLoop(DataRead dataRead) {
             //pixHist->GetXaxis()->SetRangeUser(1000,3000);
             C->Update();
             gSystem->ProcessEvents();
-            last_event = event;
+            last_event = &event;
          } else {
             gSystem->ProcessEvents();
          }

@@ -81,6 +81,22 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent ) :
    getVariable("DigitalPowerEnable")->setDescription("Digital Power Enable");
    getVariable("DigitalPowerEnable")->setRange(0,0x1);
 
+   addRegister(new Register("IDelayCtrlRdy", 0x0100000A));
+   addVariable(new Variable("IDelayCtrlRdy", Variable::Status));
+   getVariable("IDelayCtrlRdy")->setDescription("Ready flag for IDELAYCTRL block");
+
+   addRegister(new Register("AdcFrameDelay", 0x01000009));
+   addVariable(new Variable("Adc0FrameDelay", Variable::Configuration));
+   addVariable(new Variable("Adc1FrameDelay", Variable::Configuration));
+   addVariable(new Variable("Adc2FrameDelay", Variable::Configuration));
+   getVariable("Adc0FrameDelay")->setDescription("ADC 0 IDelay Setting");
+   getVariable("Adc1FrameDelay")->setDescription("ADC 1 IDelay Setting");
+   getVariable("Adc2FrameDelay")->setDescription("ADC 2 IDelay Setting");
+   getVariable("Adc0FrameDelay")->setRange(0,0x3F);
+   getVariable("Adc1FrameDelay")->setRange(0,0x3F);
+   getVariable("Adc2FrameDelay")->setRange(0,0x3F);
+   
+
    addRegister(new Register("AsicPins", 0x01000029));
 
    addVariable(new Variable("AsicGR", Variable::Configuration));
@@ -128,6 +144,9 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent ) :
    addVariable(new Variable("ADCTest", Variable::Configuration));
    getVariable("ADCTest")->setDescription("Enables manual test of ADC");
    getVariable("ADCTest")->setRange(0,0x1);
+   addVariable(new Variable("TestPattern", Variable::Configuration));
+   getVariable("TestPattern")->setDescription("Enables test pattern on data out");
+   getVariable("TestPattern")->setRange(0,0x1);
  
    for (x=0; x < 8; x++) {
       tmp.str("");
@@ -146,7 +165,6 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent ) :
    addRegister(new Register("LocalTemp", 0x01000106));
    addVariable(new Variable("LocalTemp", Variable::Status));
    getVariable("LocalTemp")->setDescription("Local temp in degrees C");
-   addRegister(new Register("acqToAsicR0Delay", 0x01000020));
 
    addRegister(new Register("Humidity", 0x01000107));
    addVariable(new Variable("Humidity", Variable::Status));
@@ -343,6 +361,9 @@ void DigFpga::readStatus ( ) {
    readRegister(getRegister("AcqCount"));
    getVariable("AcqCount")->setInt(getRegister("AcqCount")->get());
 
+   readRegister(getRegister("IDelayCtrlRdy"));
+   getVariable("IDelayCtrlRdy")->setInt(getRegister("IDelayCtrlRdy")->get());
+
    for (x=0; x < 8; x++) {
       tmp.str("");
       tmp << "AdcValue" << dec << setw(2) << setfill('0') << x;
@@ -406,6 +427,11 @@ void DigFpga::readConfig ( ) {
    getVariable("AnalogPowerEnable")->setInt(getRegister("PowerEnable")->get(0,0x1));
    getVariable("DigitalPowerEnable")->setInt(getRegister("PowerEnable")->get(1,0x1));
 
+   readRegister(getRegister("AdcFrameDelay"));
+   getVariable("Adc0FrameDelay")->setInt(getRegister("AdcFrameDelay")->get(0,0x3F));
+   getVariable("Adc1FrameDelay")->setInt(getRegister("AdcFrameDelay")->get(6,0x3F));
+   getVariable("Adc2FrameDelay")->setInt(getRegister("AdcFrameDelay")->get(12,0x3F));
+
    readRegister(getRegister("AsicPins"));
    getVariable("AsicGR")->setInt(getRegister("AsicPins")->get(0,0x1));
    getVariable("AsicAcq")->setInt(getRegister("AsicPins")->get(1,0x1));
@@ -422,8 +448,9 @@ void DigFpga::readConfig ( ) {
    getVariable("AsicPpbeControl")->setInt(getRegister("AsicPinControl")->get(4,0x1));
    getVariable("AsicRoClkControl")->setInt(getRegister("AsicPinControl")->get(5,0x1));
    getVariable("prepulseR0En")->setInt(getRegister("AsicPinControl")->get(6,0x1));
-   getVariable("ADCTest")->setInt(getRegister("AsicPinControl")->get(7,0x1))
-;
+   getVariable("ADCTest")->setInt(getRegister("AsicPinControl")->get(7,0x1));
+   getVariable("TestPattern")->setInt(getRegister("AsicPinControl")->get(8,0x1));
+
    readRegister(getRegister("acqToAsicR0Delay"));
    getVariable("acqToAsicR0Delay")->setInt(getRegister("acqToAsicR0Delay")->get());
 
@@ -501,6 +528,11 @@ void DigFpga::writeConfig ( bool force ) {
    getRegister("PowerEnable")->set(getVariable("DigitalPowerEnable")->getInt(),1,0x1);
    writeRegister(getRegister("PowerEnable"),force);
 
+   getRegister("AdcFrameDelay")->set(getVariable("Adc0FrameDelay")->getInt(),0,0x3F);
+   getRegister("AdcFrameDelay")->set(getVariable("Adc1FrameDelay")->getInt(),6,0x3F);
+   getRegister("AdcFrameDelay")->set(getVariable("Adc2FrameDelay")->getInt(),12,0x3F);
+   writeRegister(getRegister("AdcFrameDelay"),force);
+
    getRegister("AsicPins")->set(getVariable("AsicGR")->getInt(),0,0x1);
    getRegister("AsicPins")->set(getVariable("AsicAcq")->getInt(),1,0x1);
    getRegister("AsicPins")->set(getVariable("AsicR0")->getInt(),2,0x1);
@@ -517,6 +549,7 @@ void DigFpga::writeConfig ( bool force ) {
    getRegister("AsicPinControl")->set(getVariable("AsicRoClkControl")->getInt(),5,0x1);
    getRegister("AsicPinControl")->set(getVariable("prepulseR0En")->getInt(),6,0x1);
    getRegister("AsicPinControl")->set(getVariable("ADCTest")->getInt(),7,0x1);
+   getRegister("AsicPinControl")->set(getVariable("TestPattern")->getInt(),8,0x1);
    writeRegister(getRegister("AsicPinControl"),force);
 
    getRegister("acqToAsicR0Delay")->set(getVariable("acqToAsicR0Delay")->getInt());

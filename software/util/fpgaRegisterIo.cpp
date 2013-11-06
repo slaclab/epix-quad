@@ -30,9 +30,9 @@ int main (int argc, char **argv) {
    try {
 
       // Create and setup PGP link
-      pgpLink.setMaxRxTx(500000);
+      pgpLink.setMaxRxTx(550000);
       pgpLink.setDebug(true);
-      pgpLink.open("/dev/pgpcard1");
+      pgpLink.open("/dev/pgpcard0");
       pgpLink.enableSharedMemory("epix",1);
       usleep(100);
       epix.setDebug(true);//("DebugEnable", "True");
@@ -41,7 +41,6 @@ int main (int argc, char **argv) {
       cout << "--------READING FPGA VERSION---------" << endl;
       cout << "Fpga Version: 0x" << hex << setw(8) << setfill('0') << epix.device("digFpga",0)->readSingle("Version") << endl;
       //
-      string exit_str = "x";
       while (1) {
          int command;
          cout << "--------------------------------" << endl;
@@ -69,23 +68,6 @@ int main (int argc, char **argv) {
             }
          }
       }
-
-      //cout << "Fgga Version: 0x" << hex << setw(8) << setfill('0') << kpix.device("cntrlFpga",0)->readSingle("ClockSelectA") << endl;
-      //cout << "Fgga Version: 0x" << hex << setw(8) << setfill('0') << kpix.device("cntrlFpga",0)->readSingle("ClockSelectB") << endl;
-      //cout << "Kpix Version: 0x" << hex << setw(8) << setfill('0') << kpix.device("cntrlFpga",0)->device("kpixAsic",4)->readSingle("Status") << endl;
-      //kpix.device("cntrlFpga",0)->device("kpixAsic",1)->set("Enabled", "True");
-      //      cout << "Kpix Version: 0x" << hex << setw(8) << setfill('0') << kpix.device("cntrlFpga",0)->device("kpixAsic",1)->readSingle("Status") << endl;
-      //kpix.device("cntrlFpga",0)->device("kpixAsic",1)->writeSingle("TimerB", 0x50505050); 
-      //cout << "Write TimerB" << hex << setw(8) << setfill('0') << kpix.device("cntrlFpga",0)->device("kpixAsic",1)->readSingle("TimerB") << endl;
-
-      // kpix.device("cntrlFpga",0)->device("kpixAsic",1)->writeSingle("Control", 0x50505050); 
-      //cout << "Write TimerB" << hex << setw(8) << setfill('0') << kpix.device("cntrlFpga",0)->device("kpixAsic",1)->readSingle("Control") << endl;
-
-      //kpix.device("cntrlFpga",0)->device("kpixAsic",1)->writeSingle("Config", 0x50505050); 
-      //cout << "Write TimerB" << hex << setw(8) << setfill('0') << kpix.device("cntrlFpga",0)->device("kpixAsic",1)->readSingle("Config") << endl;
-
-
-     //cout << "Kpix Version: 0x" << hex << setw(8) << setfill('0') << kpix.device("cntrlFpga",0)->device("kpixAsic",0)->readSingle("Status") << endl;
 
    } catch ( string error ) {
       cout << "Caught Error: " << endl;

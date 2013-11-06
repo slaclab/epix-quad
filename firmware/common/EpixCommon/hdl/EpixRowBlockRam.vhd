@@ -57,16 +57,18 @@ end EpixRowBlockRam;
 -- Define architecture
 architecture EpixRowBlockRam of EpixRowBlockRam is
 
-   signal iRdEn   : std_logic;
-   signal iRdInc  : std_logic;
-   signal iRdDec  : std_logic;
-   signal iRdSet  : std_logic;
-   signal iRdAddr : std_logic_vector(7 downto 0);
-   signal iWrAddr : std_logic_vector(7 downto 0);
-   signal iRdCol  : unsigned(6 downto 0);
-   signal iWrCol  : unsigned(6 downto 0);
-   signal iRdRow  : unsigned(0 downto 0);
-   signal iWrRow  : unsigned(0 downto 0);
+   signal iRdEn    : std_logic;
+   signal iRdInc   : std_logic;
+   signal iRdDec   : std_logic;
+   signal iRdSet   : std_logic;
+   signal iRdAddr  : std_logic_vector(7 downto 0);
+   signal iWrAddr  : std_logic_vector(7 downto 0);
+   signal iRdCol   : unsigned(6 downto 0);
+   signal iRdRow   : unsigned(0 downto 0);
+   signal iWrCol   : unsigned(6 downto 0);
+   signal iWrRow   : unsigned(0 downto 0);
+   signal iRdColTp : unsigned(6 downto 0);
+   signal iRdRowTp : unsigned(0 downto 0);
    signal iWrRowRising   : std_logic;
    signal iWrRowFalling  : std_logic;
    signal iRdStartEdge   : std_logic;
@@ -80,7 +82,15 @@ begin
 
    --Choose normal data or test pattern for output
    rdData <= iRdData when testPattern = '0' else
-             x"0" & "000" & std_logic_vector(iRdRow) & "0" & std_logic_vector(iRdCol);
+             x"00" & std_logic_vector(iRdRowTp) & std_logic_vector(iRdColTp);
+   --Test pattern row and column should lag by 1 to match
+   --the blockram latency.
+   process(sysClk) begin
+      if rising_edge(sysClk) then
+         iRdColTp <= iRdCol;
+         iRdRowTp <= iRdRow;
+      end if;
+   end process;
 
    --Map addresses to flat space
    iRdAddr <= std_logic_vector(iRdRow) & std_logic_vector(iRdCol);

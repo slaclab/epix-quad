@@ -56,14 +56,14 @@ int main (int argc, char **argv) {
       epix.setDebug(true);
 
       // Create and setup PGP link
-      pgpLink.setMaxRxTx(500000);
+      pgpLink.setMaxRxTx(550000);
       pgpLink.setDebug(true);
-      pgpLink.open("/dev/pgpcard1");
+      pgpLink.open("/dev/pgpcard0");
       pgpLink.enableSharedMemory("epix",1);
       usleep(100);
 
       // Create and setup PGP link
-      //udpLink.setMaxRxTx(500000);
+      //udpLink.setMaxRxTx(550000);
       //udpLink.setDebug(true);
       //udpLink.open(8090,1,"127.0.0.1");
       //udpLink.enableSharedMemory("epix",1);

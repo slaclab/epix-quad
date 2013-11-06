@@ -79,7 +79,11 @@ entity RegControl is
       slowAdcData     : in    word16_array(15 downto 0);
 
       -- Power enable
-      powerEnable     : out   std_logic_vector(1 downto 0)
+      powerEnable     : out   std_logic_vector(1 downto 0);
+
+      -- Status of IDELAYCTRL blocks
+      iDelayCtrlRdy   : in    std_logic
+
    );
 
 end RegControl;
@@ -251,6 +255,10 @@ begin
             end if;
             intConfig.adcDelayUpdate <= pgpRegOut.regReq and pgpRegOut.regOp;
             pgpRegIn.regDataIn <= x"000" & "00" & intConfig.adcDelay(2) & intConfig.adcDelay(1) & intConfig.adcDelay(0);
+
+         -- IDELAYCTRL status
+         elsif pgpRegOut.regAddr = x"00000A" then
+            pgpRegIn.regDataIn(0) <= iDelayCtrlRdy;
 
          -- Slow ADC, 0x0000100 -  0x000010F
          elsif pgpRegOut.regAddr(23 downto 4) = x"000010" then
