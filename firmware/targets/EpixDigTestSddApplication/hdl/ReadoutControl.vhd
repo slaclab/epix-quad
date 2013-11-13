@@ -58,20 +58,22 @@ end ReadoutControl;
 -- Define architecture
 architecture rtl of ReadoutControl is
    constant MAX_ADDR_C : slv((ADDR_WIDTH_G-1) downto 0) := (others => '1');
+   constant MAX_CH_C   : integer                        := 8;
 
    type StateType is (
       IDLE_S,
-      TEMP_DATA_S,
+      START_HDR_S,
       SDD_DATA_S,
+      TEMP_DATA_S,
       STOP_S);
    signal state : StateType := IDLE_S;
    signal dataSendEdge,
       rdEn,
       ack : sl := '0';
-   signal chPntr : integer range 0 to 15          := 0;
-   signal req    : slv(7 downto 0)                := (others => '0');
-   signal raddr  : slv((ADDR_WIDTH_G-1) downto 0) := (others => '0');
-   signal rdata  : Slv16Array(0 to 7);
+   signal chPntr : integer range 0 to (MAX_CH_C-1) := 0;
+   signal req    : slv((MAX_CH_C-1) downto 0)      := (others => '0');
+   signal raddr  : slv((ADDR_WIDTH_G-1) downto 0)  := (others => '0');
+   signal rdata  : Slv16Array(0 to (MAX_CH_C-1));
 
 begin
    -- Default mps to '0' for now.
@@ -86,7 +88,7 @@ begin
          risingEdge => dataSendEdge);
 
    GEN_BUFFER :
-   for i in 7 downto 0 generate
+   for i in (MAX_CH_C-1) downto 0 generate
       U_BurstBuffer : entity work.BurstBuffer
          generic map (
             ADDR_WIDTH_G => ADDR_WIDTH_G)
@@ -122,35 +124,80 @@ begin
                ----------------------------------------------------------------------
                when IDLE_S =>
                   if uAnd(req) = '1' then
-                     frameTxIn.frameTxEnable <= '1';
-                     frameTxIn.frameTxSOF    <= '1';
-                     frameTxIn.frameTxData   <= x"BABECAFE";  --start header
-                     state                   <= TEMP_DATA_S;
+                     state <= START_HDR_S;
                   end if;
                   ----------------------------------------------------------------------
-               when TEMP_DATA_S =>
-                  if adcValid((2*chPntr)+1) = '1' then
-                     frameTxIn.frameTxEnable <= '1';
-                     frameTxIn.frameTxData   <= x"0000" & adcData((2*chPntr)+1);
+               when START_HDR_S =>
+                  chPntr <= chPntr + 1;
+                  case (chPntr) is
+                     when 0 =>
+                        frameTxIn.frameTxEnable <= '1';
+                        frameTxIn.frameTxSOF    <= '1';
+                        frameTxIn.frameTxData   <= (others => '0');
+                     when 1 =>
+                        frameTxIn.frameTxEnable <= '1';
+                        frameTxIn.frameTxData   <= x"0000" & acqCount(15 downto 0);
+                     when 2 =>
+                        frameTxIn.frameTxEnable <= '1';
+                        frameTxIn.frameTxData   <= seqCount;
+                     when 3 =>
+                        frameTxIn.frameTxEnable <= '1';
+                        frameTxIn.frameTxData   <= (others => '0');
+                     when 4 =>
+                        frameTxIn.frameTxEnable <= '1';
+                        frameTxIn.frameTxData   <= (others => '0');
+                     when 5 =>
+                        frameTxIn.frameTxEnable <= '1';
+                        frameTxIn.frameTxData   <= (others => '0');
+                     when 6 =>
+                        frameTxIn.frameTxEnable <= '1';
+                        frameTxIn.frameTxData   <= (others => '0');
+                     when 7 =>
+                        frameTxIn.frameTxEnable <= '1';
+                        frameTxIn.frameTxData   <= (others => '0');
+                        chPntr                  <= 0;
+                        state                   <= SDD_DATA_S;
+                     when others =>
+                        frameTxIn.frameTxData <= (others => '0');
+                  end case;
+                  ----------------------------------------------------------------------
+               when SDD_DATA_S =>
+                  rdEn  <= '1';
+                  raddr <= raddr + 1;
+                  if raddr(0) = '0' then
+                     frameTxIn.frameTxData(15 downto 0)  <= rdata(chPntr);
+                     frameTxIn.frameTxData(31 downto 16) <= x"0000";
+                  else
+                     frameTxIn.frameTxEnable             <= '1';
+                     frameTxIn.frameTxData(31 downto 16) <= rdata(chPntr);
+                  end if;
+                  if raddr = MAX_ADDR_C then
+                     frameTxIn.frameTxEnable <= '1';  --force write if odd size
+                     raddr                   <= (others => '0');
                      chPntr                  <= chPntr + 1;
-                     if chPntr = 7 then
+                     if chPntr = (MAX_CH_C-1) then
                         chPntr <= 0;
-                        state  <= SDD_DATA_S;
+                        state  <= TEMP_DATA_S;
                      end if;
                   end if;
                   ----------------------------------------------------------------------
-               when SDD_DATA_S =>
-                  rdEn                    <= '1';
-                  frameTxIn.frameTxEnable <= '1';
-                  frameTxIn.frameTxData   <= x"0000" & rdata(chPntr);
-                  raddr                   <= raddr + 1;
-                  if raddr = MAX_ADDR_C then
-                     raddr  <= (others => '0');
+               when TEMP_DATA_S =>
+                  ack <= '1';
+                  if adcValid((2*chPntr)+1) = '1' then
                      chPntr <= chPntr + 1;
-                     if chPntr = 7 then
-                        chPntr <= 0;
-                        ack    <= '1';  --high for min. 2 cycles
-                        state  <= STOP_S;
+                     raddr  <= raddr + 1;
+                     if raddr(0) = '0' then
+                        frameTxIn.frameTxData(15 downto 0)  <= adcData((2*chPntr)+1);
+                        frameTxIn.frameTxData(31 downto 16) <= x"0000";
+                     else
+                        frameTxIn.frameTxEnable             <= '1';
+                        frameTxIn.frameTxData(31 downto 16) <= adcData((2*chPntr)+1);
+                     end if;
+                     if chPntr = (MAX_CH_C-1) then
+                        frameTxIn.frameTxEnable <= '1';  --force write if odd size
+                        chPntr                  <= 0;
+                        raddr                   <= (others => '0');
+                        state                   <= STOP_S;
                      end if;
                   end if;
                   ----------------------------------------------------------------------
@@ -158,7 +205,7 @@ begin
                   ack                     <= '0';
                   frameTxIn.frameTxEnable <= '1';
                   frameTxIn.frameTxEOF    <= '1';
-                  frameTxIn.frameTxData   <= x"BEEFCAFE";     --stop header 
+                  frameTxIn.frameTxData   <= x"00000000";  --stop header 
                   readDone                <= '1';
                   state                   <= IDLE_S;
                   ----------------------------------------------------------------------

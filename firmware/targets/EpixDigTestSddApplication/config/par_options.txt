@@ -4,6 +4,6 @@
 #-intstyle ise
 -ol high
 -xe n
-#-mt 4
+-mt 4
 
 
