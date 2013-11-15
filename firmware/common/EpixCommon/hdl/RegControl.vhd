@@ -256,12 +256,16 @@ begin
             intConfig.adcDelayUpdate <= pgpRegOut.regReq and pgpRegOut.regOp;
             pgpRegIn.regDataIn <= x"000" & "00" & intConfig.adcDelay(2) & intConfig.adcDelay(1) & intConfig.adcDelay(0);
 
-         -- IDELAYCTRL status
+         -- IDELAYCTRL status, 0x00000A
          elsif pgpRegOut.regAddr = x"00000A" then
             pgpRegIn.regDataIn(0) <= iDelayCtrlRdy;
 
+         -- FPGA base clock frequency, 0x000010
+         elsif pgpRegOut.regAddr = x"000010" then
+            pgpRegIn.regDataIn <= FpgaBaseClock after tpd;
+
          -- Slow ADC, 0x0000100 -  0x000010F
-         elsif pgpRegOut.regAddr(23 downto 4) = x"000010" then
+         elsif pgpRegOut.regAddr(23 downto 4) = x"00010" then
             pgpRegIn.regDataIn(15 downto 0) <= slowAdcData(conv_integer(pgpRegOut.regAddr(3 downto 0))) after tpd;
 
          -- ASIC acquisition control interfacing, 0x000020 -0x00002F

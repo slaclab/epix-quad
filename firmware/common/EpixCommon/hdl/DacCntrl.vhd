@@ -102,7 +102,8 @@ begin
    end process;
 
    -- Output clock
-   dacSclk <= intClk;
+   -- dacSclk <= intClk;  --Original: clock runs all the time
+   dacSclk <= '0' when curState = ST_IDLE else intClk;  --Kurtis change: clock gated off when not in use
 
    -- State machine
    process ( sysClk, sysClkRst ) begin
