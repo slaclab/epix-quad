@@ -95,7 +95,11 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent ) :
    getVariable("Adc0FrameDelay")->setRange(0,0x3F);
    getVariable("Adc1FrameDelay")->setRange(0,0x3F);
    getVariable("Adc2FrameDelay")->setRange(0,0x3F);
-   
+
+   // Setup registers & variables
+   addRegister(new Register("BaseClock", 0x01000010));
+   addVariable(new Variable("BaseClock", Variable::Status));
+   getVariable("BaseClock")->setDescription("FPGA Base Clock Frequency"); 
 
    addRegister(new Register("AsicPins", 0x01000029));
 
@@ -357,6 +361,9 @@ void DigFpga::readStatus ( ) {
 
    readRegister(getRegister("Version"));
    getVariable("Version")->setInt(getRegister("Version")->get());
+
+   readRegister(getRegister("BaseClock"));
+   getVariable("BaseClock")->setInt(getRegister("BaseClock")->get());
 
    readRegister(getRegister("AcqCount"));
    getVariable("AcqCount")->setInt(getRegister("AcqCount")->get());
