@@ -23,14 +23,13 @@
 
 /************************** Constant Definitions *****************************/
 #define BURST_SIZE_C   8192
-#define PACKET_SIZE_C  ((8*BURST_SIZE_C) + 8 + 2)//8 burst packets + 8 temperatures + 2 headers
+#define PACKET_SIZE_C  32781
+#define SDD_OFFSET_C   8
+#define TEMP_OFFSET_C  32776
 
 #define OFFSET_C	   0x2000U
 #define CONVT_ADC_C	(2.0/16383.0)//Volts/counts
 #define SPS_RATE_C 	50e+6/// in Hz
-
-#define START_HDR_C     0xBABECAFE
-#define STOP_HDR_C      0xBEEFCAFE
 
 using namespace std;
 
@@ -68,9 +67,6 @@ void EventLoop(DataRead dataRead) {
    gStyle->SetPadBottomMargin(0.2); 
    gStyle->SetTitleFontSize(0.09); 
    
-   
-   
-      
    Data event;   
    TCanvas *C     = new TCanvas("C","SDD Waveform Viewer",1750,1000);
    C->Divide(2,5);
@@ -99,27 +95,32 @@ void ReadDataFrame(TCanvas *C, uint *rawData, uint size) {
    char title[100];
    
    //check the headers and frame size
-   if ((rawData[0] == START_HDR_C)
-      && (rawData[size-1] = STOP_HDR_C)
-      && (size == PACKET_SIZE_C)) {
-
-      //get the temperature data
-      for(i=0;i<8;i++){       
-         temp_sample[i] = (double)i;
-         temp_V[i] = ConvToVoltage((uint16_t)((rawData[i+1] >> 0)&0xFFFF));
-         temp_C[i] = ConvToDegC(temp_V[i]);
-      }
-      
+   if (size == PACKET_SIZE_C) {
       //get the SDD data      
       for(i=0;i<8;i++){ 
-         for(j=0;j<BURST_SIZE_C;j++){ 
-            if(i==0){
-               time[j] = 1e+6*((double(j))/SPS_RATE_C);//us
-            }
-            sdd_V[i][j] = ConvToVoltage((uint16_t)((rawData[(i*BURST_SIZE_C)+j+9] >> 0)&0xFFFF));
+         for(j=0;j<(BURST_SIZE_C/2);j++){ 
+            sdd_V[i][2*j+0] = ConvToVoltage((uint16_t)((rawData[(i*(BURST_SIZE_C/2))+j+SDD_OFFSET_C] >> 0)&0xFFFF));
+            sdd_V[i][2*j+1] = ConvToVoltage((uint16_t)((rawData[(i*(BURST_SIZE_C/2))+j+SDD_OFFSET_C] >> 16)&0xFFFF));
          }
       }
       
+      //generate a time axis for SDD waveforms
+      for(i=0;i<BURST_SIZE_C;i++){ 
+         time[i] = 1e+6*((double(i))/SPS_RATE_C);//us.
+      }
+  
+      //get the temperature data
+      for(i=0;i<4;i++){       
+         temp_sample[2*i+0] = (double)(2*i+0);
+         temp_sample[2*i+1] = (double)(2*i+1);
+         
+         temp_V[2*i+0] = ConvToVoltage((uint16_t)((rawData[i+TEMP_OFFSET_C] >> 0)&0xFFFF));
+         temp_V[2*i+1] = ConvToVoltage((uint16_t)((rawData[i+TEMP_OFFSET_C] >> 16)&0xFFFF));
+         
+         temp_C[2*i+0] = ConvToDegC(temp_V[2*i+0]);
+         temp_C[2*i+1] = ConvToDegC(temp_V[2*i+1]);
+      }
+ 
       //Graph data
       for(i=0;i<8;i++){ 
          gr[i] = new TGraph(BURST_SIZE_C,time,sdd_V[i]);
@@ -175,9 +176,13 @@ void ReadDataFrame(TCanvas *C, uint *rawData, uint size) {
 
 //convert from ADC counts to voltage
 double ConvToVoltage(uint16_t value) {
+   /*
    double result = ((double)value)*CONVT_ADC_C;
    result -= ((double)OFFSET_C)*CONVT_ADC_C;
    return result;
+   */
+   double result = ((double)value);
+   return result;   
 }
 
 //convert from voltage to deg C (assumes 27.4kOhm pull-up to +5V on NTC)
