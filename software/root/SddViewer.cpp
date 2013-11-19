@@ -176,13 +176,9 @@ void ReadDataFrame(TCanvas *C, uint *rawData, uint size) {
 
 //convert from ADC counts to voltage
 double ConvToVoltage(uint16_t value) {
-   /*
    double result = ((double)value)*CONVT_ADC_C;
    result -= ((double)OFFSET_C)*CONVT_ADC_C;
-   return result;
-   */
-   double result = ((double)value);
-   return result;   
+   return result;  
 }
 
 //convert from voltage to deg C (assumes 27.4kOhm pull-up to +5V on NTC)
