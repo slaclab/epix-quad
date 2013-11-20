@@ -1,6 +1,6 @@
 
 # Define target output
-target: prom
+target: bit
 
 # List of build core directories.
 export CORE_DIRS = $(abspath  $(PROJ_DIR)/coregen $(PROJ_DIR)/../../common/EpixCommon/coregen $(PROJ_DIR)/../../common/Pgp2Core/xil_cores )
