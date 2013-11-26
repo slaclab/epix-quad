@@ -65,6 +65,12 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent ) :
 
    addRegister(new Register("AcqCountReset", 0x01000006));
 
+   addRegister(new Register("SeqCount", 0x0100000B));
+   addVariable(new Variable("SeqCount", Variable::Status));
+   getVariable("SeqCount")->setDescription("Sequence (Frame) Counter");
+
+   addRegister(new Register("SeqCountReset", 0x0100000C));
+
    addRegister(new Register("DacSetting", 0x01000007));
    addVariable(new Variable("DacSetting", Variable::Configuration));
    getVariable("DacSetting")->setDescription("DAC Setting");
@@ -293,6 +299,9 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent ) :
    addCommand(new Command("AcqCountReset"));
    getCommand("AcqCountReset")->setDescription("Acquisition Count Reset");
 
+   addCommand(new Command("SeqCountReset"));
+   getCommand("SeqCountReset")->setDescription("Sequence (frame) Count Reset");
+
    addCommand(new Command("EpixRun",0x0));
    getCommand("EpixRun")->setDescription("Sends a single software run command");
 
@@ -332,6 +341,11 @@ void DigFpga::command ( string name, string arg) {
       writeRegister(getRegister("AcqCountReset"),true,true);
       REGISTER_UNLOCK
    }
+   else if ( name == "SeqCountReset" ) {
+      REGISTER_LOCK
+      writeRegister(getRegister("SeqCountReset"),true,true);
+      REGISTER_UNLOCK
+   }
    else if ( name == "WriteData" ) {
       REGISTER_LOCK
       writeRegister(getRegister("EepromDataIn0"),true,true);
@@ -367,6 +381,9 @@ void DigFpga::readStatus ( ) {
 
    readRegister(getRegister("AcqCount"));
    getVariable("AcqCount")->setInt(getRegister("AcqCount")->get());
+
+   readRegister(getRegister("SeqCount"));
+   getVariable("SeqCount")->setInt(getRegister("SeqCount")->get());
 
    readRegister(getRegister("IDelayCtrlRdy"));
    getVariable("IDelayCtrlRdy")->setInt(getRegister("IDelayCtrlRdy")->get());

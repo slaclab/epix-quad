@@ -47,6 +47,7 @@ package EpixTypes is
       daqTriggerDelay   : std_logic_vector(31 downto 0);
       daqTriggerEnable  : std_logic;
       acqCountReset     : std_logic;
+      seqCountReset     : std_logic;
       adcDelay          : word6_array(2 downto 0);
       adcDelayUpdate    : std_logic;
       acqToAsicR0Delay  : std_logic_vector(31 downto 0);
@@ -77,6 +78,7 @@ package EpixTypes is
       daqTriggerEnable  => '0',
       daqTriggerDelay   => (others=>'0'),
       acqCountReset     => '0',
+      seqCountReset     => '0',
       adcDelay          => (others=> (others=>'0')),
       adcDelayUpdate    => '0',
       acqToAsicR0Delay  => (others=>'0'),

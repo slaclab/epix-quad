@@ -35,7 +35,7 @@ entity ReadoutControl is
       epixConfig  : in  EpixConfigType;
       -- Data for headers
       acqCount    : in  slv(31 downto 0);
-      seqCount    : in  slv(31 downto 0);
+      seqCount    : out slv(31 downto 0);
       -- Run control
       acqStart    : in  sl;
       readValid   : in  slv(MAX_OVERSAMPLE-1 downto 0);
@@ -74,8 +74,12 @@ architecture rtl of ReadoutControl is
    signal req    : slv((MAX_CH_C-1) downto 0)      := (others => '0');
    signal raddr  : slv((ADDR_WIDTH_G-1) downto 0)  := (others => '0');
    signal rdata  : Slv16Array(0 to (MAX_CH_C-1));
+   signal intSeqCount : slv(31 downto 0) := (others => '0');
+   signal seqCountEnable : sl := '0';
 
 begin
+   -- Sequence/frame counter goes out to register control
+   seqCount <= intSeqCount;
    -- Default mps to '0' for now.
    mpsOut <= '0';
 
@@ -113,6 +117,7 @@ begin
          frameTxIn.frameTxEOF    <= '0';
          frameTxIn.frameTxEOFE   <= '0';
          readDone                <= '0';
+         seqCountEnable          <= '0';
          if sysClkRst = '1' then
             chPntr    <= 0;
             raddr     <= (others => '0');
@@ -125,6 +130,7 @@ begin
                when IDLE_S =>
                   if uAnd(req) = '1' then
                      state <= START_HDR_S;
+                     seqCountEnable <= '1';
                   end if;
                   ----------------------------------------------------------------------
                when START_HDR_S =>
@@ -139,7 +145,7 @@ begin
                         frameTxIn.frameTxData   <= x"0000" & acqCount(15 downto 0);
                      when 2 =>
                         frameTxIn.frameTxEnable <= '1';
-                        frameTxIn.frameTxData   <= seqCount;
+                        frameTxIn.frameTxData   <= intSeqCount;
                      when 3 =>
                         frameTxIn.frameTxEnable <= '1';
                         frameTxIn.frameTxData   <= (others => '0');
@@ -211,6 +217,19 @@ begin
                   ----------------------------------------------------------------------
             end case;
          end if;
+      end if;
+   end process;
+
+   --Sequence/frame counter
+   process ( sysClk, sysClkRst ) begin
+      if ( sysClkRst = '1' ) then
+         intSeqCount <= (others => '0');
+      elsif rising_edge(sysClk) then
+         if epixConfig.seqCountReset = '1' then
+            intSeqCount <= (others => '0');
+         elsif seqCountEnable = '1' then
+            intSeqCount <= intSeqCount + 1;
+          end if;
       end if;
    end process;
 

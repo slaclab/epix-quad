@@ -45,6 +45,7 @@ entity RegControl is
 
       -- Status
       acqCount        : in    std_logic_vector(31 downto 0);
+      seqCount        : in    std_logic_vector(31 downto 0);
 
       -- Readout start command request
       saciReadoutReq  : in    std_logic;
@@ -183,6 +184,7 @@ begin
          pgpRegIn.regFail        <= '0'              after tpd;
          pgpRegIn.regDataIn      <= (others=>'0')    after tpd;
          intConfig.acqCountReset <= '0'              after tpd;
+         intConfig.seqCountReset <= '0'              after tpd;
          saciRegIn.req           <= '0'              after tpd;
          dacStrobe               <= '0'              after tpd;
          adcWrReq                <= '0'              after tpd;
@@ -259,6 +261,16 @@ begin
          -- IDELAYCTRL status, 0x00000A
          elsif pgpRegOut.regAddr = x"00000A" then
             pgpRegIn.regDataIn(0) <= iDelayCtrlRdy;
+
+         -- Frame count, 0x00000B
+         elsif pgpRegOut.regAddr = x"00000B" then
+            pgpRegIn.regDataIn <= seqCount after tpd;
+
+         -- Frame count reset, 0x00000C
+         elsif pgpRegOut.regAddr = x"00000C" then
+            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
+               intConfig.seqCountReset <= '1' after tpd;
+            end if;
 
          -- FPGA base clock frequency, 0x000010
          elsif pgpRegOut.regAddr = x"000010" then

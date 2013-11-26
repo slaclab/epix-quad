@@ -177,7 +177,6 @@ begin
          pgpCmd         => pgpCmd,
          epixConfig     => epixConfig,
          acqCount       => acqCount,
-         seqCount       => seqCount,
          acqStart       => acqStart,
          dataSend       => dataSend
       );
@@ -280,6 +279,7 @@ begin
          epixConfig     => epixConfig,
          resetReq       => resetReq,
          acqCount       => acqCount,
+         seqCount       => seqCount,
          saciReadoutReq => saciReadoutReq,
          saciReadoutAck => saciReadoutAck,
          saciClk        => saciClk,

@@ -39,7 +39,9 @@ entity ReadoutControl is
 
       -- Data for headers
       acqCount            : in    slv(31 downto 0);
-      seqCount            : in    slv(31 downto 0);
+
+      -- Frame counter out to register control
+      seqCount            : out   slv(31 downto 0);
 
       -- Run control
       acqStart            : in    sl;
@@ -128,6 +130,8 @@ architecture ReadoutControl of ReadoutControl is
    signal adcFifoWrData  : Slv16Array(15 downto 0);
    signal fifoOflowAny   : sl := '0';
    signal fifoEmptyAll   : sl := '0';
+   signal intSeqCount    : unsigned(31 downto 0) := (others => '0');
+   signal seqCountEnable : sl := '0';
 
    type chanMap is array(15 downto 0) of integer range 0 to 15;
    signal channelOrder   : chanMap;
@@ -147,6 +151,8 @@ architecture ReadoutControl of ReadoutControl is
 
 begin
 
+   -- Counter output to register control
+   seqCount <= std_logic_vector(intSeqCount);
    -- Mode to decide whether we readout ASICs or pure ADC streams
    adcStreamMode <= epixConfig.adcStreamMode;
    -- Test pattern mode to help check data alignment, etc.
@@ -183,7 +189,7 @@ begin
    -- Simple state machine to just send ADC values --
    --------------------------------------------------
    process (curState,adcFifoRdData,chCnt,adcFifoRdValid,fillCnt,wordCnt,
-            acqCount,seqCount,overSmplCnt,fifoOflowAny,ePixConfig,
+            acqCount,intSeqCount,overSmplCnt,fifoOflowAny,ePixConfig,
             frameTxOut,tpsAdcData,channelOrder,acqBusy,adcFifoEmpty,adcMemOflowAny) begin
          --Defaults
          frameTxIn.frameTxEnable <= '0' after tpd;
@@ -204,6 +210,7 @@ begin
          adcFifoRdEn             <= (others => '0') after tpd;
          readDone                <= '0' after tpd;
          clearFifos              <= '0' after tpd;
+         seqCountEnable          <= '0' after tpd;
          --State specific outputs
          case curState is
             --Idle state
@@ -217,6 +224,9 @@ begin
             --Acq received, wait for daq
             when ARMED_S  =>
                timeoutCntEn  <= '1' after tpd;
+               if dataSendEdge = '1' then
+                  seqCountEnable <= '1' after tpd;
+               end if;
             --Send header words
             when HEADER_S =>
                wordCntEn               <= '1' after tpd;
@@ -226,7 +236,7 @@ begin
                   when 0 => frameTxIn.frameTxData <= x"000000" & "00" & cLane & "00" & cVC after tpd;
                             frameTxIn.frameTxSOF  <= '1' after tpd;
                   when 1 => frameTxIn.frameTxData <= x"0" & "00" & cQuad & cOpCode & acqCount(15 downto 0) after tpd;
-                  when 2 => frameTxIn.frameTxData <= seqCount after tpd;
+                  when 2 => frameTxIn.frameTxData <= std_logic_vector(intSeqCount) after tpd;
                   when 3 => frameTxIn.frameTxData <= cZeroWord after tpd;
                   when 4 => frameTxIn.frameTxData <= cZeroWord after tpd;
                   when 5 => frameTxIn.frameTxData <= cZeroWord after tpd;
@@ -416,6 +426,19 @@ begin
          end loop;
       end if;
    end process;
+   --Sequence/frame counter
+   process ( sysClk, sysClkRst ) begin
+      if ( sysClkRst = '1' ) then
+         intSeqCount <= (others => '0');
+      elsif rising_edge(sysClk) then
+         if epixConfig.seqCountReset = '1' then
+            intSeqCount <= (others => '0') after tpd;
+         elsif seqCountEnable = '1' then
+            intSeqCount <= intSeqCount + 1 after tpd;
+          end if;
+      end if;
+   end process;
+
 
    --Simple logic to choose which memory to read from
    process(sysClk) begin
