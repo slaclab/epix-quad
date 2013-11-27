@@ -171,11 +171,19 @@ begin
                   rdEn  <= '1';
                   raddr <= raddr + 1;
                   if raddr(0) = '0' then
-                     frameTxIn.frameTxData(15 downto 0)  <= rdata(chPntr);
+                     if (epixConfig.testPattern = '0') then
+                        frameTxIn.frameTxData(15 downto 0)  <= rdata(chPntr);
+                     else
+                        frameTxIn.frameTxData(15 downto 0)  <= conv_std_logic_vector(chPntr,3) & raddr;
+                     end if;
                      frameTxIn.frameTxData(31 downto 16) <= x"0000";
                   else
                      frameTxIn.frameTxEnable             <= '1';
-                     frameTxIn.frameTxData(31 downto 16) <= rdata(chPntr);
+                     if (epixConfig.testPattern = '0') then 
+                        frameTxIn.frameTxData(31 downto 16) <= rdata(chPntr);
+                     else
+                        frameTxIn.frameTxData(31 downto 16) <= conv_std_logic_vector(chPntr,3) & raddr;
+                     end if;
                   end if;
                   if raddr = MAX_ADDR_C then
                      frameTxIn.frameTxEnable <= '1';  --force write if odd size
