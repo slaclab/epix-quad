@@ -146,6 +146,9 @@ architecture RegControl of RegControl is
    constant ST_PAUSE_2 : std_logic_vector(3 downto 0) := "0111";
    constant ST_CMD_3   : std_logic_vector(3 downto 0) := "1000";
    constant ST_DONE    : std_logic_vector(3 downto 0) := "1001";
+   -- Pseudo-constants (constant within a compile, but vary by application)
+   signal NCYCLES      : integer range 0 to 2047;
+   signal NCYCLES_SPI  : integer range 0 to 31; 
  
    -- Register delay for simulation
    constant tpd:time := 0.5 ns;
@@ -674,10 +677,19 @@ begin
          end if;
    end process;
    --Generate a slow enable for the 1-wire interfaces
+   --  Modified NCYCLES to be a variable so that we can support
+   --  the slow clock enables with different clock rates (e.g.,
+   --  for both the SDD application, which uses 200 MHz base
+   --  rate, and the ePix application, which uses 125 MHz base
+   --  rate).
+   NCYCLES <= 820  when FpgaVersion(31 downto 24) = x"E0" else
+              410 when FpgaVersion(31 downto 24) = x"E1" else
+              1000;
+   NCYCLES_SPI <= 10 when FpgaVersion(31 downto 24) = x"E0" else
+                  5 when FpgaVersion(31 downto 24) = x"E1" else
+                  20;
    process(sysClk,sysClkRst) 
-      constant NCYCLES     : integer := 820;
-      constant NCYCLES_SPI : integer := 10;
-      variable counter     : integer range 0 to 1023 := 0;
+      variable counter     : integer range 0 to 2047 := 0;
       variable counter_spi : integer range 0 to 127 := 0;
    begin
       if rising_edge(sysClk) then
@@ -704,9 +716,7 @@ begin
    end process;
    --Hold write or read request for slow enable
    process(sysClk) 
-      constant NCYCLES     : integer := 820;
-      constant NCYCLES_SPI : integer := 10;
-      variable counter     : integer range 0 to 1023 := 0;
+      variable counter     : integer range 0 to 2047 := 0;
       variable counter_spi : integer range 0 to 127 := 0;
       variable RW          : integer range 0 to 2 := 0;
    begin

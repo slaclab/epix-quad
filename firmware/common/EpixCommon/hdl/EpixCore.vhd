@@ -163,7 +163,10 @@ begin
    asicAcq     <= iAsicAcq;
    -- Trigger out is tied to the integration window
    -- for the ASIC for ease of timing alignment.
-   triggerOut  <= not(iAsicAcq);
+   -- When in non-ASIC readout mode, it is simply tied to
+   -- the internal ACQ signal.
+   triggerOut  <= not(iAsicAcq) when epixConfig.adcStreamMode = '0' else
+                  not(acqStart);
    -- Input triggers have inverters on analog card
    iRunTrigger <= not(runTrigger);
    iDaqTrigger <= not(daqTrigger);

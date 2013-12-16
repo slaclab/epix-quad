@@ -424,6 +424,13 @@ begin
                tpsAdcData(i) <= adcData(16+i);
             end if;
          end loop;
+--  This is a hack for the EPIX 2013.12.16 test at SSRL
+--    (to read out slow ADC data with strongback and ADC temps)
+         if readTps = '1' then
+            tpsAdcData(1) <= slowAdcData(4);
+            tpsAdcData(2) <= slowadcData(6);
+         end if;
+-- 
       end if;
    end process;
    --Sequence/frame counter
