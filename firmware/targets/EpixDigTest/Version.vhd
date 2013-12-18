@@ -16,7 +16,7 @@ USE ieee.std_logic_1164.ALL;
 
 package Version is
 
-constant FpgaVersion : std_logic_vector(31 downto 0) := x"E0000008"; -- MAKE_VERSION
+constant FpgaVersion : std_logic_vector(31 downto 0) := x"E0000009"; -- MAKE_VERSION
 constant FpgaBaseClock : std_logic_vector(31 downto 0) := x"00" & x"125000";  
 -- FPGA base clock (used for calculating various delay units)
 -- Top two nybbles reserved
@@ -34,6 +34,10 @@ end Version;
 --                          sent out when in ADC stream mode.
 -- 12/16/2013 (0xE0000008): Modified readout control for SSRL ePix test.
 --                          Words 1 and 2 of the "TPS" data now come from
---                          the slow ADC thermistor channels rather than ASICs. 
+--                          the slow ADC thermistor channels rather than ASICs.
+-- 12/17/2013 (0xE0000009): Added asicMask register at 0xD.  This register is 
+--                          used to control which ASICs get a SACI "prepare 
+--                          for readout.  This should reduce dead time waiting
+--                          for ASICs that aren't present.
 -------------------------------------------------------------------------------
 
