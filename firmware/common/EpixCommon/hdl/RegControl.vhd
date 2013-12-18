@@ -243,6 +243,7 @@ begin
                dacData   <= pgpRegOut.regDataOut(15 downto 0) after tpd;
                dacStrobe <= '1'                               after tpd;
             end if;
+            pgpRegIn.regDataIn <= x"0000" & dacData after tpd;
 
          -- Power Enable, 0x000008
          elsif pgpRegOut.regAddr = x"000008" then
@@ -280,6 +281,7 @@ begin
             if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then 
                intConfig.asicMask <= pgpRegOut.regDataOut(3 downto 0) after tpd;
             end if;
+            pgpRegIn.regDataIn <= x"0000000" & intConfig.asicMask after tpd;
 
          -- FPGA base clock frequency, 0x000010
          elsif pgpRegOut.regAddr = x"000010" then
