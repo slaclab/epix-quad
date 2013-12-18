@@ -69,6 +69,7 @@ package EpixTypes is
       prePulseR0        : std_logic;
       testPattern       : std_logic;
       adcStreamMode     : std_logic;
+      asicMask          : std_logic_vector(3 downto 0);
    end record;
 
    -- Initialize
@@ -99,7 +100,8 @@ package EpixTypes is
       prePulseR0Width   => (others => '0'),
       prePulseR0Delay   => (others => '0'),
       testPattern       => '0',
-      adcStreamMode     => '0'
+      adcStreamMode     => '0',
+      asicMask          => (others => '0')
    ); 
    
 end EpixTypes;

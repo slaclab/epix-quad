@@ -96,7 +96,6 @@ entity EpixCore is
 
       -- ASIC Control
       asicR0              : out   std_logic;
-      --asicR0              : in   std_logic;
       asicPpmat           : out   std_logic;
       asicPpbe            : out   std_logic;
       asicGlblRst         : out   std_logic;

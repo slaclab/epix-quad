@@ -275,6 +275,12 @@ begin
                intConfig.seqCountReset <= '1' after tpd;
             end if;
 
+         -- ASIC Mask, 0x00000D
+         elsif pgpRegOut.regAddr = x"00000D" then
+            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then 
+               intConfig.asicMask <= pgpRegOut.regDataOut(3 downto 0) after tpd;
+            end if;
+
          -- FPGA base clock frequency, 0x000010
          elsif pgpRegOut.regAddr = x"000010" then
             pgpRegIn.regDataIn <= FpgaBaseClock after tpd;
@@ -453,7 +459,11 @@ begin
             if saciRegIn.req = '1' then
                nxtState <= ST_REG;
             elsif saciReadoutReq = '1' then
-               nxtState <= ST_CMD_0;
+               if intConfig.asicMask(0) = '1' then
+                  nxtState <= ST_CMD_0;
+               else
+                  nxtState <= ST_PAUSE_0;
+               end if;
             end if;
 
          when ST_REG =>
@@ -478,7 +488,11 @@ begin
             saciSelIn.req     <= '0';
             saciTimeoutCntRst <= '1';
             if saciSelOut.ack = '0' then
-               nxtState          <= ST_CMD_1;
+               if intConfig.asicMask(1) = '1' then
+                  nxtState          <= ST_CMD_1;
+               else
+                  nxtState          <= ST_PAUSE_1;
+               end if;
             end if;
 
          when ST_CMD_1 =>
@@ -494,7 +508,11 @@ begin
             saciSelIn.req     <= '0';
             saciTimeoutCntRst <= '1';
             if saciSelOut.ack = '0' then
-               nxtState          <= ST_CMD_2;
+               if intConfig.asicMask(2) = '1' then
+                  nxtState          <= ST_CMD_2;
+               else
+                  nxtState          <= ST_PAUSE_2;
+               end if;
             end if;
 
          when ST_CMD_2 =>
@@ -510,7 +528,11 @@ begin
             saciSelIn.req     <= '0';
             saciTimeoutCntRst <= '1';
             if saciSelOut.ack = '0' then
-               nxtState          <= ST_CMD_3;
+               if intConfig.asicMask(3) = '1' then
+                  nxtState          <= ST_CMD_3;
+               else
+                  nxtState          <= ST_DONE;
+               end if;
             end if;
 
          when ST_CMD_3 =>
