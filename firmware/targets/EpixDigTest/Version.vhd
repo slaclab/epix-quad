@@ -16,7 +16,7 @@ USE ieee.std_logic_1164.ALL;
 
 package Version is
 
-constant FpgaVersion : std_logic_vector(31 downto 0) := x"E0000009"; -- MAKE_VERSION
+constant FpgaVersion : std_logic_vector(31 downto 0) := x"E000000A"; -- MAKE_VERSION
 constant FpgaBaseClock : std_logic_vector(31 downto 0) := x"00" & x"125000";  
 -- FPGA base clock (used for calculating various delay units)
 -- Top two nybbles reserved
@@ -39,5 +39,9 @@ end Version;
 --                          used to control which ASICs get a SACI "prepare 
 --                          for readout.  This should reduce dead time waiting
 --                          for ASICs that aren't present.
+-- 01/14/2014 (0xE000000A): Fixed a "counting by 1" issue for asicRoClk. 
+--                          Improved SACI timeout logic so that various
+--                          frequencies can be used without screwing up the 
+--                          timeout logic. 
 -------------------------------------------------------------------------------
 
