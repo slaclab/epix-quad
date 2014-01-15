@@ -100,7 +100,7 @@ architecture RegControl of RegControl is
    signal saciSelIn   : SaciMasterInType;
    signal saciSelOut  : SaciMasterOutType;
    signal saciTimeout       : std_logic := '0';
-   signal saciTimeoutCnt    : unsigned (8 downto 0) := (others => '0');
+   signal saciTimeoutCnt    : unsigned (12 downto 0) := (others => '0');
    signal saciTimeoutCntEn  : std_logic := '0';
    signal saciTimeoutCntRst : std_logic := '0';
    signal intSelL     : std_logic_vector(3 downto 0);
@@ -558,7 +558,16 @@ begin
    end process;
 
    --Timeout logic for SACI
-   saciTimeout <= saciTimeoutCnt(8);
+--   saciTimeout <= saciTimeoutCnt(saciTimeoutCnt'left);
+   saciTimeout <= saciTimeoutCnt(5 ) when conv_integer(intConfig.saciClkBit(2 downto 0)) = 7 else
+                  saciTimeoutCnt(6 ) when conv_integer(intConfig.saciClkBit(2 downto 0)) = 6 else
+                  saciTimeoutCnt(7 ) when conv_integer(intConfig.saciClkBit(2 downto 0)) = 5 else
+                  saciTimeoutCnt(8 ) when conv_integer(intConfig.saciClkBit(2 downto 0)) = 4 else
+                  saciTimeoutCnt(9 ) when conv_integer(intConfig.saciClkBit(2 downto 0)) = 3 else
+                  saciTimeoutCnt(10) when conv_integer(intConfig.saciClkBit(2 downto 0)) = 2 else
+                  saciTimeoutCnt(11) when conv_integer(intConfig.saciClkBit(2 downto 0)) = 1 else
+                  saciTimeoutCnt(12) when conv_integer(intConfig.saciClkBit(2 downto 0)) = 0 else
+                  saciTimeoutCnt(saciTimeoutCnt'left);
    process( sysClk ) begin
       if rising_edge(sysClk) then
          if saciTimeoutCntRst = '1' or sysClkRst = '1' then

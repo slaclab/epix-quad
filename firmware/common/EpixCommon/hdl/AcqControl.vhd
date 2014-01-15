@@ -269,22 +269,22 @@ begin
             pixelCntRst   <= '0' after tpd;
             adcSampCntEn  <= '1' after tpd;
             firstPixelSet <= '1' after tpd;
-            if stateCnt < unsigned(ePixConfig.asicRoClkHalfT) then
-               stateCntEn      <= '1' after tpd;
-            else
+            if stateCnt = unsigned(ePixConfig.asicRoClkHalfT)-1 or ePixConfig.asicRoClkHalfT = 0 then
                stateCntRst     <= '1' after tpd;
                pixelCntEn      <= '1' after tpd;
+            else
+               stateCntEn      <= '1' after tpd;
             end if;
          --Clock once to the next cell
          when NEXT_CELL_S =>
             pixelCntRst  <= '0' after tpd;
             adcSampCntEn <= '1';
             iAsicClk     <= '1' after tpd;
-            if stateCnt < unsigned(ePixConfig.asicRoClkHalfT) then
-               stateCntEn      <= '1' after tpd;
-            else 
+            if stateCnt = unsigned(ePixConfig.asicRoClkHalfT)-1 or ePixConfig.asicRoClkHalfT = 0 then
                adcSampCntRst   <= '1' after tpd;
                stateCntRst     <= '1' after tpd;
+            else
+               stateCntEn      <= '1' after tpd;
             end if;
          --Synchronize phase of ADC to get repeatable number of ADC valids 
          when SYNC_TEST_S =>
@@ -390,9 +390,9 @@ begin
             else
                nxtState <= curState after tpd;
             end if;
-         --Wait for 8+N valid ADC readouts.  If we're done with all pixels, finish.
+         --ADC reads out while we wait a half period of RoClk.  If we're done with all pixels, finish.
          when WAIT_ADC_S => 
-            if stateCnt >= unsigned(ePixConfig.asicRoClkHalfT) then
+            if stateCnt = unsigned(ePixConfig.asicRoClkHalfT)-1 or unsigned(ePixConfig.asicRoClkHalfT) = 0 then
                if pixelCnt < unsigned(ePixConfig.totalPixelsToRead)-1 then
                   nxtState <= NEXT_CELL_S after tpd;
                else
@@ -403,7 +403,7 @@ begin
             end if;
          --Toggle the asicClk, then back to ADC readouts if there are more pixels to read.
          when NEXT_CELL_S => 
-            if stateCnt = unsigned(ePixConfig.asicRoClkHalfT) then
+            if stateCnt = unsigned(ePixConfig.asicRoClkHalfT)-1 or unsigned(ePixConfig.asicRoClkHalfT) = 0 then
                nxtState <= WAIT_ADC_S after tpd;
             else 
                nxtState <= curState after tpd;
