@@ -134,19 +134,16 @@ architecture RegControl of RegControl is
    signal saciClkEdge : std_logic;
    signal saciRst     : std_logic;
    -- States
-   signal   curState   : std_logic_vector(3 downto 0);
-   signal   nxtState   : std_logic_vector(3 downto 0);
-   constant ST_IDLE    : std_logic_vector(3 downto 0) := "0000";
-   constant ST_REG     : std_logic_vector(3 downto 0) := "0001";
-   constant ST_CMD_0   : std_logic_vector(3 downto 0) := "0010";
-   constant ST_PAUSE_0 : std_logic_vector(3 downto 0) := "0011";
-   constant ST_CMD_1   : std_logic_vector(3 downto 0) := "0100";
-   constant ST_PAUSE_1 : std_logic_vector(3 downto 0) := "0101";
-   constant ST_CMD_2   : std_logic_vector(3 downto 0) := "0110";
-   constant ST_PAUSE_2 : std_logic_vector(3 downto 0) := "0111";
-   constant ST_CMD_3   : std_logic_vector(3 downto 0) := "1000";
-   constant ST_DONE    : std_logic_vector(3 downto 0) := "1001";
-   -- Pseudo-constants (constant within a compile, but vary by application)
+   type saci_state is (IDLE_S, REG_S, SYNC_S, 
+                       CMD_0_S, PAUSE_0_S,
+                       CMD_1_S, PAUSE_1_S,
+                       CMD_2_S, PAUSE_2_S,
+                       CMD_3_S, 
+                       DONE_S);
+   signal   curState   : saci_state := IDLE_S;
+   signal   nxtState   : saci_state := IDLE_S;
+   -- Pseudo-constants (constant within a compile, 
+   --                   but vary by application/base clock rate)
    signal NCYCLES      : integer range 0 to 2047;
    signal NCYCLES_SPI  : integer range 0 to 31; 
  
@@ -291,6 +288,13 @@ begin
          elsif pgpRegOut.regAddr(23 downto 4) = x"00010" then
             pgpRegIn.regDataIn(15 downto 0) <= slowAdcData(conv_integer(pgpRegOut.regAddr(3 downto 0))) after tpd;
 
+         -- ASIC digital output pipeline delay
+         elsif pgpRegOut.regAddr = x"00001F" then
+            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then 
+               intConfig.doutPipelineDelay <= pgpRegOut.regDataOut after tpd;
+            end if;
+            pgpRegIn.regDataIn <= intConfig.doutPipelineDelay after tpd;
+
          -- ASIC acquisition control interfacing, 0x000020 -0x00002F
          -- 0x000020: Cycles from delayed system ACQ (when PPmat turns on) to ASIC R0
          -- 0x000021: Cycles from ASIC R0 coming high to ASIC ACQ coming high
@@ -325,9 +329,12 @@ begin
                                  intConfig.prePulseR0        <= pgpRegOut.regDataOut(6) after tpd;
                                  intConfig.adcStreamMode     <= pgpRegOut.regDataOut(7) after tpd;
                                  intConfig.testPattern       <= pgpRegOut.regDataOut(8) after tpd;
+                                 intConfig.syncMode          <= pgpRegOut.regDataOut(10 downto 9) after tpd;
+                                 intConfig.asicR0Mode        <= pgpRegOut.regDataOut(11) after tpd;
                   when x"B"   => intConfig.asicR0Width       <= pgpRegOut.regDataOut after tpd;
                   when x"C"   => intConfig.pipelineDelay     <= pgpRegOut.regDataOut after tpd;
-                  when x"D"   => intConfig.adcChannelToRead  <= pgpRegOut.regDataOut after tpd;
+                  when x"D"   => intConfig.syncWidth         <= pgpRegOut.regDataOut(15 downto  0) after tpd;
+                                 intConfig.syncDelay         <= pgpRegOut.regDataOut(31 downto 16) after tpd;
                   when x"E"   => intConfig.prePulseR0Width   <= pgpRegOut.regDataOut after tpd;
                   when x"F"   => intConfig.prePulseR0Delay   <= pgpRegOut.regDataOut after tpd;
                   when others =>
@@ -345,14 +352,15 @@ begin
                when x"8"   => pgpRegIn.regDataIn <= intConfig.saciClkBit        after tpd;
                when x"9"   => pgpRegIn.regDataIn <= x"000000" & "00" & intConfig.asicPins          after tpd;
                when x"A"   => pgpRegIn.regDataIn <= x"00000" & 
-                                                    "000"    & 
+                                                    intConfig.asicR0Mode & 
+                                                    intConfig.syncMode &
                                                     intConfig.testPattern &
                                                     intConfig.adcStreamMode & 
                                                     intConfig.prePulseR0 & 
                                                     intConfig.manualPinControl  after tpd;
                when x"B"   => pgpRegIn.regDataIn <= intConfig.asicR0Width       after tpd;
                when x"C"   => pgpRegIn.regDataIn <= intConfig.pipelineDelay     after tpd;
-               when x"D"   => pgpRegIn.regDataIn <= intConfig.adcChannelToRead  after tpd;
+               when x"D"   => pgpRegIn.regDataIn <= intConfig.syncDelay & intConfig.syncWidth after tpd;
                when x"E"   => pgpRegIn.regDataIn <= intConfig.prePulseR0Width   after tpd;
                when x"F"   => pgpRegIn.regDataIn <= intConfig.prePulseR0Delay   after tpd;
                when others =>
@@ -395,6 +403,15 @@ begin
          elsif pgpRegOut.regAddr = x"00039" then
             pgpRegIn.regDataIn <= memDataOutReg(63 downto 32) after tpd;
 
+         -- TPS control register to decide when TPS system reads (0x00040)
+         elsif pgpRegOut.regAddr = x"00040" then
+            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then 
+               intConfig.tpsEdge  <= pgpRegOut.regDataOut(16) after tpd;
+               intConfig.tpsDelay <= pgpRegOut.regDataOut(15 downto 0) after tpd;
+            end if;
+            pgpRegIn.regDataIn <= x"000" & "000" & intConfig.tpsEdge & intConfig.tpsDelay after tpd;
+            
+
          -- Fast ADCs, 0x008000 -  0x00FFFF
          elsif pgpRegOut.regAddr(23 downto 16) = x"00" and pgpRegOut.regAddr(15) = '1' then
             pgpRegIn.regDataIn(7 downto 0) <= adcRdData                                  after tpd;
@@ -429,7 +446,7 @@ begin
    -- Sync states
    process ( sysClk, sysClkRst ) begin
       if ( sysClkRst = '1' ) then
-         curState <= ST_IDLE after tpd;
+         curState <= IDLE_S after tpd;
       elsif rising_edge(sysClk) then
          if (saciClkEdge = '1') then
             curState <= nxtState after tpd;
@@ -455,102 +472,102 @@ begin
 
       case curState is 
 
-         when ST_IDLE =>
+         when IDLE_S =>
             saciTimeoutCntEn  <= '0';
             saciTimeoutCntRst <= '1';
             if saciRegIn.req = '1' then
-               nxtState <= ST_REG;
+               nxtState <= REG_S;
             elsif saciReadoutReq = '1' then
                if intConfig.asicMask(0) = '1' then
-                  nxtState <= ST_CMD_0;
+                  nxtState <= CMD_0_S;
                else
-                  nxtState <= ST_PAUSE_0;
+                  nxtState <= PAUSE_0_S;
                end if;
             end if;
 
-         when ST_REG =>
+         when REG_S =>
             saciSelIn  <= saciRegIn;
             saciRegOut <= saciSelOut;
 
             -- Request de-asserted
             if saciRegIn.req = '0' then
-               nxtState <= ST_IDLE;
+               nxtState <= IDLE_S;
             end if;
 
-         when ST_CMD_0 =>
+         when CMD_0_S =>
             saciSelIn.req    <= '1';
             saciSelIn.chip   <= "00";
 
             -- Transaction acked or we timed out
             if saciSelOut.ack = '1' or saciTimeout = '1' then
-               nxtState <= ST_PAUSE_0;
+               nxtState <= PAUSE_0_S;
             end if;
 
-         when ST_PAUSE_0 =>
+         when PAUSE_0_S =>
             saciSelIn.req     <= '0';
             saciTimeoutCntRst <= '1';
             if saciSelOut.ack = '0' then
                if intConfig.asicMask(1) = '1' then
-                  nxtState          <= ST_CMD_1;
+                  nxtState          <= CMD_1_S;
                else
-                  nxtState          <= ST_PAUSE_1;
+                  nxtState          <= PAUSE_1_S;
                end if;
             end if;
 
-         when ST_CMD_1 =>
+         when CMD_1_S =>
             saciSelIn.req    <= '1';
             saciSelIn.chip   <= "01";
 
             -- Transaction acked or we timed out
             if saciSelOut.ack = '1' or saciTimeout = '1' then
-               nxtState <= ST_PAUSE_1;
+               nxtState <= PAUSE_1_S;
             end if;
 
-         when ST_PAUSE_1 =>
+         when PAUSE_1_S =>
             saciSelIn.req     <= '0';
             saciTimeoutCntRst <= '1';
             if saciSelOut.ack = '0' then
                if intConfig.asicMask(2) = '1' then
-                  nxtState          <= ST_CMD_2;
+                  nxtState          <= CMD_2_S;
                else
-                  nxtState          <= ST_PAUSE_2;
+                  nxtState          <= PAUSE_2_S;
                end if;
             end if;
 
-         when ST_CMD_2 =>
+         when CMD_2_S =>
             saciSelIn.req    <= '1';
             saciSelIn.chip   <= "10";
 
             -- Transaction acked or we timed out 
             if saciSelOut.ack = '1' or saciTimeout = '1' then
-               nxtState <= ST_PAUSE_2;
+               nxtState <= PAUSE_2_S;
             end if;
 
-         when ST_PAUSE_2 =>
+         when PAUSE_2_S =>
             saciSelIn.req     <= '0';
             saciTimeoutCntRst <= '1';
             if saciSelOut.ack = '0' then
                if intConfig.asicMask(3) = '1' then
-                  nxtState          <= ST_CMD_3;
+                  nxtState          <= CMD_3_S;
                else
-                  nxtState          <= ST_DONE;
+                  nxtState          <= DONE_S;
                end if;
             end if;
 
-         when ST_CMD_3 =>
+         when CMD_3_S =>
             saciSelIn.req    <= '1';
             saciSelIn.chip   <= "11";
 
             -- Transaction acked or we timed out
             if saciSelOut.ack = '1' or saciTimeout = '1' then
-               nxtState <= ST_DONE;
+               nxtState <= DONE_S;
             end if;
 
-         when ST_DONE =>
+         when DONE_S =>
             saciReadoutAck    <= '1';
             saciTimeoutCntRst <= '1';
             if saciReadoutReq = '0' then
-               nxtState <= ST_IDLE;
+               nxtState <= IDLE_S;
             end if;
 
          when others =>
@@ -715,11 +732,13 @@ begin
    --  for both the SDD application, which uses 200 MHz base
    --  rate, and the ePix application, which uses 125 MHz base
    --  rate).
-   NCYCLES <= 820  when FpgaVersion(31 downto 24) = x"E0" else
-              410 when FpgaVersion(31 downto 24) = x"E1" else
+   NCYCLES <= 820  when FpgaVersion(31 downto 24) = x"E0" else --ePix100
+              410  when FpgaVersion(31 downto 24) = x"E1" else --SDD
+              820  when FpgaVersion(31 downto 24) = x"E2" else --ePix10k
               1000;
-   NCYCLES_SPI <= 10 when FpgaVersion(31 downto 24) = x"E0" else
-                  5 when FpgaVersion(31 downto 24) = x"E1" else
+   NCYCLES_SPI <= 10 when FpgaVersion(31 downto 24) = x"E0" else --ePix100
+                  5  when FpgaVersion(31 downto 24) = x"E1" else --SDD
+                  10 when FpgaVersion(31 downto 24) = x"E2" else --ePix10k
                   20;
    process(sysClk,sysClkRst) 
       variable counter     : integer range 0 to 2047 := 0;

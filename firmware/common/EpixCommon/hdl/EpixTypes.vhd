@@ -16,6 +16,7 @@
 -------------------------------------------------------------------------------
 LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
+use work.Version.all;
 
 package EpixTypes is
 
@@ -34,7 +35,8 @@ package EpixTypes is
    --Maximum oversampling rate supported
    constant MAX_OVERSAMPLE : integer := 2;
    --Number of columns in an ePix row
-   constant EPIX_COLS_PER_ROW : integer := 96;
+   constant EPIX100_COLS_PER_ROW : integer := 96;
+   constant EPIX10K_COLS_PER_ROW : integer := 48;
 
    --------------------------------------------
    -- Configuration Type
@@ -63,13 +65,19 @@ package EpixTypes is
       asicPins          : std_logic_vector(5 downto 0);
       manualPinControl  : std_logic_vector(5 downto 0);
       pipelineDelay     : std_logic_vector(31 downto 0);
-      adcChannelToRead  : std_logic_vector(31 downto 0);
+      doutPipelineDelay : std_logic_vector(31 downto 0);
+      syncWidth         : std_logic_vector(15 downto 0);
+      syncDelay         : std_logic_vector(15 downto 0);
       prePulseR0Width   : std_logic_vector(31 downto 0);
       prePulseR0Delay   : std_logic_vector(31 downto 0);
       prePulseR0        : std_logic;
+      asicR0Mode        : std_logic;
       testPattern       : std_logic;
       adcStreamMode     : std_logic;
       asicMask          : std_logic_vector(3 downto 0);
+      syncMode          : std_logic_vector(1 downto 0);
+      tpsEdge           : std_logic;
+      tpsDelay          : std_logic_vector(15 downto 0);
    end record;
 
    -- Initialize
@@ -95,14 +103,43 @@ package EpixTypes is
       asicPins          => (others=>'0'),
       manualPinControl  => (others=>'0'),
       pipelineDelay     => (others=>'0'),
-      adcChannelToRead  => (others=>'0'),
+      doutPipelineDelay => (others=>'0'),
+      syncMode          => (others=>'0'),
+      syncWidth         => (others=>'0'),
+      syncDelay         => (others=>'0'),
       prePulseR0        => '0',
+      asicR0Mode        => '0',
       prePulseR0Width   => (others => '0'),
       prePulseR0Delay   => (others => '0'),
       testPattern       => '0',
       adcStreamMode     => '0',
-      asicMask          => (others => '0')
+      asicMask          => (others => '0'),
+      tpsEdge           => '0',
+      tpsDelay          => (others => '0')
    ); 
+
+   --Functions to allow use of EPIX100 or 10k
+   function getNumColumns ( version : std_logic_vector ) return integer;
+
+   constant NCOL_C : integer := getNumColumns(FpgaVersion);
+
    
 end EpixTypes;
 
+package body EpixTypes is
+
+   function getNumColumns (version : std_logic_vector ) return integer is
+   begin
+      --Epix 100
+      if (version(31 downto 24) = x"E0") then
+         return EPIX100_COLS_PER_ROW;
+      --Epix 10k
+      elsif (version(31 downto 24) = x"E2") then
+         return EPIX10K_COLS_PER_ROW;
+      --Other (default to Epix 100)
+      else
+         return EPIX100_COLS_PER_ROW;
+      end if;
+   end function;
+
+end package body EpixTypes;

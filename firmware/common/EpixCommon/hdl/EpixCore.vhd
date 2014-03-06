@@ -103,7 +103,11 @@ entity EpixCore is
       asic0Dm2            : in    std_logic;
       asic0Dm1            : in    std_logic;
       asicRoClkP          : out   std_logic_vector(3 downto 0);
-      asicRoClkM          : out   std_logic_vector(3 downto 0)
+      asicRoClkM          : out   std_logic_vector(3 downto 0);
+      asicSync            : out   std_logic;
+
+      -- ASIC Data Output
+      asicDout            : in    std_logic_vector(3 downto 0) := "0000"
 
    );
 end EpixCore;
@@ -204,6 +208,7 @@ begin
          asicPpbe       => asicPpbe,
          asicGlblRst    => asicGlblRst,
          asicAcq        => iAsicAcq,
+         asicSync       => asicSync,
          asicRoClkP     => asicRoClkP,
          asicRoClkM     => asicRoClkM
       );
@@ -244,7 +249,8 @@ begin
          slowAdcData    => slowAdcData,
          frameTxIn      => frameTxIn,
          frameTxOut     => frameTxOut,
-         mpsOut         => mpsOut
+         mpsOut         => mpsOut,
+         asicDout       => asicDout
       );
 
    -- PGP Front End

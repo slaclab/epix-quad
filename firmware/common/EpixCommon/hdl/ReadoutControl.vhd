@@ -18,12 +18,11 @@
 LIBRARY ieee;
 use work.all;
 use ieee.std_logic_1164.all;
---use ieee.std_logic_arith.all;
---use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 use work.EpixTypes.all;
 use work.Pgp2AppTypesPkg.all;
 use work.StdRtlPkg.all;
+use work.Version.all;
 library UNISIM;
 use UNISIM.vcomponents.all;
 
@@ -63,7 +62,10 @@ entity ReadoutControl is
       frameTxOut          : in    UsBuff32OutType;
 
       -- MPS
-      mpsOut              : out   sl
+      mpsOut              : out   sl;
+
+      -- ASIC digital outputs
+      asicDout            : in    slv(3 downto 0) 
    );
 end ReadoutControl;
 
@@ -75,7 +77,7 @@ architecture ReadoutControl of ReadoutControl is
 
    -- Depth of FIFO 
    constant CH_FIFO_ADDR_WIDTH : integer := 10;
-   constant CH_FIFO_FULL_THRES : integer := 96;
+   constant CH_FIFO_FULL_THRES : integer := NCOL_C;
 
    -- State definitions
    type state is (IDLE_S,
@@ -132,6 +134,11 @@ architecture ReadoutControl of ReadoutControl is
    signal fifoEmptyAll   : sl := '0';
    signal intSeqCount    : unsigned(31 downto 0) := (others => '0');
    signal seqCountEnable : sl := '0';
+
+   signal asicDoutPipeline : Slv128Array(3 downto 0);
+   signal asicDoutDelayed  : slv(3 downto 0);
+
+   signal adcDataToReorder : word16_array(19 downto 0);
 
    type chanMap is array(15 downto 0) of integer range 0 to 15;
    signal channelOrder   : chanMap;
@@ -420,7 +427,7 @@ begin
    begin
       if rising_edge(sysClk) then
          for i in 0 to 3 loop
-            if readTps = '1' and adcValid(16+i) = '1' then
+            if readTps = '1' then
                tpsAdcData(i) <= adcData(16+i);
             end if;
          end loop;
@@ -477,6 +484,10 @@ begin
    memRst <= clearFifos or sysClkRst;
    --Generate logic
    G_RowBuffers : for i in 0 to 15 generate
+      --The following line will need to be modified when we go to full size 10k
+      --since data will need to be synchronized with ASIC clock (x4).
+      adcDataToReorder(i) <= '0' & asicDoutDelayed(i/4) & adcData(i)(13 downto 0);
+ 
       G_OversampBuffers : for j in 0 to MAX_OVERSAMPLE-1 generate
          --Write when the ADC block says data is good AND when AcqControl agrees
          adcMemWrEn(j)(i) <= readValid(j) and adcValid(i) when adcStreamMode = '0' else
@@ -487,7 +498,7 @@ begin
             sysClk      => sysClk,
             sysClkRst   => sysClkRst,
             wrReset     => clearFifos,
-            wrData      => adcData(i),
+            wrData      => adcDataToReorder(i),
             wrEn        => adcMemWrEn(j)(i),
             rdOrder     => adcMemRdOrder(i),
             rdReady     => adcMemRdRdy(j)(i),
@@ -545,7 +556,7 @@ begin
    end generate;
    --Or of all fifo overflow bits
    --And of all fifo empty bits
-   process(sysClk) 
+   PROC_FIFO_LOGIC : process(sysClk) 
       variable runningOr : std_logic := '0';
       variable runningAnd : std_logic := '0';
    begin
@@ -560,6 +571,38 @@ begin
          fifoEmptyAll <= runningAnd;
       end if;
    end process;
+
+   --Pipeline delay for the ASIC digital outputs
+   PROC_DOUT_PIPELINE : process(sysClk) 
+      variable delay : integer range 0 to 127; 
+   begin
+      if rising_edge(sysClk) then
+         if sysClkRst = '1' then
+            for n in 0 to 3 loop
+               asicDoutPipeline(n) <= (others => '0');
+            end loop;
+         else
+            for n in 0 to 3 loop
+               for i in 1 to 127 loop
+                  asicDoutPipeline(n)(i) <= asicDoutPipeline(n)(i-1);
+               end loop;
+               asicDoutPipeline(n)(0) <= asicDout(n);
+            end loop;
+         end if;
+
+         delay := to_integer(unsigned(epixConfig.doutPipelineDelay(6 downto 0)));
+         for n in 0 to 3 loop
+            if FpgaVersion(31 downto 24) = x"E2" then
+               asicDoutDelayed(n) <= asicDoutPipeline(n)( delay );
+            else
+               asicDoutDelayed(n) <= '0';
+            end if;
+         end loop;
+
+      end if;
+   end process;
+
+         
 
 end ReadoutControl;
 

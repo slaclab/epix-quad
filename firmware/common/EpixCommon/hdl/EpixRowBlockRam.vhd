@@ -20,8 +20,7 @@
 LIBRARY ieee;
 use work.all;
 use ieee.std_logic_1164.all;
-use ieee.std_logic_arith.all;
-use ieee.std_logic_unsigned.all;
+use ieee.numeric_std.all;
 use work.EpixTypes.all;
 use work.StdRtlPkg.all;
 library UNISIM;
@@ -106,7 +105,7 @@ begin
             iWrCol <= (others => '0');
             iWrRow <= (others => '0');
          elsif wrEn = '1' then
-            if iWrCol = 95 then
+            if iWrCol = NCOL_C-1 then
                iWrCol <= (others => '0');
                iWrRow <= iWrRow + 1;
             else 
@@ -141,7 +140,7 @@ begin
          when RD_FWD_S  =>
             iRdInc    <= '1';
             iRdEn     <= '1';
-            if (iRdCol = 95) then
+            if (iRdCol = NCOL_C-1) then
                nxtState <= IDLE_S;
             end if;
          when RD_BKD_S  =>
@@ -216,7 +215,7 @@ begin
             if rdOrder = '0' then
                iRdCol <= (others => '0');
             else
-               iRdCol <= "1011111";
+               iRdCol <= to_unsigned(NCOL_C-1,7);
             end if;
          elsif iRdInc = '1' then
             iRdCol <= iRdCol + 1;
@@ -228,7 +227,8 @@ begin
 
    
    --Instantiate a blockram for the ping-pong scheme
-   --Size is minimum 2 * 96 = 
+   --Size is minimum 2 * 96 = 192 values (ePix 100)
+   --                2 * 48 = 96 values (ePix 10k)
    U_RowBuffer : entity work.TrueDualPortRam
       generic map (
          DATA_WIDTH_G => 16,
