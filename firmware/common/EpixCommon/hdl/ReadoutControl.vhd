@@ -197,7 +197,8 @@ begin
    --------------------------------------------------
    process (curState,adcFifoRdData,chCnt,adcFifoRdValid,fillCnt,wordCnt,
             acqCount,intSeqCount,overSmplCnt,fifoOflowAny,ePixConfig,
-            frameTxOut,tpsAdcData,channelOrder,acqBusy,adcFifoEmpty,adcMemOflowAny) begin
+            frameTxOut,tpsAdcData,channelOrder,acqBusy,adcFifoEmpty,adcMemOflowAny,
+            dataSendEdge) begin
          --Defaults
          frameTxIn.frameTxEnable <= '0' after tpd;
          frameTxIn.frameTxSOF    <= '0' after tpd;
@@ -314,7 +315,8 @@ begin
                nxtState <= ARMED_S after tpd;
             end if;
          when ARMED_S =>
-            if dataSendEdge = '1' then
+            -- Only accept the dataSend signal if AcqControl has accepted the acq signal
+            if dataSendEdge = '1' and acqBusy = '1' then
                nxtState <= HEADER_S after tpd;
             elsif (timeoutCnt >= DAQ_TIMEOUT) then
                nxtState <= IDLE_S after tpd;

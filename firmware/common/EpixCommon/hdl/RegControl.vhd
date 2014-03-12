@@ -455,7 +455,7 @@ begin
    end process;
 
    -- Async states
-   process ( curState, saciRegIn,  saciSelOut, saciReadoutReq, saciTimeout ) begin
+   process ( curState, saciRegIn,  saciSelOut, saciReadoutReq, saciTimeout, intConfig ) begin
       saciRegOut.ack    <= '0';
       saciRegOut.fail   <= '0';
       saciRegOut.rdData <= (others=>'0');
