@@ -21,6 +21,7 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 use work.EpixTypes.all;
+use work.ScopeTypes.all;
 use work.Pgp2AppTypesPkg.all;
 use work.SaciMasterPkg.all;
 use work.Version.all;
@@ -41,6 +42,7 @@ entity RegControl is
 
       -- Configuration
       epixConfig      : out   EpixConfigType;
+      scopeConfig     : out   ScopeConfigType;
       resetReq        : out   std_logic;
 
       -- Status
@@ -93,12 +95,13 @@ end RegControl;
 architecture RegControl of RegControl is
 
    -- Local Signals
-   signal intConfig   : EpixConfigType;
-   signal intRegIn    : RegSlaveInType;
-   signal saciRegIn   : SaciMasterInType;
-   signal saciRegOut  : SaciMasterOutType;
-   signal saciSelIn   : SaciMasterInType;
-   signal saciSelOut  : SaciMasterOutType;
+   signal intConfig      : EpixConfigType;
+   signal intScopeConfig : ScopeConfigType;
+   signal intRegIn       : RegSlaveInType;
+   signal saciRegIn      : SaciMasterInType;
+   signal saciRegOut     : SaciMasterOutType;
+   signal saciSelIn      : SaciMasterInType;
+   signal saciSelOut     : SaciMasterOutType;
    signal saciTimeout       : std_logic := '0';
    signal saciTimeoutCnt    : unsigned (12 downto 0) := (others => '0');
    signal saciTimeoutCntEn  : std_logic := '0';
@@ -156,6 +159,7 @@ begin
    -- Outputs
    ------------------
    epixConfig  <= intConfig;
+   scopeConfig <= intScopeConfig;
    saciSelL    <= intSelL;
    powerEnable <= ipowerEn;
 
@@ -165,18 +169,19 @@ begin
    process ( sysClk, sysClkRst ) begin
       if ( sysClkRst = '1' ) then
 
-         intConfig          <= EpixConfigInit after tpd;
-         pgpRegIn.regAck    <= '0'            after tpd;
-         pgpRegIn.regFail   <= '0'            after tpd;
-         pgpRegIn.regDataIn <= (others=>'0')  after tpd;
-         saciRegIn.req      <= '0'            after tpd;
-         resetReq           <= '0'            after tpd;
-         dacData            <= (others=>'0')  after tpd;
-         dacStrobe          <= '0'            after tpd;
-         ipowerEn           <= "00"           after tpd;
-         adcWrReq           <= '0'            after tpd;
-         adcRdReq           <= '0'            after tpd;
-         adcSel             <= "00"           after tpd;
+         intConfig          <= EpixConfigInit  after tpd;
+         intScopeConfig     <= ScopeConfigInit after tpd;
+         pgpRegIn.regAck    <= '0'             after tpd;
+         pgpRegIn.regFail   <= '0'             after tpd;
+         pgpRegIn.regDataIn <= (others=>'0')   after tpd;
+         saciRegIn.req      <= '0'             after tpd;
+         resetReq           <= '0'             after tpd;
+         dacData            <= (others=>'0')   after tpd;
+         dacStrobe          <= '0'             after tpd;
+         ipowerEn           <= "00"            after tpd;
+         adcWrReq           <= '0'             after tpd;
+         adcRdReq           <= '0'             after tpd;
+         adcSel             <= "00"            after tpd;
       elsif rising_edge(sysClk) then
 
          -- Defaults
@@ -411,6 +416,47 @@ begin
             end if;
             pgpRegIn.regDataIn <= x"000" & "000" & intConfig.tpsEdge & intConfig.tpsDelay after tpd;
             
+         -- Virtual oscilloscope x"0005X"
+         elsif pgpRegOut.regAddr = x"00050" then
+            intScopeConfig.arm <= pgpRegOut.regReq and pgpRegOut.regOp;
+         elsif pgpRegOut.regAddr = x"00051" then
+            intScopeConfig.trig <= pgpRegOut.regReq and pgpRegOut.regOp;
+
+         elsif pgpRegOut.regAddr(23 downto 4) = x"0005" then
+            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
+               case pgpRegOut.regAddr(3 downto 0) is
+                  when x"2"   => intScopeConfig.scopeEnable       <= pgpRegOut.regDataOut(0)              after tpd;
+                                 intScopeConfig.triggerEdge       <= pgpRegOut.regDataOut(1)              after tpd;
+                                 intScopeConfig.triggerChannel    <= pgpRegOut.regDataOut( 5 downto  2)   after tpd;
+                                 intScopeConfig.triggerMode       <= pgpRegOut.regDataOut( 7 downto  6)   after tpd;
+                                 intScopeConfig.triggerAdcThresh  <= pgpRegOut.regDataOut(31 downto 16)   after tpd;
+                  when x"3"   => intScopeConfig.triggerHoldoff    <= pgpRegOut.regDataOut(12 downto  0)   after tpd;
+                                 intScopeConfig.triggerOffset     <= pgpRegOut.regDataOut(25 downto 13)   after tpd;
+                  when x"4"   => intScopeConfig.traceLength       <= pgpRegOut.regDataOut(12 downto  0)   after tpd;
+                                 intScopeConfig.skipSamples       <= pgpRegOut.regDataOut(25 downto 13)   after tpd;
+                  when x"5"   => intScopeConfig.inputChannelA     <= pgpRegOut.regDataOut( 4 downto  0)   after tpd;
+                                 intScopeConfig.inputChannelB     <= pgpRegOut.regDataOut( 9 downto  5)   after tpd;
+                  when others =>
+               end case;
+            end if;
+            case pgpRegOut.regAddr(3 downto 0) is
+               when x"2"   => pgpRegIn.regDataIn <= intScopeConfig.triggerAdcThresh &
+                                                    x"00" & 
+                                                    intScopeConfig.triggerMode & 
+                                                    intScopeConfig.triggerChannel &
+                                                    intScopeConfig.triggerEdge &
+                                                    intScopeConfig.scopeEnable after tpd; 
+               when x"3"   => pgpRegIn.regDataIn <= "000000" &
+                                                    intScopeConfig.triggerOffset &
+                                                    intScopeConfig.triggerHoldoff after tpd;
+               when x"4"   => pgpRegIn.regDataIn <= "000000" &
+                                                    intScopeConfig.traceLength &
+                                                    intScopeConfig.skipSamples after tpd;
+               when x"5"   => pgpRegIn.regDataIn <= x"00000" & "00" & 
+                                                    intScopeConfig.inputChannelA &
+                                                    intScopeConfig.inputChannelB after tpd;
+               when others =>
+            end case;
 
          -- Fast ADCs, 0x008000 -  0x00FFFF
          elsif pgpRegOut.regAddr(23 downto 16) = x"00" and pgpRegOut.regAddr(15) = '1' then
@@ -459,6 +505,7 @@ begin
       saciRegOut.ack    <= '0';
       saciRegOut.fail   <= '0';
       saciRegOut.rdData <= (others=>'0');
+      saciSelIn.reset   <= '0';
       saciSelIn.req     <= '0';
       saciSelIn.chip    <= "00";
       saciSelIn.op      <= '0';

@@ -54,6 +54,10 @@ entity PgpFrontEnd is
       frameTxIn        : in  UsBuff32InType;
       frameTxOut       : out UsBuff32OutType;
 
+      -- Oscillscope channel data transfer signals
+      scopeTxIn        : in  UsBuff32InType;
+      scopeTxOut       : out UsBuff32OutType;
+
       -- Gtp Serial Pins
       pgpRxN           : in  std_logic;
       pgpRxP           : in  std_logic;
@@ -280,17 +284,34 @@ begin
          regDataIn       => pgpRegIn.regDataIn
       );
 
-   -- VC2 Unused
-   pgpTxVcIn(2).frameTxValid  <= '0';
-   pgpTxVcIn(2).frameTxSOF    <= '0';
-   pgpTxVcIn(2).frameTxEOF    <= '0';
-   pgpTxVcIn(2).frameTxEOFE   <= '0';
-   pgpTxVcIn(2).frameTxData   <= (others=>(others=>'0'));
+   -- Lane 0, VC2, Virtual oscillope channel
+   U_ScopeBuff: entity work.Pgp2Us32Buff 
+      generic map ( 
+         FifoType => "V5" 
+      ) 
+      port map ( 
+         pgpClk           => ipgpClk,
+         pgpReset         => ipgpClkRst,
+         locClk           => isysClk,
+         locReset         => isysClkRst,
+         frameTxValid     => scopeTxIn.frameTxEnable,
+         frameTxSOF       => scopeTxIn.frameTxSOF,
+         frameTxEOF       => scopeTxIn.frameTxEOF,
+         frameTxEOFE      => scopeTxIn.frameTxEOFE,
+         frameTxData      => scopeTxIn.frameTxData,
+         frameTxAFull     => scopeTxOut.frameTxAFull,
+         vcFrameTxValid   => pgpTxVcIn(2).frameTxValid,
+         vcFrameTxReady   => pgpTxVcOut(2).frameTxReady,
+         vcFrameTxSOF     => pgpTxVcIn(2).frameTxSOF,
+         vcFrameTxEOF     => pgpTxVcIn(2).frameTxEOF,
+         vcFrameTxEOFE    => pgpTxVcIn(2).frameTxEOFE,
+         vcFrameTxData    => pgpTxVcIn(2).frameTxData(0),
+         vcRemBuffAFull   => pgpRxVcOut(2).remBuffAFull,
+         vcRemBuffFull    => pgpRxVcOut(2).remBuffFull
+      );
+   -- No corresponding receiver for VC2
    pgpTxVcIn(2).locBuffAFull  <= '0';
    pgpTxVcIn(2).locBuffFull   <= '0';
-   --pgpTxVcOut(2).frameTxReady
-   --pgpRxVcOut(2).remBuffAFull
-   --pgpRxVcOut(2).remBuffFull
    --pgpRxVcOut(2).frameRxValid,
 
    -- VC3 Unused

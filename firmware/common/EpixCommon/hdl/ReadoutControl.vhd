@@ -315,8 +315,7 @@ begin
                nxtState <= ARMED_S after tpd;
             end if;
          when ARMED_S =>
-            -- Only accept the dataSend signal if AcqControl has accepted the acq signal
-            if dataSendEdge = '1' and acqBusy = '1' then
+            if dataSendEdge = '1' then
                nxtState <= HEADER_S after tpd;
             elsif (timeoutCnt >= DAQ_TIMEOUT) then
                nxtState <= IDLE_S after tpd;
@@ -488,12 +487,24 @@ begin
    G_RowBuffers : for i in 0 to 15 generate
       --The following line will need to be modified when we go to full size 10k
       --since data will need to be synchronized with ASIC clock (x4).
-      adcDataToReorder(i) <= '0' & asicDoutDelayed(i/4) & adcData(i)(13 downto 0);
+      process(sysClk) begin
+         if rising_edge(sysClk) then
+            adcDataToReorder(i) <= '0' & asicDoutDelayed(i/4) & adcData(i)(13 downto 0);
+         end if;
+      end process;
  
       G_OversampBuffers : for j in 0 to MAX_OVERSAMPLE-1 generate
          --Write when the ADC block says data is good AND when AcqControl agrees
-         adcMemWrEn(j)(i) <= readValid(j) and adcValid(i) when adcStreamMode = '0' else
-                             '0';
+         process(sysClk) begin
+            if rising_edge(sysClk) then
+               if adcStreamMode = '0' then
+                  adcMemWrEn(j)(i) <= readValid(j) and adcValid(i);
+               else
+                  adcMemWrEn(j)(i) <= '0';
+               end if;
+            end if;
+         end process;
+
          --Instantiate memory
          U_RowBuffer : entity work.EpixRowBlockRam
          port map (

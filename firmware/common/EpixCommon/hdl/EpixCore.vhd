@@ -21,6 +21,7 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 use work.EpixTypes.all;
+use work.ScopeTypes.all;
 use work.Pgp2AppTypesPkg.all;
 library UNISIM;
 use UNISIM.vcomponents.all;
@@ -123,10 +124,13 @@ architecture EpixCore of EpixCore is
    signal pgpRegOut        : RegSlaveOutType;
    signal pgpRegIn         : RegSlaveInType;
    signal epixConfig       : EpixConfigType;
+   signal scopeConfig      : ScopeConfigType;
    signal acqCount         : std_logic_vector(31 downto 0);
    signal seqCount         : std_logic_vector(31 downto 0);
    signal frameTxIn        : UsBuff32InType;
    signal frameTxOut       : UsBuff32OutType;
+   signal scopeTxIn        : UsBuff32InType;
+   signal scopeTxOut       : UsBuff32OutType;
    signal pgpCmd           : CmdSlaveOutType;
    signal acqStart         : std_logic;
    signal acqBusy          : std_logic;
@@ -141,6 +145,12 @@ architecture EpixCore of EpixCore is
    signal saciReadoutAck   : std_logic;
    signal iPowerEnable     : std_logic_vector(1 downto 0);
    signal iAsicAcq         : std_logic;
+   signal iAsicR0          : std_logic;
+   signal iAsicRoClk       : std_logic;
+   signal iAsicPpmat       : std_logic;
+   signal iAsicPpbe        : std_logic;
+   signal iAsicSync        : std_logic;
+   signal iAsicGr          : std_logic;
    signal iRunTrigger      : std_logic;
    signal iDaqTrigger      : std_logic;
    signal iDelayCtrlRdy    : std_logic;
@@ -164,6 +174,16 @@ begin
 
    powerEnable <= iPowerEnable;
    asicAcq     <= iAsicAcq;
+   asicR0      <= iAsicR0;
+   asicPpmat   <= iAsicPpmat;
+   asicPpbe    <= iAsicPpbe;
+   asicSync    <= iAsicSync;
+   asicGlblRst <= iAsicGr;
+   saciSelL    <= iSaciSelL;
+
+   -- For debugging, use scope trigger and arm on mpsOut
+   mpsOut     <= not(scopeConfig.trig or scopeConfig.arm); 
+
    -- Trigger out is tied to the integration window
    -- for the ASIC for ease of timing alignment.
    -- When in non-ASIC readout mode, it is simply tied to
@@ -203,14 +223,15 @@ begin
          saciReadoutAck => saciReadoutAck,
          adcClkP        => adcClkP,
          adcClkM        => adcClkM,
-         asicR0         => asicR0,
-         asicPpmat      => asicPpmat,
-         asicPpbe       => asicPpbe,
-         asicGlblRst    => asicGlblRst,
+         asicR0         => iAsicR0,
+         asicPpmat      => iAsicPpmat,
+         asicPpbe       => iAsicPpbe,
+         asicGlblRst    => iAsicGr,
          asicAcq        => iAsicAcq,
-         asicSync       => asicSync,
+         asicSync       => iAsicSync,
          asicRoClkP     => asicRoClkP,
-         asicRoClkM     => asicRoClkM
+         asicRoClkM     => asicRoClkM,
+         asicRoClk      => iAsicRoClk
       );
 
    -- ADC Control
@@ -249,8 +270,30 @@ begin
          slowAdcData    => slowAdcData,
          frameTxIn      => frameTxIn,
          frameTxOut     => frameTxOut,
-         mpsOut         => mpsOut,
+         mpsOut         => open,
          asicDout       => asicDout
+      );
+
+   -- Virtual oscilloscope
+   U_PseudoScope : entity work.PseudoScope
+      port map (
+         sysClk         => sysClk,
+         sysClkRst      => sysClkRst,
+         adcData        => adcData,
+         adcValid       => adcValid,
+         arm            => acqStart,
+         acqStart       => acqStart,
+         asicAcq        => iAsicAcq,
+         asicR0         => iAsicR0,
+         asicPpmat      => iAsicPpmat,
+         asicPpbe       => iAsicPpbe,
+         asicSync       => iAsicSync,
+         asicGr         => iAsicGr,
+         asicRoClk      => iAsicRoClk,
+         asicSaciSel    => iSaciSelL,
+         scopeConfig    => scopeConfig,
+         frameTxIn      => scopeTxIn,
+         frameTxOut     => scopeTxOut
       );
 
    -- PGP Front End
@@ -271,6 +314,8 @@ begin
          pgpRegIn       => pgpRegIn,
          frameTxIn      => frameTxIn,
          frameTxOut     => frameTxOut,
+         scopeTxIn      => scopeTxIn,
+         scopeTxOut     => scopeTxOut,
          pgpRxN         => fiberRxn,
          pgpRxP         => fiberRxp,
          pgpTxN         => fiberTxn,
@@ -285,13 +330,14 @@ begin
          pgpRegOut      => pgpRegOut,
          pgpRegIn       => pgpRegIn,
          epixConfig     => epixConfig,
+         scopeConfig    => scopeConfig,
          resetReq       => resetReq,
          acqCount       => acqCount,
          seqCount       => seqCount,
          saciReadoutReq => saciReadoutReq,
          saciReadoutAck => saciReadoutAck,
          saciClk        => saciClk,
-         saciSelL       => saciSelL,
+         saciSelL       => iSaciSelL,
          saciCmd        => saciCmd,
          saciRsp        => saciRsp,
          dacSclk        => dacSclk,

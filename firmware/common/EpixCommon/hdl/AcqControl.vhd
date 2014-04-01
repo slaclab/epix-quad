@@ -59,7 +59,8 @@ entity AcqControl is
       asicAcq             : out   std_logic;
       asicSync            : out   std_logic;
       asicRoClkP          : out   std_logic_vector(3 downto 0);
-      asicRoClkM          : out   std_logic_vector(3 downto 0)
+      asicRoClkM          : out   std_logic_vector(3 downto 0);
+      asicRoClk           : out   std_logic
 
    );
 end AcqControl;
@@ -150,6 +151,8 @@ begin
    U_AsicClk1 : OBUFDS port map ( I => asicClk, O => asicRoClkP(1), OB => asicRoClkM(1) );
    U_AsicClk2 : OBUFDS port map ( I => asicClk, O => asicRoClkP(2), OB => asicRoClkM(2) );
    U_AsicClk3 : OBUFDS port map ( I => asicClk, O => asicRoClkP(3), OB => asicRoClkM(3) );
+   -- Single ended version out
+   asicRoClk <= asicClk;
 
    --MUXes for manual control of ASIC signals
    asicGlblRst <= iAsicGlblRst           when ePixConfig.manualPinControl(0) = '0' else

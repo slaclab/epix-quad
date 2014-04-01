@@ -16,7 +16,7 @@ USE ieee.std_logic_1164.ALL;
 
 package Version is
 
-constant FpgaVersion : std_logic_vector(31 downto 0) := x"E000000D"; -- MAKE_VERSION
+constant FpgaVersion : std_logic_vector(31 downto 0) := x"E000000E"; -- MAKE_VERSION
 constant FpgaBaseClock : std_logic_vector(31 downto 0) := x"00" & x"125000";  
 -- FPGA base clock (used for calculating various delay units)
 -- Top two nybbles reserved
