@@ -22,7 +22,7 @@ use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 use work.EpixTypes.all;
 use work.ScopeTypes.all;
-use work.Pgp2AppTypesPkg.all;
+use work.VcPkg.all;
 library UNISIM;
 use UNISIM.vcomponents.all;
 
@@ -121,17 +121,17 @@ architecture EpixCore of EpixCore is
    signal sysClk           : std_logic;
    signal sysClkRst        : std_logic;
    signal resetReq         : std_logic;
-   signal pgpRegOut        : RegSlaveOutType;
-   signal pgpRegIn         : RegSlaveInType;
+   signal pgpRegOut        : VcRegSlaveOutType;
+   signal pgpRegIn         : VcRegSlaveInType;
    signal epixConfig       : EpixConfigType;
    signal scopeConfig      : ScopeConfigType;
    signal acqCount         : std_logic_vector(31 downto 0);
    signal seqCount         : std_logic_vector(31 downto 0);
-   signal frameTxIn        : UsBuff32InType;
-   signal frameTxOut       : UsBuff32OutType;
-   signal scopeTxIn        : UsBuff32InType;
-   signal scopeTxOut       : UsBuff32OutType;
-   signal pgpCmd           : CmdSlaveOutType;
+   signal frameTxIn        : VcUsBuff32InType;
+   signal frameTxOut       : VcUsBuff32OutType;
+   signal scopeTxIn        : VcUsBuff32InType;
+   signal scopeTxOut       : VcUsBuff32OutType;
+   signal pgpCmd           : VcCmdSlaveOutType;
    signal acqStart         : std_logic;
    signal acqBusy          : std_logic;
    signal dataSend         : std_logic;
@@ -154,6 +154,7 @@ architecture EpixCore of EpixCore is
    signal iRunTrigger      : std_logic;
    signal iDaqTrigger      : std_logic;
    signal iDelayCtrlRdy    : std_logic;
+   signal adcPulse         : std_logic;
 
    --Local signals being kept for chipscope probing
    attribute keep          : string;
@@ -182,7 +183,7 @@ begin
    saciSelL    <= iSaciSelL;
 
    -- For debugging, use scope trigger and arm on mpsOut
-   mpsOut     <= not(scopeConfig.trig or scopeConfig.arm); 
+   mpsOut     <= not(iDaqTrigger); 
 
    -- Trigger out is tied to the integration window
    -- for the ASIC for ease of timing alignment.
@@ -218,6 +219,7 @@ begin
          acqBusy        => acqBusy,
          readDone       => readDone,
          readValid      => readValid,
+         adcPulse       => adcPulse,
          readTps        => readTps,
          saciReadoutReq => saciReadoutReq,
          saciReadoutAck => saciReadoutAck,
@@ -265,6 +267,7 @@ begin
          acqBusy        => acqBusy,
          dataSend       => dataSend,
          readTps        => readTps,
+         adcPulse       => adcPulse,
          adcValid       => adcValid,
          adcData        => adcData,
          slowAdcData    => slowAdcData,

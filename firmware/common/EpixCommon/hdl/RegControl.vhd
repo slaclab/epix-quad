@@ -22,7 +22,7 @@ use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 use work.EpixTypes.all;
 use work.ScopeTypes.all;
-use work.Pgp2AppTypesPkg.all;
+use work.VcPkg.all;
 use work.SaciMasterPkg.all;
 use work.Version.all;
 use work.StdRtlPkg.all;
@@ -37,8 +37,8 @@ entity RegControl is
       sysClkRst       : in    std_logic;
 
       -- Register Bus
-      pgpRegOut       : in    RegSlaveOutType;
-      pgpRegIn        : out   RegSlaveInType;
+      pgpRegOut       : in    VcRegSlaveOutType;
+      pgpRegIn        : out   VcRegSlaveInType;
 
       -- Configuration
       epixConfig      : out   EpixConfigType;
@@ -97,7 +97,7 @@ architecture RegControl of RegControl is
    -- Local Signals
    signal intConfig      : EpixConfigType;
    signal intScopeConfig : ScopeConfigType;
-   signal intRegIn       : RegSlaveInType;
+   signal intRegIn       : VcRegSlaveInType;
    signal saciRegIn      : SaciMasterInType;
    signal saciRegOut     : SaciMasterOutType;
    signal saciSelIn      : SaciMasterInType;
@@ -169,25 +169,25 @@ begin
    process ( sysClk, sysClkRst ) begin
       if ( sysClkRst = '1' ) then
 
-         intConfig          <= EpixConfigInit  after tpd;
-         intScopeConfig     <= ScopeConfigInit after tpd;
-         pgpRegIn.regAck    <= '0'             after tpd;
-         pgpRegIn.regFail   <= '0'             after tpd;
-         pgpRegIn.regDataIn <= (others=>'0')   after tpd;
-         saciRegIn.req      <= '0'             after tpd;
-         resetReq           <= '0'             after tpd;
-         dacData            <= (others=>'0')   after tpd;
-         dacStrobe          <= '0'             after tpd;
-         ipowerEn           <= "00"            after tpd;
-         adcWrReq           <= '0'             after tpd;
-         adcRdReq           <= '0'             after tpd;
-         adcSel             <= "00"            after tpd;
+         intConfig       <= EpixConfigInit  after tpd;
+         intScopeConfig  <= ScopeConfigInit after tpd;
+         pgpRegIn.ack    <= '0'             after tpd;
+         pgpRegIn.fail   <= '0'             after tpd;
+         pgpRegIn.rdData <= (others=>'0')   after tpd;
+         saciRegIn.req   <= '0'             after tpd;
+         resetReq        <= '0'             after tpd;
+         dacData         <= (others=>'0')   after tpd;
+         dacStrobe       <= '0'             after tpd;
+         ipowerEn        <= "00"            after tpd;
+         adcWrReq        <= '0'             after tpd;
+         adcRdReq        <= '0'             after tpd;
+         adcSel          <= "00"            after tpd;
       elsif rising_edge(sysClk) then
 
          -- Defaults
-         pgpRegIn.regAck         <= pgpRegOut.regReq after tpd;
-         pgpRegIn.regFail        <= '0'              after tpd;
-         pgpRegIn.regDataIn      <= (others=>'0')    after tpd;
+         pgpRegIn.ack            <= pgpRegOut.req after tpd;
+         pgpRegIn.fail           <= '0'              after tpd;
+         pgpRegIn.rdData         <= (others=>'0')    after tpd;
          intConfig.acqCountReset <= '0'              after tpd;
          intConfig.seqCountReset <= '0'              after tpd;
          saciRegIn.req           <= '0'              after tpd;
@@ -197,108 +197,130 @@ begin
          adcSel                  <= "00"             after tpd;
 
          -- Version register, 0x000000
-         if pgpRegOut.regAddr = x"000000" then
-            pgpRegIn.regDataIn <= FpgaVersion after tpd;
-            resetReq <= pgpRegOut.regReq and pgpRegOut.regOp after tpd; -- Reset request
+         if pgpRegOut.addr = x"000000" then
+            pgpRegIn.rdData <= FpgaVersion after tpd;
+            resetReq <= pgpRegOut.req and pgpRegOut.op after tpd; -- Reset request
 
          -- Run Trigger Enable, 0x000001
-         elsif pgpRegOut.regAddr = x"000001" then
-            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
-               intConfig.runTriggerEnable <= pgpRegOut.regDataOut(0) after tpd;
+         elsif pgpRegOut.addr = x"000001" then
+            if pgpRegOut.req = '1' and pgpRegOut.op = '1' then
+               intConfig.runTriggerEnable <= pgpRegOut.wrData(0) after tpd;
             end if;
-            pgpRegIn.regDataIn(0) <= intConfig.runTriggerEnable after tpd;
+            pgpRegIn.rdData(0) <= intConfig.runTriggerEnable after tpd;
 
          -- Run Trigger Delay, 0x000002
-         elsif pgpRegOut.regAddr = x"000002" then
-            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
-               intConfig.runTriggerDelay <= pgpRegOut.regDataOut after tpd;
+         elsif pgpRegOut.addr = x"000002" then
+            if pgpRegOut.req = '1' and pgpRegOut.op = '1' then
+               intConfig.runTriggerDelay <= pgpRegOut.wrData after tpd;
             end if;
-            pgpRegIn.regDataIn <= intConfig.runTriggerDelay after tpd;
+            pgpRegIn.rdData <= intConfig.runTriggerDelay after tpd;
 
          -- DAQ Trigger Enable, 0x000003
-         elsif pgpRegOut.regAddr = x"000003" then
-            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
-               intConfig.daqTriggerEnable <= pgpRegOut.regDataOut(0) after tpd;
+         elsif pgpRegOut.addr = x"000003" then
+            if pgpRegOut.req = '1' and pgpRegOut.op = '1' then
+               intConfig.daqTriggerEnable <= pgpRegOut.wrData(0) after tpd;
             end if;
-            pgpRegIn.regDataIn(0) <= intConfig.daqTriggerEnable after tpd;
+            pgpRegIn.rdData(0) <= intConfig.daqTriggerEnable after tpd;
 
          -- DAQ Trigger Delay, 0x000004
-         elsif pgpRegOut.regAddr = x"000004" then
-            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
-               intConfig.daqTriggerDelay <= pgpRegOut.regDataOut after tpd;
+         elsif pgpRegOut.addr = x"000004" then
+            if pgpRegOut.req = '1' and pgpRegOut.op = '1' then
+               intConfig.daqTriggerDelay <= pgpRegOut.wrData after tpd;
             end if;
-            pgpRegIn.regDataIn <= intConfig.daqTriggerDelay after tpd;
+            pgpRegIn.rdData <= intConfig.daqTriggerDelay after tpd;
 
          -- ACQ Counter, 0x000005
-         elsif pgpRegOut.regAddr = x"000005" then
-            pgpRegIn.regDataIn <= acqCount after tpd;
+         elsif pgpRegOut.addr = x"000005" then
+            pgpRegIn.rdData <= acqCount after tpd;
 
          -- ACQ Count Reset, 0x000006
-         elsif pgpRegOut.regAddr = x"000006" then
-            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
+         elsif pgpRegOut.addr = x"000006" then
+            if pgpRegOut.req = '1' and pgpRegOut.op = '1' then
                intConfig.acqCountReset <= '1' after tpd;
             end if;
 
          -- DAC Setting, 0x000007
-         elsif pgpRegOut.regAddr = x"000007" then
-            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
-               dacData   <= pgpRegOut.regDataOut(15 downto 0) after tpd;
+         elsif pgpRegOut.addr = x"000007" then
+            if pgpRegOut.req = '1' and pgpRegOut.op = '1' then
+               dacData   <= pgpRegOut.wrData(15 downto 0) after tpd;
                dacStrobe <= '1'                               after tpd;
             end if;
-            pgpRegIn.regDataIn <= x"0000" & dacData after tpd;
+            pgpRegIn.rdData <= x"0000" & dacData after tpd;
 
          -- Power Enable, 0x000008
-         elsif pgpRegOut.regAddr = x"000008" then
-            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
-               ipowerEn <= pgpRegOut.regDataOut(1 downto 0) after tpd;
+         elsif pgpRegOut.addr = x"000008" then
+            if pgpRegOut.req = '1' and pgpRegOut.op = '1' then
+               ipowerEn <= pgpRegOut.wrData(1 downto 0) after tpd;
             end if;
-            pgpRegIn.regDataIn(1 downto 0) <= ipowerEn after tpd;
+            pgpRegIn.rdData(1 downto 0) <= ipowerEn after tpd;
 
          -- Fast ADC frame delay, 0x000009
-         elsif pgpRegOut.regAddr = x"000009" then
-            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
-               intConfig.adcDelay(0) <= pgpRegOut.regDataOut(5  downto 0);
-               intConfig.adcDelay(1) <= pgpRegOut.regDataOut(11 downto 6);
-               intConfig.adcDelay(2) <= pgpRegOut.regDataOut(17 downto 12);
+         elsif pgpRegOut.addr = x"000009" then
+            if pgpRegOut.req = '1' and pgpRegOut.op = '1' then
+               intConfig.adcDelay(0) <= pgpRegOut.wrData(5  downto 0);
+               intConfig.adcDelay(1) <= pgpRegOut.wrData(11 downto 6);
+               intConfig.adcDelay(2) <= pgpRegOut.wrData(17 downto 12);
             end if;
-            intConfig.adcDelayUpdate <= pgpRegOut.regReq and pgpRegOut.regOp;
-            pgpRegIn.regDataIn <= x"000" & "00" & intConfig.adcDelay(2) & intConfig.adcDelay(1) & intConfig.adcDelay(0);
+            intConfig.adcDelayUpdate <= pgpRegOut.req and pgpRegOut.op;
+            pgpRegIn.rdData <= x"000" & "00" & intConfig.adcDelay(2) & intConfig.adcDelay(1) & intConfig.adcDelay(0);
 
          -- IDELAYCTRL status, 0x00000A
-         elsif pgpRegOut.regAddr = x"00000A" then
-            pgpRegIn.regDataIn(0) <= iDelayCtrlRdy;
+         elsif pgpRegOut.addr = x"00000A" then
+            pgpRegIn.rdData(0) <= iDelayCtrlRdy;
 
          -- Frame count, 0x00000B
-         elsif pgpRegOut.regAddr = x"00000B" then
-            pgpRegIn.regDataIn <= seqCount after tpd;
+         elsif pgpRegOut.addr = x"00000B" then
+            pgpRegIn.rdData <= seqCount after tpd;
 
          -- Frame count reset, 0x00000C
-         elsif pgpRegOut.regAddr = x"00000C" then
-            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
+         elsif pgpRegOut.addr = x"00000C" then
+            if pgpRegOut.req = '1' and pgpRegOut.op = '1' then
                intConfig.seqCountReset <= '1' after tpd;
             end if;
 
          -- ASIC Mask, 0x00000D
-         elsif pgpRegOut.regAddr = x"00000D" then
-            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then 
-               intConfig.asicMask <= pgpRegOut.regDataOut(3 downto 0) after tpd;
+         elsif pgpRegOut.addr = x"00000D" then
+            if pgpRegOut.req = '1' and pgpRegOut.op = '1' then 
+               intConfig.asicMask <= pgpRegOut.wrData(3 downto 0) after tpd;
             end if;
-            pgpRegIn.regDataIn <= x"0000000" & intConfig.asicMask after tpd;
+            pgpRegIn.rdData <= x"0000000" & intConfig.asicMask after tpd;
 
          -- FPGA base clock frequency, 0x000010
-         elsif pgpRegOut.regAddr = x"000010" then
-            pgpRegIn.regDataIn <= FpgaBaseClock after tpd;
+         elsif pgpRegOut.addr = x"000010" then
+            pgpRegIn.rdData <= FpgaBaseClock after tpd;
+
+         -- Auto trigger enables, run, 0x000011
+         elsif pgpRegOut.addr <= x"000011" then
+            if pgpRegOut.req = '1' and pgpRegOut.op = '1' then 
+               intConfig.autoRunEn <= pgpRegOut.wrData(0) after tpd;
+            end if;
+            pgpRegIn.rdData(0) <= intConfig.autoRunEn after tpd;
+
+         -- Auto trigger enables, run, 0x000012
+         elsif pgpRegOut.addr <= x"000012" then
+            if pgpRegOut.req = '1' and pgpRegOut.op = '1' then 
+               intConfig.autoTrigPeriod <= pgpRegOut.wrData after tpd;
+            end if;
+            pgpRegIn.rdData <= intConfig.autoTrigPeriod after tpd;
+
+         -- Auto trigger enables, run, 0x000013
+         elsif pgpRegOut.addr <= x"000013" then
+            if pgpRegOut.req = '1' and pgpRegOut.op = '1' then 
+               intConfig.autoDaqEn <= pgpRegOut.wrData(0) after tpd;
+            end if;
+            pgpRegIn.rdData(0) <= intConfig.autoDaqEn after tpd;
+            
 
          -- Slow ADC, 0x0000100 -  0x000010F
-         elsif pgpRegOut.regAddr(23 downto 4) = x"00010" then
-            pgpRegIn.regDataIn(15 downto 0) <= slowAdcData(conv_integer(pgpRegOut.regAddr(3 downto 0))) after tpd;
+         elsif pgpRegOut.addr(23 downto 4) = x"00010" then
+            pgpRegIn.rdData(15 downto 0) <= slowAdcData(conv_integer(pgpRegOut.addr(3 downto 0))) after tpd;
 
          -- ASIC digital output pipeline delay
-         elsif pgpRegOut.regAddr = x"00001F" then
-            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then 
-               intConfig.doutPipelineDelay <= pgpRegOut.regDataOut after tpd;
+         elsif pgpRegOut.addr = x"00001F" then
+            if pgpRegOut.req = '1' and pgpRegOut.op = '1' then 
+               intConfig.doutPipelineDelay <= pgpRegOut.wrData after tpd;
             end if;
-            pgpRegIn.regDataIn <= intConfig.doutPipelineDelay after tpd;
+            pgpRegIn.rdData <= intConfig.doutPipelineDelay after tpd;
 
          -- ASIC acquisition control interfacing, 0x000020 -0x00002F
          -- 0x000020: Cycles from delayed system ACQ (when PPmat turns on) to ASIC R0
@@ -317,161 +339,161 @@ begin
          -- 0x00002D: ADC channel to read
          -- 0x00002E: Adjust width of pre-pulse R0
          -- 0x00002F: Adjust delay from pre-pulse R0 to start of "normal" state machine
-         elsif pgpRegOut.regAddr(23 downto 4) = x"0002" then
-            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
-               case pgpRegOut.regAddr(3 downto 0) is
-                  when x"0"   => intConfig.acqToAsicR0Delay  <= pgpRegOut.regDataOut after tpd;
-                  when x"1"   => intConfig.asicR0ToAsicAcq   <= pgpRegOut.regDataOut after tpd;
-                  when x"2"   => intConfig.asicAcqWidth      <= pgpRegOut.regDataOut after tpd; 
-                  when x"3"   => intConfig.asicAcqLToPPmatL  <= pgpRegOut.regDataOut after tpd;
-                  when x"4"   => intConfig.asicRoClkHalfT    <= pgpRegOut.regDataOut after tpd;
-                  when x"5"   => intConfig.adcReadsPerPixel  <= pgpRegOut.regDataOut after tpd;
-                  when x"6"   => intConfig.adcClkHalfT       <= pgpRegOut.regDataOut after tpd;
-                  when x"7"   => intConfig.totalPixelsToRead <= pgpRegOut.regDataOut after tpd;
-                  when x"8"   => intConfig.saciClkBit        <= pgpRegOut.regDataOut after tpd;
-                  when x"9"   => intConfig.asicPins          <= pgpRegOut.regDataOut(5 downto 0) after tpd;
-                  when x"A"   => intConfig.manualPinControl  <= pgpRegOut.regDataOut(5 downto 0) after tpd;
-                                 intConfig.prePulseR0        <= pgpRegOut.regDataOut(6) after tpd;
-                                 intConfig.adcStreamMode     <= pgpRegOut.regDataOut(7) after tpd;
-                                 intConfig.testPattern       <= pgpRegOut.regDataOut(8) after tpd;
-                                 intConfig.syncMode          <= pgpRegOut.regDataOut(10 downto 9) after tpd;
-                                 intConfig.asicR0Mode        <= pgpRegOut.regDataOut(11) after tpd;
-                  when x"B"   => intConfig.asicR0Width       <= pgpRegOut.regDataOut after tpd;
-                  when x"C"   => intConfig.pipelineDelay     <= pgpRegOut.regDataOut after tpd;
-                  when x"D"   => intConfig.syncWidth         <= pgpRegOut.regDataOut(15 downto  0) after tpd;
-                                 intConfig.syncDelay         <= pgpRegOut.regDataOut(31 downto 16) after tpd;
-                  when x"E"   => intConfig.prePulseR0Width   <= pgpRegOut.regDataOut after tpd;
-                  when x"F"   => intConfig.prePulseR0Delay   <= pgpRegOut.regDataOut after tpd;
+         elsif pgpRegOut.addr(23 downto 4) = x"0002" then
+            if pgpRegOut.req = '1' and pgpRegOut.op = '1' then
+               case pgpRegOut.addr(3 downto 0) is
+                  when x"0"   => intConfig.acqToAsicR0Delay  <= pgpRegOut.wrData after tpd;
+                  when x"1"   => intConfig.asicR0ToAsicAcq   <= pgpRegOut.wrData after tpd;
+                  when x"2"   => intConfig.asicAcqWidth      <= pgpRegOut.wrData after tpd; 
+                  when x"3"   => intConfig.asicAcqLToPPmatL  <= pgpRegOut.wrData after tpd;
+                  when x"4"   => intConfig.asicRoClkHalfT    <= pgpRegOut.wrData after tpd;
+                  when x"5"   => intConfig.adcReadsPerPixel  <= pgpRegOut.wrData after tpd;
+                  when x"6"   => intConfig.adcClkHalfT       <= pgpRegOut.wrData after tpd;
+                  when x"7"   => intConfig.totalPixelsToRead <= pgpRegOut.wrData after tpd;
+                  when x"8"   => intConfig.saciClkBit        <= pgpRegOut.wrData after tpd;
+                  when x"9"   => intConfig.asicPins          <= pgpRegOut.wrData(5 downto 0) after tpd;
+                  when x"A"   => intConfig.manualPinControl  <= pgpRegOut.wrData(5 downto 0) after tpd;
+                                 intConfig.prePulseR0        <= pgpRegOut.wrData(6) after tpd;
+                                 intConfig.adcStreamMode     <= pgpRegOut.wrData(7) after tpd;
+                                 intConfig.testPattern       <= pgpRegOut.wrData(8) after tpd;
+                                 intConfig.syncMode          <= pgpRegOut.wrData(10 downto 9) after tpd;
+                                 intConfig.asicR0Mode        <= pgpRegOut.wrData(11) after tpd;
+                  when x"B"   => intConfig.asicR0Width       <= pgpRegOut.wrData after tpd;
+                  when x"C"   => intConfig.pipelineDelay     <= pgpRegOut.wrData after tpd;
+                  when x"D"   => intConfig.syncWidth         <= pgpRegOut.wrData(15 downto  0) after tpd;
+                                 intConfig.syncDelay         <= pgpRegOut.wrData(31 downto 16) after tpd;
+                  when x"E"   => intConfig.prePulseR0Width   <= pgpRegOut.wrData after tpd;
+                  when x"F"   => intConfig.prePulseR0Delay   <= pgpRegOut.wrData after tpd;
                   when others =>
                end case;
             end if;
-            case pgpRegOut.regAddr(3 downto 0) is
-               when x"0"   => pgpRegIn.regDataIn <= intConfig.acqToAsicR0Delay  after tpd;
-               when x"1"   => pgpRegIn.regDataIn <= intConfig.asicR0ToAsicAcq   after tpd;
-               when x"2"   => pgpRegIn.regDataIn <= intConfig.asicAcqWidth      after tpd;
-               when x"3"   => pgpRegIn.regDataIn <= intConfig.asicAcqLToPPmatL  after tpd;
-               when x"4"   => pgpRegIn.regDataIn <= intConfig.asicRoClkHalfT    after tpd;
-               when x"5"   => pgpRegIn.regDataIn <= intConfig.adcReadsPerPixel  after tpd;
-               when x"6"   => pgpRegIn.regDataIn <= intConfig.adcClkHalfT       after tpd;
-               when x"7"   => pgpRegIn.regDataIn <= intConfig.totalPixelsToRead after tpd;
-               when x"8"   => pgpRegIn.regDataIn <= intConfig.saciClkBit        after tpd;
-               when x"9"   => pgpRegIn.regDataIn <= x"000000" & "00" & intConfig.asicPins          after tpd;
-               when x"A"   => pgpRegIn.regDataIn <= x"00000" & 
+            case pgpRegOut.addr(3 downto 0) is
+               when x"0"   => pgpRegIn.rdData <= intConfig.acqToAsicR0Delay  after tpd;
+               when x"1"   => pgpRegIn.rdData <= intConfig.asicR0ToAsicAcq   after tpd;
+               when x"2"   => pgpRegIn.rdData <= intConfig.asicAcqWidth      after tpd;
+               when x"3"   => pgpRegIn.rdData <= intConfig.asicAcqLToPPmatL  after tpd;
+               when x"4"   => pgpRegIn.rdData <= intConfig.asicRoClkHalfT    after tpd;
+               when x"5"   => pgpRegIn.rdData <= intConfig.adcReadsPerPixel  after tpd;
+               when x"6"   => pgpRegIn.rdData <= intConfig.adcClkHalfT       after tpd;
+               when x"7"   => pgpRegIn.rdData <= intConfig.totalPixelsToRead after tpd;
+               when x"8"   => pgpRegIn.rdData <= intConfig.saciClkBit        after tpd;
+               when x"9"   => pgpRegIn.rdData <= x"000000" & "00" & intConfig.asicPins          after tpd;
+               when x"A"   => pgpRegIn.rdData <= x"00000" & 
                                                     intConfig.asicR0Mode & 
                                                     intConfig.syncMode &
                                                     intConfig.testPattern &
                                                     intConfig.adcStreamMode & 
                                                     intConfig.prePulseR0 & 
                                                     intConfig.manualPinControl  after tpd;
-               when x"B"   => pgpRegIn.regDataIn <= intConfig.asicR0Width       after tpd;
-               when x"C"   => pgpRegIn.regDataIn <= intConfig.pipelineDelay     after tpd;
-               when x"D"   => pgpRegIn.regDataIn <= intConfig.syncDelay & intConfig.syncWidth after tpd;
-               when x"E"   => pgpRegIn.regDataIn <= intConfig.prePulseR0Width   after tpd;
-               when x"F"   => pgpRegIn.regDataIn <= intConfig.prePulseR0Delay   after tpd;
+               when x"B"   => pgpRegIn.rdData <= intConfig.asicR0Width       after tpd;
+               when x"C"   => pgpRegIn.rdData <= intConfig.pipelineDelay     after tpd;
+               when x"D"   => pgpRegIn.rdData <= intConfig.syncDelay & intConfig.syncWidth after tpd;
+               when x"E"   => pgpRegIn.rdData <= intConfig.prePulseR0Width   after tpd;
+               when x"F"   => pgpRegIn.rdData <= intConfig.prePulseR0Delay   after tpd;
                when others =>
             end case;
 
          -- Serial ID chip (digital card)
-         elsif pgpRegOut.regAddr = x"00030" then 
-            pgpRegIn.regDataIn <= serNumReg(0)(31 downto 0);
-         elsif pgpRegOut.regAddr = x"00031" then
-            pgpRegIn.regDataIn <= serNumReg(0)(63 downto 32);
+         elsif pgpRegOut.addr = x"00030" then 
+            pgpRegIn.rdData <= serNumReg(0)(31 downto 0);
+         elsif pgpRegOut.addr = x"00031" then
+            pgpRegIn.rdData <= serNumReg(0)(63 downto 32);
          -- Serial ID chip (analog card)
-         elsif pgpRegOut.regAddr = x"00032" then 
-            pgpRegIn.regDataIn <= serNumReg(1)(31 downto 0);
-         elsif pgpRegOut.regAddr = x"00033" then
-            pgpRegIn.regDataIn <= serNumReg(1)(63 downto 32);
+         elsif pgpRegOut.addr = x"00032" then 
+            pgpRegIn.rdData <= serNumReg(1)(31 downto 0);
+         elsif pgpRegOut.addr = x"00033" then
+            pgpRegIn.rdData <= serNumReg(1)(63 downto 32);
 
          -- EEPROM (digital card)
-         elsif pgpRegOut.regAddr = x"00034" then
-            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
-               memAddr <= pgpRegOut.regDataOut (15 downto 0);
+         elsif pgpRegOut.addr = x"00034" then
+            if pgpRegOut.req = '1' and pgpRegOut.op = '1' then
+               memAddr <= pgpRegOut.wrData (15 downto 0);
             end if;
-            pgpRegIn.regDataIn (15 downto 0) <= memAddr after tpd;
-         elsif pgpRegOut.regAddr = x"00037" then
-            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
-               memAddr <= pgpRegOut.regDataOut (15 downto 0);
+            pgpRegIn.rdData (15 downto 0) <= memAddr after tpd;
+         elsif pgpRegOut.addr = x"00037" then
+            if pgpRegOut.req = '1' and pgpRegOut.op = '1' then
+               memAddr <= pgpRegOut.wrData (15 downto 0);
             end if;
-            pgpRegIn.regDataIn (15 downto 0) <= memAddr after tpd;
-         elsif pgpRegOut.regAddr = x"00035" then
-            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then 
-               memDataIn (31 downto 0) <= pgpRegOut.regDataOut after tpd;
+            pgpRegIn.rdData (15 downto 0) <= memAddr after tpd;
+         elsif pgpRegOut.addr = x"00035" then
+            if pgpRegOut.req = '1' and pgpRegOut.op = '1' then 
+               memDataIn (31 downto 0) <= pgpRegOut.wrData after tpd;
             end if;
-            pgpRegIn.regDataIn <= memDataIn (31 downto 0) after tpd;
-         elsif pgpRegOut.regAddr = x"00036" then
-            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then 
-               memDataIn (63 downto 32)  <= pgpRegOut.regDataOut after tpd;
+            pgpRegIn.rdData <= memDataIn (31 downto 0) after tpd;
+         elsif pgpRegOut.addr = x"00036" then
+            if pgpRegOut.req = '1' and pgpRegOut.op = '1' then 
+               memDataIn (63 downto 32)  <= pgpRegOut.wrData after tpd;
             end if;
-            pgpRegIn.regDataIn <= memDataIn (63 downto 32) after tpd;
-         elsif pgpRegOut.regAddr = x"00038" then
-            pgpRegIn.regDataIn <= memDataOutReg(31 downto 0) after tpd;
-         elsif pgpRegOut.regAddr = x"00039" then
-            pgpRegIn.regDataIn <= memDataOutReg(63 downto 32) after tpd;
+            pgpRegIn.rdData <= memDataIn (63 downto 32) after tpd;
+         elsif pgpRegOut.addr = x"00038" then
+            pgpRegIn.rdData <= memDataOutReg(31 downto 0) after tpd;
+         elsif pgpRegOut.addr = x"00039" then
+            pgpRegIn.rdData <= memDataOutReg(63 downto 32) after tpd;
 
          -- TPS control register to decide when TPS system reads (0x00040)
-         elsif pgpRegOut.regAddr = x"00040" then
-            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then 
-               intConfig.tpsEdge  <= pgpRegOut.regDataOut(16) after tpd;
-               intConfig.tpsDelay <= pgpRegOut.regDataOut(15 downto 0) after tpd;
+         elsif pgpRegOut.addr = x"00040" then
+            if pgpRegOut.req = '1' and pgpRegOut.op = '1' then 
+               intConfig.tpsEdge  <= pgpRegOut.wrData(16) after tpd;
+               intConfig.tpsDelay <= pgpRegOut.wrData(15 downto 0) after tpd;
             end if;
-            pgpRegIn.regDataIn <= x"000" & "000" & intConfig.tpsEdge & intConfig.tpsDelay after tpd;
+            pgpRegIn.rdData <= x"000" & "000" & intConfig.tpsEdge & intConfig.tpsDelay after tpd;
             
          -- Virtual oscilloscope x"0005X"
-         elsif pgpRegOut.regAddr = x"00050" then
-            intScopeConfig.arm <= pgpRegOut.regReq and pgpRegOut.regOp;
-         elsif pgpRegOut.regAddr = x"00051" then
-            intScopeConfig.trig <= pgpRegOut.regReq and pgpRegOut.regOp;
+         elsif pgpRegOut.addr = x"00050" then
+            intScopeConfig.arm <= pgpRegOut.req and pgpRegOut.op;
+         elsif pgpRegOut.addr = x"00051" then
+            intScopeConfig.trig <= pgpRegOut.req and pgpRegOut.op;
 
-         elsif pgpRegOut.regAddr(23 downto 4) = x"0005" then
-            if pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1' then
-               case pgpRegOut.regAddr(3 downto 0) is
-                  when x"2"   => intScopeConfig.scopeEnable       <= pgpRegOut.regDataOut(0)              after tpd;
-                                 intScopeConfig.triggerEdge       <= pgpRegOut.regDataOut(1)              after tpd;
-                                 intScopeConfig.triggerChannel    <= pgpRegOut.regDataOut( 5 downto  2)   after tpd;
-                                 intScopeConfig.triggerMode       <= pgpRegOut.regDataOut( 7 downto  6)   after tpd;
-                                 intScopeConfig.triggerAdcThresh  <= pgpRegOut.regDataOut(31 downto 16)   after tpd;
-                  when x"3"   => intScopeConfig.triggerHoldoff    <= pgpRegOut.regDataOut(12 downto  0)   after tpd;
-                                 intScopeConfig.triggerOffset     <= pgpRegOut.regDataOut(25 downto 13)   after tpd;
-                  when x"4"   => intScopeConfig.traceLength       <= pgpRegOut.regDataOut(12 downto  0)   after tpd;
-                                 intScopeConfig.skipSamples       <= pgpRegOut.regDataOut(25 downto 13)   after tpd;
-                  when x"5"   => intScopeConfig.inputChannelA     <= pgpRegOut.regDataOut( 4 downto  0)   after tpd;
-                                 intScopeConfig.inputChannelB     <= pgpRegOut.regDataOut( 9 downto  5)   after tpd;
+         elsif pgpRegOut.addr(23 downto 4) = x"0005" then
+            if pgpRegOut.req = '1' and pgpRegOut.op = '1' then
+               case pgpRegOut.addr(3 downto 0) is
+                  when x"2"   => intScopeConfig.scopeEnable       <= pgpRegOut.wrData(0)              after tpd;
+                                 intScopeConfig.triggerEdge       <= pgpRegOut.wrData(1)              after tpd;
+                                 intScopeConfig.triggerChannel    <= pgpRegOut.wrData( 5 downto  2)   after tpd;
+                                 intScopeConfig.triggerMode       <= pgpRegOut.wrData( 7 downto  6)   after tpd;
+                                 intScopeConfig.triggerAdcThresh  <= pgpRegOut.wrData(31 downto 16)   after tpd;
+                  when x"3"   => intScopeConfig.triggerHoldoff    <= pgpRegOut.wrData(12 downto  0)   after tpd;
+                                 intScopeConfig.triggerOffset     <= pgpRegOut.wrData(25 downto 13)   after tpd;
+                  when x"4"   => intScopeConfig.traceLength       <= pgpRegOut.wrData(12 downto  0)   after tpd;
+                                 intScopeConfig.skipSamples       <= pgpRegOut.wrData(25 downto 13)   after tpd;
+                  when x"5"   => intScopeConfig.inputChannelA     <= pgpRegOut.wrData( 4 downto  0)   after tpd;
+                                 intScopeConfig.inputChannelB     <= pgpRegOut.wrData( 9 downto  5)   after tpd;
                   when others =>
                end case;
             end if;
-            case pgpRegOut.regAddr(3 downto 0) is
-               when x"2"   => pgpRegIn.regDataIn <= intScopeConfig.triggerAdcThresh &
+            case pgpRegOut.addr(3 downto 0) is
+               when x"2"   => pgpRegIn.rdData <= intScopeConfig.triggerAdcThresh &
                                                     x"00" & 
                                                     intScopeConfig.triggerMode & 
                                                     intScopeConfig.triggerChannel &
                                                     intScopeConfig.triggerEdge &
                                                     intScopeConfig.scopeEnable after tpd; 
-               when x"3"   => pgpRegIn.regDataIn <= "000000" &
+               when x"3"   => pgpRegIn.rdData <= "000000" &
                                                     intScopeConfig.triggerOffset &
                                                     intScopeConfig.triggerHoldoff after tpd;
-               when x"4"   => pgpRegIn.regDataIn <= "000000" &
-                                                    intScopeConfig.traceLength &
-                                                    intScopeConfig.skipSamples after tpd;
-               when x"5"   => pgpRegIn.regDataIn <= x"00000" & "00" & 
-                                                    intScopeConfig.inputChannelA &
-                                                    intScopeConfig.inputChannelB after tpd;
+               when x"4"   => pgpRegIn.rdData <= "000000" &
+                                                    intScopeConfig.skipSamples &
+                                                    intScopeConfig.traceLength after tpd;
+               when x"5"   => pgpRegIn.rdData <= x"00000" & "00" & 
+                                                    intScopeConfig.inputChannelB &
+                                                    intScopeConfig.inputChannelA after tpd;
                when others =>
             end case;
 
          -- Fast ADCs, 0x008000 -  0x00FFFF
-         elsif pgpRegOut.regAddr(23 downto 16) = x"00" and pgpRegOut.regAddr(15) = '1' then
-            pgpRegIn.regDataIn(7 downto 0) <= adcRdData                                  after tpd;
-            adcSel                         <= pgpRegOut.regAddr(14 downto 13)            after tpd;
-            adcWrReq                       <= pgpRegOut.regReq and pgpRegOut.regOp       after tpd;
-            adcRdReq                       <= pgpRegOut.regReq and (not pgpRegOut.regOp) after tpd;
-            pgpRegIn.regAck                <= adcAck                                     after tpd;
+         elsif pgpRegOut.addr(23 downto 16) = x"00" and pgpRegOut.addr(15) = '1' then
+            pgpRegIn.rdData(7 downto 0) <= adcRdData                                  after tpd;
+            adcSel                         <= pgpRegOut.addr(14 downto 13)            after tpd;
+            adcWrReq                       <= pgpRegOut.req and pgpRegOut.op       after tpd;
+            adcRdReq                       <= pgpRegOut.req and (not pgpRegOut.op) after tpd;
+            pgpRegIn.ack                <= adcAck                                     after tpd;
 
          -- SACI Space, 0x800000
-         elsif pgpRegOut.regAddr(23) = '1' then
-            saciRegIn.req      <= pgpRegOut.regReq  after tpd;
-            pgpRegIn.regDataIn <= saciRegOut.rdData after tpd;
-            pgpRegIn.regAck    <= saciRegOut.ack    after tpd;
-            pgpRegIn.regFail   <= saciRegOut.fail   after tpd;
+         elsif pgpRegOut.addr(23) = '1' then
+            saciRegIn.req      <= pgpRegOut.req  after tpd;
+            pgpRegIn.rdData <= saciRegOut.rdData after tpd;
+            pgpRegIn.ack    <= saciRegOut.ack    after tpd;
+            pgpRegIn.fail   <= saciRegOut.fail   after tpd;
          end if;
 
       end if;
@@ -479,11 +501,11 @@ begin
 
    -- SACI Constants
    saciRegIn.reset  <= sysClkRst;
-   saciRegIn.chip   <= pgpRegOut.regAddr(21 downto 20);
-   saciRegIn.op     <= pgpRegOut.regOp;
-   saciRegIn.cmd    <= pgpRegOut.regAddr(18 downto 12);
-   saciRegIn.addr   <= pgpRegOut.regAddr(11 downto 0);
-   saciRegIn.wrData <= pgpRegOut.regDataOut;
+   saciRegIn.chip   <= pgpRegOut.addr(21 downto 20);
+   saciRegIn.op     <= pgpRegOut.op;
+   saciRegIn.cmd    <= pgpRegOut.addr(18 downto 12);
+   saciRegIn.addr   <= pgpRegOut.addr(11 downto 0);
+   saciRegIn.wrData <= pgpRegOut.wrData;
 
    -----------------------------------------------
    -- Readout Init Request
@@ -494,9 +516,9 @@ begin
       if ( sysClkRst = '1' ) then
          curState <= IDLE_S after tpd;
       elsif rising_edge(sysClk) then
-         if (saciClkEdge = '1') then
-            curState <= nxtState after tpd;
-         end if;
+--         if (saciClkEdge = '1') then
+         curState <= nxtState after tpd;
+--         end if;
       end if;  
    end process;
 
@@ -522,8 +544,15 @@ begin
          when IDLE_S =>
             saciTimeoutCntEn  <= '0';
             saciTimeoutCntRst <= '1';
+            -- By default, listen to the register controller.
+            saciSelIn  <= saciRegIn;
+            saciRegOut <= saciSelOut;
+            -- If we get a reg request, move to reg state to
+            -- monitor for timeouts.
             if saciRegIn.req = '1' then
                nxtState <= REG_S;
+            -- Otherwise, process the automatic prepare for
+            -- readout command.
             elsif saciReadoutReq = '1' then
                if intConfig.asicMask(0) = '1' then
                   nxtState <= CMD_0_S;
@@ -547,6 +576,7 @@ begin
 
             -- Transaction acked or we timed out
             if saciSelOut.ack = '1' or saciTimeout = '1' then
+               saciSelIn.req <= '0';
                nxtState <= PAUSE_0_S;
             end if;
 
@@ -567,6 +597,7 @@ begin
 
             -- Transaction acked or we timed out
             if saciSelOut.ack = '1' or saciTimeout = '1' then
+               saciSelIn.req <= '0';
                nxtState <= PAUSE_1_S;
             end if;
 
@@ -587,6 +618,7 @@ begin
 
             -- Transaction acked or we timed out 
             if saciSelOut.ack = '1' or saciTimeout = '1' then
+               saciSelIn.req <= '0';
                nxtState <= PAUSE_2_S;
             end if;
 
@@ -607,6 +639,7 @@ begin
 
             -- Transaction acked or we timed out
             if saciSelOut.ack = '1' or saciTimeout = '1' then
+               saciSelIn.req <= '0';
                nxtState <= DONE_S;
             end if;
 
@@ -820,9 +853,9 @@ begin
       variable RW          : integer range 0 to 2 := 0;
    begin
    if rising_edge(sysClk) then   
-      if (pgpRegOut.regAddr = x"00034" and pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1')  then
+      if (pgpRegOut.addr = x"00034" and pgpRegOut.req = '1' and pgpRegOut.op = '1')  then
           RW := 1;
-      elsif (pgpRegOut.regAddr = x"00037" and pgpRegOut.regReq = '1' and pgpRegOut.regOp = '1') then
+      elsif (pgpRegOut.addr = x"00037" and pgpRegOut.req = '1' and pgpRegOut.op = '1') then
           RW := 2; 
       end if;
       if RW = 1 then
@@ -858,9 +891,9 @@ begin
          sysClk     => sysClk,
          sysClkRst  => sysClkRst,
          sysClkEn   => spiClkEn,
-         adcWrData  => pgpRegOut.regDataOut(7 downto 0),
+         adcWrData  => pgpRegOut.wrData(7 downto 0),
          adcRdData  => adcRdData,
-         adcAddr    => pgpRegOut.regAddr(12 downto 0),
+         adcAddr    => pgpRegOut.addr(12 downto 0),
          adcWrReq   => adcWrReq,
          adcRdReq   => adcRdReq,
          adcAck     => adcAck,

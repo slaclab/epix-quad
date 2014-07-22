@@ -61,21 +61,21 @@ end AdcReadout;
 -- Define architecture
 architecture AdcReadout of AdcReadout is
 
-   -- Data FIFO
-   component afifo_16x16_dist
-      port (
-         rst    : in  std_logic;
-         wr_clk : in  std_logic;
-         rd_clk : in  std_logic;
-         din    : in  std_logic_vector(15 downto 0);
-         wr_en  : in  std_logic;
-         rd_en  : in  std_logic;
-         dout   : out std_logic_vector(15 downto 0);
-         full   : out std_logic;
-         empty  : out std_logic;
-         valid  : out std_logic
-      );
-   end component;
+--   -- Data FIFO
+--   component afifo_16x16_dist
+--      port (
+--         rst    : in  std_logic;
+--         wr_clk : in  std_logic;
+--         rd_clk : in  std_logic;
+--         din    : in  std_logic_vector(15 downto 0);
+--         wr_en  : in  std_logic;
+--         rd_en  : in  std_logic;
+--         dout   : out std_logic_vector(15 downto 0);
+--         full   : out std_logic;
+--         empty  : out std_logic;
+--         valid  : out std_logic
+--      );
+--   end component;
 
    -- Local Signals
    signal adcBitClkIo     : std_logic;
@@ -437,18 +437,59 @@ begin
       end process;
 
       -- Data FIFO
-      U_DataFifo: afifo_16x16_dist port map (
-         rst    => adcBitRst,
-         wr_clk => adcBitClkR,
-         rd_clk => sysClk,
-         din    => adcDataInt(i),
-         wr_en  => adcDataWr,
-         rd_en  => adcDataRd(i),
-         dout   => adcDataOut(i),
-         full   => open,
-         empty  => open,
-         valid  => adcDataRd(i)
-      );
+      U_DataFifo : entity work.FifoMux
+         generic map (
+            TPD_G              => tpd,
+            CASCADE_SIZE_G     => 1, 
+            LAST_STAGE_ASYNC_G => true,
+            RST_POLARITY_G     => '1', 
+            RST_ASYNC_G        => false,
+            GEN_SYNC_FIFO_G    => false,
+            BRAM_EN_G          => false,
+            FWFT_EN_G          => true,
+            USE_DSP48_G        => "no",
+            ALTERA_SYN_G       => false,
+            ALTERA_RAM_G       => "M9K",
+            USE_BUILT_IN_G     => false,
+            XIL_DEVICE_G       => "VIRTEX5",
+            SYNC_STAGES_G      => 3,
+            PIPE_STAGES_G      => 0,
+            WR_DATA_WIDTH_G    => 16,
+            RD_DATA_WIDTH_G    => 16,
+            LITTLE_ENDIAN_G    => false,
+            ADDR_WIDTH_G       => 4,
+            INIT_G             => "0",
+            FULL_THRES_G       => 1,
+            EMPTY_THRES_G      => 1           
+         )
+         port map (
+            -- Resets
+            rst           => adcBitRst,
+            --Write Ports (wr_clk domain)
+            wr_clk        => adcBitClkR,
+            wr_en         => adcDataWr,
+            din           => adcDataInt(i),
+            full          => open,
+            --Read Ports (rd_clk domain)
+            rd_clk        => sysClk,
+            rd_en         => adcDataRd(i),
+            dout          => adcDataOut(i),
+            valid         => adcdataRd(i),
+            empty         => open
+         );
+
+--      U_DataFifo: afifo_16x16_dist port map (
+--         rst    => adcBitRst,
+--         wr_clk => adcBitClkR,
+--         rd_clk => sysClk,
+--         din    => adcDataInt(i),
+--         wr_en  => adcDataWr,
+--         rd_en  => adcDataRd(i),
+--         dout   => adcDataOut(i),
+--         full   => open,
+--         empty  => open,
+--         valid  => adcDataRd(i)
+--      );
 
       -- Connect external signals
       process ( sysClk, sysClkRst ) begin

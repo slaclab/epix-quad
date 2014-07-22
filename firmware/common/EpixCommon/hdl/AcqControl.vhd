@@ -37,6 +37,7 @@ entity AcqControl is
       acqBusy             : out   std_logic;
       readDone            : in    std_logic;
       readValid           : out   std_logic_vector(MAX_OVERSAMPLE-1 downto 0);
+      adcPulse            : out   std_logic;
       readTps             : out   std_logic;
 
       -- Configuration
@@ -74,7 +75,7 @@ architecture AcqControl of AcqControl is
    signal adcClkEdge         : std_logic             := '0';
    signal asicClk            : std_logic             := '0';
    signal adcCnt             : unsigned(31 downto 0) := (others => '0');
-   signal adcSampCnt         : unsigned(31 downto 0) := (others => '0');
+   signal adcSampCnt         : slv(31 downto 0) := (others => '0');
    signal adcSampCntEn       : sl := '0';
    signal adcSampCntRst      : sl := '0';
    signal rstCnt             : unsigned(25 downto 0) := (others => '0');
@@ -191,6 +192,9 @@ begin
 
    --Busy is internal busy or data left in the pipeline
    acqBusy <= iAcqBusy or iReadValidWaiting;
+   
+   -- ADC pulse signal allows counting of adc cycles in other blocks
+   adcPulse <= adcClkEdge;
 
 
 -- Normal path for taking data frames
@@ -214,7 +218,6 @@ begin
       firstPixelRst      <= '0' after tpd;
       firstPixelSet      <= '0' after tpd;
       iReadValidTestMode <= '0' after tpd;
---      readTps            <= '0' after tpd;
       case curState is
          --Idle state, all signals zeroed out, counters reset
          when IDLE_S =>
@@ -267,7 +270,6 @@ begin
             if stateCnt < unsigned(ePixConfig.asicR0ToAsicAcq) then
                stateCntEn      <= '1' after tpd;
             else
---               readTps    <= '1' after tpd;  --New location to read Pulser just before injection
                stateCntRst     <= '1' after tpd;
             end if;
          --Bring up Acq and hold for a specified time
@@ -287,7 +289,6 @@ begin
          --Send the signal to read the test point system here (last item before power down)
          when WAIT_PPMAT_S =>
             iAsicPpmat <= '1' after tpd;
---            readTps    <= '1' after tpd;  --Original location through 2012.02.27, modified for 10k Pulser test measurements
             if stateCnt < unsigned(ePixConfig.asicAcqLToPPmatL) then
                stateCntEn   <= '1' after tpd;
             else
@@ -322,7 +323,7 @@ begin
          when SYNC_TEST_S =>
          --Test readout mode for running at full ADC rate
          when TEST_S =>
-            if adcSampCnt <= unsigned(ePixConfig.adcReadsPerPixel) then
+            if adcSampCnt <= ePixConfig.adcReadsPerPixel then
                adcSampCntEn       <= '1' after tpd;
 					iReadValidTestMode <= '1' after tpd;
             else
@@ -462,7 +463,7 @@ begin
             end if;
          --Test mode that just dumps out ADC data every sample
          when TEST_S =>
-            if adcSampCnt > unsigned(ePixConfig.adcReadsPerPixel) and readDone = '1' then
+            if adcSampCnt > ePixConfig.adcReadsPerPixel and readDone = '1' then
                nxtState <= DONE_S after tpd;
             else
                nxtState <= curState after tpd;
@@ -535,10 +536,14 @@ begin
       end if;
    end process;
    --Give a flag saying whether the samples are valid to read
-   process(adcSampCnt,epixConfig,firstPixel) begin
-      iReadValid <= (others => '0');
-      if adcSampCnt < unsigned(ePixConfig.adcReadsPerPixel)+1 and adcSampCnt > 0 and firstPixel = '0' then
-         iReadValid(conv_integer(adcSampCnt)-1) <= '1' after tpd;
+   process(adcSampCnt,epixConfig,firstPixel,sysClkRst) begin
+      if sysClkRst = '1' then
+         iReadValid <= (others => '0');
+      else
+         iReadValid <= (others => '0');
+         if adcSampCnt < ePixConfig.adcReadsPerPixel+1 and adcSampCnt > 0 and firstPixel = '0' then
+            iReadValid(conv_integer(adcSampCnt)-1) <= '1' after tpd;
+         end if;
       end if;
    end process;
 
@@ -590,27 +595,25 @@ begin
    --Pipeline for the valid signal
    process(sysClk) begin
       if rising_edge(sysClk) then
-         if (adcClkEdge = '1') then
-            if sysClkRst = '1' then
-               for n in 0 to MAX_OVERSAMPLE-1 loop
-                  readValidDelayed(n) <= (others => '0') after tpd;
+         if sysClkRst = '1' then
+            for n in 0 to MAX_OVERSAMPLE-1 loop
+               readValidDelayed(n) <= (others => '0') after tpd;
+            end loop;        
+         elsif (adcClkEdge = '1') then
+            --Shift register to allow picking off delayed samples
+            for n in 0 to MAX_OVERSAMPLE-1 loop
+               for i in 1 to 127 loop
+                  readValidDelayed(n)(i) <= readValidDelayed(n)(i-1) after tpd; 
                end loop;
-            else
-               --Shift register to allow picking off delayed samples
-               for n in 0 to MAX_OVERSAMPLE-1 loop
-                  for i in 1 to 127 loop
-                     readValidDelayed(n)(i) <= readValidDelayed(n)(i-1) after tpd; 
-                  end loop;
-               end loop;
-               --Assignment of shifted-in bits
-               --Test mode can only use the first oversampling shift register
-               readValidDelayed(0)(0) <= iReadValid(0) or iReadValidTestMode after tpd;
-               --The other shift registers can make use of the oversampling arrays
-               for n in 1 to MAX_OVERSAMPLE-1 loop
-                  --For normal mode, allow multiple samples
-                  readValidDelayed(n)(0) <= iReadValid(n) after tpd;
-               end loop;
-            end if;
+            end loop;
+            --Assignment of shifted-in bits
+            --Test mode can only use the first oversampling shift register
+            readValidDelayed(0)(0) <= iReadValid(0) or iReadValidTestMode after tpd;
+            --The other shift registers can make use of the oversampling arrays
+            for n in 1 to MAX_OVERSAMPLE-1 loop
+               --For normal mode, allow multiple samples
+               readValidDelayed(n)(0) <= iReadValid(n) after tpd;
+            end loop;
          end if;
       end if;
    end process; 
@@ -623,13 +626,17 @@ begin
       variable runningOr : std_logic := '0';
    begin
       if rising_edge(sysClk) then
-         runningOr := '0';
-         for i in 0 to 127 loop
-            for j in 0 to MAX_OVERSAMPLE-1 loop
-               runningOr := runningOr or readValidDelayed(j)(i);
+         if (sysClkRst = '1') then
+            iReadValidWaiting <= '0';
+         else
+            runningOr := '0';
+            for i in 0 to 127 loop
+               for j in 0 to MAX_OVERSAMPLE-1 loop
+                  runningOr := runningOr or readValidDelayed(j)(i);
+               end loop;
             end loop;
-         end loop;
-         iReadValidWaiting <= runningOr;
+            iReadValidWaiting <= runningOr;
+         end if;
       end if;
    end process;
 

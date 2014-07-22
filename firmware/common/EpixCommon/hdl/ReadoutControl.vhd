@@ -3,30 +3,35 @@
 -- Project       : EPIX Readout
 -------------------------------------------------------------------------------
 -- File          : ReadoutControl.vhd
--- Author        : Ryan Herbst, rherbst@slac.stanford.edu
+-- Author        : Kurtis Nishimura, kurtisn@slac.stanford.edu
 -- Created       : 12/08/2011
 -------------------------------------------------------------------------------
 -- Description:
--- Acquisition control block
+-- Readout control block
 -------------------------------------------------------------------------------
--- Copyright (c) 2011 by SLAC. All rights reserved.
+-- Copyright (c) 2014 by SLAC. All rights reserved.
 -------------------------------------------------------------------------------
 -- Modification history:
 -- 12/08/2011: created.
+-- 07/07/2014: Updated style of primary state machine
 -------------------------------------------------------------------------------
 
 LIBRARY ieee;
 use work.all;
 use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
+use ieee.std_logic_unsigned.all;
+use ieee.std_logic_arith.all;
 use work.EpixTypes.all;
-use work.Pgp2AppTypesPkg.all;
+use work.VcPkg.all;
 use work.StdRtlPkg.all;
 use work.Version.all;
 library UNISIM;
 use UNISIM.vcomponents.all;
 
 entity ReadoutControl is
+   generic (
+      TPD_G : time := 1 ns
+   );
    port (
 
       -- Clocks and reset
@@ -51,6 +56,7 @@ entity ReadoutControl is
       readTps             : in    sl;
 
       -- ADC Data
+      adcPulse            : in    sl;
       adcValid            : in    slv(19 downto 0);
       adcData             : in    word16_array(19 downto 0);
 
@@ -58,8 +64,8 @@ entity ReadoutControl is
       slowAdcData         : in    word16_array(15 downto 0);
 
       -- Data Out
-      frameTxIn           : out   UsBuff32InType;
-      frameTxOut          : in    UsBuff32OutType;
+      frameTxIn           : out   VcUsBuff32InType;
+      frameTxOut          : in    VcUsBuff32OutType;
 
       -- MPS
       mpsOut              : out   sl;
@@ -73,44 +79,60 @@ end ReadoutControl;
 architecture ReadoutControl of ReadoutControl is
 
    -- Timeout in clock cycles between acqStart and sendData
-   constant DAQ_TIMEOUT : integer := 12500; --100 us at 125 MHz
-
+   constant DAQ_TIMEOUT_C   : slv(31 downto 0) := conv_std_logic_vector(12500,32); --100 us at 125 MHz
+   constant STUCK_TIMEOUT_C : slv(31 downto 0) := conv_std_logic_vector(1250000,32); --2 s at 125 MHz
    -- Depth of FIFO 
-   constant CH_FIFO_ADDR_WIDTH : integer := 10;
-   constant CH_FIFO_FULL_THRES : integer := NCOL_C;
+   constant CH_FIFO_ADDR_WIDTH_C : integer := 10;
+   -- Hard coded words in the data stream for now
+   constant LANE_C     : slv( 1 downto 0) := "00";
+   constant VC_C       : slv( 1 downto 0) := "00";
+   constant QUAD_C     : slv( 1 downto 0) := "00";
+   constant OPCODE_C   : slv( 7 downto 0) := x"00";
+   constant ZEROWORD_C : slv(31 downto 0) := x"00000000";
+   -- Register delay for simulation
+   constant TPD_C : time := 0.5 ns;
 
+   
    -- State definitions
-   type state is (IDLE_S,
-                  ARMED_S, 
-                  HEADER_S,
-                  READ_FIFO_S,
-                  READ_FIFO_TEST_S,
-                  TPS_DATA_S,
-                  FOOTER_S);
+   type StateType is (IDLE_S,ARMED_S,HEADER_S,READ_FIFO_S,READ_FIFO_TEST_S,
+                      ENV_DATA_S,TPS_DATA_S,FOOTER_S);
 
    -- Local Signals
-   signal curState       : state := IDLE_S;
-   signal nxtState       : state := IDLE_S;
-   signal wordCnt        : unsigned(31 downto 0);
-   signal clearFifos     : sl := '0';
+   type RegType is record
+      readDone       : sl;
+      testPattern    : sl;
+      streamMode     : sl;
+      seqCountEn     : sl;
+      fillCnt        : slv(CH_FIFO_ADDR_WIDTH_C-1 downto 0);
+      overSmplCnt    : slv(log2(MAX_OVERSAMPLE)-1 downto 0);
+      chCnt          : slv(3 downto 0);
+      timeoutCnt     : slv(31 downto 0);
+      clearFifos     : sl;
+      error          : sl;
+      wordCnt        : slv(31 downto 0);
+      frameTxIn      : VcUsBuff32InType;
+      state          : StateType;
+   end record;
+   constant REG_INIT_C : RegType := (
+      '0',
+      '0',
+      '0',
+      '0',
+      (others => '0'),
+      (others => '0'),
+      (others => '0'),
+      (others => '0'),
+      '0',
+      '0',
+      (others => '0'),
+      VC_US_BUFF32_IN_INIT_C,
+      IDLE_S
+   );
+   
+   signal r   : RegType := REG_INIT_C;
+   signal rin : RegType;
+   
    signal memRst         : sl := '0';
-   signal timeoutCnt     : unsigned(13 downto 0);
-   signal timeoutCntEn   : sl := '0';
-   signal timeoutCntRst  : sl := '0';
-   signal wordCntRst     : sl;
-   signal wordCntEn      : sl;
-   signal chCnt          : unsigned(3 downto 0);
-   signal chCntRst       : sl;
-   signal chCntEn        : sl;
-   signal overSmplCnt    : unsigned(log2(MAX_OVERSAMPLE)-1 downto 0);
-   signal overSmplCntRst : sl;
-   signal overSmplCntEn  : sl;
-   signal fillCnt        : unsigned(CH_FIFO_ADDR_WIDTH-1 downto 0);
-   signal fillCntRst     : sl;
-   signal fillCntEn      : sl;
-   signal adcCnt         : unsigned(11 downto 0);
-   signal adcCntRst      : sl;
-   signal adcCntEn       : sl;
    signal dataSendEdge   : sl;
    signal acqStartEdge   : sl;
    signal adcMemWrEn     : Slv16Array(MAX_OVERSAMPLE-1 downto 0);
@@ -120,56 +142,72 @@ architecture ReadoutControl of ReadoutControl is
    signal adcMemOflow    : Slv16Array(MAX_OVERSAMPLE-1 downto 0);
    signal adcMemOflowAny : std_logic;
    signal adcMemRdData   : Slv16VectorArray(MAX_OVERSAMPLE-1 downto 0,15 downto 0);
-   signal adcStreamMode  : std_logic;
-   signal testPattern    : std_logic;
 
+   signal adcCntEn       : sl;
+   signal adcCntRst      : sl;
+   signal adcCnt         : slv(11 downto 0);
+   
    signal adcFifoWrEn    : slv(15 downto 0);
    signal adcFifoEmpty   : slv(15 downto 0);
    signal adcFifoOflow   : slv(15 downto 0);
-   signal adcFifoRdEn    : slv(15 downto 0);
    signal adcFifoRdValid : slv(15 downto 0);
+   signal adcFifoRdEn    : slv(15 downto 0);
    signal adcFifoRdData  : Slv32Array(15 downto 0);
    signal adcFifoWrData  : Slv16Array(15 downto 0);
    signal fifoOflowAny   : sl := '0';
    signal fifoEmptyAll   : sl := '0';
-   signal intSeqCount    : unsigned(31 downto 0) := (others => '0');
-   signal seqCountEnable : sl := '0';
+   signal intSeqCount    : slv(31 downto 0) := (others => '0');
 
    signal asicDoutPipeline : Slv128Array(3 downto 0);
    signal asicDoutDelayed  : slv(3 downto 0);
 
    signal adcDataToReorder : word16_array(19 downto 0);
+   signal tpsData          : word16_array(3 downto 0);
 
    type chanMap is array(15 downto 0) of integer range 0 to 15;
    signal channelOrder   : chanMap;
 
    signal tpsAdcData     : Slv16Array(3 downto 0);
 
-   -- Hard coded words in the data stream
-   -- Some may be updated later.
-   constant cLane     : slv( 1 downto 0) := "00";
-   constant cVC       : slv( 1 downto 0) := "00";
-   constant cQuad     : slv( 1 downto 0) := "00";
-   constant cOpCode   : slv( 7 downto 0) := x"00";
-   constant cZeroWord : slv(31 downto 0) := x"00000000";
-
-   -- Register delay for simulation
-   constant tpd:time := 0.5 ns;
-
 begin
 
    -- Counter output to register control
-   seqCount <= std_logic_vector(intSeqCount);
-   -- Mode to decide whether we readout ASICs or pure ADC streams
-   adcStreamMode <= epixConfig.adcStreamMode;
-   -- Test pattern mode to help check data alignment, etc.
-   testPattern <= epixConfig.testPattern;
+   seqCount <= intSeqCount;
    -- Channel Order for ASIC readout (last downto first)
-   channelOrder <= (4,5,6,7,8,9,10,11,3,2,1,0,15,14,13,12) when adcStreamMode = '0' else
-                   (15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0);
    -- Readout order based on ePix100 ASIC numbering scheme (0 - forward, 1 - backward)
-   adcMemRdOrder <= x"0FF0" when adcStreamMode = '0' else
-                    x"0000";
+   -- Indexing for the memory readout order is linked to the raw ADC channel
+   -- (i.e., if the channel reads out an ASIC from upper half of carrier,
+   --  read it backward, otherwise, read it forward)
+   G_EPIX100A_CARRIER : if (FpgaVersion(31 downto 24) = x"EA") generate
+      channelOrder <= (0,3,1,2,8,11,9,10,6,4,5,7,14,12,13,15) when r.streamMode = '0' else
+                      (15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0); 
+      adcMemRdOrder <= x"0F0F" when r.streamMode = '0' else
+                       x"0000";
+      tpsData(0) <= adcData(16+1);
+      tpsData(1) <= adcData(16+3);
+      tpsData(2) <= adcData(16+2);
+      tpsData(3) <= adcData(16+0);
+   end generate;
+   G_EPIX100P_CARRIER : if (FpgaVersion(31 downto 24) = x"E0") generate
+      channelOrder <= (4,5,6,7,8,9,10,11,3,2,1,0,15,14,13,12) when r.streamMode = '0' else
+                      (15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0); 
+      adcMemRdOrder <= x"0FF0" when r.streamMode = '0' else
+                       x"0000";
+      tpsData(0) <= adcData(16+0);
+      tpsData(1) <= adcData(16+1);
+      tpsData(2) <= adcData(16+2);
+      tpsData(3) <= adcData(16+3);
+   end generate;
+   G_EPIX10KP_CARRIER : if (FpgaVersion(31 downto 24) = x"E2") generate
+      channelOrder <= (4,5,6,7,8,9,10,11,3,2,1,0,15,14,13,12) when r.streamMode = '0' else
+                      (15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0); 
+      adcMemRdOrder <= x"0FF0" when r.streamMode = '0' else
+                       x"0000";
+      tpsData(0) <= adcData(16+0);
+      tpsData(1) <= adcData(16+1);
+      tpsData(2) <= adcData(16+2);
+      tpsData(3) <= adcData(16+3);
+   end generate;
 
    -- Edge detection for signals that interface with other blocks
    U_DataSendEdge : entity work.SynchronizerEdge
@@ -187,239 +225,200 @@ begin
          risingEdge => acqStartEdge
       );
 
-
-   -- Outputs
-   -- Default mps to '0' for now.
-   mpsOut <= '0';
-
+   process(adcFifoRdValid,channelOrder,frameTxOut,r) begin
+      for i in 0 to 15 loop
+         if (r.state = READ_FIFO_S and i = channelOrder(conv_integer(r.chCnt)) and 
+             adcFifoRdValid(i) = '1' and frameTxOut.almostFull = '0') then
+            adcFifoRdEn(i) <= '1';
+         elsif (r.state = READ_FIFO_TEST_S and i = channelOrder(conv_integer(r.chCnt)) and 
+                adcFifoRdValid(i) = '1' and frameTxOut.almostFull = '0' and acqBusy = '0') then
+            adcFifoRdEn(i) <= '1';
+         else
+            adcFifoRdEn(i) <= '0';
+         end if;
+      end loop;
+   end process;
    --------------------------------------------------
    -- Simple state machine to just send ADC values --
    --------------------------------------------------
-   process (curState,adcFifoRdData,chCnt,adcFifoRdValid,fillCnt,wordCnt,
-            acqCount,intSeqCount,overSmplCnt,fifoOflowAny,ePixConfig,
-            frameTxOut,tpsAdcData,channelOrder,acqBusy,adcFifoEmpty,adcMemOflowAny,
-            dataSendEdge) begin
-         --Defaults
-         frameTxIn.frameTxEnable <= '0' after tpd;
-         frameTxIn.frameTxSOF    <= '0' after tpd;
-         frameTxIn.frameTxEOF    <= '0' after tpd;
-         frameTxIn.frameTxEOFE   <= '0' after tpd;
-         frameTxIn.frameTxData   <= (others => '0') after tpd;
-         wordCntRst              <= '0' after tpd;
-         wordCntEn               <= '0' after tpd;
-         chCntRst                <= '0' after tpd;
-         chCntEn                 <= '0' after tpd;
-         overSmplCntRst          <= '0' after tpd;
-         overSmplCntEn           <= '0' after tpd;
-         fillCntRst              <= '0' after tpd;
-         fillCntEn               <= '0' after tpd;
-         timeoutCntRst           <= '0' after tpd;
-         timeoutCntEn            <= '0' after tpd;
-         adcFifoRdEn             <= (others => '0') after tpd;
-         readDone                <= '0' after tpd;
-         clearFifos              <= '0' after tpd;
-         seqCountEnable          <= '0' after tpd;
-         --State specific outputs
-         case curState is
-            --Idle state
+   comb : process (r,epixConfig,acqCount,intSeqCount,adcFifoRdData,adcFifoRdValid,
+                   channelOrder,fifoEmptyAll,acqBusy,adcMemOflowAny,fifoOflowAny,
+                   slowAdcData,tpsAdcData,acqStartEdge,dataSendEdge,adcFifoEmpty,
+                   sysClkRst,frameTxOut) 
+      variable v : RegType;
+   begin
+      v := r;
+
+      -- Reset pulsed signals
+      v.frameTxIn.valid := '0';
+      v.frameTxIn.sof   := '0';
+      v.frameTxIn.eof   := '0';
+      v.frameTxIn.eofe  := '0';
+      v.seqCountEn      := '0';
+      
+      -- Latch overflows (this is reset in IDLE state)
+      if (fifoOflowAny = '1' or adcMemOflowAny = '1') then
+         v.error := '1';
+      end if;
+      
+      -- State outputs
+      if frameTxOut.almostFull = '0' then      
+         case (r.state) is
             when IDLE_S =>
-               readDone      <= '1' after tpd;
-               wordCntRst    <= '1' after tpd;
-               clearFifos    <= '1' after tpd;
-               timeoutCntRst <= '1' after tpd;
-               fillCntRst    <= '1' after tpd;
-               chCntRst      <= '1' after tpd;
-            --Acq received, wait for daq
-            when ARMED_S  =>
-               timeoutCntEn  <= '1' after tpd;
-               if dataSendEdge = '1' then
-                  seqCountEnable <= '1' after tpd;
+               v.wordCnt     := (others => '0');
+               v.chCnt       := (others => '0');
+               v.overSmplCnt := (others => '0');
+               v.fillCnt     := (others => '0');
+               v.timeoutCnt  := (others => '0');
+               v.clearFifos  := '1';
+               v.readDone    := '1';
+               v.streamMode  := epixConfig.adcStreamMode;
+               v.testPattern := epixConfig.testPattern;
+               v.error       := '0';
+               if (acqStartEdge = '1') then
+                  v.state := ARMED_S;
                end if;
-            --Send header words
+            when ARMED_S =>
+               v.readDone   := '0';
+               v.clearFifos := '0';
+               v.timeoutCnt := r.timeoutCnt + 1;
+               if (dataSendEdge = '1') then
+                  v.seqCountEn := '1';
+                  v.state      := HEADER_S;
+               elsif (r.timeoutCnt >= DAQ_TIMEOUT_C) then
+                  v.state := IDLE_S;
+               end if;
             when HEADER_S =>
-               wordCntEn               <= '1' after tpd;
-               frameTxIn.frameTxEnable <= '1' after tpd;
-               overSmplCntRst          <= '1' after tpd;
-               case to_integer(wordCnt) is
-                  when 0 => frameTxIn.frameTxData <= x"000000" & "00" & cLane & "00" & cVC after tpd;
-                            frameTxIn.frameTxSOF  <= '1' after tpd;
-                  when 1 => frameTxIn.frameTxData <= x"0" & "00" & cQuad & cOpCode & acqCount(15 downto 0) after tpd;
-                  when 2 => frameTxIn.frameTxData <= std_logic_vector(intSeqCount) after tpd;
-                  when 3 => frameTxIn.frameTxData <= cZeroWord after tpd;
-                  when 4 => frameTxIn.frameTxData <= cZeroWord after tpd;
-                  when 5 => frameTxIn.frameTxData <= cZeroWord after tpd;
-                  when 6 => frameTxIn.frameTxData <= cZeroWord after tpd;
-                  when 7 => frameTxIn.frameTxData <= cZeroWord after tpd;
-                  when others  => frameTxIn.frameTxData <= cZeroWord after tpd;
+               v.wordCnt         := r.wordCnt + 1;
+               v.frameTxIn.valid := '1';
+               case conv_integer(r.wordCnt) is
+                  when 0 => v.frameTxIn.data := x"000000" & "00" & LANE_C & "00" & VC_C;
+                            v.frameTxIn.sof  := '1';
+                  when 1 => v.frameTxIn.data := x"0" & "00" & QUAD_C & OPCODE_C & acqCount(15 downto 0);
+                  when 2 => v.frameTxIn.data := intSeqCount;
+                  when 3 => v.frameTxIn.data := ZEROWORD_C;
+                  when 4 => v.frameTxIn.data := ZEROWORD_C;
+                  when 5 => v.frameTxIn.data := ZEROWORD_C;
+                  when 6 => v.frameTxIn.data := ZEROWORD_C;
+                  when 7 => v.frameTxIn.data := ZEROWORD_C;
+                  when others => v.frameTxIn.data := ZEROWORD_C;
                end case;
-            --Readout data 1 row at a time, suitable for ASIC readout
-            when READ_FIFO_S =>
-               wordCntRst <= '1' after tpd;
-               --Normal data
-               frameTxIn.frameTxData <= adcFifoRdData(channelOrder(to_integer(chCnt))) after tpd;
-               --FIFO has FWFT enabled, logic is written accordingly.
-               if (adcFifoRdValid(channelOrder(to_integer(chCnt))) = '1' and frameTxOut.frameTxAFull = '0') then
-                  frameTxIn.frameTxEnable                        <= '1' after tpd;
-                  adcFifoRdEn(channelOrder(to_integer(chCnt))) <= '1' after tpd;
-                  fillCntEn                                      <= '1' after tpd;
-                  if (to_integer(fillCnt) = CH_FIFO_FULL_THRES/2-1) then
-                     chCntEn    <= '1' after tpd;
-                     fillCntRst <= '1' after tpd;
+               if (r.wordCnt = 7) then
+                  v.wordCnt := (others => '0');
+                  if (r.streamMode = '0') then
+                     v.state := READ_FIFO_S;
+                  elsif (r.streamMode = '1') then
+                     v.state := READ_FIFO_TEST_S;
                   end if;
                end if;
-            --Readout data 1 full channel at a time, suitable for ADC waveforms
+            when READ_FIFO_S => 
+               v.frameTxIn.data := adcFifoRdData(channelOrder(conv_integer(r.chCnt)));
+               if adcFifoRdValid(channelOrder(conv_integer(r.chCnt))) = '1' then
+                  v.frameTxIn.valid := '1';
+                  v.fillCnt         := r.fillCnt + 1;
+                  if (r.fillCnt = conv_std_logic_vector(NCOL_C/2-1,r.fillCnt'length)) then
+                     v.chCnt   := r.chCnt + 1;
+                     v.fillCnt := (others => '0');
+                  end if;
+               else
+                  v.timeoutCnt := r.timeoutCnt + 1;
+               end if;
+               if acqBusy = '0' and fifoEmptyAll = '1' then
+                  v.state := ENV_DATA_S;
+               elsif r.error = '1' or r.timeoutCnt = STUCK_TIMEOUT_C then
+                  v.state := FOOTER_S;
+               end if;
             when READ_FIFO_TEST_S =>
-               wordCntRst <= '1' after tpd;
-               frameTxIn.frameTxData <= adcFifoRdData(to_integer(chCnt)) after tpd;
-               --Test mode, ADCs read out sequentially
-               if (adcFifoRdValid(to_integer(chCnt)) = '1' and frameTxOut.frameTxAFull = '0' and acqBusy = '0') then
-                  frameTxIn.frameTxEnable          <= '1' after tpd;
-                  adcFifoRdEn(to_integer(chCnt)) <= '1' after tpd;
-                  fillCntEn                        <= '1' after tpd;
+               v.frameTxIn.data := adcFifoRdData(channelOrder(conv_integer(r.chCnt)));
+               if adcFifoRdValid(channelOrder(conv_integer(r.chCnt))) = '1' and acqBusy = '0' then
+                  v.frameTxIn.valid := '1';
+                  v.fillCnt         := r.fillCnt + 1;
+               else
+                  v.timeoutCnt := r.timeoutCnt + 1;
                end if;
-               --Increment to next ADC if this one is empty
-               if (adcFifoEmpty(to_integer(chCnt)) = '1' and acqBusy = '0') then
-                  chCntEn    <= '1' after tpd;
-                  fillCntRst <= '1' after tpd;
+               if adcFifoEmpty(channelOrder(conv_integer(r.chCnt))) = '1' and acqBusy = '0' then
+                  v.chCnt   := r.chCnt + 1;
+                  v.fillCnt := (others => '0');
                end if;
-            --Two words of data from the TPS system (ADC(3))
-            when TPS_DATA_S  =>
-               wordCntEn               <= '1' after tpd;
-               frameTxIn.frameTxEnable <= '1' after tpd;
-               case to_integer(wordCnt) is
-                  when 0 => frameTxIn.frameTxData <= tpsAdcData(1) & tpsAdcData(0) after tpd;
-                  when 1 => frameTxIn.frameTxData <= tpsAdcData(3) & tpsAdcData(2) after tpd;
-                  when others  => frameTxIn.frameTxData <= cZeroWord after tpd;
-               end case;
-            --Send footer word
-            when FOOTER_S    =>
-               readDone                <= '1' after tpd;
-               frameTxIn.frameTxData   <= cZeroWord after tpd;
-               frameTxIn.frameTxEnable <= '1' after tpd; 
-               frameTxIn.frameTxEOF    <= '1' after tpd;
-               frameTxIn.frameTxEOFE   <= fifoOflowAny or adcMemOflowAny after tpd;
-            --Use defaults for uncaught cases
-            when others =>
+               if acqBusy = '0' and fifoEmptyAll = '1' then
+                  v.state := FOOTER_S;
+               elsif r.error = '1' or r.timeoutCnt = STUCK_TIMEOUT_C then
+                  v.state := FOOTER_S;
+               end if;
+            when ENV_DATA_S =>
+               v.wordCnt         := r.wordCnt + 1;
+               v.frameTxIn.valid := '1';
+               if (r.wordCnt = conv_std_logic_vector(WORDS_PER_SUPER_ROW_C,r.wordCnt'length)) then
+                  v.frameTxIn.data := slowAdcData(1) & slowAdcData(0);
+               elsif (r.wordCnt = conv_std_logic_vector(WORDS_PER_SUPER_ROW_C+1,r.wordCnt'length)) then
+                  v.frameTxIn.data := slowAdcData(3) & slowAdcData(2);
+               elsif (r.wordCnt = conv_std_logic_vector(WORDS_PER_SUPER_ROW_C+2,r.wordCnt'length)) then
+                  v.frameTxIn.data := slowAdcData(5) & slowAdcData(4);
+               elsif (r.wordCnt = conv_std_logic_vector(WORDS_PER_SUPER_ROW_C+3,r.wordCnt'length)) then
+                  v.frameTxIn.data := slowAdcData(7) & slowAdcData(6);
+               else
+                  v.frameTxIn.data := ZEROWORD_C;
+               end if;
+               if (r.wordCnt = conv_std_logic_vector(WORDS_PER_SUPER_ROW_C*2-1,r.wordCnt'length)) then
+                  v.wordCnt := (others => '0');
+                  v.state   := TPS_DATA_S;
+               end if;
+            when TPS_DATA_S =>
+               v.wordCnt         := r.wordCnt + 1;
+               v.frameTxIn.valid := '1';
+               if (r.wordCnt = 0) then
+                  v.frameTxIn.data := tpsAdcData(1) & tpsAdcData(0);
+               elsif (r.wordCnt = 1) then
+                  v.frameTxIn.data := tpsAdcData(3) & tpsAdcData(2);            
+               end if;
+               if (r.wordCnt = 1) then
+                  v.state := FOOTER_S;
+               end if;
+            when FOOTER_S =>
+               v.readDone        := '1';
+               v.frameTxIn.data  := ZEROWORD_C;
+               v.frameTxIn.valid := '1';
+               v.frameTxIn.eof   := '1';
+               v.frameTxIn.eofe  := r.error;
+               v.state           := IDLE_S;
          end case;
-   end process;
-   --Next state logic
-   process (curState,acqStartEdge,wordCnt,fillCnt,
-            overSmplCnt,acqBusy,fifoEmptyAll,dataSendEdge,timeoutCnt,
-            fifoOflowAny,adcMemOflowAny,adcStreamMode) begin
-      --Default is to remain in current state
-      nxtState <= curState after tpd;
-      --State specific next-states
-      case curState is 
-         when IDLE_S =>
-            if acqStartEdge = '1' then
-               nxtState <= ARMED_S after tpd;
-            end if;
-         when ARMED_S =>
-            if dataSendEdge = '1' then
-               nxtState <= HEADER_S after tpd;
-            elsif (timeoutCnt >= DAQ_TIMEOUT) then
-               nxtState <= IDLE_S after tpd;
-            end if; 
-         when HEADER_S =>
-            if (wordCnt = 7) then
-               if (adcStreamMode = '0') then
-                  nxtState <= READ_FIFO_S after tpd;
-               elsif (adcStreamMode = '1') then
-                  nxtState <= READ_FIFO_TEST_S after tpd;
-               end if;
-            end if;
-         when READ_FIFO_S =>
-            if acqBusy = '0' and fifoEmptyAll = '1' then
-               nxtState <= TPS_DATA_S;
-            elsif fifoOflowAny = '1' or adcMemOflowAny = '1' then
-               nxtState <= FOOTER_S;
-            end if;
-         when READ_FIFO_TEST_S =>
-            if fifoEmptyAll = '1' and acqBusy = '0' then
-               nxtState <= FOOTER_S;
-            elsif fifoOflowAny = '1' or adcMemOflowAny = '1' then
-               nxtState <= FOOTER_S;
-            end if;
-         when TPS_DATA_S =>
-            if (wordCnt = 1) then
-               nxtState <= FOOTER_S after tpd;
-            end if;
-         when FOOTER_S =>
-            nxtState <= IDLE_S after tpd;
-         when others =>
-            nxtState <= IDLE_S after tpd;
-      end case;
-   end process;
-   --Transition to next state
-   process (sysClk, sysClkRst) begin
-      if rising_edge(sysClk) then
-         if sysClkRst = '1' then
-            curState <= IDLE_S after tpd;
-         else
-            curState <= nxtState after tpd;
-         end if;
       end if;
-   end process;
+ 
+      -- Synchronous Reset
+      if sysClkRst = '1' then
+         v := REG_INIT_C;
+      end if;
 
-   --Counts the number of words to choose what data to send next
-   process(sysClk) begin
+      -- Register the variable for next clock cycle
+      rin <= v;
+      -- Fine for most assignments but data needs to be endian reversed
+      rin.frameTxIn.data <= v.frameTxIn.data(15 downto 0) & v.frameTxIn.data(31 downto 16);
+      
+      -- Outputs from block
+      readDone  <= r.readDone;
+      frameTxIn <= r.frameTxIn;
+      mpsOut    <= '0';
+      
+   end process comb;
+ 
+ 
+   seq : process (sysClk) is
+   begin
       if rising_edge(sysClk) then
-         if sysClkRst = '1' or wordCntRst = '1' then
-            wordCnt <= (others => '0') after tpd;
-         elsif wordCntEn = '1' then
-            wordCnt <= wordCnt + 1 after tpd;
-         end if; 
-      end if; 
-   end process;
-   --Count which channel we're on (0-15)
-   process(sysClk) begin
-      if rising_edge(sysClk) then
-         if (sysClkRst = '1' or chCntRst = '1') then
-            chCnt <= (others => '0') after tpd;
-         elsif chCntEn = '1' then
-            chCnt <= chCnt + 1 after tpd;
-         end if;
+         r <= rin after TPD_G;
       end if;
-   end process;
-   --Count which sample we're on (0-(MAX_OVERSAMPLE-1))
-   process(sysClk) begin
-      if rising_edge(sysClk) then
-         if (sysClkRst = '1' or overSmplCntRst = '1') then
-            overSmplCnt <= (others => '0') after tpd;
-         elsif overSmplCntEn = '1' then
-            overSmplCnt <= overSmplCnt + 1 after tpd;
-         end if;
-      end if;
-   end process;
-   --Fill count for filling up FIFOs
-   process(sysClk) begin
-      if rising_edge(sysClk) then
-         if (sysClkRst = '1' or fillCntRst = '1') then
-            fillCnt <= (others => '0') after tpd;
-         elsif fillCntEn = '1' then
-            fillCnt <= fillCnt + 1 after tpd;
-         end if;
-      end if;
-   end process;
-   --Timeout counter between acqStart and dataSend
-   process(sysClk) begin
-      if rising_edge(sysClk) then
-         if (sysClkRst = '1' or timeoutCntRst = '1') then
-            timeoutCnt <= (others => '0') after tpd;
-         elsif timeoutCntEn = '1' then
-            timeoutCnt <= timeoutCnt + 1 after tpd;
-         end if;
-      end if;
-   end process;
+   end process seq;
+ 
+
    --Count number of ADC writes
-   adcCntEn  <= readValid(0) and adcValid(0);
-   adcCntRst <= memRst;
+   adcCntEn  <= readValid(0) and adcPulse;
+   adcCntRst <= memRst or sysClkRst;
    process(sysClk) begin
       if rising_edge(sysClk) then
          if (sysClkRst = '1' or adcCntRst = '1') then
-            adcCnt <= (others => '0') after tpd;
+            adcCnt <= (others => '0') after TPD_G;
          elsif adcCntEn = '1' then
-            adcCnt <= adcCnt + 1 after tpd;
+            adcCnt <= adcCnt + 1 after TPD_G;
          end if;
       end if;
    end process;
@@ -429,16 +428,9 @@ begin
       if rising_edge(sysClk) then
          for i in 0 to 3 loop
             if readTps = '1' then
-               tpsAdcData(i) <= adcData(16+i);
+               tpsAdcData(i) <= tpsData(i);
             end if;
          end loop;
---  This is a hack for the EPIX 2013.12.16 test at SSRL
---    (to read out slow ADC data with strongback and ADC temps)
-         if readTps = '1' then
-            tpsAdcData(1) <= slowAdcData(4);
-            tpsAdcData(2) <= slowadcData(6);
-         end if;
--- 
       end if;
    end process;
    --Sequence/frame counter
@@ -447,33 +439,32 @@ begin
          intSeqCount <= (others => '0');
       elsif rising_edge(sysClk) then
          if epixConfig.seqCountReset = '1' then
-            intSeqCount <= (others => '0') after tpd;
-         elsif seqCountEnable = '1' then
-            intSeqCount <= intSeqCount + 1 after tpd;
+            intSeqCount <= (others => '0') after TPD_G;
+         elsif r.seqCountEn = '1' then
+            intSeqCount <= intSeqCount + 1 after TPD_G;
           end if;
       end if;
    end process;
 
-
    --Simple logic to choose which memory to read from
    process(sysClk) begin
       if rising_edge(sysClk) then
-         if adcStreamMode = '0' then
+         if r.streamMode = '0' then
             for i in 0 to 15 loop
                adcFifoWrEn(i)   <= adcMemRdValid(0)(i);
-               if testPattern = '0' then
+               if r.testPattern = '0' then
                   adcFifoWrData(i) <= adcMemRdData(0,i);
                else
-                  adcFifoWrData(i) <= "0000" & std_logic_vector(to_unsigned(i,4)) & adcMemRdData(0,i)(7 downto 0);
+                  adcFifoWrData(i) <= "0000" & conv_std_logic_vector(i,4) & adcMemRdData(0,i)(7 downto 0);
                end if;
             end loop;
          else
             for i in 0 to 15 loop
-               adcFifoWrEn(i)   <= readValid(0) and adcValid(i);
-               if testPattern = '0' then
-                  adcFifoWrData(i) <= adcData(i);
+               adcFifoWrEn(i)   <= readValid(0) and adcPulse;
+               if r.testPattern = '0' then
+                  adcFifoWrData(i) <= adcDataToReorder(i);
                else
-                  adcFifoWrData(i) <= std_logic_vector(to_unsigned(i,4)) & std_logic_vector(adcCnt);
+                  adcFifoWrData(i) <= conv_std_logic_vector(i,4) & std_logic_vector(adcCnt);
                end if;
             end loop;
          end if;
@@ -482,14 +473,16 @@ begin
 
    --Blockrams to reorder data
    --Memory and fifos are reset on system reset or on IDLE state
-   memRst <= clearFifos or sysClkRst;
+   memRst <= r.clearFifos or sysClkRst;
    --Generate logic
    G_RowBuffers : for i in 0 to 15 generate
       --The following line will need to be modified when we go to full size 10k
       --since data will need to be synchronized with ASIC clock (x4).
       process(sysClk) begin
          if rising_edge(sysClk) then
-            adcDataToReorder(i) <= '0' & asicDoutDelayed(i/4) & adcData(i)(13 downto 0);
+            if (adcValid(i) = '1') then
+               adcDataToReorder(i) <= '0' & asicDoutDelayed(i/4) & adcData(i)(13 downto 0);
+            end if;
          end if;
       end process;
  
@@ -497,8 +490,8 @@ begin
          --Write when the ADC block says data is good AND when AcqControl agrees
          process(sysClk) begin
             if rising_edge(sysClk) then
-               if adcStreamMode = '0' then
-                  adcMemWrEn(j)(i) <= readValid(j) and adcValid(i);
+               if r.streamMode = '0' then
+                  adcMemWrEn(j)(i) <= readValid(j) and adcPulse;
                else
                   adcMemWrEn(j)(i) <= '0';
                end if;
@@ -510,7 +503,7 @@ begin
          port map (
             sysClk      => sysClk,
             sysClkRst   => sysClkRst,
-            wrReset     => clearFifos,
+            wrReset     => r.clearFifos,
             wrData      => adcDataToReorder(i),
             wrEn        => adcMemWrEn(j)(i),
             rdOrder     => adcMemRdOrder(i),
@@ -519,7 +512,7 @@ begin
             overflow    => adcMemOflow(j)(i),
             rdData      => adcMemRdData(j,i),
             dataValid   => adcMemRdValid(j)(i),
-            testPattern => testPattern
+            testPattern => r.testPattern
          );
       end generate;
    end generate;
@@ -546,11 +539,12 @@ begin
             WR_DATA_WIDTH_G => 16,
             RD_DATA_WIDTH_G => 32,
             GEN_SYNC_FIFO_G => true,
-            ADDR_WIDTH_G    => CH_FIFO_ADDR_WIDTH,
+            ADDR_WIDTH_G    => CH_FIFO_ADDR_WIDTH_C,
             FWFT_EN_G       => true,
             USE_BUILT_IN_G  => false,
             XIL_DEVICE_G    => "VIRTEX5",
-            EMPTY_THRES_G   => 1
+            EMPTY_THRES_G   => 1,
+            LITTLE_ENDIAN_G => true
          )
          port map(
             rst           => memRst,
@@ -603,7 +597,7 @@ begin
             end loop;
          end if;
 
-         delay := to_integer(unsigned(epixConfig.doutPipelineDelay(6 downto 0)));
+         delay := conv_integer(epixConfig.doutPipelineDelay(6 downto 0));
          for n in 0 to 3 loop
             if FpgaVersion(31 downto 24) = x"E2" then
                asicDoutDelayed(n) <= asicDoutPipeline(n)( delay );

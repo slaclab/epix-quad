@@ -21,7 +21,7 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 use work.EpixTypes.all;
-use work.Pgp2AppTypesPkg.all;
+use work.VcPkg.all;
 library UNISIM;
 use UNISIM.vcomponents.all;
 
@@ -35,7 +35,7 @@ entity TrigControl is
       -- Inputs
       runTrigger    : in  std_logic;
       daqTrigger    : in  std_logic;
-      pgpCmd        : in  CmdSlaveOutType;
+      pgpCmd        : in  VcCmdSlaveOutType;
 
       -- Configuration
       epixConfig    : in  EpixConfigType;
@@ -62,6 +62,10 @@ architecture TrigControl of TrigControl is
    signal intCount        : std_logic_vector(31 downto 0);
    signal swRun           : std_logic;
    signal swRead          : std_logic;
+   signal iRunTrigOut     : std_logic;
+   signal iDaqTrigOut     : std_logic;
+   signal hwRunTrig     : std_logic;
+   signal hwDaqTrig     : std_logic;
 
    -- Register delay for simulation
    constant tpd:time := 0.5 ns;
@@ -71,20 +75,45 @@ begin
    --------------------------------
    -- SW Input
    --------------------------------
-   process ( sysClk, sysClkRst ) begin
-      if ( sysClkRst = '1' ) then
-         swRun  <= '0' after tpd;
-         swRead <= '0' after tpd;
-      elsif rising_edge(sysClk) then
-         if pgpCmd.cmdEn = '1' and pgpCmd.cmdOpCode = 0 then
-            swRun <= '1' after tpd;
+--   process ( sysClk, sysClkRst ) begin
+--      if ( sysClkRst = '1' ) then
+--         swRun  <= '0' after tpd;
+--         swRead <= '0' after tpd;
+--      elsif rising_edge(sysClk) then
+--         if pgpCmd.valid = '1' and pgpCmd.opCode = 0 then
+--            swRun <= '1' after tpd;
+--         else
+--            swRun <= '0' after tpd;
+--         end if;
+--         swRead <= swRun after tpd;
+--      end if;
+--   end process;
+   U_TrigPulser : entity work.VcCmdSlavePulser
+      generic map (
+         TPD_G          => tpd,
+         OUT_POLARITY_G => '1',
+         PULSE_WIDTH_G  => 1
+      )
+      port map (
+         -- Local command signal
+         cmdSlaveOut => pgpCmd,
+         --addressed cmdOpCode
+         opCode      => x"00",
+         -- output pulse to sync module
+         syncPulse   => swRun,
+         -- Local clock and reset
+         locClk      => sysClk,
+         locRst      => sysClkRst
+      );
+   process(sysClk,sysClkRst) begin
+      if rising_edge(sysClk) then
+         if sysClkRst = '1' then
+            swRead <= '0' after tpd;
          else
-            swRun <= '0' after tpd;
+            swRead <= swRun after tpd;
          end if;
-         swRead <= swRun after tpd;
       end if;
    end process;
-
 
    --------------------------------
    -- Run Input
@@ -193,10 +222,37 @@ begin
    end process;
 
    --------------------------------
+   -- External triggers
+   --------------------------------
+   hwRunTrig <= runTriggerOut;
+   hwDaqTrig <= daqTriggerOut;
+
+   --------------------------------
+   -- Autotrigger block
+   --------------------------------
+   U_AutoTrig : entity work.AutoTrigger
+   port map (
+      -- Sync clock and reset
+      sysClk        => sysClk,
+      sysClkRst     => sysClkRst,
+      -- Inputs 
+      runTrigIn     => hwRunTrig,
+      daqTrigIn     => hwDaqTrig,
+      -- Number of clock cycles between triggers
+      trigPeriod    => epixConfig.autoTrigPeriod,
+      --Enable run and daq triggers
+      runEn         => epixConfig.autoRunEn and epixConfig.runTriggerEnable,
+      daqEn         => epixConfig.autoDaqEn and epixConfig.daqTriggerEnable,
+      -- Outputs
+      runTrigOut    => iRunTrigOut,
+      daqTrigOut    => iDaqTrigOut
+   );
+
+   --------------------------------
    -- Acquisition Counter And Outputs
    --------------------------------
-   acqStart   <= runTriggerOut or swRun;
-   dataSend   <= daqTriggerOut or swRead;
+   acqStart   <= iRunTrigOut or swRun;
+   dataSend   <= iDaqTrigOut or swRead;
    acqCount   <= intCount;
 
    process ( sysClk, sysClkRst ) begin
@@ -204,7 +260,7 @@ begin
          intCount    <= (others=>'0') after tpd;
          countEnable <= '0'           after tpd;
       elsif rising_edge(sysClk) then
-         countEnable <= runTriggerOut or swRun after tpd;
+         countEnable <= iRunTrigOut or swRun after tpd;
 
          if epixConfig.acqCountReset = '1' then
             intCount <= (others=>'0') after tpd;

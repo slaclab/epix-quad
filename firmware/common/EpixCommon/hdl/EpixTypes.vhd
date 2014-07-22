@@ -78,6 +78,9 @@ package EpixTypes is
       syncMode          : std_logic_vector(1 downto 0);
       tpsEdge           : std_logic;
       tpsDelay          : std_logic_vector(15 downto 0);
+      autoTrigPeriod    : std_logic_vector(31 downto 0);
+      autoRunEn         : std_logic;
+      autoDaqEn         : std_logic;
    end record;
 
    -- Initialize
@@ -115,13 +118,19 @@ package EpixTypes is
       adcStreamMode     => '0',
       asicMask          => (others => '0'),
       tpsEdge           => '0',
-      tpsDelay          => (others => '0')
+      tpsDelay          => (others => '0'),
+      autoTrigPeriod    => (others => '0'),
+      autoRunEn         => '0',
+      autoDaqEn         => '0'
    ); 
 
    --Functions to allow use of EPIX100 or 10k
    function getNumColumns ( version : std_logic_vector ) return integer;
 
    constant NCOL_C : integer := getNumColumns(FpgaVersion);
+   --Number of columns in ePix "super row"
+   -- (columns / ch) * (channels / asic) * (asics / row) / (adc values / word)
+   constant WORDS_PER_SUPER_ROW_C : integer := NCOL_C * 4 * 2 / 2; 
 
    
 end EpixTypes;
@@ -130,8 +139,8 @@ package body EpixTypes is
 
    function getNumColumns (version : std_logic_vector ) return integer is
    begin
-      --Epix 100
-      if (version(31 downto 24) = x"E0") then
+      --Epix 100p and Epix100a
+      if (version(31 downto 24) = x"E0" or version(31 downto 24) = x"EA") then
          return EPIX100_COLS_PER_ROW;
       --Epix 10k
       elsif (version(31 downto 24) = x"E2") then

@@ -86,8 +86,13 @@ begin
    --the blockram latency.
    process(sysClk) begin
       if rising_edge(sysClk) then
-         iRdColTp <= iRdCol;
-         iRdRowTp <= iRdRow;
+         if sysClkRst = '1' or wrReset = '1' then
+            iRdColTp <= (others => '0');
+            iRdRowTp <= (others => '0');
+         else
+            iRdColTp <= iRdCol;
+            iRdRowTp <= iRdRow;
+         end if;
       end if;
    end process;
 
@@ -166,7 +171,11 @@ begin
    --doesn't appear on the output until rdEn + a clock
    process(sysClk) begin
       if rising_edge(sysClk) then
-         dataValid <= iRdEn;
+         if sysClkRst = '1' or wrReset = '1' then
+            dataValid <= '0';
+         else
+            dataValid <= iRdEn;
+         end if;
       end if;
    end process;
 
@@ -210,17 +219,22 @@ begin
    --Implement increment or decrement for read column
    process(sysClk) begin
       if rising_edge(sysClk) then
-         if iRdSet = '1' then
-            iRdRow <= iWrRow + 1;
-            if rdOrder = '0' then
-               iRdCol <= (others => '0');
-            else
-               iRdCol <= to_unsigned(NCOL_C-1,7);
+         if sysClkRst = '1' or wrReset = '1' then
+            iRdRow <= (others => '0');
+            iRdCol <= (others => '0');
+         else
+            if iRdSet = '1' then
+               iRdRow <= iWrRow + 1;
+               if rdOrder = '0' then
+                  iRdCol <= (others => '0');
+               else
+                  iRdCol <= to_unsigned(NCOL_C-1,7);
+               end if;
+            elsif iRdInc = '1' then
+               iRdCol <= iRdCol + 1;
+            elsif iRdDec = '1' then
+               iRdCol <= iRdCol - 1;
             end if;
-         elsif iRdInc = '1' then
-            iRdCol <= iRdCol + 1;
-         elsif iRdDec = '1' then
-            iRdCol <= iRdCol - 1;
          end if;
       end if;
    end process;
@@ -229,7 +243,7 @@ begin
    --Instantiate a blockram for the ping-pong scheme
    --Size is minimum 2 * 96 = 192 values (ePix 100)
    --                2 * 48 = 96 values (ePix 10k)
-   U_RowBuffer : entity work.TrueDualPortRam
+   U_RowBuffer : entity work.SimpleDualPortRam
       generic map (
          DATA_WIDTH_G => 16,
          ADDR_WIDTH_G => 8

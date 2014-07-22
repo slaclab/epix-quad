@@ -21,7 +21,7 @@ use ieee.numeric_std.all;
 use work.StdRtlPkg.all;
 use work.ScopeTypes.all;
 use work.EpixTypes.all;
-use work.Pgp2AppTypesPkg.all;
+use work.VcPkg.all;
 
 entity PseudoScope is
    port ( 
@@ -52,8 +52,8 @@ entity PseudoScope is
       scopeConfig     : in  ScopeConfigType;
 
       -- Data out interface
-      frameTxIn       : out  UsBuff32InType;
-      frameTxOut      :  in  UsBuff32OutType
+      frameTxIn       : out  VcUsBuff32InType;
+      frameTxOut      :  in  VcUsBuff32OutType
 
    );
 end PseudoScope;
@@ -90,7 +90,7 @@ architecture PseudoScope of PseudoScope is
    signal oddEvenRst       : sl;
    signal armSelect        : sl;
    signal triggerAdcThresh : unsigned(15 downto 0);
-   signal iFrameTxIn       : UsBuff32InType;
+   signal iFrameTxIn       : VcUsBuff32InType;
    signal adcWordPackedA   : slv(31 downto 0) := (others => '0');
    signal adcWordPackedB   : slv(31 downto 0) := (others => '0');
 
@@ -247,19 +247,19 @@ begin
            oddEven,frameTxOut,trigger,iFrameTxIn,bufferDoneA,bufferDoneB,
            adcWordPackedA,adcWordPackedB,bufferRdEnA,bufferRdEnB) begin
       --Defaults
-      iFrameTxIn.frameTxData   <= (others => '0');
-      iFrameTxIn.frameTxEnable <= '0';
-      iFrameTxIn.frameTxSOF    <= '0';
-      iFrameTxIn.frameTxEOF    <= '0';
-      iFrameTxIn.frameTxEOFE   <= '0';
-      bufferRdEnA              <= '0';
-      bufferRdEnB              <= '0';
-      wordCntRst               <= '0';
-      wordCntEn                <= '0';
-      oddEvenRst               <= '0';
-      oddEvenToggle            <= '0';
-      nxtState                 <= curState;
-      if (frameTxOut.frameTxAfull = '0') then
+      iFrameTxIn.data  <= (others => '0');
+      iFrameTxIn.valid <= '0';
+      iFrameTxIn.sof   <= '0';
+      iFrameTxIn.eof   <= '0';
+      iFrameTxIn.eofe  <= '0';
+      bufferRdEnA      <= '0';
+      bufferRdEnB      <= '0';
+      wordCntRst       <= '0';
+      wordCntEn        <= '0';
+      oddEvenRst       <= '0';
+      oddEvenToggle    <= '0';
+      nxtState         <= curState;
+      if (frameTxOut.almostFull = '0') then
          case curState is
             when IDLE_S =>
                if trigger = '1' then
@@ -273,19 +273,19 @@ begin
                end if;
             when START_HDR_S =>
                wordCntEn                <= '1';
-               iFrameTxIn.frameTxEnable <= '1';
+               iFrameTxIn.valid <= '1';
                case to_integer(wordCnt) is
-                  when 0 => iFrameTxIn.frameTxData <= x"000000" & "00" & cLane & "00" & cVC;
-                            iFrameTxIn.frameTxSOF  <= '1';
-                  when 1 => iFrameTxIn.frameTxData <= x"0" & "00" & cQuad & cOpCode & x"0000"; --Acq count usually is lower 16 here
-                  when 2 => iFrameTxIn.frameTxData <= cZeroWord; --Seqcount usually goes here
-                  when 3 => iFrameTxIn.frameTxData <= cZeroWord;
-                  when 4 => iFrameTxIn.frameTxData <= cZeroWord;
-                  when 5 => iFrameTxIn.frameTxData <= cZeroWord;
-                  when 6 => iFrameTxIn.frameTxData <= cZeroWord;
-                  when 7 => iFrameTxIn.frameTxData <= cZeroWord;
+                  when 0 => iFrameTxIn.data <= x"000000" & "00" & cLane & "00" & cVC;
+                            iFrameTxIn.sof  <= '1';
+                  when 1 => iFrameTxIn.data <= x"0" & "00" & cQuad & cOpCode & x"0000"; --Acq count usually is lower 16 here
+                  when 2 => iFrameTxIn.data <= cZeroWord; --Seqcount usually goes here
+                  when 3 => iFrameTxIn.data <= cZeroWord;
+                  when 4 => iFrameTxIn.data <= cZeroWord;
+                  when 5 => iFrameTxIn.data <= cZeroWord;
+                  when 6 => iFrameTxIn.data <= cZeroWord;
+                  when 7 => iFrameTxIn.data <= cZeroWord;
                             nxtState <= FIRST_WORD_A_S;
-                  when others  => iFrameTxIn.frameTxData <= cZeroWord;
+                  when others  => iFrameTxIn.data <= cZeroWord;
                end case;
             when FIRST_WORD_A_S =>
                bufferRdEnA            <= '1';
@@ -296,12 +296,12 @@ begin
             when SCOPE_DATA_A_S =>
                bufferRdEnA            <= '1';
                oddEvenToggle          <= '1';
-               iFrameTxIn.frameTxData <= adcWordPackedA;
+               iFrameTxIn.data <= adcWordPackedA;
                if (bufferRdEnA = '1' and oddEven = '1') then
-                  iFrameTxin.frameTxEnable <= '1';
+                  iFrameTxin.valid <= '1';
                end if;
                if bufferDoneA = '1' then
-                  --iFrameTxIn.frameTxEnable <= '1';  --force write if odd size
+                  --iFrameTxIn.valid <= '1';  --force write if odd size
                   oddEvenRst               <= '1';
                   nxtState                 <= FIRST_WORD_B_S;
                end if;
@@ -314,22 +314,22 @@ begin
             when SCOPE_DATA_B_S =>
                bufferRdEnB            <= '1';
                oddEvenToggle          <= '1';
-               iFrameTxIn.frameTxData <= adcWordPackedB;
+               iFrameTxIn.data <= adcWordPackedB;
                if (bufferRdEnB = '1' and oddEven = '1') then
-                  iFrameTxin.frameTxEnable <= '1';
+                  iFrameTxin.valid <= '1';
                end if;
                if bufferDoneB = '1' then
-                  --iFrameTxIn.frameTxEnable <= '1';  --force write if odd size
+                  --iFrameTxIn.valid <= '1';  --force write if odd size
                   oddEvenRst               <= '1';
                   wordCntRst               <= '1';
                   nxtState                 <= STOP_S;
                end if; 
             when STOP_S =>
-               iFrameTxIn.frameTxData   <= cZeroWord;
-               iFrameTxIn.frameTxEnable <= '1';
+               iFrameTxIn.data  <= cZeroWord;
+               iFrameTxIn.valid <= '1';
                wordCntEn                <= '1';
                if wordCnt = 4 then
-                  iFrameTxIn.frameTxEOF    <= '1';
+                  iFrameTxIn.eof    <= '1';
                   nxtState <= IDLE_S;
                end if;
             when others =>

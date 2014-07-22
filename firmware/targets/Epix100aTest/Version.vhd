@@ -1,22 +1,22 @@
 -------------------------------------------------------------------------------
 -- Title         : Version Constant File
--- Project       : Epix 10k Test
+-- Project       : Epix 100A
 -------------------------------------------------------------------------------
 -- File          : Version.vhd
--- Author        : Kurtis Nishimura
--- Created       : 02/07/2013
+-- Author        : Kurtis Nishimura, kurtisn@slac.stanford.edu
+-- Created       : 07/03/2014
 -------------------------------------------------------------------------------
 -- Description:
 -- Version Constant Module
 -------------------------------------------------------------------------------
--- Copyright (c) 2012 by SLAC. All rights reserved.
+-- Copyright (c) 2014 by SLAC. All rights reserved.
 -------------------------------------------------------------------------------
 LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
 
 package Version is
 
-constant FpgaVersion : std_logic_vector(31 downto 0) := x"E2000005"; -- MAKE_VERSION
+constant FpgaVersion : std_logic_vector(31 downto 0) := x"EA000000"; -- MAKE_VERSION
 constant FpgaBaseClock : std_logic_vector(31 downto 0) := x"00" & x"125000";  
 -- FPGA base clock (used for calculating various delay units)
 -- Top two nybbles reserved
@@ -26,12 +26,7 @@ end Version;
 
 -------------------------------------------------------------------------------
 -- Revision History:
--- 02/07/2014 (0xE2000000): First version for testing epix10k_p
---                          Note E2 prefix is for this project
---                               E1 is used by SDD
---                               E0 is for epix100_p
--- 03/06/2014 (0xE2000001): Added adjustable TPS sampling point
---       2014 (0xE2000003): Version used for beam tests through July.
--- 07/22/2014 (0xE2000004): Migrated to Vclib and cleaned up ReadoutControl.
+--            (0xEA000000): Version used for original ASIC characterization.
+--                          Forked from 100p version (0xE000013)
 -------------------------------------------------------------------------------
 

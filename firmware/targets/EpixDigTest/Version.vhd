@@ -16,7 +16,7 @@ USE ieee.std_logic_1164.ALL;
 
 package Version is
 
-constant FpgaVersion : std_logic_vector(31 downto 0) := x"E000000E"; -- MAKE_VERSION
+constant FpgaVersion : std_logic_vector(31 downto 0) := x"E0000014"; -- MAKE_VERSION
 constant FpgaBaseClock : std_logic_vector(31 downto 0) := x"00" & x"125000";  
 -- FPGA base clock (used for calculating various delay units)
 -- Top two nybbles reserved
@@ -45,5 +45,9 @@ end Version;
 --                          timeout logic. 
 -- 03/12/2014 (0xE000000D): Last stable version before adding oscilloscope
 --                          functionality on VC 2.
+-- 04/08/2014 (0xE000000F): Adds two fake rows to readout for env. data.
+--       2014 (0xE0000012): Version used for beam tests through July.
+-- 07/22/2014 (0xE0000013): Migrated to Vclib and cleaned up ReadoutControl.
+--                          This fixed the spurious startup issue.
 -------------------------------------------------------------------------------
 
