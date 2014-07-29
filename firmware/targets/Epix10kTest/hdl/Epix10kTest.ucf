@@ -2,10 +2,17 @@
 # Define system clocks
 NET U_EpixCore/sysClk                 TNM_NET = FFS sysClk;
 NET U_EpixCore/U_PgpFrontEnd/ipgpClk  TNM_NET = FFS pgpClk;
+NET U_EpixCore/U_AdcReadout3x/GenAdc[0].U_AdcReadout/adcBitClkR  TNM_NET = FFS adc0Clk;
+NET U_EpixCore/U_AdcReadout3x/GenAdc[1].U_AdcReadout/adcBitClkR  TNM_NET = FFS adc1Clk;
+NET U_EpixCore/U_AdcReadout3x/U_AdcMon/adcBitClkR                TNM_NET = FFS adc2Clk;
 
 # Define system clocks
-TIMESPEC TS_sysClk      = PERIOD sysClk   125 Mhz HIGH 50%;
+TIMESPEC TS_sysClk      = PERIOD sysClk   100 Mhz HIGH 50%;
+#TIMESPEC TS_sysClk      = PERIOD sysClk   125 Mhz HIGH 50%;
 TIMESPEC TS_pgpClk      = PERIOD pgpClk   157 Mhz HIGH 50%;
+TIMESPEC TS_adc0Clk     = PERIOD adc0Clk  350 Mhz HIGH 50%;
+TIMESPEC TS_adc1Clk     = PERIOD adc1Clk  350 Mhz HIGH 50%;
+TIMESPEC TS_adc2Clk     = PERIOD adc2Clk  350 Mhz HIGH 50%;
 
 # Clocks and reset
 NET "sysRstL"            LOC = "U4"     | IOSTANDARD = "LVCMOS33";
@@ -71,66 +78,66 @@ NET "asic0SaciRsp"       LOC = "J15"    | IOSTANDARD = "LVCMOS25";
 # Monitoring ADCs
 NET "adcMonClkP"         LOC = "V10"    | IOSTANDARD = "LVDS_25";  
 NET "adcMonClkM"         LOC = "U10"    | IOSTANDARD = "LVDS_25"; 
-NET "adcMonDoClkP"       LOC = "V18"    | IOSTANDARD = "LVDS_25";  
-NET "adcMonDoClkM"       LOC = "V17"    | IOSTANDARD = "LVDS_25";  
-NET "adcMonFrameClkP"    LOC = "T18"    | IOSTANDARD = "LVDS_25";  
-NET "adcMonFrameClkM"    LOC = "U18"    | IOSTANDARD = "LVDS_25";  
-NET "asic0AdcDoMonP"     LOC = "V16"    | IOSTANDARD = "LVDS_25";  
-NET "asic0AdcDoMonM"     LOC = "V15"    | IOSTANDARD = "LVDS_25";  
-NET "asic1AdcDoMonP"     LOC = "U13"    | IOSTANDARD = "LVDS_25";  
-NET "asic1AdcDoMonM"     LOC = "V13"    | IOSTANDARD = "LVDS_25";  
-NET "asic2AdcDoMonP"     LOC = "R14"    | IOSTANDARD = "LVDS_25";  
-NET "asic2AdcDoMonM"     LOC = "T14"    | IOSTANDARD = "LVDS_25";  
-NET "asic3AdcDoMonP"     LOC = "V12"    | IOSTANDARD = "LVDS_25";  
-NET "asic3AdcDoMonM"     LOC = "V11"    | IOSTANDARD = "LVDS_25";  
+NET "adcMonDoClkP"       LOC = "V18"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "adcMonDoClkM"       LOC = "V17"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "adcMonFrameClkP"    LOC = "T18"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "adcMonFrameClkM"    LOC = "U18"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic0AdcDoMonP"     LOC = "V16"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic0AdcDoMonM"     LOC = "V15"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic1AdcDoMonP"     LOC = "U13"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic1AdcDoMonM"     LOC = "V13"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic2AdcDoMonP"     LOC = "R14"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic2AdcDoMonM"     LOC = "T14"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic3AdcDoMonP"     LOC = "V12"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic3AdcDoMonM"     LOC = "V11"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
 
 # ASIC 0/1 Data
 NET "adc0ClkP"           LOC = "A18"    | IOSTANDARD = "LVDS_25";  
 NET "adc0ClkM"           LOC = "A17"    | IOSTANDARD = "LVDS_25";  
-NET "adc0DoClkP"         LOC = "K16"    | IOSTANDARD = "LVDS_25";  
-NET "adc0DoClkM"         LOC = "L16"    | IOSTANDARD = "LVDS_25";  
-NET "adc0FrameClkP"      LOC = "N16"    | IOSTANDARD = "LVDS_25";  
-NET "adc0FrameClkM"      LOC = "M16"    | IOSTANDARD = "LVDS_25";  
-NET "asic0AdcDoAP"       LOC = "N15"    | IOSTANDARD = "LVDS_25";  
-NET "asic0AdcDoAM"       LOC = "M15"    | IOSTANDARD = "LVDS_25";  
-NET "asic0AdcDoBP"       LOC = "R17"    | IOSTANDARD = "LVDS_25"; 
-NET "asic0AdcDoBM"       LOC = "P17"    | IOSTANDARD = "LVDS_25"; 
-NET "asic0AdcDoCP"       LOC = "H17"    | IOSTANDARD = "LVDS_25";  
-NET "asic0AdcDoCM"       LOC = "G18"    | IOSTANDARD = "LVDS_25";  
-NET "asic0AdcDoDP"       LOC = "J17"    | IOSTANDARD = "LVDS_25";  
-NET "asic0AdcDoDM"       LOC = "K17"    | IOSTANDARD = "LVDS_25";  
-NET "asic1AdcDoAP"       LOC = "R15"    | IOSTANDARD = "LVDS_25";  
-NET "asic1AdcDoAM"       LOC = "R16"    | IOSTANDARD = "LVDS_25";  
-NET "asic1AdcDoBP"       LOC = "H18"    | IOSTANDARD = "LVDS_25";  
-NET "asic1AdcDoBM"       LOC = "J18"    | IOSTANDARD = "LVDS_25";  
-NET "asic1AdcDoCP"       LOC = "L18"    | IOSTANDARD = "LVDS_25";  
-NET "asic1AdcDoCM"       LOC = "L17"    | IOSTANDARD = "LVDS_25";  
-NET "asic1AdcDoDP"       LOC = "H15"    | IOSTANDARD = "LVDS_25";  
-NET "asic1AdcDoDM"       LOC = "H16"    | IOSTANDARD = "LVDS_25";  
+NET "adc0DoClkP"         LOC = "K16"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "adc0DoClkM"         LOC = "L16"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "adc0FrameClkP"      LOC = "N16"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "adc0FrameClkM"      LOC = "M16"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic0AdcDoAP"       LOC = "N15"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic0AdcDoAM"       LOC = "M15"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic0AdcDoBP"       LOC = "R17"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true; 
+NET "asic0AdcDoBM"       LOC = "P17"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true; 
+NET "asic0AdcDoCP"       LOC = "H17"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic0AdcDoCM"       LOC = "G18"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic0AdcDoDP"       LOC = "J17"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic0AdcDoDM"       LOC = "K17"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic1AdcDoAP"       LOC = "R15"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic1AdcDoAM"       LOC = "R16"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic1AdcDoBP"       LOC = "H18"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic1AdcDoBM"       LOC = "J18"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic1AdcDoCP"       LOC = "L18"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic1AdcDoCM"       LOC = "L17"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic1AdcDoDP"       LOC = "H15"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic1AdcDoDM"       LOC = "H16"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
 
 # ASIC 2/3 Data
 NET "adc1ClkP"           LOC = "N12"    | IOSTANDARD = "LVDS_25";  
 NET "adc1ClkM"           LOC = "M11"    | IOSTANDARD = "LVDS_25";  
-NET "adc1DoClkP"         LOC = "C15"    | IOSTANDARD = "LVDS_25";  
-NET "adc1DoClkM"         LOC = "B15"    | IOSTANDARD = "LVDS_25";  
-NET "adc1FrameClkP"      LOC = "B11"    | IOSTANDARD = "LVDS_25";  
-NET "adc1FrameClkM"      LOC = "C11"    | IOSTANDARD = "LVDS_25";  
-NET "asic2AdcDoAP"       LOC = "F16"    | IOSTANDARD = "LVDS_25";  
-NET "asic2AdcDoAM"       LOC = "G16"    | IOSTANDARD = "LVDS_25";  
-NET "asic2AdcDoBP"       LOC = "B16"    | IOSTANDARD = "LVDS_25";  
-NET "asic2AdcDoBM"       LOC = "A16"    | IOSTANDARD = "LVDS_25";  
-NET "asic2AdcDoCP"       LOC = "C17"    | IOSTANDARD = "LVDS_25";  
-NET "asic2AdcDoCM"       LOC = "C16"    | IOSTANDARD = "LVDS_25";  
-NET "asic2AdcDoDP"       LOC = "B13"    | IOSTANDARD = "LVDS_25";  
-NET "asic2AdcDoDM"       LOC = "A13"    | IOSTANDARD = "LVDS_25";  
-NET "asic3AdcDoAP"       LOC = "E17"    | IOSTANDARD = "LVDS_25";  
-NET "asic3AdcDoAM"       LOC = "E16"    | IOSTANDARD = "LVDS_25";  
-NET "asic3AdcDoBP"       LOC = "C12"    | IOSTANDARD = "LVDS_25";  
-NET "asic3AdcDoBM"       LOC = "C13"    | IOSTANDARD = "LVDS_25";  
-NET "asic3AdcDoCP"       LOC = "A11"    | IOSTANDARD = "LVDS_25";  
-NET "asic3AdcDoCM"       LOC = "A12"    | IOSTANDARD = "LVDS_25";  
-NET "asic3AdcDoDP"       LOC = "B14"    | IOSTANDARD = "LVDS_25";  
-NET "asic3AdcDoDM"       LOC = "A14"    | IOSTANDARD = "LVDS_25";  
+NET "adc1DoClkP"         LOC = "C15"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "adc1DoClkM"         LOC = "B15"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "adc1FrameClkP"      LOC = "B11"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "adc1FrameClkM"      LOC = "C11"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic2AdcDoAP"       LOC = "F16"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic2AdcDoAM"       LOC = "G16"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic2AdcDoBP"       LOC = "B16"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic2AdcDoBM"       LOC = "A16"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic2AdcDoCP"       LOC = "C17"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic2AdcDoCM"       LOC = "C16"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic2AdcDoDP"       LOC = "B13"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic2AdcDoDM"       LOC = "A13"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic3AdcDoAP"       LOC = "E17"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic3AdcDoAM"       LOC = "E16"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic3AdcDoBP"       LOC = "C12"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic3AdcDoBM"       LOC = "C13"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic3AdcDoCP"       LOC = "A11"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic3AdcDoCM"       LOC = "A12"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic3AdcDoDP"       LOC = "B14"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true | PULLUP;  
+NET "asic3AdcDoDM"       LOC = "A14"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
 
 # ASIC Control
 NET "asicR0"             LOC = "M10"    | IOSTANDARD = "LVCMOS25";
@@ -142,12 +149,12 @@ NET "asic0Dm2"           LOC = "U11"    | IOSTANDARD = "LVCMOS25";
 NET "asic0Dm1"           LOC = "T11"    | IOSTANDARD = "LVCMOS25";
 NET "asic01RoClkP"       LOC = "U14"    | IOSTANDARD = "LVDS_25";  
 NET "asic01RoClkM"       LOC = "T13"    | IOSTANDARD = "LVDS_25";  
-NET "asic01DoutP"        LOC = "U16"    | IOSTANDARD = "LVDS_25";  
-NET "asic01DoutM"        LOC = "U15"    | IOSTANDARD = "LVDS_25";  
+NET "asic01DoutP"        LOC = "U16"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
+NET "asic01DoutM"        LOC = "U15"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;  
 NET "asic23RoClkP"       LOC = "T17"    | IOSTANDARD = "LVDS_25";  
 NET "asic23RoClkM"       LOC = "T16"    | IOSTANDARD = "LVDS_25";  
-NET "asic23DoutP"        LOC = "P18"    | IOSTANDARD = "LVDS_25";
-NET "asic23DoutM"        LOC = "N17"    | IOSTANDARD = "LVDS_25";
+NET "asic23DoutP"        LOC = "P18"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;
+NET "asic23DoutM"        LOC = "N17"    | IOSTANDARD = "LVDS_25" | DIFF_TERM = true;
 NET "asicSync"           LOC = "F14"    | IOSTANDARD = "LVCMOS25";
 
 # Prom Updates, Unused for now

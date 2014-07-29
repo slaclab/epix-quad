@@ -64,7 +64,6 @@ begin
 
    -- ADC
    GenAdc : for i in 0 to 1 generate 
-
       U_AdcReadout: entity work.AdcReadout 
          generic map (
             NUM_CHANNELS_G => 8,
@@ -72,8 +71,8 @@ begin
          ) port map ( 
             sysClk        => sysClk,
             sysClkRst     => sysClkRst,
-            inputDelay    => epixConfig.adcDelay(i),
-            inputDelaySet => epixConfig.adcDelayUpdate,
+            frameDelay    => epixConfig.frameDelay(i),
+            dataDelay     => epixConfig.dataDelay(i),
             frameSwapOut  => open,
             adcValid      => adcValid((i*8)+7 downto i*8),
             adcData       => adcData((i*8)+7 downto i*8),
@@ -93,8 +92,8 @@ begin
       ) port map ( 
          sysClk        => sysClk,
          sysClkRst     => sysClkRst,
-         inputDelay    => epixConfig.adcDelay(2),
-         inputDelaySet => epixConfig.adcDelayUpdate,
+         frameDelay    => epixConfig.frameDelay(2),
+         dataDelay     => epixConfig.monDataDelay,
          frameSwapOut  => open,
          adcValid      => adcValid(19 downto 16),
          adcData       => adcData(19 downto 16),
@@ -113,38 +112,34 @@ begin
          RDY    => iDelayCtrlRdy
       );
    --Generate a longer reset for IDELAYCTRL (minimum is 50 ns)
-   process(sysClk) 
-      variable counter : integer range 0 to 15 := 0;
-      constant delay   : integer := 10;
-   begin
-      if rising_edge(sysClk) then
-         if sysClkRst = '1' then
-            counter := delay;
-            iDelayRst <= '1';
-         elsif (counter > 0) then
-            iDelayRst <= '1';
-            counter := counter - 1;
-         else
-            iDelayRst <= '0';
-         end if;
-      end if;
-   end process;
-
+   U_IDelayRst : entity work.RstSync
+      generic map (
+         TPD_G           => ns,
+         IN_POLARITY_G   => '1',
+         OUT_POLARITY_G  => '1',
+         BYPASS_SYNC_G   => false,
+         RELEASE_DELAY_G => 32
+      )
+      port map (
+         clk      => iClk200Mhz,
+         asyncRst => sysClkRst,
+         syncRst  => iDelayRst
+      );
    -- DCM for generating 200 MHz for IDelayCtrl
    U_200MHzDcm : DCM_ADV
    generic map( 
       CLK_FEEDBACK          => "1X",
       CLKDV_DIVIDE          => 2.0,
-      CLKFX_DIVIDE          => 5,
-      CLKFX_MULTIPLY        => 8,
+      CLKFX_DIVIDE          => 8,  -- Was 5 for 125 MHz input
+      CLKFX_MULTIPLY        => 8,  -- Was 8 for 125 MHz input
       CLKIN_DIVIDE_BY_2     => FALSE,
-      CLKIN_PERIOD          => 8.000,
+      CLKIN_PERIOD          => 10.000,
       CLKOUT_PHASE_SHIFT    => "NONE",
       DCM_AUTOCALIBRATION   => TRUE,
       DCM_PERFORMANCE_MODE  => "MAX_SPEED",
       DESKEW_ADJUST         => "SYSTEM_SYNCHRONOUS",
       DFS_FREQUENCY_MODE    => "HIGH",
-      DLL_FREQUENCY_MODE    => "HIGH",
+      DLL_FREQUENCY_MODE    => "LOW",
       DUTY_CYCLE_CORRECTION => TRUE,
       FACTORY_JF            => x"F0F0",
       PHASE_SHIFT           => 0,
@@ -164,10 +159,10 @@ begin
       PSINCDEC => '0',
       RST      => sysClkRst,
       CLKDV    => open,
-      CLKFX    => iClk200MHz,
+      CLKFX    => open,
       CLKFX180 => open,
       CLK0     => iClkFb,
-      CLK2X    => open,
+      CLK2X    => iClk200MHz,
       CLK2X180 => open,
       CLK90    => open,
       CLK180   => open,

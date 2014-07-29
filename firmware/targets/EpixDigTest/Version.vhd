@@ -16,8 +16,9 @@ USE ieee.std_logic_1164.ALL;
 
 package Version is
 
-constant FpgaVersion : std_logic_vector(31 downto 0) := x"E0000014"; -- MAKE_VERSION
-constant FpgaBaseClock : std_logic_vector(31 downto 0) := x"00" & x"125000";  
+constant FpgaVersion : std_logic_vector(31 downto 0) := x"E0000015"; -- MAKE_VERSION
+--constant FpgaBaseClock : std_logic_vector(31 downto 0) := x"00" & x"125000";  
+constant FpgaBaseClock : std_logic_vector(31 downto 0) := x"00" & x"100000";
 -- FPGA base clock (used for calculating various delay units)
 -- Top two nybbles reserved
 -- Bottom 6 nybbles are base clock rate in kHz (binary coded decimal)
@@ -49,5 +50,9 @@ end Version;
 --       2014 (0xE0000012): Version used for beam tests through July.
 -- 07/22/2014 (0xE0000013): Migrated to Vclib and cleaned up ReadoutControl.
 --                          This fixed the spurious startup issue.
+-- 07/29/2014 (0xE0000014): Ramped up to 50 MSPS.  Added tristates for 
+--                          FPGA outputs for ease of power sequencing.
+--                          Added IDELAYs for all ADC signals and offset 
+--                          constraints to improve data quality/reproducibility.
 -------------------------------------------------------------------------------
 

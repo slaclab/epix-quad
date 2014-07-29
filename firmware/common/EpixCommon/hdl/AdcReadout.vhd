@@ -20,6 +20,7 @@ use work.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
+use work.StdRtlPkg.all;
 use work.EpixTypes.all;
 library UNISIM;
 use UNISIM.vcomponents.all;
@@ -36,8 +37,8 @@ entity AdcReadout is
       sysClkRst     : in  std_logic;
 
       -- ADC Configuration
-      inputDelay    : in  std_logic_vector(5 downto 0);
-      inputDelaySet : in  std_logic;
+      frameDelay    : in  std_logic_vector(5 downto 0);
+      dataDelay     : in  word6_array(NUM_CHANNELS_G-1 downto 0);
 
       -- Status
       frameSwapOut  : out std_logic;
@@ -60,22 +61,6 @@ end AdcReadout;
 
 -- Define architecture
 architecture AdcReadout of AdcReadout is
-
---   -- Data FIFO
---   component afifo_16x16_dist
---      port (
---         rst    : in  std_logic;
---         wr_clk : in  std_logic;
---         rd_clk : in  std_logic;
---         din    : in  std_logic_vector(15 downto 0);
---         wr_en  : in  std_logic;
---         rd_en  : in  std_logic;
---         dout   : out std_logic_vector(15 downto 0);
---         full   : out std_logic;
---         empty  : out std_logic;
---         valid  : out std_logic
---      );
---   end component;
 
    -- Local Signals
    signal adcBitClkIo     : std_logic;
@@ -109,14 +94,15 @@ architecture AdcReadout of AdcReadout is
    signal adcBitRst0      : std_logic;
    signal adcBitRst1      : std_logic;
    signal adcBitRst       : std_logic;
+   signal tmpAdcClkRaw    : std_logic;
    signal tmpAdcClk       : std_logic;
    signal inputCount      : word6_array(NUM_CHANNELS_G-1 downto 0);
-   signal inputCe         : std_logic_vector(NUM_CHANNELS_G-1 downto 0);
-   signal inputRst        : std_logic_vector(NUM_CHANNELS_G-1 downto 0);
-   signal frameCount      : std_logic_vector(5 downto 0);
-   signal frameCe         : std_logic;
-   signal frameRst        : std_logic;
-
+   
+   signal frameDelayCe  : sl;
+   signal frameDelayInc : sl;
+   signal dataDelayCe   : slv(NUM_CHANNELS_G-1 downto 0);
+   signal dataDelayInc  : slv(NUM_CHANNELS_G-1 downto 0);
+   
    -- Register delay for simulation
    constant tpd:time := 0.5 ns;
 
@@ -135,7 +121,28 @@ begin
       ) port map (
          I  => adcDClkP,
          IB => adcDClkM,
-         O  => tmpAdcClk
+         O  => tmpAdcClkRaw
+      );
+   -- ADC frame delay
+   U_FrameDelay : IODELAY 
+      generic map (
+         DELAY_SRC             => "I",
+         HIGH_PERFORMANCE_MODE => true,
+         IDELAY_TYPE           => "FIXED",
+         IDELAY_VALUE          => 0, -- Here
+         ODELAY_VALUE          => 0,
+         REFCLK_FREQUENCY      => 200.0,
+         SIGNAL_PATTERN        => "CLOCK"
+      ) port map (
+         DATAOUT  => tmpAdcClk,
+         C        => '0',
+         CE       => '0',
+         DATAIN   => '0',
+         IDATAIN  => tmpAdcClkRaw,
+         INC      => '0',
+         ODATAIN  => '0',
+         RST      => '0',
+         T        => '0'
       );
 
    -- IO Clock
@@ -191,43 +198,28 @@ begin
             IDELAY_VALUE          => 0, -- Here
             ODELAY_VALUE          => 0,
             REFCLK_FREQUENCY      => 200.0,
-            SIGNAL_PATTERN        => "DATA"
+            SIGNAL_PATTERN        => "CLOCK"
          ) port map (
             DATAOUT  => adcFrameDly,
             C        => sysClk,
-            CE       => frameCe,
+            CE       => frameDelayCe,
             DATAIN   => '0',
             IDATAIN  => adcFramePad,
-            INC      => '1',
+            INC      => frameDelayInc,
             ODATAIN  => '0',
-            RST      => frameRst,
+            RST      => sysClkRst,
             T        => '0'
          );
-
-      -- Frame delay adjust
-      process ( sysClk, sysClkRst ) begin
-         if ( sysClkRst = '1' ) then
-            frameCe    <= '0'           after tpd;
-            frameRst   <= '1'           after tpd;
-            frameCount <= (others=>'0') after tpd;
-         elsif rising_edge(sysClk) then
-
-            -- Idle
-            if frameCe = '0' and frameRst = '0' then
-               frameCount <= (others=>'0') after tpd;
-               frameRst   <= inputDelaySet after tpd;
-            else
-               frameRst   <= '0' after tpd;
-
-               if frameCount = inputDelay then
-                  frameCe <= '0' after tpd;
-               else
-                  frameCe    <= '1'            after tpd;
-                  frameCount <= frameCount + 1 after tpd;
-               end if;
-            end if;
-         end if;
-      end process;
+      U_FrameDelayManger : entity work.DelayManager
+         generic map (
+            TPD_G => tpd
+         ) port map (
+            sysClk      => sysClk,
+            sysClkRst   => sysClkRst,
+            delayIn     => frameDelay,
+            delayCe     => frameDelayCe,
+            delayIncDir => frameDelayInc
+         );
    end generate;
 
    FDEL_BP_GEN: if EN_DELAY = 0 generate
@@ -321,39 +313,24 @@ begin
             ) port map (
                DATAOUT  => adcDataDly(i),
                C        => sysClk,
-               CE       => inputCe(i),
+               CE       => dataDelayCe(i),
                DATAIN   => '0',
                IDATAIN  => adcDataPad(i),
-               INC      => '1',
+               INC      => dataDelayInc(i),
                ODATAIN  => '0',
-               RST      => inputRst(i),
+               RST      => sysClkRst,
                T        => '0'
             );
-
-         -- Input delay adjust
-         process ( sysClk, sysClkRst ) begin
-            if ( sysClkRst = '1' ) then
-               inputCe(i)    <= '0'           after tpd;
-               inputRst(i)   <= '1'           after tpd;
-               inputCount(i) <= (others=>'0') after tpd;
-            elsif rising_edge(sysClk) then
-
-               -- Idle
-               if inputCe(i) = '0' and inputRst(i) = '0' then
-                  inputCount(i) <= (others=>'0') after tpd;
-                  inputRst(i)   <= inputDelaySet after tpd;
-               else
-                  inputRst(i)   <= '0' after tpd;
-
-                  if inputCount(i) = inputDelay then
-                     inputCe(i) <= '0' after tpd;
-                  else
-                     inputCe(i)    <= '1'               after tpd;
-                     inputCount(i) <= inputCount(i) + 1 after tpd;
-                  end if;
-               end if;
-            end if;
-         end process;
+         U_DataDelayManger : entity work.DelayManager
+            generic map (
+               TPD_G => tpd
+            ) port map (
+               sysClk      => sysClk,
+               sysClkRst   => sysClkRst,
+               delayIn     => dataDelay(i),
+               delayCe     => dataDelayCe(i),
+               delayIncDir => dataDelayInc(i)
+            );
       end generate;
 
       DDEL_BP_GEN: if EN_DELAY = 0 generate
@@ -477,19 +454,6 @@ begin
             valid         => adcdataRd(i),
             empty         => open
          );
-
---      U_DataFifo: afifo_16x16_dist port map (
---         rst    => adcBitRst,
---         wr_clk => adcBitClkR,
---         rd_clk => sysClk,
---         din    => adcDataInt(i),
---         wr_en  => adcDataWr,
---         rd_en  => adcDataRd(i),
---         dout   => adcDataOut(i),
---         full   => open,
---         empty  => open,
---         valid  => adcDataRd(i)
---      );
 
       -- Connect external signals
       process ( sysClk, sysClkRst ) begin

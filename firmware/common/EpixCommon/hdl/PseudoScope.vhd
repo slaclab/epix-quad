@@ -51,6 +51,10 @@ entity PseudoScope is
       -- Configuration interface
       scopeConfig     : in  ScopeConfigType;
 
+      -- Sequence count from normal readout block
+      acqCount        : in  slv(31 downto 0);
+      seqCount        : in  slv(31 downto 0);
+      
       -- Data out interface
       frameTxIn       : out  VcUsBuff32InType;
       frameTxOut      :  in  VcUsBuff32OutType
@@ -117,8 +121,12 @@ architecture PseudoScope of PseudoScope is
 begin
 
    -- Output
-   frameTxIn <= iFrameTxIn;
-
+   frameTxIn.valid <= iFrameTxIn.valid;   
+   frameTxIn.sof   <= iFrameTxIn.sof;
+   frameTxIn.eof   <= iFrameTxIn.eof;
+   frameTxIn.eofe  <= iFrameTxIn.eofe;
+   frameTxIn.data  <= iFrameTxIn.data(15 downto 0) & iFrameTxIn.data(31 downto 16);
+   
    -- Type conversions
    triggerChannel   <= to_integer(unsigned(scopeConfig.triggerChannel));
    triggerAdcThresh <= unsigned(scopeConfig.triggerAdcThresh);
@@ -277,8 +285,8 @@ begin
                case to_integer(wordCnt) is
                   when 0 => iFrameTxIn.data <= x"000000" & "00" & cLane & "00" & cVC;
                             iFrameTxIn.sof  <= '1';
-                  when 1 => iFrameTxIn.data <= x"0" & "00" & cQuad & cOpCode & x"0000"; --Acq count usually is lower 16 here
-                  when 2 => iFrameTxIn.data <= cZeroWord; --Seqcount usually goes here
+                  when 1 => iFrameTxIn.data <= x"0" & "00" & cQuad & cOpCode & acqCount(15 downto 0);
+                  when 2 => iFrameTxIn.data <= seqCount;
                   when 3 => iFrameTxIn.data <= cZeroWord;
                   when 4 => iFrameTxIn.data <= cZeroWord;
                   when 5 => iFrameTxIn.data <= cZeroWord;

@@ -31,7 +31,8 @@ package EpixTypes is
 
    subtype WORD6 is STD_LOGIC_VECTOR (5 downto 0);
    type word6_array is array ( NATURAL range <> ) of WORD6;
-
+   type adcWord6_array is array ( NATURAL range <> ) of word6_array(7 downto 0);
+   
    --Maximum oversampling rate supported
    constant MAX_OVERSAMPLE : integer := 2;
    --Number of columns in an ePix row
@@ -50,8 +51,9 @@ package EpixTypes is
       daqTriggerEnable  : std_logic;
       acqCountReset     : std_logic;
       seqCountReset     : std_logic;
-      adcDelay          : word6_array(2 downto 0);
-      adcDelayUpdate    : std_logic;
+      frameDelay        : word6_array(2 downto 0);
+      dataDelay         : adcWord6_array(1 downto 0);
+      monDataDelay      : word6_array(3 downto 0);
       acqToAsicR0Delay  : std_logic_vector(31 downto 0);
       asicR0Width       : std_logic_vector(31 downto 0);
       asicR0ToAsicAcq   : std_logic_vector(31 downto 0);
@@ -91,8 +93,9 @@ package EpixTypes is
       daqTriggerDelay   => (others=>'0'),
       acqCountReset     => '0',
       seqCountReset     => '0',
-      adcDelay          => (others=> (others=>'0')),
-      adcDelayUpdate    => '0',
+      frameDelay        => (others=> (others=>'0')),
+      dataDelay         => (others=> (others=> (others => '0'))),
+      monDataDelay      => (others=> (others=>'0')),
       acqToAsicR0Delay  => (others=>'0'),
       asicR0Width       => (others=>'0'),
       asicR0ToAsicAcq   => (others=>'0'),

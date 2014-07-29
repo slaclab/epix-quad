@@ -79,11 +79,18 @@ architecture PgpFrontEnd of PgpFrontEnd is
    signal ipgpClk            : std_logic;
    signal ipgpClk2x          : std_logic;
    signal ipgpClkRst         : std_logic;
+   signal isysClkRaw         : std_logic;
    signal isysClk            : std_logic;
    signal isysClkRst         : std_logic;
+   signal isysClkRstRaw      : std_logic;
+   signal iresetReq          : std_logic;
    signal pgpRefClk          : std_logic;
    signal ethRefClk          : std_logic;
    signal resetReqPgpSync    : std_logic;
+   signal iUserClk           : std_logic;
+   signal iUserClkRst        : std_logic;
+   signal iPllFb             : std_logic;
+   signal iPllLocked         : std_logic;
 
 begin
 
@@ -96,6 +103,7 @@ begin
    U_EthRefClk : IBUFDS port map ( I => ethRefClkP, IB => ethRefClkM, O => ethRefClk );
 
    -- Synchronize the register reset
+   iresetReq <= resetReq or not(iPllLocked);
    U_SyncReset : entity work.Synchronizer
       generic map (
          TPD_G          => 1 ns,
@@ -109,15 +117,15 @@ begin
       port map (
          clk     => ipgpClk,
          rst     => '0',
-         dataIn  => resetReq,
+         dataIn  => iresetReq,
          dataOut => resetReqPgpSync
       );
 
    -- Clock generation
    U_PgpClk: Pgp2GtpPackage.Pgp2GtpClk
       generic map (
-         UserFxDiv  => 5,
-         UserFxMult => 4
+         UserFxDiv  => 5,  --5 for 125 MHz
+         UserFxMult => 4   --4 for 125 MHz
       )
       port map (
          pgpRefClk     => intRefClkOut,
@@ -126,12 +134,58 @@ begin
          pgpClk        => ipgpClk,
          pgpReset      => ipgpClkRst,
          pgpClk2x      => ipgpClk2x,
-         userClk       => isysClk,
+         userClk       => iUserClk,
          userReset     => isysClkRst,
          pgpClkIn      => ipgpClk,
          userClkIn     => isysClk
       );
-
+   -- Secondary DCM to generate 100 and 200 MHz
+   U_UserClkGen : PLL_BASE
+      generic map( 
+         BANDWIDTH          => "OPTIMIZED", -- "HIGH", "LOW" or "OPTIMIZED"
+         CLKFBOUT_MULT      =>   4, -- Multiplication factor for all output clocks
+         CLKFBOUT_PHASE     => 0.0, -- Phase shift (degrees) of all output clocks
+         CLKIN_PERIOD       => 8.0, -- Clock period (ns) of input clock on CLKIN
+         CLKOUT0_DIVIDE     =>   5, -- Division factor for CLKOUT0 (1 to 128)
+         CLKOUT0_DUTY_CYCLE => 0.5, -- Duty cycle for CLKOUT0 (0.01 to 0.99)
+         CLKOUT0_PHASE      => 0.0, -- Phase shift (degrees) for CLKOUT0 (0.0 to 360.0)
+         CLKOUT1_DIVIDE     =>   1, -- Division factor for CLKOUT1 (1 to 128)
+         CLKOUT1_DUTY_CYCLE => 0.5, -- Duty cycle for CLKOUT1 (0.01 to 0.99)
+         CLKOUT1_PHASE      => 0.0, -- Phase shift (degrees) for CLKOUT1 (0.0 to 360.0)
+         CLKOUT2_DIVIDE     =>   1, -- Division factor for CLKOUT2 (1 to 128)
+         CLKOUT2_DUTY_CYCLE => 0.5, -- Duty cycle for CLKOUT2 (0.01 to 0.99)
+         CLKOUT2_PHASE      => 0.0, -- Phase shift (degrees) for CLKOUT2 (0.0 to 360.0)
+         CLKOUT3_DIVIDE     =>   1, -- Division factor for CLKOUT3 (1 to 128)
+         CLKOUT3_DUTY_CYCLE => 0.5, -- Duty cycle for CLKOUT3 (0.01 to 0.99)
+         CLKOUT3_PHASE      => 0.0, -- Phase shift (degrees) for CLKOUT3 (0.0 to 360.0)
+         CLKOUT4_DIVIDE     =>   1, -- Division factor for CLKOUT4 (1 to 128)
+         CLKOUT4_DUTY_CYCLE => 0.5, -- Duty cycle for CLKOUT4 (0.01 to 0.99)
+         CLKOUT4_PHASE      => 0.0, -- Phase shift (degrees) for CLKOUT4 (0.0 to 360.0)
+         CLKOUT5_DIVIDE     =>   1, -- Division factor for CLKOUT5 (1 to 128)
+         CLKOUT5_DUTY_CYCLE => 0.5, -- Duty cycle for CLKOUT5 (0.01 to 0.99)
+         CLKOUT5_PHASE      => 0.0, -- Phase shift (degrees) for CLKOUT5 (0.0 to 360.0)
+         COMPENSATION       => "SYSTEM_SYNCHRONOUS", -- "SYSTEM_SYNCHRNOUS",
+                                                     -- "SOURCE_SYNCHRNOUS", "INTERNAL",
+                                                     -- "EXTERNAL", "DCM2PLL", "PLL2DCM"
+         DIVCLK_DIVIDE      => 1,    -- Division factor for all clocks (1 to 52)
+         REF_JITTER         => 0.100 -- Input reference jitter (0.000 to 0.999 UI%)
+      ) 
+      port map (
+         CLKFBOUT => iPllFb,     -- General output feedback signal
+         CLKOUT0  => isysClkRaw, -- One of six general clock output signals
+         CLKOUT1  => open,       -- One of six general clock output signals
+         CLKOUT2  => open,       -- One of six general clock output signals
+         CLKOUT3  => open,       -- One of six general clock output signals
+         CLKOUT4  => open,       -- One of six general clock output signals
+         CLKOUT5  => open,       -- One of six general clock output signals
+         LOCKED   => iPllLocked, -- Active high PLL lock signal
+         CLKFBIN  => iPllFb,     -- Clock feedback input
+         CLKIN    => iUserClk,   -- Clock input
+         RST      => iUserClkRst -- Asynchronous PLL reset
+      );
+   U_SysClkBufG : BUFG port map ( I => isysClkRaw, O => isysClk );
+   isysClkRstRaw <= not(iPllLocked) or iUserClkRst;
+      
    -- PGP Core
    U_Pgp2Gtp16: Pgp2GtpPackage.Pgp2Gtp16
       generic map ( 

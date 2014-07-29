@@ -59,8 +59,6 @@ entity AcqControl is
       asicGlblRst         : out   std_logic;
       asicAcq             : out   std_logic;
       asicSync            : out   std_logic;
-      asicRoClkP          : out   std_logic_vector(3 downto 0);
-      asicRoClkM          : out   std_logic_vector(3 downto 0);
       asicRoClk           : out   std_logic
 
    );
@@ -147,11 +145,6 @@ begin
    U_AdcClk1 : OBUFDS port map ( I => adcClk, O => adcClkP(1), OB => adcClkM(1) );
    U_AdcClk2 : OBUFDS port map ( I => adcClk, O => adcClkP(2), OB => adcClkM(2) );
 
-   -- ASIC Clock Outputs
-   U_AsicClk0 : OBUFDS port map ( I => asicClk, O => asicRoClkP(0), OB => asicRoClkM(0) );
-   U_AsicClk1 : OBUFDS port map ( I => asicClk, O => asicRoClkP(1), OB => asicRoClkM(1) );
-   U_AsicClk2 : OBUFDS port map ( I => asicClk, O => asicRoClkP(2), OB => asicRoClkM(2) );
-   U_AsicClk3 : OBUFDS port map ( I => asicClk, O => asicRoClkP(3), OB => asicRoClkM(3) );
    -- Single ended version out
    asicRoClk <= asicClk;
 

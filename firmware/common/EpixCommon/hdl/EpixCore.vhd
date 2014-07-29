@@ -63,7 +63,7 @@ entity EpixCore is
       serialIdIn          : in    std_logic_vector(1 downto 0);
 
       -- Power Control
-      powerEnable         : out   std_logic_vector(1 downto 0);
+      powerEnable         : out   std_logic_vector(7 downto 0);
 
       -- Slow ADC
       slowAdcSclk         : out   std_logic;
@@ -103,8 +103,7 @@ entity EpixCore is
       asicAcq             : out   std_logic;
       asic0Dm2            : in    std_logic;
       asic0Dm1            : in    std_logic;
-      asicRoClkP          : out   std_logic_vector(3 downto 0);
-      asicRoClkM          : out   std_logic_vector(3 downto 0);
+      asicRoClk           : out   std_logic;
       asicSync            : out   std_logic;
 
       -- ASIC Data Output
@@ -143,7 +142,7 @@ architecture EpixCore of EpixCore is
    signal slowAdcData      : word16_array(15 downto 0);
    signal saciReadoutReq   : std_logic;
    signal saciReadoutAck   : std_logic;
-   signal iPowerEnable     : std_logic_vector(1 downto 0);
+   signal iPowerEnable     : std_logic_vector(7 downto 0);
    signal iAsicAcq         : std_logic;
    signal iAsicR0          : std_logic;
    signal iAsicRoClk       : std_logic;
@@ -208,8 +207,8 @@ begin
          dataSend       => dataSend
       );
 
-      -- Acq Control
-      U_AcqControl : entity work.AcqControl 
+   -- Acq Control
+   U_AcqControl : entity work.AcqControl 
       port map (
          sysClk         => sysClk,
          sysClkRst      => sysClkRst,
@@ -231,11 +230,10 @@ begin
          asicGlblRst    => iAsicGr,
          asicAcq        => iAsicAcq,
          asicSync       => iAsicSync,
-         asicRoClkP     => asicRoClkP,
-         asicRoClkM     => asicRoClkM,
          asicRoClk      => iAsicRoClk
       );
-
+   asicRoClk <= iAsicRoClk;
+      
    -- ADC Control
    U_AdcReadout3x : entity work.AdcReadout3x 
       port map ( 
@@ -295,6 +293,8 @@ begin
          asicRoClk      => iAsicRoClk,
          asicSaciSel    => iSaciSelL,
          scopeConfig    => scopeConfig,
+         acqCount       => acqCount,
+         seqCount       => seqCount,
          frameTxIn      => scopeTxIn,
          frameTxOut     => scopeTxOut
       );

@@ -16,8 +16,9 @@ USE ieee.std_logic_1164.ALL;
 
 package Version is
 
-constant FpgaVersion : std_logic_vector(31 downto 0) := x"E2000005"; -- MAKE_VERSION
-constant FpgaBaseClock : std_logic_vector(31 downto 0) := x"00" & x"125000";  
+constant FpgaVersion : std_logic_vector(31 downto 0) := x"E2000008"; -- MAKE_VERSION
+--constant FpgaBaseClock : std_logic_vector(31 downto 0) := x"00" & x"125000";  
+constant FpgaBaseClock : std_logic_vector(31 downto 0) := x"00" & x"100000";  
 -- FPGA base clock (used for calculating various delay units)
 -- Top two nybbles reserved
 -- Bottom 6 nybbles are base clock rate in kHz (binary coded decimal)
@@ -33,5 +34,11 @@ end Version;
 -- 03/06/2014 (0xE2000001): Added adjustable TPS sampling point
 --       2014 (0xE2000003): Version used for beam tests through July.
 -- 07/22/2014 (0xE2000004): Migrated to Vclib and cleaned up ReadoutControl.
+-- 07/23/2014 (0xE2000005): New version with 100 MHz core clock to try 50 MSPS
+--                          ADC sampling.  Turned on LVDS DIFF_TERM.
+-- 07/24/2014 (0xE2000006): As above with LVDS DIFF_TERM off.
+--                      7 : Readded DIFF_TERM, commented out ADC0A,B inputs
+--                          for probe checks.
+--                      8 : Added timing constraints for adc clocks.
 -------------------------------------------------------------------------------
 

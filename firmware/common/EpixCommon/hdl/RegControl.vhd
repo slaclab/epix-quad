@@ -82,7 +82,7 @@ entity RegControl is
       slowAdcData     : in    word16_array(15 downto 0);
 
       -- Power enable
-      powerEnable     : out   std_logic_vector(1 downto 0);
+      powerEnable     : out   std_logic_vector(7 downto 0);
 
       -- Status of IDELAYCTRL blocks
       iDelayCtrlRdy   : in    std_logic
@@ -112,7 +112,7 @@ architecture RegControl of RegControl is
    signal intClk      : std_logic;
    signal dacData     : std_logic_vector(15 downto 0);
    signal dacStrobe   : std_logic;
-   signal ipowerEn    : std_logic_vector(1 downto 0);
+   signal ipowerEn    : std_logic_vector(7 downto 0);
    signal adcRdData   : std_logic_vector(7 downto 0);
    signal adcWrReq    : std_logic;
    signal adcRdReq    : std_logic;
@@ -178,7 +178,7 @@ begin
          resetReq        <= '0'             after tpd;
          dacData         <= (others=>'0')   after tpd;
          dacStrobe       <= '0'             after tpd;
-         ipowerEn        <= "00"            after tpd;
+         ipowerEn        <= x"00"           after tpd;
          adcWrReq        <= '0'             after tpd;
          adcRdReq        <= '0'             after tpd;
          adcSel          <= "00"            after tpd;
@@ -250,19 +250,18 @@ begin
          -- Power Enable, 0x000008
          elsif pgpRegOut.addr = x"000008" then
             if pgpRegOut.req = '1' and pgpRegOut.op = '1' then
-               ipowerEn <= pgpRegOut.wrData(1 downto 0) after tpd;
+               ipowerEn <= pgpRegOut.wrData(7 downto 0) after tpd;
             end if;
-            pgpRegIn.rdData(1 downto 0) <= ipowerEn after tpd;
+            pgpRegIn.rdData(7 downto 0) <= ipowerEn after tpd;
 
          -- Fast ADC frame delay, 0x000009
          elsif pgpRegOut.addr = x"000009" then
             if pgpRegOut.req = '1' and pgpRegOut.op = '1' then
-               intConfig.adcDelay(0) <= pgpRegOut.wrData(5  downto 0);
-               intConfig.adcDelay(1) <= pgpRegOut.wrData(11 downto 6);
-               intConfig.adcDelay(2) <= pgpRegOut.wrData(17 downto 12);
+               intConfig.frameDelay(0) <= pgpRegOut.wrData(5  downto 0);
+               intConfig.frameDelay(1) <= pgpRegOut.wrData(11 downto 6);
+               intConfig.frameDelay(2) <= pgpRegOut.wrData(17 downto 12);
             end if;
-            intConfig.adcDelayUpdate <= pgpRegOut.req and pgpRegOut.op;
-            pgpRegIn.rdData <= x"000" & "00" & intConfig.adcDelay(2) & intConfig.adcDelay(1) & intConfig.adcDelay(0);
+            pgpRegIn.rdData <= x"000" & "00" & intConfig.frameDelay(2) & intConfig.frameDelay(1) & intConfig.frameDelay(0);
 
          -- IDELAYCTRL status, 0x00000A
          elsif pgpRegOut.addr = x"00000A" then
@@ -284,7 +283,7 @@ begin
                intConfig.asicMask <= pgpRegOut.wrData(3 downto 0) after tpd;
             end if;
             pgpRegIn.rdData <= x"0000000" & intConfig.asicMask after tpd;
-
+            
          -- FPGA base clock frequency, 0x000010
          elsif pgpRegOut.addr = x"000010" then
             pgpRegIn.rdData <= FpgaBaseClock after tpd;
@@ -309,6 +308,48 @@ begin
                intConfig.autoDaqEn <= pgpRegOut.wrData(0) after tpd;
             end if;
             pgpRegIn.rdData(0) <= intConfig.autoDaqEn after tpd;
+
+         -- Fast ADC data delays, 0x000014 through 0x000018
+         elsif pgpRegOut.addr = x"000014" then
+            if pgpRegOut.req = '1' and pgpRegOut.op = '1' then
+               intConfig.dataDelay(0)(0) <= pgpRegOut.wrData(5  downto 0);
+               intConfig.dataDelay(0)(1) <= pgpRegOut.wrData(11 downto 6);
+               intConfig.dataDelay(0)(2) <= pgpRegOut.wrData(17 downto 12);
+               intConfig.dataDelay(0)(3) <= pgpRegOut.wrData(23 downto 18);
+            end if;
+            pgpRegIn.rdData <= x"00" & intConfig.dataDelay(0)(3) & intConfig.dataDelay(0)(2) & intConfig.dataDelay(0)(1) & intConfig.dataDelay(0)(0);
+         elsif pgpRegOut.addr = x"000015" then
+            if pgpRegOut.req = '1' and pgpRegOut.op = '1' then
+               intConfig.dataDelay(0)(4) <= pgpRegOut.wrData(5  downto 0);
+               intConfig.dataDelay(0)(5) <= pgpRegOut.wrData(11 downto 6);
+               intConfig.dataDelay(0)(6) <= pgpRegOut.wrData(17 downto 12);
+               intConfig.dataDelay(0)(7) <= pgpRegOut.wrData(23 downto 18);
+            end if;
+            pgpRegIn.rdData <= x"00" & intConfig.dataDelay(0)(7) & intConfig.dataDelay(0)(6) & intConfig.dataDelay(0)(5) & intConfig.dataDelay(0)(4);
+         elsif pgpRegOut.addr = x"000016" then
+            if pgpRegOut.req = '1' and pgpRegOut.op = '1' then
+               intConfig.dataDelay(1)(0) <= pgpRegOut.wrData(5  downto 0);
+               intConfig.dataDelay(1)(1) <= pgpRegOut.wrData(11 downto 6);
+               intConfig.dataDelay(1)(2) <= pgpRegOut.wrData(17 downto 12);
+               intConfig.dataDelay(1)(3) <= pgpRegOut.wrData(23 downto 18);
+            end if;
+            pgpRegIn.rdData <= x"00" & intConfig.dataDelay(1)(3) & intConfig.dataDelay(1)(2) & intConfig.dataDelay(1)(1) & intConfig.dataDelay(1)(0);
+         elsif pgpRegOut.addr = x"000017" then
+            if pgpRegOut.req = '1' and pgpRegOut.op = '1' then
+               intConfig.dataDelay(1)(4) <= pgpRegOut.wrData(5  downto 0);
+               intConfig.dataDelay(1)(5) <= pgpRegOut.wrData(11 downto 6);
+               intConfig.dataDelay(1)(6) <= pgpRegOut.wrData(17 downto 12);
+               intConfig.dataDelay(1)(7) <= pgpRegOut.wrData(23 downto 18);
+            end if;
+            pgpRegIn.rdData <= x"00" & intConfig.dataDelay(1)(7) & intConfig.dataDelay(1)(6) & intConfig.dataDelay(1)(5) & intConfig.dataDelay(1)(4);
+         elsif pgpRegOut.addr = x"000018" then
+            if pgpRegOut.req = '1' and pgpRegOut.op = '1' then
+               intConfig.monDataDelay(0) <= pgpRegOut.wrData(5  downto 0);
+               intConfig.monDataDelay(1) <= pgpRegOut.wrData(11 downto 6);
+               intConfig.monDataDelay(2) <= pgpRegOut.wrData(17 downto 12);
+               intConfig.monDataDelay(3) <= pgpRegOut.wrData(23 downto 18);
+            end if;
+            pgpRegIn.rdData <= x"00" & intConfig.monDataDelay(3) & intConfig.monDataDelay(2) & intConfig.monDataDelay(1) & intConfig.monDataDelay(0);
             
 
          -- Slow ADC, 0x0000100 -  0x000010F
@@ -482,15 +523,15 @@ begin
 
          -- Fast ADCs, 0x008000 -  0x00FFFF
          elsif pgpRegOut.addr(23 downto 16) = x"00" and pgpRegOut.addr(15) = '1' then
-            pgpRegIn.rdData(7 downto 0) <= adcRdData                                  after tpd;
-            adcSel                         <= pgpRegOut.addr(14 downto 13)            after tpd;
-            adcWrReq                       <= pgpRegOut.req and pgpRegOut.op       after tpd;
-            adcRdReq                       <= pgpRegOut.req and (not pgpRegOut.op) after tpd;
-            pgpRegIn.ack                <= adcAck                                     after tpd;
+            pgpRegIn.rdData(7 downto 0) <= adcRdData                            after tpd;
+            adcSel                      <= pgpRegOut.addr(14 downto 13)         after tpd;
+            adcWrReq                    <= pgpRegOut.req and pgpRegOut.op       after tpd;
+            adcRdReq                    <= pgpRegOut.req and (not pgpRegOut.op) after tpd;
+            pgpRegIn.ack                <= adcAck                               after tpd;
 
          -- SACI Space, 0x800000
          elsif pgpRegOut.addr(23) = '1' then
-            saciRegIn.req      <= pgpRegOut.req  after tpd;
+            saciRegIn.req   <= pgpRegOut.req  after tpd;
             pgpRegIn.rdData <= saciRegOut.rdData after tpd;
             pgpRegIn.ack    <= saciRegOut.ack    after tpd;
             pgpRegIn.fail   <= saciRegOut.fail   after tpd;

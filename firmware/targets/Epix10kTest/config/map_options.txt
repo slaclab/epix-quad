@@ -16,7 +16,7 @@
 #-u
 #-cm Area
 #-ir off
-#-pr off
+-pr i
 #-lc off
 #-mt 2
 
