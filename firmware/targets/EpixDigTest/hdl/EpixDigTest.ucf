@@ -2,31 +2,51 @@
 # Define system clocks
 NET U_EpixCore/sysClk                 TNM_NET = FFS sysClk;
 NET U_EpixCore/U_PgpFrontEnd/ipgpClk  TNM_NET = FFS pgpClk;
-NET U_EpixCore/U_AdcReadout3x/GenAdc[0].U_AdcReadout/adcBitClkR  TNM_NET = FFS adc0Clk;
-NET U_EpixCore/U_AdcReadout3x/GenAdc[1].U_AdcReadout/adcBitClkR  TNM_NET = FFS adc1Clk;
-NET U_EpixCore/U_AdcReadout3x/U_AdcMon/adcBitClkR                TNM_NET = FFS adc2Clk;
+NET U_EpixCore/U_AdcReadout3x/GenAdc[0].U_AdcReadout/adcBitClkR TNM_NET = FFS adc0Clk;
+NET U_EpixCore/U_AdcReadout3x/GenAdc[1].U_AdcReadout/adcBitClkR TNM_NET = FFS adc1Clk;
+NET U_EpixCore/U_AdcReadout3x/U_AdcMon/adcBitClkR               TNM_NET = FFS adc2Clk;
+NET adc0DoClkP                                                  TNM_NET = adc0DdrClk;
+NET adc1DoClkP                                                  TNM_NET = adc1DdrClk;
+NET adcMonDoClkP                                                TNM_NET = adc2DdrClk;
 
 # Define system clocks
-TIMESPEC TS_sysClk      = PERIOD sysClk   100 Mhz HIGH 50%;
-TIMESPEC TS_pgpClk      = PERIOD pgpClk   157 Mhz HIGH 50%;
-TIMESPEC TS_adc0Clk     = PERIOD adc0Clk  350 Mhz HIGH 50%;
-TIMESPEC TS_adc1Clk     = PERIOD adc1Clk  350 Mhz HIGH 50%;
-TIMESPEC TS_adc2Clk     = PERIOD adc2Clk  350 Mhz HIGH 50%;
+TIMESPEC TS_sysClk      = PERIOD sysClk      100 Mhz HIGH 50%;
+TIMESPEC TS_pgpClk      = PERIOD pgpClk      157 Mhz HIGH 50%;
+TIMESPEC TS_adc0DdrClk  = PERIOD adc0DdrClk  350 Mhz HIGH 50%;
+TIMESPEC TS_adc1DdrClk  = PERIOD adc1DdrClk  350 Mhz HIGH 50%;
+TIMESPEC TS_adc2DdrClk  = PERIOD adc2DdrClk  350 Mhz HIGH 50%;
+TIMESPEC TS_adc0Clk     = PERIOD adc0Clk     350 Mhz HIGH 50%;
+TIMESPEC TS_adc1Clk     = PERIOD adc1Clk     350 Mhz HIGH 50%;
+TIMESPEC TS_adc2Clk     = PERIOD adc2Clk     350 Mhz HIGH 50%;
+
+# Group DDR IO pads
+INST asic0AdcDo*     TNM = ADC0_DDR_IN; #Includes only pads
+INST asic1AdcDo*     TNM = ADC0_DDR_IN; #Includes only pads
+INST adc0FrameClk*   TNM = ADC0_DDR_IN; #Includes only pads
+INST asic2AdcDo*     TNM = ADC1_DDR_IN; #Includes only pads
+INST asic3AdcDo*     TNM = ADC1_DDR_IN; #Includes only pads
+INST adc1FrameClk*   TNM = ADC1_DDR_IN; #Includes only pads
+INST asic*AdcDoMon*  TNM = ADC2_DDR_IN; #Includes only pads
+INST adcMonFrameClk* TNM = ADC2_DDR_IN; #Includes only pads
+
+# Group the falling edge flip-flops
+TIMEGRP "falling_adc0_reg" = FALLING "adc0DdrClk";
+TIMEGRP "falling_adc1_reg" = FALLING "adc1DdrClk";
+TIMEGRP "falling_adc2_reg" = FALLING "adc2DdrClk";
 
 # DDR offset constraints
-#OFFSET = IN 0.7 ns VALID 1.42 ns BEFORE "U_EpixCore/U_AdcReadout3x/GenAdc[0].U_AdcReadout/adcDClkP" RISING;
-#OFFSET = IN 0.7 ns VALID 1.42 ns BEFORE "U_EpixCore/U_AdcReadout3x/GenAdc[0].U_AdcReadout/adcDClkP" FALLING;
-#OFFSET = IN 0.7 ns VALID 1.42 ns BEFORE "U_EpixCore/U_AdcReadout3x/GenAdc[1].U_AdcReadout/adcDClkP" RISING;
-#OFFSET = IN 0.7 ns VALID 1.42 ns BEFORE "U_EpixCore/U_AdcReadout3x/GenAdc[1].U_AdcReadout/adcDClkP" FALLING;
-#OFFSET = IN 0.7 ns VALID 1.42 ns BEFORE "U_EpixCore/U_AdcReadout3x/U_AdcMon/adcDClkP" RISING;
-#OFFSET = IN 0.7 ns VALID 1.42 ns BEFORE "U_EpixCore/U_AdcReadout3x/U_AdcMon/adcDClkP" FALLING;
-OFFSET = IN -0.714 ns VALID 1.00 ns BEFORE "adc0DoClkP" RISING;
-OFFSET = IN -0.714 ns VALID 1.00 ns BEFORE "adc0DoClkP" FALLING;
-OFFSET = IN -0.714 ns VALID 1.00 ns BEFORE "adc1DoClkP" RISING;
-OFFSET = IN -0.714 ns VALID 1.00 ns BEFORE "adc1DoClkP" FALLING;
-OFFSET = IN -0.714 ns VALID 1.00 ns BEFORE "adcMonDoClkP" RISING;
-OFFSET = IN -0.714 ns VALID 1.00 ns BEFORE "adcMonDoClkP" FALLING;
-
+#OFFSET = IN -0.714 ns VALID 1.00 ns BEFORE "adc0DoClkP" RISING;
+#OFFSET = IN -3.714 ns VALID 1.00 ns BEFORE "adc0DoClkP" FALLING;
+#OFFSET = IN -0.714 ns VALID 1.00 ns BEFORE "adc1DoClkP" RISING;
+#OFFSET = IN -3.714 ns VALID 1.00 ns BEFORE "adc1DoClkP" FALLING;
+#OFFSET = IN -0.714 ns VALID 1.00 ns BEFORE "adcMonDoClkP" RISING;
+#OFFSET = IN -3.714 ns VALID 1.00 ns BEFORE "adcMonDoClkP" FALLING;
+TIMEGRP "ADC0_DDR_IN" OFFSET = IN -0.714 ns VALID 1.00 ns BEFORE "adc0DoClkP" RISING;
+TIMEGRP "ADC0_DDR_IN" OFFSET = IN 0.714 ns VALID 1.00 ns BEFORE "adc0DoClkP" TIMEGRP "falling_adc0_reg";
+TIMEGRP "ADC1_DDR_IN" OFFSET = IN -0.714 ns VALID 1.00 ns BEFORE "adc1DoClkP" RISING;
+TIMEGRP "ADC1_DDR_IN" OFFSET = IN 0.714 ns VALID 1.00 ns BEFORE "adc1DoClkP" TIMEGRP "falling_adc1_reg";
+TIMEGRP "ADC2_DDR_IN" OFFSET = IN -0.714 ns VALID 1.00 ns BEFORE "adcMonDoClkP" RISING;
+TIMEGRP "ADC2_DDR_IN" OFFSET = IN 0.714 ns VALID 1.00 ns BEFORE "adcMonDoClkP" TIMEGRP "falling_adc2_reg";
 
 # Clocks and reset
 NET "sysRstL"            LOC = "U4"     | IOSTANDARD = "LVCMOS33";

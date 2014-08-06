@@ -154,7 +154,12 @@ architecture EpixCore of EpixCore is
    signal iDaqTrigger      : std_logic;
    signal iDelayCtrlRdy    : std_logic;
    signal adcPulse         : std_logic;
-
+   signal startupRegOut    : VcRegSlaveOutType;
+   signal startupRegIn     : VcRegSlaveInType;
+   signal startupReq       : std_logic;
+   signal startupAck       : std_logic;
+   signal startupFail      : std_logic;
+   
    --Local signals being kept for chipscope probing
    attribute keep          : string;
    signal iDm1             : std_logic;
@@ -330,8 +335,13 @@ begin
       port map ( 
          sysClk         => sysClk,
          sysClkRst      => sysClkRst,
-         pgpRegOut      => pgpRegOut,
-         pgpRegIn       => pgpRegIn,
+         vcRegOut       => pgpRegOut,
+         vcRegIn        => pgpRegIn,
+         startupRegOut  => startupRegOut,
+         startupRegIn   => startupRegIn,
+         startupReq     => startupReq,
+         startupAck     => startupAck,
+         startupFail    => startupFail,
          epixConfig     => epixConfig,
          scopeConfig    => scopeConfig,
          resetReq       => resetReq,
@@ -361,6 +371,23 @@ begin
          slowAdcData    => slowAdcData
       );
 
+   -- Startup process (does register reads/writes)
+   U_EpixStartup : entity work.EpixStartup
+      generic map (
+         JTAG_LOADER_DISABLE_G => 0
+      )
+      port map (
+         sysClk      => sysClk,
+         sysClkRst   => sysClkRst,
+         startupReq  => startupReq,
+         startupAck  => startupAck,
+         startupFail => startupFail,
+         adcValid    => adcValid,
+         adcData     => adcData,
+         vcRegOut    => startupRegOut,
+         vcRegIn     => startupRegIn
+      );
+      
    -- OTHER
    process(sysClk) begin
       if rising_edge(sysClk) then
