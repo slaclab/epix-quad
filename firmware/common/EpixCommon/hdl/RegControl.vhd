@@ -362,8 +362,8 @@ begin
                intConfig.doutPipelineDelay <= pgpRegOut.wrData after tpd;
             end if;
             pgpRegIn.rdData <= intConfig.doutPipelineDelay after tpd;
-
-         -- ASIC acquisition control interfacing, 0x000020 -0x00002F
+            
+         -- ASIC acquisition control interfacing, 0x000020 -0x00002F, and 3A 
          -- 0x000020: Cycles from delayed system ACQ (when PPmat turns on) to ASIC R0
          -- 0x000021: Cycles from ASIC R0 coming high to ASIC ACQ coming high
          -- 0x000022: Cycles to keep ASIC ACQ high
@@ -433,7 +433,7 @@ begin
                when x"F"   => pgpRegIn.rdData <= intConfig.prePulseR0Delay   after tpd;
                when others =>
             end case;
-
+            
          -- Serial ID chip (digital card)
          elsif pgpRegOut.addr = x"00030" then 
             pgpRegIn.rdData <= serNumReg(0)(31 downto 0);
@@ -471,6 +471,14 @@ begin
          elsif pgpRegOut.addr = x"00039" then
             pgpRegIn.rdData <= memDataOutReg(63 downto 32) after tpd;
 
+         -- ASIC acquisition control (ran out of space above)
+         -- 0x00003A: Adjustable delay between PPmat dropping low and readout starting            
+         elsif pgpRegOut.addr = x"0003A" then
+            if pgpRegOut.req = '1' and pgpRegOut.op = '1' then 
+               intConfig.asicPPmatToReadout <= pgpRegOut.wrData after tpd;
+            end if;
+            pgpRegIn.rdData <= intConfig.asicPPmatToReadout after tpd;
+         
          -- TPS control register to decide when TPS system reads (0x00040)
          elsif pgpRegOut.addr = x"00040" then
             if pgpRegOut.req = '1' and pgpRegOut.op = '1' then 

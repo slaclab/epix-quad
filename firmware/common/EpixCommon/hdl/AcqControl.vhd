@@ -123,6 +123,7 @@ architecture AcqControl of AcqControl is
                   ACQ_S,
                   DROP_ACQ_S,
                   WAIT_PPMAT_S,
+                  WAIT_POST_PPMAT_S,
                   SYNC_TO_ADC_S,
                   WAIT_ADC_S,
                   NEXT_CELL_S,
@@ -287,6 +288,13 @@ begin
             else
                stateCntRst  <= '1' after tpd;
             end if;
+         -- Programmable delay before starting the readout after dropping PPmat
+         when WAIT_POST_PPMAT_S =>
+            if stateCnt < unsigned(ePixConfig.asicPPmatToReadout) then
+               stateCntEn <= '1' after tpd;
+            else
+               stateCntRst <= '1' after tpd;
+            end if;
          --Synchronize phases of ASIC RoClk and ADC clk
          when SYNC_TO_ADC_S =>
          --Wait for the ADC to readout the desired number of samples
@@ -418,6 +426,13 @@ begin
          --Ensure that the minimum hold off time has been enforced before dropping PPmat
          when WAIT_PPMAT_S =>
             if stateCnt = unsigned(ePixConfig.asicAcqLToPPmatL) then
+               nxtState <= WAIT_POST_PPMAT_S after tpd;
+            else
+               nxtState <= curState after tpd;
+            end if;
+         -- Programmable delay before starting the readout after dropping PPmat
+         when WAIT_POST_PPMAT_S =>
+            if stateCnt = unsigned(ePixConfig.asicPPmatToReadout) then
                nxtState <= SYNC_TO_ADC_S after tpd;
             else
                nxtState <= curState after tpd;

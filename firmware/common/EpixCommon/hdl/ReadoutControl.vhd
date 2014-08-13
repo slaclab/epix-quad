@@ -110,6 +110,7 @@ architecture ReadoutControl of ReadoutControl is
       clearFifos     : sl;
       error          : sl;
       wordCnt        : slv(31 downto 0);
+      adcData        : word16_array(19 downto 0);
       frameTxIn      : VcUsBuff32InType;
       state          : StateType;
    end record;
@@ -125,6 +126,7 @@ architecture ReadoutControl of ReadoutControl is
       '0',
       '0',
       (others => '0'),
+      (others => (others => '0')),      
       VC_US_BUFF32_IN_INIT_C,
       IDLE_S
    );
@@ -183,30 +185,30 @@ begin
                       (15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0); 
       adcMemRdOrder <= x"0F0F" when r.streamMode = '0' else
                        x"0000";
-      tpsData(0) <= adcData(16+1);
-      tpsData(1) <= adcData(16+3);
-      tpsData(2) <= adcData(16+2);
-      tpsData(3) <= adcData(16+0);
+      tpsData(0) <= r.adcData(16+1);
+      tpsData(1) <= r.adcData(16+3);
+      tpsData(2) <= r.adcData(16+2);
+      tpsData(3) <= r.adcData(16+0);
    end generate;
    G_EPIX100P_CARRIER : if (FpgaVersion(31 downto 24) = x"E0") generate
       channelOrder <= (4,5,6,7,8,9,10,11,3,2,1,0,15,14,13,12) when r.streamMode = '0' else
                       (15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0); 
       adcMemRdOrder <= x"0FF0" when r.streamMode = '0' else
                        x"0000";
-      tpsData(0) <= adcData(16+0);
-      tpsData(1) <= adcData(16+1);
-      tpsData(2) <= adcData(16+2);
-      tpsData(3) <= adcData(16+3);
+      tpsData(0) <= r.adcData(16+0);
+      tpsData(1) <= r.adcData(16+1);
+      tpsData(2) <= r.adcData(16+2);
+      tpsData(3) <= r.adcData(16+3);
    end generate;
    G_EPIX10KP_CARRIER : if (FpgaVersion(31 downto 24) = x"E2") generate
       channelOrder <= (4,5,6,7,8,9,10,11,3,2,1,0,15,14,13,12) when r.streamMode = '0' else
                       (15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0); 
       adcMemRdOrder <= x"0FF0" when r.streamMode = '0' else
                        x"0000";
-      tpsData(0) <= adcData(16+0);
-      tpsData(1) <= adcData(16+1);
-      tpsData(2) <= adcData(16+2);
-      tpsData(3) <= adcData(16+3);
+      tpsData(0) <= r.adcData(16+0);
+      tpsData(1) <= r.adcData(16+1);
+      tpsData(2) <= r.adcData(16+2);
+      tpsData(3) <= r.adcData(16+3);
    end generate;
 
    -- Edge detection for signals that interface with other blocks
@@ -255,6 +257,11 @@ begin
       v.frameTxIn.eof   := '0';
       v.frameTxIn.eofe  := '0';
       v.seqCountEn      := '0';
+
+      -- Always grab latest adc data
+      for i in 0 to 19 loop
+         v.adcData(i) := adcData(i);
+      end loop;
       
       -- Latch overflows (this is reset in IDLE state)
       if (fifoOflowAny = '1' or adcMemOflowAny = '1') then
@@ -481,7 +488,7 @@ begin
       process(sysClk) begin
          if rising_edge(sysClk) then
             if (adcValid(i) = '1') then
-               adcDataToReorder(i) <= '0' & asicDoutDelayed(i/4) & adcData(i)(13 downto 0);
+               adcDataToReorder(i) <= '0' & asicDoutDelayed(i/4) & r.adcData(i)(13 downto 0);
             end if;
          end if;
       end process;

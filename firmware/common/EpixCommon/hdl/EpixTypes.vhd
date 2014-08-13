@@ -83,6 +83,7 @@ package EpixTypes is
       autoTrigPeriod    : std_logic_vector(31 downto 0);
       autoRunEn         : std_logic;
       autoDaqEn         : std_logic;
+      asicPPmatToReadout: std_logic_vector(31 downto 0);
    end record;
 
    -- Initialize
@@ -124,7 +125,8 @@ package EpixTypes is
       tpsDelay          => (others => '0'),
       autoTrigPeriod    => (others => '0'),
       autoRunEn         => '0',
-      autoDaqEn         => '0'
+      autoDaqEn         => '0',
+      asicPPmatToReadout=> (others => '0')
    ); 
 
    --Functions to allow use of EPIX100 or 10k
