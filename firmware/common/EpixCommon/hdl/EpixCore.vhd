@@ -185,10 +185,13 @@ begin
    asicSync    <= iAsicSync;
    asicGlblRst <= iAsicGr;
    saciSelL    <= iSaciSelL;
+   saciCmd     <= iSaciCmd;
 
-   -- For debugging, use scope trigger and arm on mpsOut
-   mpsOut     <= not(iDaqTrigger); 
-
+   -- No true MPS signal for now, using external DAQ trigger
+   --mpsOut <= not(startupReq);
+   --mpsOut <= not(iSaciCmd);
+   --triggerOut <= not(startupAck);
+   mpsOut <= not(iDaqTrigger); 
    -- Trigger out is tied to the integration window
    -- for the ASIC for ease of timing alignment.
    -- When in non-ASIC readout mode, it is simply tied to
@@ -241,6 +244,9 @@ begin
       
    -- ADC Control
    U_AdcReadout3x : entity work.AdcReadout3x 
+      generic map (
+         USE_ADC_CLK_G => false
+      )
       port map ( 
          sysClk         => sysClk,
          sysClkRst      => sysClkRst,
@@ -351,7 +357,7 @@ begin
          saciReadoutAck => saciReadoutAck,
          saciClk        => saciClk,
          saciSelL       => iSaciSelL,
-         saciCmd        => saciCmd,
+         saciCmd        => iSaciCmd,
          saciRsp        => saciRsp,
          dacSclk        => dacSclk,
          dacDin         => dacDin,

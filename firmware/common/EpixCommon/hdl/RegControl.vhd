@@ -151,12 +151,51 @@ architecture RegControl of RegControl is
    signal iAdcPdwn         : std_logic_vector(2 downto 0);
    signal iStartupReq      : std_logic;
    
+   type PixelWriteData is record
+      asic      : slv(1 downto 0);
+      row       : slv(9 downto 0);
+      col       : slv(9 downto 0);
+      pixelData : slv16array(3 downto 0);
+      calRow    : sl;
+      calBottom : sl;
+      req       : sl;
+   end record;
+   constant PIXEL_WRITE_INIT_C : PixelWriteData := (
+      asic      => (others => '0'),
+      row       => (others => '0'),
+      col       => (others => '0'),
+      pixelData => (others => (others => '0')),
+      calRow    => '0',
+      calBottom => '0',
+      req       => '0'
+   );
+   
+   signal multiPixelReg     : PixelWriteData;
+   signal decodePixelReg    : PixelWriteData;
+   signal decodePixelReg2   : PixelWriteData;
+   signal multiPixelReq     : sl;
+   signal multiPixelBank    : slv(3 downto 0);
+   signal multiPixelBankCnt : slv(1 downto 0);
+   signal multiPixelBankEn  : sl;
+   signal multiPixelBankRst : sl;
+   signal multiPixelAck     : sl;
+   
    -- States
    type saci_state is (IDLE_S, REG_S, SYNC_S, 
                        CMD_0_S, PAUSE_0_S,
                        CMD_1_S, PAUSE_1_S,
                        CMD_2_S, PAUSE_2_S,
-                       CMD_3_S, 
+                       CMD_3_S,
+                       PIXEL_DECODE_S,
+                       PIXEL_COLUMN_DECODE_S,
+--                       PIXEL_CONFIG_S,
+--                       PIXEL_CONFIG_PAUSE_S,
+                       PIXEL_ROW_S,
+                       PIXEL_ROW_PAUSE_S,
+                       PIXEL_COL_S,
+                       PIXEL_COL_PAUSE_S,
+                       PIXEL_WRITE_S,
+                       PIXEL_WRITE_PAUSE_S,
                        DONE_S);
    signal   curState   : saci_state := IDLE_S;
    signal   nxtState   : saci_state := IDLE_S;
@@ -200,8 +239,8 @@ begin
       end if;
    end process;
    pgpRegOut     <= startupRegOut when useStartupReg = '1' else vcRegOut;
-   vcRegIn       <= pgpRegIn;
-   startupRegIn  <= pgpRegIn;
+   vcRegIn       <= pgpRegIn when useStartupReg = '0' else VC_REG_SLAVE_IN_INIT_C;
+   startupRegIn  <= pgpRegIn when useStartupReg = '1' else VC_REG_SLAVE_IN_INIT_C;
    
    --------------------------------
    -- Register control block
@@ -209,19 +248,21 @@ begin
    process ( sysClk, sysClkRst ) begin
       if ( sysClkRst = '1' ) then
 
-         intConfig       <= EpixConfigInit  after tpd;
-         intScopeConfig  <= ScopeConfigInit after tpd;
-         pgpRegIn.ack    <= '0'             after tpd;
-         pgpRegIn.fail   <= '0'             after tpd;
-         pgpRegIn.rdData <= (others=>'0')   after tpd;
-         saciRegIn.req   <= '0'             after tpd;
-         resetReq        <= '0'             after tpd;
-         dacData         <= (others=>'0')   after tpd;
-         dacStrobe       <= '0'             after tpd;
-         ipowerEn        <= x"00"           after tpd;
-         adcWrReq        <= '0'             after tpd;
-         adcRdReq        <= '0'             after tpd;
-         adcSel          <= "00"            after tpd;
+         intConfig       <= EpixConfigInit     after tpd;
+         intScopeConfig  <= ScopeConfigInit    after tpd;
+         pgpRegIn.ack    <= '0'                after tpd;
+         pgpRegIn.fail   <= '0'                after tpd;
+         pgpRegIn.rdData <= (others=>'0')      after tpd;
+         saciRegIn.req   <= '0'                after tpd;
+         resetReq        <= '0'                after tpd;
+         dacData         <= (others=>'0')      after tpd;
+         dacStrobe       <= '0'                after tpd;
+         ipowerEn        <= x"00"              after tpd;
+         adcWrReq        <= '0'                after tpd;
+         adcRdReq        <= '0'                after tpd;
+         adcSel          <= "00"               after tpd;
+         iStartupReq     <= '1'                after tpd;
+         multiPixelReg   <= PIXEL_WRITE_INIT_C after tpd;
       elsif rising_edge(sysClk) then
 
          -- Defaults
@@ -606,9 +647,51 @@ begin
             adcRdReq                    <= pgpRegOut.req and (not pgpRegOut.op) after tpd;
             pgpRegIn.ack                <= adcAck                               after tpd;
 
+         -- Pseudo-SACI space, 0x080000
+         -- These are commands used to do multi-SACI commands (e.g., configure multiple pixels)
+         -- Note that these are EPIX100A-sized.  It must be extended to other ePix devices if desired.
+         -- 0x080000 - Row in global space
+         -- 0x080001 - Col in global space
+         -- 0x080002 - Left most pixel in global space
+         -- 0x080003 - Next pixel to the right
+         -- 0x080004 - Next pixel to the right
+         -- 0x080005 - Right most pixel in global space, initiate SACI transactions
+         elsif pgpRegOut.addr(19) = '1' and FpgaVersion(31 downto 24) = x"EA" then
+            case conv_integer(pgpRegOut.addr(18 downto 0)) is 
+               when 0 =>  -- Row in global row space
+                  if pgpRegOut.req = '1' and pgpRegOut.op = '1' then
+                     multiPixelReg.row       <= pgpRegOut.wrData(9 downto 0);
+                     multiPixelReg.calRow    <= pgpRegOut.wrData(16);
+                     multiPixelReg.calBottom <= pgpRegOut.wrData(17);
+                  end if;
+               when 1 =>  -- Col in global col space
+                  if pgpRegOut.req = '1' and pgpRegOut.op = '1' then
+                     multiPixelReg.col <= pgpRegOut.wrData(9 downto 0);
+                  end if;
+               when 2 =>  -- Pixel data 0 (left most in global space)
+                  if pgpRegOut.req = '1' and pgpRegOut.op = '1' then
+                     multiPixelReg.pixelData(0) <= pgpRegOut.wrData(15 downto 0);
+                  end if;
+               when 3 =>  -- Pixel data 1 
+                  if pgpRegOut.req = '1' and pgpRegOut.op = '1' then
+                     multiPixelReg.pixelData(1) <= pgpRegOut.wrData(15 downto 0);
+                  end if;
+               when 4 =>  -- Pixel data 2 
+                  if pgpRegOut.req = '1' and pgpRegOut.op = '1' then
+                     multiPixelReg.pixelData(2) <= pgpRegOut.wrData(15 downto 0);
+                  end if;
+               when 5 =>  -- Pixel data 3 (right most in global space)
+                  if pgpRegOut.req = '1' and pgpRegOut.op = '1' then
+                     multiPixelReg.pixelData(3) <= pgpRegOut.wrData(15 downto 0);
+                  end if;
+                  multiPixelReg.req          <= pgpRegOut.req;
+                  -- Separate ack here that waits for full execution.
+                  pgpRegIn.ack               <= multiPixelAck;
+               when others =>
+            end case;
          -- SACI Space, 0x800000
          elsif pgpRegOut.addr(23) = '1' then
-            saciRegIn.req   <= pgpRegOut.req  after tpd;
+            saciRegIn.req   <= pgpRegOut.req     after tpd;
             pgpRegIn.rdData <= saciRegOut.rdData after tpd;
             pgpRegIn.ack    <= saciRegOut.ack    after tpd;
             pgpRegIn.fail   <= saciRegOut.fail   after tpd;
@@ -641,7 +724,8 @@ begin
    end process;
 
    -- Async states
-   process ( curState, saciRegIn,  saciSelOut, saciReadoutReq, saciTimeout, intConfig ) begin
+   process ( curState, saciRegIn,  saciSelOut, saciReadoutReq, saciTimeout, intConfig, 
+             multiPixelReg, multiPixelBank, multiPixelBankCnt, multiPixelReg, decodePixelReg ) begin
       saciRegOut.ack    <= '0';
       saciRegOut.fail   <= '0';
       saciRegOut.rdData <= (others=>'0');
@@ -655,6 +739,9 @@ begin
       saciReadoutAck    <= '0';
       saciTimeoutCntEn  <= '1';
       saciTimeoutCntRst <= '0';
+      multiPixelBankEn  <= '0';
+      multiPixelBankRst <= '0';
+      decodePixelReg    <= decodePixelReg;
       nxtState          <= curState;
 
       case curState is 
@@ -662,6 +749,7 @@ begin
          when IDLE_S =>
             saciTimeoutCntEn  <= '0';
             saciTimeoutCntRst <= '1';
+            multiPixelAck     <= '0';
             -- By default, listen to the register controller.
             saciSelIn  <= saciRegIn;
             saciRegOut <= saciSelOut;
@@ -669,6 +757,11 @@ begin
             -- monitor for timeouts.
             if saciRegIn.req = '1' then
                nxtState <= REG_S;
+            -- Alternative path for writing pixel data
+            -- 4 banks are written
+            elsif multiPixelReg.req = '1' then
+               decodePixelReg <= PIXEL_WRITE_INIT_C;
+               nxtState       <= PIXEL_DECODE_S;
             -- Otherwise, process the automatic prepare for
             -- readout command.
             elsif saciReadoutReq = '1' then
@@ -768,10 +861,188 @@ begin
                nxtState <= IDLE_S;
             end if;
 
+         ------------------------------------------------------
+         -- Write 4-pixels, one in each bank, for a given ASIC
+         ------------------------------------------------------
+         --
+         -- Decode global row and column into a local row/col
+         when PIXEL_DECODE_S =>
+            multiPixelBankRst <= '1';
+            -- Top 2 ASICs
+            if ((multiPixelReg.row < 352 and multiPixelReg.calRow = '0') or (multiPixelReg.calRow = '1' and multiPixelReg.calBottom = '0')) then
+               -- ASIC 2 (upper left)
+               if (multiPixelReg.col < 384) then
+                  decodePixelReg.asic <= "10";
+                  decodePixelReg.col  <= 383 - multiPixelReg.col;
+               -- ASIC 1 (upper right)
+               else
+                  decodePixelReg.asic <= "01";
+                  decodePixelReg.col  <= 767 - multiPixelReg.col;
+               end if;
+               --For both top ASICs, translate row to local space
+               if (multiPixelReg.calRow = '1') then
+                  decodePixelReg.row <= conv_std_logic_vector(352,decodePixelReg.row'length);
+               else
+                  decodePixelReg.row <= 351 - multiPixelReg.row;
+               end if;
+               --Readout order is 3-0
+               for i in 0 to 3 loop
+                  decodePixelReg.pixelData(i) <= multiPixelReg.pixelData(3-i);
+               end loop;
+            -- Bottom 2 ASICs
+            else
+               -- ASIC 3 (lower left)
+               if (multiPixelReg.col < 384) then
+                  decodePixelReg.asic <= "11";
+                  decodePixelReg.col  <= multiPixelReg.col;
+               -- ASIC 0 (lower right)
+               else
+                  decodePixelReg.asic <= "00";
+                  decodePixelReg.col  <= multiPixelReg.col - 384;
+               end if;
+               -- For both bottom ASICs, translate row to local space
+               if (multiPixelReg.calRow = '1') then
+                  decodePixelReg.row <= conv_std_logic_vector(352,decodePixelReg.row'length);
+               else
+                  decodePixelReg.row <= multiPixelReg.row - 352;
+               end if;
+               --Readout order is 0-3
+               for i in 0 to 3 loop
+                  decodePixelReg.pixelData(i) <= multiPixelReg.pixelData(i);
+               end loop;
+            end if;
+            nxtState <= PIXEL_COLUMN_DECODE_S;
+         -- Decode column to column within a bank
+         when PIXEL_COLUMN_DECODE_S =>
+            decodePixelReg2 <= decodePixelReg;
+            -- Convert ASIC column to bank column
+            if (decodePixelReg.col < 96) then
+               decodePixelReg2.col <= decodePixelReg.col;
+            elsif (decodePixelReg.col < 192) then
+               decodePixelReg2.col <= decodePixelReg.col - 96;
+            elsif (decodePixelReg.col < 288) then
+               decodePixelReg2.col <= decodePixelReg.col - 192;
+            else
+               decodePixelReg2.col <= decodePixelReg.col - 288;
+            end if;
+            -- Check that we're writing a pixel for an unmasked ASIC
+            if ( intConfig.asicMask(conv_integer(decodePixelReg.asic)) = '0' ) then
+               multiPixelAck     <= '1';
+               if (multiPixelReg.req = '0') then
+                  nxtState          <= IDLE_S;
+               end if;
+            else
+               nxtState <= PIXEL_ROW_S;
+            end if;
+
+--         -- Prepare for multi-pixel configuration (CMD 8, RW = X, ADDR = X, DATA = X)
+--         when PIXEL_CONFIG_S =>
+--            multiPixelBankRst <= '1';
+--            saciSelIn.op      <= '1';
+--            saciSelIn.chip    <= decodePixelReg.asic;
+--            saciSelIn.cmd     <= "000" & x"8";
+--            saciSelIn.addr    <= x"000";
+--            saciSelIn.wrData  <= x"00000000";
+--            saciSelIn.req     <= '1';
+--            if (saciSelOut.ack = '1') then
+--               nxtState <= PIXEL_CONFIG_PAUSE_S;
+--            elsif (saciTimeout = '1') then
+--               saciSelIn.req <= '0';
+--               nxtState      <= IDLE_S;
+--            end if;
+--         when PIXEL_CONFIG_PAUSE_S =>
+--            saciSelIn.req     <= '0';
+--            saciTimeoutCntRst <= '1';
+--            if saciSelOut.ack = '0' then
+--               nxtState          <= PIXEL_ROW_S;
+--            end if;
+         -- Write row (CMD = 6, RW = 1, ADDR = 17, DATA = ROW)
+         when PIXEL_ROW_S    =>
+            saciSelIn.op      <= '1';
+            saciSelIn.chip    <= decodePixelReg2.asic;
+            saciSelIn.cmd     <= "000" & x"6";
+            saciSelIn.addr    <= x"011";
+            saciSelIn.wrData  <= x"0000" & x"0" & "000" & decodePixelReg2.row(8 downto 0);
+            saciSelIn.req     <= '1';
+            if (saciSelOut.ack = '1') then
+               nxtState <= PIXEL_ROW_PAUSE_S;
+            elsif (saciTimeout = '1') then
+               saciSelIn.req <= '0';
+               nxtState      <= IDLE_S;
+            end if;
+         when PIXEL_ROW_PAUSE_S =>
+            saciSelIn.req     <= '0';
+            saciTimeoutCntRst <= '1';
+            if saciSelOut.ack = '0' then
+               nxtState          <= PIXEL_COL_S;
+            end if;
+         -- Write col (CMD = 6, RW = 1, ADDR = 19, DATA = Bank + Col)
+         when PIXEL_COL_S    =>
+            saciSelIn.op      <= '1';
+            saciSelIn.chip    <= decodePixelReg2.asic;
+            saciSelIn.cmd     <= "000" & x"6";
+            saciSelIn.addr    <= x"013";
+            saciSelIn.wrData  <= x"0000" & x"0" & "0" & multiPixelBank & decodePixelReg2.col(6 downto 0);
+            saciSelIn.req     <= '1';
+            if (saciSelOut.ack = '1') then
+               nxtState <= PIXEL_COL_PAUSE_S;
+            elsif (saciTimeout = '1') then
+               saciSelIn.req <= '0';
+               nxtState      <= IDLE_S;
+            end if;
+         when PIXEL_COL_PAUSE_S =>
+            saciSelIn.req     <= '0';
+            saciTimeoutCntRst <= '1';
+            if saciSelOut.ack = '0' then
+               nxtState <= PIXEL_WRITE_S;
+            end if;
+         -- Write data (CMD = 5, RW = 1, ADDR = X, DATA = MT)
+         when PIXEL_WRITE_S  =>
+            saciSelIn.op      <= '1';
+            saciSelIn.chip    <= decodePixelReg2.asic;
+            saciSelIn.cmd     <= "000" & x"5";
+            saciSelIn.addr    <= x"000";
+            saciSelIn.wrData  <= x"0000" & decodePixelReg2.pixelData(conv_integer(multiPixelBankCnt));
+            saciSelIn.req     <= '1';
+            if (saciSelOut.ack = '1') then
+               nxtState      <= PIXEL_WRITE_PAUSE_S;
+            elsif (saciTimeout = '1') then
+               saciSelIn.req <= '0';
+               nxtState      <= IDLE_S;
+            end if;            
+         when PIXEL_WRITE_PAUSE_S =>
+            saciSelIn.req     <= '0';
+            saciTimeoutCntRst <= '1';
+            if saciSelOut.ack = '0' then
+               if (multiPixelBankCnt < 3) then
+                  multiPixelBankEn  <= '1';
+                  nxtState          <= PIXEL_COL_S;
+               else
+                  multiPixelAck     <= '1';
+                  if (multiPixelReg.req = '0') then
+                     nxtState          <= IDLE_S;
+                  end if;
+               end if;
+            end if;
          when others =>
       end case;
    end process;
 
+   -- Barrel shifter and counter for bank select for multi pixel writing
+   process( sysClk ) begin
+      if rising_edge(sysClk) then
+         if multiPixelBankRst = '1' or sysClkRst = '1' then
+            multiPixelBank    <= "1110";
+            multiPixelBankCnt <= (others => '0');
+         elsif multiPixelBankEn = '1' then
+            multiPixelBank(3 downto 1) <= multiPixelBank(2 downto 0);
+            multiPixelBank(0)          <= multiPixelBank(3);
+            multiPixelBankCnt          <= multiPixelBankCnt + 1;
+         end if;
+      end if;
+   end process;
+
+   
    --Timeout logic for SACI
 --   saciTimeout <= saciTimeoutCnt(saciTimeoutCnt'left);
    saciTimeout <= saciTimeoutCnt(5 ) when conv_integer(intConfig.saciClkBit(2 downto 0)) = 7 else
@@ -800,7 +1071,7 @@ begin
          dataIn     => sacibit,
          risingEdge => saciClkEdge
       );
-
+      
    -----------------------------------------------
    -- SACI Controller
    -----------------------------------------------
@@ -930,13 +1201,15 @@ begin
    --  for both the SDD application, which uses 200 MHz base
    --  rate, and the ePix application, which uses 125 MHz base
    --  rate).
-   NCYCLES <= 820  when FpgaVersion(31 downto 24) = x"E0" else --ePix100
+   NCYCLES <= 820  when FpgaVersion(31 downto 24) = x"E0" else --ePix100p
               410  when FpgaVersion(31 downto 24) = x"E1" else --SDD
-              820  when FpgaVersion(31 downto 24) = x"E2" else --ePix10k
+              820  when FpgaVersion(31 downto 24) = x"E2" else --ePix10kp
+              820  when FpgaVersion(31 downto 24) = x"EA" else --ePix100a
               1000;
-   NCYCLES_SPI <= 10 when FpgaVersion(31 downto 24) = x"E0" else --ePix100
+   NCYCLES_SPI <= 10 when FpgaVersion(31 downto 24) = x"E0" else --ePix100p
                   5  when FpgaVersion(31 downto 24) = x"E1" else --SDD
-                  10 when FpgaVersion(31 downto 24) = x"E2" else --ePix10k
+                  10 when FpgaVersion(31 downto 24) = x"E2" else --ePix10kp
+                  10 when FpgaVersion(31 downto 24) = x"EA" else --ePix100a
                   20;
    process(sysClk,sysClkRst) 
       variable counter     : integer range 0 to 2047 := 0;

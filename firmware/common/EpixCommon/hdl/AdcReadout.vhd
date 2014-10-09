@@ -28,13 +28,16 @@ use UNISIM.vcomponents.all;
 entity AdcReadout is
    generic (
       NUM_CHANNELS_G : integer range 1 to 8 := 8;
-      EN_DELAY       : integer range 0 to 1 := 1
+      EN_DELAY_G     : integer range 0 to 1 := 1;
+      USE_ADC_CLK_G  : boolean := true
    );
    port ( 
 
       -- Master system clock, 125Mhz
       sysClk        : in  std_logic;
       sysClkRst     : in  std_logic;
+      -- Multiplied system clock, 350 MHz
+      sysDataClock  : in  std_logic;
 
       -- ADC Configuration
       frameDelay    : in  std_logic_vector(5 downto 0);
@@ -110,10 +113,6 @@ begin
 
    frameSwapOut <= frameSwap;
 
-   --------------------------------
-   -- Clock Input
-   --------------------------------
-
    AdcClk_I_Ibufds : IBUFDS
       generic map (
          DIFF_TERM  => true,
@@ -122,44 +121,57 @@ begin
          I  => adcDClkP,
          IB => adcDClkM,
          O  => tmpAdcClkRaw
-      );
-   -- ADC frame delay
-   U_FrameDelay : IODELAY 
-      generic map (
-         DELAY_SRC             => "I",
-         HIGH_PERFORMANCE_MODE => true,
-         IDELAY_TYPE           => "FIXED",
-         IDELAY_VALUE          => 0, -- Here
-         ODELAY_VALUE          => 0,
-         REFCLK_FREQUENCY      => 200.0,
-         SIGNAL_PATTERN        => "CLOCK"
-      ) port map (
-         DATAOUT  => tmpAdcClk,
-         C        => '0',
-         CE       => '0',
-         DATAIN   => '0',
-         IDATAIN  => tmpAdcClkRaw,
-         INC      => '0',
-         ODATAIN  => '0',
-         RST      => '0',
-         T        => '0'
-      );
+      );    
+   
+   --------------------------------
+   -- Clock Input (standard ADC clock used)
+   --------------------------------
+   G_AdcDoClk : if USE_ADC_CLK_G = true generate
+      -- ADC frame delay
+      U_FrameDelay : IODELAY 
+         generic map (
+            DELAY_SRC             => "I",
+            HIGH_PERFORMANCE_MODE => true,
+            IDELAY_TYPE           => "FIXED",
+            IDELAY_VALUE          => 0, -- Here
+            ODELAY_VALUE          => 0,
+            REFCLK_FREQUENCY      => 200.0,
+            SIGNAL_PATTERN        => "CLOCK"
+         ) port map (
+            DATAOUT  => tmpAdcClk,
+            C        => '0',
+            CE       => '0',
+            DATAIN   => '0',
+            IDATAIN  => tmpAdcClkRaw,
+            INC      => '0',
+            ODATAIN  => '0',
+            RST      => '0',
+            T        => '0'
+         );
 
-   -- IO Clock
-   U_BUFIO : BUFIO Port map ( O => adcBitClkIo, I => tmpAdcClk );
+      -- IO Clock
+      U_BUFIO : BUFIO Port map ( O => adcBitClkIo, I => tmpAdcClk );
 
-   -- Regional clock
-   U_AdcBitClkR : BUFR
-      generic map (
-         BUFR_DIVIDE => "1",
-         SIM_DEVICE  => "VIRTEX5"
-      ) port map (
-         I   => tmpAdcClk,
-         O   => adcBitClkR,
-         CE  => '1',
-         CLR => '0'
-      );
-
+      -- Regional clock
+      U_AdcBitClkR : BUFR
+         generic map (
+            BUFR_DIVIDE => "1",
+            SIM_DEVICE  => "VIRTEX5"
+         ) port map (
+            I   => tmpAdcClk,
+            O   => adcBitClkR,
+            CE  => '1',
+            CLR => '0'
+         );
+   end generate G_AdcDoClk;
+   --------------------------------
+   -- Clock Input (use locally generated clock)
+   --------------------------------
+   G_LocalClk : if USE_ADC_CLK_G = false generate
+         adcBitClkR  <= sysDataClock;
+         adcBitClkIo <= sysDataClock;
+   end generate G_LocalClk;
+   
    -- Regional clock reset
    process ( adcBitClkR, sysClkRst ) begin
       if ( sysClkRst = '1' ) then
@@ -187,7 +199,7 @@ begin
          O  => adcFramePad
       );
 
-   FDEL_GEN: if EN_DELAY = 1 generate
+   FDEL_GEN: if EN_DELAY_G = 1 generate
 
       -- ADC frame delay
       U_FrameDelay : IODELAY 
@@ -222,7 +234,7 @@ begin
          );
    end generate;
 
-   FDEL_BP_GEN: if EN_DELAY = 0 generate
+   FDEL_BP_GEN: if EN_DELAY_G = 0 generate
       adcFrameDly <= adcFramePad;
    end generate;
 
@@ -299,7 +311,7 @@ begin
             O  => adcDataPad(i)
          );
 
-      DDEL_GEN: if EN_DELAY = 1 generate
+      DDEL_GEN: if EN_DELAY_G = 1 generate
          -- ADC input delay
          U_InDelay : IODELAY 
             generic map (
@@ -333,7 +345,7 @@ begin
             );
       end generate;
 
-      DDEL_BP_GEN: if EN_DELAY = 0 generate
+      DDEL_BP_GEN: if EN_DELAY_G = 0 generate
          adcDataDly(i) <= adcDataPad(i);
       end generate;
 

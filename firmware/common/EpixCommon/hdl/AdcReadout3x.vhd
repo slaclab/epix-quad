@@ -25,6 +25,9 @@ library UNISIM;
 use UNISIM.vcomponents.all;
 
 entity AdcReadout3x is
+   generic (
+      USE_ADC_CLK_G  : boolean := true
+   );
    port ( 
 
       -- Master system clock, 125Mhz
@@ -55,10 +58,14 @@ end AdcReadout3x;
 -- Define architecture
 architecture AdcReadout3x of AdcReadout3x is
 
-   signal iClkFb     : std_logic;
-   signal iClkFbBufG : std_logic;
-   signal iClk200MHz : std_logic;
-   signal iDelayRst  : std_logic;
+   signal iClkFb        : std_logic;
+   signal iClkFbBufG    : std_logic;
+   signal iClk200MHz    : std_logic;
+   signal iDelayRst     : std_logic;
+   signal iPllFb        : std_logic;
+   signal iPllLocked    : std_logic;
+   signal iClk350MHz    : std_logic;
+   signal iClk350MHzRaw : std_logic;
 
 begin
 
@@ -67,10 +74,12 @@ begin
       U_AdcReadout: entity work.AdcReadout 
          generic map (
             NUM_CHANNELS_G => 8,
-            EN_DELAY       => 1
+            EN_DELAY_G     => 1,
+            USE_ADC_CLK_G  => USE_ADC_CLK_G
          ) port map ( 
             sysClk        => sysClk,
             sysClkRst     => sysClkRst,
+            sysDataClock  => iClk350MHz,
             frameDelay    => epixConfig.frameDelay(i),
             dataDelay     => epixConfig.dataDelay(i),
             frameSwapOut  => open,
@@ -88,10 +97,12 @@ begin
    U_AdcMon: entity work.AdcReadout 
       generic map (
          NUM_CHANNELS_G => 4,
-         EN_DELAY       => 1
+         EN_DELAY_G     => 1,
+         USE_ADC_CLK_G  => USE_ADC_CLK_G
       ) port map ( 
          sysClk        => sysClk,
          sysClkRst     => sysClkRst,
+         sysDataClock  => iClk350MHz,
          frameDelay    => epixConfig.frameDelay(2),
          dataDelay     => epixConfig.monDataDelay,
          frameSwapOut  => open,
@@ -175,5 +186,37 @@ begin
 
    U_ClkFbBufG : BUFG port map ( I => iClkFb, O => iClkFbBufG );
 
+   -- PLL to generate 350 MHz clock
+   U_AdcDoClkGen : PLL_BASE
+      generic map( 
+         BANDWIDTH          => "OPTIMIZED", -- "HIGH", "LOW" or "OPTIMIZED"
+         CLKFBOUT_MULT      =>   7, -- Multiplication factor for all output clocks
+         CLKFBOUT_PHASE     => 0.0, -- Phase shift (degrees) of all output clocks
+         CLKIN_PERIOD       =>10.0, -- Clock period (ns) of input clock on CLKIN
+         CLKOUT0_DIVIDE     =>   2, -- Division factor for CLKOUT0 (1 to 128)
+         CLKOUT0_DUTY_CYCLE => 0.5, -- Duty cycle for CLKOUT0 (0.01 to 0.99)
+         CLKOUT0_PHASE      => 0.0, -- Phase shift (degrees) for CLKOUT0 (0.0 to 360.0)
+         COMPENSATION       => "SYSTEM_SYNCHRONOUS", -- "SYSTEM_SYNCHRNOUS",
+                                                     -- "SOURCE_SYNCHRNOUS", "INTERNAL",
+                                                     -- "EXTERNAL", "DCM2PLL", "PLL2DCM"
+         DIVCLK_DIVIDE      => 1,    -- Division factor for all clocks (1 to 52)
+         REF_JITTER         => 0.100 -- Input reference jitter (0.000 to 0.999 UI%)
+      ) 
+      port map (
+         CLKFBOUT => iPllFb,        -- General output feedback signal
+         CLKOUT0  => iClk350MHzRaw, -- One of six general clock output signals
+         CLKOUT1  => open,          -- One of six general clock output signals
+         CLKOUT2  => open,          -- One of six general clock output signals
+         CLKOUT3  => open,          -- One of six general clock output signals
+         CLKOUT4  => open,          -- One of six general clock output signals
+         CLKOUT5  => open,          -- One of six general clock output signals
+         LOCKED   => iPllLocked,    -- Active high PLL lock signal
+         CLKFBIN  => iPllFb,        -- Clock feedback input
+         CLKIN    => sysClk,        -- Clock input
+         RST      => sysClkRst      -- Asynchronous PLL reset
+      );
+   U_SysClkBufG : BUFG port map ( I => iClk350MHzRaw, O => iClk350MHz );
+
+   
 end AdcReadout3x;
 

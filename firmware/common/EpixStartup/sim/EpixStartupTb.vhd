@@ -21,6 +21,7 @@ architecture EpixStartupTb of EpixStartupTb is
    signal adcData        : word16_array(19 downto 0) := (others => (others => '0'));
    signal startupRegOut  : VcRegSlaveOutType := VC_REG_SLAVE_OUT_INIT_C;
    signal startupRegIn   : VcRegSlaveInType := VC_REG_SLAVE_IN_INIT_C;
+   signal goodAlignment  : std_logic;
  
     constant ADC_TEST_PATTERN_C : slv(15 downto 0) := "0010100001100111"; --10343 decimal
  
@@ -50,33 +51,30 @@ begin
    -- Counter data on ADCs
    adc : process(sysClk) 
       variable toggle : std_logic := '0';
-      variable good   : std_logic := '0';
    begin
       if rising_edge(sysClk) then
          if (sysClkRst = '1') then
-            adcData   <= (others => (others => '0'));
-            adcValid  <= (others => '0');
-            toggle    := '0';
-            good      := '0';
+            adcData       <= (others => (others => '0'));
+            adcValid      <= (others => '0');
+            goodAlignment <= '0';
+            toggle        := '0';
          else
             toggle := not(toggle);
-            if (good = '1') then
-               for i in 0 to 19 loop
-                  adcValid(i) <= toggle; 
+            for i in 0 to 19 loop
+               adcValid(i) <= toggle;
+               if (goodAlignment = '1') then
                   adcData(i) <= ADC_TEST_PATTERN_C;
-               end loop;
-            else 
-               for i in 0 to 19 loop
-                  adcValid(i) <= '0'; 
-                  adcData(i) <= ADC_TEST_PATTERN_C-1;
-               end loop;            
-            end if;
-            if (startupRegOut.req = '1' and startupRegOut.op = '1') then
+               else
+                  adcData(i) <= (others => '1');
+               end if;
+            end loop;
+            if (startupRegOut.req = '1') then
                if (startupRegOut.addr(23 downto 4) = x"00006" or startupRegOut.addr(23 downto 4) = x"00007") then
-                  if (startupRegOut.wrData(5 downto 0) > 20 and startupRegOut.wrData(5 downto 0) < 30) then
-                     good := '1';
+                  if (startupRegOut.wrData(5 downto 0) > 1 and startupRegOut.wrData(5 downto 0) < 3) then
+--                     goodAlignment <= '1';
+                     goodAlignment <= '0';
                   else
-                     good := '0';
+                     goodAlignment <= '0';
                   end if;
                end if;
             end if;
