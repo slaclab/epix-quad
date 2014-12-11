@@ -38,6 +38,7 @@ package EpixTypes is
    --Number of columns in an ePix row
    constant EPIX100_COLS_PER_ROW : integer := 96;
    constant EPIX10K_COLS_PER_ROW : integer := 48;
+   constant EPIXS_COLS_PER_ROW   : integer := 10;
 
    --------------------------------------------
    -- Configuration Type
@@ -150,6 +151,9 @@ package body EpixTypes is
       --Epix 10k
       elsif (version(31 downto 24) = x"E2") then
          return EPIX10K_COLS_PER_ROW;
+      --Epix S
+      elsif (version(31 downto 24) = x"E3") then
+         return EPIXS_COLS_PER_ROW;
       --Other (default to Epix 100)
       else
          return EPIX100_COLS_PER_ROW;

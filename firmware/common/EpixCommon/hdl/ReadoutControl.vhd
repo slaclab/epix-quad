@@ -210,6 +210,16 @@ begin
       tpsData(2) <= r.adcData(16+2);
       tpsData(3) <= r.adcData(16+3);
    end generate;
+   G_EPIXS_CARRIER : if (FpgaVersion(31 downto 24) = x"E3") generate
+      channelOrder <= (4,5,6,7,8,9,10,11,3,2,1,0,15,14,13,12) when r.streamMode = '0' else
+                      (15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0); 
+      adcMemRdOrder <= x"0F0F" when r.streamMode = '0' else
+                       x"0000";
+      tpsData(0) <= r.adcData(16+1);
+      tpsData(1) <= r.adcData(16+3);
+      tpsData(2) <= r.adcData(16+2);
+      tpsData(3) <= r.adcData(16+0);
+   end generate;
 
    -- Edge detection for signals that interface with other blocks
    U_DataSendEdge : entity work.SynchronizerEdge

@@ -934,7 +934,8 @@ begin
             else
                nxtState <= PIXEL_ROW_S;
             end if;
-
+--         -- Commented out because it's not sensible to do this every quad pixel write...
+--         -- It makes things easier for single writes, but wastes time for large writes.           
 --         -- Prepare for multi-pixel configuration (CMD 8, RW = X, ADDR = X, DATA = X)
 --         when PIXEL_CONFIG_S =>
 --            multiPixelBankRst <= '1';
