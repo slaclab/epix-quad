@@ -1,0 +1,2 @@
+vhdl work rtl/CommonPkg.vhd
+vhdl work rtl/PgpFrontEnd.vhd
