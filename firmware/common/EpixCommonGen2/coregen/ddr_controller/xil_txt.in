@@ -1,0 +1,25 @@
+SET_FLAG MODE BATCH
+SET_FLAG STANDALONE_MODE TRUE
+SET_PREFERENCE ipi_mode no
+SET_PREFERENCE is_ip_locked false
+SET_PREFERENCE devicefamily artix7
+SET_PREFERENCE device xc7a200t
+SET_PREFERENCE speedgrade -3
+SET_PREFERENCE package sbg484
+SET_PREFERENCE verilogsim false
+SET_PREFERENCE vhdlsim true
+SET_PREFERENCE designentry VHDL
+SET_PREFERENCE outputdirectory /afs/slac.stanford.edu/u/eb/kurtisn/projects/epix/devel/firmware/common/EpixCommonGen2/coregen/ddr_controller/_tmp/
+SET_PREFERENCE subworkingdirectory /afs/slac.stanford.edu/u/eb/kurtisn/projects/epix/devel/firmware/common/EpixCommonGen2/coregen/ddr_controller/_tmp/
+SET_PREFERENCE flowvendor Other
+SET_PREFERENCE tool vivado
+SET_PARAMETER component_name ddr_controller
+SET_PREFERENCE compnamestatus 1
+SET_PARAMETER component_name ddr_controller
+SET_PARAMETER xml_input_file /afs/slac.stanford.edu/u/eb/kurtisn/projects/epix/devel/firmware/common/EpixCommonGen2/coregen/ddr_controller/mig_a.prj
+SET_PARAMETER data_dir_path /afs/slac.stanford.edu/g/reseng/vol15/Xilinx/vivado_2014.1/Vivado/2014.1/data/ip/xilinx/mig_7series_v2_0
+SET_CORE_NAME Memory Interface Generator (MIG 7 Series)
+SET_CORE_VERSION 2.0
+SET_CORE_VLNV xilinx.com:ip:mig_7series:2.0
+SET_CORE_PATH /afs/slac.stanford.edu/g/reseng/vol15/Xilinx/vivado_2014.1/Vivado/2014.1/data/ip/xilinx/mig_7series_v2_0
+SET_CORE_DATASHEET /afs/slac.stanford.edu/g/reseng/vol15/Xilinx/vivado_2014.1/Vivado/2014.1/data/ip/xilinx/mig_7series_v2_0/data/docs/ds176_7series_MIS.pdf
