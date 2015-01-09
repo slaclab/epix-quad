@@ -64,6 +64,13 @@ vhdl    work "_PROJ_DIR_/../../common/EpixCommon/hdl/RingBuffer.vhd"
 vhdl    work "_PROJ_DIR_/../../common/EpixCommon/hdl/PseudoScope.vhd"
 vhdl    work "_PROJ_DIR_/../../common/EpixCommon/hdl/AutoTrigger.vhd"
 
+# EPIX Startup code (picoblaze)
+vhdl    work "_PROJ_DIR_/../../common/EpixStartup/hdl/EpixStartup.vhd"
+vhdl    work "_PROJ_DIR_/../../common/EpixStartup/hdl/EpixStartupCode.vhd"
+vhdl    work "_PROJ_DIR_/../../common/EpixStartup/hdl/JTAG_LOADER_6.vhd"
+vhdl    work "_PROJ_DIR_/../../common/EpixStartup/hdl/embedded_kcpsm3.vhd"
+vhdl    work "_PROJ_DIR_/../../common/EpixStartup/hdl/kcpsm3.vhd"
+
 # Version Constant
 vhdl    work "_PROJ_DIR_/Version.vhd"
 

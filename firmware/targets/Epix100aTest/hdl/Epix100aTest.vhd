@@ -232,8 +232,6 @@ architecture Epix100aTest of Epix100aTest is
    signal iAsicRoClk          : std_logic;
    signal iAsicSync           : std_logic;
    
-   -- Register delay for simulation
-   constant tpd:time := 0.5 ns;
 
 begin
 

@@ -183,7 +183,7 @@ architecture Epix10kTest of Epix10kTest is
    signal serialIdOut         : std_logic_vector(1 downto 0);
    signal serialIdEn          : std_logic_vector(1 downto 0);
    signal serialIdIn          : std_logic_vector(1 downto 0);
-   signal powerEnable         : std_logic_vector(1 downto 0);
+   signal powerEnable         : std_logic_vector(7 downto 0);
    signal saciClk             : std_logic;
    signal saciSelL            : std_logic_vector(3 downto 0);
    signal saciCmd             : std_logic;
@@ -193,6 +193,7 @@ architecture Epix10kTest of Epix10kTest is
    signal adcSpiDataEn        : std_logic;
    signal adcPdwn             : std_logic_vector(2 downto 0);
    signal adcSpiCsb           : std_logic_vector(2 downto 0);
+   signal iAdcSpiClk          : std_logic;   
    signal adcClkP             : std_logic_vector(2 downto 0);
    signal adcClkM             : std_logic_vector(2 downto 0);
    signal adcFClkP            : std_logic_vector(2 downto 0);
@@ -201,20 +202,32 @@ architecture Epix10kTest of Epix10kTest is
    signal adcDClkM            : std_logic_vector(2 downto 0);
    signal adcChP              : std_logic_vector(19 downto 0);
    signal adcChM              : std_logic_vector(19 downto 0);
-   signal asicRoClkP          : std_logic_vector(3 downto 0);
-   signal asicRoClkM          : std_logic_vector(3 downto 0);
+
    signal asicDout            : std_logic_vector(3 downto 0);
 
+   signal iVguardDacSclk       : std_logic;
+   signal iVguardDacDin        : std_logic;
+   signal iVguardDacCsb        : std_logic;
+   signal iVguardDacClrb       : std_logic;
+      
+   signal iSlowAdcSclk         : std_logic;
+   signal iSlowAdcDin          : std_logic;
+   signal iSlowAdcCsb          : std_logic;
+   
+   signal iMps                 : std_logic;
+   signal iTgOut               : std_logic;
+   
+   signal outputEn            : std_logic;   
+   
    signal iAsicR0             : std_logic;
    signal iAsicAcq            : std_logic;
-
-   -- Register delay for simulation
-   constant tpd:time := 0.5 ns;
+   signal iAsicPpmat          : std_logic;
+   signal iAsicPpbe           : std_logic;
+   signal iAsicGlblRst        : std_logic;
+   signal iAsicRoClk          : std_logic;
+   signal iAsicSync           : std_logic;
 
 begin
-
-   asicR0  <= iAsicR0;
-   asicAcq <= iAsicAcq;
 
    -- Core
    U_EpixCore: entity work.EpixCore
@@ -230,27 +243,27 @@ begin
          fiberTxn             => fiberTxn,
          fiberRxp             => fiberRxp,
          fiberRxn             => fiberRxn,
-         dacSclk              => vguardDacSclk,
-         dacDin               => vguardDacDin,
-         dacCsb               => vguardDacCsb,
-         dacClrb              => vguardDacClrb,
+         dacSclk              => iVguardDacSclk,
+         dacDin               => iVguardDacDin,
+         dacCsb               => iVguardDacCsb,
+         dacClrb              => iVguardDacClrb,
          runTrigger           => runTg,
          daqTrigger           => daqTg,
-         mpsOut               => mps,
-         triggerOut           => tgOut,
+         mpsOut               => iMps,
+         triggerOut           => iTgOut,
          serialIdOut          => serialIdOut,
          serialIdEn           => serialIdEn,
          serialIdIn           => serialIdIn,
          powerEnable          => powerEnable,
-         slowAdcSclk          => slowAdcSclk,
-         slowAdcDin           => slowAdcDin,
-         slowAdcCsb           => slowAdcCsb,
+         slowAdcSclk          => iSlowAdcSclk,
+         slowAdcDin           => iSlowAdcDin,
+         slowAdcCsb           => iSlowAdcCsb,
          slowAdcDout          => slowAdcDout,
          saciClk              => saciClk,
          saciSelL             => saciSelL,
          saciCmd              => saciCmd,
          saciRsp              => saciRsp,
-         adcSpiClk            => adcSpiClk,
+         adcSpiClk            => iAdcSpiClk,
          adcSpiDataOut        => adcSpiDataOut,
          adcSpiDataEn         => adcSpiDataEn,
          adcSpiDataIn         => adcSpiDataIn,
@@ -265,16 +278,15 @@ begin
          adcChP               => adcChP,
          adcChM               => adcChM,
          asicR0               => iAsicR0,
-         asicPpmat            => asicPpmat,
-         asicPpbe             => asicPpbe,
-         asicGlblRst          => asicGlblRst,
+         asicPpmat            => iAsicPpmat,
+         asicPpbe             => iAsicPpbe,
+         asicGlblRst          => iAsicGlblRst,
          asicAcq              => iAsicAcq,
          asic0Dm2             => asic0Dm2,
          asic0Dm1             => asic0Dm1,
-         asicRoClkP           => asicRoClkP,
-         asicRoClkM           => asicRoClkM,
+         asicRoClk            => iAsicRoClk,
          asicDout             => asicDout,
-         asicSync             => asicSync
+         asicSync             => iAsicSync
       );
 
    -- Serial ID
@@ -286,28 +298,45 @@ begin
    -- Power control
    analogCardDigPwrEn <= powerEnable(0);
    analogCardAnaPwrEn <= powerEnable(1);
+   outputEn           <= powerEnable(2);
 
+   -- Connector signals
+   mps   <= iMps when outputEn = '1' else 'Z';
+   tgOut <= iTgOut when outputEn = '1' else 'Z';   
+   
    -- SACI
-   asicSaciCmd    <= saciCmd;
-   asicSaciClk    <= saciClk;
-   asic0SaciSel   <= saciSelL(0);
-   asic1SaciSel   <= saciSelL(1);
-   asic2SaciSel   <= saciSelL(2);
-   asic3SaciSel   <= saciSelL(3);
+   asicSaciCmd    <= saciCmd when outputEn = '1' else 'Z';
+   asicSaciClk    <= saciClk when outputEn = '1' else 'Z';
+   asic0SaciSel   <= saciSelL(0) when outputEn = '1' else 'Z';
+   asic1SaciSel   <= saciSelL(1) when outputEn = '1' else 'Z';
+   asic2SaciSel   <= saciSelL(2) when outputEn = '1' else 'Z';
+   asic3SaciSel   <= saciSelL(3) when outputEn = '1' else 'Z';
    saciRsp(0)     <= asic0SaciRsp;
    saciRsp(1)     <= asic1SaciRsp;
    saciRsp(2)     <= asic2SaciRsp;
    saciRsp(3)     <= asic3SaciRsp;
 
+   -- Guard ring DAC
+   vguardDacSclk  <= iVguardDacSclk when outputEn = '1' else 'Z';
+   vguardDacDin   <= iVguardDacDin when outputEn = '1' else 'Z'; 
+   vguardDacCsb   <= iVguardDacCsb when outputEn = '1' else 'Z'; 
+   vguardDacClrb  <= iVguardDacClrb when outputEn = '1' else 'Z';   
+
+   -- Slow ADC
+   slowAdcSclk    <= iSlowAdcSclk when outputEn = '1' else 'Z';
+   slowAdcDin     <= iSlowAdcDin when outputEn = '1' else 'Z';
+   slowAdcCsb     <= iSlowAdcCsb when outputEn = '1' else 'Z';   
+   
    -- ADC Configuration
-   adcSpiData   <= '0' when adcSpiDataOut = '0' and adcSpiDataEn = '1' else 'Z';
+   adcSpiClk    <= iAdcSpiClk when outputEn = '1' else 'Z';
+   adcSpiData   <= '0' when adcSpiDataOut = '0' and adcSpiDataEn = '1' and outputEn = '1' else 'Z';
    adcSpiDataIn <= adcSpiData;
-   adc0SpiCsb   <= adcSpiCsb(0);
-   adc1SpiCsb   <= adcSpiCsb(1);
-   adcMonSpiCsb <= adcSpiCsb(2);
-   adc0Pdwn     <= adcPdwn(0);
-   adc1Pdwn     <= adcPdwn(1);
-   adcMonPdwn   <= adcPdwn(2);
+   adc0SpiCsb   <= adcSpiCsb(0) when outputEn = '1' else 'Z';
+   adc1SpiCsb   <= adcSpiCsb(1) when outputEn = '1' else 'Z';
+   adcMonSpiCsb <= adcSpiCsb(2) when outputEn = '1' else 'Z';
+   adc0Pdwn     <= adcPdwn(0) when outputEn = '1' else '0';
+   adc1Pdwn     <= adcPdwn(1) when outputEn = '1' else '0';
+   adcMonPdwn   <= adcPdwn(2) when outputEn = '1' else '0';
 
    -- ADC 0 Connections
    adc0ClkP            <= adcClkP(0);
@@ -374,18 +403,24 @@ begin
    adcChM(19)          <= asic3AdcDoMonM;
 
    -- ASIC Connections
-   asic01RoClkP        <= asicRoClkP(0);
-   asic01RoClkM        <= asicRoClkM(0);
-   asic23RoClkP        <= asicRoClkP(2);
-   asic23RoClkM        <= asicRoClkM(2);
+
+   -- ASIC control signals
+   U_AsicClk01 : OBUFTDS port map ( I => iAsicRoClk, T => not(outputEn), O => asic01RoClkP, OB => asic01RoClkM );
+   U_AsicClk23 : OBUFTDS port map ( I => iAsicRoClk, T => not(outputEn), O => asic23RoClkP, OB => asic23RoClkM );
+
+   asicR0      <= iAsicR0      when outputEn = '1' else 'Z';
+   asicAcq     <= iAsicAcq     when outputEn = '1' else 'Z';
+   asicPpmat   <= iAsicPpmat   when outputEn = '1' else 'Z';
+   asicPpbe    <= iAsicPpbe    when outputEn = '1' else 'Z';
+   asicGlblRst <= iAsicGlblRst when outputEn = '1' else 'Z';
+   asicSync    <= iAsicSync    when outputEn = '1' else 'Z';
+
    -- Buffers for the digital ASIC outputs
    -- On first carrier for ePix10k, ASICs 01 share a Dout, as do ASICs 23
    U_AsicDout0 : IBUFDS port map ( I => asic01DoutP, IB => asic01DoutM, O => asicDout(0) );
    asicDout(1) <= asicDout(0);
    U_AsicDout2 : IBUFDS port map ( I => asic23DoutP, IB => asic23DoutM, O => asicDout(2) );
    asicDout(3) <= asicDout(2);
-
-
 
 end Epix10kTest;
 

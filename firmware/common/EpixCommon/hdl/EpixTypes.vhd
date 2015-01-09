@@ -132,11 +132,13 @@ package EpixTypes is
 
    --Functions to allow use of EPIX100 or 10k
    function getNumColumns ( version : std_logic_vector ) return integer;
+   function getWordsPerSuperRow ( version : std_logic_vector ) return integer;
 
    constant NCOL_C : integer := getNumColumns(FpgaVersion);
    --Number of columns in ePix "super row"
    -- (columns / ch) * (channels / asic) * (asics / row) / (adc values / word)
-   constant WORDS_PER_SUPER_ROW_C : integer := NCOL_C * 4 * 2 / 2; 
+   -- constant WORDS_PER_SUPER_ROW_C : integer := NCOL_C * 4 * 2 / 2; 
+   constant WORDS_PER_SUPER_ROW_C : integer := getWordsPerSuperRow(FpgaVersion); 
 
    
 end EpixTypes;
@@ -157,6 +159,17 @@ package body EpixTypes is
       --Other (default to Epix 100)
       else
          return EPIX100_COLS_PER_ROW;
+      end if;
+   end function;
+
+   function getWordsPerSuperRow (version : std_logic_vector ) return integer is
+   begin
+      --EpixS reads only the active ASICs
+      if (version(31 downto 24) = x"E3") then
+         return EPIXS_COLS_PER_ROW * 2 / 2;
+      --Other
+      else
+         return NCOL_C * 4 * 2 / 2;
       end if;
    end function;
 

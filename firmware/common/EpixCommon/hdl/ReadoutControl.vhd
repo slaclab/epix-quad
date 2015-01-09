@@ -168,6 +168,7 @@ architecture ReadoutControl of ReadoutControl is
 
    type chanMap is array(15 downto 0) of integer range 0 to 15;
    signal channelOrder   : chanMap;
+   signal channelValid   : slv(15 downto 0);
 
    signal tpsAdcData     : Slv16Array(3 downto 0);
 
@@ -183,6 +184,7 @@ begin
    G_EPIX100A_CARRIER : if (FpgaVersion(31 downto 24) = x"EA") generate
       channelOrder <= (0,3,1,2,8,11,9,10,6,4,5,7,14,12,13,15) when r.streamMode = '0' else
                       (15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0); 
+      channelValid  <= (others => '1');
       adcMemRdOrder <= x"0F0F" when r.streamMode = '0' else
                        x"0000";
       tpsData(0) <= r.adcData(16+1);
@@ -193,6 +195,7 @@ begin
    G_EPIX100P_CARRIER : if (FpgaVersion(31 downto 24) = x"E0") generate
       channelOrder <= (4,5,6,7,8,9,10,11,3,2,1,0,15,14,13,12) when r.streamMode = '0' else
                       (15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0); 
+      channelValid  <= (others => '1');
       adcMemRdOrder <= x"0FF0" when r.streamMode = '0' else
                        x"0000";
       tpsData(0) <= r.adcData(16+0);
@@ -203,6 +206,7 @@ begin
    G_EPIX10KP_CARRIER : if (FpgaVersion(31 downto 24) = x"E2") generate
       channelOrder <= (4,5,6,7,8,9,10,11,3,2,1,0,15,14,13,12) when r.streamMode = '0' else
                       (15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0); 
+      channelValid  <= (others => '1');
       adcMemRdOrder <= x"0FF0" when r.streamMode = '0' else
                        x"0000";
       tpsData(0) <= r.adcData(16+0);
@@ -213,12 +217,13 @@ begin
    G_EPIXS_CARRIER : if (FpgaVersion(31 downto 24) = x"E3") generate
       channelOrder <= (4,5,6,7,8,9,10,11,3,2,1,0,15,14,13,12) when r.streamMode = '0' else
                       (15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0); 
-      adcMemRdOrder <= x"0F0F" when r.streamMode = '0' else
+      channelValid  <= "1000100000010001";
+      adcMemRdOrder <= x"0FF0" when r.streamMode = '0' else
                        x"0000";
-      tpsData(0) <= r.adcData(16+1);
-      tpsData(1) <= r.adcData(16+3);
+      tpsData(0) <= r.adcData(16+0);
+      tpsData(1) <= r.adcData(16+1);
       tpsData(2) <= r.adcData(16+2);
-      tpsData(3) <= r.adcData(16+0);
+      tpsData(3) <= r.adcData(16+3);
    end generate;
 
    -- Edge detection for signals that interface with other blocks
@@ -331,7 +336,9 @@ begin
             when READ_FIFO_S => 
                v.frameTxIn.data := adcFifoRdData(channelOrder(conv_integer(r.chCnt)));
                if adcFifoRdValid(channelOrder(conv_integer(r.chCnt))) = '1' then
-                  v.frameTxIn.valid := '1';
+                  if (channelValid(conv_integer(r.chCnt)) = '1') then
+                     v.frameTxIn.valid := '1';
+                  end if;
                   v.fillCnt         := r.fillCnt + 1;
                   if (r.fillCnt = conv_std_logic_vector(NCOL_C/2-1,r.fillCnt'length)) then
                      v.chCnt   := r.chCnt + 1;

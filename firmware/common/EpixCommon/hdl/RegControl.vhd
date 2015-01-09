@@ -75,9 +75,9 @@ entity RegControl is
       dacClrb         : out   std_logic;
 
       -- Board IDs
-      serialIdOut     : out   std_logic_vector(1 downto 0);
-      serialIdEn      : out   std_logic_vector(1 downto 0);
-      serialIdIn      : in    std_logic_vector(1 downto 0);
+      serialIdOut     : out   std_logic_vector(2 downto 0);
+      serialIdEn      : out   std_logic_vector(2 downto 0);
+      serialIdIn      : in    std_logic_vector(2 downto 0) := "000";
 
       -- Fast ADC Control
       adcSpiClk       : out   std_logic;
@@ -127,11 +127,11 @@ architecture RegControl of RegControl is
    signal adcRdReq          : std_logic;
    signal adcAck            : std_logic;
    signal adcSel            : std_logic_vector(1 downto 0);
-   type serNum is array(1 downto 0) of slv(63 downto 0);
+   type serNum is array(2 downto 0) of slv(63 downto 0);
    signal serNumRaw        : serNum;
    signal serNumReg        : serNum;
-   signal serNumValid      : slv(1 downto 0);
-   signal serNumValidEdge  : slv(1 downto 0);
+   signal serNumValid      : slv(2 downto 0);
+   signal serNumValidEdge  : slv(2 downto 0);
    signal serClkEn         : sl;
    signal spiClkEn         : sl;
    signal memAddr          : std_logic_vector(15 downto 0);
@@ -150,6 +150,7 @@ architecture RegControl of RegControl is
    signal useStartupReg    : std_logic;
    signal iAdcPdwn         : std_logic_vector(2 downto 0);
    signal iStartupReq      : std_logic;
+   signal useStartupRegFalling : sl;
    
    type PixelWriteData is record
       asic      : slv(1 downto 0);
@@ -186,16 +187,22 @@ architecture RegControl of RegControl is
                        CMD_1_S, PAUSE_1_S,
                        CMD_2_S, PAUSE_2_S,
                        CMD_3_S,
-                       PIXEL_DECODE_S,
-                       PIXEL_COLUMN_DECODE_S,
---                       PIXEL_CONFIG_S,
---                       PIXEL_CONFIG_PAUSE_S,
-                       PIXEL_ROW_S,
-                       PIXEL_ROW_PAUSE_S,
-                       PIXEL_COL_S,
-                       PIXEL_COL_PAUSE_S,
-                       PIXEL_WRITE_S,
-                       PIXEL_WRITE_PAUSE_S,
+                       EPIX100A_PIXEL_DECODE_S,
+                       EPIX100A_PIXEL_COLUMN_DECODE_S,
+                       EPIX100A_PIXEL_ROW_S,
+                       EPIX100A_PIXEL_ROW_PAUSE_S,
+                       EPIX100A_PIXEL_COL_S,
+                       EPIX100A_PIXEL_COL_PAUSE_S,
+                       EPIX100A_PIXEL_WRITE_S,
+                       EPIX100A_PIXEL_WRITE_PAUSE_S,
+                       EPIXS_PIXEL_DECODE_S,
+                       EPIXS_PIXEL_COLUMN_DECODE_S,
+                       EPIXS_PIXEL_ROW_S,
+                       EPIXS_PIXEL_ROW_PAUSE_S,
+                       EPIXS_PIXEL_COL_S,
+                       EPIXS_PIXEL_COL_PAUSE_S,
+                       EPIXS_PIXEL_WRITE_S,
+                       EPIXS_PIXEL_WRITE_PAUSE_S,
                        DONE_S);
    signal   curState   : saci_state := IDLE_S;
    signal   nxtState   : saci_state := IDLE_S;
@@ -519,7 +526,13 @@ begin
                intConfig.asicPPmatToReadout <= pgpRegOut.wrData after tpd;
             end if;
             pgpRegIn.rdData <= intConfig.asicPPmatToReadout after tpd;
-         
+
+         -- Serial ID chip (analog card)
+         elsif pgpRegOut.addr = x"0003B" then 
+            pgpRegIn.rdData <= serNumReg(2)(31 downto 0);
+         elsif pgpRegOut.addr = x"0003C" then
+            pgpRegIn.rdData <= serNumReg(2)(63 downto 32);
+            
          -- TPS control register to decide when TPS system reads (0x00040)
          elsif pgpRegOut.addr = x"00040" then
             if pgpRegOut.req = '1' and pgpRegOut.op = '1' then 
@@ -650,13 +663,14 @@ begin
          -- Pseudo-SACI space, 0x080000
          -- These are commands used to do multi-SACI commands (e.g., configure multiple pixels)
          -- Note that these are EPIX100A-sized.  It must be extended to other ePix devices if desired.
+         -- 2014.12.18 - Adding support for EpixS size
          -- 0x080000 - Row in global space
          -- 0x080001 - Col in global space
          -- 0x080002 - Left most pixel in global space
          -- 0x080003 - Next pixel to the right
          -- 0x080004 - Next pixel to the right
          -- 0x080005 - Right most pixel in global space, initiate SACI transactions
-         elsif pgpRegOut.addr(19) = '1' and FpgaVersion(31 downto 24) = x"EA" then
+         elsif pgpRegOut.addr(19) = '1' and (FpgaVersion(31 downto 24) = x"EA" or FpgaVersion(31 downto 24) = x"E3") then
             case conv_integer(pgpRegOut.addr(18 downto 0)) is 
                when 0 =>  -- Row in global row space
                   if pgpRegOut.req = '1' and pgpRegOut.op = '1' then
@@ -761,7 +775,11 @@ begin
             -- 4 banks are written
             elsif multiPixelReg.req = '1' then
                decodePixelReg <= PIXEL_WRITE_INIT_C;
-               nxtState       <= PIXEL_DECODE_S;
+               if (FpgaVersion(31 downto 24) = x"EA") then
+                  nxtState       <= EPIX100A_PIXEL_DECODE_S;
+               elsif (FpgaVersion(31 downto 24) = x"E3") then
+                  nxtState       <= EPIXS_PIXEL_DECODE_S;
+               end if;
             -- Otherwise, process the automatic prepare for
             -- readout command.
             elsif saciReadoutReq = '1' then
@@ -862,11 +880,11 @@ begin
             end if;
 
          ------------------------------------------------------
-         -- Write 4-pixels, one in each bank, for a given ASIC
+         -- 100A: Write 4-pixels, one in each bank, for a given ASIC
          ------------------------------------------------------
          --
          -- Decode global row and column into a local row/col
-         when PIXEL_DECODE_S =>
+         when EPIX100A_PIXEL_DECODE_S =>
             multiPixelBankRst <= '1';
             -- Top 2 ASICs
             if ((multiPixelReg.row < 352 and multiPixelReg.calRow = '0') or (multiPixelReg.calRow = '1' and multiPixelReg.calBottom = '0')) then
@@ -911,9 +929,9 @@ begin
                   decodePixelReg.pixelData(i) <= multiPixelReg.pixelData(i);
                end loop;
             end if;
-            nxtState <= PIXEL_COLUMN_DECODE_S;
+            nxtState <= EPIX100A_PIXEL_COLUMN_DECODE_S;
          -- Decode column to column within a bank
-         when PIXEL_COLUMN_DECODE_S =>
+         when EPIX100A_PIXEL_COLUMN_DECODE_S =>
             decodePixelReg2 <= decodePixelReg;
             -- Convert ASIC column to bank column
             if (decodePixelReg.col < 96) then
@@ -932,33 +950,10 @@ begin
                   nxtState          <= IDLE_S;
                end if;
             else
-               nxtState <= PIXEL_ROW_S;
+               nxtState <= EPIX100A_PIXEL_ROW_S;
             end if;
---         -- Commented out because it's not sensible to do this every quad pixel write...
---         -- It makes things easier for single writes, but wastes time for large writes.           
---         -- Prepare for multi-pixel configuration (CMD 8, RW = X, ADDR = X, DATA = X)
---         when PIXEL_CONFIG_S =>
---            multiPixelBankRst <= '1';
---            saciSelIn.op      <= '1';
---            saciSelIn.chip    <= decodePixelReg.asic;
---            saciSelIn.cmd     <= "000" & x"8";
---            saciSelIn.addr    <= x"000";
---            saciSelIn.wrData  <= x"00000000";
---            saciSelIn.req     <= '1';
---            if (saciSelOut.ack = '1') then
---               nxtState <= PIXEL_CONFIG_PAUSE_S;
---            elsif (saciTimeout = '1') then
---               saciSelIn.req <= '0';
---               nxtState      <= IDLE_S;
---            end if;
---         when PIXEL_CONFIG_PAUSE_S =>
---            saciSelIn.req     <= '0';
---            saciTimeoutCntRst <= '1';
---            if saciSelOut.ack = '0' then
---               nxtState          <= PIXEL_ROW_S;
---            end if;
          -- Write row (CMD = 6, RW = 1, ADDR = 17, DATA = ROW)
-         when PIXEL_ROW_S    =>
+         when EPIX100A_PIXEL_ROW_S    =>
             saciSelIn.op      <= '1';
             saciSelIn.chip    <= decodePixelReg2.asic;
             saciSelIn.cmd     <= "000" & x"6";
@@ -966,19 +961,19 @@ begin
             saciSelIn.wrData  <= x"0000" & x"0" & "000" & decodePixelReg2.row(8 downto 0);
             saciSelIn.req     <= '1';
             if (saciSelOut.ack = '1') then
-               nxtState <= PIXEL_ROW_PAUSE_S;
+               nxtState <= EPIX100A_PIXEL_ROW_PAUSE_S;
             elsif (saciTimeout = '1') then
                saciSelIn.req <= '0';
                nxtState      <= IDLE_S;
             end if;
-         when PIXEL_ROW_PAUSE_S =>
+         when EPIX100A_PIXEL_ROW_PAUSE_S =>
             saciSelIn.req     <= '0';
             saciTimeoutCntRst <= '1';
             if saciSelOut.ack = '0' then
-               nxtState          <= PIXEL_COL_S;
+               nxtState          <= EPIX100A_PIXEL_COL_S;
             end if;
          -- Write col (CMD = 6, RW = 1, ADDR = 19, DATA = Bank + Col)
-         when PIXEL_COL_S    =>
+         when EPIX100A_PIXEL_COL_S    =>
             saciSelIn.op      <= '1';
             saciSelIn.chip    <= decodePixelReg2.asic;
             saciSelIn.cmd     <= "000" & x"6";
@@ -986,19 +981,19 @@ begin
             saciSelIn.wrData  <= x"0000" & x"0" & "0" & multiPixelBank & decodePixelReg2.col(6 downto 0);
             saciSelIn.req     <= '1';
             if (saciSelOut.ack = '1') then
-               nxtState <= PIXEL_COL_PAUSE_S;
+               nxtState <= EPIX100A_PIXEL_COL_PAUSE_S;
             elsif (saciTimeout = '1') then
                saciSelIn.req <= '0';
                nxtState      <= IDLE_S;
             end if;
-         when PIXEL_COL_PAUSE_S =>
+         when EPIX100A_PIXEL_COL_PAUSE_S =>
             saciSelIn.req     <= '0';
             saciTimeoutCntRst <= '1';
             if saciSelOut.ack = '0' then
-               nxtState <= PIXEL_WRITE_S;
+               nxtState <= EPIX100A_PIXEL_WRITE_S;
             end if;
          -- Write data (CMD = 5, RW = 1, ADDR = X, DATA = MT)
-         when PIXEL_WRITE_S  =>
+         when EPIX100A_PIXEL_WRITE_S  =>
             saciSelIn.op      <= '1';
             saciSelIn.chip    <= decodePixelReg2.asic;
             saciSelIn.cmd     <= "000" & x"5";
@@ -1006,18 +1001,18 @@ begin
             saciSelIn.wrData  <= x"0000" & decodePixelReg2.pixelData(conv_integer(multiPixelBankCnt));
             saciSelIn.req     <= '1';
             if (saciSelOut.ack = '1') then
-               nxtState      <= PIXEL_WRITE_PAUSE_S;
+               nxtState      <= EPIX100A_PIXEL_WRITE_PAUSE_S;
             elsif (saciTimeout = '1') then
                saciSelIn.req <= '0';
                nxtState      <= IDLE_S;
             end if;            
-         when PIXEL_WRITE_PAUSE_S =>
+         when EPIX100A_PIXEL_WRITE_PAUSE_S =>
             saciSelIn.req     <= '0';
             saciTimeoutCntRst <= '1';
             if saciSelOut.ack = '0' then
                if (multiPixelBankCnt < 3) then
                   multiPixelBankEn  <= '1';
-                  nxtState          <= PIXEL_COL_S;
+                  nxtState          <= EPIX100A_PIXEL_COL_S;
                else
                   multiPixelAck     <= '1';
                   if (multiPixelReg.req = '0') then
@@ -1025,8 +1020,137 @@ begin
                   end if;
                end if;
             end if;
+
+         ------------------------------------------------------
+         -- EPIXS: Write 1-pixel for a given ASIC
+         ------------------------------------------------------
+         --
+         -- Decode global row and column into a local row/col
+         when EPIXS_PIXEL_DECODE_S =>
+            multiPixelBankRst <= '1';
+            -- Top 2 ASICs
+            if ((multiPixelReg.row < 10 and multiPixelReg.calRow = '0') or (multiPixelReg.calRow = '1' and multiPixelReg.calBottom = '0')) then
+               -- ASIC 2 (upper left)
+               if (multiPixelReg.col < 10) then
+                  decodePixelReg.asic <= "10";
+                  decodePixelReg.col  <= 9 - multiPixelReg.col;
+               -- ASIC 1 (upper right)
+               else
+                  decodePixelReg.asic <= "01";
+                  decodePixelReg.col  <= 19 - multiPixelReg.col;
+               end if;
+               --For both top ASICs, translate row to local space
+               if (multiPixelReg.calRow = '1') then
+                  decodePixelReg.row <= conv_std_logic_vector(10,decodePixelReg.row'length);
+               else
+                  decodePixelReg.row <= 9 - multiPixelReg.row;
+               end if;
+               --Always take first and only pixel 
+               decodePixelReg.pixelData(0) <= multiPixelReg.pixelData(0);
+            -- Bottom 2 ASICs
+            else
+               -- ASIC 3 (lower left)
+               if (multiPixelReg.col < 10) then
+                  decodePixelReg.asic <= "11";
+                  decodePixelReg.col  <= multiPixelReg.col;
+               -- ASIC 0 (lower right)
+               else
+                  decodePixelReg.asic <= "00";
+                  decodePixelReg.col  <= multiPixelReg.col - 10;
+               end if;
+               -- For both bottom ASICs, translate row to local space
+               if (multiPixelReg.calRow = '1') then
+                  decodePixelReg.row <= conv_std_logic_vector(10,decodePixelReg.row'length);
+               else
+                  decodePixelReg.row <= multiPixelReg.row - 10;
+               end if;
+               --Readout order is 0-3
+               for i in 0 to 3 loop
+                  decodePixelReg.pixelData(i) <= multiPixelReg.pixelData(i);
+               end loop;
+            end if;
+            nxtState <= EPIXS_PIXEL_COLUMN_DECODE_S;
+         -- Decode column to column within a bank
+         when EPIXS_PIXEL_COLUMN_DECODE_S =>
+            decodePixelReg2 <= decodePixelReg;
+            -- There are no banks, so column is just column
+            decodePixelReg2.col <= decodePixelReg.col;
+            -- Check that we're writing a pixel for an unmasked ASIC
+            if ( intConfig.asicMask(conv_integer(decodePixelReg.asic)) = '0' ) then
+               multiPixelAck     <= '1';
+               if (multiPixelReg.req = '0') then
+                  nxtState          <= IDLE_S;
+               end if;
+            else
+               nxtState <= EPIXS_PIXEL_ROW_S;
+            end if;
+         -- Write row (CMD = 6, RW = 1, ADDR = 17, DATA = ROW)
+         when EPIXS_PIXEL_ROW_S    =>
+            saciSelIn.op      <= '1';
+            saciSelIn.chip    <= decodePixelReg2.asic;
+            saciSelIn.cmd     <= "000" & x"6";
+            saciSelIn.addr    <= x"011";
+            saciSelIn.wrData  <= x"0000" & x"0" & "000" & decodePixelReg2.row(8 downto 0);
+            saciSelIn.req     <= '1';
+            if (saciSelOut.ack = '1') then
+               nxtState <= EPIXS_PIXEL_ROW_PAUSE_S;
+            elsif (saciTimeout = '1') then
+               saciSelIn.req <= '0';
+               nxtState      <= IDLE_S;
+            end if;
+         when EPIXS_PIXEL_ROW_PAUSE_S =>
+            saciSelIn.req     <= '0';
+            saciTimeoutCntRst <= '1';
+            if saciSelOut.ack = '0' then
+               nxtState          <= EPIXS_PIXEL_COL_S;
+            end if;
+         -- Write col (CMD = 6, RW = 1, ADDR = 19, DATA = Bank + Col)
+         when EPIXS_PIXEL_COL_S    =>
+            saciSelIn.op      <= '1';
+            saciSelIn.chip    <= decodePixelReg2.asic;
+            saciSelIn.cmd     <= "000" & x"6";
+            saciSelIn.addr    <= x"013";
+            saciSelIn.wrData  <= x"0000" & x"0" & "0" & "0000" & decodePixelReg2.col(6 downto 0);
+            saciSelIn.req     <= '1';
+            if (saciSelOut.ack = '1') then
+               nxtState <= EPIXS_PIXEL_COL_PAUSE_S;
+            elsif (saciTimeout = '1') then
+               saciSelIn.req <= '0';
+               nxtState      <= IDLE_S;
+            end if;
+         when EPIXS_PIXEL_COL_PAUSE_S =>
+            saciSelIn.req     <= '0';
+            saciTimeoutCntRst <= '1';
+            if saciSelOut.ack = '0' then
+               nxtState <= EPIXS_PIXEL_WRITE_S;
+            end if;
+         -- Write data (CMD = 5, RW = 1, ADDR = X, DATA = MT)
+         when EPIXS_PIXEL_WRITE_S  =>
+            saciSelIn.op      <= '1';
+            saciSelIn.chip    <= decodePixelReg2.asic;
+            saciSelIn.cmd     <= "000" & x"5";
+            saciSelIn.addr    <= x"000";
+            saciSelIn.wrData  <= x"0000" & decodePixelReg2.pixelData(0);
+            saciSelIn.req     <= '1';
+            if (saciSelOut.ack = '1') then
+               nxtState      <= EPIXS_PIXEL_WRITE_PAUSE_S;
+            elsif (saciTimeout = '1') then
+               saciSelIn.req <= '0';
+               nxtState      <= IDLE_S;
+            end if;            
+         when EPIXS_PIXEL_WRITE_PAUSE_S =>
+            saciSelIn.req     <= '0';
+            saciTimeoutCntRst <= '1';
+            if saciSelOut.ack = '0' then
+               multiPixelAck     <= '1';
+               if (multiPixelReg.req = '0') then
+                  nxtState          <= IDLE_S;
+               end if;
+            end if;
+
          when others =>
       end case;
+
    end process;
 
    -- Barrel shifter and counter for bank select for multi pixel writing
@@ -1128,10 +1252,21 @@ begin
    -----------------------------------------------
    -- Serial Number/EEPROM IC Interfaces (1-wire)
    -----------------------------------------------
+   U_SliceDimmIdCarrierCard : entity work.SliceDimmId
+      port map (
+         pgpClk    => sysClk,
+         pgpRst    => sysClkRst or useStartupRegFalling,
+         serClkEn  => serClkEn,
+         fdSerDin  => serialIdIn(2),
+         fdSerDout => serialIdOut(2),
+         fdSerDenL => serialIdEn(2),
+         fdSerial  => serNumRaw(2),
+         fdValid   => serNumValid(2)
+      );
    U_SliceDimmIdAnalogCard : entity work.SliceDimmId
       port map (
          pgpClk    => sysClk,
-         pgpRst    => sysClkRst,
+         pgpRst    => sysClkRst or useStartupRegFalling,
          serClkEn  => serClkEn,
          fdSerDin  => serialIdIn(1),
          fdSerDout => serialIdOut(1),
@@ -1142,7 +1277,7 @@ begin
    U_IdAndEepromDigitalCard : entity work.EepromId
       port map (
          pgpClk    => sysClk,
-         pgpRst    => sysClkRst,
+         pgpRst    => sysClkRst or useStartupRegFalling,
          serClkEn  => serClkEn,
          fdSerDin  => serialIdIn(0),
          fdSerDout => serialIdOut(0),
@@ -1156,8 +1291,16 @@ begin
          readReq   => memReadReq,
          writeReq  => memWriteReq
       );
+   --Falling edge of startup sequencer can trigger ID chip reads
+   U_StartupDoneEdge : entity work.SynchronizerEdge
+      port map (
+         clk         => sysClk,
+         rst         => sysClkRst,
+         dataIn      => useStartupReg,
+         fallingEdge => useStartupRegFalling
+      );
    --Edge detect for the valid signals
-   G_DataSendEdgeSer : for i in 0 to 1 generate
+   G_DataSendEdgeSer : for i in 0 to 2 generate
       U_DataSendEdgeSer : entity work.SynchronizerEdge
          port map (
             clk        => sysClk,
@@ -1168,7 +1311,7 @@ begin
    end generate;
    --Clock the serial number into a register when it's valid
    process(sysClk, sysClkRst) begin
-      for i in 0 to 1 loop
+      for i in 0 to 2 loop
          if rising_edge(sysClk) then
             if sysClkRst = '1' then
                serNumReg(i) <= (others => '0');
@@ -1206,11 +1349,13 @@ begin
               410  when FpgaVersion(31 downto 24) = x"E1" else --SDD
               820  when FpgaVersion(31 downto 24) = x"E2" else --ePix10kp
               820  when FpgaVersion(31 downto 24) = x"EA" else --ePix100a
+              820  when FpgaVersion(31 downto 24) = x"E3" else --ePixS
               1000;
    NCYCLES_SPI <= 10 when FpgaVersion(31 downto 24) = x"E0" else --ePix100p
                   5  when FpgaVersion(31 downto 24) = x"E1" else --SDD
                   10 when FpgaVersion(31 downto 24) = x"E2" else --ePix10kp
                   10 when FpgaVersion(31 downto 24) = x"EA" else --ePix100a
+                  10 when FpgaVersion(31 downto 24) = x"E3" else --ePixS
                   20;
    process(sysClk,sysClkRst) 
       variable counter     : integer range 0 to 2047 := 0;

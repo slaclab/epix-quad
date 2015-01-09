@@ -1,18 +1,18 @@
-
 # Define system clocks
 NET U_EpixCore/sysClk                 TNM_NET = FFS sysClk;
 NET U_EpixCore/U_PgpFrontEnd/ipgpClk  TNM_NET = FFS pgpClk;
-NET U_EpixCore/U_AdcReadout3x/GenAdc[0].U_AdcReadout/adcBitClkR  TNM_NET = FFS adc0Clk;
-NET U_EpixCore/U_AdcReadout3x/GenAdc[1].U_AdcReadout/adcBitClkR  TNM_NET = FFS adc1Clk;
-NET U_EpixCore/U_AdcReadout3x/U_AdcMon/adcBitClkR                TNM_NET = FFS adc2Clk;
+NET U_EpixCore/U_AdcReadout3x/iClk350MHz TNM_NET = fpgaAdcDoClk;
+NET U_EpixCore/U_AdcReadout3x/iClk200MHz TNM_NET = iDelayCtrlClk;
 
 # Define system clocks
-TIMESPEC TS_sysClk      = PERIOD sysClk   100 Mhz HIGH 50%;
-#TIMESPEC TS_sysClk      = PERIOD sysClk   125 Mhz HIGH 50%;
-TIMESPEC TS_pgpClk      = PERIOD pgpClk   157 Mhz HIGH 50%;
-TIMESPEC TS_adc0Clk     = PERIOD adc0Clk  350 Mhz HIGH 50%;
-TIMESPEC TS_adc1Clk     = PERIOD adc1Clk  350 Mhz HIGH 50%;
-TIMESPEC TS_adc2Clk     = PERIOD adc2Clk  350 Mhz HIGH 50%;
+TIMESPEC TS_sysClk        = PERIOD sysClk        100 Mhz HIGH 50%;
+TIMESPEC TS_pgpClk        = PERIOD pgpClk        157 Mhz HIGH 50%;
+TIMESPEC TS_fpgaAdcDoClk  = PERIOD fpgaAdcDoClk  350 Mhz HIGH 50%;
+TIMESPEC TS_iDelayCtrlClk = PERIOD iDelayCtrlClk 200 Mhz HIGH 50%;
+
+# TIG for async fifos
+TIMESPEC TS_ADC_CORE = FROM "fpgaAdcDoClk" TO "sysClk" TIG;
+TIMESPEC TS_CORE_ADC = FROM "sysClk" TO "fpgaAdcDoClk" TIG;
 
 # Clocks and reset
 NET "sysRstL"            LOC = "U4"     | IOSTANDARD = "LVCMOS33";

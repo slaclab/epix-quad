@@ -58,9 +58,9 @@ entity EpixCore is
       triggerOut          : out   std_logic;
 
       -- Board IDs
-      serialIdOut         : out   std_logic_vector(1 downto 0);
-      serialIdEn          : out   std_logic_vector(1 downto 0);
-      serialIdIn          : in    std_logic_vector(1 downto 0);
+      serialIdOut         : out   std_logic_vector(2 downto 0);
+      serialIdEn          : out   std_logic_vector(2 downto 0);
+      serialIdIn          : in    std_logic_vector(2 downto 0) := "000";
 
       -- Power Control
       powerEnable         : out   std_logic_vector(7 downto 0);
