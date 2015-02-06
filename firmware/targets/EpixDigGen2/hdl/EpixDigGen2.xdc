@@ -15,7 +15,7 @@ set_property PACKAGE_PIN L5  [get_ports {led[2]}]
 set_property PACKAGE_PIN L4  [get_ports {led[3]}]
 set_property IOSTANDARD LVCMOS25 [get_ports {led[*]}]
 
-create_clock -period 8.000 -name gtRefClk0P -waveform {0.000 4.000} [get_ports gtRefClk0P]
+create_clock -period 6.400 -name gtRefClk0P -waveform {0.000 3.200} [get_ports gtRefClk0P]
 
 # Configuration properties
 set_property CFGBVS VCCO [current_design]

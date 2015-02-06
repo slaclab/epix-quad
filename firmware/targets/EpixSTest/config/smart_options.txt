@@ -1,0 +1,7 @@
+{"virtex5":
+(
+{"name": "GlobalOptT1",
+ "map": "-ol high -xe n -register_duplication on ",
+ "par": "-ol high -xe n "},
+),
+}

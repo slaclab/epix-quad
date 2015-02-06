@@ -1064,10 +1064,8 @@ begin
                else
                   decodePixelReg.row <= multiPixelReg.row - 10;
                end if;
-               --Readout order is 0-3
-               for i in 0 to 3 loop
-                  decodePixelReg.pixelData(i) <= multiPixelReg.pixelData(i);
-               end loop;
+               --Always take first and only pixel
+               decodePixelReg.pixelData(0) <= multiPixelReg.pixelData(0);
             end if;
             nxtState <= EPIXS_PIXEL_COLUMN_DECODE_S;
          -- Decode column to column within a bank

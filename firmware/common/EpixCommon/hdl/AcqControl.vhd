@@ -100,15 +100,15 @@ architecture AcqControl of AcqControl is
    -- Multiplexed ASIC outputs.  These versions are the
    -- automatic ones controlled by state machine.
    -- You can override them with the manualPinControl config bits.
-   signal iAsicR0       : std_logic             := '0';
-   signal iAsicR0Rising : std_logic             := '0';
-   signal iAsicPpmat    : std_logic             := '0';
-   signal iAsicPpbe     : std_logic             := '0';
-   signal iAsicGlblRst  : std_logic             := '0';
-   signal iAsicAcq      : std_logic             := '0';
-   signal iAsicClk      : std_logic             := '0';
-   signal iAsicSync     : std_logic             := '0';
-   signal iAsicSyncAlt  : std_logic             := '0';
+   signal iAsicR0          : std_logic := '0';
+   signal iAsicPpmat       : std_logic := '0';
+   signal iAsicPpmatRising : std_logic := '0';
+   signal iAsicPpbe        : std_logic := '0';
+   signal iAsicGlblRst     : std_logic := '0';
+   signal iAsicAcq         : std_logic := '0';
+   signal iAsicClk         : std_logic := '0';
+   signal iAsicSync        : std_logic := '0';
+   signal iAsicSyncAlt     : std_logic := '0';
    -- Alternate R0 that can be used for "original" polarity
    -- (i.e., usually low except before ACQ and through readout)
    signal iAsicR0Alt    : std_logic             := '0';
@@ -662,31 +662,31 @@ begin
       port map (
          clk        => sysClk,
          rst        => sysClkRst,
-         dataIn     => iAsicR0Alt,
-         risingEdge => iAsicR0Rising
+         dataIn     => iAsicPpmat,
+         risingEdge => iAsicPpmatRising
       );
    
    -- Simple delay to bring up R0
    PROC_SYNC_SPECIAL : process(sysClk) 
-      variable delay : unsigned(15 downto 0) := (others => '0');
-      variable width : unsigned(15 downto 0) := (others => '0');
+      variable vDelay : unsigned(15 downto 0) := (others => '0');
+      variable vWidth : unsigned(15 downto 0) := (others => '0');
    begin
       if rising_edge(sysClk) then
          --Default Sync value is 0
          iAsicSyncAlt <= '0';
-         --When you see the rising edge of R0, set counter to target
-         if iAsicR0Rising = '1' then 
-            delay := unsigned(epixConfig.syncDelay);
-            width := unsigned(epixConfig.syncWidth);
+         --When you see the rising edge of Ppmat, set counter to target
+         if iAsicPpmatRising = '1' then 
+            vDelay := unsigned(epixConfig.syncDelay);
+            vWidth := unsigned(epixConfig.syncWidth);
          else
             --If delay is nonzero, Sync should still be low
             --and count down to 0
-            if (delay > 0) then
-               delay := delay - 1;
+            if (vDelay > 0) then
+               vDelay := vDelay - 1;
             --If width is nonzero, Sync should be high and
             --count downt to 0
-            elsif (width > 0) then
-               width := width - 1;
+            elsif (vWidth > 0) then
+               vWidth := vWidth - 1;
                iAsicSyncAlt <= '1';
             end if;
          end if;

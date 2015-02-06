@@ -85,30 +85,40 @@
     </probe>
     <probe type="ila" busType="bus" source="netlist" spec="ILA_V2_RT">
       <probeOptions Id="DebugProbeParams">
-        <Option Id="COMPARE_VALUE.0" value="eq16&apos;hXXXX"/>
+        <Option Id="COMPARE_VALUE.0" value="eq11&apos;hXXX"/>
         <Option Id="CORE_LOCATION" value="1:0"/>
         <Option Id="HW_ILA" value="u_ila_0"/>
         <Option Id="PROBE_PORT" value="0"/>
         <Option Id="PROBE_PORT_BITS" value="22"/>
-        <Option Id="PROBE_PORT_BIT_COUNT" value="16"/>
+        <Option Id="PROBE_PORT_BIT_COUNT" value="11"/>
+      </probeOptions>
+      <nets>
+        <net name="U_PgpFrontEnd/pgpRxMasters[1][tData]_1[10]"/>
+        <net name="U_PgpFrontEnd/pgpRxMasters[1][tData]_1[9]"/>
+        <net name="U_PgpFrontEnd/pgpRxMasters[1][tData]_1[8]"/>
+        <net name="U_PgpFrontEnd/pgpRxMasters[1][tData]_1[7]"/>
+        <net name="U_PgpFrontEnd/pgpRxMasters[1][tData]_1[6]"/>
+        <net name="U_PgpFrontEnd/pgpRxMasters[1][tData]_1[5]"/>
+        <net name="U_PgpFrontEnd/pgpRxMasters[1][tData]_1[4]"/>
+        <net name="U_PgpFrontEnd/pgpRxMasters[1][tData]_1[3]"/>
+        <net name="U_PgpFrontEnd/pgpRxMasters[1][tData]_1[2]"/>
+        <net name="U_PgpFrontEnd/pgpRxMasters[1][tData]_1[1]"/>
+        <net name="U_PgpFrontEnd/pgpRxMasters[1][tData]_1[0]"/>
+      </nets>
+    </probe>
+    <probe type="ila" busType="bus" source="netlist" spec="ILA_V2_RT">
+      <probeOptions Id="DebugProbeParams">
+        <Option Id="COMPARE_VALUE.0" value="eq3&apos;hX"/>
+        <Option Id="CORE_LOCATION" value="1:0"/>
+        <Option Id="HW_ILA" value="u_ila_0"/>
+        <Option Id="PROBE_PORT" value="0"/>
+        <Option Id="PROBE_PORT_BITS" value="33"/>
+        <Option Id="PROBE_PORT_BIT_COUNT" value="3"/>
       </probeOptions>
       <nets>
         <net name="U_PgpFrontEnd/pgpRxMasters[1][tData][15]"/>
         <net name="U_PgpFrontEnd/pgpRxMasters[1][tData][14]"/>
         <net name="U_PgpFrontEnd/pgpRxMasters[1][tData][13]"/>
-        <net name="U_PgpFrontEnd/pgpRxMasters[1][tData][12]"/>
-        <net name="U_PgpFrontEnd/pgpRxMasters[1][tData][11]"/>
-        <net name="U_PgpFrontEnd/pgpRxMasters[1][tData][10]"/>
-        <net name="U_PgpFrontEnd/pgpRxMasters[1][tData][9]"/>
-        <net name="U_PgpFrontEnd/pgpRxMasters[1][tData][8]"/>
-        <net name="U_PgpFrontEnd/pgpRxMasters[1][tData][7]"/>
-        <net name="U_PgpFrontEnd/pgpRxMasters[1][tData][6]"/>
-        <net name="U_PgpFrontEnd/pgpRxMasters[1][tData][5]"/>
-        <net name="U_PgpFrontEnd/pgpRxMasters[1][tData][4]"/>
-        <net name="U_PgpFrontEnd/pgpRxMasters[1][tData][3]"/>
-        <net name="U_PgpFrontEnd/pgpRxMasters[1][tData][2]"/>
-        <net name="U_PgpFrontEnd/pgpRxMasters[1][tData][1]"/>
-        <net name="U_PgpFrontEnd/pgpRxMasters[1][tData][0]"/>
       </nets>
     </probe>
     <probe type="ila" busType="bus" source="netlist" spec="ILA_V2_RT">
@@ -117,7 +127,7 @@
         <Option Id="CORE_LOCATION" value="1:0"/>
         <Option Id="HW_ILA" value="u_ila_0"/>
         <Option Id="PROBE_PORT" value="0"/>
-        <Option Id="PROBE_PORT_BITS" value="38"/>
+        <Option Id="PROBE_PORT_BITS" value="36"/>
         <Option Id="PROBE_PORT_BIT_COUNT" value="2"/>
       </probeOptions>
       <nets>
@@ -131,7 +141,7 @@
         <Option Id="CORE_LOCATION" value="1:0"/>
         <Option Id="HW_ILA" value="u_ila_0"/>
         <Option Id="PROBE_PORT" value="0"/>
-        <Option Id="PROBE_PORT_BITS" value="40"/>
+        <Option Id="PROBE_PORT_BITS" value="38"/>
         <Option Id="PROBE_PORT_BIT_COUNT" value="1"/>
       </probeOptions>
       <nets>
@@ -140,14 +150,15 @@
     </probe>
     <probe type="ila" busType="bus" source="netlist" spec="ILA_V2_RT">
       <probeOptions Id="DebugProbeParams">
-        <Option Id="COMPARE_VALUE.0" value="eq1&apos;bX"/>
+        <Option Id="COMPARE_VALUE.0" value="eq2&apos;hX"/>
         <Option Id="CORE_LOCATION" value="1:0"/>
         <Option Id="HW_ILA" value="u_ila_0"/>
         <Option Id="PROBE_PORT" value="0"/>
-        <Option Id="PROBE_PORT_BITS" value="41"/>
-        <Option Id="PROBE_PORT_BIT_COUNT" value="1"/>
+        <Option Id="PROBE_PORT_BITS" value="39"/>
+        <Option Id="PROBE_PORT_BIT_COUNT" value="2"/>
       </probeOptions>
       <nets>
+        <net name="U_PgpFrontEnd/pgpRxMasters[1][tUser][2]"/>
         <net name="U_PgpFrontEnd/pgpRxMasters[1][tUser][1]"/>
       </nets>
     </probe>
@@ -157,7 +168,7 @@
         <Option Id="CORE_LOCATION" value="1:0"/>
         <Option Id="HW_ILA" value="u_ila_0"/>
         <Option Id="PROBE_PORT" value="0"/>
-        <Option Id="PROBE_PORT_BITS" value="42"/>
+        <Option Id="PROBE_PORT_BITS" value="41"/>
         <Option Id="PROBE_PORT_BIT_COUNT" value="1"/>
       </probeOptions>
       <nets>
@@ -167,13 +178,3 @@
     <probe type="ila" busType="bus" source="netlist" spec="ILA_V2_RT">
       <probeOptions Id="DebugProbeParams">
         <Option Id="COMPARE_VALUE.0" value="eq16&apos;hXXXX"/>
-        <Option Id="CORE_LOCATION" value="1:0"/>
-        <Option Id="HW_ILA" value="u_ila_0"/>
-        <Option Id="PROBE_PORT" value="0"/>
-        <Option Id="PROBE_PORT_BITS" value="43"/>
-        <Option Id="PROBE_PORT_BIT_COUNT" value="16"/>
-      </probeOptions>
-      <nets>
-        <net name="U_PgpFrontEnd/pgpRxMasters[2][tData][15]"/>
-        <net name="U_PgpFrontEnd/pgpRxMasters[2][tData][14]"/>
-        <net name="U_PgpFrontEn

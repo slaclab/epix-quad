@@ -11,6 +11,7 @@ export MODULE_DIRS = $(PROJ_DIR)/../../common/StdLib  \
                      $(PROJ_DIR)/../../common/pgp2b_core/core \
                      $(PROJ_DIR)/../../common/MgtLib/gtp7  \
                      $(PROJ_DIR)/../../common/EpixCommonGen2  \
+                     $(PROJ_DIR)/../../common/EpixCommon  \
                      $(PROJ_DIR)
 
 # Max number of smart explorer runs

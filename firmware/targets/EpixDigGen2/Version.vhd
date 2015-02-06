@@ -1,32 +1,34 @@
 -------------------------------------------------------------------------------
 -- Title         : Version File
--- Project       : PGP To PCI-E Bridge Card, 8x
+-- Project       : ePix Generation 2 Digital Card Firmware
 -------------------------------------------------------------------------------
--- File          : PgpCard8xG2Version.vhd
--- Author        : Ryan Herbst, rherbst@slac.stanford.edu
--- Created       : 04/27/2010
+-- File          : Version.vhd
+-- Author        : Kurtis Nishimura, kurtisn@slac.stanford.edu
+-- Created       : 02/05/2015
 -------------------------------------------------------------------------------
 -- Description:
 -- Version Constant Module.
 -------------------------------------------------------------------------------
--- Copyright (c) 2010 by SLAC National Accelerator Laboratory. All rights reserved.
+-- Copyright (c) 2015 by SLAC National Accelerator Laboratory. All rights reserved.
 -------------------------------------------------------------------------------
 -- Modification history:
--- 04/27/2010: created.
+-- 02/05/2015: created.
 -------------------------------------------------------------------------------
 LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"00010000"; -- MAKE_VERSION
+constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"00010001"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "EpixDigGen2: Built Fri Dec 12 13:49:34 PST 2014 by kurtisn";
+constant BUILD_STAMP_C : string := "EpixDigGen2: Built Thu Feb  5 10:36:44 PST 2015 by kurtisn";
 
 end Version;
 
 -------------------------------------------------------------------------------
 -- Revision History:
--- 07/26/2013 (0xCEC83000): Initial Build
+-- 02/05/2015 (0x00010000): Initial build on digital card generation 2.  Simple
+--                          data tester for PGP with programmable rate and 
+--                          packet size.
 -------------------------------------------------------------------------------
 

@@ -49,12 +49,13 @@ entity PgpFrontEnd is
       mAxiLiteReadMaster  : out AxiLiteReadMasterType;
       mAxiLiteReadSlave   : in  AxiLiteReadSlaveType;
       mAxiLiteWriteMaster : out AxiLiteWriteMasterType;
-      mAxiLiteWriteSlave  : in  AxiLiteWriteSlaveType
-      -- -- Streaming data Links (axiClk domain)      
-      -- userAxisMaster : in  AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
-      -- userAxisSlave  : out AxiStreamSlaveType;
+      mAxiLiteWriteSlave  : in  AxiLiteWriteSlaveType;
+      -- Streaming data Links (axiClk domain)      
+      userAxisMaster : in  AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
+      userAxisSlave  : out AxiStreamSlaveType;
+      userAxisCtrl   : out AxiStreamCtrlType;
       -- Command interface
-      -- ssiCmd         : out SsiCmdMasterType
+      ssiCmd         : out SsiCmdMasterType
    );        
 end PgpFrontEnd;
 
@@ -80,9 +81,9 @@ architecture mapping of PgpFrontEnd is
 begin
    
    -- Map to signals out
-   rxLinkReady <= pgpRxOut.phyRxReady;
-   txLinkReady <= pgpTxOut.phyTxReady;
-   pgpRst      <= '0';
+   rxLinkReady <= pgpRxOut.remLinkReady;
+   txLinkReady <= pgpTxOut.linkReady;
+   pgpRst      <= stableRst;
    pgpClk      <= iPgpClk;
    stableClk   <= iStableClk;
    
@@ -173,73 +174,47 @@ begin
          mAxiLiteReadSlave   => mAxiLiteReadSlave
       );
 
-   -- -- Lane 0, VC1 TX, streaming data out 
-   -- U_Vc1SsiTxFifo : entity work.SsiFifo
-      -- generic map (
-         -- EN_FRAME_FILTER_G   => true,
-         -- CASCADE_SIZE_G      => 1,
-         -- BRAM_EN_G           => true,
-         -- USE_BUILT_IN_G      => false,  
-         -- GEN_SYNC_FIFO_G     => false,    
-         -- FIFO_ADDR_WIDTH_G   => 14,
-         -- FIFO_FIXED_THRESH_G => true,
-         -- FIFO_PAUSE_THRESH_G => 128,    
-         -- SLAVE_AXI_CONFIG_G  => ssiAxiStreamConfig(4),
-         -- MASTER_AXI_CONFIG_G => SSI_PGP2B_CONFIG_C) 
-      -- port map (   
-         -- -- Slave Port
-         -- sAxisClk    => dataWrClk,
-         -- sAxisRst    => stableRst,
-         -- sAxisMaster => userAxisMaster,
-         -- sAxisSlave  => userAxisSlave,
-         -- -- Master Port
-         -- mAxisClk    => iPgpClk,
-         -- mAxisRst    => stableRst,
-         -- mAxisMaster => pgpTxMasters(1),
-         -- mAxisSlave  => pgpTxSlaves(1));     
-   -- -- Lane 0, VC1 RX, Command processor
-   -- U_Vc1SsiCmdMaster : entity work.SsiCmdMaster
-      -- generic map (
-         -- AXI_STREAM_CONFIG_G => SSI_PGP2B_CONFIG_C)   
-      -- port map (
-         -- -- Streaming Data Interface
-         -- axisClk     => iPgpClk,
-         -- axisRst     => stableRst,
-         -- sAxisMaster => pgpRxMasters(1),
-         -- sAxisSlave  => open,
-         -- sAxisCtrl   => pgpRxCtrl(1),
-         -- -- Command signals
-         -- cmdClk      => axiClk,
-         -- cmdRst      => axiRst,
-         -- cmdMaster   => ssiCmd
-      -- );     
-
-   -- Lane 0, VC1 loopback
-   U_Vc1SsiLoopbackFifo : entity work.SsiFifo
+   -- Lane 0, VC1 TX, streaming data out 
+   U_Vc1SsiTxFifo : entity work.AxiStreamFifo
       generic map (
-         EN_FRAME_FILTER_G   => true,
+         --EN_FRAME_FILTER_G   => true,
          CASCADE_SIZE_G      => 1,
          BRAM_EN_G           => true,
          USE_BUILT_IN_G      => false,  
          GEN_SYNC_FIFO_G     => true,    
-         FIFO_ADDR_WIDTH_G   => 14,
+         FIFO_ADDR_WIDTH_G   => 10,
          FIFO_FIXED_THRESH_G => true,
          FIFO_PAUSE_THRESH_G => 128,    
-         SLAVE_AXI_CONFIG_G  => ssiAxiStreamConfig(4),
+         SLAVE_AXI_CONFIG_G  => ssiAxiStreamConfig(4, TKEEP_COMP_C),
          MASTER_AXI_CONFIG_G => SSI_PGP2B_CONFIG_C) 
       port map (   
          -- Slave Port
-         sAxisClk    => iPgpClk,
+         sAxisClk    => axiClk,
          sAxisRst    => stableRst,
-         sAxisMaster => pgpRxMasters(1),
-         sAxisSlave  => open,
-         sAxisCtrl   => pgpRxCtrl(1),
+         sAxisMaster => userAxisMaster,
+         sAxisSlave  => userAxisSlave,
+--         sAxisCtrl   => userAxisCtrl,
          -- Master Port
          mAxisClk    => iPgpClk,
          mAxisRst    => stableRst,
          mAxisMaster => pgpTxMasters(1),
          mAxisSlave  => pgpTxSlaves(1));     
-
+   -- Lane 0, VC1 RX, Command processor
+   U_Vc1SsiCmdMaster : entity work.SsiCmdMaster
+      generic map (
+         AXI_STREAM_CONFIG_G => SSI_PGP2B_CONFIG_C)   
+      port map (
+         -- Streaming Data Interface
+         axisClk     => iPgpClk,
+         axisRst     => stableRst,
+         sAxisMaster => pgpRxMasters(1),
+         sAxisSlave  => open,
+         sAxisCtrl   => pgpRxCtrl(1),
+         -- Command signals
+         cmdClk      => axiClk,
+         cmdRst      => axiRst,
+         cmdMaster   => ssiCmd
+      );     
       
    -- Lane 0, VC2 loopback
    U_Vc2SsiLoopbackFifo : entity work.SsiFifo

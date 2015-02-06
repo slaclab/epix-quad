@@ -23,7 +23,7 @@ use ieee.std_logic_unsigned.all;
 library UNISIM;
 use UNISIM.vcomponents.all;
 
-entity Epix100aTest is
+entity EpixSTest is
    port ( 
 
       -- Clocks and reset
@@ -79,13 +79,13 @@ entity Epix100aTest is
       asicSaciCmd         : out   std_logic;
       asicSaciClk         : out   std_logic;
       asic3SaciSel        : out   std_logic;
-      --asic3SaciRsp        : in    std_logic;
+      asic3SaciRsp        : in    std_logic;
       asic2SaciSel        : out   std_logic;
-      --asic2SaciRsp        : in    std_logic;
+      asic2SaciRsp        : in    std_logic;
       asic1SaciSel        : out   std_logic;
-      --asic1SaciRsp        : in    std_logic;
+      asic1SaciRsp        : in    std_logic;
       asic0SaciSel        : out   std_logic;
-      asicAllSaciRsp      : in    std_logic;
+      asic0SaciRsp        : in    std_logic;
 
       -- Monitoring ADCs
       adcMonClkP          : out   std_logic;
@@ -159,7 +159,7 @@ entity Epix100aTest is
       asicSync            : out   std_logic;
       asicAcq             : out   std_logic;
       asicAllDm2          : in    std_logic;
-      asicAllDm1          : in    std_logic;
+      asicAllDm1          : inout std_logic;  --Overloaded with ID chip
       asic0DoutP          : in    std_logic;
       asic0DoutM          : in    std_logic;
       asic1DoutP          : in    std_logic;
@@ -178,11 +178,11 @@ entity Epix100aTest is
       asic3RoClkM         : out   std_logic
    );
 
-end Epix100aTest;
+end EpixSTest;
 
 
 -- Define architecture
-architecture Epix100aTest of Epix100aTest is
+architecture EpixSTest of EpixSTest is
 
    -- Local Signals
    signal serialIdOut         : std_logic_vector(2 downto 0);
@@ -232,6 +232,8 @@ architecture Epix100aTest of Epix100aTest is
    signal iAsicRoClk          : std_logic;
    signal iAsicSync           : std_logic;
    
+   -- Register delay for simulation
+   constant tpd:time := 0.5 ns;
 
 begin
 
@@ -299,6 +301,8 @@ begin
    serialNumberIo <= serialIdOut(0) when serialIdEn(0) = '0' else 'Z';
    serialIdIn(1)  <= snIoAdcCard;
    snIoAdcCard    <= serialIdOut(1) when serialIdEn(1) = '0' else 'Z';
+   serialIdIn(2)  <= asicAllDm1;
+   asicAllDm1     <= serialIdOut(2) when serialIdEn(2) = '0' else 'Z';
 
    -- Power control
    analogCardDigPwrEn <= powerEnable(0);
@@ -316,10 +320,10 @@ begin
    asic1SaciSel   <= saciSelL(1) when outputEn = '1' else 'Z';
    asic2SaciSel   <= saciSelL(2) when outputEn = '1' else 'Z';
    asic3SaciSel   <= saciSelL(3) when outputEn = '1' else 'Z';
-   saciRsp(0)     <= asicAllSaciRsp;
-   saciRsp(1)     <= asicAllSaciRsp;
-   saciRsp(2)     <= asicAllSaciRsp;
-   saciRsp(3)     <= asicAllSaciRsp;
+   saciRsp(0)     <= asic0SaciRsp;
+   saciRsp(1)     <= asic1SaciRsp;
+   saciRsp(2)     <= asic2SaciRsp;
+   saciRsp(3)     <= asic3SaciRsp;
 
    -- Guard ring DAC
    vguardDacSclk  <= iVguardDacSclk when outputEn = '1' else 'Z';
@@ -429,5 +433,5 @@ begin
    asicGlblRst <= iAsicGlblRst when outputEn = '1' else 'Z';
    asicSync    <= iAsicSync    when outputEn = '1' else 'Z';
    
-end Epix100aTest;
+end EpixSTest;
 
