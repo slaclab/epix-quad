@@ -1,0 +1,675 @@
+             ;Input Ports (ip)
+             CONSTANT ipVcRegInStatus, 00  ; Bit 0 - reg ack, Bit 1 - reg fail
+             CONSTANT ipVcRegInData,   01  ; Data byte
+             CONSTANT ipAdcValidCount, 02  ; Byte of counter data.  # of valids over last 256 cycles
+             CONSTANT ipAdcMatchCount, 03  ; Byte of counter data.  # of matched ADC words over last 256 cycles
+             CONSTANT ipHandshaking,   04  ; Bit 0 - startup request
+             ;Output ports (op)
+             CONSTANT opRegWrAddr,     01  ; Byte of register address
+             CONSTANT opRegWrData,     02  ; Byte of register data
+             CONSTANT opAdcReg,        04  ; Bit 7 - enable ADC reg access, Bit 4:0 - adc/ch select
+             CONSTANT opAsicReg,       08  ; Bit 7 - enable ASIC reg access, Bit 1:0 - asic select
+             CONSTANT opRegRequest,    10  ; Bit 1 - reg request, Bit 0 - read/write bit (1 is write)
+             CONSTANT opHandshaking,   20  ; Bit 1 - startup failed, Bit 0 - startup acknowledged
+             ;Register addresses (r) (from RegControl.vhd)
+             CONSTANT rPower,          08  ; Power Enable is register 0x000008
+             CONSTANT rClock,          26  ; AdcClkHalfT is register  0x000026
+             CONSTANT rSaciClkBit,     28  ; Saci clock bit is register 0x000028
+             CONSTANT rAdcPdwn,        1E  ; AdcPowerDown is register 0x00001E
+             CONSTANT rAdcRegTestPatt, 0D  ; Adc space test pattern register     
+             CONSTANT rAdcRegExecute,  FF  ; Adc space transfer register
+             CONSTANT rAsicMask,       0D  ; Asic mask register
+             CONSTANT rBaseFrameDelay, 60  ; First frame delay register
+             CONSTANT rBaseDataDelay,  63  ; First data delay register
+             ;Other useful constants (c)
+             CONSTANT cPowerUp,        03  ; Digital and analog power up, FPGA outputs disabled
+             CONSTANT cPowerUpAll,     07  ; Digital and analog power up, FPGA outputs enabled
+             CONSTANT cClk50MHz,       01  ; Clock half period is 1 cycle (50 MSPS)
+             CONSTANT cSaciClkBit,     04  ; Clock rate is 100 MHz / 2^(cSaciClkBit+1)
+             CONSTANT cRegWrite,       03  ; Reg req - 1, Read/write - 1
+             CONSTANT cAdcPdwn,        07  ; Power down all 3 ADCs
+             CONSTANT cAdcPup,         00  ; Power up all ADCs
+             CONSTANT cAdcRegEn,       80  ; Enable bit for ADC register access
+             CONSTANT cAdcMixedBitPatt,0C  ; Mixed bit pattern select for ADCs
+             CONSTANT cAdcNoTestPatt,  00  ; Test pattern disable
+             CONSTANT cAdcTransferBit, 01  ; Transfer bit for ADCs
+             CONSTANT cLastAdc,        02  ; 3 ADCs on this board, 0,1,2
+             CONSTANT cLastAsic,       03  ; 4 ASICs on this board,0,1,2,3
+             CONSTANT cLastFrame,      02  ; 3 frame signals to be aligned
+             CONSTANT cLastData,       13  ; 20 data signals to be aligned
+             CONSTANT cStartFrameDelay,13  ; Starting point for frame delay (19 ~ 1 bit period away from 0)
+             CONSTANT cLastDataDelay,  25  ; End scanning ~1 bit period after highest frame delay
+             CONSTANT cAllGood,        7F  ; counter value for all good data
+             ;Reserved/named registers (s)
+             NAMEREG s0, sInArg0
+             NAMEREG s1, sInArg1
+             NAMEREG s2, sInArg2
+             NAMEREG s3, sInArg3
+             NAMEREG s4, sOutArg0
+             NAMEREG s5, sOutArg1
+             NAMEREG s6, sOutArg2
+             NAMEREG s7, sOutArg3
+             NAMEREG s8, sAsicMask
+             NAMEREG s9, sAsicMaskFinal
+             NAMEREG sA, sStartupFail
+             NAMEREG sB, sScratch0
+             NAMEREG sC, sScratch1
+             NAMEREG sD, sScratch2
+             NAMEREG sE, sScratch3
+             ;Reserved scratchpad spaces (scratchpad ends at 3F)
+             CONSTANT mCurAdc,         00
+             CONSTANT mCurCh,          01
+             CONSTANT mCurDelay,       02
+             CONSTANT mFirstGood,      03
+             CONSTANT mFrameDelay0,    05
+             CONSTANT mFrameDelay1,    06
+             CONSTANT mFrameDelay2,    07
+             CONSTANT mBaseChDelay,    08
+             CONSTANT mFailFlag0,      10
+             CONSTANT mFailFlag1,      11
+             CONSTANT mFailFlag2,      12
+             CONSTANT mInput0,         30
+             CONSTANT mInput1,         31
+             CONSTANT mInput2,         32
+             CONSTANT mInput3,         33
+
+             
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+             ;;Main - poll request port until you see a 1, then go
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      fMain: 
+             INPUT sInArg0, ipHandshaking ;Read the input port
+             TEST  sInArg0, 01            ;Test the LSB, if set, carry = 1, if not, zero = 1
+             JUMP NC, fMain               ;If carry isn't set, return to start and poll again
+                                          ;Otherwise, initiate startup sequence
+             CALL fPowerUp                ; 1) Start up the power
+             CALL fClockUp                ; 2) Start up ADC clock at 50 MHz
+             CALL fFpgaOutUp              ; 3) Bring FPGA outputs out of tristate
+             CALL fCycleAdcs              ; 4) Power cycle ADCs
+             CALL fSetDefaultFrame        ; 5) Set default frame alignment
+             CALL fTestEn                 ; 6) Start test patterns on all ADCs
+fAlignAgain:
+             CALL fDataAlign              ; 8) Data alignment sequence
+             CALL fDataSuccessCheck       ; 9) Check for failures 
+             COMPARE sOutArg0, 00         ; 
+             JUMP Z, fAlignFinish         ;    - No failures, jump to finish
+             CALL fFrameAlign             ;10) - Failures, adjust alignment
+             COMPARE sOutArg0, 00         ;    Did frame alignment fail?
+             JUMP NZ, fAlignFail          ;    - Yes, jump to finish having failed
+             JUMP fAlignAgain             ;    - No, run through the data alignment with new frame alignments
+fAlignFail:
+             OR sStartupFail, sOutArg0
+fAlignFinish:
+             CALL fFrameFineAlign         ;10.5) Center frame to avoid being stuck on edge
+             CALL fTestDis                ;11) ADC test pattern off
+             CALL fFindAsics              ;12) Determine which ASICs are connected
+             CALL fAck                    ;13) Complete acknowledgement (hold here until startup req drops low)
+             JUMP fMain                   ;14) Return to beginning of loop
+
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+             ;;Power up analog and digital power
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+   fPowerUp: 
+             LOAD sStartupFail, 00
+             LOAD sInArg0, rPower
+             LOAD sInArg1, cPowerUp
+             CALL fWriteReg
+             CALL fWait300ms  ; Long wait to let power settle
+             RETURN
+
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+             ;;Setup ADC clock
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+   fClockUp: 
+             LOAD sInArg0, rClock
+             LOAD sInArg1, cClk50MHz
+             CALL fWriteReg
+             CALL fWait300ms  ; Long wait to let power settle
+             RETURN
+
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+             ;;Enable the FPGA outputs
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;             
+ fFpgaOutUp:
+             LOAD sInArg0, rPower
+             LOAD sInArg1, cPowerUpAll
+             CALL fWriteReg
+             RETURN
+
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+             ;;Power cycle ADCs
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;    
+ fCycleAdcs:
+             LOAD sInArg0, rAdcPdwn
+             LOAD sInArg1, cAdcPdwn
+             CALL fWriteReg
+             LOAD sInArg2, FF
+             LOAD sInArg1, 14
+             CALL fLongWait
+             LOAD sInArg0, rAdcPdwn
+             LOAD sInArg1, cAdcPup
+             CALL fWriteReg
+             LOAD sInArg2, FF        ; Wait for ~20*20 us
+             LOAD sInArg1, 14
+             CALL fLongWait
+             CALL fWait300ms  ; Long wait to let power settle
+             RETURN
+
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+             ;;Load up ADC test patterns
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;    
+    fTestEn:
+             LOAD sInArg2, 00
+    fNextEn:
+             LOAD sInArg0, rAdcRegTestPatt
+             LOAD sInArg1, cAdcMixedBitPatt
+             CALL fWrAdcReg
+             LOAD sInArg0, rAdcRegExecute
+             LOAD sInArg1, cAdcTransferBit
+             CALL fWrAdcReg
+             COMPARE sInArg2, cLastAdc
+             RETURN Z
+             ADD sInArg2, 01
+             JUMP fNextEn
+
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+             ;;Set default frame alignment on all ADCs
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;                     
+fSetDefaultFrame:
+             LOAD  sScratch0, cStartFrameDelay
+             STORE sScratch0, mFrameDelay0
+             STORE sScratch0, mFrameDelay1
+             STORE sScratch0, mFrameDelay2
+             LOAD  sScratch0, 00
+             STORE sScratch0, mCurAdc
+             STORE sScratch0, mCurCh
+             LOAD  sScratch0, cStartFrameDelay
+             STORE sScratch0, mCurDelay
+fNextDefaultFrame:
+             LOAD    sInArg0, rBaseFrameDelay   ; Select current ADC register
+             FETCH   sScratch0, mCurAdc
+             ADD     sInArg0, sScratch0
+             FETCH   sInArg1, mCurDelay
+             CALL    fWriteReg                 
+             FETCH   sScratch0, mCurAdc
+             COMPARE sScratch0, cLastFrame
+             RETURN Z
+             ADD     sScratch0, 01
+             STORE   sScratch0, mCurAdc
+             FETCH   sScratch0, mCurCh
+             ADD     sScratch0, 08
+             STORE   sScratch0, mCurCh
+             LOAD    sScratch0, cStartFrameDelay
+             STORE   sScratch0, mCurDelay
+             JUMP    fNextDefaultFrame
+
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+             ;;Check the failure flags
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;        
+fDataSuccessCheck:
+             LOAD sScratch0, 00
+             FETCH sScratch1, mFailFlag0
+             ADD sScratch0, sScratch1
+             FETCH sScratch1, mFailFlag1
+             ADD sScratch0, sScratch1
+             FETCH sScratch1, mFailFlag2
+             ADD sScratch0, sScratch1
+             LOAD sOutArg0, sScratch0
+             RETURN
+             
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+             ;;Perform frame alignment based on fail flags
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;        
+fFrameAlign:
+             LOAD  sScratch0, 00                ; Initialize ADC counter
+             STORE sScratch0, mCurAdc
+ fNextFrame:
+             FETCH sScratch1, mFailFlag0        ; Calculate address of current ADC fail flag in scratchpad
+             FETCH sScratch0, mCurAdc
+             ADD   sScratch1, sScratch0
+             FETCH sScratch0, (sScratch1)
+             COMPARE sScratch0, 00              ; Z will be set if there was no failure
+             JUMP Z, fFrameChIncr
+                                                ; Otherwise, increment the delay
+             LOAD  sScratch1, mFrameDelay0      ; Calculate address of current ADC delay in scratchpad
+             FETCH sScratch0, mCurAdc
+             ADD   sScratch1, sScratch0
+             FETCH sScratch0, (sScratch1)       ; Place current delay in sScratch0
+             COMPARE sScratch0, 00              ; Is this the last delay?
+             JUMP Z, fFrameFail                 ; If so, return failure so we can stop trying
+             SUB sScratch0, 01                  ; Otherwise, decrement the delay by 1
+             STORE sScratch0, (sScratch1)       ; Store it in the same location in scratchpad
+                                                ; Write the delay out with a function call
+             LOAD    sInArg0, rBaseFrameDelay   ; Select current ADC register
+             FETCH   sScratch0, mCurAdc
+             ADD     sInArg0, sScratch0
+             FETCH   sInArg1, (sScratch1)       ; Set the current delay
+             CALL    fWriteReg                  
+fFrameChIncr:
+             FETCH   sScratch0, mCurAdc         ; Move on to the next channel
+             COMPARE sScratch0, cLastFrame
+             JUMP Z, fFrameSucc                 ; Successful completion
+             ADD     sScratch0, 01
+             STORE   sScratch0, mCurAdc
+             JUMP    fNextFrame
+
+ fFrameFail:
+             LOAD sOutArg0, 01
+             RETURN
+ fFrameSucc:
+             LOAD sOutArg0, 00
+             RETURN
+
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+             ;;Realign frames to center them
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;        
+fFrameFineAlign:
+             LOAD    sScratch0, 00
+             STORE   sScratch0, mCurAdc
+             STORE   sScratch0, mCurDelay 
+             STORE   sScratch0, mFirstGood
+             STORE   sScratch0, mFailFlag0
+             STORE   sScratch0, mFailFlag1
+             STORE   sScratch0, mFailFlag2
+fFrameFineNext:
+             LOAD    sInArg0, rBaseFrameDelay    ; Select current ADC register
+             FETCH   sScratch0, mCurAdc
+             ADD     sInArg0, sScratch0
+             FETCH   sInArg1, mCurDelay
+             CALL    fWriteReg                 
+             FETCH   sScratch0, mCurAdc          ; Monitor the counter for the current channel
+             SL0     sScratch0                   ; Use ch0 for that ADC (shift left by 3 ==> x8)
+             SL0     sScratch0
+             SL0     sScratch0
+             OUTPUT  sScratch0, opAdcReg
+             LOAD    sScratch1, 00               ; 16-bit counter in scratch1-2
+             LOAD    sScratch2, 00              
+             LOAD    sScratch3, FF               ; Count down to do 256 reads (SIMULATION NOTE: reduce to speed up)
+fFrameFineMeasure:
+             LOAD     sInArg0, 44                ; Wait ~5.4 us (256 samples @ 50 MHz would be 5.12 us)
+             CALL     fWait
+             INPUT    sScratch0, ipAdcMatchCount
+             ADD      sScratch1, sScratch0
+             ADDCY    sScratch2, 00
+             SUB      sScratch3, 01
+             COMPARE  sScratch3, 00
+             JUMP NZ, fFrameFineMeasure
+             OR       sScratch2, sScratch1
+             COMPARE  sScratch2, 00         ; Zero will be set if no errors were detected
+             JUMP Z,  fFrameFineFirstGood                 
+             JUMP     fFrameFineLastGood
+fFrameFineNextDelay:
+             FETCH    sScratch0, mCurDelay
+             COMPARE  sScratch0, cLastDataDelay ; Last allowed delay
+             JUMP Z,  fFrameFineSetFail         ; If we've gotten here, calibration failed
+             ADD      sScratch0, 01
+             STORE    sScratch0, mCurDelay
+             JUMP     fFrameFineNext
+fFrameFineFirstGood: 
+             FETCH    sScratch0, mFirstGood
+             COMPARE  sScratch0, 00
+             JUMP NZ, fFrameFineNextDelay       ; If we've already found the first good one, move along
+             FETCH    sScratch0, mCurDelay      ; Otherwise, store this one
+             STORE    sScratch0, mFirstGood
+             JUMP     fFrameFineNextDelay
+fFrameFineLastGood:
+             FETCH   sScratch0, mFirstGood
+             COMPARE sScratch0, 00
+             JUMP Z, fFrameFineNextDelay        ; If we haven't yet found the first good one, move along
+             FETCH   sScratch0, mCurDelay       ; Otherwise, this is the first bad one after good.
+             SUB     sScratch0, 01              ; The one before it was the last good
+             FETCH   sScratch1, mFirstGood      ; Average that one and the first good one
+             ADD     sScratch1, sScratch0
+             SR0     sScratch1
+             LOAD    sInArg0, rBaseFrameDelay   ; Load it up into the current register
+             FETCH   sScratch0, mCurAdc
+             ADD     sInArg0, sScratch0
+             LOAD    sInArg1, sScratch1
+             CALL    fWriteReg                  ; Since we found the last good sample, complete here
+             JUMP    fFrameFineIncrData         ; Make sure to skip writing the fail flag
+fFrameFineSetFail:
+             FETCH   sScratch0, mCurAdc         ; Convert current channel to ADC value by shifting 3 bits right
+             LOAD    sScratch2, sScratch0       ; Store the current ADC for use in a moment
+             LOAD    sScratch1, mFailFlag0
+             ADD     sScratch1, sScratch0
+             LOAD    sScratch0, 01
+             STORE   sScratch0, (sScratch1)
+             COMPARE sScratch2, cLastAdc        ; Was this last ADC?  If so, return
+             RETURN Z
+             FETCH   sScratch0, mCurCh          ; Otherwise, skip over remaining channels on this ADC
+             OR      sScratch0, 07              ; Do this by setting the lowest 3 bits to 111, and let 
+             STORE   sScratch0, mCurCh          ; the next block increment
+fFrameFineIncrData:
+             FETCH   sScratch0, mCurAdc          ; Are we done?  Check for last adc
+             COMPARE sScratch0, cLastAdc
+             RETURN Z                           ; Compare matched, we're done
+             ADD     sScratch0, 01              ; Otherwise, increment channel and store it to scratchpad
+             STORE   sScratch0, mCurAdc
+             LOAD    sScratch0, 00              ; Reset delay and good flags before moving on to next channel
+             STORE   sScratch0, mCurDelay
+             STORE   sScratch0, mFirstGood
+             JUMP    fFrameFineNext
+             
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+             ;;Perform data alignment on all ADCs
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;        
+ fDataAlign:
+             LOAD    sScratch0, 00
+             STORE   sScratch0, mCurCh
+             STORE   sScratch0, mCurDelay 
+             STORE   sScratch0, mFirstGood
+             STORE   sScratch0, mFailFlag0
+             STORE   sScratch0, mFailFlag1
+             STORE   sScratch0, mFailFlag2
+  fNextData:
+             LOAD    sInArg0, rBaseDataDelay     ; Select current ADC register
+             FETCH   sScratch0, mCurCh
+             ADD     sInArg0, sScratch0
+             FETCH   sInArg1, mCurDelay
+             CALL    fWriteReg                 
+             FETCH   sScratch0, mCurCh           ; Monitor the counter for the current channel
+             OUTPUT  sScratch0, opAdcReg
+             LOAD    sScratch1, 00               ; 16-bit counter in scratch1-2
+             LOAD    sScratch2, 00              
+             LOAD    sScratch3, FF               ; Count down to do 256 reads (SIMULATION NOTE: reduce to speed up)
+fDataMeasure:
+             LOAD     sInArg0, 44                ; Wait ~5.4 us (256 samples @ 50 MHz would be 5.12 us)
+             CALL     fWait
+             INPUT    sScratch0, ipAdcMatchCount
+             ADD      sScratch1, sScratch0
+             ADDCY    sScratch2, 00
+             SUB      sScratch3, 01
+             COMPARE  sScratch3, 00
+             JUMP NZ, fDataMeasure
+             OR       sScratch2, sScratch1
+             COMPARE  sScratch2, 00         ; Zero will be set if no errors were detected
+             JUMP Z,  fFirstGood                 
+             JUMP     fLastGood
+ fNextDelay:
+             FETCH    sScratch0, mCurDelay
+             COMPARE  sScratch0, cLastDataDelay ; Last allowed delay
+             JUMP Z,  fSetFail                  ; If we've gotten here, calibration failed
+             ADD      sScratch0, 01
+             STORE    sScratch0, mCurDelay
+             JUMP     fNextData
+ 
+ fFirstGood: 
+             FETCH    sScratch0, mFirstGood
+             COMPARE  sScratch0, 00
+             JUMP NZ, fNextDelay                ; If we've already found the first good one, move along
+             FETCH    sScratch0, mCurDelay      ; Otherwise, store this one
+             STORE    sScratch0, mFirstGood
+             JUMP     fNextDelay
+  fLastGood:
+             FETCH   sScratch0, mFirstGood
+             COMPARE sScratch0, 00
+             JUMP Z, fNextDelay                 ; If we haven't yet found the first good one, move along
+             FETCH   sScratch0, mCurDelay       ; Otherwise, this is the first bad one after good.
+             SUB     sScratch0, 01              ; The one before it was the last good
+             FETCH   sScratch1, mFirstGood      ; Average that one and the first good one
+             ADD     sScratch1, sScratch0
+             SR0     sScratch1
+             LOAD    sInArg0, rBaseDataDelay    ; Load it up into the current register
+             FETCH   sScratch0, mCurCh
+             ADD     sInArg0, sScratch0
+             LOAD    sInArg1, sScratch1
+             CALL    fWriteReg                  ; Since we found the last good sample, complete here
+             JUMP    fIncrData                  ; Make sure to skip writing the fail flag
+   fSetFail:
+             FETCH   sScratch0, mCurCh          ; Convert current channel to ADC value by shifting 3 bits right
+             SR0     sScratch0
+             SR0     sScratch0
+             SR0     sScratch0
+             LOAD    sScratch2, sScratch0       ; Store the current ADC for use in a moment
+             LOAD    sScratch1, mFailFlag0
+             ADD     sScratch1, sScratch0
+             LOAD    sScratch0, 01
+             STORE   sScratch0, (sScratch1)
+             COMPARE sScratch2, cLastAdc        ; Was this last ADC?  If so, return
+             RETURN Z
+             FETCH   sScratch0, mCurCh          ; Otherwise, skip over remaining channels on this ADC
+             OR      sScratch0, 07              ; Do this by setting the lowest 3 bits to 111, and let 
+             STORE   sScratch0, mCurCh          ; the next block increment
+  fIncrData:
+             FETCH   sScratch0, mCurCh          ; Are we done?  Check for last channel
+             COMPARE sScratch0, cLastData
+             RETURN Z                           ; Compare matched, we're done
+             ADD     sScratch0, 01              ; Otherwise, increment channel and store it to scratchpad
+             STORE   sScratch0, mCurCh
+             LOAD    sScratch0, 00              ; Reset delay and good flags before moving on to next channel
+             STORE   sScratch0, mCurDelay
+             STORE   sScratch0, mFirstGood
+             JUMP    fNextData
+  
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+             ;;Disable test mode on all ADCs
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;        
+   fTestDis:
+             LOAD sInArg2, 00
+   fNextDis:
+             LOAD sInArg0, rAdcRegTestPatt
+             LOAD sInArg1, cAdcNoTestPatt
+             CALL fWrAdcReg
+             LOAD sInArg0, rAdcRegExecute
+             LOAD sInArg1, cAdcTransferBit
+             CALL fWrAdcReg
+             COMPARE sInArg2, cLastAdc
+             RETURN Z
+             ADD sInArg2, 01
+             JUMP fNextDis
+
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+             ;;Send a command to identify connected ASICs
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;           
+ fFindAsics:
+             LOAD sInArg0, rSaciClkBit  ; First turn on the SACI clock
+             LOAD sInArg1, cSaciClkBit
+             CALL fWriteReg
+             LOAD sInArg2,   00         ; Set up to send a command to each ASIC
+             LOAD sAsicMask, 01
+             LOAD sAsicMaskFinal, 00
+  fNextAsic:
+             CALL fWrAsicReg
+             COMPARE sOutArg0, 00
+             CALL Z, fSetAsicBit
+             COMPARE sInArg2, cLastAsic
+             JUMP Z, fWriteMask
+             ADD sInArg2, 01
+             SL0 sAsicMask
+             JUMP fNextAsic
+fSetAsicBit:
+             OR sAsicMaskFinal, sAsicMask
+             RETURN
+ fWriteMask:  
+             LOAD sInArg0, rAsicMask
+             LOAD sInArg1, sAsicMaskFinal
+             CALL fWriteReg
+             RETURN
+
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+             ;;Output an acknowledge, hold until request drops
+             ;; sInArg0    - Modified
+             ;; sInArg1-3  - Unmodified
+             ;; sOutArg0-3 - Unused
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;    
+       fAck:
+             LOAD   sInArg0, 01
+             SL0    sStartupFail
+             OR     sInArg0, sStartupFail
+             OUTPUT sInArg0, opHandshaking
+   fAckWait:
+             INPUT  sInArg0, ipHandshaking
+             SR0    sInArg0
+             JUMP C, fAckWait
+             LOAD   sInArg0, 00
+             OUTPUT sInArg0, opHandshaking
+             RETURN             
+   
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+             ;;Do a raw reg write (not to ASIC or ADC)
+             ;; sInArg0    - Write address
+             ;; sInArg1    - Write data
+             ;; sInArg2    - Modified
+             ;; sInArg3    - Unmodified
+             ;; sOutArg0   - Fail flag in bit 0 (from fWaitRegAck)
+             ;; sOutArg1-3 - Unused
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;   
+  fWriteReg: 
+             OUTPUT sInArg0, opRegWrAddr
+             OUTPUT sInArg1, opRegWrData
+             LOAD   sInArg2, 00
+             OUTPUT sInArg2, opAdcReg
+             OUTPUT sInArg2, opAsicReg
+             LOAD   sInArg2, cRegWrite
+             OUTPUT sInArg2, opRegRequest
+             CALL   fWaitRegAck
+             OR     sStartupFail, sOutArg0 ; Store the fail flag into the fail register
+             RETURN
+
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+             ;;Do an ADC reg write
+             ;; sInArg0    - Write address (ADC space)
+             ;; sInArg1    - Write data
+             ;; sInArg2    - ADC selection
+             ;; sInArg3    - Modified
+             ;; sOutArg0   - Fail flag in bit 0 (from fWaitRegAck)
+             ;; sOutArg1-3 - Unused
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;   
+  fWrAdcReg: 
+             OUTPUT sInArg0, opRegWrAddr
+             OUTPUT sInArg1, opRegWrData
+             LOAD   sInArg3, sInArg2     ;Input Adc select is bits 1:0
+             SL0    sInArg3
+             SL0    sInArg3
+             SL0    sInArg3              ;Adc select bits are 4:3
+             OR     sInArg3, 80
+             OUTPUT sInArg3, opAdcReg
+             LOAD   sInArg3, 00
+             OUTPUT sInArg3, opAsicReg
+             LOAD   sInArg3, cRegWrite
+             OUTPUT sInArg3, opRegRequest
+             CALL fWaitRegAck
+             OR     sStartupFail, sOutArg0 ; Store the fail flag into the fail register
+             RETURN
+
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+             ;;Do an ASIC test command (ADDR = 0, CMD = 0)
+             ;; sInArg0    - Unmodified
+             ;; sInArg1    - Modified
+             ;; sInArg2    - ASIC number
+             ;; sInArg3    - 
+             ;; sOutArg0   - 
+             ;; sOutArg1-3 - 
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;   
+ fWrAsicReg: 
+             LOAD   sInArg1, 00
+             OUTPUT sInArg1, opRegWrAddr
+             OUTPUT sInArg1, opRegWrData
+             LOAD   sInArg1, 80
+             OR     sInArg1, sInArg2
+             OUTPUT sInArg1, opAsicReg
+             LOAD   sInArg3, 00
+             OUTPUT sInArg3, opAdcReg
+             LOAD   sInArg3, cRegWrite
+             OUTPUT sInArg3, opRegRequest
+             CALL fWaitRegAck             ; Don't store fails, as the ASIC may just be missing
+             RETURN
+             
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+             ;;Wait for a register 
+             ;; sInArg0    - Modified
+             ;; sInArg1    - Modified
+             ;; sInArg2    - Modified
+             ;; sInArg3    - Modified
+             ;; sOutArg0   - Fail flag in bit 0
+             ;; sOutArg1-3 - Unused
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;                
+fWaitRegAck: 
+             LOAD    sScratch0, 00
+             LOAD    sScratch1, 00
+             LOAD    sInArg3, 00
+  fWaitLoop:
+             ADD     sInArg3, 01
+             ADDCY   sScratch0, 00
+             ADDCY   sScratch1, 00
+             COMPARE sScratch1, 08
+             JUMP Z, fTimeout
+             INPUT   sInArg0,  ipVcRegInStatus
+             SR0     sInArg0                    ; Rotate LSB (ack) to carry
+             JUMP NC, fWaitLoop
+             LOAD    sInArg3, 00                ; Clear the timeout register if we succeeded
+    fReturn:
+             LOAD   sInArg1,  00                ; Drop the register request
+             OUTPUT sInArg1,  opRegRequest
+             LOAD   sOutArg0, sInArg0           ; Return fail as bit0 of sOutArg0
+             OR     sOutArg0, sInArg3           ; Fail can also be from a timeout
+             RETURN
+   fTimeout: 
+             LOAD   sInArg3, 01
+             JUMP   fReturn
+
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+             ;;Idle for ~300 ms
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ fWait300ms:
+             LOAD    sInArg3, 40
+     fWait3:
+             COMPARE sInArg3, 00
+             RETURN Z
+             LOAD    sInArg1, FF
+             LOAD    sInArg2, FF
+             CALL    fLongWait
+             SUB     sInArg3, 01
+             JUMP    fWait3
+
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+             ;;Idle for sInArg1 * sInArg2 * 8 clock cycles
+             ;; sInArg0    - Modified
+             ;; sInArg1    - Long cycles to wait
+             ;; sInArg2    - Cycles to wait per long cycle
+             ;; sOutArg0-3 - Unused
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;                             
+  fLongWait: 
+             COMPARE sInArg1, 00
+             RETURN Z
+             LOAD sInArg0, sInArg2
+             CALL fWait
+             SUB sInArg1, 01
+             JUMP fLongWait
+            
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+             ;;Idle for sInArg0 * 8 clock cycles (80 ns) (~20 us for 0xFF)
+             ;; sInArg0    - Cycles to wait
+             ;; sInArg1-3  - Unmodified
+             ;; sOutArg0-3 - Unused
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;                             
+      fWait:
+             COMPARE sInArg0, 00
+             RETURN Z
+             SUB sInArg0, 01
+             JUMP fWait
+             
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+             ;;Utility function to store inputs into the scratchpad
+             ;; This way we can guarantee inputs will not be overwritten.
+             ;; Call this at the beginning of a function.
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;                                          
+fStoreInputs:
+               STORE sInArg0, mInput0
+               STORE sInArg1, mInput1
+               STORE sInArg2, mInput2
+               STORE sInArg3, mInput3
+               RETURN
+
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+             ;;Utility function to fetch inputs from the scratchpad
+             ;; Call this just before the RETURN of a function.
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;                                          
+fFetchInputs:
+               FETCH sInArg0, mInput0
+               FETCH sInArg1, mInput1
+               FETCH sInArg2, mInput2
+               FETCH sInArg3, mInput3
+               RETURN
+
+;

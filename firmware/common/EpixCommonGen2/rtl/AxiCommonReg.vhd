@@ -113,6 +113,7 @@ begin
          -- Decode address and perform write
          case (axiWriteMaster.awaddr(9 downto 2)) is
             when x"20" => v.regOut.packetSize     := axiWriteMaster.wdata(31 downto 0);
+            when x"21" => v.regOut.chToRead       := axiWriteMaster.wdata(4 downto 0);
             when x"80" => v.regOut.enAutoTrigger  := axiWriteMaster.wdata(0);
             when x"81" => v.regOut.autoTrigPeriod := axiWriteMaster.wdata(31 downto 0);
             when x"AA" => v.regOut.eventTrigger   := '1';
@@ -137,6 +138,7 @@ begin
             when x"13" => v.axiReadSlave.rdata(STATUS_CNT_WIDTH_G-1 downto 0) := rxReadyCnt;
             when x"14" => v.axiReadSlave.rdata(STATUS_CNT_WIDTH_G-1 downto 0) := txReadyCnt;
             when x"20" => v.axiReadSlave.rdata(31 downto 0)                   := r.regOut.packetSize;
+            when x"21" => v.axiReadSlave.rdata(4 downto 0)                    := r.regOut.chToRead;
             when x"70" => v.axiReadSlave.rdata(0)                             := regIn.txReady;
                           v.axiReadSlave.rdata(1)                             := regIn.rxReady; 
             when x"80" => v.axiReadSlave.rdata(0)                             := r.regOut.enAutoTrigger;

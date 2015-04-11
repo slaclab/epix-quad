@@ -1,0 +1,4 @@
+vhdl work rtl/EpixStartupCode.vhd
+vhdl work rtl/EpixStartupGen2.vhd
+vhdl work rtl/kcpsm6.vhd
+vhdl work rtl/kcpsm6_wrapper.vhd

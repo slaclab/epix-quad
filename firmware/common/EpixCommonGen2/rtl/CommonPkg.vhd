@@ -25,6 +25,8 @@ package CommonPkg is
          addrBits            => 12,
          connectivity        => x"0001")
       );  
+      
+   type adcChDelayArray is array ( natural range <> ) of Slv5Array(7 downto 0);
 
    type CommonStatusType is record
       txReady        : sl;
@@ -42,12 +44,20 @@ package CommonPkg is
       enAutoTrigger     : sl;
       autoTrigPeriod    : slv(31 downto 0);
       packetSize        : slv(31 downto 0);
+      chToRead          : slv(4 downto 0);
+      frameDelay        : Slv5Array(2 downto 0);
+      dataDelay         : adcChDelayArray(1 downto 0);
+      monDataDelay      : Slv5Array(3 downto 0);
    end record;
    constant COMMON_CONFIG_INIT_C : CommonConfigType := (
       eventTrigger      => '0',
       enAutoTrigger     => '0',
       autoTrigPeriod    => x"0013DE43",
-      packetSize        => x"00000100"
+      packetSize        => x"00000100",
+      chToRead          => (others => '0'),
+      frameDelay        => (others => (others => '0')),
+      dataDelay         => (others => (others => (others => '0'))),
+      monDataDelay      => (others => (others => '0'))
    );
 
       

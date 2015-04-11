@@ -19,7 +19,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 use work.StdRtlPkg.all;
-use work.CommonPkg.all;
+use work.EpixPkgGen2.all;
 use work.AxiLitePkg.all;
 use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
@@ -29,357 +29,267 @@ library unisim;
 use unisim.vcomponents.all;
 
 entity EpixDigGen2 is
+   generic (
+      TPD_G : time := 1 ns
+   );
    port (
       -- Debugging IOs
       led                 : out slv(3 downto 0);
+      -- Power good
+      powerGood           : in  sl;
+      -- Power Control
+      analogCardDigPwrEn  : out sl;
+      analogCardAnaPwrEn  : out sl;
       -- GT CLK Pins
       gtRefClk0P          : in  sl;
       gtRefClk0N          : in  sl;
       -- SFP TX/RX
-      gtDataRxP           : in  sl;
-      gtDataRxN           : in  sl;
       gtDataTxP           : out sl;
       gtDataTxN           : out sl;
+      gtDataRxP           : in  sl;
+      gtDataRxN           : in  sl;
       -- SFP control signals
-      sfpDisable          : out sl
-      -- -- Guard ring DAC
-      -- vGuardDacSclk       : out sl;
-      -- vGuardDacDin        : out sl;
-      -- vGuardDacCsb        : out sl;
-      -- vGuardDacClrb       : out sl;
-      -- -- External Signals
-      -- runTg               : in  sl;
-      -- daqTg               : in  sl;
-      -- mps                 : out sl;
-      -- tgOut               : out sl;
-      -- -- Board IDs
-      -- snIoAdcCard         : inout sl;
-      -- serialNumberIo      : inout sl;
-      -- -- Power Control
-      -- analogCardDigPwrEn  : out sl;
-      -- analogCardAnaPwrEn  : out sl;
-      -- -- Slow ADC
-      -- slowAdcSclk         : out sl;
-      -- slowAdcDin          : out sl;
-      -- slowAdcCsb          : out sl;
-      -- slowAdcDout         : in  sl;
-      -- -- Fast ADC Control
-      -- adcSpiClk           : out sl;
-      -- adcSpiData          : inout sl;
-      -- adc0SpiCsb          : out sl;
-      -- adc1SpiCsb          : out sl;
-      -- adcMonSpiCsb        : out sl;
-      -- adc0Pdwn            : out sl;
-      -- adc1Pdwn            : out sl;
-      -- adcMonPdwn          : out sl;
-      -- -- ASIC SACI Interface
-      -- asicSaciCmd         : out sl;
-      -- asicSaciClk         : out sl;
-      -- asic3SaciSel        : out sl;
-      -- asic2SaciSel        : out sl;
-      -- asic1SaciSel        : out sl;
-      -- asic0SaciSel        : out sl;
-      -- asicAllSaciRsp      : in  sl;
-      -- -- Monitoring ADCs
-      -- adcMonClkP          : out sl;
-      -- adcMonClkM          : out sl;
-      -- adcMonDoClkP        : in  sl;
-      -- adcMonDoClkM        : in  sl;
-      -- adcMonFrameClkP     : in  sl;
-      -- adcMonFrameClkM     : in  sl;
-      -- asic0AdcDoMonP      : in  sl;
-      -- asic0AdcDoMonM      : in  sl;
-      -- asic1AdcDoMonP      : in  sl;
-      -- asic1AdcDoMonM      : in  sl;
-      -- asic2AdcDoMonP      : in  sl;
-      -- asic2AdcDoMonM      : in  sl;
-      -- asic3AdcDoMonP      : in  sl;
-      -- asic3AdcDoMonM      : in  sl;
-      -- -- ASIC 0/1 Data
-      -- adc0ClkP            : out sl;
-      -- adc0ClkM            : out sl;
-      -- adc0DoClkP          : in  sl;
-      -- adc0DoClkM          : in  sl;
-      -- adc0FrameClkP       : in  sl;
-      -- adc0FrameClkM       : in  sl;
-      -- asic0AdcDoAP        : in  sl;
-      -- asic0AdcDoAM        : in  sl;
-      -- asic0AdcDoBP        : in  sl;
-      -- asic0AdcDoBM        : in  sl;
-      -- asic0AdcDoCP        : in  sl;
-      -- asic0AdcDoCM        : in  sl;
-      -- asic0AdcDoDP        : in  sl;
-      -- asic0AdcDoDM        : in  sl;
-      -- asic1AdcDoAP        : in  sl;
-      -- asic1AdcDoAM        : in  sl;
-      -- asic1AdcDoBP        : in  sl;
-      -- asic1AdcDoBM        : in  sl;
-      -- asic1AdcDoCP        : in  sl;
-      -- asic1AdcDoCM        : in  sl;
-      -- asic1AdcDoDP        : in  sl;
-      -- asic1AdcDoDM        : in  sl;
-      -- -- ASIC 2/3 Data
-      -- adc1ClkP            : out sl;
-      -- adc1ClkM            : out sl;
-      -- adc1DoClkP          : in  sl;
-      -- adc1DoClkM          : in  sl;
-      -- adc1FrameClkP       : in  sl;
-      -- adc1FrameClkM       : in  sl;
-      -- asic2AdcDoAP        : in  sl;
-      -- asic2AdcDoAM        : in  sl;
-      -- asic2AdcDoBP        : in  sl;
-      -- asic2AdcDoBM        : in  sl;
-      -- asic2AdcDoCP        : in  sl;
-      -- asic2AdcDoCM        : in  sl;
-      -- asic2AdcDoDP        : in  sl;
-      -- asic2AdcDoDM        : in  sl;
-      -- asic3AdcDoAP        : in  sl;
-      -- asic3AdcDoAM        : in  sl;
-      -- asic3AdcDoBP        : in  sl;
-      -- asic3AdcDoBM        : in  sl;
-      -- asic3AdcDoCP        : in  sl;
-      -- asic3AdcDoCM        : in  sl;
-      -- asic3AdcDoDP        : in  sl;
-      -- asic3AdcDoDM        : in  sl;
-      -- -- ASIC Control
-      -- asicR0              : out sl;
-      -- asicPpmat           : out sl;
-      -- asicPpbe            : out sl;
-      -- asicGlblRst         : out sl;
-      -- asicSync            : out sl;
-      -- asicAcq             : out sl;
-      -- asicAllDm2          : in  sl;
-      -- asicAllDm1          : in  sl;
-      -- asic0DoutP          : in  sl;
-      -- asic0DoutM          : in  sl;
-      -- asic1DoutP          : in  sl;
-      -- asic1DoutM          : in  sl;
-      -- asic2DoutP          : in  sl;
-      -- asic2DoutM          : in  sl;
-      -- asic3DoutP          : in  sl;
-      -- asic3DoutM          : in  sl;
-      -- asic0RoClkP         : out sl;
-      -- asic0RoClkM         : out sl;
-      -- asic1RoClkP         : out sl;
-      -- asic1RoClkM         : out sl;
-      -- asic2RoClkP         : out sl;
-      -- asic2RoClkM         : out sl;
-      -- asic3RoClkP         : out sl;
-      -- asic3RoClkM         : out sl
+      sfpDisable          : out sl;
+      -- Guard ring DAC
+      vGuardDacSclk       : out sl;
+      vGuardDacDin        : out sl;
+      vGuardDacCsb        : out sl;
+      vGuardDacClrb       : out sl;
+      -- External Signals
+      runTg               : in  sl;
+      daqTg               : in  sl;
+      mps                 : out sl;
+      tgOut               : out sl;
+      -- Board IDs
+      snIoAdcCard         : inout sl;
+      snIoCarrier         : inout sl;
+      -- Slow ADC
+      slowAdcSclk         : out sl;
+      slowAdcDin          : out sl;
+      slowAdcCsb          : out sl;
+      slowAdcDout         : in  sl;
+      -- Fast ADC Control
+      adcSpiClk           : out sl;
+      adcSpiData          : inout sl;
+      adcSpiCsb           : out slv(2 downto 0);
+      adcPdwn             : out slv(2 downto 0);
+      -- ASIC SACI Interface
+      asicSaciCmd         : out sl;
+      asicSaciClk         : out sl;
+      asicSaciSel         : out slv(3 downto 0);
+      asicSaciRsp         : in  sl;
+      -- ADC readout signals
+      adcClkP             : out slv( 2 downto 0);
+      adcClkM             : out slv( 2 downto 0);
+      adcDoClkP           : in  slv( 2 downto 0);
+      adcDoClkM           : in  slv( 2 downto 0);
+      adcFrameClkP        : in  slv( 2 downto 0);
+      adcFrameClkM        : in  slv( 2 downto 0);
+      adcDoP              : in  slv(19 downto 0);
+      adcDoM              : in  slv(19 downto 0);
+      -- ASIC Control
+      asicR0              : out sl;
+      asicPpmat           : out sl;
+      asicGlblRst         : out sl;
+      asicSync            : out sl;
+      asicAcq             : out sl;
+--      asicDoutP           : in  slv(3 downto 0);
+--      asicDoutM           : in  slv(3 downto 0);
+      asicRoClkP          : out slv(3 downto 0);
+      asicRoClkM          : out slv(3 downto 0)
+      -- TODO: Add DDR pins
+      -- TODO: Add I2C pins for SFP
+      -- TODO: Add sync pins for DC/DCs
    );
 end EpixDigGen2;
 
 architecture top_level of EpixDigGen2 is
-
-   signal coreClk     : sl;
-   signal sysRst      : sl;
-   signal axiRst      : sl;
-   signal heartBeat   : sl;
-   signal txLinkReady : sl;
-   signal rxLinkReady : sl;
-
-   -- AXI-Lite Signals
-   signal sAxiReadMaster  : AxiLiteReadMasterType;
-   signal sAxiReadSlave   : AxiLiteReadSlaveType;
-   signal sAxiWriteMaster : AxiLiteWriteMasterType;
-   signal sAxiWriteSlave  : AxiLiteWriteSlaveType;
-   -- AXI-Lite Signals
-   signal mAxiWriteMasters : AxiLiteWriteMasterArray(NUM_AXI_MASTERS_C-1 downto 0); 
-   signal mAxiWriteSlaves  : AxiLiteWriteSlaveArray(NUM_AXI_MASTERS_C-1 downto 0); 
-   signal mAxiReadMasters  : AxiLiteReadMasterArray(NUM_AXI_MASTERS_C-1 downto 0); 
-   signal mAxiReadSlaves   : AxiLiteReadSlaveArray(NUM_AXI_MASTERS_C-1 downto 0); 
-
-   -- AXI-Stream signals
-   signal userAxisMaster   : AxiStreamMasterType;
-   signal userAxisSlave    : AxiStreamSlaveType;
+   signal iLed          : slv(3 downto 0);
+   signal iFpgaOutputEn : sl;
+   signal iLedEn        : sl;
    
-   -- Command interface
-   signal ssiCmd           : SsiCmdMasterType;
+   -- Internal versions of signals so that we don't
+   -- drive anything unpowered until the components
+   -- are online.
+   signal iVGuardDacClrb : sl;
+   signal iVGuardDacSclk : sl;
+   signal iVGuardDacDin  : sl;
+   signal iVGuardDacCsb  : sl;
    
-   -- Other signals
-   signal cmdTrigger       : sl;
-   signal fullTrigger      : sl;
-   signal autoTrigger      : sl;
-   signal ssiPrbsTxBusy    : sl;
+   signal iMps   : sl;
+   signal iTgOut : sl;
    
-   signal status           : CommonStatusType;
-   signal config           : CommonConfigType;
+   signal iSerialIdIo : slv(1 downto 0);
+   
+   signal iSlowAdcSclk : sl;
+   signal iSlowAdcDin  : sl;
+   signal iSlowAdcCsb  : sl;
+   
+   signal iSaciClk  : sl;
+   signal iSaciSelL : slv(3 downto 0);
+   signal iSaciCmd  : sl;
+   signal iSaciRsp  : sl;
+   
+   signal iAdcSpiDataOut : sl;
+   signal iAdcSpiDataIn   : sl;
+   signal iAdcSpiDataEn  : sl;
+   signal iAdcPdwn       : slv(2 downto 0);
+   signal iAdcSpiCsb     : slv(2 downto 0);
+   signal iAdcSpiClk     : sl;   
+   
+   signal iAsicRoClk    : sl;
+   signal iAsicR0       : sl;
+   signal iAsicAcq      : sl;
+   signal iAsicPpmat    : sl;
+   signal iAsicGlblRst  : sl;
+   signal iAsicSync     : sl;
+   signal iAsicDm1      : sl;
+   signal iAsicDm2      : sl;
+   signal iAsicDout     : slv(3 downto 0);
+   
+   -- Keep douts from getting trimmed even if they're not used in this design
+   attribute dont_touch : string;
+   attribute dont_touch of iAsicDout : signal is "true";
+   attribute dont_touch of iAsicDm1  : signal is "true";
+   attribute dont_touch of iAsicDm2  : signal is "true";
    
 begin
 
-   -- Fixed state logic signals
-   sfpDisable <= '0';
-
-   -- Generate full trigger from all possible sources
-   fullTrigger <= cmdTrigger or config.eventTrigger or autoTrigger;
-   
-   ---------------------
-   -- Diagnostic LEDs --
-   ---------------------
-   led(3) <= ssiPrbsTxBusy;
-   led(2) <= status.rxReady;
-   led(1) <= status.txReady;
-   led(0) <= heartBeat;
-   ---------------------
-   -- Heart beat LED  --
-   ---------------------
-   U_Heartbeat : entity work.Heartbeat
-      generic map(
-         PERIOD_IN_G => 6.4E-9
-      )   
+   ---------------------------
+   -- Core block            --
+   ---------------------------
+   U_EpixCore : entity work.EpixCoreGen2
+      generic map (
+         TPD_G => TPD_G
+      )
       port map (
-         clk => coreClk,
-         o   => heartBeat
-      );    
-
-   ---------------------
-   -- PGP Front end   --
-   ---------------------
-   U_PgpFrontEnd : entity work.PgpFrontEnd
-      port map (
-         -- GTX 7 Ports
-         gtClkP      => gtRefClk0P,
-         gtClkN      => gtRefClk0N,
-         gtRxP       => gtDataRxP,
-         gtRxN       => gtDataRxN,
-         gtTxP       => gtDataTxP,
-         gtTxN       => gtDataTxN,
-         -- Output reset
-         pgpRst      => sysRst,
-         -- Output status
-         rxLinkReady => status.rxReady,
-         txLinkReady => status.txReady,
-         -- Output clocking
-         pgpClk      => coreClk,
-         stableClk   => open,--: out sl
-         -- AXI clocking
-         axiClk     => coreClk,
-         axiRst     => axiRst,--: in  sl
-         -- Axi Master Interface - Registers (axiClk domain)
-         mAxiLiteReadMaster  => sAxiReadMaster,
-         mAxiLiteReadSlave   => sAxiReadSlave,
-         mAxiLiteWriteMaster => sAxiWriteMaster,
-         mAxiLiteWriteSlave  => sAxiWriteSlave,
-         -- Streaming data Links (axiClk domain)      
-         userAxisMaster      => userAxisMaster,
-         userAxisSlave       => userAxisSlave,
-         userAxisCtrl        => open, --userAxisCtrl,
-         -- Command interface
-         ssiCmd              => ssiCmd
+         -- Debugging IOs
+         led                 => iLed,
+         -- Power enables
+         digitalPowerEn      => analogCardDigPwrEn,
+         analogPowerEn       => analogCardAnaPwrEn,
+         fpgaOutputEn        => iFpgaOutputEn,
+         ledEn               => iLedEn,
+         -- Clocks and reset
+         powerGood           => powerGood,
+         gtRefClk0P          => gtRefClk0P,
+         gtRefClk0N          => gtRefClk0N,
+         -- SFP interfaces
+         sfpDisable          => sfpDisable,
+         -- SFP TX/RX
+         gtDataRxP           => gtDataRxP,
+         gtDataRxN           => gtDataRxN,
+         gtDataTxP           => gtDataTxP,
+         gtDataTxN           => gtDataTxN,
+         -- Guard ring DAC
+         vGuardDacSclk       => iVGuardDacSclk,
+         vGuardDacDin        => iVGuardDacDin,
+         vGuardDacCsb        => iVGuardDacCsb,
+         vGuardDacClrb       => iVGuardDacClrb,
+         -- External Signals
+         runTrigger          => runTg,
+         daqTrigger          => daqTg,
+         mpsOut              => iMps,
+         triggerOut          => iTgOut,
+         -- Board IDs
+         serialIdIo(1)       => snIoCarrier,
+         serialIdIo(0)       => snIoAdcCard,
+         -- Slow ADC
+         slowAdcSclk         => iSlowAdcSclk,
+         slowAdcDin          => iSlowAdcDin,
+         slowAdcCsb          => iSlowAdcCsb,
+         slowAdcDout         => slowAdcDout,
+         -- SACI
+         saciClk             => iSaciClk,
+         saciSelL            => iSaciSelL,
+         saciCmd             => iSaciCmd,
+         saciRsp             => iSaciRsp,
+         -- Fast ADC Control
+         adcSpiClk           => iAdcSpiClk,
+         adcSpiDataOut       => iAdcSpiDataOut,
+         adcSpiDataIn        => iAdcSpiDataIn,
+         adcSpiDataEn        => iAdcSpiDataEn,
+         adcSpiCsb           => iAdcSpiCsb,
+         adcPdwn             => iAdcPdwn,
+         -- Fast ADC readout
+         adcClkP             => adcClkP,
+         adcClkN             => adcClkM,
+         adcFClkP            => adcFrameClkP,
+         adcFClkN            => adcFrameClkM,
+         adcDClkP            => adcDoClkP,
+         adcDClkN            => adcDoClkM,
+         adcChP              => adcDoP,
+         adcChN              => adcDoM,
+         -- ASIC Control
+         asicR0              => iAsicR0,
+         asicPpmat           => iAsicPpmat,
+         asicPpbe            => open,
+         asicGrst            => iAsicGlblRst,
+         asicAcq             => iAsicAcq,
+         asic0Dm2            => iAsicDm1,
+         asic0Dm1            => iAsicDm2,
+         asicRoClk           => iAsicRoClk,
+         asicSync            => iAsicSync,
+         -- ASIC digital data
+         asicDout            => iAsicDout
       );
 
-   --------------------------------------------
-   -- AXI Lite Crossbar for register control --
-   --------------------------------------------
-   U_AxiLiteCrossbar : entity work.AxiLiteCrossbar
-      generic map (
-         NUM_SLAVE_SLOTS_G  => 1,
-         NUM_MASTER_SLOTS_G => NUM_AXI_MASTERS_C,
-         MASTERS_CONFIG_G   => AXI_CROSSBAR_MASTERS_CONFIG_C)
-      port map (
-         sAxiWriteMasters(0) => sAxiWriteMaster,
-         sAxiWriteSlaves(0)  => sAxiWriteSlave,
-         sAxiReadMasters(0)  => sAxiReadMaster,
-         sAxiReadSlaves(0)   => sAxiReadSlave,
-         mAxiWriteMasters    => mAxiWriteMasters,
-         mAxiWriteSlaves     => mAxiWriteSlaves,
-         mAxiReadMasters     => mAxiReadMasters,
-         mAxiReadSlaves      => mAxiReadSlaves,
-         axiClk              => coreClk,
-         axiClkRst           => axiRst);
+   ----------------------------
+   -- Map ports/signals/etc. --
+   ----------------------------
+   led <= iLed when iLedEn = '1' else (others => '0');
    
-   --------------------------------------------
-   --     AXI Lite Version Register          --
-   --------------------------------------------   
-   U_AxiVersion : entity work.AxiVersion
-      generic map (
-         EN_DEVICE_DNA_G => true
-      )
-      port map (
-         axiReadMaster  => mAxiReadMasters(VERSION_AXI_INDEX_C),
-         axiReadSlave   => mAxiReadSlaves(VERSION_AXI_INDEX_C),
-         axiWriteMaster => mAxiWriteMasters(VERSION_AXI_INDEX_C),
-         axiWriteSlave  => mAxiWriteSlaves(VERSION_AXI_INDEX_C),
-         axiClk         => coreClk,
-         axiRst         => axiRst
-      );    
+   -- Guard ring DAC
+   vGuardDacSclk <= iVGuardDacSclk when iFpgaOutputEn = '1' else 'Z';
+   vGuardDacDin  <= iVGuardDacDin  when iFpgaOutputEn = '1' else 'Z';
+   vGuardDacCsb  <= iVGuardDacCsb  when iFpgaOutputEn = '1' else 'Z';
+   vGuardDacClrb <= ivGuardDacClrb when iFpgaOutputEn = '1' else 'Z';
+   
+   -- TTL interfaces
+   mps   <= iMps   when iFpgaOutputEn = '1' else 'Z';
+   tgOut <= iTgOut when iFpgaOutputEn = '1' else 'Z';
 
-   --------------------------------------------
-   --     AXI Common Register                --
-   --------------------------------------------   
-   U_AxiCommonReg : entity work.AxiCommonReg
-      port map (
-         axiReadMaster  => mAxiReadMasters(COMMON_AXI_INDEX_C),
-         axiReadSlave   => mAxiReadSlaves(COMMON_AXI_INDEX_C),
-         axiWriteMaster => mAxiWriteMasters(COMMON_AXI_INDEX_C),
-         axiWriteSlave  => mAxiWriteSlaves(COMMON_AXI_INDEX_C),
-         ssiCmd         => ssiCmd,
-         status         => status,
-         config         => config,
-         axiClk         => coreClk,
-         axiRst         => axiRst, --out
-         sysRst         => sysRst  --in
-      );          
+   -- Slow ADC
+   slowAdcSclk    <= iSlowAdcSclk when iFpgaOutputEn = '1' else 'Z';
+   slowAdcDin     <= iSlowAdcDin when iFpgaOutputEn = '1' else 'Z';
+   slowAdcCsb     <= iSlowAdcCsb when iFpgaOutputEn = '1' else 'Z';
 
-   -------------------------------
-   -- Triggering from SSI
-   -------------------------------      
-   U_CmdTrigger : entity work.SsiCmdMasterPulser
-      generic map (
-         OUT_POLARITY_G => '1',
-         PULSE_WIDTH_G  => 1
-      )   
-      port map (
-         -- Local command signal
-         cmdSlaveOut => ssiCmd,
-         --addressed cmdOpCode
-         opCode      => x"00",
-         -- output pulse to sync module
-         syncPulse   => cmdTrigger,
-         -- Local clock and reset
-         locClk      => coreClk,
-         locRst      => axiRst);      
+   -- ASIC SACI interfaces
+   asicSaciCmd    <= iSaciCmd when iFpgaOutputEn = '1' else 'Z';
+   asicSaciClk    <= iSaciClk when iFpgaOutputEn = '1' else 'Z';
+   G_SACISEL : for i in 0 to 3 generate
+      asicSaciSel(i) <= iSaciSelL(i) when iFpgaOutputEn = '1' else 'Z';
+   end generate;
+   iSaciRsp <= asicSaciRsp;
 
-   -------------------------------
-   -- Autotrigger               --
-   -------------------------------      
-   U_AutoTrigger : entity work.AutoTrigger
-      port map (
-         sysClk        => coreClk,
-         sysClkRst     => axiRst,
-         runTrigIn     => '0',
-         daqTrigIn     => '0',
-         -- Number of clock cycles between triggers
-         trigPeriod    => config.autoTrigPeriod,
-         --Enable run and daq triggers
-         runEn         => config.enAutoTrigger,
-         daqEn         => '0',
-         -- Outputs
-         runTrigOut    => autoTrigger,
-         daqTrigOut    => open);
-         
-   --------------------------------------------
-   --     Streaming data out                 --
-   --------------------------------------------   
-   U_SsiPrbsTx : entity work.SsiPrbsTx
-      generic map (
-         GEN_SYNC_FIFO_G            => true,
-         MASTER_AXI_STREAM_CONFIG_G => ssiAxiStreamConfig(4, TKEEP_COMP_C)
-      )
-      port map (
-         -- Master Port (mAxisClk)
-         mAxisClk        => coreClk,
-         mAxisRst        => axiRst,
-         mAxisMaster     => userAxisMaster,
-         mAxisSlave      => userAxisSlave,
-         -- Trigger Signal (locClk domain)
-         locClk          => coreClk,
-         locRst          => axiRst,
-         trig            => fullTrigger,
-         packetLength    => config.packetSize,
-         forceEofe       => '0',
-         busy            => ssiPrbsTxBusy,
-         tDest           => x"00",
-         tId             => x"00");
-         
+   -- Fast ADC Configuration
+   adcSpiClk     <= iAdcSpiClk when iFpgaOutputEn = '1' else 'Z';
+   adcSpiData    <= '0' when iAdcSpiDataOut = '0' and iAdcSpiDataEn = '1' and iFpgaOutputEn = '1' else 'Z';
+   iAdcSpiDataIn <= adcSpiData;
+   adcSpiCsb(0)  <= iAdcSpiCsb(0) when iFpgaOutputEn = '1' else 'Z';
+   adcSpiCsb(1)  <= iAdcSpiCsb(1) when iFpgaOutputEn = '1' else 'Z';
+   adcSpiCsb(2)  <= iAdcSpiCsb(2) when iFpgaOutputEn = '1' else 'Z';
+   adcPdwn(0)    <= iAdcPdwn(0) when iFpgaOutputEn = '1' else '0';
+   adcPdwn(1)    <= iAdcPdwn(1) when iFpgaOutputEn = '1' else '0';
+   adcPdwn(2)    <= iAdcPdwn(2) when iFpgaOutputEn = '1' else '0';
+   
+   -- ASIC Connections
+   -- Digital bits, unused in this design but used to check pinout
+--   G_ASIC_DOUT : for i in 0 to 3 generate
+--      U_ASIC_DOUT_IBUFDS : IBUFDS port map (I => asicDoutP(i), IB => asicDoutM(i), O => iAsicDout(i));
+--   end generate;
+   -- ASIC control signals (differential)
+   G_ROCLK : for i in 0 to 3 generate
+      U_ASIC_ROCLK_OBUFTDS : OBUFTDS port map ( I => iAsicRoClk, T => not(iFpgaOutputEn), O => asicRoClkP(i), OB => asicRoClkM(i) );
+   end generate;
+   -- ASIC control signals (single ended)
+   asicR0      <= iAsicR0      when iFpgaOutputEn = '1' else 'Z';
+   asicAcq     <= iAsicAcq     when iFpgaOutputEn = '1' else 'Z';
+   asicPpmat   <= iAsicPpmat   when iFpgaOutputEn = '1' else 'Z';
+   asicGlblRst <= iAsicGlblRst when iFpgaOutputEn = '1' else 'Z';
+   asicSync    <= iAsicSync    when iFpgaOutputEn = '1' else 'Z';
+   -- On this carrier ASIC digital monitors are shared with SN device
+   --iAsicDm1    <= snIoCarrier;
+   --iAsicDm2    <= snIoCarrier;
+   
 end top_level;
