@@ -49,6 +49,9 @@ entity ReadoutControl is
       -- Frame counter out to register control
       seqCount            : out   slv(31 downto 0);
 
+      -- Opcode to insert into frame
+      opCode              : in    slv(7 downto 0);
+      
       -- Run control
       acqStart            : in    sl;
       readValid           : in    slv(MAX_OVERSAMPLE_C-1 downto 0);
@@ -89,7 +92,6 @@ architecture ReadoutControl of ReadoutControl is
    constant LANE_C     : slv( 1 downto 0) := "00";
    constant VC_C       : slv( 1 downto 0) := "00";
    constant QUAD_C     : slv( 1 downto 0) := "00";
-   constant OPCODE_C   : slv( 7 downto 0) := x"00";
    constant ZEROWORD_C : slv(31 downto 0) := x"00000000";
    -- Register delay for simulation
    constant TPD_C : time := 0.5 ns;
@@ -320,7 +322,7 @@ begin
                case conv_integer(r.wordCnt) is
                   when 0 => v.mAxisMaster.tData(31 downto 0) := x"000000" & "00" & LANE_C & "00" & VC_C;
                             ssiSetUserSof(MASTER_AXI_STREAM_CONFIG_G, v.mAxisMaster, '1');
-                  when 1 => v.mAxisMaster.tData(31 downto 0) := x"0" & "00" & QUAD_C & OPCODE_C & acqCount(15 downto 0);
+                  when 1 => v.mAxisMaster.tData(31 downto 0) := x"0" & "00" & QUAD_C & opCode & acqCount(15 downto 0);
                   when 2 => v.mAxisMaster.tData(31 downto 0) := intSeqCount;
                   when 3 => v.mAxisMaster.tData(31 downto 0) := ZEROWORD_C;
                   when 4 => v.mAxisMaster.tData(31 downto 0) := ZEROWORD_C;

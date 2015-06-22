@@ -58,7 +58,7 @@ entity RegControlGen2 is
       saciClk        : out sl;
       saciSelL       : out slv(NUM_ASICS_G-1 downto 0);
       saciCmd        : out sl;
-      saciRsp        : in  sl;
+      saciRsp        : in  slv(NUM_ASICS_G-1 downto 0);
       -- Guard ring DAC interfaces
       dacSclk        : out sl;
       dacDin         : out sl;
@@ -505,6 +505,7 @@ begin
                if (r.saciRegIn.op = '1') then
                   axiSlaveWriteResponse(v.axiWriteSlave,r.saciAxiRsp);
                else
+                  v.axiReadSlave.rdata := iSaciSelOut.rdData;
                   axiSlaveReadResponse(v.axiReadSlave,r.saciAxiRsp);
                end if;
             end if;
@@ -705,7 +706,21 @@ begin
    end process;
    iSaciClkBit <= iSaciCnt(conv_integer(r.epixRegOut.saciClkBit(2 downto 0)));
    U_SaciClk : BUFG port map (I => iSaciClkBit, O => iSaciClk);
-   iSaciRsp <= saciRsp;
+   process ( axiClk ) begin
+      if rising_edge(axiClk) then
+         if iSaciSelL(0) = '0' then
+            iSaciRsp <= saciRsp(0);
+         elsif iSaciSelL(1) = '0' then
+            iSaciRsp <= saciRsp(1);
+         elsif iSaciSelL(2) = '0' then
+            iSaciRsp <= saciRsp(2);
+         elsif iSaciSelL(3) = '0' then
+            iSaciRsp <= saciRsp(3);
+         else
+            iSaciRsp <= '0';
+         end if;
+      end if;
+   end process;
    --Edge detect for SACI clk
    U_DataSaciClkEdge : entity work.SynchronizerEdge
       port map (

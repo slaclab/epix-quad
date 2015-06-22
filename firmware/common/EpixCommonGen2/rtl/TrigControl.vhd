@@ -41,6 +41,8 @@ entity TrigControl is
       daqTrigger    : in  std_logic;
       ssiCmd        : in  SsiCmdMasterType;
       pgpRxOut      : in  Pgp2bRxOutType;
+      -- Fiducial code output
+      opCodeOut     : out slv(7 downto 0);
       -- Configuration
       epixConfig    : in  EpixConfigType;
       -- Outputs
@@ -79,6 +81,10 @@ architecture TrigControl of TrigControl is
    signal hwRunTrig     : std_logic;
    signal hwDaqTrig     : std_logic;
 
+   -- Op code signals
+   signal pgpOpCode  : slv(7 downto 0) := (others => '0');
+   signal syncOpCode : slv(7 downto 0);
+   
    -- Register delay for simulation
    constant tpd:time := 0.5 ns;
 
@@ -117,38 +123,37 @@ begin
 
    -----------------------------------------
    -- PGP Sideband Triggers:
-   --   Run trigger - programmable opCode 
-   --   DAQ trigger - programmable opCode 
+   --   Any op code is a trigger, actual op
+   --   code is the fiducial.
    -----------------------------------------
-   process ( pgpClk ) begin
-      if rising_edge(pgpClk) then
-         if ( pgpClkRst = '1' ) then
-            pgpSidebandRun <= '0' after tpd;
-            pgpSidebandDaq <= '0' after tpd;
-         elsif pgpRxOut.opCodeEn = '1' then
-            pgpSidebandRun <= '1' after tpd;
-         else
-            pgpSidebandRun <= '0' after tpd;
+   U_PgpSideBandTrigger : entity work.SynchronizerFifo
+      generic map (
+         TPD_G        => tpd,
+         DATA_WIDTH_G => 8
+      )
+      port map (
+         rst    => pgpClkRst,
+         wr_clk => pgpClk,
+         wr_en  => pgpRxOut.opCodeEn,
+         din    => pgpRxOut.opCode,
+         rd_clk => sysClk,
+         rd_en  => '1',
+         valid  => coreSidebandRun,
+         dout   => syncOpCode
+      );
+   -- Map op code to output port
+   -- Have sideband DAQ lag 1 cycle behind sideband run
+   process(sysClk) begin
+      if rising_edge(sysClk) then
+         if sysClkRst = '1' then
+            opCodeOut <= (others => '0') after tpd;
+         elsif coreSidebandRun = '1' then
+            opCodeOut <= syncOpCode after tpd;
          end if;
-         pgpSidebandDaq <= pgpSidebandRun;
+         coreSidebandDaq <= coreSidebandRun;
       end if;
    end process;
-   -- Synchronize PGP sideband triggers to core clock
-   U_PgpRunSync : entity work.Synchronizer
-      port map (
-         clk     => sysClk,
-         rst     => sysClkRst,
-         dataIn  => pgpSidebandRun,
-         dataOut => coreSidebandRun
-      );
-   U_PgpDaqSync : entity work.Synchronizer
-      port map (
-         clk     => sysClk,
-         rst     => sysClkRst,
-         dataIn  => pgpSidebandDaq,
-         dataOut => coreSidebandDaq
-      );
-
+      
    --------------------------------------------------
    -- Combine with TTL triggers and look for edges --
    --------------------------------------------------

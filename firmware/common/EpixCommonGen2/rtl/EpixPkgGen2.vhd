@@ -219,7 +219,7 @@ package body EpixPkgGen2 is
        variable localData  : inout Slv16Array)
    is
    begin 
-      assert (asicType = x"EA") report "Multi-pixel writes not supported for this ASIC!" severity failure;   
+      assert (asicType = x"EA") report "Multi-pixel writes not supported for this ASIC!" severity warning;   
       if asicType = x"EA" then
          globalToLocalPixelEpix100A(globalRow,globalCol,calRowFlag,calBotFlag,inputData,localAsic,localRow,localCol,localData);
       end if;

@@ -20,14 +20,14 @@
 --[~] Adapt pseudoscope to axistream
 --[ ] Fix ring buffer issue (off by 1?) in pseudoscope
 --[X] SACI command master in reg controller
---[ ] Multipixel writes
+--[~] Multipixel writes (implemented for 100a only)
 --[A] Startup sequencer (PB for Artix-7)
 --[X] Adapt readoutcontrol to axistream
 --[X] IDs re-read on power/FPGA enable
 --[X] ADC clock moves back into AcqControl
 --[~] Instantiate slow ADC
 --[~] Choose readout point of slow ADC (was this causing some common mode noise previously...?)
---[ ] Fix implementation of PGP triggering to match Larry's
+--[X] Fix implementation of PGP triggering to match Larry's
 --[ ] Speed up ADC configuration (right now effective SPI CLK rate is ~200 kHz)
 --[ ] Add assert to avoid successful compilation with an invalid ASIC code.
 --[ ] Permanent 50 MHz ADC clock
@@ -102,7 +102,7 @@ entity EpixCoreGen2 is
       saciClk             : out sl;
       saciSelL            : out slv(3 downto 0);
       saciCmd             : out sl;
-      saciRsp             : in  sl;
+      saciRsp             : in  slv(3 downto 0);
       -- Fast ADC Control
       adcSpiClk           : out sl;
       adcSpiDataOut       : out sl;
@@ -183,9 +183,11 @@ architecture top_level of EpixCoreGen2 is
    signal adcValid         : slv(19 downto 0);
    signal adcData          : Slv16Array(19 downto 0);
    
-   -- Triggers
+   -- Triggers and associated signals
    signal iDaqTrigger      : sl;
    signal iRunTrigger      : sl;
+   signal opCode           : slv(7 downto 0);
+   signal pgpOpCodeOneShot : sl;
    
    -- Interfaces between blocks
    signal acqStart           : sl;
@@ -213,7 +215,6 @@ architecture top_level of EpixCoreGen2 is
    signal iAsicSync  : sl;
    
    signal iSaciSelL  : slv(3 downto 0);
-
    
 begin
 
@@ -229,7 +230,7 @@ begin
    iDaqTrigger    <= daqTrigger;
    -- Triggers out
    triggerOut     <= iAsicAcq;
-   mpsOut         <= iDaqTrigger;
+   mpsOut         <= pgpOpCodeOneShot;
    -- ASIC signals
    asicR0         <= iAsicR0;
    asicPpmat      <= iAsicPpmat;
@@ -240,7 +241,24 @@ begin
    asicSync       <= iAsicSync;
    -- SACI signals
    saciSelL       <= iSaciSelL;
-   
+  
+
+   -- Temporary one-shot for grabbing PGP op code
+   U_OpCodeEnOneShot : entity work.SynchronizerOneShot
+      generic map (
+         TPD_G           => TPD_G,
+         RST_POLARITY_G  => '1',
+         RST_ASYNC_G     => false,
+         BYPASS_SYNC_G   => true,
+         RELEASE_DELAY_G => 10,
+         IN_POLARITY_G   => '1',
+         OUT_POLARITY_G  => '1')
+      port map (
+         clk     => pgpClk,
+         rst     => '0',
+         dataIn  => pgpRxOut.opCodeEn,
+         dataOut => pgpOpCodeOneShot);
+
    
    ---------------------
    -- Diagnostic LEDs --
@@ -438,6 +456,8 @@ begin
          ssiCmd         => ssiCmd,
          -- PGP RxOutType (to trigger from sideband)
          pgpRxOut       => pgpRxOut,
+         -- Opcode associated with this trigger
+         opCodeOut      => opCode,
          -- Configuration
          epixConfig     => epixConfig,
          -- Status output
@@ -488,6 +508,7 @@ begin
          epixConfig     => epixConfig,
          acqCount       => epixStatus.acqCount,
          seqCount       => epixStatus.seqCount,
+         opCode         => opCode,
          acqStart       => acqStart,
          readValid      => readValid,
          readDone       => readDone,
