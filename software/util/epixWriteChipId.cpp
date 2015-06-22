@@ -38,41 +38,32 @@ int main (int argc, char **argv) {
       epix.setDebug(true);//("DebugEnable", "True");
 
       int epixIndex = 0;
+      int epixId    = 0;
 
       // Test
       cout << "--------READING FPGA VERSION---------" << endl;
       cout << "Fpga Version: 0x" << hex << setw(8) << setfill('0') << epix.device("digFpga",0)->readSingle("Version") << endl;
-      epix.device("digFpga",0)->device("epix10kAsic",epixIndex)->set("Enabled","True");
       //
       string exit_str = "x";
       while (1) {
-         int command;
          cout << "--------------------------------" << endl;
-         cout << "Read (0) / write (1) / exit(2): ";
-         cin >> command;
-         if (command == 2) {
-            break;
-         } else {
-            if (command == 0) {
-               cout << "Enter register name: ";
-               string reg_name;
-               cin >> reg_name;
-               unsigned int value = 0xBEEF;
-   			   value = epix.device("digFpga",0)->device("epix10kAsic",epixIndex)->readSingle(reg_name.c_str());
-   			   unsigned int dec_value = value & 0xFFFF;
-			      cout << "READBACK: " << dec << dec_value << " | 0x" << hex << setw(2) << setfill('0') << value << endl;
-            }
-            if (command == 1) {
-               cout << "Enter register name: ";
-               string reg_name;
-               cin >> reg_name;
-               unsigned int value;
-               cout << "Enter value to write: ";
-               cin >> hex >> value;
-               cout << "WRITING." << endl;
-               epix.device("digFpga",0)->device("epix10kAsic",epixIndex)->writeSingle(reg_name.c_str(),value);
-            }
-         }
+         cout << "Enter chip to program (0-based dec): ";
+         cin >> dec >> epixIndex;
+         epix.device("digFpga",0)->device("epix10kAsic",epixIndex)->set("Enabled","True");
+         cout << "Enter ID to program (hex): ";
+         cin >> hex >> epixId;
+         epix.device("digFpga",0)->device("epix10kAsic",epixIndex)->writeSingle("ChipId",epixId);
+         epix.device("digFpga",0)->device("epix10kAsic",epixIndex)->writeSingle("PrepareWriteChipIdA",0);
+         cout << "Apply voltage, return to 2.5 V, and press a key to continue" << endl;
+         string temp;
+         cin >> temp;
+   	   unsigned int value = epix.device("digFpga",0)->device("epix10kAsic",epixIndex)->readSingle("PrepareWriteChipIdB");
+   	   value = epix.device("digFpga",0)->device("epix10kAsic",epixIndex)->readSingle("ChipId");
+         epix.device("digFpga",0)->device("epix10kAsic",epixIndex)->writeSingle("ChipId",0);
+         epix.device("digFpga",0)->device("epix10kAsic",epixIndex)->writeSingle("PrepareWriteChipIdA",0);
+   	   value = epix.device("digFpga",0)->device("epix10kAsic",epixIndex)->readSingle("PrepareWriteChipIdB");
+   	   value = epix.device("digFpga",0)->device("epix10kAsic",epixIndex)->readSingle("ChipId");
+         cout << "Chip id is now: " << hex << value << endl;
       }
 
    } catch ( string error ) {

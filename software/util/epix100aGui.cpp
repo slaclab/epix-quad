@@ -47,7 +47,7 @@ int main (int argc, char **argv) {
 
    try {
       PgpLink       pgpLink; 
-      EpixControl   epix(&pgpLink,defFile,EPIX100);
+      EpixControl   epix(&pgpLink,defFile,EPIX100A);
       //UdpLink       udpLink; 
       //EpixControl   epix(&udpLink,defFile);
       int           pid;
@@ -62,6 +62,8 @@ int main (int argc, char **argv) {
       pgpLink.enableSharedMemory("epix",1);
       usleep(100);
 
+      cout << "Created PGP Link" << endl;
+
       // Create and setup PGP link
       //udpLink.setMaxRxTx(550000);
       //udpLink.setDebug(true);
@@ -75,6 +77,8 @@ int main (int argc, char **argv) {
       port = cntrlServer.startListen(0);
       cntrlServer.setSystem(&epix);
       cout << "Control id = 1" << endl;
+
+      cout << "Created control server" << endl;
 
       //Write out only the event data, no XML
       pgpLink.setXmlStore(false);
