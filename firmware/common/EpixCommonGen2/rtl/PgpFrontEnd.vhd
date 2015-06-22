@@ -106,7 +106,7 @@ begin
    -------------------------------
    --       PGP Core            --
    -------------------------------
-   U_Pgp2bVarLatWrapper : entity work.Pgp2bGtp7VarLatWrapper
+   U_Pgp2bVarLatWrapper : entity work.EpixPgp2bGtp7Wrapper
       generic map (
          TPD_G                => TPD_G,
          -- MMCM Configurations (Defaults: gtClkP = 125 MHz Configuration)
