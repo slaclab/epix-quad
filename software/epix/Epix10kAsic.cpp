@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// File          : EpixAsic.cpp
+// File          : Epix10kAsic.cpp
 // Author        : Ryan Herbst  <rherbst@slac.stanford.edu>
 // Created       : 06/06/2013
 // Project       : Epix ASIC
@@ -13,7 +13,7 @@
 // Modification history :
 // 06/06/2013: created
 //-----------------------------------------------------------------------------
-#include <EpixAsic.h>
+#include <Epix10kAsic.h>
 #include <Register.h>
 #include <Variable.h>
 #include <Command.h>
@@ -24,11 +24,11 @@
 using namespace std;
 
 // Constructor
-EpixAsic::EpixAsic ( uint destination, uint baseAddress, uint index, Device *parent ) : 
-                     Device(destination,baseAddress,"epixAsic",index,parent) {
+Epix10kAsic::Epix10kAsic ( uint destination, uint baseAddress, uint index, Device *parent ) : 
+                     Device(destination,baseAddress,"epix10kAsic",index,parent) {
 
    // Description
-   desc_    = "Epix ASIC Object.";
+   desc_    = "Epix 10k ASIC Object.";
 
    // ASIC Address Space
    // Addr[11:0]  = Address
@@ -40,16 +40,28 @@ EpixAsic::EpixAsic ( uint destination, uint baseAddress, uint index, Device *par
    addCommand(new Command("PrepForRead"));
    getCommand("PrepForRead")->setDescription("ePix Prepare For Readout");
 
-   // CMD = 1, Addr = 1  : Pulser bits 2:0
-   addRegister(new Register("MonostPulser", baseAddress_ + 0x00001001));
+   // CMD = 1, Addr = 1  : Bits 5:0 = CompTH_DAC[5:0]
+   //                    : Bit  6   = CompEn[0] (other bits [2:1] at Addr 5)
+   //                    : Bit  7   = PulserSync
+   addRegister(new Register("Config1", baseAddress_ + 0x00001001));
+   
+   addVariable(new Variable("CompTH_DAC", Variable::Configuration));
+   getVariable("CompTH_DAC")->setDescription("CompTH_DAC bits");
+   getVariable("CompTH_DAC")->setRange(0,63);
 
-   addVariable(new Variable("MonostPulser", Variable::Configuration));
-   getVariable("MonostPulser")->setDescription("MonoSt Pulser bits");
-   getVariable("MonostPulser")->setRange(0,7);
+   addVariable(new Variable("CompEn", Variable::Configuration));
+   getVariable("CompEn")->setDescription("Comparator enable delay in FEL mode off");
+   getVariable("CompEn")->setRange(0,7);
+
+   addVariable(new Variable("PulserSync", Variable::Configuration));
+   getVariable("PulserSync")->setDescription("Use sync signal as pulser trigger");
+   getVariable("PulserSync")->setTrueFalse();
 
    // CMD = 1, Addr = 2  : Pixel dummy, write data
    //                    : Bit 0 = Test
-   //                    : Bit 1 = Test
+   //                    : Bit 1 = Mask
+   //                    : Bit 2 = G
+   //                    : Bit 3 = GA
    addRegister(new Register("PixelDummy", baseAddress_ + 0x00001002));
 
    addVariable(new Variable("DummyMask", Variable::Configuration));
@@ -60,12 +72,21 @@ EpixAsic::EpixAsic ( uint destination, uint baseAddress, uint index, Device *par
    getVariable("DummyTest")->setDescription("Dummy Pixel Test");
    getVariable("DummyTest")->setTrueFalse();
 
+   addVariable(new Variable("DummyG", Variable::Configuration));
+   getVariable("DummyG")->setDescription("Dummy Pixel Gain");
+   getVariable("DummyG")->setTrueFalse();
+
+   addVariable(new Variable("DummyGA", Variable::Configuration));
+   getVariable("DummyGA")->setDescription("Dummy Pixel Gain Manual Mode");
+   getVariable("DummyGA")->setTrueFalse();
+
    // CMD = 1, Addr = 3  : Bits 9:0 = Pulser[9:0]
    //                    : Bit  10  = pbit
    //                    : Bit  11  = atest
    //                    : Bit  12  = test
    //                    : Bit  13  = sab_test
    //                    : Bit  14  = hrtest
+   //                    : Bit  15  = PulserR
    addRegister(new Register("Config3", baseAddress_ + 0x00001003));
 
    addVariable(new Variable("Pulser", Variable::Configuration));
@@ -91,6 +112,10 @@ EpixAsic::EpixAsic ( uint destination, uint baseAddress, uint index, Device *par
    addVariable(new Variable("HrTest", Variable::Configuration));
    getVariable("HrTest")->setDescription("HrTest");
    getVariable("HrTest")->setTrueFalse();
+
+   addVariable(new Variable("PulserR", Variable::Configuration));
+   getVariable("PulserR")->setDescription("Auto-pulser Reset");
+   getVariable("PulserR")->setTrueFalse();
 
    // CMD = 1, Addr = 4  : Bits 3:0 = DM1[3:0]
    //                    : Bits 7:4 = DM2[3:0]
@@ -141,15 +166,23 @@ EpixAsic::EpixAsic ( uint destination, uint baseAddress, uint index, Device *par
    getVariable("DigMon2")->setEnums(dm2);
 
    // CMD = 1, Addr = 5  : Bits 2:0 = Pulser DAC[2:0]
-   addRegister(new Register("PulserDac", baseAddress_ + 0x00001005));
+   //                    : Bits 5:3 = MonostPulser[2:0]
+   //                    : Bits 7:6 = CompEn[2:1]
+   addRegister(new Register("Config5", baseAddress_ + 0x00001005));
 
    addVariable(new Variable("PulserDac", Variable::Configuration));
    getVariable("PulserDac")->setDescription("Pulser DAC");
    getVariable("PulserDac")->setRange(0,0x7);
 
+   addVariable(new Variable("MonostPulser", Variable::Configuration));
+   getVariable("MonostPulser")->setDescription("MonoSt Pulser bits");
+   getVariable("MonostPulser")->setRange(0,7);
+
+
    // CMD = 1, Addr = 6  : Bit  0   = DM1en
    //                    : Bit  1   = DM2en
-   //                    : Bit  4   = SLVDSbit
+   //                    : Bits 4:2 = emph_bd
+   //                    : Bits 7:5 = emph_bc
    addRegister(new Register("Config6", baseAddress_ + 0x00001006));
 
    addVariable(new Variable("Dm1En", Variable::Configuration));
@@ -160,20 +193,29 @@ EpixAsic::EpixAsic ( uint destination, uint baseAddress, uint index, Device *par
    getVariable("Dm2En")->setDescription("Digital Monitor 2 Enable");
    getVariable("Dm2En")->setTrueFalse();
 
-   addVariable(new Variable("SlvdSBit", Variable::Configuration));
-   getVariable("SlvdSBit")->setDescription("");
-   getVariable("SlvdSBit")->setTrueFalse();
+   addVariable(new Variable("emph_bd", Variable::Configuration));
+   getVariable("emph_bd")->setDescription("emphasis bit delay");
+   getVariable("emph_bd")->setRange(0,7);
+
+   addVariable(new Variable("emph_bc", Variable::Configuration));
+   getVariable("emph_bc")->setDescription("emphasis bit current");
+   getVariable("emph_bc")->setRange(0,7);
 
    // CMD = 1, Addr = 7  : Bit  5:0 = VREF[5:0]
-   addRegister(new Register("VRef", baseAddress_ + 0x00001007));
+   //                    : Bit  7:6 = VrefLow[1:0]
+   addRegister(new Register("Config7", baseAddress_ + 0x00001007));
 
    addVariable(new Variable("VRef", Variable::Configuration));
    getVariable("VRef")->setDescription("Voltage Ref");
    getVariable("VRef")->setRange(0,0x3F);
 
+   addVariable(new Variable("VRefLow", Variable::Configuration));
+   getVariable("VRefLow")->setDescription("Voltage Ref Low");
+   getVariable("VRefLow")->setRange(0,3);
+
    // CMD = 1, Addr = 8  : Bit  0   = TPS_tcomp
    //                    : Bit  4:1 = TPS_MUX[3:0]
-   //                    : Bit  7:5 = TO_Monost[2:0]
+   //                    : Bit  7:5 = RO_Monost[2:0]
    addRegister(new Register("Config8", baseAddress_ + 0x00001008));
 
    addVariable(new Variable("TpsTComp", Variable::Configuration));
@@ -197,8 +239,8 @@ EpixAsic::EpixAsic ( uint destination, uint baseAddress, uint index, Device *par
    tpsMuxNames[10] = "VtestBE";
    tpsMuxNames[11] = "Pix_Vctrl";
    tpsMuxNames[12] = "testline";
-   tpsMuxNames[13] = "Unused13";
-   tpsMuxNames[14] = "Unused14";
+   tpsMuxNames[13] = "tempSensor";
+   tpsMuxNames[14] = "Vguard";
    tpsMuxNames[15] = "Unused15";
    getVariable("TpsMux")->setEnums(tpsMuxNames);
 
@@ -241,28 +283,38 @@ EpixAsic::EpixAsic ( uint destination, uint baseAddress, uint index, Device *par
    getVariable("FastppEnable")->setTrueFalse();
 
    // CMD = 1, Addr = 11 : Bit  2:0 = Preamp[2:0]
-   //                    : Bit  6:4 = Pixel_CB[2:0]
+   //                    : Bit  5:3 = Pixel_CB[2:0]
+   //                    : Bit  7:6 = Vld1_b[1:0]
    addRegister(new Register("Config11", baseAddress_ + 0x0000100B));
 
    addVariable(new Variable("Preamp", Variable::Configuration));
-   getVariable("Preamp")->setDescription("");
+   getVariable("Preamp")->setDescription("Preamplifier current");
    getVariable("Preamp")->setRange(0,7);
 
    addVariable(new Variable("PixelCb", Variable::Configuration));
-   getVariable("PixelCb")->setDescription("");
+   getVariable("PixelCb")->setDescription("Pixel output buffer current");
    getVariable("PixelCb")->setRange(0,7);
+
+   addVariable(new Variable("Vld1_b", Variable::Configuration));
+   getVariable("Vld1_b")->setDescription("Pixel buffer current");
+   getVariable("Vld1_b")->setRange(0,3);
 
    // CMD = 1, Addr = 12 : Bit  0   = S2D_tcomp
    //                    : Bit  6:1 = Filter_Dac[5:0]
+   //                    : Bit  7   = testLVDTransmitter
    addRegister(new Register("Config12", baseAddress_ + 0x0000100C));
 
    addVariable(new Variable("S2dTComp", Variable::Configuration));
-   getVariable("S2dTComp")->setDescription("");
+   getVariable("S2dTComp")->setDescription("Output driver temperature compensation");
    getVariable("S2dTComp")->setTrueFalse();
 
    addVariable(new Variable("FilterDac", Variable::Configuration));
-   getVariable("FilterDac")->setDescription("");
+   getVariable("FilterDac")->setDescription("Pixel filter level (default 1 V)");
    getVariable("FilterDac")->setRange(0,0x3F);
+
+   addVariable(new Variable("TestLVDTransmitter", Variable::Configuration));
+   getVariable("TestLVDTransmitter")->setDescription("Place high speed LVDS transmitter under test");
+   getVariable("TestLVDTransmitter")->setTrueFalse();
 
    // CMD = 1, Addr = 13 : Bit  1:0 = tc[1:0]
    //                    : Bit  4:2 = S2D[2:0]
@@ -309,6 +361,10 @@ EpixAsic::EpixAsic ( uint destination, uint baseAddress, uint index, Device *par
    //                    : Bit  1   = is_en
    //                    : Bit  2   = delEXEC
    //                    : Bit  3   = delCCkreg
+   //                    : Bit  4   = RO_rst_en
+   //                    : Bit  5   = SLVDS_bit
+   //                    : Bit  6   = FELmode
+   //                    : Bit  7   = CompEnOn
    addRegister(new Register("Config16", baseAddress_ + 0x00001010));
 
    addVariable(new Variable("TestBe", Variable::Configuration));
@@ -326,6 +382,22 @@ EpixAsic::EpixAsic ( uint destination, uint baseAddress, uint index, Device *par
    addVariable(new Variable("DelCckRef", Variable::Configuration));
    getVariable("DelCckRef")->setDescription("");
    getVariable("DelCckRef")->setTrueFalse();
+
+   addVariable(new Variable("RO_rst_en", Variable::Configuration));
+   getVariable("RO_rst_en")->setDescription("");
+   getVariable("RO_rst_en")->setTrueFalse();
+
+   addVariable(new Variable("SlvdsBit", Variable::Configuration));
+   getVariable("SlvdsBit")->setDescription("Enable termination for LVDS receiver");
+   getVariable("SlvdsBit")->setTrueFalse();
+
+   addVariable(new Variable("FELmode", Variable::Configuration));
+   getVariable("FELmode")->setDescription("");
+   getVariable("FELmode")->setTrueFalse();
+
+   addVariable(new Variable("CompEnOn", Variable::Configuration));
+   getVariable("CompEnOn")->setDescription("");
+   getVariable("CompEnOn")->setTrueFalse();
 
    // CMD = 1, Addr = 17 : Row start  address[9:0]
    addRegister(new Register("RowStartAddr", baseAddress_ + 0x00001011));
@@ -385,6 +457,8 @@ EpixAsic::EpixAsic ( uint destination, uint baseAddress, uint index, Device *par
 
    // CMD = 3, Addr = X  : Write Column with data
    addRegister(new Register("WriteColData", baseAddress_ + 0x00003000));
+   addCommand(new Command("WriteColData"));
+   getCommand("WriteColData")->setDescription("Write PixelTest and PixelMask to selected col");
 
    // CMD = 4, Addr = X  : Write Matrix with data
    addRegister(new Register("WriteMatrixData", baseAddress_ + 0x00004000));
@@ -405,14 +479,24 @@ EpixAsic::EpixAsic ( uint destination, uint baseAddress, uint index, Device *par
 
    // Pixel Configuration
    //                    : Bit 0 = Test
-   //                    : Bit 1 = Test
+   //                    : Bit 1 = Mask
+   //                    : Bit 2 = G
+   //                    : Bit 3 = GA
    addVariable(new Variable("PixelMask", Variable::Configuration));
-   getVariable("PixelMask")->setDescription("Dummy Pixel Mask");
+   getVariable("PixelMask")->setDescription("Pixel Mask");
    getVariable("PixelMask")->setTrueFalse();
 
    addVariable(new Variable("PixelTest", Variable::Configuration));
-   getVariable("PixelTest")->setDescription("Dummy Pixel Test");
+   getVariable("PixelTest")->setDescription("Pixel Test");
    getVariable("PixelTest")->setTrueFalse();
+
+   addVariable(new Variable("PixelG", Variable::Configuration));
+   getVariable("PixelG")->setDescription("Pixel Gain");
+   getVariable("PixelG")->setTrueFalse();
+
+   addVariable(new Variable("PixelGA", Variable::Configuration));
+   getVariable("PixelGA")->setDescription("Pixel Gain Mode");
+   getVariable("PixelGA")->setTrueFalse();
 
    // To Write a single pixel:
       // CMD = 6, Addr = 17 : Row start address[9:0]
@@ -437,10 +521,10 @@ EpixAsic::EpixAsic ( uint destination, uint baseAddress, uint index, Device *par
 }
 
 // Deconstructor
-EpixAsic::~EpixAsic ( ) { }
+Epix10kAsic::~Epix10kAsic ( ) { }
 
 // Method to process a command
-void EpixAsic::command ( string name, string arg) {
+void Epix10kAsic::command ( string name, string arg) {
    stringstream tmp;
 
    // Command is local
@@ -452,6 +536,8 @@ void EpixAsic::command ( string name, string arg) {
       REGISTER_LOCK
       getRegister("WriteMatrixData")->set(getVariable("PixelTest")->getInt(),0,0x1);
       getRegister("WriteMatrixData")->set(getVariable("PixelMask")->getInt(),1,0x1);
+      getRegister("WriteMatrixData")->set(getVariable("PixelG")->getInt(),2,0x1);
+      getRegister("WriteMatrixData")->set(getVariable("PixelGA")->getInt(),3,0x1);
       writeRegister(getRegister("PrepareMultiConfig"),true,true);
       writeRegister(getRegister("WriteMatrixData"),true,true);
       writeRegister(getRegister("CmdPrepForRead"),true,true);
@@ -466,18 +552,38 @@ void EpixAsic::command ( string name, string arg) {
       REGISTER_LOCK
       getRegister("WritePixelData")->set(getVariable("PixelTest")->getInt(),0,0x1);
       getRegister("WritePixelData")->set(getVariable("PixelMask")->getInt(),1,0x1);
+      getRegister("WritePixelData")->set(getVariable("PixelG")->getInt(),2,0x1);
+      getRegister("WritePixelData")->set(getVariable("PixelGA")->getInt(),3,0x1);
+      writeRegister(getRegister("PrepareMultiConfig"),true,true);
+      getRegister("RowCounter")->set(getVariable("RowCounter")->getInt(),0,0x1FF);
+      writeRegister(getRegister("RowCounter"),true,true);
+      getRegister("ColCounter")->set(getVariable("ColCounter")->getInt(),0,0x1FF);
+      writeRegister(getRegister("ColCounter"),true,true);
       writeRegister(getRegister("WritePixelData"),true,true);
       REGISTER_UNLOCK
    } else if ( name == "WriteRowData" ) {
       REGISTER_LOCK
-      bool wait = true;
-      writeRegister(getRegister("CmdPrepForRead"),true,wait);
-      writeRegister(getRegister("PrepareMultiConfig"),true,wait);
+      writeRegister(getRegister("CmdPrepForRead"),true,true);
+      writeRegister(getRegister("PrepareMultiConfig"),true,true);
       getRegister("RowCounter")->set(getVariable("RowCounter")->getInt(),0,0x1FF);
-      writeRegister(getRegister("RowCounter"),true,wait);
+      writeRegister(getRegister("RowCounter"),true,true);
       getRegister("WriteRowData")->set(getVariable("PixelTest")->getInt(),0,0x1);
       getRegister("WriteRowData")->set(getVariable("PixelMask")->getInt(),1,0x1);
-      writeRegister(getRegister("WriteRowData"),true,wait);
+      getRegister("WriteRowData")->set(getVariable("PixelG")->getInt(),2,0x1);
+      getRegister("WriteRowData")->set(getVariable("PixelGA")->getInt(),3,0x1);
+      writeRegister(getRegister("WriteRowData"),true,true);
+      REGISTER_UNLOCK
+   } else if ( name == "WriteColData" ) {
+      REGISTER_LOCK
+      writeRegister(getRegister("CmdPrepForRead"),true,true);
+      writeRegister(getRegister("PrepareMultiConfig"),true,true);
+      getRegister("ColCounter")->set(getVariable("ColCounter")->getInt(),0,0x1FF);
+      writeRegister(getRegister("ColCounter"),true,true);
+      getRegister("WriteColData")->set(getVariable("PixelTest")->getInt(),0,0x1);
+      getRegister("WriteColData")->set(getVariable("PixelMask")->getInt(),1,0x1);
+      getRegister("WriteColData")->set(getVariable("PixelG")->getInt(),2,0x1);
+      getRegister("WriteColData")->set(getVariable("PixelGA")->getInt(),3,0x1);
+      writeRegister(getRegister("WriteColData"),true,true);
       REGISTER_UNLOCK
    }
    else Device::command(name, arg);
@@ -485,7 +591,7 @@ void EpixAsic::command ( string name, string arg) {
 
 
 // Method to read status registers and update variables
-void EpixAsic::readStatus ( ) {
+void Epix10kAsic::readStatus ( ) {
    REGISTER_LOCK
 
    // Read status register
@@ -496,20 +602,29 @@ void EpixAsic::readStatus ( ) {
 }
 
 // Method to read configuration registers and update variables
-void EpixAsic::readConfig ( ) {
+void Epix10kAsic::readConfig ( ) {
 
    REGISTER_LOCK
 
-   // CMD = 1, Addr = 1  : Pulser bits 2:0
-   readRegister(getRegister("MonostPulser"));
-   getVariable("MonostPulser")->setInt(getRegister("MonostPulser")->get(0,0x7));
+   // CMD = 1, Addr = 1  : Bits 5:0 = CompTH_DAC[5:0]
+   //                    : Bit  6   = CompEn[0] (other bits [2:1] at Addr 5)
+   //                    : Bit  7   = PulserSync
+   readRegister(getRegister("Config1"));
+   getVariable("CompTH_DAC")->setInt(getRegister("Config1")->get(0,0x3F));
+//   getVariable("CompEn")->setInt(getRegister("Config1")->get(6,0x1));
+   getVariable("PulserSync")->setInt(getRegister("Config1")->get(7,0x1));
 
    // CMD = 1, Addr = 2  : Pixel dummy, write data
    //                    : Bit 0 = Test
    //                    : Bit 1 = Mask
-   readRegister(getRegister("PixelDummy"));
+   //                    : Bit 2 = G
+   //                    : Bit 3 = GA
+   // Pixel dummy cannot be read back.
+   //readRegister(getRegister("PixelDummy"));
    getVariable("DummyTest")->setInt(getRegister("PixelDummy")->get(0,0x1));
    getVariable("DummyMask")->setInt(getRegister("PixelDummy")->get(1,0x1));
+   getVariable("DummyG")->setInt(getRegister("PixelDummy")->get(2,0x1));
+   getVariable("DummyGA")->setInt(getRegister("PixelDummy")->get(3,0x1));
 
    // CMD = 1, Addr = 3  : Bits 9:0 = Pulser[9:0]
    //                    : Bit  10  = pbit
@@ -517,6 +632,7 @@ void EpixAsic::readConfig ( ) {
    //                    : Bit  12  = test
    //                    : Bit  13  = sab_test
    //                    : Bit  14  = hrtest
+   //                    : Bit  15  = PulserR
    readRegister(getRegister("Config3"));
    getVariable("Pulser")->setInt(getRegister("Config3")->get(0,0x3FF));
    getVariable("PBit")->setInt(getRegister("Config3")->get(10,0x1));
@@ -524,6 +640,7 @@ void EpixAsic::readConfig ( ) {
    getVariable("Test")->setInt(getRegister("Config3")->get(12,0x1));
    getVariable("SabTest")->setInt(getRegister("Config3")->get(13,0x1));
    getVariable("HrTest")->setInt(getRegister("Config3")->get(14,0x1));
+   getVariable("PulserR")->setInt(getRegister("Config3")->get(15,0x1));
 
    // CMD = 1, Addr = 4  : Bits 3:0 = DM1[3:0]
    //                    : Bits 7:4 = DM2[3:0]
@@ -532,20 +649,28 @@ void EpixAsic::readConfig ( ) {
    getVariable("DigMon2")->setInt(getRegister("Config4")->get(4,0xF));
 
    // CMD = 1, Addr = 5  : Bits 2:0 = Pulser DAC[2:0]
-   readRegister(getRegister("PulserDac"));
-   getVariable("PulserDac")->setInt(getRegister("PulserDac")->get(0,0x7));
+   //                    : Bits 5:3 = MonostPulser[2:0]
+   //                    : Bits 7:6 = CompEn[2:1]
+   readRegister(getRegister("Config5"));
+   getVariable("PulserDac")->setInt(getRegister("Config5")->get(0,0x7));
+   getVariable("MonostPulser")->setInt(getRegister("Config5")->get(3,0x7));
+   getVariable("CompEn")->setInt( (getRegister("Config5")->get(6,0x3) << 1) | getRegister("Config1")->get(6,0x1) );
 
    // CMD = 1, Addr = 6  : Bit  0   = DM1en
    //                    : Bit  1   = DM2en
-   //                    : Bit  4   = SLVDSbit
+   //                    : Bits 4:2 = emph_bd
+   //                    : Bits 7:5 = emph_bc
    readRegister(getRegister("Config6"));
    getVariable("Dm1En")->setInt(getRegister("Config6")->get(0,0x1));
    getVariable("Dm2En")->setInt(getRegister("Config6")->get(1,0x1));
-   getVariable("SlvdSBit")->setInt(getRegister("Config6")->get(4,0x1));
+   getVariable("emph_bd")->setInt(getRegister("Config6")->get(2,0x7));
+   getVariable("emph_bc")->setInt(getRegister("Config6")->get(5,0x7));
 
    // CMD = 1, Addr = 7  : Bit  5:0 = VREF[5:0]
-   readRegister(getRegister("VRef"));
-   getVariable("VRef")->setInt(getRegister("VRef")->get(0,0x3F));
+   //                    : Bit  7:6 = VrefLow[1:0]
+   readRegister(getRegister("Config7"));
+   getVariable("VRef")->setInt(getRegister("Config7")->get(0,0x3F));
+   getVariable("VRefLow")->setInt(getRegister("Config7")->get(6,0x3));
 
    // CMD = 1, Addr = 8  : Bit  0   = TPS_tcomp
    //                    : Bit  4:1 = TPS_MUX[3:0]
@@ -553,7 +678,6 @@ void EpixAsic::readConfig ( ) {
    readRegister(getRegister("Config8"));
    getVariable("TpsTComp")->setInt(getRegister("Config8")->get(0,0x1));
    getVariable("TpsMux")->setInt(getRegister("Config8")->get(1,0xf));
-
    getVariable("RoMonost")->setInt(getRegister("Config8")->get(5,0x7));
 
    // CMD = 1, Addr = 9  : Bit  3:0 = TPS_GR[3:0]
@@ -573,16 +697,20 @@ void EpixAsic::readConfig ( ) {
    getVariable("FastppEnable")->setInt(getRegister("Config10")->get(7,0x1));
 
    // CMD = 1, Addr = 11 : Bit  2:0 = Preamp[2:0]
-   //                    : Bit  6:4 = Pixel_CB[2:0]
+   //                    : Bit  5:3 = Pixel_CB[2:0]
+   //                    : Bit  7:6 = Vld1_b[1:0]
    readRegister(getRegister("Config11"));
    getVariable("Preamp")->setInt(getRegister("Config11")->get(0,0x7));
-   getVariable("PixelCb")->setInt(getRegister("Config11")->get(4,0x7));
+   getVariable("PixelCb")->setInt(getRegister("Config11")->get(3,0x7));
+   getVariable("Vld1_b")->setInt(getRegister("Config11")->get(6,0x3));
 
    // CMD = 1, Addr = 12 : Bit  0   = S2D_tcomp
    //                    : Bit  6:1 = Filter_Dac[5:0]
+   //                    : Bit  7   = TestLVDTransmitter
    readRegister(getRegister("Config12"));
    getVariable("S2dTComp")->setInt(getRegister("Config12")->get(0,0x1));
    getVariable("FilterDac")->setInt(getRegister("Config12")->get(1,0x3F));
+   getVariable("TestLVDTransmitter")->setInt(getRegister("Config12")->get(7,0x1));
 
    // CMD = 1, Addr = 13 : Bit  1:0 = tc[1:0]
    //                    : Bit  4:2 = S2D[2:0]
@@ -608,11 +736,19 @@ void EpixAsic::readConfig ( ) {
    //                    : Bit  1   = is_en
    //                    : Bit  2   = delEXEC
    //                    : Bit  3   = delCCkreg
+   //                    : Bit  4   = RO_rst_en
+   //                    : Bit  5   = SLVDS_bit
+   //                    : Bit  6   = FELmode
+   //                    : Bit  7   = CompEnOn
    readRegister(getRegister("Config16"));
    getVariable("TestBe")->setInt(getRegister("Config16")->get(0,0x1));
    getVariable("IsEn")->setInt(getRegister("Config16")->get(1,0x1));
    getVariable("DelExec")->setInt(getRegister("Config16")->get(2,0x1));
    getVariable("DelCckRef")->setInt(getRegister("Config16")->get(3,0x1));
+   getVariable("RO_rst_en")->setInt(getRegister("Config16")->get(4,0x1));
+   getVariable("SlvdsBit")->setInt(getRegister("Config16")->get(5,0x1));
+   getVariable("FELmode")->setInt(getRegister("Config16")->get(6,0x1));
+   getVariable("CompEnOn")->setInt(getRegister("Config16")->get(7,0x1));
 
    // CMD = 1, Addr = 18 : Row stop  address[8:0]
    readRegister(getRegister("RowStopAddr"));
@@ -634,24 +770,34 @@ void EpixAsic::readConfig ( ) {
    readRegister(getRegister("WritePixelData"));
    getVariable("PixelTest")->setInt(getRegister("WritePixelData")->get(0,0x1));
    getVariable("PixelMask")->setInt(getRegister("WritePixelData")->get(1,0x1));
+   getVariable("PixelG")->setInt(getRegister("WritePixelData")->get(2,0x1));
+   getVariable("PixelGA")->setInt(getRegister("WritePixelData")->get(3,0x1));
 
    REGISTER_UNLOCK
 }
 
 // Method to write configuration registers
-void EpixAsic::writeConfig ( bool force ) {
+void Epix10kAsic::writeConfig ( bool force ) {
 
    REGISTER_LOCK
 
-   // CMD = 1, Addr = 1  : Pulser bits 2:0
-   getRegister("MonostPulser")->set(getVariable("MonostPulser")->getInt(),0,0x7);
-   writeRegister(getRegister("MonostPulser"),force,true);
+   // CMD = 1, Addr = 1  : Bits 5:0 = CompTH_DAC[5:0]
+   //                    : Bit  6   = CompEn[0] (other bits [2:1] at Addr 5)
+   //                    : Bit  7   = PulserSync
+   getRegister("Config1")->set(getVariable("CompTH_DAC")->getInt(),0,0x3F);
+   getRegister("Config1")->set(getVariable("CompEn")->getInt(),6,0x1);
+   getRegister("Config1")->set(getVariable("PulserSync")->getInt(),7,0x1);
+   writeRegister(getRegister("Config1"),force,true);
 
    // CMD = 1, Addr = 2  : Pixel dummy, write data
    //                    : Bit 0 = Test
    //                    : Bit 1 = Mask
+   //                    : Bit 2 = G
+   //                    : Bit 3 = GA
    getRegister("PixelDummy")->set(getVariable("DummyTest")->getInt(),0,0x1);
    getRegister("PixelDummy")->set(getVariable("DummyMask")->getInt(),1,0x1);
+   getRegister("PixelDummy")->set(getVariable("DummyG")->getInt(),2,0x1);
+   getRegister("PixelDummy")->set(getVariable("DummyGA")->getInt(),3,0x1);
    writeRegister(getRegister("PixelDummy"),force,true);
 
    // CMD = 1, Addr = 3  : Bits 9:0 = Pulser[9:0]
@@ -666,6 +812,7 @@ void EpixAsic::writeConfig ( bool force ) {
    getRegister("Config3")->set(getVariable("Test")->getInt(),12,0x1);
    getRegister("Config3")->set(getVariable("SabTest")->getInt(),13,0x1);
    getRegister("Config3")->set(getVariable("HrTest")->getInt(),14,0x1);
+   getRegister("Config3")->set(getVariable("PulserR")->getInt(),15,0x1);
    writeRegister(getRegister("Config3"),force,true);
 
    // CMD = 1, Addr = 4  : Bits 3:0 = DM1[3:0]
@@ -675,20 +822,28 @@ void EpixAsic::writeConfig ( bool force ) {
    writeRegister(getRegister("Config4"),force,true);
 
    // CMD = 1, Addr = 5  : Bits 2:0 = Pulser DAC[2:0]
-   getRegister("PulserDac")->set(getVariable("PulserDac")->getInt(),0,0x7);
-   writeRegister(getRegister("PulserDac"),force,true);
+   //                    : Bits 5:3 = MonostPulser[2:0]
+   //                    : Bits 7:6 = CompEn[2:1]
+   getRegister("Config5")->set(getVariable("PulserDac")->getInt(),0,0x7);
+   getRegister("Config5")->set(getVariable("MonostPulser")->getInt(),3,0x7);
+   getRegister("Config5")->set( (getVariable("CompEn")->getInt() >> 1) ,6,0x3);
+   writeRegister(getRegister("Config5"),force,true);
 
    // CMD = 1, Addr = 6  : Bit  0   = DM1en
    //                    : Bit  1   = DM2en
-   //                    : Bit  4   = SLVDSbit
+   //                    : Bits 4:2 = emph_bd
+   //                    : Bits 7:5 = emph_bc
    getRegister("Config6")->set(getVariable("Dm1En")->getInt(),0,0x1);
    getRegister("Config6")->set(getVariable("Dm2En")->getInt(),1,0x1);
-   getRegister("Config6")->set(getVariable("SlvdSBit")->getInt(),4,0x1);
+   getRegister("Config6")->set(getVariable("emph_bd")->getInt(),2,0x7);
+   getRegister("Config6")->set(getVariable("emph_bc")->getInt(),5,0x7);
    writeRegister(getRegister("Config6"),force,true);
 
    // CMD = 1, Addr = 7  : Bit  5:0 = VREF[5:0]
-   getRegister("VRef")->set(getVariable("VRef")->getInt(),0,0x3F);
-   writeRegister(getRegister("VRef"),force,true);
+   //                    : Bit  7:6 = VrefLow[1:0]
+   getRegister("Config7")->set(getVariable("VRef")->getInt(),0,0x3F);
+   getRegister("Config7")->set(getVariable("VRefLow")->getInt(),6,0x3);
+   writeRegister(getRegister("Config7"),force,true);
 
    // CMD = 1, Addr = 8  : Bit  0   = TPS_tcomp
    //                    : Bit  4:1 = TPS_MUX[3:0]
@@ -715,15 +870,19 @@ void EpixAsic::writeConfig ( bool force ) {
    writeRegister(getRegister("Config10"),force,true);
 
    // CMD = 1, Addr = 11 : Bit  2:0 = Preamp[2:0]
-   //                    : Bit  6:4 = Pixel_CB[2:0]
+   //                    : Bit  5:3 = Pixel_CB[2:0]
+   //                    : Bit  7:6 = Vld1_b[1:0]
    getRegister("Config11")->set(getVariable("Preamp")->getInt(),0,0x7);
-   getRegister("Config11")->set(getVariable("PixelCb")->getInt(),4,0x7);
+   getRegister("Config11")->set(getVariable("PixelCb")->getInt(),3,0x7);
+   getRegister("Config11")->set(getVariable("Vld1_b")->getInt(),6,0x3);
    writeRegister(getRegister("Config11"),force,true);
 
    // CMD = 1, Addr = 12 : Bit  0   = S2D_tcomp
    //                    : Bit  6:1 = Filter_Dac[5:0]
+   //                    : Bit  7   = TestLVDTransmitter
    getRegister("Config12")->set(getVariable("S2dTComp")->getInt(),0,0x1);
    getRegister("Config12")->set(getVariable("FilterDac")->getInt(),1,0x3F);
+   getRegister("Config12")->set(getVariable("TestLVDTransmitter")->getInt(),7,0x1);
    writeRegister(getRegister("Config12"),force,true);
 
    // CMD = 1, Addr = 13 : Bit  1:0 = tc[1:0]
@@ -750,10 +909,18 @@ void EpixAsic::writeConfig ( bool force ) {
    //                    : Bit  1   = is_en
    //                    : Bit  2   = delEXEC
    //                    : Bit  3   = delCCkreg
+   //                    : Bit  4   = RO_rst_en
+   //                    : Bit  5   = SLVDS_bit
+   //                    : Bit  6   = FELmode
+   //                    : Bit  7   = CompEnOn
    getRegister("Config16")->set(getVariable("TestBe")->getInt(),0,0x1);
    getRegister("Config16")->set(getVariable("IsEn")->getInt(),1,0x1);
    getRegister("Config16")->set(getVariable("DelExec")->getInt(),2,0x1);
    getRegister("Config16")->set(getVariable("DelCckRef")->getInt(),3,0x1);
+   getRegister("Config16")->set(getVariable("RO_rst_en")->getInt(),4,0x1);
+   getRegister("Config16")->set(getVariable("SlvdsBit")->getInt(),5,0x1);
+   getRegister("Config16")->set(getVariable("FELmode")->getInt(),6,0x1);
+   getRegister("Config16")->set(getVariable("CompEnOn")->getInt(),7,0x1);
    writeRegister(getRegister("Config16"),force,true);
 
    // CMD = 1, Addr = 18 : Row stop  address[8:0]
@@ -775,6 +942,8 @@ void EpixAsic::writeConfig ( bool force ) {
    // CMD = 4, Addr = X  : Write Matrix With passed data
    getRegister("WriteMatrixData")->set(getVariable("PixelTest")->getInt(),0,0x1);
    getRegister("WriteMatrixData")->set(getVariable("PixelMask")->getInt(),1,0x1);
+   getRegister("WriteMatrixData")->set(getVariable("PixelG")->getInt(),2,0x1);
+   getRegister("WriteMatrixData")->set(getVariable("PixelGA")->getInt(),3,0x1);
 
 //   if ( force || getRegister("WriteMatrixData")->stale() ) {
 //      writeRegister(getRegister("PrepareMultiConfig"),true);
@@ -785,17 +954,17 @@ void EpixAsic::writeConfig ( bool force ) {
 }
 
 // Verify hardware state of configuration
-void EpixAsic::verifyConfig ( ) {
+void Epix10kAsic::verifyConfig ( ) {
 
    REGISTER_LOCK
 
-   verifyRegister(getRegister("MonostPulser"),false,0xFF);
+   verifyRegister(getRegister("Config1"),false,0xFF);
 //   verifyRegister(getRegister("PixelDummy"),false,0x03);
    verifyRegister(getRegister("Config3"),false,0xFFFF);
    verifyRegister(getRegister("Config4"),false,0xFF);
-   verifyRegister(getRegister("PulserDac"),false,0xFF);
+   verifyRegister(getRegister("Config5"),false,0xFF);
    verifyRegister(getRegister("Config6"),false,0xFF);
-   verifyRegister(getRegister("VRef"),false,0xFF);
+   verifyRegister(getRegister("Config7"),false,0xFF);
    verifyRegister(getRegister("Config8"),false,0xFF);
    verifyRegister(getRegister("Config9"),false,0xFF);
    verifyRegister(getRegister("Config10"),false,0xFF);

@@ -17,16 +17,19 @@
 #define __EPIX_CONTROL_H__
 
 #include <System.h>
+#include <EpixTypes.h>
 using namespace std;
 
 class CommLink;
 
 class EpixControl : public System {
 
+   EpixType epixType_;
+
    public:
 
       //! Constructor
-      EpixControl ( CommLink *commLink_, string defFile );
+      EpixControl ( CommLink *commLink_, string defFile, EpixType epixType);
 
       //! Deconstructor
       ~EpixControl ( );

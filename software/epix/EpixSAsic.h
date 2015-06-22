@@ -1,42 +1,40 @@
 //-----------------------------------------------------------------------------
-// File          : DigFpga.h
+// File          : EpixSAsic.h
 // Author        : Ryan Herbst  <rherbst@slac.stanford.edu>
-// Created       : 06/07/2013
-// Project       : Digital FPGA
+// Created       : 06/06/2013
+// Project       : EPIX ASIC
 //-----------------------------------------------------------------------------
 // Description :
-// Digital FPGA container
+// EPIX ASIC container
 //-----------------------------------------------------------------------------
 // Copyright (c) 2013 by SLAC. All rights reserved.
 // Proprietary and confidential to SLAC.
 //-----------------------------------------------------------------------------
 // Modification history :
-// 06/07/2013: created
+// 06/06/2013: created
 //-----------------------------------------------------------------------------
-#ifndef __DIG_FPGA_H__
-#define __DIG_FPGA_H__
+#ifndef __EPIXS_ASIC_H__
+#define __EPIXS_ASIC_H__
 
 #include <Device.h>
-#include <EpixTypes.h>
-
-#define NASICS 4
 using namespace std;
 
-//! Class to contain APV25 
-class DigFpga : public Device {
+//! Class to contain ePix ASIC
+class EpixSAsic : public Device {
 
    public:
 
       //! Constructor
       /*! 
        * \param destination Device destination
+       * \param baseAddress Device base address
        * \param index       Device index
-       * \param parent      Parent Device
+       * \param parent      Parent device
       */
-      DigFpga ( uint destination, uint index, Device *parent, EpixType epixType );
+      EpixSAsic ( uint destination, uint baseAddress, uint index, Device *parent );
 
       //! Deconstructor
-      ~DigFpga ( );
+      ~EpixSAsic ( );
 
       //! Method to process a command
       /*!

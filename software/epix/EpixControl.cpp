@@ -23,22 +23,37 @@
 #include <iostream>
 #include <string>
 #include <iomanip>
+
+#define LANE0  0x10
+#define LANE1  0x20
+#define LANE2  0x40
+#define LANE3  0x80
+
+#define VC0    0x01
+#define VC1    0x02
+#define VC2    0x04
+#define VC3    0x08
+
 using namespace std;
 
 // Constructor
-EpixControl::EpixControl ( CommLink *commLink, string defFile ) : System("EpixControl",commLink) {
+EpixControl::EpixControl ( CommLink *commLink, string defFile, EpixType epixType ) : System("EpixControl",commLink) {
 
    // Description
    desc_ = "Epix Control";
    
-   // Data mask, lane 0, vc 0
-   commLink->setDataMask(0x11);
+   // Data mask, lane 0, vc 0 (primary); lane 0, vc 2 (scope)
+   commLink->setDataMask( (LANE0|VC0) | (LANE0|VC2) );
+//   commLink->setDataMask( (LANE0|VC0) );
 
    if ( defFile == "" ) defaults_ = "xml/defaults.xml";
    else defaults_ = defFile;
 
    // Add sub-devices
-   addDevice(new DigFpga(0, 0, this));
+   addDevice(new DigFpga(0, 0, this, epixType));
+
+   //Set ePix type
+   epixType_ = epixType;
 
    //Add commands
    addCommand(new Command("SoftwareTrigger"));
@@ -55,6 +70,9 @@ EpixControl::EpixControl ( CommLink *commLink, string defFile ) : System("EpixCo
 
    addCommand(new Command("WriteRowData"));
    getCommand("WriteRowData")->setDescription("Special command to write PixelTest and PixelMask to a row");
+   
+   addCommand(new Command("WriteColData"));
+   getCommand("WriteColData")->setDescription("Special command to write PixelTest and PixelMask to a col");
 
    addCommand(new Command("PrepForRead"));
    getCommand("PrepForRead")->setDescription("Sends SACI prepare for readout");
@@ -70,24 +88,79 @@ void EpixControl::command ( string name, string arg) {
 
    // Command is local
    if ( name == "SoftwareTrigger" ) {
-      for (int asic = 0; asic < NASICS; ++asic) 
-         device("digFpga",0)->device("epixAsic",asic)->command("PrepForRead","");
       device("digFpga",0)->command("EpixRun","");
    } else if ( name == "WriteMatrixData" ) {
-      for (int asic = 0; asic < NASICS; ++asic) 
-         device("digFpga",0)->device("epixAsic",asic)->command("WriteMatrixData","");
+      for (int asic = 0; asic < NASICS; ++asic) {
+         if (epixType_ == EPIX100) {
+            device("digFpga",0)->device("epixAsic",asic)->command("WriteMatrixData","");
+         } else if (epixType_ == EPIX100A) {
+            device("digFpga",0)->device("epix100aAsic",asic)->command("WriteMatrixData","");
+         } else if (epixType_ == EPIX10K) {
+            device("digFpga",0)->device("epix10kAsic",asic)->command("WriteMatrixData","");
+         } else if (epixType_ == EPIXS) {
+            device("digFpga",0)->device("epixSAsic",asic)->command("WriteMatrixData","");
+         } 
+      }
    } else if ( name == "WritePixelData" ) {
-      for (int asic = 0; asic < NASICS; ++asic) 
-         device("digFpga",0)->device("epixAsic",asic)->command("WritePixelData","");
+      for (int asic = 0; asic < NASICS; ++asic) {
+         if (epixType_ == EPIX100) {
+            device("digFpga",0)->device("epixAsic",asic)->command("WritePixelData","");
+         } else if (epixType_ == EPIX100A) {
+            device("digFpga",0)->device("epix100aAsic",asic)->command("WritePixelData","");
+         } else if (epixType_ == EPIX10K) {
+            device("digFpga",0)->device("epix10kAsic",asic)->command("WritePixelData","");
+         } else if (epixType_ == EPIXS) {
+            device("digFpga",0)->device("epixSAsic",asic)->command("WritePixelData","");
+         }
+      }
    } else if ( name == "WriteRowCounter" ) {
-      for (int asic = 0; asic < NASICS; ++asic) 
-         device("digFpga",0)->device("epixAsic",asic)->command("WriteRowCounter","");
+      for (int asic = 0; asic < NASICS; ++asic) {
+         if (epixType_ == EPIX100) {
+            device("digFpga",0)->device("epixAsic",asic)->command("WriteRowCounter","");
+         } else if (epixType_ == EPIX100A) {
+            device("digFpga",0)->device("epix100aAsic",asic)->command("WriteRowCounter","");
+         } else if (epixType_ == EPIX10K) {
+            device("digFpga",0)->device("epix10kAsic",asic)->command("WriteRowCounter","");
+         } else if (epixType_ == EPIXS) {
+            device("digFpga",0)->device("epixSAsic",asic)->command("WriteRowCounter","");
+         }
+      }
    } else if ( name == "PrepForRead" ) {
-      for (int asic = 0; asic < NASICS; ++asic) 
-         device("digFpga",0)->device("epixAsic",asic)->command("PrepForRead","");
+      for (int asic = 0; asic < NASICS; ++asic) { 
+         if (epixType_ == EPIX100) {
+            device("digFpga",0)->device("epixAsic",asic)->command("PrepForRead","");
+         } else if (epixType_ == EPIX100A) {
+            device("digFpga",0)->device("epix100aAsic",asic)->command("PrepForRead","");
+         } else if (epixType_ == EPIX10K) {
+            device("digFpga",0)->device("epix10kAsic",asic)->command("PrepForRead","");
+         } else if (epixType_ == EPIXS) {
+            device("digFpga",0)->device("epixSAsic",asic)->command("PrepForRead","");
+         }
+      }
    } else if ( name == "WriteRowData" ) {
-      for (int asic = 0; asic < NASICS; ++asic) 
-         device("digFpga",0)->device("epixAsic",asic)->command("WriteRowData","");
+      for (int asic = 0; asic < NASICS; ++asic) {
+         if (epixType_ == EPIX100) {
+            device("digFpga",0)->device("epixAsic",asic)->command("WriteRowData","");
+         } else if (epixType_ == EPIX100A) {
+            device("digFpga",0)->device("epix100aAsic",asic)->command("WriteRowData","");
+         } else if (epixType_ == EPIX10K) {
+            device("digFpga",0)->device("epix10kAsic",asic)->command("WriteRowData","");
+         } else if (epixType_ == EPIXS) {
+            device("digFpga",0)->device("epixSAsic",asic)->command("WriteRowData","");
+         }
+      }
+   } else if ( name == "WriteColData" ) {
+      for (int asic = 0; asic < NASICS; ++asic) {
+         if (epixType_ == EPIX100) {
+            device("digFpga",0)->device("epixAsic",asic)->command("WriteColData","");
+         } else if (epixType_ == EPIX100A) {
+            device("digFpga",0)->device("epix100aAsic",asic)->command("WriteColData","");
+         } else if (epixType_ == EPIX10K) {
+            device("digFpga",0)->device("epix10kAsic",asic)->command("WriteColData","");
+         } else if (epixType_ == EPIXS) {
+            device("digFpga",0)->device("epixSAsic",asic)->command("WriteColData","");
+         }
+      }
    } else System::command(name, arg);
 }
 

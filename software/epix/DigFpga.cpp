@@ -14,7 +14,11 @@
 //-----------------------------------------------------------------------------
 #include <DigFpga.h>
 #include <EpixAsic.h>
+#include <Epix100aAsic.h>
+#include <Epix10kAsic.h>
+#include <EpixSAsic.h>
 #include <Ad9252.h>
+#include <PseudoScope.h>
 #include <Register.h>
 #include <Variable.h>
 #include <Command.h>
@@ -23,10 +27,14 @@
 #include <string>
 #include <iomanip>
 #include "EpixUtility.h"
+#include "math.h"
 using namespace std;
 
+#define HIDE_SCOPE 1
+#define CLOCK_PERIOD_IN_US (0.010)
+
 // Constructor
-DigFpga::DigFpga ( uint destination, uint index, Device *parent ) : 
+DigFpga::DigFpga ( uint destination, uint index, Device *parent, EpixType epixType ) : 
                    Device(destination,0,"digFpga",index,parent) {
    stringstream tmp;
    uint         x;
@@ -71,6 +79,11 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent ) :
 
    addRegister(new Register("SeqCountReset", 0x0100000C));
 
+   addRegister(new Register("asicMask", 0x0100000D));
+   addVariable(new Variable("asicMask", Variable::Configuration));
+   getVariable("asicMask")->setDescription("ASIC Mask (1-present, 0-not present)");
+   getVariable("asicMask")->setRange(0,0xF);
+
    addRegister(new Register("DacSetting", 0x01000007));
    addVariable(new Variable("DacSetting", Variable::Configuration));
    getVariable("DacSetting")->setDescription("DAC Setting");
@@ -86,27 +99,81 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent ) :
    addVariable(new Variable("DigitalPowerEnable", Variable::Configuration));
    getVariable("DigitalPowerEnable")->setDescription("Digital Power Enable");
    getVariable("DigitalPowerEnable")->setRange(0,0x1);
+   
+   addVariable(new Variable("FpgaOutputEnable", Variable::Configuration));
+   getVariable("FpgaOutputEnable")->setDescription("Fpga Output Enable");
+   getVariable("FpgaOutputEnable")->setRange(0,0x1);
 
    addRegister(new Register("IDelayCtrlRdy", 0x0100000A));
    addVariable(new Variable("IDelayCtrlRdy", Variable::Status));
    getVariable("IDelayCtrlRdy")->setDescription("Ready flag for IDELAYCTRL block");
 
-   addRegister(new Register("AdcFrameDelay", 0x01000009));
-   addVariable(new Variable("Adc0FrameDelay", Variable::Configuration));
-   addVariable(new Variable("Adc1FrameDelay", Variable::Configuration));
-   addVariable(new Variable("Adc2FrameDelay", Variable::Configuration));
-   getVariable("Adc0FrameDelay")->setDescription("ADC 0 IDelay Setting");
-   getVariable("Adc1FrameDelay")->setDescription("ADC 1 IDelay Setting");
-   getVariable("Adc2FrameDelay")->setDescription("ADC 2 IDelay Setting");
-   getVariable("Adc0FrameDelay")->setRange(0,0x3F);
-   getVariable("Adc1FrameDelay")->setRange(0,0x3F);
-   getVariable("Adc2FrameDelay")->setRange(0,0x3F);
+   for (x=0; x < 3; x++) {
+      tmp.str("");
+      tmp << "Adc" << dec << x << "FrameDelay";
+      addRegister(new Register(tmp.str(), 0x01000060 + x));
+      addVariable(new Variable(tmp.str(), Variable::Configuration));
+      getVariable(tmp.str())->setDescription(tmp.str());
+      getVariable(tmp.str())->setRange(0,0x3F);
+   }
+   for (x=0; x < 8; x++) {
+      tmp.str("");
+      tmp << "Adc0Ch" << dec << x << "Delay";
+      addRegister(new Register(tmp.str(), 0x01000063 + x));
+      addVariable(new Variable(tmp.str(), Variable::Configuration));
+      getVariable(tmp.str())->setDescription(tmp.str());
+      getVariable(tmp.str())->setRange(0,0x3F);
+   }
+   for (x=0; x < 8; x++) {
+      tmp.str("");
+      tmp << "Adc1Ch" << dec << x << "Delay";
+      addRegister(new Register(tmp.str(), 0x0100006B + x));
+      addVariable(new Variable(tmp.str(), Variable::Configuration));
+      getVariable(tmp.str())->setDescription(tmp.str());
+      getVariable(tmp.str())->setRange(0,0x3F);
+   }
+   for (x=0; x < 4; x++) {
+      tmp.str("");
+      tmp << "Adc2Ch" << dec << x << "Delay";
+      addRegister(new Register(tmp.str(), 0x01000073 + x));
+      addVariable(new Variable(tmp.str(), Variable::Configuration));
+      getVariable(tmp.str())->setDescription(tmp.str());
+      getVariable(tmp.str())->setRange(0,0x3F);
+   }
+
+   addRegister(new Register("Startup",0x01000080));
+   addVariable(new Variable("RequestStartup", Variable::Configuration));
+   addVariable(new Variable("StartupDone", Variable::Status));
+   addVariable(new Variable("StartupFail", Variable::Status));
+   getVariable("RequestStartup")->setDescription("Request startup sequence");
+   getVariable("RequestStartup")->setTrueFalse();
+   getVariable("StartupDone")->setDescription("Startup sequence done");
+   getVariable("StartupDone")->setTrueFalse();
+   getVariable("StartupFail")->setDescription("Startup sequence failed");
+   getVariable("StartupFail")->setTrueFalse();
 
    // Setup registers & variables
    addRegister(new Register("BaseClock", 0x01000010));
    addVariable(new Variable("BaseClock", Variable::Status));
    getVariable("BaseClock")->setDescription("FPGA Base Clock Frequency"); 
 
+   //Autotriggers
+   addRegister(new Register("AutoRunEnable", 0x01000011));
+   addVariable(new Variable("AutoRunEnable", Variable::Configuration));
+   getVariable("AutoRunEnable")->setDescription("Auto Run Enable");
+   getVariable("AutoRunEnable")->setTrueFalse();
+
+   addRegister(new Register("AutoRunPeriod", 0x01000012));
+   addVariable(new Variable("AutoRunPeriod", Variable::Configuration));
+   getVariable("AutoRunPeriod")->setDescription("Auto Run Enable");
+   getVariable("AutoRunPeriod")->setComp(0,0.000010,0,"ms");
+
+   addRegister(new Register("AutoDaqEnable", 0x01000013));
+   addVariable(new Variable("AutoDaqEnable", Variable::Configuration));
+   getVariable("AutoDaqEnable")->setDescription("Auto Daq Enable");
+   getVariable("AutoDaqEnable")->setTrueFalse();
+
+   // Manual ASIC pin controls
    addRegister(new Register("AsicPins", 0x01000029));
 
    addVariable(new Variable("AsicGR", Variable::Configuration));
@@ -157,6 +224,19 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent ) :
    addVariable(new Variable("TestPattern", Variable::Configuration));
    getVariable("TestPattern")->setDescription("Enables test pattern on data out");
    getVariable("TestPattern")->setRange(0,0x1);
+   addVariable(new Variable("SyncMode", Variable::Configuration));
+   getVariable("SyncMode")->setDescription("Use single ended Sync instead of SACI prep for readout");
+   vector<string> syncMode;
+   syncMode.resize(4);
+   syncMode[0]  = "FixedLow";
+   syncMode[1]  = "EndOfFrame";
+   syncMode[2]  = "Adjustable";
+   syncMode[3]  = "FixedHigh";
+   getVariable("SyncMode")->setEnums(syncMode);
+   
+   addVariable(new Variable("AsicR0Mode", Variable::Configuration));
+   getVariable("AsicR0Mode")->setDescription("0: time with R0 low minimized (ePix100p), 1: normal (ePix10k)");
+   getVariable("AsicR0Mode")->setRange(0,0x1);
  
    for (x=0; x < 8; x++) {
       tmp.str("");
@@ -168,42 +248,50 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent ) :
       getVariable(tmp.str())->setDescription(tmp.str());
    }
 
-   getVariable("AdcValue04")->setComp(0,-.0261,95.116,"C");
-   getVariable("AdcValue06")->setComp(0,-.0261,95.116,"C");
-   getVariable("AdcValue07")->setComp(0,.0287,-23.5,"%RH");
+   getVariable("AdcValue02")->setComp(0,2.5/4095.*3.0,0,"V (ana)");  //Analog Voltage
+   getVariable("AdcValue03")->setComp(0,2.5/4095.*3.0,0,"V (dig)");  //Digital Voltage
+   getVariable("AdcValue04")->setComp(0,-.0194,78.393,"C (ana)"); //ADC board temp
+   getVariable("AdcValue06")->setComp(0,-.0154,43.973,"C (sb)"); //Strongback temp (standard 30k resistor)
+   //getVariable("AdcValue06")->setComp(0,-0.009992,-27.94,"C (sb)"); //Strongback temp (special 1M resistor)
+   getVariable("AdcValue07")->setComp(0,.0287,-23.5,"%RH"); //Relative humidity
 
-   addRegister(new Register("LocalTemp", 0x01000106));
-   addVariable(new Variable("LocalTemp", Variable::Status));
-   getVariable("LocalTemp")->setDescription("Local temp in degrees C");
+   addRegister(new Register("StrongbackTemp", 0x01000106));
+   addVariable(new Variable("StrongbackTemp", Variable::Status));
+   getVariable("StrongbackTemp")->setDescription("Strongback temp in degrees C");
 
    addRegister(new Register("Humidity", 0x01000107));
    addVariable(new Variable("Humidity", Variable::Status));
    getVariable("Humidity")->setDescription("Humidity in percent RH");
 
+   addRegister(new Register("doutPipelineDelay", 0x0100001F));
+   addVariable(new Variable("doutPipelineDelay", Variable::Configuration));
+   getVariable("doutPipelineDelay")->setDescription("Number of clock cycles to delay ASIC digital output bit");
+   getVariable("doutPipelineDelay")->setRange(0,0xFF);
+
    addRegister(new Register("acqToAsicR0Delay", 0x01000020)); 
    addVariable(new Variable("acqToAsicR0Delay", Variable::Configuration));
    getVariable("acqToAsicR0Delay")->setDescription("");
    getVariable("acqToAsicR0Delay")->setRange(0,0x7FFFFFFF);
-   getVariable("acqToAsicR0Delay")->setComp(0,.008,0,"us");
+   getVariable("acqToAsicR0Delay")->setComp(0,CLOCK_PERIOD_IN_US,0,"us");
 
    addRegister(new Register("asicR0ToAsicAcq", 0x01000021));
    addVariable(new Variable("asicR0ToAsicAcq", Variable::Configuration));
    getVariable("asicR0ToAsicAcq")->setDescription("");
    getVariable("asicR0ToAsicAcq")->setRange(0,0x7FFFFFFF);
-   getVariable("asicR0ToAsicAcq")->setComp(0,.008,0,"us");
+   getVariable("asicR0ToAsicAcq")->setComp(0,CLOCK_PERIOD_IN_US,0,"us");
 
    
    addRegister(new Register("asicAcqWidth", 0x01000022));
    addVariable(new Variable("asicAcqWidth", Variable::Configuration));
    getVariable("asicAcqWidth")->setDescription("");
    getVariable("asicAcqWidth")->setRange(0,0x7FFFFFFF);
-   getVariable("asicAcqWidth")->setComp(0,.008,0,"us");
+   getVariable("asicAcqWidth")->setComp(0,CLOCK_PERIOD_IN_US,0,"us");
 
    addRegister(new Register("asicAcqLToPPmatL", 0x01000023));
    addVariable(new Variable("asicAcqLToPPmatL", Variable::Configuration));
    getVariable("asicAcqLToPPmatL")->setDescription("");
    getVariable("asicAcqLToPPmatL")->setRange(0,0x7FFFFFFF);
-   getVariable("asicAcqLToPPmatL")->setComp(0,.008,0,"us");
+   getVariable("asicAcqLToPPmatL")->setComp(0,CLOCK_PERIOD_IN_US,0,"us");
 
    addRegister(new Register("asicRoClkHalfT", 0x01000024));
    addVariable(new Variable("asicRoClkHalfT", Variable::Configuration));
@@ -235,29 +323,46 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent ) :
    addVariable(new Variable("asicR0Width", Variable::Configuration));
    getVariable("asicR0Width")->setDescription("Width of R0 low pulse");
    getVariable("asicR0Width")->setRange(0,0x7FFFFFFF);
-   getVariable("asicR0Width")->setComp(0,.008,0,"us");
+   getVariable("asicR0Width")->setComp(0,CLOCK_PERIOD_IN_US,0,"us");
 
    addRegister(new Register("adcPipelineDelay", 0x0100002C));
    addVariable(new Variable("adcPipelineDelay", Variable::Configuration));
    getVariable("adcPipelineDelay")->setDescription("Number of samples to delay ADC reads");
    getVariable("adcPipelineDelay")->setRange(0,0xFF);
 
-   addRegister(new Register("adcChannelToRead", 0x0100002D));
-   addVariable(new Variable("adcChannelToRead", Variable::Configuration));
-   getVariable("adcChannelToRead")->setDescription("ADC channel to read out");
-   getVariable("adcChannelToRead")->setRange(0,0xFF);
+   addRegister(new Register("syncSettings", 0x0100002D));
+   addVariable(new Variable("syncWidth", Variable::Configuration));
+   getVariable("syncWidth")->setDescription("Width of ASIC SYNC signal");
+   getVariable("syncWidth")->setRange(0,0x7FFFFFFF);
+   addVariable(new Variable("syncDelay", Variable::Configuration));
+   getVariable("syncDelay")->setDescription("Delay of ASIC SYNC signal");
+   getVariable("syncDelay")->setRange(0,0x7FFFFFFF);
 
    addRegister(new Register("prepulseR0Width", 0x0100002E));
    addVariable(new Variable("prepulseR0Width", Variable::Configuration));
    getVariable("prepulseR0Width")->setDescription("Width of R0 low prepulse");
    getVariable("prepulseR0Width")->setRange(0,0x7FFFFFFF);
-   getVariable("prepulseR0Width")->setComp(0,.008,0,"us");
+   getVariable("prepulseR0Width")->setComp(0,CLOCK_PERIOD_IN_US,0,"us");
 
    addRegister(new Register("prepulseR0Delay", 0x0100002F));
    addVariable(new Variable("prepulseR0Delay", Variable::Configuration));
    getVariable("prepulseR0Delay")->setDescription("Delay of R0 low prepulse");
    getVariable("prepulseR0Delay")->setRange(0,0x7FFFFFFF);
-   getVariable("prepulseR0Delay")->setComp(0,.008,0,"us");
+   getVariable("prepulseR0Delay")->setComp(0,CLOCK_PERIOD_IN_US,0,"us");
+
+   addRegister(new Register("asicPPmatToReadout", 0x0100003A));
+   addVariable(new Variable("asicPPmatToReadout", Variable::Configuration));
+   getVariable("asicPPmatToReadout")->setDescription("");
+   getVariable("asicPPmatToReadout")->setRange(0,0x7FFFFFFF);
+   getVariable("asicPPmatToReadout")->setComp(0,CLOCK_PERIOD_IN_US,0,"us");
+
+   addRegister(new Register("tpsTiming", 0x01000040));
+   addVariable(new Variable("tpsEdge", Variable::Configuration));
+   getVariable("tpsEdge")->setDescription("Sync TPS to rising or falling edge of Acq");
+   getVariable("tpsEdge")->setTrueFalse();
+   addVariable(new Variable("tpsDelay", Variable::Configuration));
+   getVariable("tpsDelay")->setDescription("Delay TPS signal");
+   getVariable("tpsDelay")->setRange(0,0xFFFF);
 
    addRegister(new Register("digitalCardId0",0x01000030));
    addRegister(new Register("digitalCardId1",0x01000031));
@@ -272,11 +377,20 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent ) :
    addVariable(new Variable("analogCardId1", Variable::Status));
    getVariable("analogCardId0")->setDescription("Analog Card Serial Number (low 32 bits)");
    getVariable("analogCardId1")->setDescription("Analog Card Serial Number (high 32 bits)");
+
+   addRegister(new Register("carrierCardId0",0x0100003B));
+   addRegister(new Register("carrierCardId1",0x0100003C));
+   addVariable(new Variable("carrierCardId0", Variable::Status));
+   addVariable(new Variable("carrierCardId1", Variable::Status));
+   getVariable("carrierCardId0")->setDescription("Carrier Card Serial Number (low 32 bits)");
+   getVariable("carrierCardId1")->setDescription("Carrier Card Serial Number (high 32 bits)");
   
    addVariable(new Variable("analogCRC", Variable::Status)); 
    getVariable("analogCRC")->setTrueFalse();
    addVariable(new Variable("digitalCRC", Variable::Status)); 
    getVariable("digitalCRC")->setTrueFalse();
+   addVariable(new Variable("carrierCRC", Variable::Status)); 
+   getVariable("carrierCRC")->setTrueFalse();
 
    addRegister(new Register("EepromWriteAddr", 0x01000034));
    addVariable(new Variable("EepromWriteAddr", Variable::Configuration));
@@ -312,13 +426,31 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent ) :
    getCommand("ReadData")->setDescription("Read data from EEPROM");
 
    // Add sub-devices
+   addDevice(new   PseudoScope(destination, 0x01000000, 0, this));
    addDevice(new   Ad9252(destination, 0x01008000, 0, this));
    addDevice(new   Ad9252(destination, 0x0100A000, 1, this));
    addDevice(new   Ad9252(destination, 0x0100C000, 2, this));
-   addDevice(new EpixAsic(destination, 0x01800000, 0, this));
-   addDevice(new EpixAsic(destination, 0x01900000, 1, this));
-   addDevice(new EpixAsic(destination, 0x01A00000, 2, this));
-   addDevice(new EpixAsic(destination, 0x01B00000, 3, this));
+   if (epixType == EPIX100) {
+      addDevice(new EpixAsic(destination, 0x01800000, 0, this));
+      addDevice(new EpixAsic(destination, 0x01900000, 1, this));
+      addDevice(new EpixAsic(destination, 0x01A00000, 2, this));
+      addDevice(new EpixAsic(destination, 0x01B00000, 3, this));
+   } else if (epixType == EPIX100A) {
+      addDevice(new Epix100aAsic(destination, 0x01800000, 0, this));
+      addDevice(new Epix100aAsic(destination, 0x01900000, 1, this));
+      addDevice(new Epix100aAsic(destination, 0x01A00000, 2, this));
+      addDevice(new Epix100aAsic(destination, 0x01B00000, 3, this));
+   } else if (epixType == EPIX10K) {
+      addDevice(new Epix10kAsic(destination, 0x01800000, 0, this));
+      addDevice(new Epix10kAsic(destination, 0x01900000, 1, this));
+      addDevice(new Epix10kAsic(destination, 0x01A00000, 2, this));
+      addDevice(new Epix10kAsic(destination, 0x01B00000, 3, this));
+   } else if (epixType == EPIXS) {
+      addDevice(new EpixSAsic(destination, 0x01800000, 0, this));
+      addDevice(new EpixSAsic(destination, 0x01900000, 1, this));
+      addDevice(new EpixSAsic(destination, 0x01A00000, 2, this));
+      addDevice(new EpixSAsic(destination, 0x01B00000, 3, this));
+   }
 
    getVariable("Enabled")->setHidden(true);
 }
@@ -363,6 +495,7 @@ void DigFpga::command ( string name, string arg) {
 		//getVariable("EepromDataOut1")->setInt(getRegister("EepromDataOut1")->get());
       REGISTER_UNLOCK
    }
+   
    else Device::command(name, arg);
 }
 
@@ -388,6 +521,10 @@ void DigFpga::readStatus ( ) {
    readRegister(getRegister("IDelayCtrlRdy"));
    getVariable("IDelayCtrlRdy")->setInt(getRegister("IDelayCtrlRdy")->get());
 
+   readRegister(getRegister("Startup"));
+   getVariable("StartupDone")->setInt(getRegister("Startup")->get(1,0x1));
+   getVariable("StartupFail")->setInt(getRegister("Startup")->get(2,0x1));
+
    for (x=0; x < 8; x++) {
       tmp.str("");
       tmp << "AdcValue" << dec << setw(2) << setfill('0') << x;
@@ -412,12 +549,36 @@ void DigFpga::readStatus ( ) {
    temp = crc(getVariable("analogCardId1")->getInt(),getVariable("analogCardId0")->getInt());
    getVariable("analogCRC")->setInt(temp);
 
+   readRegister(getRegister("carrierCardId0"));
+   getVariable("carrierCardId0")->setInt(getRegister("carrierCardId0")->get());
+   readRegister(getRegister("carrierCardId1"));
+   getVariable("carrierCardId1")->setInt(getRegister("carrierCardId1")->get());
+   temp = crc(getVariable("carrierCardId1")->getInt(),getVariable("carrierCardId0")->getInt());
+   getVariable("carrierCRC")->setInt(temp);
  
 
    uint y;
-   readRegister(getRegister("LocalTemp"));
-   y=getRegister("LocalTemp")->get();
-   getVariable("LocalTemp")->setIntDec(.000006*y*y-.0489*y+112.26);
+   readRegister(getRegister("StrongbackTemp"));
+   y=getRegister("StrongbackTemp")->get();
+//   getVariable("StrongbackTemp")->setIntDec(.000006*y*y-.0489*y+112.26);
+   static double cA = 3.3538646e-3;
+   static double cB = 2.5654090e-4;
+   static double cC = 1.9243889e-6;
+   static double cD = 1.0969244e-7;
+   static double cR25 = 10e3;
+   static double cRdiv = 30e3; //Normal operation to -19 C
+//   static double cRdiv = 1e6; //Special operation to -69 C
+   static double cVref = 3.3;
+   static double cVdac = 2.5;
+   static double cMaxCnt = 4095.0;
+   double Vtherm   = (double)y / cMaxCnt * cVdac;
+   double res = cRdiv * Vtherm / (cVref - Vtherm);
+   double rt_r25 = res / cR25;
+   double log_rt_r25 = log(rt_r25);
+   double Tinv = cA + cB * log_rt_r25 + cC * pow(log_rt_r25,2) + cD * pow(log_rt_r25,3);
+//   Tinv = (1./Tinv) - 273.0;  //For reading in C
+   Tinv = (1./Tinv); //For reading in K
+   getVariable("StrongbackTemp")->setIntDec( (int) Tinv ); 
 
    readRegister(getRegister("EepromDataOut0"));
    readRegister(getRegister("EepromDataOut1"));
@@ -430,16 +591,28 @@ void DigFpga::readStatus ( ) {
 
 // Method to read configuration registers and update variables
 void DigFpga::readConfig ( ) {
+   stringstream tmp;
+   uint x;
+
    REGISTER_LOCK
 
    readRegister(getRegister("RunTrigEnable"));
    getVariable("RunTrigEnable")->setInt(getRegister("RunTrigEnable")->get(0,0x1));
 
+   readRegister(getRegister("AutoRunEnable"));
+   getVariable("AutoRunEnable")->setInt(getRegister("AutoRunEnable")->get(0,0x1));
+
    readRegister(getRegister("RunTrigDelay"));
    getVariable("RunTrigDelay")->setInt(getRegister("RunTrigDelay")->get());
 
+   readRegister(getRegister("AutoRunPeriod"));
+   getVariable("AutoRunPeriod")->setInt(getRegister("AutoRunPeriod")->get());
+
    readRegister(getRegister("DaqTrigEnable"));
    getVariable("DaqTrigEnable")->setInt(getRegister("DaqTrigEnable")->get(0,0x1));
+
+   readRegister(getRegister("AutoDaqEnable"));
+   getVariable("AutoDaqEnable")->setInt(getRegister("AutoDaqEnable")->get(0,0x1));
 
    readRegister(getRegister("DaqTrigDelay"));
    getVariable("DaqTrigDelay")->setInt(getRegister("DaqTrigDelay")->get());
@@ -447,14 +620,41 @@ void DigFpga::readConfig ( ) {
    readRegister(getRegister("DacSetting"));
    getVariable("DacSetting")->setInt(getRegister("DacSetting")->get(0,0xFFFF));
 
-   readRegister(getRegister("PowerEnable"));
-   getVariable("AnalogPowerEnable")->setInt(getRegister("PowerEnable")->get(0,0x1));
-   getVariable("DigitalPowerEnable")->setInt(getRegister("PowerEnable")->get(1,0x1));
+   readRegister(getRegister("asicMask"));
+   getVariable("asicMask")->setInt(getRegister("asicMask")->get(0,0xF));
 
-   readRegister(getRegister("AdcFrameDelay"));
-   getVariable("Adc0FrameDelay")->setInt(getRegister("AdcFrameDelay")->get(0,0x3F));
-   getVariable("Adc1FrameDelay")->setInt(getRegister("AdcFrameDelay")->get(6,0x3F));
-   getVariable("Adc2FrameDelay")->setInt(getRegister("AdcFrameDelay")->get(12,0x3F));
+   readRegister(getRegister("PowerEnable"));
+   getVariable("FpgaOutputEnable")->setInt(getRegister("PowerEnable")->get(2,0x1));
+   getVariable("AnalogPowerEnable")->setInt(getRegister("PowerEnable")->get(1,0x1));
+   getVariable("DigitalPowerEnable")->setInt(getRegister("PowerEnable")->get(0,0x1));
+
+   for (x = 0; x < 3; ++x) {
+      tmp.str("");
+      tmp << "Adc" << dec << x << "FrameDelay";
+      readRegister(getRegister(tmp.str()));
+      getVariable(tmp.str())->setInt(getRegister(tmp.str())->get(0,0x3f));
+   }
+   for (x = 0; x < 8; ++x) {
+      tmp.str("");
+      tmp << "Adc0Ch" << dec << x << "Delay";
+      readRegister(getRegister(tmp.str()));
+      getVariable(tmp.str())->setInt(getRegister(tmp.str())->get(0,0x3f));
+   }
+   for (x = 0; x < 8; ++x) {
+      tmp.str("");
+      tmp << "Adc1Ch" << dec << x << "Delay";
+      readRegister(getRegister(tmp.str()));
+      getVariable(tmp.str())->setInt(getRegister(tmp.str())->get(0,0x3f));
+   }
+   for (x = 0; x < 4; ++x) {
+      tmp.str("");
+      tmp << "Adc2Ch" << dec << x << "Delay";
+      readRegister(getRegister(tmp.str()));
+      getVariable(tmp.str())->setInt(getRegister(tmp.str())->get(0,0x3f));
+   }
+
+   readRegister(getRegister("Startup"));
+   getVariable("RequestStartup")->setInt(getRegister("Startup")->get(0,0x1));
 
    readRegister(getRegister("AsicPins"));
    getVariable("AsicGR")->setInt(getRegister("AsicPins")->get(0,0x1));
@@ -474,6 +674,8 @@ void DigFpga::readConfig ( ) {
    getVariable("prepulseR0En")->setInt(getRegister("AsicPinControl")->get(6,0x1));
    getVariable("ADCTest")->setInt(getRegister("AsicPinControl")->get(7,0x1));
    getVariable("TestPattern")->setInt(getRegister("AsicPinControl")->get(8,0x1));
+   getVariable("SyncMode")->setInt(getRegister("AsicPinControl")->get(9,0x3));
+   getVariable("AsicR0Mode")->setInt(getRegister("AsicPinControl")->get(11,0x1));
 
    readRegister(getRegister("acqToAsicR0Delay"));
    getVariable("acqToAsicR0Delay")->setInt(getRegister("acqToAsicR0Delay")->get());
@@ -515,15 +717,26 @@ void DigFpga::readConfig ( ) {
    readRegister(getRegister("adcPipelineDelay"));
    getVariable("adcPipelineDelay")->setInt(getRegister("adcPipelineDelay")->get(0,0xFF));
 
-   readRegister(getRegister("adcChannelToRead"));
-   getVariable("adcChannelToRead")->setInt(getRegister("adcChannelToRead")->get(0,0xFF));
+   readRegister(getRegister("doutPipelineDelay"));
+   getVariable("doutPipelineDelay")->setInt(getRegister("doutPipelineDelay")->get(0,0xFF));
+
+   readRegister(getRegister("syncSettings"));
+   getVariable("syncWidth")->setInt(getRegister("syncSettings")->get(0,0xFFFF));
+   getVariable("syncDelay")->setInt(getRegister("syncSettings")->get(16,0xFFFF));
 
    readRegister(getRegister("prepulseR0Width"));
    getVariable("prepulseR0Width")->setInt(getRegister("prepulseR0Width")->get(0,0xFFFF));
 
    readRegister(getRegister("prepulseR0Delay"));
    getVariable("prepulseR0Delay")->setInt(getRegister("prepulseR0Delay")->get(0,0xFFFF));
+   
+   readRegister(getRegister("asicPPmatToReadout"));
+   getVariable("asicPPmatToReadout")->setInt(getRegister("asicPPmatToReadout")->get(0,0xFFFF));
 
+   readRegister(getRegister("tpsTiming"));
+   getVariable("tpsDelay")->setInt(getRegister("tpsTiming")->get(0,0xFFFF));
+   getVariable("tpsEdge")->setInt(getRegister("tpsTiming")->get(16,0x1));
+   
  // Sub devices
    Device::readConfig();
    REGISTER_UNLOCK
@@ -531,31 +744,49 @@ void DigFpga::readConfig ( ) {
 
 // Method to write configuration registers
 void DigFpga::writeConfig ( bool force ) {
+   stringstream tmp;
+   uint x;
+
    REGISTER_LOCK
-
-   getRegister("RunTrigEnable")->set(getVariable("RunTrigEnable")->getInt(),0,0x1);
-   writeRegister(getRegister("RunTrigEnable"),force);
-
-   getRegister("RunTrigDelay")->set(getVariable("RunTrigDelay")->getInt());
-   writeRegister(getRegister("RunTrigDelay"),force);
-
-   getRegister("DaqTrigEnable")->set(getVariable("DaqTrigEnable")->getInt(),0,0x1);
-   writeRegister(getRegister("DaqTrigEnable"),force);
-
-   getRegister("DaqTrigDelay")->set(getVariable("DaqTrigDelay")->getInt());
-   writeRegister(getRegister("DaqTrigDelay"),force);
 
    getRegister("DacSetting")->set(getVariable("DacSetting")->getInt(),0,0xFFFF);
    writeRegister(getRegister("DacSetting"),force);
+   
+   getRegister("asicMask")->set(getVariable("asicMask")->getInt(),0,0xF);
+   writeRegister(getRegister("asicMask"),force);
 
-   getRegister("PowerEnable")->set(getVariable("AnalogPowerEnable")->getInt(),0,0x1);
-   getRegister("PowerEnable")->set(getVariable("DigitalPowerEnable")->getInt(),1,0x1);
+   getRegister("PowerEnable")->set(getVariable("FpgaOutputEnable")->getInt(),2,0x1);
+   getRegister("PowerEnable")->set(getVariable("AnalogPowerEnable")->getInt(),1,0x1);
+   getRegister("PowerEnable")->set(getVariable("DigitalPowerEnable")->getInt(),0,0x1);
    writeRegister(getRegister("PowerEnable"),force);
 
-   getRegister("AdcFrameDelay")->set(getVariable("Adc0FrameDelay")->getInt(),0,0x3F);
-   getRegister("AdcFrameDelay")->set(getVariable("Adc1FrameDelay")->getInt(),6,0x3F);
-   getRegister("AdcFrameDelay")->set(getVariable("Adc2FrameDelay")->getInt(),12,0x3F);
-   writeRegister(getRegister("AdcFrameDelay"),force);
+   for (x = 0; x < 3; ++x) {
+      tmp.str("");
+      tmp << "Adc" << dec << x << "FrameDelay";
+      getRegister(tmp.str())->set(getVariable(tmp.str())->getInt(),0,0x3F);
+      writeRegister(getRegister(tmp.str()),force);
+   }
+   for (x = 0; x < 8; ++x) {
+      tmp.str("");
+      tmp << "Adc0Ch" << dec << x << "Delay";
+      getRegister(tmp.str())->set(getVariable(tmp.str())->getInt(),0,0x3F);
+      writeRegister(getRegister(tmp.str()),force);
+   }
+   for (x = 0; x < 8; ++x) {
+      tmp.str("");
+      tmp << "Adc1Ch" << dec << x << "Delay";
+      getRegister(tmp.str())->set(getVariable(tmp.str())->getInt(),0,0x3F);
+      writeRegister(getRegister(tmp.str()),force);
+   }
+   for (x = 0; x < 4; ++x) {
+      tmp.str("");
+      tmp << "Adc2Ch" << dec << x << "Delay";
+      getRegister(tmp.str())->set(getVariable(tmp.str())->getInt(),0,0x3F);
+      writeRegister(getRegister(tmp.str()),force);
+   }
+
+   getRegister("Startup")->set(getVariable("RequestStartup")->getInt(),0,0x1);
+   writeRegister(getRegister("Startup"),force);
 
    getRegister("AsicPins")->set(getVariable("AsicGR")->getInt(),0,0x1);
    getRegister("AsicPins")->set(getVariable("AsicAcq")->getInt(),1,0x1);
@@ -574,6 +805,8 @@ void DigFpga::writeConfig ( bool force ) {
    getRegister("AsicPinControl")->set(getVariable("prepulseR0En")->getInt(),6,0x1);
    getRegister("AsicPinControl")->set(getVariable("ADCTest")->getInt(),7,0x1);
    getRegister("AsicPinControl")->set(getVariable("TestPattern")->getInt(),8,0x1);
+   getRegister("AsicPinControl")->set(getVariable("SyncMode")->getInt(),9,0x3);
+   getRegister("AsicPinControl")->set(getVariable("AsicR0Mode")->getInt(),11,0x1);
    writeRegister(getRegister("AsicPinControl"),force);
 
    getRegister("acqToAsicR0Delay")->set(getVariable("acqToAsicR0Delay")->getInt());
@@ -620,14 +853,49 @@ void DigFpga::writeConfig ( bool force ) {
    getRegister("adcPipelineDelay")->set(getVariable("adcPipelineDelay")->getInt(),0,0xFF);
    writeRegister(getRegister("adcPipelineDelay"),force);
 
-   getRegister("adcChannelToRead")->set(getVariable("adcChannelToRead")->getInt(),0,0xFF);
-   writeRegister(getRegister("adcChannelToRead"),force);
+   getRegister("doutPipelineDelay")->set(getVariable("doutPipelineDelay")->getInt(),0,0xFF);
+   writeRegister(getRegister("doutPipelineDelay"),force);
+
+   getRegister("syncSettings")->set(getVariable("syncWidth")->getInt(),0,0xFFFF);
+   getRegister("syncSettings")->set(getVariable("syncDelay")->getInt(),16,0xFFFF);
+   writeRegister(getRegister("syncSettings"),force);
 
    getRegister("prepulseR0Width")->set(getVariable("prepulseR0Width")->getInt());
    writeRegister(getRegister("prepulseR0Width"),force);
 
    getRegister("prepulseR0Delay")->set(getVariable("prepulseR0Delay")->getInt());
    writeRegister(getRegister("prepulseR0Delay"),force);
+
+   getRegister("asicPPmatToReadout")->set(getVariable("asicPPmatToReadout")->getInt());
+   writeRegister(getRegister("asicPPmatToReadout"),force);
+
+   getRegister("tpsTiming")->set(getVariable("tpsDelay")->getInt(),0,0xFFFF);
+   getRegister("tpsTiming")->set(getVariable("tpsEdge")->getInt(),16,0x1);
+   writeRegister(getRegister("tpsTiming"),force);
+
+   //Trigger enables here so that all other registers are set before we start
+   getRegister("RunTrigDelay")->set(getVariable("RunTrigDelay")->getInt());
+   writeRegister(getRegister("RunTrigDelay"),force);
+
+   getRegister("DaqTrigDelay")->set(getVariable("DaqTrigDelay")->getInt());
+   writeRegister(getRegister("DaqTrigDelay"),force);
+
+   getRegister("RunTrigEnable")->set(getVariable("RunTrigEnable")->getInt(),0,0x1);
+   writeRegister(getRegister("RunTrigEnable"),force);
+
+   getRegister("DaqTrigEnable")->set(getVariable("DaqTrigEnable")->getInt(),0,0x1);
+   writeRegister(getRegister("DaqTrigEnable"),force);
+
+   //Auto trigger settings
+   getRegister("AutoRunPeriod")->set(getVariable("AutoRunPeriod")->getInt());
+   writeRegister(getRegister("AutoRunPeriod"),force);
+
+   getRegister("AutoRunEnable")->set(getVariable("AutoRunEnable")->getInt(),0,0x1);
+   writeRegister(getRegister("AutoRunEnable"),force);
+
+   getRegister("AutoDaqEnable")->set(getVariable("AutoDaqEnable")->getInt(),0,0x1);
+   writeRegister(getRegister("AutoDaqEnable"),force);
+
 
   // Sub devices
    Device::writeConfig(force);
@@ -642,9 +910,28 @@ void DigFpga::verifyConfig ( ) {
    verifyRegister(getRegister("RunTrigDelay"));
    verifyRegister(getRegister("DaqTrigEnable"));
    verifyRegister(getRegister("DaqTrigDelay"));
+   verifyRegister(getRegister("asicMask"));
    verifyRegister(getRegister("DacSetting"));
    verifyRegister(getRegister("PowerEnable"));
+//   verifyRegister(getRegister("AdcFrameDelay"));
+   verifyRegister(getRegister("AsicPins"));
+   verifyRegister(getRegister("AsicPinControl"));
+   verifyRegister(getRegister("doutPipelineDelay"));
+   verifyRegister(getRegister("acqToAsicR0Delay"));
+   verifyRegister(getRegister("asicR0ToAsicAcq"));
+   verifyRegister(getRegister("asicAcqWidth"));
+   verifyRegister(getRegister("asicAcqLToPPmatL"));
+   verifyRegister(getRegister("asicRoClkHalfT"));
+   verifyRegister(getRegister("adcReadsPerPixel"));
    verifyRegister(getRegister("adcClkHalfT"));
+   verifyRegister(getRegister("totalPixelsToRead"));
+   verifyRegister(getRegister("saciClkBit"));
+   verifyRegister(getRegister("asicR0Width"));
+   verifyRegister(getRegister("adcPipelineDelay"));
+   verifyRegister(getRegister("syncSettings"));
+   verifyRegister(getRegister("prepulseR0Width"));
+   verifyRegister(getRegister("prepulseR0Delay"));
+   verifyRegister(getRegister("asicPPmatToReadout"));
    Device::verifyConfig();
    REGISTER_UNLOCK
 }
