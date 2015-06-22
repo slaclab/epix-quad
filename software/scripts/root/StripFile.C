@@ -10,45 +10,28 @@ using namespace std;
 
 int debug = 0;
 
-void StripFile(char *file_in) {
-
-   TH1F *hist = new TH1F("hist","hist",1000,8000,9000);
+void StripFile(char *file_in, char *file_out) {
 
    ifstream fin(file_in);
+   ofstream fout(file_out);
+   int nevents = 0;
 
-   UInt_t current_word;
-   fin.read((char*) &current_word,sizeof(UInt_t));
-
-   while (fin) {
-      while (current_word != WORD_HEADER && fin) {
-         //Read next byte and shift in to the word
-         UChar_t next_byte;
-         fin.read((char*) &next_byte,sizeof(UChar_t));
-         current_word = (current_word >> 8) | (next_byte << 24);
-      }
-      if (!fin) {
-         break;
-      }
-      UInt_t data_words[EVENT_SIZE];
-      fin.read((char *) data_words,sizeof(UInt_t)*EVENT_SIZE);
-
-      for (int i = 0; i < EVENT_SIZE; ++i) {
-         hist->Fill(data_words[i]);
-      }
-
-      if (debug) {
-         cout << "----------" << endl;
-         for (int i = 0; i < EVENT_SIZE; ++i) {
-            char output[16];
-            sprintf(output,"%08x",data_words[i]);
-            cout << output << endl;
+   while (fin && nevents < 1000) {
+      UInt_t size;
+      fin.read((char*) &size,sizeof(UInt_t));
+      if (fin) {
+         UInt_t *buffer = new UInt_t[size];
+         fin.read((char*) buffer, sizeof(UInt_t)*size);
+         fout.write((char *) buffer, sizeof(UInt_t)*size);
+         delete [] buffer;
+         nevents++;
+         if (nevents%100 == 0) {
+            cout << "Wrote event " << nevents << endl;
          }
-         cout << "----------" << endl;
       }
-
-      fin.read((char *) &current_word,sizeof(UInt_t));
    }
 
-   hist->Draw();
+   fin.close();
+   fout.close();
 
 }

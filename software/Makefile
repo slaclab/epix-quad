@@ -55,9 +55,9 @@ $(BIN)/%: $(UTL_DIR)/%.cpp $(GEN_OBJ) $(EPX_OBJ)
 
 # root
 ana:
-ifneq ($(ROOTSYS),)
-	cd root; gmake
-endif
+#ifneq ($(ROOTSYS),)
+#	cd root; gmake
+#endif
 
 # python libs
 pylibs:

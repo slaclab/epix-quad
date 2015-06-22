@@ -107,7 +107,7 @@
             <TestBe>False</TestBe>
             <TpsDac>0x1c</TpsDac>
             <TpsGr>0x4</TpsGr>
-            <TpsMux>0x9</TpsMux>
+            <TpsMux>in</TpsMux>
             <TpsTComp>True</TpsTComp>
             <TpsTcDac>0x1</TpsTcDac>
             <VRef>0x1e</VRef>

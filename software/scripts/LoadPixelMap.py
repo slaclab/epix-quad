@@ -34,17 +34,25 @@ def main(argv):
    else:      
       pythonDaq.daqSendCommand("PrepForRead","");
       for row in range(0,lines.__len__()):
-#      for row in range(0,10):
          this_line = lines[row]
          this_line.rstrip()
          this_data = this_line.split();
          pythonDaq.daqSetConfig("digFpga:epixAsic:RowCounter",str(row))
          pythonDaq.daqSendCommand("WriteRowCounter","");
          for col in range(0,this_data.__len__()):
-            if this_data[col] == '1':
+            test = "True"
+            mask = "False"
+            if (row==0):
+               test = "False"
+               mask = "True"
                pythonDaq.daqSetConfig("digFpga:epixAsic:ColCounter",str(col))
-               pythonDaq.daqSetConfig("digFpga:epixAsic:PixelTest","True")
-               pythonDaq.daqSetConfig("digFpga:epixAsic:PixelMask","False")
+               pythonDaq.daqSetConfig("digFpga:epixAsic:PixelTest",test)
+               pythonDaq.daqSetConfig("digFpga:epixAsic:PixelMask",mask)
+               pythonDaq.daqSendCommand("WritePixelData","");
+            elif this_data[col] == '1':
+               pythonDaq.daqSetConfig("digFpga:epixAsic:ColCounter",str(col))
+               pythonDaq.daqSetConfig("digFpga:epixAsic:PixelTest",test)
+               pythonDaq.daqSetConfig("digFpga:epixAsic:PixelMask",mask)
                pythonDaq.daqSendCommand("WritePixelData","");
 
    print 'Sending prepare for readout'
