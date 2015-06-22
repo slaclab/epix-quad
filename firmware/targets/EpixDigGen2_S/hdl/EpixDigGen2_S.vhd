@@ -1,7 +1,7 @@
 -------------------------------------------------------------------------------
 -- Title      : 
 -------------------------------------------------------------------------------
--- File       : EpixDigGen2.vhd
+-- File       : EpixDigGen2_S.vhd
 -- Author     : Kurtis Nishimura <kurtisn@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2014-12-11
@@ -28,7 +28,7 @@ use work.SsiCmdMasterPkg.all;
 library unisim;
 use unisim.vcomponents.all;
 
-entity EpixDigGen2 is
+entity EpixDigGen2_S is
    generic (
       TPD_G : time := 1 ns
    );
@@ -77,7 +77,7 @@ entity EpixDigGen2 is
       asicSaciCmd         : out sl;
       asicSaciClk         : out sl;
       asicSaciSel         : out slv(3 downto 0);
-      asicSaciRsp         : in  sl;
+      asicSaciRsp         : in  slv(3 downto 0);
       -- ADC readout signals
       adcClkP             : out slv( 2 downto 0);
       adcClkM             : out slv( 2 downto 0);
@@ -90,20 +90,22 @@ entity EpixDigGen2 is
       -- ASIC Control
       asicR0              : out sl;
       asicPpmat           : out sl;
+      asicPpbe            : out sl;
       asicGlblRst         : out sl;
       asicSync            : out sl;
       asicAcq             : out sl;
 --      asicDoutP           : in  slv(3 downto 0);
 --      asicDoutM           : in  slv(3 downto 0);
       asicRoClkP          : out slv(3 downto 0);
-      asicRoClkM          : out slv(3 downto 0)
+      asicRoClkM          : out slv(3 downto 0);
+      asicDm2             : in  sl
       -- TODO: Add DDR pins
       -- TODO: Add I2C pins for SFP
       -- TODO: Add sync pins for DC/DCs
    );
-end EpixDigGen2;
+end EpixDigGen2_S;
 
-architecture top_level of EpixDigGen2 is
+architecture top_level of EpixDigGen2_S is
    signal iLed          : slv(3 downto 0);
    signal iFpgaOutputEn : sl;
    signal iLedEn        : sl;
@@ -143,6 +145,7 @@ architecture top_level of EpixDigGen2 is
    signal iAsicR0       : sl;
    signal iAsicAcq      : sl;
    signal iAsicPpmat    : sl;
+   signal iAsicPpbe     : sl;
    signal iAsicGlblRst  : sl;
    signal iAsicSync     : sl;
    signal iAsicDm1      : sl;
@@ -225,13 +228,13 @@ begin
          -- ASIC Control
          asicR0              => iAsicR0,
          asicPpmat           => iAsicPpmat,
-         asicPpbe            => open,
+         asicPpbe            => iAsicPpbe,
          asicGrst            => iAsicGlblRst,
          asicAcq             => iAsicAcq,
          asic0Dm2            => iAsicDm1,
          asic0Dm1            => iAsicDm2,
          asicRoClk           => iAsicRoClk,
-         asicSync            => iAsicSync,
+         -- asicSync            => iAsicSync,
          -- ASIC digital data
          asicDout            => iAsicDout
       );
@@ -248,8 +251,8 @@ begin
    vGuardDacClrb <= ivGuardDacClrb when iFpgaOutputEn = '1' else 'Z';
    
    -- TTL interfaces (accounting for inverters on ADC card)
-   mps    <= not(iMps)   when iFpgaOutputEn = '1' else 'Z';
-   tgOut  <= not(iTgOut) when iFpgaOutputEn = '1' else 'Z';
+   mps   <= not(iMps)   when iFpgaOutputEn = '1' else 'Z';
+   tgOut <= not(iTgOut) when iFpgaOutputEn = '1' else 'Z';
    iRunTg <= not(runTg);
    iDaqTg <= not(daqTg);
 
@@ -263,8 +266,8 @@ begin
    asicSaciClk    <= iSaciClk when iFpgaOutputEn = '1' else 'Z';
    G_SACISEL : for i in 0 to 3 generate
       asicSaciSel(i) <= iSaciSelL(i) when iFpgaOutputEn = '1' else 'Z';
-      iSaciRsp(i)    <= asicSaciRsp;
    end generate;
+   iSaciRsp <= asicSaciRsp;
 
    -- Fast ADC Configuration
    adcSpiClk     <= iAdcSpiClk when iFpgaOutputEn = '1' else 'Z';
@@ -290,10 +293,11 @@ begin
    asicR0      <= iAsicR0      when iFpgaOutputEn = '1' else 'Z';
    asicAcq     <= iAsicAcq     when iFpgaOutputEn = '1' else 'Z';
    asicPpmat   <= iAsicPpmat   when iFpgaOutputEn = '1' else 'Z';
+   asicPpmat   <= iAsicPpbe    when iFpgaOutputEn = '1' else 'Z';
    asicGlblRst <= iAsicGlblRst when iFpgaOutputEn = '1' else 'Z';
-   asicSync    <= iAsicSync    when iFpgaOutputEn = '1' else 'Z';
+   --asicSync    <= iAsicSync    when iFpgaOutputEn = '1' else 'Z';
    -- On this carrier ASIC digital monitors are shared with SN device
    --iAsicDm1    <= snIoCarrier;
-   --iAsicDm2    <= snIoCarrier;
+   iAsicDm2    <= asicDm2;
    
 end top_level;
