@@ -176,32 +176,32 @@ fAlignFinish:
              ;;Set default frame alignment on all ADCs
              ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;                     
 fSetDefaultFrame:
-             LOAD  sScratch0, cStartFrameDelay
-             STORE sScratch0, mFrameDelay0
-             STORE sScratch0, mFrameDelay1
-             STORE sScratch0, mFrameDelay2
-             LOAD  sScratch0, 00
-             STORE sScratch0, mCurAdc
-             STORE sScratch0, mCurCh
-             LOAD  sScratch0, cStartFrameDelay
-             STORE sScratch0, mCurDelay
+             LOAD  sScratch0, cStartFrameDelay	;load 13 to sScratch0
+             STORE sScratch0, mFrameDelay0		;store RAM[05] 13
+             STORE sScratch0, mFrameDelay1		;store RAM[06] 13
+             STORE sScratch0, mFrameDelay2		;store RAM[07] 13
+             LOAD  sScratch0, 00				;load 0 to sScratch0
+             STORE sScratch0, mCurAdc			;store RAM[0] 0
+             STORE sScratch0, mCurCh			;store 0 to current channel_no RAM[1]
+             LOAD  sScratch0, cStartFrameDelay	;load 13 to sScratch0
+             STORE sScratch0, mCurDelay			;store RAM[2] 13
 fNextDefaultFrame:
-             LOAD    sInArg0, rBaseFrameDelay   ; Select current ADC register
-             FETCH   sScratch0, mCurAdc
-             ADD     sInArg0, sScratch0
-             FETCH   sInArg1, mCurDelay
-             CALL    fWriteReg                 
-             FETCH   sScratch0, mCurAdc
-             COMPARE sScratch0, cLastFrame
-             RETURN Z
-             ADD     sScratch0, 01
-             STORE   sScratch0, mCurAdc
-             FETCH   sScratch0, mCurCh
-             ADD     sScratch0, 08
-             STORE   sScratch0, mCurCh
-             LOAD    sScratch0, cStartFrameDelay
-             STORE   sScratch0, mCurDelay
-             JUMP    fNextDefaultFrame
+             LOAD    sInArg0, rBaseFrameDelay   ; Select current ADC register (register addr 0x60)
+             FETCH   sScratch0, mCurAdc			;read RAM[0] to sScratch0
+             ADD     sInArg0, sScratch0			;add current ADC number to the address 0x60 in sInArg0
+             FETCH   sInArg1, mCurDelay			;read current delay RAM[2] to sInArg1
+             CALL    fWriteReg      			;write current delay to the current adc register (0x60 + adc_no)           
+             FETCH   sScratch0, mCurAdc			;read RAM[0] current adc_no to sScratch0
+             COMPARE sScratch0, cLastFrame		;compare with 2
+             RETURN Z							;return if equal (last ADC)
+             ADD     sScratch0, 01				;add 1
+             STORE   sScratch0, mCurAdc			;store RAM[0] current adc_no
+             FETCH   sScratch0, mCurCh				;read current channel_no RAM[1] 	???
+             ADD     sScratch0, 08					;add 8 								???
+             STORE   sScratch0, mCurCh				;store current channel_no RAM[1] 	???
+             LOAD    sScratch0, cStartFrameDelay	;load 13 to sScratch0 				???
+             STORE   sScratch0, mCurDelay			;store RAM[2] 13 					???
+             JUMP    fNextDefaultFrame			;jump 2 times before return
 
              ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
              ;;Check the failure flags
