@@ -22,13 +22,15 @@ use work.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
+use ieee.math_real.all;
 use work.StdRtlPkg.all;
 
 entity SlowAdcCntrl is 
    generic (
       TPD_G           	: time := 1 ns;
-      CLK_PERIOD_G      : real := 10.0E-9;	-- 100MHz
-      SPI_SCLK_PERIOD_G : real := 1.0E-6  	-- 1 MHz
+      SYS_CLK_PERIOD_G  : real := 10.0E-9;	-- 100MHz
+      ADC_CLK_PERIOD_G  : real := 200.0E-9;	-- 5MHz
+      SPI_SCLK_PERIOD_G : real := 1.0E-6  	-- 1MHz
    );
    port ( 
       -- Master system clock
@@ -38,7 +40,6 @@ entity SlowAdcCntrl is
       -- Operation Control
       adcStart        : in  std_logic;
       adcData         : out Slv24Array(9 downto 0);
-      adcStrobe       : out std_logic;
 
       -- ADC Control Signals
       adcDrdy       : in    std_logic;
@@ -83,28 +84,40 @@ architecture RTL of SlowAdcCntrl is
    constant cmd_dsync :    std_logic_vector(7 downto 0) := "11111100";
    constant cmd_rdata :    std_logic_vector(7 downto 0) := "00000001";
    
-   TYPE STATE_TYPE IS (IDLE, INIT_BYTE, INIT_WAIT, WAIT_TRIG, ACQ_BYTE, ACQ_WAIT, MUX_EXT_ON, MUX_TEMP);
-   SIGNAL state, next_state   : STATE_TYPE;
-
+   constant rd_cmd_wait_t: integer := integer(ceil(ADC_CLK_PERIOD_G/SYS_CLK_PERIOD_G*50.0))-1;
    
+   TYPE STATE_TYPE IS (IDLE, INIT_CMD, INIT_WAIT, WAIT_TRIG, ACQ_CMD, ACQ_WAIT, WAIT_DRDY, READ_CMD, READ_WAIT, WAIT_DATA, READ_DATA, STORE_DATA);
+   SIGNAL state, next_state   : STATE_TYPE;   
    
    signal adcDrdyEn :      std_logic;
    signal adcDrdyD1 :      std_logic;
    signal adcDrdyD2 :      std_logic;
-   signal init_out :       std_logic;
+   signal sel_init_cmds :  std_logic;
    signal spi_wr_en :      std_logic;
    signal spi_wr_data :    std_logic_vector(7 downto 0);
    signal spi_rd_en :      std_logic;
    signal spi_rd_data :    std_logic_vector(7 downto 0);
-   signal init_data :      std_logic_vector(7 downto 0);
-   signal acq_data :       std_logic_vector(7 downto 0);
-   signal byte_counter :   integer range 0 to 13;
-   signal byte_rst :       std_logic;
-   signal byte_en :        std_logic;
+   signal init_cmds :      std_logic_vector(7 downto 0);
+   signal acq_cmds :       std_logic_vector(7 downto 0);
+   signal cmd_counter :    integer range 0 to 13;
+   signal cmd_rst :        std_logic;
+   signal cmd_en :         std_logic;
    signal ain_sel  :       std_logic_vector(3 downto 0);
    signal ain_counter :    integer range 0 to 9;
    signal ain_rst :        std_logic;
    signal ain_en :         std_logic;
+   signal byte_counter :   integer range 0 to 3;
+   signal byte_rst :       std_logic;
+   signal byte_en :        std_logic;
+   signal ch_counter :     integer range 0 to 9;
+   signal channel_en :     std_logic;
+   
+   signal wait_counter :   integer range 0 to rd_cmd_wait_t;
+   signal wait_load :      std_logic;
+   signal wait_done :   std_logic;
+   
+   signal data_23_16 :     std_logic_vector(7 downto 0);
+   signal data_15_08 :     std_logic_vector(7 downto 0);
 
 begin
 
@@ -132,7 +145,7 @@ begin
          DATA_SIZE_G       => 8,
          CPHA_G            => '1',
          CPOL_G            => '1',
-         CLK_PERIOD_G      => CLK_PERIOD_G,
+         CLK_PERIOD_G      => SYS_CLK_PERIOD_G,
          SPI_SCLK_PERIOD_G => SPI_SCLK_PERIOD_G
       )
       port map (
@@ -153,50 +166,51 @@ begin
       );
    
    -- ADC write MUX
-   spi_wr_data <= init_data when init_out = '1' else acq_data;
+   spi_wr_data <= init_cmds when sel_init_cmds = '1' else acq_cmds;
    
    
    
-   -- ADC initialization data MUX
-   init_data <=   
-      cmd_reset               when byte_counter = 0 else    -- reset command
-      cmd_wr_reg & "0000"     when byte_counter = 1 else    -- write register command starting from reg 0
-      "00001010"              when byte_counter = 2 else    -- write register command write 10 registers
-      adc_setup_regs(0)       when byte_counter = 3 else    -- write registers 0 to 9
-      adc_setup_regs(1)       when byte_counter = 4 else 
-      adc_setup_regs(2)       when byte_counter = 5 else 
-      adc_setup_regs(3)       when byte_counter = 6 else 
-      adc_setup_regs(4)       when byte_counter = 7 else 
-      adc_setup_regs(5)       when byte_counter = 8 else 
-      adc_setup_regs(6)       when byte_counter = 9 else 
-      adc_setup_regs(7)       when byte_counter = 10 else 
-      adc_setup_regs(8)       when byte_counter = 11 else 
-      adc_setup_regs(9)       when byte_counter = 12 else 
+   -- ADC initialization commands MUX. Written just once.
+   init_cmds <=   
+      cmd_reset               when cmd_counter = 0 else    -- reset command
+      cmd_wr_reg & "0000"     when cmd_counter = 1 else    -- write register command starting from reg 0
+      "00001010"              when cmd_counter = 2 else    -- write register command write 10 registers
+      adc_setup_regs(0)       when cmd_counter = 3 else    -- write registers 0 to 9
+      adc_setup_regs(1)       when cmd_counter = 4 else 
+      adc_setup_regs(2)       when cmd_counter = 5 else 
+      adc_setup_regs(3)       when cmd_counter = 6 else 
+      adc_setup_regs(4)       when cmd_counter = 7 else 
+      adc_setup_regs(5)       when cmd_counter = 8 else 
+      adc_setup_regs(6)       when cmd_counter = 9 else 
+      adc_setup_regs(7)       when cmd_counter = 10 else 
+      adc_setup_regs(8)       when cmd_counter = 11 else 
+      adc_setup_regs(9)       when cmd_counter = 12 else 
       "00000000";
    
-   -- ADC acquisition data MUX
-   acq_data <=   
-      cmd_wr_reg & "0001"     when byte_counter = 0 else    -- write register command with MUX reg address
-      "00000001"              when byte_counter = 1 else    -- write register command write 1 register
-      ain_sel & "1000"        when byte_counter = 2 and ain_counter < 8 else    -- write register data with selected ain
-      "0111"  & "1000"        when byte_counter = 2 and ain_counter = 8 else    -- write register data with ain no 7
-      "1111"  & "1111"        when byte_counter = 2 and ain_counter = 9 else    -- write register data with selected internal diode
-      cmd_wr_reg & "0110"     when byte_counter = 3 else    -- write register command with DIO reg address
-      "00000001"              when byte_counter = 4 else    -- write register command write 1 register
-      "00000001"              when byte_counter = 5 and ain_counter = 8 else    -- write register data, switch external MUX
-      "00000000"              when byte_counter = 5 and ain_counter /= 8 else   -- write register data, do not switch external MUX
-      cmd_dsync               when byte_counter = 6 else    -- DSYNC command
-      cmd_rdata               when byte_counter = 7 else    -- read data command
+   -- Single channel acquisition commands MUX. Written in loop after every trigger.
+   acq_cmds <=   
+      cmd_wr_reg & "0001"     when cmd_counter = 0 else    -- write register command with MUX reg address
+      "00000001"              when cmd_counter = 1 else    -- write register command write 1 register
+      ain_sel & "1000"        when cmd_counter = 2 and ain_counter < 8 else    -- write register data with selected ain
+      "0111"  & "1000"        when cmd_counter = 2 and ain_counter = 8 else    -- write register data with ain no 7
+      "1111"  & "1111"        when cmd_counter = 2 and ain_counter = 9 else    -- write register data with selected internal diode
+      cmd_wr_reg & "0110"     when cmd_counter = 3 else    -- write register command with DIO reg address
+      "00000001"              when cmd_counter = 4 else    -- write register command write 1 register
+      "00000001"              when cmd_counter = 5 and ain_counter = 8 else    -- write register data, switch external MUX
+      "00000000"              when cmd_counter = 5 and ain_counter /= 8 else   -- write register data, do not switch external MUX
+      cmd_dsync               when cmd_counter = 6 else    -- DSYNC command
+      "00000000"              when cmd_counter = 7 else    -- send zeros to release reset after DSYNC
+      cmd_rdata               when cmd_counter = 8 else    -- RDATA command
       "00000000";
 
-   -- byte select counter counter
-   byte_cnt_p: process ( sysClk ) 
+   -- comand select counter counter
+   cmd_cnt_p: process ( sysClk ) 
    begin
       if rising_edge(sysClk) then
-         if sysClkRst = '1' or byte_rst = '1' then
-            byte_counter <= 0;
-         elsif byte_en = '1' then
-            byte_counter <= byte_counter + 1;         
+         if sysClkRst = '1' or cmd_rst = '1' then
+            cmd_counter <= 0;
+         elsif cmd_en = '1' then
+            cmd_counter <= cmd_counter + 1;         
          end if;
       end if;
    end process;
@@ -214,6 +228,66 @@ begin
    end process;
    ain_sel <= CONV_STD_LOGIC_VECTOR(ain_counter, 4);
    
+   -- data wait delay counter
+   wait_cnt_p: process ( sysClk ) 
+   begin
+      if rising_edge(sysClk) then
+         if sysClkRst = '1' then
+            wait_counter <= 0;
+         elsif wait_load = '1' then
+            wait_counter <= rd_cmd_wait_t;       
+         elsif wait_done = '0' then
+            wait_counter <= wait_counter - 1;
+         end if;
+      end if;
+   end process;
+   wait_done <= '1' when wait_counter = 0 else '0';
+   
+   -- read byte counter
+   byte_cnt_p: process ( sysClk ) 
+   begin
+      if rising_edge(sysClk) then
+         if sysClkRst = '1' or byte_rst = '1' then
+            byte_counter <= 0;
+         elsif byte_en = '1' then
+            byte_counter <= byte_counter + 1;         
+         end if;
+      end if;
+   end process;
+   
+   -- acquisition chanel counter
+   ch_cnt_p: process ( sysClk ) 
+   begin
+      if rising_edge(sysClk) then
+         if sysClkRst = '1' then
+            ch_counter <= 0;
+         elsif channel_en = '1' then
+            if ch_counter < 9 then
+               ch_counter <= ch_counter + 1;
+            else
+               ch_counter <= 0;
+            end if;
+         end if;
+      end if;
+   end process;
+   
+   -- acquisition data storage
+   data_reg_p: process ( sysClk ) 
+   begin
+      if rising_edge(sysClk) then
+         if sysClkRst = '1' then
+            data_23_16 <= (others=>'0');
+            data_15_08 <= (others=>'0');
+         elsif byte_counter = 0 and spi_rd_en = '1' then
+            data_23_16 <= spi_rd_data;
+         elsif byte_counter = 1 and spi_rd_en = '1' then
+            data_15_08 <= spi_rd_data;
+         elsif byte_counter = 2 and spi_rd_en = '1' then
+            adcData(ch_counter) <= data_23_16 & data_15_08 & spi_rd_data;
+         end if;
+      end if;
+   end process;
+   
    -- One time init and readout loop FSM
    fsm_cnt_p: process ( sysClk ) 
    begin
@@ -226,63 +300,105 @@ begin
       end if;
    end process;
 
-   fsm_cmb_p: process ( state, adcDrdyEn, spi_rd_en, byte_counter, ain_counter, adcStart) 
+   fsm_cmb_p: process ( state, adcDrdyEn, adcDrdyD2, spi_rd_en, cmd_counter, ain_counter, byte_counter, adcStart, wait_done) 
    begin
       next_state <= state;
-      byte_en <= '0';
-      byte_rst <= '0';
+      cmd_en <= '0';
+      cmd_rst <= '0';
       ain_en <= '0';
       ain_rst <= '0';
+      byte_en <= '0';
+      byte_rst <= '0';
       spi_wr_en <= '0';
-      init_out <= '0';
+      sel_init_cmds <= '0';
+      channel_en <= '0';
+      wait_load <= '0';
       
       case state is
       
          when IDLE =>
-            byte_rst <= '1';
+            cmd_rst <= '1';
             ain_rst <= '1';
-            next_state <= INIT_BYTE;
+            next_state <= INIT_CMD;
          
-         when INIT_BYTE => 
+         when INIT_CMD => 
             spi_wr_en <= '1';
-            byte_en <= '1';
-            init_out <= '1';
+            cmd_en <= '1';
+            sel_init_cmds <= '1';
             next_state <= INIT_WAIT;
             
          when INIT_WAIT =>
-            init_out <= '1';
+            sel_init_cmds <= '1';
             if spi_rd_en = '1' then
-               if byte_counter < 13 then
-                  next_state <= INIT_BYTE;
+               if cmd_counter < 13 then
+                  next_state <= INIT_CMD;
                else
                   next_state <= WAIT_TRIG;
                end if;
             end if;
          
          when WAIT_TRIG => 
-            byte_rst <= '1';
-            --if adcStart = '1' then
-               next_state <= ACQ_BYTE;
-            --else
-            --   next_state <= WAIT_TRIG;
-            --end if;
+            cmd_rst <= '1';
+            if adcStart = '1' then
+               next_state <= ACQ_CMD;
+            else
+               next_state <= WAIT_TRIG;
+            end if;
          
-         when ACQ_BYTE => 
-            if byte_counter = 6 and ain_counter < 9 then
+         when ACQ_CMD => 
+            if cmd_counter = 6 and ain_counter < 9 then
                ain_en <= '1';
-            elsif byte_counter = 6 and ain_counter >= 9 then
+            elsif cmd_counter = 6 and ain_counter >= 9 then
                ain_rst <= '1';
             end if;
             spi_wr_en <= '1';
-            byte_en <= '1';
+            cmd_en <= '1';
             next_state <= ACQ_WAIT;
             
          when ACQ_WAIT => 
             if spi_rd_en = '1' then
-               if byte_counter < 8 then
-                  next_state <= ACQ_BYTE;
+               if cmd_counter < 8 then
+                  next_state <= ACQ_CMD;
                else
-                  next_state <= WAIT_TRIG;   -- change to new state WAIT_DATA, READ_DATA ...
+                  next_state <= WAIT_DRDY;   
+               end if;
+            end if;
+         
+         when WAIT_DRDY =>
+            --if adcDrdyEn = '1' then
+            if adcDrdyD2 = '0' then
+               next_state <= READ_CMD;
+            end if;
+         
+         when READ_CMD => 
+            spi_wr_en <= '1';
+            cmd_en <= '1';
+            next_state <= READ_WAIT;
+            
+         when READ_WAIT => 
+            wait_load <= '1';
+            if spi_rd_en = '1' then
+               next_state <= WAIT_DATA;
+            end if;
+         
+         when WAIT_DATA => 
+            byte_rst <= '1';
+            if wait_done = '1' then
+               next_state <= READ_DATA;
+            end if;
+         
+         when READ_DATA =>
+            spi_wr_en <= '1';
+            next_state <= STORE_DATA;
+         
+         when STORE_DATA =>
+            if spi_rd_en = '1' then
+               if byte_counter < 2 then
+                  next_state <= READ_DATA;
+                  byte_en <= '1';
+               else
+                  next_state <= WAIT_TRIG;
+                  channel_en <= '1';
                end if;
             end if;
          

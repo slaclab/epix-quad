@@ -37,6 +37,7 @@ architecture beh of TB_SlowAdcCntrl is
    signal adcSclk :      std_logic;
    signal adcCsL :      std_logic;
    signal adcDin :      std_logic;
+   signal trigger :      std_logic;
 
 begin
 
@@ -57,6 +58,15 @@ begin
    end process;
    
    
+   process
+   begin
+      trigger <= '0';
+      wait for 500 ns;
+      trigger <= '1';
+      wait for 500 ns;
+   end process;
+   
+   
    --DUT
    Dut_i: entity work.SlowAdcCntrl
       generic map (
@@ -68,14 +78,13 @@ begin
          sysClkRst       => rst,
 
          -- Operation Control
-         adcStart        => '0',
+         adcStart        => trigger,
          adcData         => open,
-         adcStrobe       => open,
 
          -- ADC Control Signals
-         adcDrdy       => '0',
+         adcDrdy       => trigger,
          adcSclk       => adcSclk,
-         adcDout       => '1',
+         adcDout       => trigger,
          adcCsL        => adcCsL,
          adcDin        => adcDin
       );
