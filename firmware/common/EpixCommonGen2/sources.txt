@@ -9,11 +9,13 @@ vhdl work rtl/AdcDeserializer.vhd
 vhdl work rtl/DacCntrl.vhd
 vhdl work rtl/AutoTrigger.vhd
 vhdl work rtl/EpixCoreGen2.vhd
+vhdl work rtl/EpixCoreGen2_2.vhd
 vhdl work rtl/RegControlGen2.vhd
 vhdl work rtl/TrigControl.vhd
 vhdl work rtl/AcqControl.vhd
 vhdl work rtl/ReadoutControl.vhd
 vhdl work rtl/AdcCntrl.vhd
+vhdl work rtl/SlowAdcCntrl.vhd
 vhdl work rtl/PseudoScope.vhd
 vhdl work rtl/RingBuffer.vhd
 vhdl work rtl/EpixRowBlockRam.vhd

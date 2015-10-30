@@ -29,7 +29,10 @@ use UNISIM.vcomponents.all;
 entity AdcReadout3x is
    generic (
       TPD_G             : time := 1 ns;
-      IDELAYCTRL_FREQ_G : real := 200.0
+      IDELAYCTRL_FREQ_G : real := 200.0;
+      ADC0_INVERT_CH    : slv(7 downto 0) := "00000000";
+      ADC1_INVERT_CH    : slv(7 downto 0) := "00000000";
+      ADC2_INVERT_CH    : slv(7 downto 0) := "00000000"
    );
    port ( 
       -- Master system clock
@@ -60,6 +63,8 @@ end AdcReadout3x;
 -- Define architecture
 architecture AdcReadout3x of AdcReadout3x is
 
+   constant ADC01_INVERT_CH : Slv8Array(1 downto 0) := (0 => ADC0_INVERT_CH, 1 => ADC1_INVERT_CH);
+
 begin
 
    ------------------------
@@ -69,7 +74,9 @@ begin
    GenAdc : for i in 0 to 1 generate 
       U_AdcReadout: entity work.AdcReadout 
          generic map (
-            NUM_CHANNELS_G => 8
+            NUM_CHANNELS_G => 8,
+            ADC_INVERT_CH => ADC01_INVERT_CH(i),
+            IDELAYCTRL_FREQ_G => IDELAYCTRL_FREQ_G
          ) port map ( 
             sysClk        => sysClk,
             sysClkRst     => sysClkRst,
@@ -88,7 +95,9 @@ begin
    -- Monitor ADC
    U_AdcMon: entity work.AdcReadout 
       generic map (
-         NUM_CHANNELS_G => 4
+         NUM_CHANNELS_G => 4,
+         ADC_INVERT_CH => ADC2_INVERT_CH,
+         IDELAYCTRL_FREQ_G => IDELAYCTRL_FREQ_G
       ) port map ( 
          sysClk        => sysClk,
          sysClkRst     => sysClkRst,

@@ -30,7 +30,8 @@ entity AdcReadout is
    generic (
       TPD_G             : time                 := 1 ns;
       NUM_CHANNELS_G    : natural range 1 to 8 := 8;
-      IDELAYCTRL_FREQ_G : real                 := 200.0
+      IDELAYCTRL_FREQ_G : real                 := 200.0;
+      ADC_INVERT_CH     : slv(7 downto 0)      := "00000000"
    );
    port (
       -- Master system clock 
@@ -89,6 +90,7 @@ architecture rtl of AdcReadout is
    signal adcFramePad   : sl;
    signal adcFrame      : slv(13 downto 0);
    signal adcDataPad    : slv(NUM_CHANNELS_G-1 downto 0);
+   signal adcDataPadOut : slv(NUM_CHANNELS_G-1 downto 0);
    signal iAdcData      : Slv14Array(NUM_CHANNELS_G-1 downto 0);
    signal fifoDataOut   : slv(NUM_CHANNELS_G*16-1 downto 0);
    signal fifoDataIn    : slv(NUM_CHANNELS_G*16-1 downto 0);   
@@ -185,7 +187,9 @@ begin
          port map (
             I  => adcChP(i),
             IB => adcChN(i),
-            O  => adcDataPad(i));
+            O  => adcDataPadOut(i));
+      
+      adcDataPad(i) <= adcDataPadOut(i) when ADC_INVERT_CH(i) = '0' else not adcDataPadOut(i);
 
       U_DATA_DESERIALIZER : entity work.AdcDeserializer
          generic map (

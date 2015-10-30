@@ -188,7 +188,18 @@ begin
    -- Indexing for the memory readout order is linked to the raw ADC channel
    -- (i.e., if the channel reads out an ASIC from upper half of carrier,
    --  read it backward, otherwise, read it forward)
-   G_EPIX100A_CARRIER : if (FPGA_VERSION_C(31 downto 24) = x"EA") generate
+   G_EPIX100A_CARRIER_ADC_GEN2 : if (FPGA_VERSION_C(31 downto 16) = x"EA02") generate
+      channelOrder <= (8,9,3,4,5,6,7,15,0,1,2,10,11,12,13,14) when r.streamMode = '0' else
+                      (15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0); 
+      channelValid  <= (others => '1');
+      adcMemRdOrder <= "1100000100011111" when r.streamMode = '0' else
+                       x"0000";
+      tpsData(0) <= r.adcData(16+1);
+      tpsData(1) <= r.adcData(16+3);
+      tpsData(2) <= r.adcData(16+2);
+      tpsData(3) <= r.adcData(16+0);
+   end generate;
+   G_EPIX100A_CARRIER_ADC_GEN1 : if (FPGA_VERSION_C(31 downto 16) = x"EA01") generate
       channelOrder <= (0,3,1,2,8,11,9,10,6,4,5,7,14,12,13,15) when r.streamMode = '0' else
                       (15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0); 
       channelValid  <= (others => '1');
