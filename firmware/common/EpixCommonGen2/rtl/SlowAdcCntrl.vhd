@@ -96,6 +96,7 @@ architecture RTL of SlowAdcCntrl is
    signal spi_wr_en :      std_logic;
    signal spi_wr_data :    std_logic_vector(7 downto 0);
    signal spi_rd_en :      std_logic;
+   signal spi_rd_en_d1 :   std_logic;
    signal spi_rd_data :    std_logic_vector(7 downto 0);
    signal init_cmds :      std_logic_vector(7 downto 0);
    signal acq_cmds :       std_logic_vector(7 downto 0);
@@ -128,9 +129,11 @@ begin
          if sysClkRst = '1' then
             adcDrdyD1 <= '0';
             adcDrdyD2 <= '0';
+            spi_rd_en_d1 <= '0';
          else
             adcDrdyD1 <= adcDrdy;
             adcDrdyD2 <= adcDrdyD1;
+            spi_rd_en_d1 <= spi_rd_en;
          end if;
       end if;
    end process;
@@ -278,11 +281,11 @@ begin
          if sysClkRst = '1' then
             data_23_16 <= (others=>'0');
             data_15_08 <= (others=>'0');
-         elsif byte_counter = 0 and spi_rd_en = '1' then
+         elsif byte_counter = 0 and spi_rd_en = '1' and spi_rd_en_d1 = '0' then
             data_23_16 <= spi_rd_data;
-         elsif byte_counter = 1 and spi_rd_en = '1' then
+         elsif byte_counter = 1 and spi_rd_en = '1' and spi_rd_en_d1 = '0' then
             data_15_08 <= spi_rd_data;
-         elsif byte_counter = 2 and spi_rd_en = '1' then
+         elsif byte_counter = 2 and spi_rd_en = '1' and spi_rd_en_d1 = '0' then
             adcData(ch_counter) <= data_23_16 & data_15_08 & spi_rd_data;
          end if;
       end if;
@@ -399,6 +402,7 @@ begin
                else
                   next_state <= WAIT_TRIG;
                   channel_en <= '1';
+                  byte_en <= '1';
                end if;
             end if;
          
