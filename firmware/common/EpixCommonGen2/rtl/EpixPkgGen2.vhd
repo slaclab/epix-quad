@@ -126,6 +126,7 @@ package EpixPkgGen2 is
       startupAck         : sl;
       startupFail        : sl;
       slowAdcData        : Slv16Array(7 downto 0);
+      slowNewAdcData     : Slv24Array(9 downto 0);
    end record;
    constant EPIX_STATUS_INIT_C : EpixStatusType := (
       acqCount           => (others => '0'),
@@ -133,7 +134,8 @@ package EpixPkgGen2 is
       seqCount           => (others => '0'),
       startupAck         => '0',
       startupFail        => '0',
-      slowAdcData        => (others => (others => '0'))
+      slowAdcData        => (others => (others => '0')),
+      slowNewAdcData     => (others => (others => '0'))
    );
 
    --Functions to allow use of EPIX100 or 10k

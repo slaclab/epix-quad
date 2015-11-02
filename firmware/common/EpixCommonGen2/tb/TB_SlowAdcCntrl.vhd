@@ -37,6 +37,7 @@ architecture beh of TB_SlowAdcCntrl is
    signal adcSclk :      std_logic;
    signal adcCsL :      std_logic;
    signal adcDin :      std_logic;
+   signal adcRefClk :      std_logic;
    signal trigger :      std_logic;
 
 begin
@@ -82,6 +83,7 @@ begin
          adcData         => open,
 
          -- ADC Control Signals
+         adcRefClk     => adcRefClk,
          adcDrdy       => trigger,
          adcSclk       => adcSclk,
          adcDout       => trigger,

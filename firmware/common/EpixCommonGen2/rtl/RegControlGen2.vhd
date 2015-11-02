@@ -329,14 +329,33 @@ begin
       axiSlaveRegisterW(x"000080" & "00",  0, v.epixRegOut.requestStartupCal);
       axiSlaveRegisterR(x"000080" & "00",  1, epixStatus.startupAck);
       axiSlaveRegisterR(x"000080" & "00",  2, epixStatus.startupFail);
-      axiSlaveRegisterR(x"000100" & "00",  0, epixStatus.slowAdcData(0));
-      axiSlaveRegisterR(x"000101" & "00",  0, epixStatus.slowAdcData(1));
-      axiSlaveRegisterR(x"000102" & "00",  0, epixStatus.slowAdcData(2));
-      axiSlaveRegisterR(x"000103" & "00",  0, epixStatus.slowAdcData(3));
-      axiSlaveRegisterR(x"000104" & "00",  0, epixStatus.slowAdcData(4));
-      axiSlaveRegisterR(x"000105" & "00",  0, epixStatus.slowAdcData(5));
-      axiSlaveRegisterR(x"000106" & "00",  0, epixStatus.slowAdcData(6));
-      axiSlaveRegisterR(x"000107" & "00",  0, epixStatus.slowAdcData(7));
+      --axiSlaveRegisterR(x"000100" & "00",  0, epixStatus.slowAdcData(0));
+      --axiSlaveRegisterR(x"000101" & "00",  0, epixStatus.slowAdcData(1));
+      --axiSlaveRegisterR(x"000102" & "00",  0, epixStatus.slowAdcData(2));
+      --axiSlaveRegisterR(x"000103" & "00",  0, epixStatus.slowAdcData(3));
+      --axiSlaveRegisterR(x"000104" & "00",  0, epixStatus.slowAdcData(4));
+      --axiSlaveRegisterR(x"000105" & "00",  0, epixStatus.slowAdcData(5));
+      --axiSlaveRegisterR(x"000106" & "00",  0, epixStatus.slowAdcData(6));
+      --axiSlaveRegisterR(x"000107" & "00",  0, epixStatus.slowAdcData(7));
+      axiSlaveRegisterR(x"000100" & "00",  0, epixStatus.slowNewAdcData(0));
+      axiSlaveRegisterR(x"000101" & "00",  0, epixStatus.slowNewAdcData(1));
+      axiSlaveRegisterR(x"000102" & "00",  0, epixStatus.slowNewAdcData(2));
+      axiSlaveRegisterR(x"000103" & "00",  0, epixStatus.slowNewAdcData(3));
+      axiSlaveRegisterR(x"000104" & "00",  0, epixStatus.slowNewAdcData(4));
+      axiSlaveRegisterR(x"000105" & "00",  0, epixStatus.slowNewAdcData(7));
+      axiSlaveRegisterR(x"000106" & "00",  0, epixStatus.slowNewAdcData(8));
+      axiSlaveRegisterR(x"000107" & "00",  0, epixStatus.slowNewAdcData(9));
+      
+      axiSlaveRegisterR(x"000110" & "00",  0, epixStatus.slowNewAdcData(0));
+      axiSlaveRegisterR(x"000111" & "00",  0, epixStatus.slowNewAdcData(1));
+      axiSlaveRegisterR(x"000112" & "00",  0, epixStatus.slowNewAdcData(2));
+      axiSlaveRegisterR(x"000113" & "00",  0, epixStatus.slowNewAdcData(3));
+      axiSlaveRegisterR(x"000114" & "00",  0, epixStatus.slowNewAdcData(4));
+      axiSlaveRegisterR(x"000115" & "00",  0, epixStatus.slowNewAdcData(5));
+      axiSlaveRegisterR(x"000116" & "00",  0, epixStatus.slowNewAdcData(6));
+      axiSlaveRegisterR(x"000117" & "00",  0, epixStatus.slowNewAdcData(7));
+      axiSlaveRegisterR(x"000118" & "00",  0, epixStatus.slowNewAdcData(8));
+      axiSlaveRegisterR(x"000119" & "00",  0, epixStatus.slowNewAdcData(9));
 
       -- Pseudo-SACI space, 0x080000
       -- These are commands used to do multi-SACI commands (e.g., configure multiple pixels)
