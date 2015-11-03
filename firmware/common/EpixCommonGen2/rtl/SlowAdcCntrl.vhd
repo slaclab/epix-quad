@@ -58,8 +58,8 @@ architecture RTL of SlowAdcCntrl is
    constant r0_speed :     std_logic_vector(0 downto 0) := "0";      -- "0" - fosc/128, "1" - fosc/256
    constant r0_refhi :     std_logic_vector(0 downto 0) := "1";      -- "0" - Vref 1.25, "1" - Vref 2.5
    constant r0_bufen :     std_logic_vector(0 downto 0) := "0";      -- "0" - buffer disabled, "1" - buffer enabled
-   constant r2_idac1r :    std_logic_vector(1 downto 0) := "10";     -- "00" - off, "01" - range 1 ... "11" - range 3
-   constant r2_idac2r :    std_logic_vector(1 downto 0) := "10";     -- "00" - off, "01" - range 1 ... "11" - range 3
+   constant r2_idac1r :    std_logic_vector(1 downto 0) := "01";     -- "00" - off, "01" - range 1 (0.5mA) ... "11" - range 3 (2mA)
+   constant r2_idac2r :    std_logic_vector(1 downto 0) := "01";     -- "00" - off, "01" - range 1 (0.5mA) ... "11" - range 3 (2mA)
    constant r2_pga :       std_logic_vector(2 downto 0) := "000";    -- PGA 1 to 128
    constant r3_idac1 :     std_logic_vector(7 downto 0) := CONV_STD_LOGIC_VECTOR(51, 8);    -- I DAC1 0 to max range
    constant r4_idac2 :     std_logic_vector(7 downto 0) := CONV_STD_LOGIC_VECTOR(51, 8);    -- I DAC2 0 to max range
@@ -88,7 +88,7 @@ architecture RTL of SlowAdcCntrl is
    constant adc_refclk_t: integer := integer(ceil((ADC_CLK_PERIOD_G/SYS_CLK_PERIOD_G)/2.0))-1;
    constant rd_cmd_wait_t: integer := integer(ceil(ADC_CLK_PERIOD_G/SYS_CLK_PERIOD_G*50.0))-1;
    
-   TYPE STATE_TYPE IS (IDLE, INIT_CMD, INIT_WAIT, WAIT_TRIG, ACQ_CMD, ACQ_WAIT, WAIT_DRDY, READ_CMD, READ_WAIT, WAIT_DATA, READ_DATA, STORE_DATA);
+   TYPE STATE_TYPE IS (IDLE, RESET, INIT_CMD, INIT_WAIT, WAIT_TRIG, ACQ_CMD, ACQ_WAIT, WAIT_DRDY, READ_CMD, READ_WAIT, WAIT_DATA, READ_DATA, STORE_DATA);
    SIGNAL state, next_state   : STATE_TYPE;   
    
    signal adcDrdyEn :      std_logic;
@@ -124,8 +124,26 @@ architecture RTL of SlowAdcCntrl is
    
    signal ref_counter :    integer range 0 to adc_refclk_t;
    signal ref_clk :        std_logic;
+   signal ref_clk_en :     std_logic;
+   
+   signal adc_reset_en :   std_logic;
+   signal adc_reset_done : std_logic;
+   signal sel_reset_out :  std_logic;
+   signal adcSclkM :       std_logic;
+   signal adcSclkR :       std_logic;
 
 begin
+
+   -- ADC reset pattern generator
+   ADC_rst_i: entity work.SlowAdcReset
+   port map ( 
+      sysClk          => sysClk,
+      sysClkRst       => sysClkRst,
+      reset_en        => adc_reset_en,
+      tosc_en         => ref_clk_en,
+      reset_pattern   => adcSclkR,
+      reset_done      => adc_reset_done
+   );
 
    -- ADC reference clock counter
    ref_cnt_p: process ( sysClk ) 
@@ -143,6 +161,7 @@ begin
       end if;
    end process;
    adcRefClk <= ref_clk;
+   ref_clk_en <= '1' when ref_clk = '1' and ref_counter >= adc_refclk_t else '0';
 
    -- Drdy sync and falling edge detector
    process ( sysClk ) 
@@ -186,11 +205,11 @@ begin
          --SPI interface
          --spiCsL(0)=> adcCsL,
          spiCsL(0)=> open,
-         spiSclk  => adcSclk,
+         spiSclk  => adcSclkM,
          spiSdi   => adcDin,
          spiSdo   => adcDout
       );
-   adcCsL <= '0';
+   adcSclk <= adcSclkM when sel_reset_out = '0' else adcSclkR;
    -- ADC write MUX
    spi_wr_data <= init_cmds when sel_init_cmds = '1' else acq_cmds;
    
@@ -217,12 +236,12 @@ begin
       cmd_wr_reg & "0001"     when cmd_counter = 0 else    -- write register command with MUX reg address
       "00000000"              when cmd_counter = 1 else    -- write register command write 1 register
       ain_sel & "1000"        when cmd_counter = 2 and ain_counter < 8 else    -- write register data with selected ain
-      "0111"  & "1000"        when cmd_counter = 2 and ain_counter = 8 else    -- write register data with ain no 7
-      "1111"  & "1111"        when cmd_counter = 2 and ain_counter = 9 else    -- write register data with selected internal diode
+      "1111"  & "1111"        when cmd_counter = 2 and ain_counter = 8 else    -- write register data with selected internal diode
+      "0111"  & "1000"        when cmd_counter = 2 and ain_counter = 9 else    -- write register data with ain no 7
       cmd_wr_reg & "0110"     when cmd_counter = 3 else    -- write register command with DIO reg address
       "00000000"              when cmd_counter = 4 else    -- write register command write 1 register
-      "00000001"              when cmd_counter = 5 and ain_counter = 8 else    -- write register data, switch external MUX
-      "00000000"              when cmd_counter = 5 and ain_counter /= 8 else   -- write register data, do not switch external MUX
+      "00000001"              when cmd_counter = 5 and ain_counter = 9 else    -- write register data, switch external MUX
+      "00000000"              when cmd_counter = 5 and ain_counter /= 9 else   -- write register data, do not switch external MUX
       cmd_dsync               when cmd_counter = 6 else    -- DSYNC command
       "00000000"              when cmd_counter = 7 else    -- send zeros to release reset after DSYNC
       cmd_rdata               when cmd_counter = 8 else    -- RDATA command
@@ -325,7 +344,7 @@ begin
       end if;
    end process;
 
-   fsm_cmb_p: process ( state, adcDrdyEn, adcDrdyD2, spi_rd_en, cmd_counter, ain_counter, byte_counter, adcStart, wait_done) 
+   fsm_cmb_p: process ( state, adcDrdyEn, adcDrdyD2, spi_rd_en, cmd_counter, ain_counter, byte_counter, adcStart, wait_done, adc_reset_done) 
    begin
       next_state <= state;
       cmd_en <= '0';
@@ -336,15 +355,27 @@ begin
       byte_rst <= '0';
       spi_wr_en <= '0';
       sel_init_cmds <= '0';
+      sel_reset_out <= '0';
       channel_en <= '0';
       wait_load <= '0';
+      adc_reset_en <= '0';
+      adcCsL <= '0';
       
       case state is
       
          when IDLE =>
+            adcCsL <= '1';
             cmd_rst <= '1';
             ain_rst <= '1';
-            next_state <= INIT_CMD;
+            adc_reset_en <= '1';
+            sel_reset_out <= '1';
+            next_state <= RESET;
+         
+         when RESET => 
+            sel_reset_out <= '1';
+            if adc_reset_done = '1' then
+               next_state <= INIT_CMD;
+            end if;
          
          when INIT_CMD => 
             spi_wr_en <= '1';
@@ -390,6 +421,7 @@ begin
             end if;
          
          when WAIT_DRDY =>
+            adcCsL <= '1';
             --if adcDrdyEn = '1' then
             if adcDrdyD2 = '0' then
                next_state <= READ_CMD;
