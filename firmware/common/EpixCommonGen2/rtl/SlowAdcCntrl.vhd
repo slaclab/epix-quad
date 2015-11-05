@@ -86,36 +86,34 @@ architecture RTL of SlowAdcCntrl is
    constant cmd_rdata :    std_logic_vector(7 downto 0) := "00000001";
    
    constant adc_refclk_t: integer := integer(ceil((ADC_CLK_PERIOD_G/SYS_CLK_PERIOD_G)/2.0))-1;
-   constant rd_cmd_wait_t: integer := integer(ceil(ADC_CLK_PERIOD_G/SYS_CLK_PERIOD_G*50.0))-1;
+   constant dout_wait_t: integer := 60;
+   constant wreg_wait_t: integer := 6;
+   constant reset_wait_t: integer := 20;
    
-   TYPE STATE_TYPE IS (IDLE, RESET, INIT_CMD, INIT_WAIT, WAIT_TRIG, ACQ_CMD, ACQ_WAIT, WAIT_DRDY, READ_CMD, READ_WAIT, WAIT_DATA, READ_DATA, STORE_DATA);
+   TYPE STATE_TYPE IS (RESET, IDLE, CMD_SEND, CMD_WAIT, CMD_DLY, WAIT_DRDY, READ_DATA, STORE_DATA);
    SIGNAL state, next_state   : STATE_TYPE;   
    
    signal adcDrdyEn :      std_logic;
    signal adcDrdyD1 :      std_logic;
    signal adcDrdyD2 :      std_logic;
-   signal sel_init_cmds :  std_logic;
    signal spi_wr_en :      std_logic;
    signal spi_wr_data :    std_logic_vector(7 downto 0);
    signal spi_rd_en :      std_logic;
    signal spi_rd_en_d1 :   std_logic;
    signal spi_rd_data :    std_logic_vector(7 downto 0);
-   signal init_cmds :      std_logic_vector(7 downto 0);
-   signal acq_cmds :       std_logic_vector(7 downto 0);
-   signal cmd_counter :    integer range 0 to 13;
-   signal cmd_rst :        std_logic;
+   signal cmd_counter :    integer range 0 to 22;
+   signal cmd_data :       integer range 0 to 22;
+   signal cmd_load :       std_logic;
    signal cmd_en :         std_logic;
-   signal ain_sel  :       std_logic_vector(3 downto 0);
-   signal ain_counter :    integer range 0 to 9;
-   signal ain_rst :        std_logic;
-   signal ain_en :         std_logic;
+   signal ch_sel  :        std_logic_vector(3 downto 0);
    signal byte_counter :   integer range 0 to 3;
    signal byte_rst :       std_logic;
    signal byte_en :        std_logic;
    signal ch_counter :     integer range 0 to 9;
    signal channel_en :     std_logic;
    
-   signal wait_counter :   integer range 0 to rd_cmd_wait_t;
+   signal wait_counter :   integer range 0 to dout_wait_t;
+   signal wait_data :      integer range 0 to dout_wait_t;
    signal wait_load :      std_logic;
    signal wait_done :      std_logic;
    
@@ -126,37 +124,24 @@ architecture RTL of SlowAdcCntrl is
    signal ref_clk :        std_logic;
    signal ref_clk_en :     std_logic;
    
-   signal adc_reset_en :   std_logic;
-   signal adc_reset_done : std_logic;
-   signal sel_reset_out :  std_logic;
-   signal adcSclkM :       std_logic;
-   signal adcSclkR :       std_logic;
+   signal csl_master :     std_logic;
+   signal csl_cmd :       std_logic;
 
 begin
 
-   -- ADC reset pattern generator
-   ADC_rst_i: entity work.SlowAdcReset
-   port map ( 
-      sysClk          => sysClk,
-      sysClkRst       => sysClkRst,
-      reset_en        => adc_reset_en,
-      tosc_en         => ref_clk_en,
-      reset_pattern   => adcSclkR,
-      reset_done      => adc_reset_done
-   );
 
    -- ADC reference clock counter
    ref_cnt_p: process ( sysClk ) 
    begin
       if rising_edge(sysClk) then
          if sysClkRst = '1' then
-            ref_counter <= 0;
-            ref_clk <= '0';
+            ref_counter <= 0 after TPD_G;
+            ref_clk <= '0' after TPD_G;
          elsif ref_counter >= adc_refclk_t then
-            ref_counter <= 0;
-            ref_clk <= not ref_clk;
+            ref_counter <= 0 after TPD_G;
+            ref_clk <= not ref_clk after TPD_G;
          else
-            ref_counter <= ref_counter + 1;
+            ref_counter <= ref_counter + 1 after TPD_G;
          end if;
       end if;
    end process;
@@ -168,13 +153,13 @@ begin
    begin
       if rising_edge(sysClk) then
          if sysClkRst = '1' then
-            adcDrdyD1 <= '0';
-            adcDrdyD2 <= '0';
-            spi_rd_en_d1 <= '0';
+            adcDrdyD1 <= '0' after TPD_G;
+            adcDrdyD2 <= '0' after TPD_G;
+            spi_rd_en_d1 <= '0' after TPD_G;
          else
-            adcDrdyD1 <= adcDrdy;
-            adcDrdyD2 <= adcDrdyD1;
-            spi_rd_en_d1 <= spi_rd_en;
+            adcDrdyD1 <= adcDrdy after TPD_G;
+            adcDrdyD2 <= adcDrdyD1 after TPD_G;
+            spi_rd_en_d1 <= spi_rd_en after TPD_G;
          end if;
       end if;
    end process;
@@ -204,97 +189,102 @@ begin
          rdData   => spi_rd_data,
          --SPI interface
          --spiCsL(0)=> adcCsL,
-         spiCsL(0)=> open,
-         spiSclk  => adcSclkM,
+         spiCsL(0)=> csl_master,
+         spiSclk  => adcSclk,
          spiSdi   => adcDin,
          spiSdo   => adcDout
       );
-   adcSclk <= adcSclkM when sel_reset_out = '0' else adcSclkR;
-   -- ADC write MUX
-   spi_wr_data <= init_cmds when sel_init_cmds = '1' else acq_cmds;
+      
+      adcCsL <= csl_master and csl_cmd;
    
+   -- keep CS low when within one command
+   csl_cmd <= 
+      '1'   when cmd_counter = 0 else    -- write reset command 
+      '1'   when cmd_counter = 1 else    -- write register command starting from reg 0
+      '0'   when cmd_counter = 2 else    -- write register command write 10 registers
+      '0'   when cmd_counter = 3 else    -- write registers 0 to 9
+      '0'   when cmd_counter = 4 else 
+      '0'   when cmd_counter = 5 else 
+      '0'   when cmd_counter = 6 else 
+      '0'   when cmd_counter = 7 else 
+      '0'   when cmd_counter = 8 else 
+      '0'   when cmd_counter = 9 else 
+      '0'   when cmd_counter = 10 else 
+      '0'   when cmd_counter = 11 else 
+      '0'   when cmd_counter = 12 else 
+      '1'   when cmd_counter = 13 else
+      '1'   when cmd_counter = 14 else
+      '1'   when cmd_counter = 15 else
+      '0';
    
-   
-   -- ADC initialization commands MUX. Written just once.
-   init_cmds <=   
-      cmd_wr_reg & "0000"     when cmd_counter = 0 else    -- write register command starting from reg 0
-      "00001001"              when cmd_counter = 1 else    -- write register command write 10 registers
-      adc_setup_regs(0)       when cmd_counter = 2 else    -- write registers 0 to 9
-      adc_setup_regs(1)       when cmd_counter = 3 else 
-      adc_setup_regs(2)       when cmd_counter = 4 else 
-      adc_setup_regs(3)       when cmd_counter = 5 else 
-      adc_setup_regs(4)       when cmd_counter = 6 else 
-      adc_setup_regs(5)       when cmd_counter = 7 else 
-      adc_setup_regs(6)       when cmd_counter = 8 else 
-      adc_setup_regs(7)       when cmd_counter = 9 else 
-      adc_setup_regs(8)       when cmd_counter = 10 else 
-      adc_setup_regs(9)       when cmd_counter = 11 else 
+   -- selsct command to be transimitted to the ADC
+   spi_wr_data <=   
+      cmd_reset               when cmd_counter = 0 else    -- write reset command 
+      cmd_wr_reg & "0000"     when cmd_counter = 1 else    -- write register command starting from reg 0
+      "00001001"              when cmd_counter = 2 else    -- write register command write 10 registers
+      adc_setup_regs(0)       when cmd_counter = 3 else    -- write registers 0 to 9
+      ch_sel & "1000"         when cmd_counter = 4 and ch_counter < 8 else    -- write register data with selected ain
+      "1111"  & "1111"        when cmd_counter = 4 and ch_counter = 8 else    -- write register data with selected internal diode
+      "0111"  & "1000"        when cmd_counter = 4 and ch_counter = 9 else    -- write register data with ain no 7 
+      adc_setup_regs(2)       when cmd_counter = 5 else 
+      adc_setup_regs(3)       when cmd_counter = 6 else 
+      adc_setup_regs(4)       when cmd_counter = 7 else 
+      adc_setup_regs(5)       when cmd_counter = 8 else 
+      "00000001"              when cmd_counter = 9 and ch_counter = 9 else    -- write register data, switch external MUX
+      "00000000"              when cmd_counter = 9 and ch_counter /= 9 else   -- write register data, do not switch external MUX
+      adc_setup_regs(7)       when cmd_counter = 10 else 
+      adc_setup_regs(8)       when cmd_counter = 11 else 
+      adc_setup_regs(9)       when cmd_counter = 12 else 
+      cmd_dsync               when cmd_counter = 13 else    -- write dsync command
+      "00000000"              when cmd_counter = 14 else    -- write zeros to release reset (see ADC doc.)
+      cmd_rdata               when cmd_counter = 15 else    -- write RDATA command
       "00000000";
-   
-   -- Single channel acquisition commands MUX. Written in loop after every trigger.
-   acq_cmds <=   
-      cmd_wr_reg & "0001"     when cmd_counter = 0 else    -- write register command with MUX reg address
-      "00000000"              when cmd_counter = 1 else    -- write register command write 1 register
-      ain_sel & "1000"        when cmd_counter = 2 and ain_counter < 8 else    -- write register data with selected ain
-      "1111"  & "1111"        when cmd_counter = 2 and ain_counter = 8 else    -- write register data with selected internal diode
-      "0111"  & "1000"        when cmd_counter = 2 and ain_counter = 9 else    -- write register data with ain no 7
-      cmd_wr_reg & "0110"     when cmd_counter = 3 else    -- write register command with DIO reg address
-      "00000000"              when cmd_counter = 4 else    -- write register command write 1 register
-      "00000001"              when cmd_counter = 5 and ain_counter = 9 else    -- write register data, switch external MUX
-      "00000000"              when cmd_counter = 5 and ain_counter /= 9 else   -- write register data, do not switch external MUX
-      cmd_dsync               when cmd_counter = 6 else    -- DSYNC command
-      "00000000"              when cmd_counter = 7 else    -- send zeros to release reset after DSYNC
-      cmd_rdata               when cmd_counter = 8 else    -- RDATA command
-      "00000000";
+      
 
-   -- comand select counter counter
+   -- comand select counter
    cmd_cnt_p: process ( sysClk ) 
    begin
       if rising_edge(sysClk) then
-         if sysClkRst = '1' or cmd_rst = '1' then
-            cmd_counter <= 0;
+         if sysClkRst = '1' then
+            cmd_counter <= 0 after TPD_G;
+         elsif cmd_load = '1'  then
+            cmd_counter <= cmd_data after TPD_G;
          elsif cmd_en = '1' then
-            cmd_counter <= cmd_counter + 1;         
+            cmd_counter <= cmd_counter + 1 after TPD_G;         
          end if;
       end if;
    end process;
    
-   -- analog input select counter
-   ain_cnt_p: process ( sysClk ) 
-   begin
-      if rising_edge(sysClk) then
-         if sysClkRst = '1' or ain_rst = '1' then
-            ain_counter <= 0;
-         elsif ain_en = '1' then
-            ain_counter <= ain_counter + 1;         
-         end if;
-      end if;
-   end process;
-   ain_sel <= CONV_STD_LOGIC_VECTOR(ain_counter, 4);
    
-   -- data wait delay counter
+   -- after command delay counter
    wait_cnt_p: process ( sysClk ) 
    begin
       if rising_edge(sysClk) then
          if sysClkRst = '1' then
-            wait_counter <= 0;
+            wait_counter <= 0 after TPD_G;
          elsif wait_load = '1' then
-            wait_counter <= rd_cmd_wait_t;       
-         elsif wait_done = '0' then
-            wait_counter <= wait_counter - 1;
+            wait_counter <= wait_data after TPD_G;       
+         elsif wait_done = '0' and ref_clk_en = '1' then
+            wait_counter <= wait_counter - 1 after TPD_G;
          end if;
       end if;
    end process;
    wait_done <= '1' when wait_counter = 0 else '0';
+   wait_data <= 
+      reset_wait_t      when cmd_counter = 1 else     -- tosc delay after reset cmd
+      wreg_wait_t       when cmd_counter = 13 else    -- tosc delay after wreg cmd
+      wreg_wait_t       when cmd_counter = 14 else    -- tosc delay after dsync
+      dout_wait_t       when cmd_counter = 16 else    -- tosc delay after rdata cmd
+      0;
    
    -- read byte counter
    byte_cnt_p: process ( sysClk ) 
    begin
       if rising_edge(sysClk) then
          if sysClkRst = '1' or byte_rst = '1' then
-            byte_counter <= 0;
+            byte_counter <= 0 after TPD_G;
          elsif byte_en = '1' then
-            byte_counter <= byte_counter + 1;         
+            byte_counter <= byte_counter + 1 after TPD_G;         
          end if;
       end if;
    end process;
@@ -304,164 +294,120 @@ begin
    begin
       if rising_edge(sysClk) then
          if sysClkRst = '1' then
-            ch_counter <= 0;
+            ch_counter <= 0 after TPD_G;
          elsif channel_en = '1' then
             if ch_counter < 9 then
-               ch_counter <= ch_counter + 1;
+               ch_counter <= ch_counter + 1 after TPD_G;
             else
-               ch_counter <= 0;
+               ch_counter <= 0 after TPD_G;
             end if;
          end if;
       end if;
    end process;
+   ch_sel <= CONV_STD_LOGIC_VECTOR(ch_counter, 4);
    
    -- acquisition data storage
    data_reg_p: process ( sysClk ) 
    begin
       if rising_edge(sysClk) then
          if sysClkRst = '1' then
-            data_23_16 <= (others=>'0');
-            data_15_08 <= (others=>'0');
+            data_23_16 <= (others=>'0') after TPD_G;
+            data_15_08 <= (others=>'0') after TPD_G;
          elsif byte_counter = 0 and spi_rd_en = '1' and spi_rd_en_d1 = '0' then
-            data_23_16 <= spi_rd_data;
+            data_23_16 <= spi_rd_data after TPD_G;
          elsif byte_counter = 1 and spi_rd_en = '1' and spi_rd_en_d1 = '0' then
-            data_15_08 <= spi_rd_data;
+            data_15_08 <= spi_rd_data after TPD_G;
          elsif byte_counter = 2 and spi_rd_en = '1' and spi_rd_en_d1 = '0' then
-            adcData(ch_counter) <= data_23_16 & data_15_08 & spi_rd_data;
+            adcData(ch_counter) <= data_23_16 & data_15_08 & spi_rd_data after TPD_G;
          end if;
       end if;
    end process;
    
-   -- One time init and readout loop FSM
+   -- Readout loop FSM
    fsm_cnt_p: process ( sysClk ) 
    begin
       if rising_edge(sysClk) then
          if sysClkRst = '1' then
-            state <= IDLE;
+            state <= RESET after TPD_G;
          else
-            state <= next_state;         
+            state <= next_state after TPD_G;         
          end if;
       end if;
    end process;
 
-   fsm_cmb_p: process ( state, adcDrdyEn, adcDrdyD2, spi_rd_en, cmd_counter, ain_counter, byte_counter, adcStart, wait_done, adc_reset_done) 
+   fsm_cmb_p: process ( state, adcDrdyEn, spi_rd_en, cmd_counter, byte_counter, adcStart, wait_done) 
    begin
       next_state <= state;
       cmd_en <= '0';
-      cmd_rst <= '0';
-      ain_en <= '0';
-      ain_rst <= '0';
+      cmd_load <= '0';
+      cmd_data <= 0;
       byte_en <= '0';
       byte_rst <= '0';
       spi_wr_en <= '0';
-      sel_init_cmds <= '0';
-      sel_reset_out <= '0';
       channel_en <= '0';
       wait_load <= '0';
-      adc_reset_en <= '0';
-      adcCsL <= '0';
       
       case state is
       
-         when IDLE =>
-            adcCsL <= '1';
-            cmd_rst <= '1';
-            ain_rst <= '1';
-            adc_reset_en <= '1';
-            sel_reset_out <= '1';
-            next_state <= RESET;
-         
-         when RESET => 
-            sel_reset_out <= '1';
-            if adc_reset_done = '1' then
-               next_state <= INIT_CMD;
-            end if;
-         
-         when INIT_CMD => 
-            spi_wr_en <= '1';
-            cmd_en <= '1';
-            sel_init_cmds <= '1';
-            next_state <= INIT_WAIT;
-            
-         when INIT_WAIT =>
-            sel_init_cmds <= '1';
-            if spi_rd_en = '1' then
-               if cmd_counter < 12 then
-                  next_state <= INIT_CMD;
-               else
-                  next_state <= WAIT_TRIG;
-               end if;
-            end if;
-         
-         when WAIT_TRIG => 
-            cmd_rst <= '1';
+         when RESET =>           -- command 0 (reset) only after power up
+            cmd_load <= '1'; 
             if adcStart = '1' then
-               next_state <= ACQ_CMD;
-            else
-               next_state <= WAIT_TRIG;
+               next_state <= CMD_SEND;
+            end if;
+      
+         when IDLE =>            -- start from command 1
+            cmd_data <= 1;
+            cmd_load <= '1';
+            if adcStart = '1' then
+               next_state <= CMD_SEND;
             end if;
          
-         when ACQ_CMD => 
-            if cmd_counter = 6 and ain_counter < 9 then
-               ain_en <= '1';
-            elsif cmd_counter = 6 and ain_counter >= 9 then
-               ain_rst <= '1';
-            end if;
+         when CMD_SEND =>        -- trigger the SPI master
             spi_wr_en <= '1';
             cmd_en <= '1';
-            next_state <= ACQ_WAIT;
+            next_state <= CMD_WAIT;
             
-         when ACQ_WAIT => 
-            if spi_rd_en = '1' then
-               if cmd_counter < 8 then
-                  next_state <= ACQ_CMD;
-               else
-                  next_state <= WAIT_DRDY;   
-               end if;
-            end if;
-         
-         when WAIT_DRDY =>
-            adcCsL <= '1';
-            --if adcDrdyEn = '1' then
-            if adcDrdyD2 = '0' then
-               next_state <= READ_CMD;
-            end if;
-         
-         when READ_CMD => 
-            spi_wr_en <= '1';
-            cmd_en <= '1';
-            next_state <= READ_WAIT;
-            
-         when READ_WAIT => 
+         when CMD_WAIT =>        -- wait for the SPI master to finish
             wait_load <= '1';
             if spi_rd_en = '1' then
-               next_state <= WAIT_DATA;
+               next_state <= CMD_DLY;
             end if;
          
-         when WAIT_DATA => 
-            byte_rst <= '1';
+         when CMD_DLY =>                     -- wait required Tosc periods (see ADC doc.)
             if wait_done = '1' then
-               next_state <= READ_DATA;
+               if cmd_counter < 15 then      -- repeat send command up to DSYNC
+                  next_state <= CMD_SEND;    
+               elsif cmd_counter = 15 then   -- after DSYNC must wait for DRDY
+                  next_state <= WAIT_DRDY;
+               else                          -- after RDATA go to data readout
+                  byte_rst <= '1';
+                  next_state <= READ_DATA;
+               end if;
             end if;
          
-         when READ_DATA =>
+         when WAIT_DRDY =>          -- wait for DRDY and go to send RDATA command
+            if adcDrdyEn = '1' then
+               next_state <= CMD_SEND;
+            end if;
+         
+         when READ_DATA =>          -- trigger the SPI master for readout
             spi_wr_en <= '1';
             next_state <= STORE_DATA;
          
-         when STORE_DATA =>
+         when STORE_DATA =>         -- wait for the readout to complete and repeat 3 times
             if spi_rd_en = '1' then
                if byte_counter < 2 then
                   next_state <= READ_DATA;
                   byte_en <= '1';
                else
-                  next_state <= WAIT_TRIG;
+                  next_state <= IDLE;
                   channel_en <= '1';
                   byte_en <= '1';
                end if;
             end if;
          
          when others =>
-            next_state <= IDLE;
+            next_state <= RESET;
       
       end case;
       
