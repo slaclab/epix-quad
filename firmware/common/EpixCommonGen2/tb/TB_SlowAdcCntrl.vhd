@@ -71,7 +71,7 @@ begin
    --DUT
    Dut_i: entity work.SlowAdcCntrl
       generic map (
-         SPI_SCLK_PERIOD_G => 5.0E-9  	-- 20 MHz for simulation
+         SPI_SCLK_PERIOD_G => 100.0E-9  	-- 10 MHz for simulation
       )
       port map ( 
          -- Master system clock

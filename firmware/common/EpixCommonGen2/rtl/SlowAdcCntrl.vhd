@@ -119,13 +119,14 @@ architecture RTL of SlowAdcCntrl is
    
    signal data_23_16 :     std_logic_vector(7 downto 0);
    signal data_15_08 :     std_logic_vector(7 downto 0);
+   signal data_23_00 :     Slv24Array(9 downto 0);
    
    signal ref_counter :    integer range 0 to adc_refclk_t;
    signal ref_clk :        std_logic;
    signal ref_clk_en :     std_logic;
    
    signal csl_master :     std_logic;
-   signal csl_cmd :       std_logic;
+   signal csl_cmd :        std_logic;
 
 begin
 
@@ -318,10 +319,21 @@ begin
          elsif byte_counter = 1 and spi_rd_en = '1' and spi_rd_en_d1 = '0' then
             data_15_08 <= spi_rd_data after TPD_G;
          elsif byte_counter = 2 and spi_rd_en = '1' and spi_rd_en_d1 = '0' then
-            adcData(ch_counter) <= data_23_16 & data_15_08 & spi_rd_data after TPD_G;
+            data_23_00(ch_counter) <= data_23_16 & data_15_08 & spi_rd_data after TPD_G;
          end if;
       end if;
    end process;
+   -- map registers to outputs
+   adcData(0) <= data_23_00(0);
+   adcData(1) <= data_23_00(1);
+   adcData(2) <= data_23_00(8);
+   adcData(3) <= data_23_00(2);
+   adcData(4) <= data_23_00(3);
+   adcData(5) <= data_23_00(4);
+   adcData(6) <= data_23_00(5);
+   adcData(7) <= data_23_00(6);
+   adcData(8) <= data_23_00(7);
+   adcData(9) <= data_23_00(9);
    
    -- Readout loop FSM
    fsm_cnt_p: process ( sysClk ) 

@@ -329,33 +329,38 @@ begin
       axiSlaveRegisterW(x"000080" & "00",  0, v.epixRegOut.requestStartupCal);
       axiSlaveRegisterR(x"000080" & "00",  1, epixStatus.startupAck);
       axiSlaveRegisterR(x"000080" & "00",  2, epixStatus.startupFail);
-      --axiSlaveRegisterR(x"000100" & "00",  0, epixStatus.slowAdcData(0));
-      --axiSlaveRegisterR(x"000101" & "00",  0, epixStatus.slowAdcData(1));
-      --axiSlaveRegisterR(x"000102" & "00",  0, epixStatus.slowAdcData(2));
-      --axiSlaveRegisterR(x"000103" & "00",  0, epixStatus.slowAdcData(3));
-      --axiSlaveRegisterR(x"000104" & "00",  0, epixStatus.slowAdcData(4));
-      --axiSlaveRegisterR(x"000105" & "00",  0, epixStatus.slowAdcData(5));
-      --axiSlaveRegisterR(x"000106" & "00",  0, epixStatus.slowAdcData(6));
-      --axiSlaveRegisterR(x"000107" & "00",  0, epixStatus.slowAdcData(7));
-      axiSlaveRegisterR(x"000100" & "00",  0, epixStatus.slowNewAdcData(0));
-      axiSlaveRegisterR(x"000101" & "00",  0, epixStatus.slowNewAdcData(1));
-      axiSlaveRegisterR(x"000102" & "00",  0, epixStatus.slowNewAdcData(2));
-      axiSlaveRegisterR(x"000103" & "00",  0, epixStatus.slowNewAdcData(3));
-      axiSlaveRegisterR(x"000104" & "00",  0, epixStatus.slowNewAdcData(4));
-      axiSlaveRegisterR(x"000105" & "00",  0, epixStatus.slowNewAdcData(7));
-      axiSlaveRegisterR(x"000106" & "00",  0, epixStatus.slowNewAdcData(8));
-      axiSlaveRegisterR(x"000107" & "00",  0, epixStatus.slowNewAdcData(9));
+      -- slow ADC registers of the analog card gen1
+      axiSlaveRegisterR(x"000100" & "00",  0, epixStatus.slowAdcData(0));
+      axiSlaveRegisterR(x"000101" & "00",  0, epixStatus.slowAdcData(1));
+      axiSlaveRegisterR(x"000102" & "00",  0, epixStatus.slowAdcData(2));
+      axiSlaveRegisterR(x"000103" & "00",  0, epixStatus.slowAdcData(3));
+      axiSlaveRegisterR(x"000104" & "00",  0, epixStatus.slowAdcData(4));
+      axiSlaveRegisterR(x"000105" & "00",  0, epixStatus.slowAdcData(5));
+      axiSlaveRegisterR(x"000106" & "00",  0, epixStatus.slowAdcData(6));
+      axiSlaveRegisterR(x"000107" & "00",  0, epixStatus.slowAdcData(7));
+      -- slow ADC registers of the analog card gen2
+      axiSlaveRegisterR(x"000110" & "00",  0, epixStatus.slowAdc2Data(0));
+      axiSlaveRegisterR(x"000111" & "00",  0, epixStatus.slowAdc2Data(1));
+      axiSlaveRegisterR(x"000112" & "00",  0, epixStatus.slowAdc2Data(2));
+      axiSlaveRegisterR(x"000113" & "00",  0, epixStatus.slowAdc2Data(3));
+      axiSlaveRegisterR(x"000114" & "00",  0, epixStatus.slowAdc2Data(4));
+      axiSlaveRegisterR(x"000115" & "00",  0, epixStatus.slowAdc2Data(5));
+      axiSlaveRegisterR(x"000116" & "00",  0, epixStatus.slowAdc2Data(6));
+      axiSlaveRegisterR(x"000117" & "00",  0, epixStatus.slowAdc2Data(7));
+      axiSlaveRegisterR(x"000118" & "00",  0, epixStatus.slowAdc2Data(8));
+      axiSlaveRegisterR(x"000119" & "00",  0, epixStatus.slowAdc2Data(9));
       
-      axiSlaveRegisterR(x"000110" & "00",  0, epixStatus.slowNewAdcData(0));
-      axiSlaveRegisterR(x"000111" & "00",  0, epixStatus.slowNewAdcData(1));
-      axiSlaveRegisterR(x"000112" & "00",  0, epixStatus.slowNewAdcData(2));
-      axiSlaveRegisterR(x"000113" & "00",  0, epixStatus.slowNewAdcData(3));
-      axiSlaveRegisterR(x"000114" & "00",  0, epixStatus.slowNewAdcData(4));
-      axiSlaveRegisterR(x"000115" & "00",  0, epixStatus.slowNewAdcData(5));
-      axiSlaveRegisterR(x"000116" & "00",  0, epixStatus.slowNewAdcData(6));
-      axiSlaveRegisterR(x"000117" & "00",  0, epixStatus.slowNewAdcData(7));
-      axiSlaveRegisterR(x"000118" & "00",  0, epixStatus.slowNewAdcData(8));
-      axiSlaveRegisterR(x"000119" & "00",  0, epixStatus.slowNewAdcData(9));
+      
+      axiSlaveRegisterR(x"000140" & "00",  0, epixStatus.envData(0));
+      axiSlaveRegisterR(x"000141" & "00",  0, epixStatus.envData(1));
+      axiSlaveRegisterR(x"000142" & "00",  0, epixStatus.envData(2));
+      axiSlaveRegisterR(x"000143" & "00",  0, epixStatus.envData(3));
+      axiSlaveRegisterR(x"000144" & "00",  0, epixStatus.envData(4));
+      axiSlaveRegisterR(x"000145" & "00",  0, epixStatus.envData(5));
+      axiSlaveRegisterR(x"000146" & "00",  0, epixStatus.envData(6));
+      axiSlaveRegisterR(x"000147" & "00",  0, epixStatus.envData(7));
+      axiSlaveRegisterR(x"000148" & "00",  0, epixStatus.envData(8));
+      axiSlaveRegisterR(x"000149" & "00",  0, epixStatus.envData(9));
 
       -- Pseudo-SACI space, 0x080000
       -- These are commands used to do multi-SACI commands (e.g., configure multiple pixels)
