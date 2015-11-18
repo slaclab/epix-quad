@@ -65,8 +65,11 @@ entity ReadoutControl is
       adcValid            : in    slv(19 downto 0);
       adcData             : in    Slv16Array(19 downto 0);
 
-      -- Slow ADC data
+      -- Slow ADC data (ADC board gen1)
       slowAdcData         : in    Slv16Array(7 downto 0);
+      
+      -- monitoring data (ADC board gen2)
+      envData             : in    Slv32Array(8 downto 0);
 
       -- Data out interface
       mAxisMaster         : out AxiStreamMasterType;
@@ -175,6 +178,11 @@ architecture ReadoutControl of ReadoutControl is
    signal channelValid   : slv(15 downto 0);
 
    signal tpsAdcData     : Slv16Array(3 downto 0);
+   
+   signal monitorData    : Slv32Array(8 downto 0);
+   
+   signal iAdcValid      : slv(19 downto 0);
+   signal iAdcData       : Slv16Array(19 downto 0);
 
    attribute dont_touch : string;
    attribute dont_touch of r : signal is "true";
@@ -189,17 +197,46 @@ begin
    -- (i.e., if the channel reads out an ASIC from upper half of carrier,
    --  read it backward, otherwise, read it forward)
    G_EPIX100A_CARRIER_ADC_GEN2 : if (FPGA_VERSION_C(31 downto 16) = x"EA02") generate
-      channelOrder <= (8,9,3,4,5,6,7,15,0,1,2,10,11,12,13,14) when r.streamMode = '0' else
-                      (15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0); 
-      channelValid  <= (others => '1');
-      adcMemRdOrder <= "1100000100011111" when r.streamMode = '0' else
-                       x"0000";
-      tpsData(0) <= r.adcData(16+1);
-      tpsData(1) <= r.adcData(16+3);
-      tpsData(2) <= r.adcData(16+2);
-      tpsData(3) <= r.adcData(16+0);
-   end generate;
-   G_EPIX100A_CARRIER_ADC_GEN1 : if (FPGA_VERSION_C(31 downto 16) = x"EA01") generate
+      iAdcValid(0) <= adcValid(8);
+      iAdcValid(1) <= adcValid(3);
+      iAdcValid(2) <= adcValid(4);
+      iAdcValid(3) <= adcValid(9);
+      iAdcValid(4) <= adcValid(1);
+      iAdcValid(5) <= adcValid(2);
+      iAdcValid(6) <= adcValid(0);
+      iAdcValid(7) <= adcValid(10);
+      iAdcValid(8) <= adcValid(5);
+      iAdcValid(9) <= adcValid(7);
+      iAdcValid(10) <= adcValid(15);
+      iAdcValid(11) <= adcValid(6);
+      iAdcValid(12) <= adcValid(12);
+      iAdcValid(13) <= adcValid(13);
+      iAdcValid(14) <= adcValid(11);
+      iAdcValid(15) <= adcValid(14);
+      iAdcValid(16) <= adcValid(16);
+      iAdcValid(17) <= adcValid(17);
+      iAdcValid(18) <= adcValid(18);
+      iAdcValid(19) <= adcValid(19);
+      iAdcData(0) <= adcData(8);
+      iAdcData(1) <= adcData(3);
+      iAdcData(2) <= adcData(4);
+      iAdcData(3) <= adcData(9);
+      iAdcData(4) <= adcData(1);
+      iAdcData(5) <= adcData(2);
+      iAdcData(6) <= adcData(0);
+      iAdcData(7) <= adcData(10);
+      iAdcData(8) <= adcData(5);
+      iAdcData(9) <= adcData(7);
+      iAdcData(10) <= adcData(15);
+      iAdcData(11) <= adcData(6);
+      iAdcData(12) <= adcData(12);
+      iAdcData(13) <= adcData(13);
+      iAdcData(14) <= adcData(11);
+      iAdcData(15) <= adcData(14);
+      iAdcData(16) <= adcData(16);
+      iAdcData(17) <= adcData(17);
+      iAdcData(18) <= adcData(18);
+      iAdcData(19) <= adcData(19);
       channelOrder <= (0,3,1,2,8,11,9,10,6,4,5,7,14,12,13,15) when r.streamMode = '0' else
                       (15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0); 
       channelValid  <= (others => '1');
@@ -209,8 +246,41 @@ begin
       tpsData(1) <= r.adcData(16+3);
       tpsData(2) <= r.adcData(16+2);
       tpsData(3) <= r.adcData(16+0);
+      monitorData(0) <= envData(0);
+      monitorData(1) <= envData(1);
+      monitorData(2) <= envData(2);
+      monitorData(3) <= envData(3);
+      monitorData(4) <= envData(4);
+      monitorData(5) <= envData(5);
+      monitorData(6) <= envData(6);
+      monitorData(7) <= envData(7);
+      monitorData(8) <= envData(8);
+   end generate;
+   G_EPIX100A_CARRIER_ADC_GEN1 : if (FPGA_VERSION_C(31 downto 16) = x"EA01") generate
+      iAdcValid    <= adcValid;
+      iAdcData     <= adcData;
+      channelOrder <= (0,3,1,2,8,11,9,10,6,4,5,7,14,12,13,15) when r.streamMode = '0' else
+                      (15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0); 
+      channelValid  <= (others => '1');
+      adcMemRdOrder <= x"0F0F" when r.streamMode = '0' else
+                       x"0000";
+      tpsData(0) <= r.adcData(16+1);
+      tpsData(1) <= r.adcData(16+3);
+      tpsData(2) <= r.adcData(16+2);
+      tpsData(3) <= r.adcData(16+0);
+      monitorData(0) <= slowAdcData(1) & slowAdcData(0);
+      monitorData(1) <= slowAdcData(3) & slowAdcData(2);
+      monitorData(2) <= slowAdcData(5) & slowAdcData(4);
+      monitorData(3) <= slowAdcData(7) & slowAdcData(6);
+      monitorData(4) <= (others=>'0');
+      monitorData(5) <= (others=>'0');
+      monitorData(6) <= (others=>'0');
+      monitorData(7) <= (others=>'0');
+      monitorData(8) <= (others=>'0');
    end generate;
    G_EPIX100P_CARRIER : if (FPGA_VERSION_C(31 downto 24) = x"E0") generate
+      iAdcValid    <= adcValid;
+      iAdcData     <= adcData;
       channelOrder <= (4,5,6,7,8,9,10,11,3,2,1,0,15,14,13,12) when r.streamMode = '0' else
                       (15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0); 
       channelValid  <= (others => '1');
@@ -220,8 +290,19 @@ begin
       tpsData(1) <= r.adcData(16+1);
       tpsData(2) <= r.adcData(16+2);
       tpsData(3) <= r.adcData(16+3);
+      monitorData(0) <= slowAdcData(1) & slowAdcData(0);
+      monitorData(1) <= slowAdcData(3) & slowAdcData(2);
+      monitorData(2) <= slowAdcData(5) & slowAdcData(4);
+      monitorData(3) <= slowAdcData(7) & slowAdcData(6);
+      monitorData(4) <= (others=>'0');
+      monitorData(5) <= (others=>'0');
+      monitorData(6) <= (others=>'0');
+      monitorData(7) <= (others=>'0');
+      monitorData(8) <= (others=>'0');
    end generate;
    G_EPIX10KP_CARRIER : if (FPGA_VERSION_C(31 downto 24) = x"E2") generate
+      iAdcValid    <= adcValid;
+      iAdcData     <= adcData;
       channelOrder <= (4,5,6,7,8,9,10,11,3,2,1,0,15,14,13,12) when r.streamMode = '0' else
                       (15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0); 
       channelValid  <= (others => '1');
@@ -231,8 +312,19 @@ begin
       tpsData(1) <= r.adcData(16+1);
       tpsData(2) <= r.adcData(16+2);
       tpsData(3) <= r.adcData(16+3);
+      monitorData(0) <= slowAdcData(1) & slowAdcData(0);
+      monitorData(1) <= slowAdcData(3) & slowAdcData(2);
+      monitorData(2) <= slowAdcData(5) & slowAdcData(4);
+      monitorData(3) <= slowAdcData(7) & slowAdcData(6);
+      monitorData(4) <= (others=>'0');
+      monitorData(5) <= (others=>'0');
+      monitorData(6) <= (others=>'0');
+      monitorData(7) <= (others=>'0');
+      monitorData(8) <= (others=>'0');
    end generate;
    G_EPIXS_CARRIER : if (FPGA_VERSION_C(31 downto 24) = x"E3") generate
+      iAdcValid    <= adcValid;
+      iAdcData     <= adcData;
       channelOrder <= (4,5,6,7,8,9,10,11,3,2,1,0,15,14,13,12) when r.streamMode = '0' else
                       (15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0); 
       channelValid  <= "1000100000010001";
@@ -242,6 +334,15 @@ begin
       tpsData(1) <= r.adcData(16+1);
       tpsData(2) <= r.adcData(16+2);
       tpsData(3) <= r.adcData(16+3);
+      monitorData(0) <= slowAdcData(1) & slowAdcData(0);
+      monitorData(1) <= slowAdcData(3) & slowAdcData(2);
+      monitorData(2) <= slowAdcData(5) & slowAdcData(4);
+      monitorData(3) <= slowAdcData(7) & slowAdcData(6);
+      monitorData(4) <= (others=>'0');
+      monitorData(5) <= (others=>'0');
+      monitorData(6) <= (others=>'0');
+      monitorData(7) <= (others=>'0');
+      monitorData(8) <= (others=>'0');
    end generate;
 
    -- Edge detection for signals that interface with other blocks
@@ -278,8 +379,8 @@ begin
    --------------------------------------------------
    comb : process (r,epixConfig,acqCount,intSeqCount,adcFifoRdData,adcFifoRdValid,
                    channelOrder,fifoEmptyAll,acqBusy,adcMemOflowAny,fifoOflowAny,
-                   slowAdcData,tpsAdcData,acqStartEdge,dataSendEdge,adcFifoEmpty,
-                   sysClkRst,mAxisSlave, adcData, channelValid) 
+                   monitorData,tpsAdcData,acqStartEdge,dataSendEdge,adcFifoEmpty,
+                   sysClkRst,mAxisSlave, iAdcData, channelValid) 
       variable v : RegType;
    begin
       v := r;
@@ -291,7 +392,7 @@ begin
 
       -- Always grab latest adc data
       for i in 0 to 19 loop
-         v.adcData(i) := adcData(i);
+         v.adcData(i) := iAdcData(i);
       end loop;
       
       -- Latch overflows (this is reset in IDLE state)
@@ -390,13 +491,23 @@ begin
                v.wordCnt         := r.wordCnt + 1;
                v.mAxisMaster.tValid := '1';
                if (r.wordCnt = conv_std_logic_vector(WORDS_PER_SUPER_ROW_C,r.wordCnt'length)) then
-                  v.mAxisMaster.tData(31 downto 0) := slowAdcData(1) & slowAdcData(0);
+                  v.mAxisMaster.tData(31 downto 0) := monitorData(0);
                elsif (r.wordCnt = conv_std_logic_vector(WORDS_PER_SUPER_ROW_C+1,r.wordCnt'length)) then
-                  v.mAxisMaster.tData(31 downto 0) := slowAdcData(3) & slowAdcData(2);
+                  v.mAxisMaster.tData(31 downto 0) := monitorData(1);
                elsif (r.wordCnt = conv_std_logic_vector(WORDS_PER_SUPER_ROW_C+2,r.wordCnt'length)) then
-                  v.mAxisMaster.tData(31 downto 0) := slowAdcData(5) & slowAdcData(4);
+                  v.mAxisMaster.tData(31 downto 0) := monitorData(2);
                elsif (r.wordCnt = conv_std_logic_vector(WORDS_PER_SUPER_ROW_C+3,r.wordCnt'length)) then
-                  v.mAxisMaster.tData(31 downto 0) := slowAdcData(7) & slowAdcData(6);
+                  v.mAxisMaster.tData(31 downto 0) := monitorData(3);
+               elsif (r.wordCnt = conv_std_logic_vector(WORDS_PER_SUPER_ROW_C+4,r.wordCnt'length)) then
+                  v.mAxisMaster.tData(31 downto 0) := monitorData(4);
+               elsif (r.wordCnt = conv_std_logic_vector(WORDS_PER_SUPER_ROW_C+5,r.wordCnt'length)) then
+                  v.mAxisMaster.tData(31 downto 0) := monitorData(5);
+               elsif (r.wordCnt = conv_std_logic_vector(WORDS_PER_SUPER_ROW_C+6,r.wordCnt'length)) then
+                  v.mAxisMaster.tData(31 downto 0) := monitorData(6);
+               elsif (r.wordCnt = conv_std_logic_vector(WORDS_PER_SUPER_ROW_C+7,r.wordCnt'length)) then
+                  v.mAxisMaster.tData(31 downto 0) := monitorData(7);
+               elsif (r.wordCnt = conv_std_logic_vector(WORDS_PER_SUPER_ROW_C+8,r.wordCnt'length)) then
+                  v.mAxisMaster.tData(31 downto 0) := monitorData(8);
                else
                   v.mAxisMaster.tData(31 downto 0) := ZEROWORD_C;
                end if;
@@ -519,7 +630,7 @@ begin
       --since data will need to be synchronized with ASIC clock (x4).
       process(sysClk) begin
          if rising_edge(sysClk) then
-            if (adcValid(i) = '1') then
+            if (iAdcValid(i) = '1') then
                adcDataToReorder(i) <= '0' & asicDoutDelayed(i/4) & r.adcData(i)(13 downto 0);
             end if;
          end if;

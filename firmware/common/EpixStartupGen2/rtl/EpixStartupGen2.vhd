@@ -103,6 +103,14 @@ architecture EpixStartupGen2 of EpixStartupGen2 is
    constant ADC_TEST_PATTERN_C : slv(15 downto 0) := "0010100001100111"; --10343 decimal
    constant MAX_COUNT_C : slv(7 downto 0) := (others => '1');
    
+   attribute keep : boolean;
+   attribute keep of adcSelect : signal is true;
+   attribute keep of adcChSelect : signal is true;
+   attribute keep of muxedAdcData : signal is true;
+   attribute keep of muxedAdcValid : signal is true;
+   attribute keep of adcValidCountReg : signal is true;
+   attribute keep of adcMatchCountReg : signal is true;
+   
 begin
 
    U_StartupPicoBlaze : entity work.kcpsm6_wrapper

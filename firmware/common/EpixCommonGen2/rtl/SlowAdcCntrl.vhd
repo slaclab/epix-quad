@@ -39,7 +39,7 @@ entity SlowAdcCntrl is
 
       -- Operation Control
       adcStart        : in  std_logic;
-      adcData         : out Slv24Array(9 downto 0);
+      adcData         : out Slv24Array(8 downto 0);
 
       -- ADC Control Signals
       adcRefClk     : out   std_logic;
@@ -56,13 +56,13 @@ end SlowAdcCntrl;
 architecture RTL of SlowAdcCntrl is
 
    constant r0_speed :     std_logic_vector(0 downto 0) := "0";      -- "0" - fosc/128, "1" - fosc/256
-   constant r0_refhi :     std_logic_vector(0 downto 0) := "1";      -- "0" - Vref 1.25, "1" - Vref 2.5
+   constant r0_refhi :     std_logic_vector(0 downto 0) := "0";      -- "0" - Vref 1.25, "1" - Vref 2.5
    constant r0_bufen :     std_logic_vector(0 downto 0) := "0";      -- "0" - buffer disabled, "1" - buffer enabled
-   constant r2_idac1r :    std_logic_vector(1 downto 0) := "01";     -- "00" - off, "01" - range 1 (0.5mA) ... "11" - range 3 (2mA)
-   constant r2_idac2r :    std_logic_vector(1 downto 0) := "01";     -- "00" - off, "01" - range 1 (0.5mA) ... "11" - range 3 (2mA)
+   constant r2_idac1r :    std_logic_vector(1 downto 0) := "01";     -- "00" - off, "01" - range 1 (0.25mA@1.25Vref) ... "11" - range 3 (1mA@1.25Vref)
+   constant r2_idac2r :    std_logic_vector(1 downto 0) := "01";     -- "00" - off, "01" - range 1 (0.25mA@1.25Vref) ... "11" - range 3 (1mA@1.25Vref)
    constant r2_pga :       std_logic_vector(2 downto 0) := "000";    -- PGA 1 to 128
-   constant r3_idac1 :     std_logic_vector(7 downto 0) := CONV_STD_LOGIC_VECTOR(51, 8);    -- I DAC1 0 to max range
-   constant r4_idac2 :     std_logic_vector(7 downto 0) := CONV_STD_LOGIC_VECTOR(51, 8);    -- I DAC2 0 to max range
+   constant r3_idac1 :     std_logic_vector(7 downto 0) := CONV_STD_LOGIC_VECTOR(26, 8);    -- I DAC1 0 to max range
+   constant r4_idac2 :     std_logic_vector(7 downto 0) := CONV_STD_LOGIC_VECTOR(26, 8);    -- I DAC2 0 to max range
    constant r5_r6_dec0 :   std_logic_vector(10 downto 0) := CONV_STD_LOGIC_VECTOR(195, 11); -- Decimation value
    constant r6_ub :        std_logic_vector(0 downto 0) := "1";      -- "0" - bipolar, "1" - unipolar
    constant r6_mode :      std_logic_vector(1 downto 0) := "00";     -- "00" - auto, "01" - fast ...
@@ -96,6 +96,9 @@ architecture RTL of SlowAdcCntrl is
    signal adcDrdyEn :      std_logic;
    signal adcDrdyD1 :      std_logic;
    signal adcDrdyD2 :      std_logic;
+   signal adcStartEn :     std_logic;
+   signal adcStartD1 :     std_logic;
+   signal adcStartD2 :     std_logic;
    signal spi_wr_en :      std_logic;
    signal spi_wr_data :    std_logic_vector(7 downto 0);
    signal spi_rd_en :      std_logic;
@@ -119,7 +122,6 @@ architecture RTL of SlowAdcCntrl is
    
    signal data_23_16 :     std_logic_vector(7 downto 0);
    signal data_15_08 :     std_logic_vector(7 downto 0);
-   signal data_23_00 :     Slv24Array(9 downto 0);
    
    signal ref_counter :    integer range 0 to adc_refclk_t;
    signal ref_clk :        std_logic;
@@ -156,16 +158,21 @@ begin
          if sysClkRst = '1' then
             adcDrdyD1 <= '0' after TPD_G;
             adcDrdyD2 <= '0' after TPD_G;
+            adcStartD1 <= '0' after TPD_G;
+            adcStartD2 <= '0' after TPD_G;
             spi_rd_en_d1 <= '0' after TPD_G;
          else
             adcDrdyD1 <= adcDrdy after TPD_G;
             adcDrdyD2 <= adcDrdyD1 after TPD_G;
+            adcStartD1 <= adcStart after TPD_G;
+            adcStartD2 <= adcStartD1 after TPD_G;
             spi_rd_en_d1 <= spi_rd_en after TPD_G;
          end if;
       end if;
    end process;
    
    adcDrdyEn <= adcDrdyD2 and not adcDrdyD1;
+   adcStartEn <= adcStartD1 and not adcStartD2;
 
    -- Instance of the SPI Master controller
    SPI_Master_i: entity work.SpiMaster
@@ -225,14 +232,13 @@ begin
       "00001001"              when cmd_counter = 2 else    -- write register command write 10 registers
       adc_setup_regs(0)       when cmd_counter = 3 else    -- write registers 0 to 9
       ch_sel & "1000"         when cmd_counter = 4 and ch_counter < 8 else    -- write register data with selected ain
-      "1111"  & "1111"        when cmd_counter = 4 and ch_counter = 8 else    -- write register data with selected internal diode
-      "0111"  & "1000"        when cmd_counter = 4 and ch_counter = 9 else    -- write register data with ain no 7 
+      "0111"  & "1000"        when cmd_counter = 4 and ch_counter = 8 else    -- write register data with ain no 7
       adc_setup_regs(2)       when cmd_counter = 5 else 
       adc_setup_regs(3)       when cmd_counter = 6 else 
       adc_setup_regs(4)       when cmd_counter = 7 else 
       adc_setup_regs(5)       when cmd_counter = 8 else 
-      "00000001"              when cmd_counter = 9 and ch_counter = 9 else    -- write register data, switch external MUX
-      "00000000"              when cmd_counter = 9 and ch_counter /= 9 else   -- write register data, do not switch external MUX
+      "00000001"              when cmd_counter = 9 and ch_counter = 8 else    -- write register data, switch external MUX
+      "00000000"              when cmd_counter = 9 and ch_counter /= 8 else   -- write register data, do not switch external MUX
       adc_setup_regs(7)       when cmd_counter = 10 else 
       adc_setup_regs(8)       when cmd_counter = 11 else 
       adc_setup_regs(9)       when cmd_counter = 12 else 
@@ -297,7 +303,7 @@ begin
          if sysClkRst = '1' then
             ch_counter <= 0 after TPD_G;
          elsif channel_en = '1' then
-            if ch_counter < 9 then
+            if ch_counter < 8 then
                ch_counter <= ch_counter + 1 after TPD_G;
             else
                ch_counter <= 0 after TPD_G;
@@ -319,21 +325,10 @@ begin
          elsif byte_counter = 1 and spi_rd_en = '1' and spi_rd_en_d1 = '0' then
             data_15_08 <= spi_rd_data after TPD_G;
          elsif byte_counter = 2 and spi_rd_en = '1' and spi_rd_en_d1 = '0' then
-            data_23_00(ch_counter) <= data_23_16 & data_15_08 & spi_rd_data after TPD_G;
+            adcData(ch_counter) <= data_23_16 & data_15_08 & spi_rd_data after TPD_G;
          end if;
       end if;
    end process;
-   -- map registers to outputs
-   adcData(0) <= data_23_00(0);
-   adcData(1) <= data_23_00(1);
-   adcData(2) <= data_23_00(8);
-   adcData(3) <= data_23_00(2);
-   adcData(4) <= data_23_00(3);
-   adcData(5) <= data_23_00(4);
-   adcData(6) <= data_23_00(5);
-   adcData(7) <= data_23_00(6);
-   adcData(8) <= data_23_00(7);
-   adcData(9) <= data_23_00(9);
    
    -- Readout loop FSM
    fsm_cnt_p: process ( sysClk ) 
@@ -347,7 +342,7 @@ begin
       end if;
    end process;
 
-   fsm_cmb_p: process ( state, adcDrdyEn, spi_rd_en, cmd_counter, byte_counter, adcStart, wait_done) 
+   fsm_cmb_p: process ( state, adcDrdyEn, spi_rd_en, cmd_counter, byte_counter, adcStartEn, wait_done) 
    begin
       next_state <= state;
       cmd_en <= '0';
@@ -363,14 +358,14 @@ begin
       
          when RESET =>           -- command 0 (reset) only after power up
             cmd_load <= '1'; 
-            if adcStart = '1' then
+            if adcStartEn = '1' then
                next_state <= CMD_SEND;
             end if;
       
          when IDLE =>            -- start from command 1
             cmd_data <= 1;
             cmd_load <= '1';
-            if adcStart = '1' then
+            if adcStartEn = '1' then
                next_state <= CMD_SEND;
             end if;
          

@@ -16,6 +16,7 @@
              CONSTANT rClock,          26  ; AdcClkHalfT is register  0x000026
              CONSTANT rSaciClkBit,     28  ; Saci clock bit is register 0x000028
              CONSTANT rAdcPdwn,        1E  ; AdcPowerDown is register 0x00001E
+             CONSTANT rAdcRegReset,    08  ; Adc space reset register 
              CONSTANT rAdcRegTestPatt, 0D  ; Adc space test pattern register     
              CONSTANT rAdcRegExecute,  FF  ; Adc space transfer register
              CONSTANT rAsicMask,       0D  ; Asic mask register
@@ -87,7 +88,8 @@
              CALL fFpgaOutUp              ; 3) Bring FPGA outputs out of tristate
              CALL fCycleAdcs              ; 4) Power cycle ADCs
              CALL fSetDefaultFrame        ; 5) Set default frame alignment
-             CALL fTestEn                 ; 6) Start test patterns on all ADCs
+             CALL fAdcDigRst              ; 6) ADC digital reset
+             CALL fTestEn                 ; 7) Start test patterns on all ADCs
 fAlignAgain:
              CALL fDataAlign              ; 8) Data alignment sequence
              CALL fDataSuccessCheck       ; 9) Check for failures 
@@ -154,6 +156,30 @@ fAlignFinish:
              CALL fLongWait
              CALL fWait300ms  ; Long wait to let power settle
              RETURN
+             
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+             ;;ADC digital reset command
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ fAdcDigRst:
+             LOAD sInArg2, 00
+fNextAdcRst:
+             LOAD sInArg0, rAdcRegReset      ; Set digital reset bits
+             LOAD sInArg1, 03
+             CALL fWrAdcReg
+             LOAD sInArg0, rAdcRegExecute
+             LOAD sInArg1, cAdcTransferBit   ; Not needed for the new AD9249, except for the 0x100 (override reg)
+             CALL fWrAdcReg
+             LOAD sInArg0, rAdcRegReset      ; Clear digital reset bits
+             LOAD sInArg1, 00
+             CALL fWrAdcReg
+             LOAD sInArg0, rAdcRegExecute
+             LOAD sInArg1, cAdcTransferBit   ; Not needed for the new AD9249, except for the 0x100 (override reg)
+             CALL fWrAdcReg
+             COMPARE sInArg2, cLastAdc
+             RETURN Z
+             ADD sInArg2, 01
+             JUMP fNextAdcRst
+   
 
              ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
              ;;Load up ADC test patterns
@@ -165,7 +191,7 @@ fAlignFinish:
              LOAD sInArg1, cAdcMixedBitPatt
              CALL fWrAdcReg
              LOAD sInArg0, rAdcRegExecute
-             LOAD sInArg1, cAdcTransferBit
+             LOAD sInArg1, cAdcTransferBit   ; Not needed for the new AD9249, except for the 0x100 (override reg)
              CALL fWrAdcReg
              COMPARE sInArg2, cLastAdc
              RETURN Z
@@ -451,7 +477,7 @@ fDataMeasure:
              LOAD sInArg1, cAdcNoTestPatt
              CALL fWrAdcReg
              LOAD sInArg0, rAdcRegExecute
-             LOAD sInArg1, cAdcTransferBit
+             LOAD sInArg1, cAdcTransferBit   ; Not needed for the new AD9249, except for the 0x100 (override reg)
              CALL fWrAdcReg
              COMPARE sInArg2, cLastAdc
              RETURN Z

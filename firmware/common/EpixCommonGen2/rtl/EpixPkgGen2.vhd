@@ -126,8 +126,8 @@ package EpixPkgGen2 is
       startupAck         : sl;
       startupFail        : sl;
       slowAdcData        : Slv16Array(7 downto 0);
-      slowAdc2Data       : Slv24Array(9 downto 0);
-      envData            : Slv16Array(9 downto 0);
+      slowAdc2Data       : Slv24Array(8 downto 0);
+      envData            : Slv32Array(8 downto 0);
    end record;
    constant EPIX_STATUS_INIT_C : EpixStatusType := (
       acqCount           => (others => '0'),

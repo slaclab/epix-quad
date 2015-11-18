@@ -19,8 +19,7 @@
 LIBRARY ieee;
 use work.all;
 use ieee.std_logic_1164.all;
-use ieee.std_logic_arith.all;
-use ieee.std_logic_unsigned.all;
+use ieee.numeric_std.all;
 use work.SlowAdcPkg.all;
 use work.StdRtlPkg.all;
 
@@ -39,10 +38,10 @@ entity SlowAdcLUT is
       sysClkRst       : in  std_logic;
 
       -- ADC raw data inputs
-      adcData         : in Slv24Array(9 downto 0);
+      adcData         : in Slv24Array(8 downto 0);
 
       -- Converted data outputs
-      outEnvData      : out Slv16Array(9 downto 0)
+      outEnvData      : out Slv32Array(8 downto 0)
    );
 end SlowAdcLUT;
 
@@ -53,18 +52,17 @@ architecture RTL of SlowAdcLUT is
    signal th0_address_a :     std_logic_vector(15 downto 0);
    signal th0_h_data_out_a :  std_logic_vector(35 downto 0);
    signal th0_l_data_out_a :  std_logic_vector(35 downto 0);
+   signal th0_data_out_a :    std_logic_vector(15 downto 0);
    
    signal th1_address_a :     std_logic_vector(15 downto 0);
    signal th1_h_data_out_a :  std_logic_vector(35 downto 0);
    signal th1_l_data_out_a :  std_logic_vector(35 downto 0);
-   
-   signal vdio_address_a :    std_logic_vector(15 downto 0);
-   signal vdio_h_data_out_a : std_logic_vector(35 downto 0);
-   signal vdio_l_data_out_a : std_logic_vector(35 downto 0);
+   signal th1_data_out_a :    std_logic_vector(15 downto 0);
    
    signal hum_address_a :     std_logic_vector(15 downto 0);
    signal hum_h_data_out_a :  std_logic_vector(35 downto 0);
    signal hum_l_data_out_a :  std_logic_vector(35 downto 0);
+   signal hum_data_out_a :    std_logic_vector(15 downto 0);
    
    signal iana_address_a :    std_logic_vector(15 downto 0);
    signal iana_h_data_out_a : std_logic_vector(35 downto 0);
@@ -458,7 +456,8 @@ begin
    );
    
    th0_address_a <= '1' & adcData(0)(23 downto 12) & "111";
-   outEnvData(0) <= th0_h_data_out_a(7 downto 0) & th0_l_data_out_a(7 downto 0);
+   th0_data_out_a <= th0_h_data_out_a(7 downto 0) & th0_l_data_out_a(7 downto 0);
+   outEnvData(0) <= std_logic_vector(resize(signed(th0_data_out_a), 32));
    
    
    
@@ -827,376 +826,8 @@ begin
    );
    
    th1_address_a <= '1' & adcData(1)(23 downto 12) & "111";
-   outEnvData(1) <= th1_h_data_out_a(7 downto 0) & th1_l_data_out_a(7 downto 0);
-   
-   
-   
-   vdio_h_rom: RAMB36E1 generic map ( 
-      READ_WIDTH_A => 9,
-      WRITE_WIDTH_A => 9,
-      DOA_REG => 0,
-      INIT_A => X"000000000",
-      RSTREG_PRIORITY_A => "REGCE",
-      SRVAL_A => X"000000000",
-      WRITE_MODE_A => "WRITE_FIRST",
-      READ_WIDTH_B => 9,
-      WRITE_WIDTH_B => 9,
-      DOB_REG => 0,
-      INIT_B => X"000000000",
-      RSTREG_PRIORITY_B => "REGCE",
-      SRVAL_B => X"000000000",
-      WRITE_MODE_B => "WRITE_FIRST",
-      INIT_FILE => "NONE",
-      SIM_COLLISION_CHECK => "ALL",
-      RAM_MODE => "TDP",
-      RDADDR_COLLISION_HWCONFIG => "DELAYED_WRITE",
-      EN_ECC_READ => FALSE,
-      EN_ECC_WRITE => FALSE,
-      RAM_EXTENSION_A => "NONE",
-      RAM_EXTENSION_B => "NONE",
-      SIM_DEVICE => "7SERIES",
-      INIT_00 => INIT_H_VDIO_00,
-      INIT_01 => INIT_H_VDIO_01,
-      INIT_02 => INIT_H_VDIO_02,
-      INIT_03 => INIT_H_VDIO_03,
-      INIT_04 => INIT_H_VDIO_04,
-      INIT_05 => INIT_H_VDIO_05,
-      INIT_06 => INIT_H_VDIO_06,
-      INIT_07 => INIT_H_VDIO_07,
-      INIT_08 => INIT_H_VDIO_08,
-      INIT_09 => INIT_H_VDIO_09,
-      INIT_0A => INIT_H_VDIO_0A,
-      INIT_0B => INIT_H_VDIO_0B,
-      INIT_0C => INIT_H_VDIO_0C,
-      INIT_0D => INIT_H_VDIO_0D,
-      INIT_0E => INIT_H_VDIO_0E,
-      INIT_0F => INIT_H_VDIO_0F,
-      INIT_10 => INIT_H_VDIO_10,
-      INIT_11 => INIT_H_VDIO_11,
-      INIT_12 => INIT_H_VDIO_12,
-      INIT_13 => INIT_H_VDIO_13,
-      INIT_14 => INIT_H_VDIO_14,
-      INIT_15 => INIT_H_VDIO_15,
-      INIT_16 => INIT_H_VDIO_16,
-      INIT_17 => INIT_H_VDIO_17,
-      INIT_18 => INIT_H_VDIO_18,
-      INIT_19 => INIT_H_VDIO_19,
-      INIT_1A => INIT_H_VDIO_1A,
-      INIT_1B => INIT_H_VDIO_1B,
-      INIT_1C => INIT_H_VDIO_1C,
-      INIT_1D => INIT_H_VDIO_1D,
-      INIT_1E => INIT_H_VDIO_1E,
-      INIT_1F => INIT_H_VDIO_1F,
-      INIT_20 => INIT_H_VDIO_20,
-      INIT_21 => INIT_H_VDIO_21,
-      INIT_22 => INIT_H_VDIO_22,
-      INIT_23 => INIT_H_VDIO_23,
-      INIT_24 => INIT_H_VDIO_24,
-      INIT_25 => INIT_H_VDIO_25,
-      INIT_26 => INIT_H_VDIO_26,
-      INIT_27 => INIT_H_VDIO_27,
-      INIT_28 => INIT_H_VDIO_28,
-      INIT_29 => INIT_H_VDIO_29,
-      INIT_2A => INIT_H_VDIO_2A,
-      INIT_2B => INIT_H_VDIO_2B,
-      INIT_2C => INIT_H_VDIO_2C,
-      INIT_2D => INIT_H_VDIO_2D,
-      INIT_2E => INIT_H_VDIO_2E,
-      INIT_2F => INIT_H_VDIO_2F,
-      INIT_30 => INIT_H_VDIO_30,
-      INIT_31 => INIT_H_VDIO_31,
-      INIT_32 => INIT_H_VDIO_32,
-      INIT_33 => INIT_H_VDIO_33,
-      INIT_34 => INIT_H_VDIO_34,
-      INIT_35 => INIT_H_VDIO_35,
-      INIT_36 => INIT_H_VDIO_36,
-      INIT_37 => INIT_H_VDIO_37,
-      INIT_38 => INIT_H_VDIO_38,
-      INIT_39 => INIT_H_VDIO_39,
-      INIT_3A => INIT_H_VDIO_3A,
-      INIT_3B => INIT_H_VDIO_3B,
-      INIT_3C => INIT_H_VDIO_3C,
-      INIT_3D => INIT_H_VDIO_3D,
-      INIT_3E => INIT_H_VDIO_3E,
-      INIT_3F => INIT_H_VDIO_3F,
-      INIT_40 => INIT_H_VDIO_40,
-      INIT_41 => INIT_H_VDIO_41,
-      INIT_42 => INIT_H_VDIO_42,
-      INIT_43 => INIT_H_VDIO_43,
-      INIT_44 => INIT_H_VDIO_44,
-      INIT_45 => INIT_H_VDIO_45,
-      INIT_46 => INIT_H_VDIO_46,
-      INIT_47 => INIT_H_VDIO_47,
-      INIT_48 => INIT_H_VDIO_48,
-      INIT_49 => INIT_H_VDIO_49,
-      INIT_4A => INIT_H_VDIO_4A,
-      INIT_4B => INIT_H_VDIO_4B,
-      INIT_4C => INIT_H_VDIO_4C,
-      INIT_4D => INIT_H_VDIO_4D,
-      INIT_4E => INIT_H_VDIO_4E,
-      INIT_4F => INIT_H_VDIO_4F,
-      INIT_50 => INIT_H_VDIO_50,
-      INIT_51 => INIT_H_VDIO_51,
-      INIT_52 => INIT_H_VDIO_52,
-      INIT_53 => INIT_H_VDIO_53,
-      INIT_54 => INIT_H_VDIO_54,
-      INIT_55 => INIT_H_VDIO_55,
-      INIT_56 => INIT_H_VDIO_56,
-      INIT_57 => INIT_H_VDIO_57,
-      INIT_58 => INIT_H_VDIO_58,
-      INIT_59 => INIT_H_VDIO_59,
-      INIT_5A => INIT_H_VDIO_5A,
-      INIT_5B => INIT_H_VDIO_5B,
-      INIT_5C => INIT_H_VDIO_5C,
-      INIT_5D => INIT_H_VDIO_5D,
-      INIT_5E => INIT_H_VDIO_5E,
-      INIT_5F => INIT_H_VDIO_5F,
-      INIT_60 => INIT_H_VDIO_60,
-      INIT_61 => INIT_H_VDIO_61,
-      INIT_62 => INIT_H_VDIO_62,
-      INIT_63 => INIT_H_VDIO_63,
-      INIT_64 => INIT_H_VDIO_64,
-      INIT_65 => INIT_H_VDIO_65,
-      INIT_66 => INIT_H_VDIO_66,
-      INIT_67 => INIT_H_VDIO_67,
-      INIT_68 => INIT_H_VDIO_68,
-      INIT_69 => INIT_H_VDIO_69,
-      INIT_6A => INIT_H_VDIO_6A,
-      INIT_6B => INIT_H_VDIO_6B,
-      INIT_6C => INIT_H_VDIO_6C,
-      INIT_6D => INIT_H_VDIO_6D,
-      INIT_6E => INIT_H_VDIO_6E,
-      INIT_6F => INIT_H_VDIO_6F,
-      INIT_70 => INIT_H_VDIO_70,
-      INIT_71 => INIT_H_VDIO_71,
-      INIT_72 => INIT_H_VDIO_72,
-      INIT_73 => INIT_H_VDIO_73,
-      INIT_74 => INIT_H_VDIO_74,
-      INIT_75 => INIT_H_VDIO_75,
-      INIT_76 => INIT_H_VDIO_76,
-      INIT_77 => INIT_H_VDIO_77,
-      INIT_78 => INIT_H_VDIO_78,
-      INIT_79 => INIT_H_VDIO_79,
-      INIT_7A => INIT_H_VDIO_7A,
-      INIT_7B => INIT_H_VDIO_7B,
-      INIT_7C => INIT_H_VDIO_7C,
-      INIT_7D => INIT_H_VDIO_7D,
-      INIT_7E => INIT_H_VDIO_7E,
-      INIT_7F => INIT_H_VDIO_7F
-   ) port map(   
-      ADDRARDADDR    => vdio_address_a,
-      ENARDEN        => '1',
-      CLKARDCLK      => sysClk,
-      DOADO          => vdio_h_data_out_a(31 downto 0),
-      DOPADOP        => vdio_h_data_out_a(35 downto 32), 
-      DIADI          => x"00000000",
-      DIPADIP        => x"0", 
-      WEA            => "0000",
-      REGCEAREGCE    => '0',
-      RSTRAMARSTRAM  => '0',
-      RSTREGARSTREG  => '0',
-      ADDRBWRADDR    => x"0000",
-      ENBWREN        => '0',
-      CLKBWRCLK      => sysClk,
-      DOBDO          => open,
-      DOPBDOP        => open, 
-      DIBDI          => x"00000000",
-      DIPBDIP        => x"0", 
-      WEBWE          => x"00",
-      REGCEB         => '0',
-      RSTRAMB        => '0',
-      RSTREGB        => '0',
-      CASCADEINA     => '0',
-      CASCADEINB     => '0',
-      INJECTDBITERR  => '0',
-      INJECTSBITERR  => '0'
-   );
-   
-   
-   
-   vdio_l_rom: RAMB36E1 generic map ( 
-      READ_WIDTH_A => 9,
-      WRITE_WIDTH_A => 9,
-      DOA_REG => 0,
-      INIT_A => X"000000000",
-      RSTREG_PRIORITY_A => "REGCE",
-      SRVAL_A => X"000000000",
-      WRITE_MODE_A => "WRITE_FIRST",
-      READ_WIDTH_B => 9,
-      WRITE_WIDTH_B => 9,
-      DOB_REG => 0,
-      INIT_B => X"000000000",
-      RSTREG_PRIORITY_B => "REGCE",
-      SRVAL_B => X"000000000",
-      WRITE_MODE_B => "WRITE_FIRST",
-      INIT_FILE => "NONE",
-      SIM_COLLISION_CHECK => "ALL",
-      RAM_MODE => "TDP",
-      RDADDR_COLLISION_HWCONFIG => "DELAYED_WRITE",
-      EN_ECC_READ => FALSE,
-      EN_ECC_WRITE => FALSE,
-      RAM_EXTENSION_A => "NONE",
-      RAM_EXTENSION_B => "NONE",
-      SIM_DEVICE => "7SERIES",
-      INIT_00 => INIT_L_VDIO_00,
-      INIT_01 => INIT_L_VDIO_01,
-      INIT_02 => INIT_L_VDIO_02,
-      INIT_03 => INIT_L_VDIO_03,
-      INIT_04 => INIT_L_VDIO_04,
-      INIT_05 => INIT_L_VDIO_05,
-      INIT_06 => INIT_L_VDIO_06,
-      INIT_07 => INIT_L_VDIO_07,
-      INIT_08 => INIT_L_VDIO_08,
-      INIT_09 => INIT_L_VDIO_09,
-      INIT_0A => INIT_L_VDIO_0A,
-      INIT_0B => INIT_L_VDIO_0B,
-      INIT_0C => INIT_L_VDIO_0C,
-      INIT_0D => INIT_L_VDIO_0D,
-      INIT_0E => INIT_L_VDIO_0E,
-      INIT_0F => INIT_L_VDIO_0F,
-      INIT_10 => INIT_L_VDIO_10,
-      INIT_11 => INIT_L_VDIO_11,
-      INIT_12 => INIT_L_VDIO_12,
-      INIT_13 => INIT_L_VDIO_13,
-      INIT_14 => INIT_L_VDIO_14,
-      INIT_15 => INIT_L_VDIO_15,
-      INIT_16 => INIT_L_VDIO_16,
-      INIT_17 => INIT_L_VDIO_17,
-      INIT_18 => INIT_L_VDIO_18,
-      INIT_19 => INIT_L_VDIO_19,
-      INIT_1A => INIT_L_VDIO_1A,
-      INIT_1B => INIT_L_VDIO_1B,
-      INIT_1C => INIT_L_VDIO_1C,
-      INIT_1D => INIT_L_VDIO_1D,
-      INIT_1E => INIT_L_VDIO_1E,
-      INIT_1F => INIT_L_VDIO_1F,
-      INIT_20 => INIT_L_VDIO_20,
-      INIT_21 => INIT_L_VDIO_21,
-      INIT_22 => INIT_L_VDIO_22,
-      INIT_23 => INIT_L_VDIO_23,
-      INIT_24 => INIT_L_VDIO_24,
-      INIT_25 => INIT_L_VDIO_25,
-      INIT_26 => INIT_L_VDIO_26,
-      INIT_27 => INIT_L_VDIO_27,
-      INIT_28 => INIT_L_VDIO_28,
-      INIT_29 => INIT_L_VDIO_29,
-      INIT_2A => INIT_L_VDIO_2A,
-      INIT_2B => INIT_L_VDIO_2B,
-      INIT_2C => INIT_L_VDIO_2C,
-      INIT_2D => INIT_L_VDIO_2D,
-      INIT_2E => INIT_L_VDIO_2E,
-      INIT_2F => INIT_L_VDIO_2F,
-      INIT_30 => INIT_L_VDIO_30,
-      INIT_31 => INIT_L_VDIO_31,
-      INIT_32 => INIT_L_VDIO_32,
-      INIT_33 => INIT_L_VDIO_33,
-      INIT_34 => INIT_L_VDIO_34,
-      INIT_35 => INIT_L_VDIO_35,
-      INIT_36 => INIT_L_VDIO_36,
-      INIT_37 => INIT_L_VDIO_37,
-      INIT_38 => INIT_L_VDIO_38,
-      INIT_39 => INIT_L_VDIO_39,
-      INIT_3A => INIT_L_VDIO_3A,
-      INIT_3B => INIT_L_VDIO_3B,
-      INIT_3C => INIT_L_VDIO_3C,
-      INIT_3D => INIT_L_VDIO_3D,
-      INIT_3E => INIT_L_VDIO_3E,
-      INIT_3F => INIT_L_VDIO_3F,
-      INIT_40 => INIT_L_VDIO_40,
-      INIT_41 => INIT_L_VDIO_41,
-      INIT_42 => INIT_L_VDIO_42,
-      INIT_43 => INIT_L_VDIO_43,
-      INIT_44 => INIT_L_VDIO_44,
-      INIT_45 => INIT_L_VDIO_45,
-      INIT_46 => INIT_L_VDIO_46,
-      INIT_47 => INIT_L_VDIO_47,
-      INIT_48 => INIT_L_VDIO_48,
-      INIT_49 => INIT_L_VDIO_49,
-      INIT_4A => INIT_L_VDIO_4A,
-      INIT_4B => INIT_L_VDIO_4B,
-      INIT_4C => INIT_L_VDIO_4C,
-      INIT_4D => INIT_L_VDIO_4D,
-      INIT_4E => INIT_L_VDIO_4E,
-      INIT_4F => INIT_L_VDIO_4F,
-      INIT_50 => INIT_L_VDIO_50,
-      INIT_51 => INIT_L_VDIO_51,
-      INIT_52 => INIT_L_VDIO_52,
-      INIT_53 => INIT_L_VDIO_53,
-      INIT_54 => INIT_L_VDIO_54,
-      INIT_55 => INIT_L_VDIO_55,
-      INIT_56 => INIT_L_VDIO_56,
-      INIT_57 => INIT_L_VDIO_57,
-      INIT_58 => INIT_L_VDIO_58,
-      INIT_59 => INIT_L_VDIO_59,
-      INIT_5A => INIT_L_VDIO_5A,
-      INIT_5B => INIT_L_VDIO_5B,
-      INIT_5C => INIT_L_VDIO_5C,
-      INIT_5D => INIT_L_VDIO_5D,
-      INIT_5E => INIT_L_VDIO_5E,
-      INIT_5F => INIT_L_VDIO_5F,
-      INIT_60 => INIT_L_VDIO_60,
-      INIT_61 => INIT_L_VDIO_61,
-      INIT_62 => INIT_L_VDIO_62,
-      INIT_63 => INIT_L_VDIO_63,
-      INIT_64 => INIT_L_VDIO_64,
-      INIT_65 => INIT_L_VDIO_65,
-      INIT_66 => INIT_L_VDIO_66,
-      INIT_67 => INIT_L_VDIO_67,
-      INIT_68 => INIT_L_VDIO_68,
-      INIT_69 => INIT_L_VDIO_69,
-      INIT_6A => INIT_L_VDIO_6A,
-      INIT_6B => INIT_L_VDIO_6B,
-      INIT_6C => INIT_L_VDIO_6C,
-      INIT_6D => INIT_L_VDIO_6D,
-      INIT_6E => INIT_L_VDIO_6E,
-      INIT_6F => INIT_L_VDIO_6F,
-      INIT_70 => INIT_L_VDIO_70,
-      INIT_71 => INIT_L_VDIO_71,
-      INIT_72 => INIT_L_VDIO_72,
-      INIT_73 => INIT_L_VDIO_73,
-      INIT_74 => INIT_L_VDIO_74,
-      INIT_75 => INIT_L_VDIO_75,
-      INIT_76 => INIT_L_VDIO_76,
-      INIT_77 => INIT_L_VDIO_77,
-      INIT_78 => INIT_L_VDIO_78,
-      INIT_79 => INIT_L_VDIO_79,
-      INIT_7A => INIT_L_VDIO_7A,
-      INIT_7B => INIT_L_VDIO_7B,
-      INIT_7C => INIT_L_VDIO_7C,
-      INIT_7D => INIT_L_VDIO_7D,
-      INIT_7E => INIT_L_VDIO_7E,
-      INIT_7F => INIT_L_VDIO_7F
-   ) port map(   
-      ADDRARDADDR    => vdio_address_a,
-      ENARDEN        => '1',
-      CLKARDCLK      => sysClk,
-      DOADO          => vdio_l_data_out_a(31 downto 0),
-      DOPADOP        => vdio_l_data_out_a(35 downto 32), 
-      DIADI          => x"00000000",
-      DIPADIP        => x"0", 
-      WEA            => "0000",
-      REGCEAREGCE    => '0',
-      RSTRAMARSTRAM  => '0',
-      RSTREGARSTREG  => '0',
-      ADDRBWRADDR    => x"0000",
-      ENBWREN        => '0',
-      CLKBWRCLK      => sysClk,
-      DOBDO          => open,
-      DOPBDOP        => open, 
-      DIBDI          => x"00000000",
-      DIPBDIP        => x"0", 
-      WEBWE          => x"00",
-      REGCEB         => '0',
-      RSTRAMB        => '0',
-      RSTREGB        => '0',
-      CASCADEINA     => '0',
-      CASCADEINB     => '0',
-      INJECTDBITERR  => '0',
-      INJECTSBITERR  => '0'
-   );
-   
-   vdio_address_a <= '1' & adcData(2)(23 downto 12) & "111";
-   outEnvData(2) <= vdio_h_data_out_a(7 downto 0) & vdio_l_data_out_a(7 downto 0);
+   th1_data_out_a <= th1_h_data_out_a(7 downto 0) & th1_l_data_out_a(7 downto 0);
+   outEnvData(1) <= std_logic_vector(resize(signed(th1_data_out_a), 32));
    
    
    hum_h_rom: RAMB36E1 generic map ( 
@@ -1563,8 +1194,9 @@ begin
       INJECTSBITERR  => '0'
    );
    
-   hum_address_a <= '1' & adcData(3)(23 downto 12) & "111";
-   outEnvData(3) <= hum_h_data_out_a(7 downto 0) & hum_l_data_out_a(7 downto 0);
+   hum_address_a <= '1' & adcData(2)(23 downto 12) & "111";
+   hum_data_out_a <= hum_h_data_out_a(7 downto 0) & hum_l_data_out_a(7 downto 0);
+   outEnvData(2) <= std_logic_vector(resize(signed(hum_data_out_a), 32));
    
    iana_h_rom: RAMB36E1 generic map ( 
       READ_WIDTH_A => 9,
@@ -1930,8 +1562,8 @@ begin
       INJECTSBITERR  => '0'
    );
    
-   iana_address_a <= '1' & adcData(4)(23 downto 12) & "111";
-   outEnvData(4) <= iana_h_data_out_a(7 downto 0) & iana_l_data_out_a(7 downto 0);
+   iana_address_a <= '1' & adcData(3)(23 downto 12) & "111";
+   outEnvData(3) <= x"0000" & iana_h_data_out_a(7 downto 0) & iana_l_data_out_a(7 downto 0);
    
    
    idig_h_rom: RAMB36E1 generic map ( 
@@ -2298,8 +1930,8 @@ begin
       INJECTSBITERR  => '0'
    );
    
-   idig_address_a <= '1' & adcData(5)(23 downto 12) & "111";
-   outEnvData(5) <= idig_h_data_out_a(7 downto 0) & idig_l_data_out_a(7 downto 0);
+   idig_address_a <= '1' & adcData(4)(23 downto 12) & "111";
+   outEnvData(4) <= x"0000" & idig_h_data_out_a(7 downto 0) & idig_l_data_out_a(7 downto 0);
    
    
    igua_h_rom: RAMB36E1 generic map ( 
@@ -2666,8 +2298,8 @@ begin
       INJECTSBITERR  => '0'
    );
    
-   igua_address_a <= '1' & adcData(6)(23 downto 12) & "111";
-   outEnvData(6) <= igua_h_data_out_a(7 downto 0) & igua_l_data_out_a(7 downto 0);
+   igua_address_a <= '1' & adcData(5)(23 downto 12) & "111";
+   outEnvData(5) <= x"0000" & igua_h_data_out_a(7 downto 0) & igua_l_data_out_a(7 downto 0);
    
    
    ibia_h_rom: RAMB36E1 generic map ( 
@@ -3034,8 +2666,8 @@ begin
       INJECTSBITERR  => '0'
    );
    
-   ibia_address_a <= '1' & adcData(7)(23 downto 12) & "111";
-   outEnvData(7) <= ibia_h_data_out_a(7 downto 0) & ibia_l_data_out_a(7 downto 0);
+   ibia_address_a <= '1' & adcData(6)(23 downto 12) & "111";
+   outEnvData(6) <= x"0000" & ibia_h_data_out_a(7 downto 0) & ibia_l_data_out_a(7 downto 0);
    
    
    avin_h_rom: RAMB36E1 generic map ( 
@@ -3402,8 +3034,8 @@ begin
       INJECTSBITERR  => '0'
    );
    
-   avin_address_a <= '1' & adcData(8)(23 downto 12) & "111";
-   outEnvData(8) <= avin_h_data_out_a(7 downto 0) & avin_l_data_out_a(7 downto 0);
+   avin_address_a <= '1' & adcData(7)(23 downto 12) & "111";
+   outEnvData(7) <= x"0000" & avin_h_data_out_a(7 downto 0) & avin_l_data_out_a(7 downto 0);
    
    
    dvin_h_rom: RAMB36E1 generic map ( 
@@ -3770,8 +3402,8 @@ begin
       INJECTSBITERR  => '0'
    );
    
-   dvin_address_a <= '1' & adcData(9)(23 downto 12) & "111";
-   outEnvData(9) <= dvin_h_data_out_a(7 downto 0) & dvin_l_data_out_a(7 downto 0);
+   dvin_address_a <= '1' & adcData(8)(23 downto 12) & "111";
+   outEnvData(8) <= x"0000" & dvin_h_data_out_a(7 downto 0) & dvin_l_data_out_a(7 downto 0);
 
 end RTL;
 

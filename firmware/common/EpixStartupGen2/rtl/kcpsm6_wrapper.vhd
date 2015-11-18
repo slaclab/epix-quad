@@ -47,12 +47,17 @@ entity kcpsm6_wrapper is
 end kcpsm6_wrapper;
 
 architecture kcpsm6_wrapper of kcpsm6_wrapper is
-
+   
    signal address        : slv(11 downto 0);
    signal instruction    : slv(17 downto 0);
    signal bram_enable    : sl;
    signal kcpsm6_reset   : sl;
    signal rdl            : sl;
+   
+   attribute keep : boolean;
+   attribute keep of address : signal is true;
+   attribute keep of instruction : signal is true;
+   attribute keep of bram_enable : signal is true;
 
 
 begin

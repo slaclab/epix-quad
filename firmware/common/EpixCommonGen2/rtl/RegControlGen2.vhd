@@ -347,10 +347,8 @@ begin
       axiSlaveRegisterR(x"000115" & "00",  0, epixStatus.slowAdc2Data(5));
       axiSlaveRegisterR(x"000116" & "00",  0, epixStatus.slowAdc2Data(6));
       axiSlaveRegisterR(x"000117" & "00",  0, epixStatus.slowAdc2Data(7));
-      axiSlaveRegisterR(x"000118" & "00",  0, epixStatus.slowAdc2Data(8));
-      axiSlaveRegisterR(x"000119" & "00",  0, epixStatus.slowAdc2Data(9));
-      
-      
+      axiSlaveRegisterR(x"000118" & "00",  0, epixStatus.slowAdc2Data(8));      
+      -- gen 2 slow ADC data transformed to real numbers
       axiSlaveRegisterR(x"000140" & "00",  0, epixStatus.envData(0));
       axiSlaveRegisterR(x"000141" & "00",  0, epixStatus.envData(1));
       axiSlaveRegisterR(x"000142" & "00",  0, epixStatus.envData(2));
@@ -360,7 +358,6 @@ begin
       axiSlaveRegisterR(x"000146" & "00",  0, epixStatus.envData(6));
       axiSlaveRegisterR(x"000147" & "00",  0, epixStatus.envData(7));
       axiSlaveRegisterR(x"000148" & "00",  0, epixStatus.envData(8));
-      axiSlaveRegisterR(x"000149" & "00",  0, epixStatus.envData(9));
 
       -- Pseudo-SACI space, 0x080000
       -- These are commands used to do multi-SACI commands (e.g., configure multiple pixels)

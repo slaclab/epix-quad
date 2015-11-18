@@ -18,9 +18,10 @@ set_property C_DATA_DEPTH 2048 [get_debug_cores ${ilaName}]
 ############################################################################
 
 ## Core debug signals
-SetDebugCoreClk ${ilaName} {U_EpixCore/coreClk}
-ConfigProbe ${ilaName} {U_EpixCore/U_TrigControl/coreSideband*}
-ConfigProbe ${ilaName} {U_EpixCore/U_TrigControl/*opCode*}
+#SetDebugCoreClk ${ilaName} {U_EpixCore/coreClk}
+SetDebugCoreClk ${ilaName} {sampleClk}
+ConfigProbe ${ilaName} {asicDout1}
+#ConfigProbe ${ilaName} {asic01DM2}
 
 #ConfigProbe ${ilaName} {U_EpixCore/U_PseudoScope/mAxisMaster*}
 #ConfigProbe ${ilaName} {U_EpixCore/U_PseudoScope/mAxisSlave*}

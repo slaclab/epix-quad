@@ -54,13 +54,17 @@ use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
 use work.SsiCmdMasterPkg.all;
 use work.Pgp2bPkg.all;
+use work.Version.all;
 
 library unisim;
 use unisim.vcomponents.all;
 
 entity EpixCoreGen2 is
    generic (
-      TPD_G       : time := 1 ns
+      TPD_G       : time := 1 ns;
+      ADC0_INVERT_CH    : slv(7 downto 0) := "00000000";
+      ADC1_INVERT_CH    : slv(7 downto 0) := "00000000";
+      ADC2_INVERT_CH    : slv(7 downto 0) := "00000000"
    );
    port (
       -- Debugging IOs
@@ -94,10 +98,12 @@ entity EpixCoreGen2 is
       -- Board IDs
       serialIdIo          : inout slv(1 downto 0) := "00";
       -- Slow ADC
+      slowAdcRefClk       : out sl;
       slowAdcSclk         : out sl;
       slowAdcDin          : out sl;
       slowAdcCsb          : out sl;
       slowAdcDout         : in  sl;
+      slowAdcDrdy         : in  sl;
       -- SACI (allow for point-to-point interfaces)
       saciClk             : out sl;
       saciSelL            : out slv(3 downto 0);
@@ -215,6 +221,9 @@ architecture top_level of EpixCoreGen2 is
    signal iAsicSync  : sl;
    
    signal iSaciSelL  : slv(3 downto 0);
+   
+   attribute keep : boolean;
+   attribute keep of coreClk : signal is true;
    
 begin
 
@@ -345,7 +354,8 @@ begin
          locked    => open
       );
    -- clkIn     : 156.25 MHz PGP
-   -- clkOut(0) : 300.00 MHz IDELAYCTRL clock
+   -- clkOut(0) : 200.00 MHz IDELAYCTRL clock
+   -- TODO : Check it it is better to change back to 300 MHz. Modify picoblaze default delay range.
    U_CalClockGen : entity work.ClockManager7
       generic map (
          INPUT_BUFG_G         => false,
@@ -353,7 +363,8 @@ begin
          NUM_CLOCKS_G         => 1,
          CLKIN_PERIOD_G       => 6.4,
          DIVCLK_DIVIDE_G      => 1,
-         CLKFBOUT_MULT_F_G    => 6.0,
+         --CLKFBOUT_MULT_F_G    => 6.0,
+         CLKFBOUT_MULT_F_G    => 4.0,
          CLKOUT0_DIVIDE_F_G   => 3.125,
          CLKOUT0_PHASE_G      => 0.0,
          CLKOUT0_DUTY_CYCLE_G => 0.5,
@@ -519,6 +530,7 @@ begin
          adcValid       => adcValid,
          adcData        => adcData,
          slowAdcData    => epixStatus.slowAdcData,
+         envData        => epixStatus.envData,
          mAxisMaster    => userAxisMaster,
          mAxisSlave     => userAxisSlave,
          mpsOut         => open,
@@ -531,7 +543,11 @@ begin
    U_AdcReadout3x : entity work.AdcReadout3x
       generic map (
          TPD_G             => TPD_G,
-         IDELAYCTRL_FREQ_G => 300.0
+         --IDELAYCTRL_FREQ_G => 300.0,
+         IDELAYCTRL_FREQ_G => 200.0,
+         ADC0_INVERT_CH    => ADC0_INVERT_CH,
+         ADC1_INVERT_CH    => ADC1_INVERT_CH,
+         ADC2_INVERT_CH    => ADC2_INVERT_CH
       )
       port map ( 
          -- Master system clock
@@ -576,25 +592,77 @@ begin
          syncRst  => serdesReset);
 
    --------------------------------------------
-   --     Slow ADC Readout                   --
+   --     Slow ADC Readout ADC gen 1         --
    --------------------------------------------
-   U_AdcCntrl : entity work.AdcCntrl 
-      generic map (
-         TPD_G        => TPD_G,
-         N_CHANNELS_G => 8
-      )
-      port map ( 
-         sysClk        => coreClk,
-         sysClkRst     => axiRst,
-         adcChanCount  => "0111",
-         adcStart      => readDone,
-         adcData       => epixStatus.slowAdcData,
-         adcStrobe     => open,
-         adcSclk       => slowAdcSclk,
-         adcDout       => slowAdcDout,
-         adcCsL        => slowAdcCsb,
-         adcDin        => slowAdcDin
-      );
+   G_EPIX100A_SLOW_ADC_GEN1 : if (FPGA_VERSION_C(31 downto 16) = x"EA01") generate
+   
+      U_AdcCntrl : entity work.AdcCntrl 
+         generic map (
+            TPD_G        => TPD_G,
+            N_CHANNELS_G => 8
+         )
+         port map ( 
+            sysClk        => coreClk,
+            sysClkRst     => axiRst,
+            adcChanCount  => "0111",
+            adcStart      => readDone,
+            adcData       => epixStatus.slowAdcData,
+            adcStrobe     => open,
+            adcSclk       => slowAdcSclk,
+            adcDout       => slowAdcDout,
+            adcCsL        => slowAdcCsb,
+            adcDin        => slowAdcDin
+         );
+      
+   end generate;
+   
+   --------------------------------------------
+   --     Slow ADC Readout ADC gen 2         --
+   -------------------------------------------- 
+   G_EPIX100A_SLOW_ADC_GEN2 : if (FPGA_VERSION_C(31 downto 16) = x"EA02") generate
+     
+      U_AdcCntrl : entity work.SlowAdcCntrl
+         generic map (
+            SYS_CLK_PERIOD_G  => 10.0E-9,	   -- 100MHz
+            ADC_CLK_PERIOD_G  => 200.0E-9,	-- 5MHz
+            SPI_SCLK_PERIOD_G => 2.0E-6  	   -- 500kHz
+         )
+         port map ( 
+            -- Master system clock
+            sysClk        => coreClk,
+            sysClkRst     => axiRst,
+
+            -- Operation Control
+            adcStart      => readDone,
+            adcData       => epixStatus.slowAdc2Data,
+
+            -- ADC Control Signals
+            adcRefClk     => slowAdcRefClk,
+            adcDrdy       => slowAdcDrdy,
+            adcSclk       => slowAdcSclk,
+            adcDout       => slowAdcDout,
+            adcCsL        => slowAdcCsb,
+            adcDin        => slowAdcDin
+         );
+      
+      --------------------------------------------
+      --    Environmental data convertion LUTs  --
+      -------------------------------------------- 
+      
+      U_AdcEnv : entity work.SlowAdcLUT
+         port map ( 
+            -- Master system clock
+            sysClk        => coreClk,
+            sysClkRst     => axiRst,
+            
+            -- ADC raw data inputs
+            adcData       => epixStatus.slowAdc2Data,
+
+            -- Converted data outputs
+            outEnvData    => epixStatus.envData
+         );
+      
+   end generate;
 
    --------------------------------------------
    --     ePix Startup Sequencer             --
