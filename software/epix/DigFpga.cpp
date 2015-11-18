@@ -13,9 +13,9 @@
 // 06/07/2013: created
 //-----------------------------------------------------------------------------
 #include <DigFpga.h>
-#include <EpixAsic.h>
+#include <Epix100pAsic.h>
 #include <Epix100aAsic.h>
-#include <Epix10kAsic.h>
+#include <Epix10kpAsic.h>
 #include <EpixSAsic.h>
 #include <Ad9252.h>
 #include <PseudoScope.h>
@@ -237,7 +237,8 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent, EpixType epixTy
    addVariable(new Variable("AsicR0Mode", Variable::Configuration));
    getVariable("AsicR0Mode")->setDescription("0: time with R0 low minimized (ePix100p), 1: normal (ePix10k)");
    getVariable("AsicR0Mode")->setRange(0,0x1);
- 
+   
+   //Old analog board slow ADC registers
    for (x=0; x < 8; x++) {
       tmp.str("");
       tmp << "AdcValue" << dec << setw(2) << setfill('0') << x;
@@ -254,6 +255,71 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent, EpixType epixTy
    getVariable("AdcValue06")->setComp(0,-.0154,43.973,"C (sb)"); //Strongback temp (standard 30k resistor)
    //getVariable("AdcValue06")->setComp(0,-0.009992,-27.94,"C (sb)"); //Strongback temp (special 1M resistor)
    getVariable("AdcValue07")->setComp(0,.0287,-23.5,"%RH"); //Relative humidity
+   
+   //New analog board slow ADC registers
+   for (x=0; x < 9; x++) {
+      tmp.str("");
+      tmp << "Adc2Value" << dec << setw(2) << setfill('0') << x;
+
+      addRegister(new Register(tmp.str(), 0x01000110 + x));
+
+      addVariable(new Variable(tmp.str(), Variable::Status));
+      getVariable(tmp.str())->setDescription(tmp.str());
+   }
+   getVariable("Adc2Value00")->setComp(0,2.5/16777215/0.0000255,0,"Ohm (Th0)");              //Thermistor 0
+   getVariable("Adc2Value01")->setComp(0,2.5/16777215/0.0000255,0,"Ohm (Th1)");              //Thermistor 1
+   getVariable("Adc2Value02")->setComp(0,.0000156/2.0,-23.8,"%RH");            //Humidity
+   getVariable("Adc2Value03")->setComp(0,.0012682/2.0,0,"mA (2.5AV)");         //ASIC analog current
+   getVariable("Adc2Value04")->setComp(0,.0006341/2.0,0,"mA (2.5DV)");         //ASIC digital current
+   getVariable("Adc2Value05")->setComp(0,2.5/16777215,0,"mA (Iguard)");    //Vguard current
+   getVariable("Adc2Value06")->setComp(0,5.0/16777215,0,"mA (Ibias)");    //Vbias current
+   getVariable("Adc2Value07")->setComp(0,4.82/2.0/16777215.*3.0,0,"V (AVin)"); //Analog raw voltage
+   getVariable("Adc2Value08")->setComp(0,4.82/2.0/16777215.*3.0,0,"V (DVin)"); //Digital raw voltage
+   
+   addRegister(new Register("EnvData00", 0x01000140));
+   addVariable(new Variable("EnvData00", Variable::Status));
+   getVariable("EnvData00")->setDescription("Thermistor0 temperature");
+   getVariable("EnvData00")->setComp(0,.01,0,"C");
+   
+   addRegister(new Register("EnvData01", 0x01000141));
+   addVariable(new Variable("EnvData01", Variable::Status));
+   getVariable("EnvData01")->setDescription("Thermistor1 temperature");
+   getVariable("EnvData01")->setComp(0,.01,0,"C");
+   
+   addRegister(new Register("EnvData02", 0x01000142));
+   addVariable(new Variable("EnvData02", Variable::Status));
+   getVariable("EnvData02")->setDescription("Humidity");
+   getVariable("EnvData02")->setComp(0,.01,0,"%RH");
+   
+   addRegister(new Register("EnvData03", 0x01000143));
+   addVariable(new Variable("EnvData03", Variable::Status));
+   getVariable("EnvData03")->setDescription("ASIC analog current");
+   getVariable("EnvData03")->setComp(0,1.0,0,"mA");
+   
+   addRegister(new Register("EnvData04", 0x01000144));
+   addVariable(new Variable("EnvData04", Variable::Status));
+   getVariable("EnvData04")->setDescription("ASIC digital current");
+   getVariable("EnvData04")->setComp(0,1.0,0,"mA");
+   
+   addRegister(new Register("EnvData05", 0x01000145));
+   addVariable(new Variable("EnvData05", Variable::Status));
+   getVariable("EnvData05")->setDescription("Guard ring current");
+   getVariable("EnvData05")->setComp(0,.001,0,"mA");
+   
+   addRegister(new Register("EnvData06", 0x01000146));
+   addVariable(new Variable("EnvData06", Variable::Status));
+   getVariable("EnvData06")->setDescription("Detector bias current");
+   getVariable("EnvData06")->setComp(0,.001,0,"mA");
+   
+   addRegister(new Register("EnvData07", 0x01000147));
+   addVariable(new Variable("EnvData07", Variable::Status));
+   getVariable("EnvData07")->setDescription("Analog raw input voltage");
+   getVariable("EnvData07")->setComp(0,.001,0,"V");
+   
+   addRegister(new Register("EnvData08", 0x01000148));
+   addVariable(new Variable("EnvData08", Variable::Status));
+   getVariable("EnvData08")->setDescription("Digital raw input voltage");
+   getVariable("EnvData08")->setComp(0,.001,0,"V");
 
    addRegister(new Register("StrongbackTemp", 0x01000106));
    addVariable(new Variable("StrongbackTemp", Variable::Status));
@@ -430,21 +496,21 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent, EpixType epixTy
    addDevice(new   Ad9252(destination, 0x01008000, 0, this));
    addDevice(new   Ad9252(destination, 0x0100A000, 1, this));
    addDevice(new   Ad9252(destination, 0x0100C000, 2, this));
-   if (epixType == EPIX100) {
-      addDevice(new EpixAsic(destination, 0x01800000, 0, this));
-      addDevice(new EpixAsic(destination, 0x01900000, 1, this));
-      addDevice(new EpixAsic(destination, 0x01A00000, 2, this));
-      addDevice(new EpixAsic(destination, 0x01B00000, 3, this));
+   if (epixType == EPIX100P) {
+      addDevice(new Epix100pAsic(destination, 0x01800000, 0, this));
+      addDevice(new Epix100pAsic(destination, 0x01900000, 1, this));
+      addDevice(new Epix100pAsic(destination, 0x01A00000, 2, this));
+      addDevice(new Epix100pAsic(destination, 0x01B00000, 3, this));
    } else if (epixType == EPIX100A) {
       addDevice(new Epix100aAsic(destination, 0x01800000, 0, this));
       addDevice(new Epix100aAsic(destination, 0x01900000, 1, this));
       addDevice(new Epix100aAsic(destination, 0x01A00000, 2, this));
       addDevice(new Epix100aAsic(destination, 0x01B00000, 3, this));
-   } else if (epixType == EPIX10K) {
-      addDevice(new Epix10kAsic(destination, 0x01800000, 0, this));
-      addDevice(new Epix10kAsic(destination, 0x01900000, 1, this));
-      addDevice(new Epix10kAsic(destination, 0x01A00000, 2, this));
-      addDevice(new Epix10kAsic(destination, 0x01B00000, 3, this));
+   } else if (epixType == EPIX10KP) {
+      addDevice(new Epix10kpAsic(destination, 0x01800000, 0, this));
+      addDevice(new Epix10kpAsic(destination, 0x01900000, 1, this));
+      addDevice(new Epix10kpAsic(destination, 0x01A00000, 2, this));
+      addDevice(new Epix10kpAsic(destination, 0x01B00000, 3, this));
    } else if (epixType == EPIXS) {
       addDevice(new EpixSAsic(destination, 0x01800000, 0, this));
       addDevice(new EpixSAsic(destination, 0x01900000, 1, this));
@@ -533,6 +599,22 @@ void DigFpga::readStatus ( ) {
       getVariable(tmp.str())->setInt(getRegister(tmp.str())->get());
    }
    
+   for (x=0; x < 9; x++) {
+      tmp.str("");
+      tmp << "Adc2Value" << dec << setw(2) << setfill('0') << x;
+
+      readRegister(getRegister(tmp.str()));
+      getVariable(tmp.str())->setInt(getRegister(tmp.str())->get());
+   }
+   
+   for (x=0; x < 9; x++) {
+      tmp.str("");
+      tmp << "EnvData" << dec << setw(2) << setfill('0') << x;
+
+      readRegister(getRegister(tmp.str()));
+      getVariable(tmp.str())->setInt(getRegister(tmp.str())->get());
+   }
+   
 
    bool temp;
    readRegister(getRegister("digitalCardId0"));
@@ -557,6 +639,7 @@ void DigFpga::readStatus ( ) {
    getVariable("carrierCRC")->setInt(temp);
  
 
+/*
    uint y;
    readRegister(getRegister("StrongbackTemp"));
    y=getRegister("StrongbackTemp")->get();
@@ -579,6 +662,7 @@ void DigFpga::readStatus ( ) {
 //   Tinv = (1./Tinv) - 273.0;  //For reading in C
    Tinv = (1./Tinv); //For reading in K
    getVariable("StrongbackTemp")->setIntDec( (int) Tinv ); 
+*/
 
    readRegister(getRegister("EepromDataOut0"));
    readRegister(getRegister("EepromDataOut1"));
