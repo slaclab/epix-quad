@@ -26,6 +26,7 @@ package ScopeTypes is
    -- Record
    type ScopeConfigType is record
       scopeEnable       : std_logic;
+      triggerEnable     : std_logic;
       triggerEdge       : std_logic;
       triggerChannel    : std_logic_vector(3 downto 0);
       triggerMode       : std_logic_vector(1 downto 0);
@@ -43,6 +44,7 @@ package ScopeTypes is
    -- Initialize
    constant SCOPE_CONFIG_INIT_C : ScopeConfigType := ( 
       scopeEnable      => '0',
+      triggerEnable    => '0',
       triggerEdge      => '0',
       triggerChannel   => (others => '0'), 
       triggerMode      => (others => '0'), 

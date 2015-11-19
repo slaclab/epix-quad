@@ -42,7 +42,7 @@ entity PseudoScope is
 
       -- Signal for auto-rearm of trigger
       arm             : in  sl;
-
+      
       -- Potential triggers in
       acqStart        : in  sl;
       asicAcq         : in  sl;
@@ -74,6 +74,7 @@ architecture PseudoScope of PseudoScope is
    signal overThresholdA   : sl := '0';
    signal overThresholdB   : sl := '0';
    signal autoTrigger      : sl := '0';
+   signal trigger_sel      : sl := '0';
    signal trigger          : sl := '0';
    signal triggerRising    : sl := '0';
    signal triggerFalling   : sl := '0';
@@ -141,23 +142,27 @@ begin
                 '1';
 
    -- Trigger multiplexing
-   trigger <= scopeConfig.trig when triggerChannel =  0 else
-              overThresholdA   when triggerChannel =  1 else
-              overThresholdB   when triggerChannel =  2 else
-              acqStart         when triggerChannel =  3 else
-              asicAcq          when triggerChannel =  4 else
-              asicR0           when triggerChannel =  5 else
-              asicRoClk        when triggerChannel =  6 else
-              asicPpmat        when triggerChannel =  7 else
-              asicPpbe         when triggerChannel =  8 else
-              asicSync         when triggerChannel =  9 else
-              asicGr           when triggerChannel = 10 else
-              asicSaciSel(0)   when triggerChannel = 11 else
-              asicSaciSel(1)   when triggerChannel = 12 else
-              asicSaciSel(2)   when triggerChannel = 13 else
-              asicSaciSel(3)   when triggerChannel = 14 else
-              '0'              when triggerChannel = 15 else
-              'X';
+   trigger_sel <= 
+      scopeConfig.trig when triggerChannel =  0 else
+      overThresholdA   when triggerChannel =  1 else
+      overThresholdB   when triggerChannel =  2 else
+      acqStart         when triggerChannel =  3 else
+      asicAcq          when triggerChannel =  4 else
+      asicR0           when triggerChannel =  5 else
+      asicRoClk        when triggerChannel =  6 else
+      asicPpmat        when triggerChannel =  7 else
+      asicPpbe         when triggerChannel =  8 else
+      asicSync         when triggerChannel =  9 else
+      asicGr           when triggerChannel = 10 else
+      asicSaciSel(0)   when triggerChannel = 11 else
+      asicSaciSel(1)   when triggerChannel = 12 else
+      asicSaciSel(2)   when triggerChannel = 13 else
+      asicSaciSel(3)   when triggerChannel = 14 else
+      '0'              when triggerChannel = 15 else
+      'X';
+   
+   -- Trigger enable
+   trigger <= trigger_sel and scopeConfig.triggerEnable;
 
    -- Generate edges of the possible trigger signals
    U_RunEdge : entity work.SynchronizerEdge 

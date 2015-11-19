@@ -229,6 +229,10 @@ begin
       v.scopeRegOut.arm          := '0';
       v.scopeRegOut.trig         := '0';
       v.saciReadoutAck           := '0';
+      
+      -- add a feature to disable the pseudoscope when the DAC trigger is disabled
+      v.scopeRegOut.triggerEnable:= r.epixRegOut.daqTriggerEnable;
+      
       -- Reset data
       v.axiReadSlave.rdata       := (others => '0');
       
