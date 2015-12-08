@@ -48,11 +48,11 @@
 #define IBIA_SHIFT   0.0
 #define IBIA_SCALE   1000.0      // (mA * 1000)
 
-#define AVIN_COMP    0.001765568 // 2.41V (calibrated) / 2^12 * 3       
+#define AVIN_COMP    0.001831502 // 2.5V / 2^12 * 3       
 #define AVIN_SHIFT   0.0
 #define AVIN_SCALE   1000.0      // (Vin * 1000)
 
-#define DVIN_COMP    0.001765568 // 2.41V (calibrated) / 2^12 * 3      
+#define DVIN_COMP    0.001831502 // 2.5V / 2^12 * 3      
 #define DVIN_SHIFT   0.0
 #define DVIN_SCALE   1000.0      // (Vin * 1000)
 

@@ -273,8 +273,8 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent, EpixType epixTy
    getVariable("Adc2Value04")->setComp(0,.0006341/2.0,0,"mA (2.5DV)");         //ASIC digital current
    getVariable("Adc2Value05")->setComp(0,2.5/16777215,0,"mA (Iguard)");    //Vguard current
    getVariable("Adc2Value06")->setComp(0,5.0/16777215,0,"mA (Ibias)");    //Vbias current
-   getVariable("Adc2Value07")->setComp(0,4.82/2.0/16777215.*3.0,0,"V (AVin)"); //Analog raw voltage
-   getVariable("Adc2Value08")->setComp(0,4.82/2.0/16777215.*3.0,0,"V (DVin)"); //Digital raw voltage
+   getVariable("Adc2Value07")->setComp(0,2.5/16777215.*3.0,0,"V (AVin)"); //Analog raw voltage
+   getVariable("Adc2Value08")->setComp(0,2.5/16777215.*3.0,0,"V (DVin)"); //Digital raw voltage
    
    addRegister(new Register("EnvData00", 0x01000140));
    addVariable(new Variable("EnvData00", Variable::Status));
@@ -395,6 +395,26 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent, EpixType epixTy
    addVariable(new Variable("adcPipelineDelay", Variable::Configuration));
    getVariable("adcPipelineDelay")->setDescription("Number of samples to delay ADC reads");
    getVariable("adcPipelineDelay")->setRange(0,0xFF);
+   
+   addRegister(new Register("adcPipelineDelayA0", 0x01000090));
+   addVariable(new Variable("adcPipelineDelayA0", Variable::Configuration));
+   getVariable("adcPipelineDelayA0")->setDescription("Number of samples to delay ADC reads of the ASIC0 channels");
+   getVariable("adcPipelineDelayA0")->setRange(0,0xFF);
+   
+   addRegister(new Register("adcPipelineDelayA1", 0x01000091));
+   addVariable(new Variable("adcPipelineDelayA1", Variable::Configuration));
+   getVariable("adcPipelineDelayA1")->setDescription("Number of samples to delay ADC reads of the ASIC1 channels");
+   getVariable("adcPipelineDelayA1")->setRange(0,0xFF);
+   
+   addRegister(new Register("adcPipelineDelayA2", 0x01000092));
+   addVariable(new Variable("adcPipelineDelayA2", Variable::Configuration));
+   getVariable("adcPipelineDelayA2")->setDescription("Number of samples to delay ADC reads of the ASIC2 channels");
+   getVariable("adcPipelineDelayA2")->setRange(0,0xFF);
+   
+   addRegister(new Register("adcPipelineDelayA3", 0x01000093));
+   addVariable(new Variable("adcPipelineDelayA3", Variable::Configuration));
+   getVariable("adcPipelineDelayA3")->setDescription("Number of samples to delay ADC reads of the ASIC3 channels");
+   getVariable("adcPipelineDelayA3")->setRange(0,0xFF);
 
    addRegister(new Register("syncSettings", 0x0100002D));
    addVariable(new Variable("syncWidth", Variable::Configuration));
@@ -800,6 +820,18 @@ void DigFpga::readConfig ( ) {
 
    readRegister(getRegister("adcPipelineDelay"));
    getVariable("adcPipelineDelay")->setInt(getRegister("adcPipelineDelay")->get(0,0xFF));
+   
+   readRegister(getRegister("adcPipelineDelayA0"));
+   getVariable("adcPipelineDelayA0")->setInt(getRegister("adcPipelineDelayA0")->get(0,0xFF));
+   
+   readRegister(getRegister("adcPipelineDelayA1"));
+   getVariable("adcPipelineDelayA1")->setInt(getRegister("adcPipelineDelayA1")->get(0,0xFF));
+   
+   readRegister(getRegister("adcPipelineDelayA2"));
+   getVariable("adcPipelineDelayA2")->setInt(getRegister("adcPipelineDelayA2")->get(0,0xFF));
+   
+   readRegister(getRegister("adcPipelineDelayA3"));
+   getVariable("adcPipelineDelayA3")->setInt(getRegister("adcPipelineDelayA3")->get(0,0xFF));
 
    readRegister(getRegister("doutPipelineDelay"));
    getVariable("doutPipelineDelay")->setInt(getRegister("doutPipelineDelay")->get(0,0xFF));
@@ -936,6 +968,18 @@ void DigFpga::writeConfig ( bool force ) {
 
    getRegister("adcPipelineDelay")->set(getVariable("adcPipelineDelay")->getInt(),0,0xFF);
    writeRegister(getRegister("adcPipelineDelay"),force);
+   
+   getRegister("adcPipelineDelayA0")->set(getVariable("adcPipelineDelayA0")->getInt(),0,0xFF);
+   writeRegister(getRegister("adcPipelineDelayA0"),force);
+   
+   getRegister("adcPipelineDelayA1")->set(getVariable("adcPipelineDelayA1")->getInt(),0,0xFF);
+   writeRegister(getRegister("adcPipelineDelayA1"),force);
+   
+   getRegister("adcPipelineDelayA2")->set(getVariable("adcPipelineDelayA2")->getInt(),0,0xFF);
+   writeRegister(getRegister("adcPipelineDelayA2"),force);
+   
+   getRegister("adcPipelineDelayA3")->set(getVariable("adcPipelineDelayA3")->getInt(),0,0xFF);
+   writeRegister(getRegister("adcPipelineDelayA3"),force);
 
    getRegister("doutPipelineDelay")->set(getVariable("doutPipelineDelay")->getInt(),0,0xFF);
    writeRegister(getRegister("doutPipelineDelay"),force);
@@ -1012,6 +1056,10 @@ void DigFpga::verifyConfig ( ) {
    verifyRegister(getRegister("saciClkBit"));
    verifyRegister(getRegister("asicR0Width"));
    verifyRegister(getRegister("adcPipelineDelay"));
+   verifyRegister(getRegister("adcPipelineDelayA0"));
+   verifyRegister(getRegister("adcPipelineDelayA1"));
+   verifyRegister(getRegister("adcPipelineDelayA2"));
+   verifyRegister(getRegister("adcPipelineDelayA3"));
    verifyRegister(getRegister("syncSettings"));
    verifyRegister(getRegister("prepulseR0Width"));
    verifyRegister(getRegister("prepulseR0Delay"));
