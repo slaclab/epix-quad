@@ -320,6 +320,11 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent, EpixType epixTy
    addVariable(new Variable("EnvData08", Variable::Status));
    getVariable("EnvData08")->setDescription("Digital raw input voltage");
    getVariable("EnvData08")->setComp(0,.001,0,"V");
+   
+   // software calculated humidity on the cold side
+   addVariable(new Variable("EnvData09", Variable::Status));
+   getVariable("EnvData09")->setDescription("Recalculated humidity on the cold side");
+   getVariable("EnvData09")->setComp(0,.01,0,"V");
 
    addRegister(new Register("StrongbackTemp", 0x01000106));
    addVariable(new Variable("StrongbackTemp", Variable::Status));
@@ -634,6 +639,18 @@ void DigFpga::readStatus ( ) {
       readRegister(getRegister(tmp.str()));
       getVariable(tmp.str())->setInt(getRegister(tmp.str())->get());
    }
+   
+   // software calculated humidity on the cold side
+   double b=17.62;
+   double c=243.12;
+   double T1 = (double)getRegister("EnvData01")->get();
+   T1*=0.01;
+   double T2 = (double)getRegister("EnvData00")->get();
+   T2*=0.01;
+   double RH1 = (double)getRegister("EnvData02")->get();
+   RH1*=0.0001*RH1;
+   double RH2 = exp(log(RH1)+b*T1/(c+T1)-b*T2/(c+T2));
+   getVariable("EnvData09")->setInt((int)(RH2*10000.0));
    
 
    bool temp;
