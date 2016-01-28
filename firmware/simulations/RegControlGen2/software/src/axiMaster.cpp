@@ -27,6 +27,7 @@ int main(int argc, char **argv) {
    AxiMasterSim  *master;
 
    uint runTriggerDelayAddr  = 0x01000002;
+   uint saciRowStopAddr  = 0x01801012;
    
    uint          rdout = 0;
    
@@ -42,10 +43,11 @@ int main(int argc, char **argv) {
 
    usleep(100);
    master->write(runTriggerDelayAddr,9000);
+   master->write(saciRowStopAddr,0xff);
 
    master->setVerbose(0);
    
-   rdout = master->read(runTriggerDelayAddr);
+   rdout = master->read(saciRowStopAddr);
    
    printf("Read %d\n", rdout);
    
