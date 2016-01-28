@@ -1,1 +1,2 @@
 tb/TB_SlowAdcCntrl.vhd
+tb/TB_Tixel_8b10b.vhd

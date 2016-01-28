@@ -54,7 +54,10 @@ entity ReadoutControl is
       
       -- Run control
       acqStart            : in    sl;
-      readValid           : in    slv(MAX_OVERSAMPLE_C-1 downto 0);
+      readValidA0         : in    slv(MAX_OVERSAMPLE_C-1 downto 0);
+      readValidA1         : in    slv(MAX_OVERSAMPLE_C-1 downto 0);
+      readValidA2         : in    slv(MAX_OVERSAMPLE_C-1 downto 0);
+      readValidA3         : in    slv(MAX_OVERSAMPLE_C-1 downto 0);
       readDone            : out   sl;
       acqBusy             : in    sl;
       dataSend            : in    sl;
@@ -175,6 +178,7 @@ architecture ReadoutControl of ReadoutControl is
 
    type chanMap is array(15 downto 0) of integer range 0 to 15;
    signal channelOrder   : chanMap;
+   signal asicOrder      : chanMap;
    signal channelValid   : slv(15 downto 0);
 
    signal tpsAdcData     : Slv16Array(3 downto 0);
@@ -237,6 +241,7 @@ begin
       iAdcData(17) <= adcData(17);
       iAdcData(18) <= adcData(18);
       iAdcData(19) <= adcData(19);
+      asicOrder <= (3,3,3,3,2,2,2,2,0,0,0,0,1,1,1,1);
       channelOrder <= (0,3,1,2,8,11,9,10,6,4,5,7,14,12,13,15) when r.streamMode = '0' else
                       (15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0); 
       channelValid  <= (others => '1');
@@ -561,7 +566,7 @@ begin
  
 
    --Count number of ADC writes
-   adcCntEn  <= readValid(0) and adcPulse;
+   adcCntEn  <= readValidA0(0) and adcPulse;
    adcCntRst <= memRst or sysClkRst;
    process(sysClk) begin
       if rising_edge(sysClk) then
@@ -610,7 +615,17 @@ begin
             end loop;
          else
             for i in 0 to 15 loop
-               adcFifoWrEn(i)   <= readValid(0) and adcPulse;
+               
+               if asicOrder(i) = 0 then
+                  adcFifoWrEn(i) <= readValidA0(0) and adcPulse;
+               elsif asicOrder(i) = 1 then
+                  adcFifoWrEn(i) <= readValidA1(0) and adcPulse;
+               elsif asicOrder(i) = 2 then
+                  adcFifoWrEn(i) <= readValidA2(0) and adcPulse;
+               else
+                  adcFifoWrEn(i) <= readValidA3(0) and adcPulse;
+               end if;
+               
                if r.testPattern = '0' then
                   adcFifoWrData(i) <= adcDataToReorder(i);
                else
@@ -641,7 +656,17 @@ begin
          process(sysClk) begin
             if rising_edge(sysClk) then
                if r.streamMode = '0' then
-                  adcMemWrEn(j)(i) <= readValid(j) and adcPulse;
+                  
+                  if asicOrder(i) = 0  then
+                     adcMemWrEn(j)(i) <= readValidA0(j) and adcPulse;
+                  elsif asicOrder(i) = 1 then
+                     adcMemWrEn(j)(i) <= readValidA1(j) and adcPulse;
+                  elsif asicOrder(i) = 2 then
+                     adcMemWrEn(j)(i) <= readValidA2(j) and adcPulse;
+                  else
+                     adcMemWrEn(j)(i) <= readValidA3(j) and adcPulse;
+                  end if;                  
+                  
                else
                   adcMemWrEn(j)(i) <= '0';
                end if;

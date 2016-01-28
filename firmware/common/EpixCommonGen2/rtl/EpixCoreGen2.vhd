@@ -200,7 +200,10 @@ architecture top_level of EpixCoreGen2 is
    signal acqBusy            : sl;
    signal dataSend           : sl;
    signal readDone           : sl;
-   signal readValid          : slv(MAX_OVERSAMPLE_C-1 downto 0);
+   signal readValidA0        : slv(MAX_OVERSAMPLE_C-1 downto 0);
+   signal readValidA1        : slv(MAX_OVERSAMPLE_C-1 downto 0);
+   signal readValidA2        : slv(MAX_OVERSAMPLE_C-1 downto 0);
+   signal readValidA3        : slv(MAX_OVERSAMPLE_C-1 downto 0);
    signal adcPulse           : sl;
    signal readTps            : sl;
    signal saciPrepReadoutReq : sl;
@@ -488,7 +491,10 @@ begin
          acqStart        => acqStart,
          acqBusy         => acqBusy,
          readDone        => readDone,
-         readValid       => readValid,
+         readValidA0     => readValidA0,
+         readValidA1     => readValidA1,
+         readValidA2     => readValidA2,
+         readValidA3     => readValidA3,
          adcClkP         => adcClkP,
          adcClkM         => adcClkN,
          adcPulse        => adcPulse,
@@ -521,7 +527,10 @@ begin
          seqCount       => epixStatus.seqCount,
          opCode         => opCode,
          acqStart       => acqStart,
-         readValid      => readValid,
+         readValidA0    => readValidA0,
+         readValidA1    => readValidA1,
+         readValidA2    => readValidA2,
+         readValidA3    => readValidA3,
          readDone       => readDone,
          acqBusy        => acqBusy,
          dataSend       => dataSend,

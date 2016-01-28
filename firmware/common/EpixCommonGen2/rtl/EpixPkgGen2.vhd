@@ -64,6 +64,10 @@ package EpixPkgGen2 is
       asicR0Mode         : sl;
       asicR0Width        : slv(31 downto 0);
       pipelineDelay      : slv(31 downto 0);
+      pipelineDelayA0    : slv(31 downto 0);
+      pipelineDelayA1    : slv(31 downto 0);
+      pipelineDelayA2    : slv(31 downto 0);
+      pipelineDelayA3    : slv(31 downto 0);
       syncWidth          : slv(15 downto 0);
       syncDelay          : slv(15 downto 0);
       prePulseR0Width    : slv(31 downto 0);
@@ -107,6 +111,10 @@ package EpixPkgGen2 is
       asicR0Mode         => '0',
       asicR0Width        => (others => '0'),
       pipelineDelay      => (others => '0'),
+      pipelineDelayA0    => (others => '0'),
+      pipelineDelayA1    => (others => '0'),
+      pipelineDelayA2    => (others => '0'),
+      pipelineDelayA3    => (others => '0'),
       syncWidth          => (others => '0'),
       syncDelay          => (others => '0'),
       prePulseR0Width    => (others => '0'),

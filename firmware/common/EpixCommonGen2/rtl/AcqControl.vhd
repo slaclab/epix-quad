@@ -36,7 +36,10 @@ entity AcqControl is
       acqStart            : in    std_logic;
       acqBusy             : out   std_logic;
       readDone            : in    std_logic;
-      readValid           : out   std_logic_vector(MAX_OVERSAMPLE_C-1 downto 0);
+      readValidA0         : out   std_logic_vector(MAX_OVERSAMPLE_C-1 downto 0);
+      readValidA1         : out   std_logic_vector(MAX_OVERSAMPLE_C-1 downto 0);
+      readValidA2         : out   std_logic_vector(MAX_OVERSAMPLE_C-1 downto 0);
+      readValidA3         : out   std_logic_vector(MAX_OVERSAMPLE_C-1 downto 0);
       adcPulse            : out   std_logic;
       readTps             : out   std_logic;
 
@@ -83,9 +86,15 @@ architecture AcqControl of AcqControl is
    signal pixelCntEn         : sl := '0';
    signal pixelCntRst        : sl := '0';
    signal iReadValid         : slv(MAX_OVERSAMPLE_C-1 downto 0) := (others => '0');
-   signal iReadValidWaiting  : sl := '0';
+   signal iReadValidWaitingA0: sl := '0';
+   signal iReadValidWaitingA1: sl := '0';
+   signal iReadValidWaitingA2: sl := '0';
+   signal iReadValidWaitingA3: sl := '0';
    signal iReadValidTestMode : sl := '0';
-   signal readValidDelayed   : Slv128Array(MAX_OVERSAMPLE_C-1 downto 0);
+   signal readValidDelayedA0 : Slv128Array(MAX_OVERSAMPLE_C-1 downto 0);
+   signal readValidDelayedA1 : Slv128Array(MAX_OVERSAMPLE_C-1 downto 0);
+   signal readValidDelayedA2 : Slv128Array(MAX_OVERSAMPLE_C-1 downto 0);
+   signal readValidDelayedA3 : Slv128Array(MAX_OVERSAMPLE_C-1 downto 0);
    signal firstPixel         : sl := '0';
    signal firstPixelSet      : sl := '0';
    signal firstPixelRst      : sl := '0';
@@ -184,7 +193,7 @@ begin
    readTps <= iTpsDelayed;
 
    --Busy is internal busy or data left in the pipeline
-   acqBusy <= iAcqBusy or iReadValidWaiting;
+   acqBusy <= iAcqBusy or iReadValidWaitingA0 or iReadValidWaitingA1 or iReadValidWaitingA2 or iReadValidWaitingA3;
    
    -- ADC pulse signal allows counting of adc cycles in other blocks
    adcPulse <= adcClkEdge;
@@ -604,45 +613,75 @@ begin
       if rising_edge(sysClk) then
          if sysClkRst = '1' then
             for n in 0 to MAX_OVERSAMPLE_C-1 loop
-               readValidDelayed(n) <= (others => '0') after tpd;
+               readValidDelayedA0(n) <= (others => '0') after tpd;
+               readValidDelayedA1(n) <= (others => '0') after tpd;
+               readValidDelayedA2(n) <= (others => '0') after tpd;
+               readValidDelayedA3(n) <= (others => '0') after tpd;
             end loop;        
          elsif (adcClkEdge = '1') then
             --Shift register to allow picking off delayed samples
             for n in 0 to MAX_OVERSAMPLE_C-1 loop
                for i in 1 to 127 loop
-                  readValidDelayed(n)(i) <= readValidDelayed(n)(i-1) after tpd; 
+                  readValidDelayedA0(n)(i) <= readValidDelayedA0(n)(i-1) after tpd; 
+                  readValidDelayedA1(n)(i) <= readValidDelayedA1(n)(i-1) after tpd; 
+                  readValidDelayedA2(n)(i) <= readValidDelayedA2(n)(i-1) after tpd; 
+                  readValidDelayedA3(n)(i) <= readValidDelayedA3(n)(i-1) after tpd; 
                end loop;
             end loop;
             --Assignment of shifted-in bits
             --Test mode can only use the first oversampling shift register
-            readValidDelayed(0)(0) <= iReadValid(0) or iReadValidTestMode after tpd;
+            readValidDelayedA0(0)(0) <= iReadValid(0) or iReadValidTestMode after tpd;
+            readValidDelayedA1(0)(0) <= iReadValid(0) or iReadValidTestMode after tpd;
+            readValidDelayedA2(0)(0) <= iReadValid(0) or iReadValidTestMode after tpd;
+            readValidDelayedA3(0)(0) <= iReadValid(0) or iReadValidTestMode after tpd;
             --The other shift registers can make use of the oversampling arrays
             for n in 1 to MAX_OVERSAMPLE_C-1 loop
                --For normal mode, allow multiple samples
-               readValidDelayed(n)(0) <= iReadValid(n) after tpd;
+               readValidDelayedA0(n)(0) <= iReadValid(n) after tpd;
+               readValidDelayedA1(n)(0) <= iReadValid(n) after tpd;
+               readValidDelayedA2(n)(0) <= iReadValid(n) after tpd;
+               readValidDelayedA3(n)(0) <= iReadValid(n) after tpd;
             end loop;
          end if;
       end if;
    end process; 
    --Wire up the delayed output
    G_ReadValidOut : for i in 0 to MAX_OVERSAMPLE_C-1 generate
-      readValid(i) <= readValidDelayed(i)( conv_integer(epixConfig.pipelineDelay(6 downto 0)) );
+      readValidA0(i) <= readValidDelayedA0(i)( conv_integer(epixConfig.pipelineDelayA0(6 downto 0)) );
+      readValidA1(i) <= readValidDelayedA1(i)( conv_integer(epixConfig.pipelineDelayA1(6 downto 0)) );
+      readValidA2(i) <= readValidDelayedA2(i)( conv_integer(epixConfig.pipelineDelayA2(6 downto 0)) );
+      readValidA3(i) <= readValidDelayedA3(i)( conv_integer(epixConfig.pipelineDelayA3(6 downto 0)) );
    end generate;
    --Single bit signal that indicates whether there is anything left in the pipeline
    process(sysClk)
-      variable runningOr : std_logic := '0';
+      variable runningOrA0 : std_logic := '0';
+      variable runningOrA1 : std_logic := '0';
+      variable runningOrA2 : std_logic := '0';
+      variable runningOrA3 : std_logic := '0';
    begin
       if rising_edge(sysClk) then
          if (sysClkRst = '1') then
-            iReadValidWaiting <= '0';
+            iReadValidWaitingA0 <= '0';
+            iReadValidWaitingA1 <= '0';
+            iReadValidWaitingA2 <= '0';
+            iReadValidWaitingA3 <= '0';
          else
-            runningOr := '0';
+            runningOrA0 := '0';
+            runningOrA1 := '0';
+            runningOrA2 := '0';
+            runningOrA3 := '0';
             for i in 0 to 127 loop
                for j in 0 to MAX_OVERSAMPLE_C-1 loop
-                  runningOr := runningOr or readValidDelayed(j)(i);
+                  runningOrA0 := runningOrA0 or readValidDelayedA0(j)(i);
+                  runningOrA1 := runningOrA1 or readValidDelayedA1(j)(i);
+                  runningOrA2 := runningOrA2 or readValidDelayedA2(j)(i);
+                  runningOrA3 := runningOrA3 or readValidDelayedA3(j)(i);
                end loop;
             end loop;
-            iReadValidWaiting <= runningOr;
+            iReadValidWaitingA0 <= runningOrA0;
+            iReadValidWaitingA1 <= runningOrA1;
+            iReadValidWaitingA2 <= runningOrA2;
+            iReadValidWaitingA3 <= runningOrA3;
          end if;
       end if;
    end process;

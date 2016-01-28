@@ -9,6 +9,10 @@
 -- Platform   : Vivado 2014.4
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
+-- Change log:
+-- [MK] 01/14/2016 - Removed iSaciClk slow clock. SaciMaster replaced by SaciMasterSync.
+-- [MK] 01/14/2016 - Fixed prepare for readout command. It was sent only to ASIC 0.
+-------------------------------------------------------------------------------
 -- Description: Adaptation of Gen1 ePix register controller to Gen2 dig. card.
 -------------------------------------------------------------------------------
 -- Copyright (c) 2014 SLAC National Accelerator Laboratory
@@ -167,12 +171,9 @@ architecture rtl of RegControlGen2 is
    signal iAdcAck    : sl;
    signal iAdcRdData : slv(7 downto 0);
    
-   signal iSaciClk        : sl;
-   signal iSaciClkBit     : sl;
-   signal iSaciClkBitEdge : sl;
-   signal iSaciCnt        : slv(7 downto 0) := (others => '0');
    signal iSaciSelL       : slv(NUM_ASICS_G-1 downto 0);
    signal iSaciRsp        : sl;
+   signal saciRst         : sl;
    
    signal iSaciSelOut : SaciMasterOutType;
    
@@ -187,7 +188,7 @@ begin
    -------------------------------
    -- Configuration Register
    -------------------------------  
-   comb : process (axiReadMaster, axiReset, axiWriteMaster, r, 
+   comb : process (axiReadMaster, axiReset, axiWriteMaster, r, saciReadoutReq, iSaciSelOut,
                    ePixStatus, idValids, idValues, iAdcAck, iAdcRdData) is
       variable v            : RegType;
       variable axiStatus    : AxiLiteStatusType;
@@ -333,6 +334,12 @@ begin
       axiSlaveRegisterW(x"000080" & "00",  0, v.epixRegOut.requestStartupCal);
       axiSlaveRegisterR(x"000080" & "00",  1, epixStatus.startupAck);
       axiSlaveRegisterR(x"000080" & "00",  2, epixStatus.startupFail);
+      
+      axiSlaveRegisterW(x"000090" & "00",  0, v.epixRegOut.pipelineDelayA0);
+      axiSlaveRegisterW(x"000091" & "00",  0, v.epixRegOut.pipelineDelayA1);
+      axiSlaveRegisterW(x"000092" & "00",  0, v.epixRegOut.pipelineDelayA2);
+      axiSlaveRegisterW(x"000093" & "00",  0, v.epixRegOut.pipelineDelayA3);
+      
       -- slow ADC registers of the analog card gen1
       axiSlaveRegisterR(x"000100" & "00",  0, epixStatus.slowAdcData(0));
       axiSlaveRegisterR(x"000101" & "00",  0, epixStatus.slowAdcData(1));
@@ -468,10 +475,10 @@ begin
 
       -- SACI mediation
       -- By default let the SACI counter count
-      if (r.saciTimeout /= '1' and iSaciClkBitEdge = '1') then
+      if r.saciTimeout /= '1' then
          v.saciTimeoutCnt := r.saciTimeoutCnt + 1;
       end if;
-      v.saciTimeout    := r.saciTimeoutCnt(12 - conv_integer(r.epixRegOut.saciClkBit(2 downto 0)));
+      v.saciTimeout := r.saciTimeoutCnt(15);
       -- State machine for SACI mediation
       case(r.saciState) is
          when SACI_IDLE_S =>
@@ -479,40 +486,43 @@ begin
             v.saciSelIn := SACI_MASTER_IN_INIT_C;
             -- In idle state, continually reset SACI timeout
             v.saciTimeoutCnt := (others => '0');
-            -- If we see a register request, process it
-            if (r.SaciRegIn.req = '1') then
-               v.saciSelIn := r.saciRegIn;
-               v.saciState := SACI_REG_S;
-            -- If we see a multi-pixel write request, handle it
-            elsif (r.globalMultiPix.req = '1') then
-               globalToLocalPixel(FPGA_VERSION_C(31 downto 24),
-                                  r.globalMultiPix.row,
-                                  r.globalMultiPix.col,
-                                  r.globalMultiPix.calRowFlag,
-                                  r.globalMultiPix.calBotFlag,
-                                  r.globalMultiPix.data,
-                                  v.localMultiPix.asic,
-                                  v.localMultiPix.row,
-                                  v.localMultiPix.col,
-                                  v.localMultiPix.data);
-               v.localMultiPix.bankFlag := "1110";
-               -- If the ASIC is not active, immediately drop the req and return
-               if (r.epixRegOut.asicMask(conv_integer(v.localMultiPix.asic)) = '0') then
-                  v.saciAxiRsp := AXI_RESP_OK_C;
-                  v.saciState  := SACI_PIXEL_DONE_S;
-               else
-                  v.saciState := SACI_PIXEL_ROW_S;
+            -- make sure that all previous requests are done before processing the next incoming
+            if iSaciSelOut.fail = '0' and r.saciTimeout = '0' and iSaciSelOut.ack = '0' then
+               -- If we see a register request, process it
+               if (r.aciRegIn.req = '1') then
+                  v.saciSelIn := r.saciRegIn;
+                  v.saciState := SACI_REG_S;
+               -- If we see a multi-pixel write request, handle it
+               elsif (r.globalMultiPix.req = '1') then
+                  globalToLocalPixel(FPGA_VERSION_C(31 downto 24),
+                                     r.globalMultiPix.row,
+                                     r.globalMultiPix.col,
+                                     r.globalMultiPix.calRowFlag,
+                                     r.globalMultiPix.calBotFlag,
+                                     r.globalMultiPix.data,
+                                     v.localMultiPix.asic,
+                                     v.localMultiPix.row,
+                                     v.localMultiPix.col,
+                                     v.localMultiPix.data);
+                  v.localMultiPix.bankFlag := "1110";
+                  -- If the ASIC is not active, immediately drop the req and return
+                  if (r.epixRegOut.asicMask(conv_integer(v.localMultiPix.asic)) = '0') then
+                     v.saciAxiRsp := AXI_RESP_OK_C;
+                     v.saciState  := SACI_PIXEL_DONE_S;
+                  else
+                     v.saciState := SACI_PIXEL_ROW_S;
+                  end if;
+               -- Otherwise watch for prepare for readout requests
+               elsif (saciReadoutReq = '1') then
+                  v.saciChipCnt      := (others => '0');
+                  v.saciSelIn.req    := '0';
+                  v.saciSelIn.op     := '0';
+                  v.saciSelIn.chip   := (others => '0');
+                  v.saciSelIn.cmd    := (others => '0');
+                  v.saciSelIn.addr   := (others => '0');
+                  v.saciSelIn.wrData := (others => '0');
+                  v.saciState := SACI_PAUSE_S;
                end if;
-            -- Otherwise watch for prepare for readout requests
-            elsif (saciReadoutReq = '1') then
-               v.saciChipCnt      := (others => '0');
-               v.saciSelIn.req    := '0';
-               v.saciSelIn.op     := '0';
-               v.saciSelIn.chip   := (others => '0');
-               v.saciSelIn.cmd    := (others => '0');
-               v.saciSelIn.addr   := (others => '0');
-               v.saciSelIn.wrData := (others => '0');
-               v.saciState := SACI_PAUSE_S;
             end if;
          -- Standard SACI register request
          when SACI_REG_S =>
@@ -537,6 +547,7 @@ begin
          -------- Automated SACI prepare for readout ----------
          when SACI_PAUSE_S =>
             v.saciTimeoutCnt := (others => '0');
+            v.saciSelIn.chip := r.saciChipCnt;
             if (r.epixRegOut.asicMask(conv_integer(r.saciChipCnt)) = '0') then
                if (r.saciChipCnt = 3) then
                   v.saciReadoutAck := '1';
@@ -546,12 +557,12 @@ begin
                else
                   v.saciChipCnt := r.saciChipCnt + 1;
                end if;
-            else
+            elsif iSaciSelOut.fail = '0' and r.saciTimeout = '0' and iSaciSelOut.ack = '0' then
                v.saciState := SACI_CMD_S;
             end if;
          when SACI_CMD_S =>
             v.saciSelIn.req := '1';
-            if (iSaciSelOut.fail = '1' or r.saciTimeout = '1' or iSaciSelOut.ack = '1') then
+            if iSaciSelOut.fail = '1' or r.saciTimeout = '1' or iSaciSelOut.ack = '1' then
                v.saciSelIn.req := '0';
                if (r.saciChipCnt = 3) then
                   v.saciReadoutAck := '1';
@@ -719,18 +730,6 @@ begin
    -----------------------------------------------
    -- SACI Master
    -----------------------------------------------
-   -- Generate SACI Clock
-   process ( axiClk, axiReset ) begin
-      if rising_edge(axiClk) then
-         if (axiReset = '1') then
-            iSaciCnt <= (others => '0') after TPD_G;
-         else
-            iSaciCnt <= iSaciCnt + 1 after TPD_G;
-         end if;
-      end if;  
-   end process;
-   iSaciClkBit <= iSaciCnt(conv_integer(r.epixRegOut.saciClkBit(2 downto 0)));
-   U_SaciClk : BUFG port map (I => iSaciClkBit, O => iSaciClk);
    process ( axiClk ) begin
       if rising_edge(axiClk) then
          if iSaciSelL(0) = '0' then
@@ -746,19 +745,15 @@ begin
          end if;
       end if;
    end process;
-   --Edge detect for SACI clk
-   U_DataSaciClkEdge : entity work.SynchronizerEdge
-      port map (
-         clk        => axiClk,
-         rst        => axiReset,
-         dataIn     => iSaciClkBit,
-         risingEdge => iSaciClkBitEdge
-      );
+   
    -- Actual SACI Master
-   U_Saci : entity work.SaciMaster 
+   U_Saci : entity work.SaciMasterSync 
+   generic map (
+      SACI_HALF_CLK_TICKS => 15
+   )
    port map (
-       clk           => iSaciClk,
-       rst           => axiReset or r.saciTimeout,
+       clk           => axiClk,
+       rst           => saciRst,
        saciClk       => saciClk,
        saciSelL      => iSaciSelL,
        saciCmd       => saciCmd,
@@ -767,6 +762,7 @@ begin
        saciMasterOut => iSaciSelOut
    );
    saciSelL <= iSaciSelL;
+   saciRst <= axiReset or r.saciTimeout;
       
    -----------------------------------------------
    -- Serial IDs: FPGA Device DNA + DS2411's
