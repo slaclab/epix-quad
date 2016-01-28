@@ -180,6 +180,8 @@ architecture rtl of RegControlGen2 is
    signal adcCardPowerUp     : sl;
    signal adcCardPowerUpEdge : sl;
    
+   signal chipIdRst          : sl;
+   
 begin
 
    axiReset <= sysRst or r.usrRst;
@@ -478,7 +480,9 @@ begin
       if r.saciTimeout /= '1' then
          v.saciTimeoutCnt := r.saciTimeoutCnt + 1;
       end if;
+      
       v.saciTimeout := r.saciTimeoutCnt(15);
+      
       -- State machine for SACI mediation
       case(r.saciState) is
          when SACI_IDLE_S =>
@@ -486,12 +490,15 @@ begin
             v.saciSelIn := SACI_MASTER_IN_INIT_C;
             -- In idle state, continually reset SACI timeout
             v.saciTimeoutCnt := (others => '0');
+            
             -- make sure that all previous requests are done before processing the next incoming
             if iSaciSelOut.fail = '0' and r.saciTimeout = '0' and iSaciSelOut.ack = '0' then
+            
                -- If we see a register request, process it
-               if (r.aciRegIn.req = '1') then
+               if (r.saciRegIn.req = '1') then
                   v.saciSelIn := r.saciRegIn;
                   v.saciState := SACI_REG_S;
+                  
                -- If we see a multi-pixel write request, handle it
                elsif (r.globalMultiPix.req = '1') then
                   globalToLocalPixel(FPGA_VERSION_C(31 downto 24),
@@ -512,6 +519,7 @@ begin
                   else
                      v.saciState := SACI_PIXEL_ROW_S;
                   end if;
+                  
                -- Otherwise watch for prepare for readout requests
                elsif (saciReadoutReq = '1') then
                   v.saciChipCnt      := (others => '0');
@@ -523,7 +531,11 @@ begin
                   v.saciSelIn.wrData := (others => '0');
                   v.saciState := SACI_PAUSE_S;
                end if;
+               
             end if;
+            
+            
+            
          -- Standard SACI register request
          when SACI_REG_S =>
             if (iSaciSelOut.fail = '1' or r.saciTimeout = '1') then
@@ -535,8 +547,11 @@ begin
                v.saciRegIn.req := '0';
                v.saciAxiRsp    := AXI_RESP_OK_C;
             end if;
+            
             if (r.saciSelIn.req = '0' and iSaciSelOut.ack = '0') then
                v.saciState     := SACI_IDLE_S;
+               v.saciSelIn.req := '0';
+               v.saciRegIn.req := '0';
                if (r.saciRegIn.op = '1') then
                   axiSlaveWriteResponse(v.axiWriteSlave,r.saciAxiRsp);
                else
@@ -544,6 +559,8 @@ begin
                   axiSlaveReadResponse(v.axiReadSlave,r.saciAxiRsp);
                end if;
             end if;
+            
+            
          -------- Automated SACI prepare for readout ----------
          when SACI_PAUSE_S =>
             v.saciTimeoutCnt := (others => '0');
@@ -674,6 +691,8 @@ begin
       saciReadoutAck <= r.saciReadoutAck;
       
    end process comb;
+   
+   
 
    seq : process (axiClk) is
    begin
@@ -786,12 +805,14 @@ begin
          )
          port map (
             clk       => axiClk,
-            rst       => axiReset or adcCardPowerUpEdge,
+            rst       => chipIdRst,
             fdSerSdio => serialIdIo(i),
             fdSerial  => idValues(i+1),
             fdValid   => idValids(i+1)
          );
    end generate;
+   
+   chipIdRst <= axiReset or adcCardPowerUpEdge;
 
    -- Special reset to the DS2411 to re-read in the event of a power up event
    adcCardPowerUp <= r.epixRegOut.powerEnable(0) and r.epixRegOut.powerEnable(1) and r.epixRegOut.powerEnable(2);

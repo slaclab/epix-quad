@@ -22,14 +22,13 @@ using namespace std;
  
 int main(int argc, char **argv) {
    
-
-   
    AxiMasterSim  *master;
-
-   uint runTriggerDelayAddr  = 0x01000002;
-   uint saciRowStopAddr  = 0x01801012;
-   
-   uint          rdout = 0;
+   uint runTriggerDelayAddr   = (0x00000002)<<2;
+   uint asicMaskAddr          = (0x0000000D)<<2;
+   uint saciRowStopAddr       = (0x00801012)<<2;
+   uint saciConfig22Addr      = (0x00801016)<<2;
+   uint rdout1                = 0;
+   uint rdout2                = 0;
    
 
    master = new AxiMasterSim;
@@ -42,14 +41,22 @@ int main(int argc, char **argv) {
    master->setVerbose(0);
 
    usleep(100);
+   
+   
+   master->write(asicMaskAddr,0xF);
    master->write(runTriggerDelayAddr,9000);
-   master->write(saciRowStopAddr,0xff);
-
-   master->setVerbose(0);
    
-   rdout = master->read(saciRowStopAddr);
+   master->write(saciRowStopAddr,0x55);  
+   master->write(saciConfig22Addr,0xaa);  
    
-   printf("Read %d\n", rdout);
+   do {
+      rdout1 = master->read(saciRowStopAddr);
+      rdout2 = master->read(saciConfig22Addr);
+      printf("Read: 0x55=%X 0xAA=%X\n", rdout1, rdout2);
+   }
+   while (1);
+   
+   
    
 }
 

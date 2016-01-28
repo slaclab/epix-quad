@@ -186,7 +186,7 @@ end EpixPkgGen2;
 
 package body EpixPkgGen2 is
 
-   function getNumColumns (version : std_logic_vector ) return integer is
+   function getNumColumns (version : slv ) return integer is
    begin
       assert (version(31 downto 24) = x"E0" or 
               version(31 downto 24) = x"EA" or
@@ -207,7 +207,7 @@ package body EpixPkgGen2 is
       end if; 
    end function;
 
-   function getWordsPerSuperRow (version : std_logic_vector ) return integer is
+   function getWordsPerSuperRow (version : slv ) return integer is
    begin
       --EpixS reads only the active ASICs
       if (version(31 downto 24) = x"E3") then
