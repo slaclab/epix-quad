@@ -12,6 +12,8 @@
 -- Change log:
 -- [MK] 01/14/2016 - Removed iSaciClk slow clock. SaciMaster replaced by SaciMasterSync.
 -- [MK] 01/14/2016 - Fixed prepare for readout command. It was sent only to ASIC 0.
+-- [MK] 01/28/2016 - Fixed SACI state machine
+-- [MK] 01/28/2016 - Fixed carrier ID readout
 -------------------------------------------------------------------------------
 -- Description: Adaptation of Gen1 ePix register controller to Gen2 dig. card.
 -------------------------------------------------------------------------------
@@ -177,8 +179,8 @@ architecture rtl of RegControlGen2 is
    
    signal iSaciSelOut : SaciMasterOutType;
    
-   signal adcCardPowerUp     : sl;
-   signal adcCardPowerUpEdge : sl;
+   signal adcCardStartUp     : sl;
+   signal adcCardStartUpEdge : sl;
    
    signal chipIdRst          : sl;
    
@@ -812,16 +814,17 @@ begin
          );
    end generate;
    
-   chipIdRst <= axiReset or adcCardPowerUpEdge;
+   chipIdRst <= axiReset or adcCardStartUpEdge;
 
-   -- Special reset to the DS2411 to re-read in the event of a power up event
-   adcCardPowerUp <= r.epixRegOut.powerEnable(0) and r.epixRegOut.powerEnable(1) and r.epixRegOut.powerEnable(2);
-   U_AdcCardPowerUpRisingEdge : entity work.SynchronizerEdge
+   -- Special reset to the DS2411 to re-read in the event of a start up request event
+   -- Start up (picoblaze) is disabling the ASIC digital monitors to ensure proper carrier ID readout
+   adcCardStartUp <= epixStatus.startupAck or epixStatus.startupFail;
+   U_adcCardStartUpRisingEdge : entity work.SynchronizerEdge
       generic map (
          TPD_G       => TPD_G)
       port map (
          clk         => axiClk,
-         dataIn      => adcCardPowerUp,
-         risingEdge  => adcCardPowerUpEdge);
+         dataIn      => adcCardStartUp,
+         risingEdge  => adcCardStartUpEdge);
    
 end rtl;

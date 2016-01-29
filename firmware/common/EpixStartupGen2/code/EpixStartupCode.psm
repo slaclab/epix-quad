@@ -8,7 +8,7 @@
              CONSTANT opRegWrAddr,     01  ; Byte of register address
              CONSTANT opRegWrData,     02  ; Byte of register data
              CONSTANT opAdcReg,        04  ; Bit 7 - enable ADC reg access, Bit 4:0 - adc/ch select
-             CONSTANT opAsicReg,       08  ; Bit 7 - enable ASIC reg access, Bit 1:0 - asic select
+             CONSTANT opAsicReg,       08  ; Bit 7 - enable ASIC reg access, Bit 6:2 - ASIC CMD, Bit 1:0 - asic select
              CONSTANT opRegRequest,    10  ; Bit 1 - reg request, Bit 0 - read/write bit (1 is write)
              CONSTANT opHandshaking,   20  ; Bit 1 - startup failed, Bit 0 - startup acknowledged
              ;Register addresses (r) (from RegControl.vhd)
@@ -495,23 +495,35 @@ fDataMeasure:
 
              ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
              ;;Send a command to identify connected ASICs
-             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;           
+             ;;Disable digital monitors to let the carrier ID readout
+             ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;        
  fFindAsics:
              LOAD sInArg0, rSaciClkBit  ; First turn on the SACI clock
              LOAD sInArg1, cSaciClkBit
              CALL fWriteReg
-             LOAD sInArg2,   00         ; Set up to send a command to each ASIC
+             LOAD sInArg2,   00         ; Incrementing ASIC number 0 to 3
              LOAD sAsicMask, 01
              LOAD sAsicMaskFinal, 00
   fNextAsic:
-             CALL fWrAsicReg
-             COMPARE sOutArg0, 00
-             CALL Z, fSetAsicBit
-             COMPARE sInArg2, cLastAsic
-             JUMP Z, fWriteMask
-             ADD sInArg2, 01
-             SL0 sAsicMask
-             JUMP fNextAsic
+             ;;Do an ASIC test command (ADDR = 0, CMD = 0)
+             LOAD sInArg1,   00        ;; Data = 0
+             LOAD sInArg0,   00        ;; ADDR = 0
+             LOAD sInArg3,   00        ;; CMD = 0
+             CALL fWrAsicReg           ;; ASIC test command 
+             COMPARE sOutArg0, 00      ;; Check if succeed
+             CALL Z, fSetAsicBit       ;; Set the ASIC mask bit
+             
+             ;;Enable SLVDS, disable DM2 and DM1 (ADDR = 6, CMD = 1)
+             LOAD sInArg1,   10        ;; Disable DMs. Bit 4 - SLVDS, bit 1 - DM2en, bit 0 - DM1en
+             LOAD sInArg0,   06        ;; ADDR = 6
+             LOAD sInArg3,   01        ;; CMD = 1
+             CALL fWrAsicReg           ;; Disable DMs 
+             
+             COMPARE sInArg2, cLastAsic   ;; Check if last ASIC
+             JUMP Z, fWriteMask           ;; Finish if last
+             ADD sInArg2, 01              ;; Increment ASIC number otherwise
+             SL0 sAsicMask                ;; Move ASIC mask bit
+             JUMP fNextAsic               ;; Loop until last ASIC
 fSetAsicBit:
              OR sAsicMaskFinal, sAsicMask
              RETURN
@@ -588,20 +600,22 @@ fSetAsicBit:
              RETURN
 
              ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-             ;;Do an ASIC test command (ADDR = 0, CMD = 0)
-             ;; sInArg0    - Unmodified
-             ;; sInArg1    - Modified
+             ;;Do an ASIC register or command
+             ;; sInArg0    - Write address (ASIC space)
+             ;; sInArg1    - Write data (modified)
              ;; sInArg2    - ASIC number
-             ;; sInArg3    - 
+             ;; sInArg3    - ASIC CMD (modified)
              ;; sOutArg0   - 
              ;; sOutArg1-3 - 
              ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;   
  fWrAsicReg: 
-             LOAD   sInArg1, 00
-             OUTPUT sInArg1, opRegWrAddr
+             OUTPUT sInArg0, opRegWrAddr
              OUTPUT sInArg1, opRegWrData
              LOAD   sInArg1, 80
              OR     sInArg1, sInArg2
+             SL0    sInArg3
+             SL0    sInArg3
+             OR     sInArg1, sInArg3
              OUTPUT sInArg1, opAsicReg
              LOAD   sInArg3, 00
              OUTPUT sInArg3, opAdcReg

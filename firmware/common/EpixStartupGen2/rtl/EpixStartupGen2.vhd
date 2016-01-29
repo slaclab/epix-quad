@@ -81,6 +81,7 @@ architecture EpixStartupGen2 of EpixStartupGen2 is
    signal adcSelect   : slv(1 downto 0);
    signal adcChSelect : slv(2 downto 0);
    signal asicSelect  : slv(1 downto 0);
+   signal asicCmd     : slv(4 downto 0);
    signal addressByte : slv(7 downto 0);
    signal wrDataByte  : slv(7 downto 0);
    signal regReq      : sl;
@@ -166,12 +167,13 @@ begin
    adcChSelect <= pbReg(2)(2 downto 0);
    asicEnable  <= pbReg(3)(7);
    asicSelect  <= pbReg(3)(1 downto 0);
+   asicCmd     <= pbReg(3)(6 downto 2);
    regOp       <= pbReg(4)(0);
    regReq      <= pbReg(4)(1);
    startupAck  <= pbReg(5)(0);
    startupFail <= pbReg(5)(1);
    -- Output ports mapped to entity ports
-   regAddr <= "10" & asicSelect & x"000" & addressByte when asicEnable = '1' else
+   regAddr <= "10" & asicSelect & "000" & asicCmd & x"0" & addressByte when asicEnable = '1' else
               x"00" & '1' & adcSelect & '0' & x"0" & addressByte when adcEnable = '1' else
               x"0000" & addressByte; 
    
