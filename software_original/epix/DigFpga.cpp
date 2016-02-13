@@ -701,10 +701,10 @@ void DigFpga::readStatus ( ) {
    readRegister(getRegister("EepromDataOut0"));
    readRegister(getRegister("EepromDataOut1"));
    getVariable("EepromDataOut0")->setInt(getRegister("EepromDataOut0")->get());
-	getVariable("EepromDataOut1")->setInt(getRegister("EepromDataOut1")->get());
+getVariable("EepromDataOut1")->setInt(getRegister("EepromDataOut1")->get());
    // Sub devices
-   Device::readStatus();
    REGISTER_UNLOCK
+   Device::readStatus();
 }
 
 // Method to read configuration registers and update variables
