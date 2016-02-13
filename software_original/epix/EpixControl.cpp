@@ -23,6 +23,7 @@
 #include <iostream>
 #include <string>
 #include <iomanip>
+#include <EvrCntrl.h>
 
 #define LANE0  0x10
 #define LANE1  0x20
@@ -37,7 +38,7 @@
 using namespace std;
 
 // Constructor
-EpixControl::EpixControl ( CommLink *commLink, string defFile, EpixType epixType ) : System("EpixControl",commLink) {
+EpixControl::EpixControl ( CommLink *commLink, string defFile, EpixType epixType, bool evrEnable ) : System("EpixControl",commLink) {
 
    // Description
    desc_ = "Epix Control";
@@ -51,6 +52,8 @@ EpixControl::EpixControl ( CommLink *commLink, string defFile, EpixType epixType
 
    // Add sub-devices
    addDevice(new DigFpga(0, 0, this, epixType));
+
+   if ( evrEnable ) addDevice(new EvrCntrl(this));
 
    //Set ePix type
    epixType_ = epixType;
