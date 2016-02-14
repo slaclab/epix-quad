@@ -18,6 +18,10 @@
 #include <iostream>
 #include <string>
 #include <iomanip>
+#include <EvrCntrl.h>
+#include <System.h>
+#include <CommLink.h>
+#include <PgpCardG3Link.h>
 using namespace std;
 
 // Constructor
@@ -44,28 +48,35 @@ EvrCntrl::~EvrCntrl ( ) { }
 
 // Method to read status registers and update variables
 void EvrCntrl::readStatus ( ) {
-   getVariable("EvrStatus")->setInt(getEvrStatus());
-   getVariable("EvrErrors")->setInt(getEvrErrors());
+   PgpCardG3Link *pgp = (PgpCardG3Link*)system_->commLink();
+
+   getVariable("EvrStatus")->setInt(pgp->getEvrStatus());
+   getVariable("EvrErrors")->setInt(pgp->getEvrErrors());
 }
 
 // Method to read configuration registers and update variables
 void EvrCntrl::readConfig ( ) {
-   getVariable("EvrEnable")->setInt(getEvrEnable());
-   getVariable("EvrEnableLane")->setInt(getEvrEnableLane(0));
-   getVariable("EvrRunOpCode")->setInt(getEvrRunOpCode(0));
-   getVariable("EvrAcceptOpCode")->setInt(getEvrAcceptOpCode(0));
-   getVariable("EvrAcceptDelay")->setInt(getEvrAcceptDelay(0));
-   getVariable("EvrRunDelay")->setInt(getEvrRunDelay(0));
-   Device::readConfig();
+   printf("Here1----------------------------------\n");
+   PgpCardG3Link *pgp = (PgpCardG3Link*)system_->commLink();
+
+   getVariable("EvrEnable")->setInt(pgp->getEvrEnable());
+   getVariable("EvrEnableLane")->setInt(pgp->getEvrEnableLane());
+   getVariable("EvrRunOpCode")->setInt(pgp->getEvrLaneRunOpCode(0));
+   getVariable("EvrAcceptOpCode")->setInt(pgp->getEvrLaneAcceptOpCode(0));
+   getVariable("EvrAcceptDelay")->setInt(pgp->getEvrLaneAcceptDelay(0));
+   getVariable("EvrRunDelay")->setInt(pgp->getEvrLaneRunDelay(0));
+   printf("Here2----------------------------------\n");
 }
 
 // Method to write configuration registers
 void EvrCntrl::writeConfig ( bool force ) {
-   setEvrEnable(getVariable("EvrEnable")->getInt());
-   setEvrEnableLane(getVariable("EvrEnableLane")->getInt());
-   setEvrLaneRunOpCode(getVariable("EvrRunOpCode")->getInt());
-   setEvrLaneAcceptOpCode(getVariable("EvrAcceptOpCode")->getInt());
-   setEvrLaneAcceptDelay(getVariable("EvrAcceptDelay")->getInt());
-   setEvrLaneRunDelay(getVariable("EvrRunDelay")->getInt());
+   PgpCardG3Link *pgp = (PgpCardG3Link*)system_->commLink();
+
+   pgp->setEvrEnable(getVariable("EvrEnable")->getInt());
+   pgp->setEvrEnableLane(getVariable("EvrEnableLane")->getInt());
+   pgp->setEvrLaneRunOpCode(0,getVariable("EvrRunOpCode")->getInt());
+   pgp->setEvrLaneAcceptOpCode(0,getVariable("EvrAcceptOpCode")->getInt());
+   pgp->setEvrLaneAcceptDelay(0,getVariable("EvrAcceptDelay")->getInt());
+   pgp->setEvrLaneRunDelay(0,getVariable("EvrRunDelay")->getInt());
 }
 

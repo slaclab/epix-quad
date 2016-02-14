@@ -868,8 +868,8 @@ void DigFpga::readConfig ( ) {
    getVariable("tpsEdge")->setInt(getRegister("tpsTiming")->get(16,0x1));
    
  // Sub devices
-   Device::readConfig();
    REGISTER_UNLOCK
+   Device::readConfig();
 }
 
 // Method to write configuration registers
@@ -1040,8 +1040,8 @@ void DigFpga::writeConfig ( bool force ) {
 
 
   // Sub devices
-   Device::writeConfig(force);
    REGISTER_UNLOCK
+   Device::writeConfig(force);
 }
 
 // Verify hardware state of configuration
@@ -1078,7 +1078,7 @@ void DigFpga::verifyConfig ( ) {
    verifyRegister(getRegister("prepulseR0Width"));
    verifyRegister(getRegister("prepulseR0Delay"));
    verifyRegister(getRegister("asicPPmatToReadout"));
-   Device::verifyConfig();
    REGISTER_UNLOCK
+   Device::verifyConfig();
 }
 

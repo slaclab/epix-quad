@@ -47,7 +47,7 @@ int main (int argc, char **argv) {
 
    try {
       PgpCardG3Link   pgpLink;
-      EpixControl     epix(&pgpLink,defFile,EPIX100A);
+      EpixControl     epix(&pgpLink,defFile,EPIX100A,true);
       //UdpLink       udpLink; 
       //EpixControl   epix(&udpLink,defFile);
       int           pid;
