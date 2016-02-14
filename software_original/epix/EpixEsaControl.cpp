@@ -252,12 +252,12 @@ void EpixEsaControl::setRunState ( string state ) {
    else if ( !hwRunning_ && state == "Evr Running" ) {
 
       // Update run rate
-      if      ( getVariable("RunRate")->get() == "1Hz"   ) bCode = 0x24;
-      else if ( getVariable("RunRate")->get() == "5Hz"   ) bCode = 0x24;
-      else if ( getVariable("RunRate")->get() == "10Hz"  ) bCode = 0x24;
-      else if ( getVariable("RunRate")->get() == "120Hz" ) bCode = 0x24;
-      else if ( getVariable("RunRate")->get() == "Beam"  ) bCode = 0x24;
-      else bCode = 0x24;
+      if      ( getVariable("RunRate")->get() == "1Hz"   ) bCode = 45;
+      else if ( getVariable("RunRate")->get() == "5Hz"   ) bCode = 44;
+      else if ( getVariable("RunRate")->get() == "10Hz"  ) bCode = 43;
+      else if ( getVariable("RunRate")->get() == "120Hz" ) bCode = 40;
+      else if ( getVariable("RunRate")->get() == "Beam"  ) bCode = 161; // ESA beam
+      else bCode = 45; // 1hz
 
       // Set beam code
       device("evrCntrl",0)->setInt("EvrRunOpCode",bCode);
