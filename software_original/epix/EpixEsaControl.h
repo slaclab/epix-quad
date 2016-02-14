@@ -13,8 +13,8 @@
 // Modification history :
 // 06/06/2013: created
 //-----------------------------------------------------------------------------
-#ifndef __EPIX_CONTROL_H__
-#define __EPIX_CONTROL_H__
+#ifndef __EPIX_ESA_CONTROL_H__
+#define __EPIX_ESA_CONTROL_H__
 
 #include <System.h>
 #include <EpixTypes.h>
@@ -22,17 +22,17 @@ using namespace std;
 
 class CommLink;
 
-class EpixControl : public System {
+class EpixEsaControl : public System {
 
    EpixType epixType_;
 
    public:
 
       //! Constructor
-      EpixControl ( CommLink *commLink_, string defFile, EpixType epixType);
+      EpixEsaControl ( CommLink *commLink_, string defFile, EpixType epixType );
 
       //! Deconstructor
-      ~EpixControl ( );
+      ~EpixEsaControl ( );
 
       //! Method to process a command
       /*!

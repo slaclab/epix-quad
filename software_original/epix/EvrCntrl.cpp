@@ -56,7 +56,6 @@ void EvrCntrl::readStatus ( ) {
 
 // Method to read configuration registers and update variables
 void EvrCntrl::readConfig ( ) {
-   printf("Here1----------------------------------\n");
    PgpCardG3Link *pgp = (PgpCardG3Link*)system_->commLink();
 
    getVariable("EvrEnable")->setInt(pgp->getEvrEnable());
@@ -65,7 +64,6 @@ void EvrCntrl::readConfig ( ) {
    getVariable("EvrAcceptOpCode")->setInt(pgp->getEvrLaneAcceptOpCode(0));
    getVariable("EvrAcceptDelay")->setInt(pgp->getEvrLaneAcceptDelay(0));
    getVariable("EvrRunDelay")->setInt(pgp->getEvrLaneRunDelay(0));
-   printf("Here2----------------------------------\n");
 }
 
 // Method to write configuration registers

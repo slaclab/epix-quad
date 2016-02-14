@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// File          : EpixControl.cpp
+// File          : EpixEsaControl.cpp
 // Author        : Ryan Herbst  <rherbst@slac.stanford.edu>
 // Created       : 06/06/2013
 // Project       : EPIX System 
@@ -13,7 +13,7 @@
 // Modification history :
 // 06/06/2013: created
 //-----------------------------------------------------------------------------
-#include <EpixControl.h>
+#include <EpixEsaControl.h>
 #include <DigFpga.h>
 #include <Register.h>
 #include <Variable.h>
@@ -23,6 +23,7 @@
 #include <iostream>
 #include <string>
 #include <iomanip>
+#include <EvrCntrl.h>
 
 #define LANE0  0x10
 #define LANE1  0x20
@@ -37,7 +38,7 @@
 using namespace std;
 
 // Constructor
-EpixControl::EpixControl ( CommLink *commLink, string defFile, EpixType epixType ) : System("EpixControl",commLink) {
+EpixEsaControl::EpixEsaControl ( CommLink *commLink, string defFile, EpixType epixType ) : System("EpixEsaControl",commLink) {
 
    // Description
    desc_ = "Epix Control";
@@ -49,8 +50,26 @@ EpixControl::EpixControl ( CommLink *commLink, string defFile, EpixType epixType
    if ( defFile == "" ) defaults_ = "xml/defaults.xml";
    else defaults_ = defFile;
 
+   // Set run states
+   vector<string> states;
+   states.resize(2);
+   states[0] = "Stopped";
+   states[1] = "Evr Running";
+   getVariable("RunState")->setEnums(states);
+
+   // Set run rates
+   vector<string> rates;
+   rates.resize(5);
+   rates[0] = "1Hz";
+   rates[1] = "5Hz";
+   rates[2] = "10Hz";
+   rates[3] = "120Hz";
+   rates[4] = "Beam";
+   getVariable("RunRate")->setEnums(rates);
+
    // Add sub-devices
    addDevice(new DigFpga(0, 0, this, epixType));
+   addDevice(new EvrCntrl(this));
 
    //Set ePix type
    epixType_ = epixType;
@@ -80,10 +99,10 @@ EpixControl::EpixControl ( CommLink *commLink, string defFile, EpixType epixType
 }
 
 // Deconstructor
-EpixControl::~EpixControl ( ) { }
+EpixEsaControl::~EpixEsaControl ( ) { }
 
 // Method to process a command
-void EpixControl::command ( string name, string arg) {
+void EpixEsaControl::command ( string name, string arg) {
    stringstream tmp;
 
    // Command is local
@@ -165,7 +184,7 @@ void EpixControl::command ( string name, string arg) {
 }
 
 //! Method to return state string
-string EpixControl::localState ( ) {
+string EpixEsaControl::localState ( ) {
    string loc = "";
 
    loc = "System Ready To Take Data.\n";
@@ -174,14 +193,14 @@ string EpixControl::localState ( ) {
 }
 
 //! Method to perform soft reset
-void EpixControl::softReset ( ) {
+void EpixEsaControl::softReset ( ) {
    System::softReset();
 
    device("digFpga",0)->command("AcqCountReset","");
 }
 
 //! Method to perform hard reset
-void EpixControl::hardReset ( ) {
+void EpixEsaControl::hardReset ( ) {
    bool gotVer = false;
    uint count = 0;
 
@@ -196,7 +215,7 @@ void EpixControl::hardReset ( ) {
       } catch ( string err ) { 
          if ( count > 5 ) {
             gotVer = true;
-            throw(string("EpixControl::hardReset -> Error contacting fpga"));
+            throw(string("EpixEsaControl::hardReset -> Error contacting fpga"));
          }
          else {
             count++;
@@ -207,10 +226,60 @@ void EpixControl::hardReset ( ) {
 }
 
 //! Method to set run state
-void EpixControl::setRunState ( string state ) {
+void EpixEsaControl::setRunState ( string state ) {
    // Set run command
    device("digFpga",0)->setRunCommand("EpixRun");
    System::setRunState(state);
    
+}
+
+// Method to set run state
+void KpixControl::setRunState ( string state ) {
+   uint         runNumber;
+   uint         bCode;
+
+   // Stopped state is requested
+   if ( state == "Stopped" ) {
+      if ( hwRunning_ ) {
+         addRunStop();
+         device("digFpga",0)->set("DaqTrigEnable","False");
+         device("digFpga",0)->set("RunTrigEnable","False");
+         writeConfig(false);
+         hwRunning_ = false;
+         getVariable("RunState")->set(state);
+      }
+
+      allStatusReq_ = true;
+      addRunStop();
+   }
+
+   // EVR Running
+   else if ( !hwRunning_ && state == "Evr Running" ) {
+
+      // Update run rate
+      if      ( getVariable("RunRate")->get() == "1Hz"   ) bCode = 0x24;
+      else if ( getVariable("RunRate")->get() == "5Hz"   ) bCode = 0x24;
+      else if ( getVariable("RunRate")->get() == "10Hz"  ) bCode = 0x24;
+      else if ( getVariable("RunRate")->get() == "120Hz" ) bCode = 0x24;
+      else if ( getVariable("RunRate")->get() == "Beam"  ) bCode = 0x24;
+      else bCode = 0x24;
+
+      // Set beam code
+      device("evrCntrl",0)->setInt("EvrRunOpCode",bCode);
+      writeConfig(false);
+
+      // Increment run number
+      runNumber = getVariable("RunNumber")->getInt() + 1;
+      getVariable("RunNumber")->setInt(runNumber);
+      addRunStart();
+
+      swRunRetState_ = "Stopped";
+      hwRunning_   = true;
+      getVariable("RunState")->set(state);
+
+      device("digFpga",0)->set("DaqTrigEnable","True");
+      device("digFpga",0)->set("RunTrigEnable","True");
+      writeConfig(false);
+   }
 }
 
