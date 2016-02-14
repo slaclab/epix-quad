@@ -73,6 +73,15 @@ bool VariableHolder::typeMatch(QString typeIn) {
    return(false);
 }
 
+
+uint VariableHolder::getMax(){
+   return(max_);
+}
+
+uint VariableHolder::getMin(){
+   return(min_);
+}
+
 // Add device level information
 QString VariableHolder::addDevice ( QDomNode node ) {
    QString name;

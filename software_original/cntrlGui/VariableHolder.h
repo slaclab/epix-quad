@@ -89,6 +89,10 @@ class VariableHolder : public QObject {
       // Get hidden status
       bool isHidden();
 
+      // Get maxvalue
+      uint getMax();
+      uint getMin();
+
       // Update value
       void updateValue(QString value);
 

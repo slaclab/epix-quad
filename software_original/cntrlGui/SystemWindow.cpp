@@ -450,6 +450,12 @@ void SystemWindow::cmdResStructure (QDomNode node) {
             if ( local->shortName() == "RunRate" ) {
                for (x=0; x < enums.size(); x++ ) runRate_->addItem(enums[x]);
             }
+
+            if ( local->shortName() == "RunCount" ) {
+               runCount_->setEnable(false);
+               runCount_->setMaximum(0);
+            }
+
          }
          delete local;
       }
