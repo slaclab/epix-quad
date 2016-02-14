@@ -15,7 +15,7 @@
 //----------------------------------------------------------------------------
 #include <PgpCardG3Link.h>
 #include <MultLink.h>
-#include <EpixControl.h>
+#include <EpixEsaControl.h>
 #include <ControlServer.h>
 #include <Device.h>
 #include <iomanip>

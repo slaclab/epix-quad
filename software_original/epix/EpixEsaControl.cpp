@@ -67,6 +67,9 @@ EpixEsaControl::EpixEsaControl ( CommLink *commLink, string defFile, EpixType ep
    rates[4] = "Beam";
    getVariable("RunRate")->setEnums(rates);
 
+   getVariable("RunCount")->setRange(0,0);
+   getVariable("RunCount")->setInt(0);
+
    // Add sub-devices
    addDevice(new DigFpga(0, 0, this, epixType));
    addDevice(new EvrCntrl(this));
@@ -225,16 +228,8 @@ void EpixEsaControl::hardReset ( ) {
    } while ( !gotVer );
 }
 
-//! Method to set run state
-void EpixEsaControl::setRunState ( string state ) {
-   // Set run command
-   device("digFpga",0)->setRunCommand("EpixRun");
-   System::setRunState(state);
-   
-}
-
 // Method to set run state
-void KpixControl::setRunState ( string state ) {
+void EpixEsaControl::setRunState ( string state ) {
    uint         runNumber;
    uint         bCode;
 
