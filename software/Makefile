@@ -3,11 +3,11 @@ CC     := g++
 DEF    :=
 BIN    := $(PWD)/bin
 OBJ    := $(PWD)/.obj
-CFLAGS := -Wall `xml2-config --cflags` -I$(PWD)/gen_real -I$(PWD)/epix -I$(PWD)/offline
+CFLAGS := -Wall `xml2-config --cflags` -I$(PWD)/generic -I$(PWD)/epix -I$(PWD)/offline
 LFLAGS := `xml2-config --libs` -pthread -lrt -lbz2
 
 # Generic Sources
-GEN_DIR := $(PWD)/gen_real
+GEN_DIR := $(PWD)/generic
 GEN_SRC := $(wildcard $(GEN_DIR)/*.cpp)
 GEN_HDR := $(wildcard $(GEN_DIR)/*.h)
 GEN_OBJ := $(patsubst $(GEN_DIR)/%.cpp,$(OBJ)/%.o,$(GEN_SRC))
