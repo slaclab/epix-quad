@@ -36,13 +36,13 @@ Epix100aAsic::Epix100aAsic ( uint destination, uint baseAddress, uint index, Dev
    // Addr[21:20] = Chip
 
    // CMD = 0, Addr = 0  : Prepare for readout
-   addRegister(new Register("CmdPrepForRead", baseAddress_ + 0x00000000));
+   addRegister(new Register("CmdPrepForRead", baseAddress_ + 0x00000000, 1));
    addCommand(new Command("PrepForRead"));
    getCommand("PrepForRead")->setDescription("ePix Prepare For Readout");
 
    // CMD = 1, Addr = 1  : Bits 2:0 - Pulser monostable bits
    //                      Bit  7   - Pulser sync bit
-   addRegister(new Register("MonostPulser", baseAddress_ + 0x00001001));
+   addRegister(new Register("MonostPulser", baseAddress_ + 0x00001001, 1));
 
    addVariable(new Variable("MonostPulser", Variable::Configuration));
    getVariable("MonostPulser")->setDescription("MonoSt Pulser bits");
@@ -54,7 +54,7 @@ Epix100aAsic::Epix100aAsic ( uint destination, uint baseAddress, uint index, Dev
    // CMD = 1, Addr = 2  : Pixel dummy, write data
    //                    : Bit 0 = Test
    //                    : Bit 1 = Test
-   addRegister(new Register("PixelDummy", baseAddress_ + 0x00001002));
+   addRegister(new Register("PixelDummy", baseAddress_ + 0x00001002, 1));
 
    addVariable(new Variable("DummyMask", Variable::Configuration));
    getVariable("DummyMask")->setDescription("Dummy Pixel Mask");
@@ -71,7 +71,7 @@ Epix100aAsic::Epix100aAsic ( uint destination, uint baseAddress, uint index, Dev
    //                    : Bit  13  = sab_test
    //                    : Bit  14  = hrtest
    //                    : Bit  15  = PulserR
-   addRegister(new Register("Config3", baseAddress_ + 0x00001003));
+   addRegister(new Register("Config3", baseAddress_ + 0x00001003, 1));
 
    addVariable(new Variable("Pulser", Variable::Configuration));
    getVariable("Pulser")->setDescription("Pulser bits");
@@ -103,7 +103,7 @@ Epix100aAsic::Epix100aAsic ( uint destination, uint baseAddress, uint index, Dev
 
    // CMD = 1, Addr = 4  : Bits 3:0 = DM1[3:0]
    //                    : Bits 7:4 = DM2[3:0]
-   addRegister(new Register("Config4", baseAddress_ + 0x00001004));
+   addRegister(new Register("Config4", baseAddress_ + 0x00001004, 1));
 
    addVariable(new Variable("DigMon1", Variable::Configuration));
    getVariable("DigMon1")->setDescription("Digital Monitor 1 Select");
@@ -151,7 +151,7 @@ Epix100aAsic::Epix100aAsic ( uint destination, uint baseAddress, uint index, Dev
 
    // CMD = 1, Addr = 5  : Bits 2:0 = Pulser DAC[2:0]
    //                      Bits 7:4 = TPS_GR[3:0]
-   addRegister(new Register("PulserDac", baseAddress_ + 0x00001005));
+   addRegister(new Register("PulserDac", baseAddress_ + 0x00001005, 1));
 
    addVariable(new Variable("PulserDac", Variable::Configuration));
    getVariable("PulserDac")->setDescription("Pulser DAC");
@@ -164,7 +164,7 @@ Epix100aAsic::Epix100aAsic ( uint destination, uint baseAddress, uint index, Dev
    // CMD = 1, Addr = 6  : Bit  0   = DM1en
    //                    : Bit  1   = DM2en
    //                    : Bit  4   = SLVDSbit
-   addRegister(new Register("Config6", baseAddress_ + 0x00001006));
+   addRegister(new Register("Config6", baseAddress_ + 0x00001006, 1));
 
    addVariable(new Variable("Dm1En", Variable::Configuration));
    getVariable("Dm1En")->setDescription("Digital Monitor 1 Enable");
@@ -180,7 +180,7 @@ Epix100aAsic::Epix100aAsic ( uint destination, uint baseAddress, uint index, Dev
 
    // CMD = 1, Addr = 7  : Bit  5:0 = VREF[5:0]
    //                    : Bit  7:6 = VrefLow[1:0]
-   addRegister(new Register("VRef", baseAddress_ + 0x00001007));
+   addRegister(new Register("VRef", baseAddress_ + 0x00001007, 1));
 
    addVariable(new Variable("VRef", Variable::Configuration));
    getVariable("VRef")->setDescription("Voltage Ref");
@@ -193,7 +193,7 @@ Epix100aAsic::Epix100aAsic ( uint destination, uint baseAddress, uint index, Dev
    // CMD = 1, Addr = 8  : Bit  0   = TPS_tcomp
    //                    : Bit  4:1 = TPS_MUX[3:0]
    //                    : Bit  7:5 = RO_Monost[2:0]
-   addRegister(new Register("Config8", baseAddress_ + 0x00001008));
+   addRegister(new Register("Config8", baseAddress_ + 0x00001008, 1));
 
    addVariable(new Variable("TpsTComp", Variable::Configuration));
    getVariable("TpsTComp")->setDescription("");
@@ -227,7 +227,7 @@ Epix100aAsic::Epix100aAsic ( uint destination, uint baseAddress, uint index, Dev
 
    // CMD = 1, Addr = 9  : Bit  3:0 = S2D0_GR[3:0]
    //                    : Bit  7:4 = S2D1_GR[3:0]
-   addRegister(new Register("Config9", baseAddress_ + 0x00001009));
+   addRegister(new Register("Config9", baseAddress_ + 0x00001009, 1));
 
    addVariable(new Variable("S2d0Gr", Variable::Configuration));
    getVariable("S2d0Gr")->setDescription("");
@@ -241,7 +241,7 @@ Epix100aAsic::Epix100aAsic ( uint destination, uint baseAddress, uint index, Dev
    //                    : Bit  3:1 = OCB[2:0]
    //                    : Bit  6:4 = Monost[2:0]
    //                    : Bit  7   = fastpp_enable
-   addRegister(new Register("Config10", baseAddress_ + 0x0000100A));
+   addRegister(new Register("Config10", baseAddress_ + 0x0000100A, 1));
 
    addVariable(new Variable("PpOcbS2d", Variable::Configuration));
    getVariable("PpOcbS2d")->setDescription("");
@@ -262,7 +262,7 @@ Epix100aAsic::Epix100aAsic ( uint destination, uint baseAddress, uint index, Dev
    // CMD = 1, Addr = 11 : Bit  2:0 = Preamp[2:0]
    //                    : Bit  5:3 = Pixel_CB[2:0]
    //                    : Bit  7:6 = Vld1_b[1:0]
-   addRegister(new Register("Config11", baseAddress_ + 0x0000100B));
+   addRegister(new Register("Config11", baseAddress_ + 0x0000100B, 1));
 
    addVariable(new Variable("Preamp", Variable::Configuration));
    getVariable("Preamp")->setDescription("");
@@ -278,7 +278,7 @@ Epix100aAsic::Epix100aAsic ( uint destination, uint baseAddress, uint index, Dev
 
    // CMD = 1, Addr = 12 : Bit  0   = S2D_tcomp
    //                    : Bit  6:1 = Filter_Dac[5:0]
-   addRegister(new Register("Config12", baseAddress_ + 0x0000100C));
+   addRegister(new Register("Config12", baseAddress_ + 0x0000100C, 1));
 
    addVariable(new Variable("S2dTComp", Variable::Configuration));
    getVariable("S2dTComp")->setDescription("");
@@ -291,7 +291,7 @@ Epix100aAsic::Epix100aAsic ( uint destination, uint baseAddress, uint index, Dev
    // CMD = 1, Addr = 13 : Bit  1:0 = tc[1:0]
    //                    : Bit  4:2 = S2D[2:0]
    //                    : Bit  7:5 = S2D_DAC_BIAS[2:0]
-   addRegister(new Register("Config13", baseAddress_ + 0x0000100D));
+   addRegister(new Register("Config13", baseAddress_ + 0x0000100D, 1));
 
    addVariable(new Variable("TC", Variable::Configuration));
    getVariable("TC")->setDescription("");
@@ -307,7 +307,7 @@ Epix100aAsic::Epix100aAsic ( uint destination, uint baseAddress, uint index, Dev
 
    // CMD = 1, Addr = 14 : Bit  1:0 = tps_tcDAC[1:0]
    //                    : Bit  7:2 = TPS_DAC[5:0]
-   addRegister(new Register("Config14", baseAddress_ + 0x0000100E));
+   addRegister(new Register("Config14", baseAddress_ + 0x0000100E, 1));
 
    addVariable(new Variable("TpsTcDac", Variable::Configuration));
    getVariable("TpsTcDac")->setDescription("");
@@ -319,7 +319,7 @@ Epix100aAsic::Epix100aAsic ( uint destination, uint baseAddress, uint index, Dev
 
    // CMD = 1, Addr = 15 : Bit  1:0 = S2D0_tcDAC[1:0]
    //                    : Bit  7:2 = S2D0_DAC[5:0]
-   addRegister(new Register("Config15", baseAddress_ + 0x0000100F));
+   addRegister(new Register("Config15", baseAddress_ + 0x0000100F, 1));
 
    addVariable(new Variable("S2d0TcDac", Variable::Configuration));
    getVariable("S2d0TcDac")->setDescription("");
@@ -334,7 +334,7 @@ Epix100aAsic::Epix100aAsic ( uint destination, uint baseAddress, uint index, Dev
    //                    : Bit  2   = delEXEC
    //                    : Bit  3   = delCCkreg
    //                    : Bit  4   = ro_rst_exten
-   addRegister(new Register("Config16", baseAddress_ + 0x00001010));
+   addRegister(new Register("Config16", baseAddress_ + 0x00001010, 1));
 
    addVariable(new Variable("TestBe", Variable::Configuration));
    getVariable("TestBe")->setDescription("");
@@ -357,28 +357,28 @@ Epix100aAsic::Epix100aAsic ( uint destination, uint baseAddress, uint index, Dev
    getVariable("ro_rst_exten")->setTrueFalse();
 
    // CMD = 1, Addr = 17 : Row start  address[9:0]
-   addRegister(new Register("RowStartAddr", baseAddress_ + 0x00001011));
+   addRegister(new Register("RowStartAddr", baseAddress_ + 0x00001011, 1));
 
    addVariable(new Variable("RowStartAddr", Variable::Configuration));
    getVariable("RowStartAddr")->setDescription("");
    getVariable("RowStartAddr")->setRange(0,0x2FF);
 
    // CMD = 1, Addr = 18 : Row stop  address[9:0]
-   addRegister(new Register("RowStopAddr", baseAddress_ + 0x00001012));
+   addRegister(new Register("RowStopAddr", baseAddress_ + 0x00001012, 1));
 
    addVariable(new Variable("RowStopAddr", Variable::Configuration));
    getVariable("RowStopAddr")->setDescription("");
    getVariable("RowStopAddr")->setRange(0,0x2FF);
 
    // CMD = 1, Addr = 19 : Col start  address[9:0]
-   addRegister(new Register("ColStartAddr", baseAddress_ + 0x00001013));
+   addRegister(new Register("ColStartAddr", baseAddress_ + 0x00001013, 1));
 
    addVariable(new Variable("ColStartAddr", Variable::Configuration));
    getVariable("ColStartAddr")->setDescription("");
    getVariable("ColStartAddr")->setRange(0,0x2FF);
 
    // CMD = 1, Addr = 20 : Col stop  address[9:0]
-   addRegister(new Register("ColStopAddr", baseAddress_ + 0x00001014));
+   addRegister(new Register("ColStopAddr", baseAddress_ + 0x00001014, 1));
 
    addVariable(new Variable("ColStopAddr", Variable::Configuration));
    getVariable("ColStopAddr")->setDescription("");
@@ -386,7 +386,7 @@ Epix100aAsic::Epix100aAsic ( uint destination, uint baseAddress, uint index, Dev
 
    // CMD = 1, Addr = 22 : Bit  3:0 = S2D2GR[3:0]
    //                    : Bit  7:4 = S2D3GR[5:0]
-   addRegister(new Register("Config22", baseAddress_ + 0x00001016));
+   addRegister(new Register("Config22", baseAddress_ + 0x00001016, 1));
 
    addVariable(new Variable("S2d2Gr", Variable::Configuration));
    getVariable("S2d2Gr")->setDescription("");
@@ -398,7 +398,7 @@ Epix100aAsic::Epix100aAsic ( uint destination, uint baseAddress, uint index, Dev
 
    // CMD = 1, Addr = 23 : Bit  1:0 = S2D1_tcDAC[1:0]
    //                    : Bit  7:2 = S2D1_DAC[5:0]
-   addRegister(new Register("Config23", baseAddress_ + 0x00001017));
+   addRegister(new Register("Config23", baseAddress_ + 0x00001017, 1));
 
    addVariable(new Variable("S2d1TcDac", Variable::Configuration));
    getVariable("S2d1TcDac")->setDescription("");
@@ -410,7 +410,7 @@ Epix100aAsic::Epix100aAsic ( uint destination, uint baseAddress, uint index, Dev
    
    // CMD = 1, Addr = 24 : Bit  1:0 = S2D2_tcDAC[1:0]
    //                    : Bit  7:2 = S2D2_DAC[5:0]
-   addRegister(new Register("Config24", baseAddress_ + 0x00001018));
+   addRegister(new Register("Config24", baseAddress_ + 0x00001018, 1));
 
    addVariable(new Variable("S2d2TcDac", Variable::Configuration));
    getVariable("S2d2TcDac")->setDescription("");
@@ -422,7 +422,7 @@ Epix100aAsic::Epix100aAsic ( uint destination, uint baseAddress, uint index, Dev
 
    // CMD = 1, Addr = 25 : Bit  1:0 = S2D3_tcDAC[1:0]
    //                    : Bit  7:2 = S2D3_DAC[5:0]
-   addRegister(new Register("Config25", baseAddress_ + 0x00001019));
+   addRegister(new Register("Config25", baseAddress_ + 0x00001019, 1));
 
    addVariable(new Variable("S2d3TcDac", Variable::Configuration));
    getVariable("S2d3TcDac")->setDescription("");
@@ -433,13 +433,13 @@ Epix100aAsic::Epix100aAsic ( uint destination, uint baseAddress, uint index, Dev
    getVariable("S2d3Dac")->setRange(0,0x3F);
 
    // CMD = 1, Addr = 21 : Chip ID Read
-   addRegister(new Register("ChipId", baseAddress_ + 0x00001015));
+   addRegister(new Register("ChipId", baseAddress_ + 0x00001015, 1));
 
    addVariable(new Variable("ChipId", Variable::Status));
    getVariable("ChipId")->setDescription("");
 
    // CMD = 6, Addr = 17 : Row counter[8:0]
-   addRegister(new Register("RowCounter", baseAddress_ + 0x00006011));
+   addRegister(new Register("RowCounter", baseAddress_ + 0x00006011, 1));
 
    addVariable(new Variable("RowCounter", Variable::Configuration));
    getVariable("RowCounter")->setDescription("");
@@ -449,7 +449,7 @@ Epix100aAsic::Epix100aAsic ( uint destination, uint baseAddress, uint index, Dev
    getCommand("WriteRowCounter")->setDescription("Special command to write row counter");
 
    // CMD = 6, Addr = 19 : Bank select [3:0] & Col counter[6:0]
-   addRegister(new Register("ColCounter", baseAddress_ + 0x00006013));
+   addRegister(new Register("ColCounter", baseAddress_ + 0x00006013, 1));
 
    addVariable(new Variable("ColCounter", Variable::Configuration));
    getVariable("ColCounter")->setDescription("");
@@ -460,20 +460,20 @@ Epix100aAsic::Epix100aAsic ( uint destination, uint baseAddress, uint index, Dev
    getVariable("BankSelect")->setRange(0,0xF);
 
    // CMD = 2, Addr = X  : Write Row with data
-   addRegister(new Register("WriteRowData", baseAddress_ + 0x00002000));
+   addRegister(new Register("WriteRowData", baseAddress_ + 0x00002000, 1));
    addCommand(new Command("WriteRowData"));
    getCommand("WriteRowData")->setDescription("Write PixelTest and PixelMask to selected row");
 
    // CMD = 3, Addr = X  : Write Column with data
-   addRegister(new Register("WriteColData", baseAddress_ + 0x00003000));
+   addRegister(new Register("WriteColData", baseAddress_ + 0x00003000, 1));
 
    // CMD = 4, Addr = X  : Write Matrix with data
-   addRegister(new Register("WriteMatrixData", baseAddress_ + 0x00004000));
+   addRegister(new Register("WriteMatrixData", baseAddress_ + 0x00004000, 1));
    addCommand(new Command("WriteMatrixData"));
    getCommand("WriteMatrixData")->setDescription("Write PixelTest and PixelMask to all pixels");
 
    // CMD = 5, Addr = X  : Read/Write Pixel with data
-   addRegister(new Register("WritePixelData", baseAddress_ + 0x00005000));
+   addRegister(new Register("WritePixelData", baseAddress_ + 0x00005000, 1));
    addCommand(new Command("WritePixelData"));
    getCommand("WritePixelData")->setDescription("Write PixelTest and PixelMask to current pixel only");
    // Dummy command to enable reading of pixels (register is same as WritePixelData)
@@ -481,11 +481,11 @@ Epix100aAsic::Epix100aAsic ( uint destination, uint baseAddress, uint index, Dev
    getCommand("ReadPixelData")->setDescription("Read PixelTest and PixelMask from current pixel only");
 
    // CMD = 7, Addr = X  : Prepare to write chip ID
-   addRegister(new Register("PrepareWriteChipIdA", baseAddress_ + 0x00007000));
-   addRegister(new Register("PrepareWriteChipIdB", baseAddress_ + 0x00007015));
+   addRegister(new Register("PrepareWriteChipIdA", baseAddress_ + 0x00007000, 1));
+   addRegister(new Register("PrepareWriteChipIdB", baseAddress_ + 0x00007015, 1));
 
    // CMD = 8, Addr = X  : Prepare for row/column/matrix configuration
-   addRegister(new Register("PrepareMultiConfig", baseAddress_ + 0x00008000));
+   addRegister(new Register("PrepareMultiConfig", baseAddress_ + 0x00008000, 1));
 
    // Pixel Configuration
    //                    : Bit 0 = Test

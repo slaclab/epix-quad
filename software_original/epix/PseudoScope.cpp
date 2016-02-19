@@ -31,25 +31,25 @@ PseudoScope::PseudoScope ( uint destination, uint baseAddress, uint index, Devic
    desc_ = "Virtual Oscilloscope object.";
 
 
-   addRegister(new Register("Arm",            baseAddress_ + 0x50));
-   addRegister(new Register("Trig",           baseAddress_ + 0x51));
+   addRegister(new Register("Arm",            baseAddress_ + 0x50, 1));
+   addRegister(new Register("Trig",           baseAddress_ + 0x51, 1));
 
-   addRegister(new Register("Settings1",      baseAddress_ + 0x52));
+   addRegister(new Register("Settings1",      baseAddress_ + 0x52, 1));
    addVariable(new Variable("Enable",           Variable::Configuration));
    addVariable(new Variable("TriggerEdge",      Variable::Configuration));
    addVariable(new Variable("TriggerChannel",   Variable::Configuration));
    addVariable(new Variable("TriggerMode",      Variable::Configuration));
    addVariable(new Variable("TriggerThreshold", Variable::Configuration));
 
-   addRegister(new Register("Settings2",      baseAddress_ + 0x53));
+   addRegister(new Register("Settings2",      baseAddress_ + 0x53, 1));
    addVariable(new Variable("TriggerOffset",    Variable::Configuration));
    addVariable(new Variable("TriggerHoldoff",   Variable::Configuration));
 
-   addRegister(new Register("Settings3",      baseAddress_ + 0x54));
+   addRegister(new Register("Settings3",      baseAddress_ + 0x54, 1));
    addVariable(new Variable("TraceLength",      Variable::Configuration));
    addVariable(new Variable("SkipSamples",      Variable::Configuration));
 
-   addRegister(new Register("Settings4",      baseAddress_ + 0x55));
+   addRegister(new Register("Settings4",      baseAddress_ + 0x55, 1));
    addVariable(new Variable("InputChannelA",    Variable::Configuration));
    addVariable(new Variable("InputChannelB",    Variable::Configuration));
 
