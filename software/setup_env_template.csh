@@ -15,7 +15,7 @@ setenv QTDIR   /afs/slac/g/reseng/qt/qt_4.7.4_x64 #64-bit version
 #setenv ROOTSYS /afs/slac/g/reseng/root/root_5.20_x64
 
 # Python search path, uncomment to compile python script support
-setenv PYTHONPATH ${BASE}/python/lib64/python/
+setenv PYTHONPATH ${BASE}/python/lib/python/
 
 # Setup path
 if ($?PATH) then
