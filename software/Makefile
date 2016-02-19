@@ -24,8 +24,8 @@ UTL_SRC := $(wildcard $(UTL_DIR)/*.cpp)
 UTL_BIN := $(patsubst $(UTL_DIR)/%.cpp,$(BIN)/%,$(UTL_SRC))
 
 # Default
-#all: dir $(GEN_OBJ) $(EPX_OBJ) $(UTL_BIN) gui ana online pylibs
-all: dir $(GEN_OBJ) $(EPX_OBJ) $(UTL_BIN) gui ana online 
+all: dir $(GEN_OBJ) $(EPX_OBJ) $(UTL_BIN) gui ana online pylibs
+#all: dir $(GEN_OBJ) $(EPX_OBJ) $(UTL_BIN) gui ana online 
 
 # Object directory
 dir:
