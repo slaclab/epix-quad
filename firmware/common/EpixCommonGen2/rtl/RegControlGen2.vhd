@@ -14,6 +14,9 @@
 -- [MK] 01/14/2016 - Fixed prepare for readout command. It was sent only to ASIC 0.
 -- [MK] 01/28/2016 - Fixed SACI state machine
 -- [MK] 01/28/2016 - Fixed carrier ID readout
+-- [MK] 02/23/2016 - Increased SACI clock frequency to 10MHz. Improved SACI FSM to better handle 
+--                   simultaneous prepare for readout commands and SACI register accesses.
+--                   Obsolete regs replaced by removedRegs dummy (writable for software compatibility).
 -------------------------------------------------------------------------------
 -- Description: Adaptation of Gen1 ePix register controller to Gen2 dig. card.
 -------------------------------------------------------------------------------
@@ -135,6 +138,7 @@ architecture rtl of RegControlGen2 is
       scopeRegOut    : ScopeConfigType;
       axiReadSlave   : AxiLiteReadSlaveType;
       axiWriteSlave  : AxiLiteWriteSlaveType;
+      removedRegs    : Slv32Array(7 downto 0);
    end record RegType;
    
    constant REG_INIT_C : RegType := (
@@ -160,7 +164,9 @@ architecture rtl of RegControlGen2 is
       epixRegOut     => EPIX_CONFIG_INIT_C,
       scopeRegOut    => SCOPE_CONFIG_INIT_C,
       axiReadSlave   => AXI_LITE_READ_SLAVE_INIT_C,
-      axiWriteSlave  => AXI_LITE_WRITE_SLAVE_INIT_C);
+      axiWriteSlave  => AXI_LITE_WRITE_SLAVE_INIT_C,
+      removedRegs    => (others => (others => '0'))
+   );
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
@@ -275,20 +281,20 @@ begin
       axiSlaveRegisterW(x"000025" & "00",  0, v.epixRegOut.adcReadsPerPixel);
       axiSlaveRegisterW(x"000026" & "00",  0, v.epixRegOut.adcClkHalfT);
       axiSlaveRegisterW(x"000027" & "00",  0, v.epixRegOut.totalPixelsToRead);
-      axiSlaveRegisterW(x"000028" & "00",  0, v.epixRegOut.saciClkBit);
+      axiSlaveRegisterW(x"000028" & "00",  0, v.removedRegs(0));
       axiSlaveRegisterW(x"000029" & "00",  0, v.epixRegOut.asicPins);
       axiSlaveRegisterW(x"00002A" & "00",  0, v.epixRegOut.manualPinControl);
-      axiSlaveRegisterW(x"00002A" & "00",  6, v.epixRegOut.prePulseR0);
+      axiSlaveRegisterW(x"00002A" & "00",  6, v.removedRegs(1)(0));
       axiSlaveRegisterW(x"00002A" & "00",  7, v.epixRegOut.adcStreamMode);
       axiSlaveRegisterW(x"00002A" & "00",  8, v.epixRegOut.testPattern);
-      axiSlaveRegisterW(x"00002A" & "00",  9, v.epixRegOut.syncMode);
+      axiSlaveRegisterW(x"00002A" & "00",  9, v.removedRegs(2)(1 downto 0));
       axiSlaveRegisterW(x"00002A" & "00", 11, v.epixRegOut.asicR0Mode);
       axiSlaveRegisterW(x"00002B" & "00",  0, v.epixRegOut.asicR0Width);
-      axiSlaveRegisterW(x"00002C" & "00",  0, v.epixRegOut.pipelineDelay);
-      axiSlaveRegisterW(x"00002D" & "00",  0, v.epixRegOut.syncWidth);
-      axiSlaveRegisterW(x"00002D" & "00", 16, v.epixRegOut.syncDelay);
-      axiSlaveRegisterW(x"00002E" & "00",  0, v.epixRegOut.prePulseR0Width);
-      axiSlaveRegisterW(x"00002F" & "00",  0, v.epixRegOut.prePulseR0Delay);
+      axiSlaveRegisterW(x"00002C" & "00",  0, v.removedRegs(3));
+      axiSlaveRegisterW(x"00002D" & "00",  0, v.removedRegs(4)(15 downto 0));
+      axiSlaveRegisterW(x"00002D" & "00", 16, v.removedRegs(5)(15 downto 0));
+      axiSlaveRegisterW(x"00002E" & "00",  0, v.removedRegs(6));
+      axiSlaveRegisterW(x"00002F" & "00",  0, v.removedRegs(7));
       axiSlaveRegisterR(x"000030" & "00",  0, ite(idValids(0) = '1',idValues(0)(31 downto  0), x"00000000")); --Digital card ID low
       axiSlaveRegisterR(x"000031" & "00",  0, ite(idValids(0) = '1',idValues(0)(63 downto 32), x"00000000")); --Digital card ID high
       axiSlaveRegisterR(x"000032" & "00",  0, ite(idValids(1) = '1',idValues(1)(31 downto  0), x"00000000")); --Analog card ID low
@@ -570,9 +576,7 @@ begin
             if (r.epixRegOut.asicMask(conv_integer(r.saciChipCnt)) = '0') then
                if (r.saciChipCnt = 3) then
                   v.saciReadoutAck := '1';
-                  if (saciReadoutReq = '0') then
-                     v.saciState := SACI_IDLE_S;
-                  end if;
+                  v.saciState := SACI_IDLE_S;
                else
                   v.saciChipCnt := r.saciChipCnt + 1;
                end if;
@@ -585,9 +589,7 @@ begin
                v.saciSelIn.req := '0';
                if (r.saciChipCnt = 3) then
                   v.saciReadoutAck := '1';
-                  if (saciReadoutReq = '0') then
-                     v.saciState := SACI_IDLE_S;
-                  end if;
+                  v.saciState := SACI_IDLE_S;
                else
                   v.saciChipCnt   := r.saciChipCnt + 1;
                   v.saciState := SACI_PAUSE_S;
@@ -770,7 +772,7 @@ begin
    -- Actual SACI Master
    U_Saci : entity work.SaciMasterSync 
    generic map (
-      SACI_HALF_CLK_TICKS => 15
+      SACI_HALF_CLK_TICKS => 5
    )
    port map (
        clk           => axiClk,

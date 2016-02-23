@@ -94,9 +94,9 @@ begin
       saciReadoutReq <= '0';
       wait for 100 us;
       saciReadoutReq <= '1';
-      wait for 10 ns;
-      saciReadoutReq <= '0';
-      wait;
+      wait until saciReadoutAck = '0';
+      --saciReadoutReq <= '0';
+      --wait;
    end process;
    
    

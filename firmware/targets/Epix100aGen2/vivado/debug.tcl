@@ -21,12 +21,12 @@ open_run synth_1
 ### Core debug signals
 #SetDebugCoreClk ${ilaName} {U_EpixCore/coreClk}
 #
-##SACI Debug
-#ConfigProbe ${ilaName} {U_EpixCore/U_RegControl/U_Saci/saciClk}
-#ConfigProbe ${ilaName} {U_EpixCore/U_RegControl/U_Saci/saciSelL*}
-#ConfigProbe ${ilaName} {U_EpixCore/U_RegControl/U_Saci/saciCmd}
-#ConfigProbe ${ilaName} {U_EpixCore/U_RegControl/U_Saci/saciRsp}
-#ConfigProbe ${ilaName} {U_EpixCore/U_RegControl/U_Saci/saciMasterOut*}
+###SACI Debug
+##ConfigProbe ${ilaName} {U_EpixCore/U_RegControl/U_Saci/saciClk}
+##ConfigProbe ${ilaName} {U_EpixCore/U_RegControl/U_Saci/saciSelL*}
+##ConfigProbe ${ilaName} {U_EpixCore/U_RegControl/U_Saci/saciCmd}
+##ConfigProbe ${ilaName} {U_EpixCore/U_RegControl/U_Saci/saciRsp}
+##ConfigProbe ${ilaName} {U_EpixCore/U_RegControl/U_Saci/saciMasterOut*}
 #
 ###ADC Alignment Program Debug
 ##ConfigProbe ${ilaName} {U_EpixCore/U_EpixStartup/U_StartupPicoBlaze/address*}
@@ -39,15 +39,15 @@ open_run synth_1
 ##ConfigProbe ${ilaName} {U_EpixCore/U_EpixStartup/adcValidCountReg*}
 ##ConfigProbe ${ilaName} {U_EpixCore/U_EpixStartup/adcMatchCountReg*}
 #
-###ADC Data Debug
-##ConfigProbe ${ilaName} {U_EpixCore/adcData[0]*}
-##ConfigProbe ${ilaName} {U_EpixCore/adcValid[0]*}
-##ConfigProbe ${ilaName} {U_EpixCore/adcData[4]*}
-##ConfigProbe ${ilaName} {U_EpixCore/adcValid[4]*}
-##ConfigProbe ${ilaName} {U_EpixCore/adcData[8]*}
-##ConfigProbe ${ilaName} {U_EpixCore/adcValid[8]*}
-##ConfigProbe ${ilaName} {U_EpixCore/adcData[12]*}
-##ConfigProbe ${ilaName} {U_EpixCore/adcValid[12]*}
+##Bad frame debug
+#ConfigProbe ${ilaName} {U_EpixCore/U_ReadoutControl/r[state][*]}
+#ConfigProbe ${ilaName} {U_EpixCore/U_ReadoutControl/r[timeoutCnt][*]}
+#ConfigProbe ${ilaName} {U_EpixCore/U_ReadoutControl/fifoEmptyAll}
+#ConfigProbe ${ilaName} {U_EpixCore/acqBusy}
+#ConfigProbe ${ilaName} {U_EpixCore/acqStart}
+#ConfigProbe ${ilaName} {U_EpixCore/U_AcqControl/pixelCnt[*]}
+#ConfigProbe ${ilaName} {U_EpixCore/U_AcqControl/curState[*]}
+#
 #
 ###Slow ADC debug
 ##ConfigProbe ${ilaName} {U_EpixCore/slowAdcRefClk*}

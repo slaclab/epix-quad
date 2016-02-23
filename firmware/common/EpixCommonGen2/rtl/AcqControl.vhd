@@ -13,6 +13,7 @@
 -------------------------------------------------------------------------------
 -- Modification history:
 -- 12/08/2011: created.
+-- [MK] 01/14/2016 - Removed unused sync modes and reset prepulse. 
 -------------------------------------------------------------------------------
 
 LIBRARY ieee;
@@ -74,6 +75,7 @@ architecture AcqControl of AcqControl is
    signal adcClk             : std_logic             := '0';
    signal adcClkEdge         : std_logic             := '0';
    signal asicClk            : std_logic             := '0';
+   signal acqStartEdge       : std_logic             := '0';
    signal adcCnt             : unsigned(31 downto 0) := (others => '0');
    signal adcSampCnt         : slv(31 downto 0) := (others => '0');
    signal adcSampCntEn       : sl := '0';
@@ -98,7 +100,6 @@ architecture AcqControl of AcqControl is
    signal firstPixel         : sl := '0';
    signal firstPixelSet      : sl := '0';
    signal firstPixelRst      : sl := '0';
-   signal prePulseR0         : sl := '0';
    signal iAcqBusy           : sl := '0';
    signal risingAcq          : sl := '0';
    signal fallingAcq         : sl := '0';
@@ -115,16 +116,12 @@ architecture AcqControl of AcqControl is
    signal iAsicGlblRst     : std_logic := '0';
    signal iAsicAcq         : std_logic := '0';
    signal iAsicClk         : std_logic := '0';
-   signal iAsicSync        : std_logic := '0';
-   signal iAsicSyncAlt     : std_logic := '0';
    -- Alternate R0 that can be used for "original" polarity
    -- (i.e., usually low except before ACQ and through readout)
    signal iAsicR0Alt    : std_logic             := '0';
 
    -- State machine values
    type state is (IDLE_S,
-                  PRE_R0_S,
-                  POST_PRE_R0_S,
                   WAIT_R0_S,
                   PULSE_R0_S,
                   WAIT_ACQ_S,
@@ -136,7 +133,6 @@ architecture AcqControl of AcqControl is
                   WAIT_ADC_S,
                   NEXT_CELL_S,
                   WAIT_FOR_READOUT_S,
-                  SYNC_S,
                   SACI_RESET_S,
                   DONE_S,
                   SYNC_TEST_S,
@@ -146,6 +142,11 @@ architecture AcqControl of AcqControl is
 
    -- Register delay for simulation
    constant tpd:time := 0.5 ns;
+   
+   attribute keep : string;
+   attribute keep of pixelCnt : signal is "true";
+   attribute keep of curState : signal is "true";
+   
 
 begin
 
@@ -177,14 +178,8 @@ begin
    asicClk     <= iAsicClk               when ePixConfig.manualPinControl(5) = '0' else
                   ePixConfig.asicPins(5) when ePixConfig.manualPinControl(5) = '1' else
                   'X';
-   asicSync    <= iAsicSync              when ePixConfig.syncMode = "01" else
-                  iAsicSyncAlt           when ePixConfig.syncMode = "10" else
-                  '0'                    when ePixConfig.syncMode = "00" else
-                  '1'                    when ePixConfig.syncMode = "11" else
-                  'X';
+   asicSync    <= '0';
 
-   --Use 6th bit of manual pin control to activate or deactivate pre-pulsing of R0
-   prePulseR0 <= ePixConfig.prePulseR0; 
 
    --Outputs not incorporated into state machine at the moment
    iAsicPpbe    <= '1'; 
@@ -197,18 +192,25 @@ begin
    
    -- ADC pulse signal allows counting of adc cycles in other blocks
    adcPulse <= adcClkEdge;
+   
+   U_ReadStartEdge : entity work.SynchronizerEdge
+      port map (
+         clk        => sysClk,
+         rst        => sysClkRst,
+         dataIn     => acqStart,
+         risingEdge => acqStartEdge
+      );
 
 
 -- Normal path for taking data frames
    --Asynchronous state machine outputs
-   process(curState,stateCnt,adcSampCnt,ePixConfig) begin
+   process(curState,stateCnt,adcSampCnt,ePixConfig, saciReadoutAck) begin
       --All signals default values
       iAsicClk           <= '0' after tpd;
       iAsicR0            <= '1' after tpd;
       iAsicR0Alt         <= '1' after tpd;
       iAsicPpmat         <= '0' after tpd;
       iAsicAcq           <= '0' after tpd;
-      iAsicSync          <= '0' after tpd;
       saciReadoutReq     <= '0' after tpd;
       stateCntEn         <= '0' after tpd;
       stateCntRst        <= '0' after tpd;
@@ -233,25 +235,6 @@ begin
             iAsicPpmat      <= '1' after tpd;
             iAsicR0Alt      <= '0' after tpd;
             if stateCnt < unsigned(ePixConfig.acqToAsicR0Delay) then
-               stateCntEn      <= '1' after tpd;
-            else
-               stateCntRst     <= '1' after tpd;
-            end if;
-         -- Prepulse R0
-         when PRE_R0_S =>
-            iAsicPpmat      <= '1' after tpd;
-            iAsicR0         <= '0' after tpd;
-            iAsicR0Alt      <= '0' after tpd;
-            if stateCnt < unsigned(ePixConfig.prePulseR0Width) then
-               stateCntEn      <= '1' after tpd;
-            else
-               stateCntRst     <= '1' after tpd;
-            end if;
-         -- Hold off before rest of state machine
-         when POST_PRE_R0_S =>
-            iAsicPpmat      <= '1' after tpd;
-            iAsicR0Alt      <= '0' after tpd;
-            if stateCnt < unsigned(ePixConfig.prePulseR0Delay) then
                stateCntEn      <= '1' after tpd;
             else
                stateCntRst     <= '1' after tpd;
@@ -344,16 +327,6 @@ begin
          when WAIT_FOR_READOUT_S =>
             iAcqBusy       <= '0' after tpd;
             iAsicR0Alt     <= '0' after tpd;
-         --Use ASIC signal instead of prepare for readout
-         when SYNC_S =>
-            if stateCnt = unsigned(ePixConfig.syncWidth) then
-               stateCntRst <= '1' after tpd;
-            else
-               stateCntEn    <= '1' after tpd;
-            end if;
-            iAcqBusy       <= '0' after tpd;
-            iAsicR0Alt     <= '0' after tpd;
-            iAsicSync      <= '1' after tpd;
          --Send SACI prepare for readout for the next event
          when SACI_RESET_S =>
             saciReadoutReq <= '1' after tpd;
@@ -369,11 +342,11 @@ begin
    end process;
 
    --Next state logic
-   process(curState,acqStart,stateCnt,saciReadoutAck,adcSampCnt,pixelCnt,ePixConfig,prePulseR0,adcClkEdge,readDone) begin
+   process(curState,acqStartEdge,stateCnt,saciReadoutAck,adcSampCnt,pixelCnt,ePixConfig,adcClkEdge,readDone) begin
       case curState is
          --Remain idle until we get the acqStart signal
          when IDLE_S =>
-            if acqStart = '1' then
+            if acqStartEdge = '1' then
                if ePixConfig.adcStreamMode = '0' then
                   nxtState <= WAIT_R0_S after tpd;
                else
@@ -385,28 +358,10 @@ begin
          --Wait a specified number of clock cycles before bringing asicR0 up
          when WAIT_R0_S =>
             if stateCnt = unsigned(ePixConfig.acqToAsicR0Delay) then
-               if (prePulseR0 = '0') then
-                  nxtState <= PULSE_R0_S after tpd;
-               else
-                  nxtState <= PRE_R0_S after tpd;
-               end if;
-            else
-               nxtState <= curState after tpd;
-            end if; 
-         -- Prepulse R0
-         when PRE_R0_S =>
-            if stateCnt = unsigned(ePixConfig.prePulseR0Width) then
-               nxtState <= POST_PRE_R0_S after tpd;
-            else
-               nxtState <= curState after tpd;
-            end if;
-         -- Hold off before rest of state machine
-         when POST_PRE_R0_S =>
-            if stateCnt = unsigned(ePixConfig.prePulseR0Delay) then
                nxtState <= PULSE_R0_S after tpd;
             else
                nxtState <= curState after tpd;
-            end if;
+            end if; 
          --Pulse R0 low for a specified number of clock cycles
          when PULSE_R0_S =>
             if stateCnt = unsigned(ePixConfig.asicR0Width) then
@@ -487,18 +442,7 @@ begin
          --Wait for readout to finish before sending SACI commands
          when WAIT_FOR_READOUT_S =>
             if readDone = '1' then
-               if epixConfig.syncMode = "01" then
-                  nxtState <= SYNC_S;
-               else 
-                  nxtState <= SACI_RESET_S;
-               end if;
-            else
-               nxtState <= curState after tpd;
-            end if;
-         --Use ASIC sync signal
-         when SYNC_S =>
-            if stateCnt = unsigned(ePixConfig.syncWidth) then
-               nxtState <= DONE_S after tpd;
+               nxtState <= SACI_RESET_S;
             else
                nxtState <= curState after tpd;
             end if;
@@ -703,34 +647,6 @@ begin
          dataIn     => iAsicPpmat,
          risingEdge => iAsicPpmatRising
       );
-   
-   -- Simple delay to bring up R0
-   PROC_SYNC_SPECIAL : process(sysClk) 
-      variable vDelay : unsigned(15 downto 0) := (others => '0');
-      variable vWidth : unsigned(15 downto 0) := (others => '0');
-   begin
-      if rising_edge(sysClk) then
-         --Default Sync value is 0
-         iAsicSyncAlt <= '0';
-         --When you see the rising edge of Ppmat, set counter to target
-         if iAsicPpmatRising = '1' then 
-            vDelay := unsigned(epixConfig.syncDelay);
-            vWidth := unsigned(epixConfig.syncWidth);
-         else
-            --If delay is nonzero, Sync should still be low
-            --and count down to 0
-            if (vDelay > 0) then
-               vDelay := vDelay - 1;
-            --If width is nonzero, Sync should be high and
-            --count downt to 0
-            elsif (vWidth > 0) then
-               vWidth := vWidth - 1;
-               iAsicSyncAlt <= '1';
-            end if;
-         end if;
-         
-      end if;
-   end process;
 
    -- TPS can trigger on either rising or falling edge of Acq
    U_AcqEdge : entity work.SynchronizerEdge

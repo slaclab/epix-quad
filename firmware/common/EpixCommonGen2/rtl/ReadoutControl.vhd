@@ -191,6 +191,11 @@ architecture ReadoutControl of ReadoutControl is
    attribute dont_touch : string;
    attribute dont_touch of r : signal is "true";
    
+   attribute keep : string;
+   attribute keep of fifoEmptyAll : signal is "true";
+   attribute keep of r : signal is "true";
+   
+   
 begin
 
    -- Counter output to register control
@@ -419,14 +424,14 @@ begin
                v.streamMode  := epixConfig.adcStreamMode;
                v.testPattern := epixConfig.testPattern;
                v.error       := '0';
-               if (acqStartEdge = '1') then
+               if acqStartEdge = '1' then
                   v.state := ARMED_S;
                end if;
             when ARMED_S =>
                v.readDone   := '0';
                v.clearFifos := '0';
                v.timeoutCnt := r.timeoutCnt + 1;
-               if (dataSendEdge = '1') then
+               if dataSendEdge = '1' then
                   v.seqCountEn := '1';
                   v.state      := HEADER_S;
                elsif (r.timeoutCnt >= DAQ_TIMEOUT_C) then

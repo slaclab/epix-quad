@@ -54,24 +54,16 @@ package EpixPkgGen2 is
       adcReadsPerPixel   : slv(31 downto 0);
       adcClkHalfT        : slv(31 downto 0);
       totalPixelsToRead  : slv(31 downto 0);
-      saciClkBit         : slv(31 downto 0);
       asicPins           : slv( 5 downto 0);
       manualPinControl   : slv( 5 downto 0);
-      prePulseR0         : sl;
       adcStreamMode      : sl;
       testPattern        : sl;
-      syncMode           : slv( 1 downto 0);
       asicR0Mode         : sl;
       asicR0Width        : slv(31 downto 0);
-      pipelineDelay      : slv(31 downto 0);
       pipelineDelayA0    : slv(31 downto 0);
       pipelineDelayA1    : slv(31 downto 0);
       pipelineDelayA2    : slv(31 downto 0);
       pipelineDelayA3    : slv(31 downto 0);
-      syncWidth          : slv(15 downto 0);
-      syncDelay          : slv(15 downto 0);
-      prePulseR0Width    : slv(31 downto 0);
-      prePulseR0Delay    : slv(31 downto 0);
       asicPpmatToReadout : slv(31 downto 0);
       tpsDelay           : slv(15 downto 0);
       tpsEdge            : sl;
@@ -101,24 +93,16 @@ package EpixPkgGen2 is
       adcReadsPerPixel   => x"00000001",
       adcClkHalfT        => x"00000001",
       totalPixelsToRead  => x"000084C0",
-      saciClkBit         => (others => '0'),
       asicPins           => (others => '0'),
       manualPinControl   => (others => '0'),
-      prePulseR0         => '0',
       adcStreamMode      => '0',
       testPattern        => '0',
-      syncMode           => (others => '0'),
       asicR0Mode         => '0',
       asicR0Width        => (others => '0'),
-      pipelineDelay      => (others => '0'),
       pipelineDelayA0    => (others => '0'),
       pipelineDelayA1    => (others => '0'),
       pipelineDelayA2    => (others => '0'),
       pipelineDelayA3    => (others => '0'),
-      syncWidth          => (others => '0'),
-      syncDelay          => (others => '0'),
-      prePulseR0Width    => (others => '0'),
-      prePulseR0Delay    => (others => '0'),
       asicPpmatToReadout => (others => '0'),
       tpsDelay           => (others => '0'),
       tpsEdge            => '0',

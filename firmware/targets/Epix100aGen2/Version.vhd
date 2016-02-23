@@ -19,9 +19,9 @@ USE ieee.std_logic_1164.ALL;
 
 package Version is
 
-constant FPGA_VERSION_C    : std_logic_vector(31 downto 0) := x"EA020000"; -- MAKE_VERSION
+constant FPGA_VERSION_C    : std_logic_vector(31 downto 0) := x"EA020003"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C     : string := "EpixDigGen2: Built Mon Mar 16 17:26:54 PDT 2015 by kurtisn";
+constant BUILD_STAMP_C     : string := "EpixDigGen2: Built Mon Mar 16 17:26:54 PDT 2015 by mkwiatko";
 
 constant FPGA_BASE_CLOCK_C : std_logic_vector(31 downto 0) := x"00" & x"100000";  
 
@@ -32,7 +32,10 @@ end Version;
 -- 09/30/2015 (0xEA020000): Upper byte of version encodes the ASIC, 
 --                          second byte encodes the analog board version: 01 - gen1, 02 - gen2
 --                          Initial build on digital and analog cards generation 2
--- 09/30/2015 (0xEA020001): Current working version...
+-- 09/30/2015 (0xEA020001): First release of the EPIX100a firmware for the analog card gen2
+-- 02/23/2016 (0xEA020002): Fixed SACI reliability issues, ADC wrong default encoding, carier ID readout. 
+--                          Removed unused ASIC sync modes fixed random packet without data.
+-- 02/23/2016 (0xEA020003): New working copy version number (change date when release)
 --               
 -------------------------------------------------------------------------------
 
