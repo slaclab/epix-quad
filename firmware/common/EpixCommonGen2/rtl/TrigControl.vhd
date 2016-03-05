@@ -80,6 +80,8 @@ architecture TrigControl of TrigControl is
    signal iDaqTrigOut     : std_logic;
    signal hwRunTrig     : std_logic;
    signal hwDaqTrig     : std_logic;
+   signal autoRunEn     : std_logic;
+   signal autoDaqEn     : std_logic;
 
    -- Op code signals
    signal pgpOpCode  : slv(7 downto 0) := (others => '0');
@@ -285,12 +287,15 @@ begin
       -- Number of clock cycles between triggers
       trigPeriod    => epixConfig.autoTrigPeriod,
       --Enable run and daq triggers
-      runEn         => epixConfig.autoRunEn and epixConfig.runTriggerEnable,
-      daqEn         => epixConfig.autoDaqEn and epixConfig.daqTriggerEnable,
+      runEn         => autoRunEn,
+      daqEn         => autoDaqEn,
       -- Outputs
       runTrigOut    => iRunTrigOut,
       daqTrigOut    => iDaqTrigOut
    );
+   
+   autoRunEn <= epixConfig.autoRunEn and epixConfig.runTriggerEnable;
+   autoDaqEn <= epixConfig.autoDaqEn and epixConfig.daqTriggerEnable;
 
    --------------------------------
    -- Acquisition Counter And Outputs
