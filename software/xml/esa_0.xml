@@ -5,6 +5,9 @@
       <DebugCmdTime>True</DebugCmdTime>
       <DebugEnable>False</DebugEnable>
       <Enabled>True</Enabled>
+      <HideDataControl>False</HideDataControl>
+      <HideRunControl>False</HideRunControl>
+      <PollPeriod>0</PollPeriod>
       <RunCount>1000000</RunCount>
       <RunRate>120Hz</RunRate>
       <digFpga>
@@ -188,6 +191,15 @@
             <ro_rst_exten>True</ro_rst_exten>
          </epix100aAsic>
       </digFpga>
+      <evrCntrl>
+         <Enabled>True</Enabled>
+         <EvrAcceptDelay>0x0</EvrAcceptDelay>
+         <EvrAcceptOpCode>0x0</EvrAcceptOpCode>
+         <EvrEnable>0x1</EvrEnable>
+         <EvrEnableLane>0x1</EvrEnableLane>
+         <EvrRunDelay>83333</EvrRunDelay>
+         <EvrRunOpCode>0x28</EvrRunOpCode>
+      </evrCntrl>
       <Enabled>True</Enabled>
       <digFpga index="0">
          <Enabled>True</Enabled>
@@ -216,5 +228,8 @@
             <Enabled>False</Enabled>
          </epix100aAsic>
       </digFpga>
+      <evrCntrl index="0">
+         <Enabled>True</Enabled>
+      </evrCntrl>
    </config>
 </system>
