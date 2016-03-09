@@ -32,6 +32,8 @@ EvrCntrl::EvrCntrl ( Device *parent ) : Device(0,0,"evrCntrl",0,parent) {
 
    addVariable(new Variable("EvrStatus", Variable::Status));
    addVariable(new Variable("EvrErrors", Variable::Status));
+   addVariable(new Variable("EvrCount",  Variable::Status));
+   addVariable(new Variable("EvrRawStat",Variable::Status));
 
    addVariable(new Variable("EvrEnable",       Variable::Configuration));
    addVariable(new Variable("EvrEnableLane",   Variable::Configuration));
@@ -52,6 +54,8 @@ void EvrCntrl::readStatus ( ) {
 
    getVariable("EvrStatus")->setInt(pgp->getEvrStatus());
    getVariable("EvrErrors")->setInt(pgp->getEvrErrors());
+   getVariable("EvrCount")->setInt(pgp->getEvrCount(0));
+   getVariable("EvrRawStat")->setInt(pgp->getEvrStatRaw());
 }
 
 // Method to read configuration registers and update variables

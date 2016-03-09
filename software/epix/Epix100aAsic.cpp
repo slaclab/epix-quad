@@ -526,9 +526,17 @@ Epix100aAsic::~Epix100aAsic ( ) { }
 // Method to process a command
 void Epix100aAsic::command ( string name, string arg) {
    stringstream tmp;
+   uint32_t i;
 
    // Command is local
-   if ( name == "PrepForRead" ) {
+   if ( name == "ClearMatrix" ) {
+      for (i=0; i < 96; i++){
+         writeSingleV2("PrepareMultiConfig",0);
+         writeSingleV2("ColCounter",i);
+         writeSingleV2("WriteColData",0);
+      }
+      writeSingleV2("CmdPreForRead",0);
+   } else if ( name == "PrepForRead" ) {
       REGISTER_LOCK
       writeRegister(getRegister("CmdPrepForRead"),true,true);
       REGISTER_UNLOCK
