@@ -1,7 +1,7 @@
 <system>
    <config>
       <DataCompress>False</DataCompress>
-      <DataFile>/home/epix/data/02292016_1119_data.bin</DataFile>
+      <DataFile>/home/epix/data/</DataFile>
       <DebugCmdTime>True</DebugCmdTime>
       <DebugEnable>False</DebugEnable>
       <Enabled>True</Enabled>
@@ -210,6 +210,7 @@
       <Enabled>True</Enabled>
       <digFpga index="0">
          <Enabled>True</Enabled>
+         <ClearMatrixEnabled>True</ClearMatrixEnabled>
          <PseudoScope index="0">
             <Enabled>False</Enabled>
          </PseudoScope>

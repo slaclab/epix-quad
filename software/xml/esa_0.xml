@@ -206,6 +206,7 @@
       <Enabled>True</Enabled>
       <digFpga index="0">
          <Enabled>True</Enabled>
+         <ClearMatrixEnabled>True</ClearMatrixEnabled>
          <PseudoScope index="0">
             <Enabled>False</Enabled>
          </PseudoScope>
