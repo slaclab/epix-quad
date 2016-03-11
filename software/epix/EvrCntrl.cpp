@@ -20,6 +20,7 @@
 #include <iomanip>
 #include <EvrCntrl.h>
 #include <System.h>
+#include <Command.h>
 #include <CommLink.h>
 #include <PgpCardG3Link.h>
 using namespace std;
@@ -41,6 +42,12 @@ EvrCntrl::EvrCntrl ( Device *parent ) : Device(0,0,"evrCntrl",0,parent) {
    addVariable(new Variable("EvrAcceptOpCode", Variable::Configuration));
    addVariable(new Variable("EvrAcceptDelay",  Variable::Configuration));
    addVariable(new Variable("EvrRunDelay",     Variable::Configuration));
+
+   addVariable(new Variable("BeamDelay",       Variable::Configuration));
+   addVariable(new Variable("DarkDelay",       Variable::Configuration));
+   addVariable(new Variable("BeamCode",        Variable::Configuration));
+
+   addCommand(new Command("SendCode"));
 
    getVariable("Enabled")->setHidden(true);
 }
@@ -80,5 +87,19 @@ void EvrCntrl::writeConfig ( bool force ) {
    pgp->setEvrLaneAcceptOpCode(0,getVariable("EvrAcceptOpCode")->getInt());
    pgp->setEvrLaneAcceptDelay(0,getVariable("EvrAcceptDelay")->getInt());
    pgp->setEvrLaneRunDelay(0,getVariable("EvrRunDelay")->getInt());
+}
+
+
+// Method to process a command
+void EvrCntrl::command ( string name, string arg) {
+   stringstream tmp;
+   PgpCardG3Link *pgp = (PgpCardG3Link*)system_->commLink();
+
+   // Command is local
+   if ( name == "SendCode" ) {
+      pgp->sendOpCode(0xAA);
+   }
+
+   else Device::command(name,arg);
 }
 

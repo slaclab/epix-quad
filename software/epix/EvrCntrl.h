@@ -34,5 +34,6 @@ class EvrCntrl : public Device {
 
       void writeConfig ( bool force );
 
+      void command ( string name, string arg );
 };
 #endif
