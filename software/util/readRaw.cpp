@@ -36,10 +36,10 @@ int main (int argc, char **argv) {
 
    // Process each event
    while ( dataRead.next(&event) ) {
-     cout <<  endl << endl << "Got Data Size" << event.size() << endl;
-     for (x = 0; x < event.size(); x++) {
-       cout << "0x" << hex << setw(8) << setfill('0') << event.data()[x] << endl;
-     }
+     //cout <<  endl << endl << "Got Data Size" << event.size() << endl;
+     //for (x = 0; x < event.size(); x++) {
+       //cout << "0x" << hex << setw(8) << setfill('0') << event.data()[x] << endl;
+     //}
       
    }
 
