@@ -17,6 +17,7 @@
 #include <Epix100aAsic.h>
 #include <Epix10kpAsic.h>
 #include <EpixSAsic.h>
+#include <CpixPAsic.h>
 #include <Ad9252.h>
 #include <PseudoScope.h>
 #include <Register.h>
@@ -39,6 +40,9 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent, EpixType epixTy
    stringstream tmp;
    uint         x;
 
+   //Set ePix type
+   epixType_ = epixType;
+   
    // Description
    desc_ = "Digital FPGA Object.";
 
@@ -515,6 +519,12 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent, EpixType epixTy
 
    addCommand(new Command("ReadData"));
    getCommand("ReadData")->setDescription("Read data from EEPROM");
+   
+   addVariable(new Variable("ClearMatrixEnabled", Variable::Configuration));
+   getVariable("ClearMatrixEnabled")->setTrueFalse();
+   getVariable("ClearMatrixEnabled")->setDescription("Enable ClearMatrix command");
+   addCommand(new Command("ClearMatrix"));
+   getCommand("ClearMatrix")->setDescription("Clear configuration bits of all pixels in all ASICs");
 
    // Add sub-devices
    addDevice(new   PseudoScope(destination, 0x01000000, 0, this));
@@ -541,6 +551,9 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent, EpixType epixTy
       addDevice(new EpixSAsic(destination, 0x01900000, 1, this));
       addDevice(new EpixSAsic(destination, 0x01A00000, 2, this));
       addDevice(new EpixSAsic(destination, 0x01B00000, 3, this));
+   } else if (epixType == CPIXP) {
+      addDevice(new CpixPAsic(destination, 0x01800000, 0, this));
+      addDevice(new CpixPAsic(destination, 0x01900000, 1, this));
    }
 
    getVariable("Enabled")->setHidden(true);
@@ -554,7 +567,17 @@ void DigFpga::command ( string name, string arg) {
    stringstream tmp;
 
    // Command is local
-   if ( name == "MasterReset" ) {
+   if ( name == "ClearMatrix" ) {
+      if (epixType_ == EPIX100A) {
+         if (getVariable("ClearMatrixEnabled")->getInt()) {
+            device("epix100aAsic",0)->command("ClearMatrix","");
+            device("epix100aAsic",1)->command("ClearMatrix","");
+            device("epix100aAsic",2)->command("ClearMatrix","");
+            device("epix100aAsic",3)->command("ClearMatrix","");
+         }
+      }
+   }
+   else if ( name == "MasterReset" ) {
       REGISTER_LOCK
       writeRegister(getRegister("Version"),true,false);
       REGISTER_UNLOCK

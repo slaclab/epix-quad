@@ -201,6 +201,7 @@ void EpixEsaControl::softReset ( ) {
    System::softReset();
 
    device("digFpga",0)->command("AcqCountReset","");
+   device("digFpga",0)->command("ClearMatrix","");
 }
 
 //! Method to perform hard reset

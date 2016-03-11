@@ -1,3 +1,18 @@
+//-----------------------------------------------------------------------------
+// File          : lutGenEnvironData.cpp
+// Author        : Maciej Kwiatkowski  <mkwiatko@slac.stanford.edu>
+// Created       : 03/10/2016
+// Project       : Cpix
+//-----------------------------------------------------------------------------
+// Description :
+//-----------------------------------------------------------------------------
+// Copyright (c) 2013 by SLAC. All rights reserved.
+// Proprietary and confidential to SLAC.
+//-----------------------------------------------------------------------------
+// Modification history :
+// 03/10/2016: created
+//----------------------------------------------------------------------------
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>

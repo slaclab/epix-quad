@@ -25,6 +25,8 @@ using namespace std;
 //! Class to contain APV25 
 class DigFpga : public Device {
 
+   EpixType epixType_;
+   
    public:
 
       //! Constructor

@@ -497,6 +497,10 @@ Epix100aAsic::Epix100aAsic ( uint destination, uint baseAddress, uint index, Dev
    addVariable(new Variable("PixelTest", Variable::Configuration));
    getVariable("PixelTest")->setDescription("Dummy Pixel Test");
    getVariable("PixelTest")->setTrueFalse();
+   
+   
+   addCommand(new Command("ClearMatrix"));
+   getCommand("ClearMatrix")->setDescription("Clear configuration bits of all pixels");
 
    // To Write a single pixel:
       // CMD = 6, Addr = 17 : Row start address[9:0]
@@ -535,7 +539,7 @@ void Epix100aAsic::command ( string name, string arg) {
          writeSingleV2("ColCounter",i);
          writeSingleV2("WriteColData",0);
       }
-      writeSingleV2("CmdPreForRead",0);
+      writeSingleV2("CmdPrepForRead",0);
    } else if ( name == "PrepForRead" ) {
       REGISTER_LOCK
       writeRegister(getRegister("CmdPrepForRead"),true,true);
@@ -1000,4 +1004,6 @@ void Epix100aAsic::verifyConfig ( ) {
 
    REGISTER_UNLOCK
 }
+
+
 
