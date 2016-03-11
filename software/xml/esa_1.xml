@@ -203,6 +203,9 @@
          <EvrEnableLane>0x1</EvrEnableLane>
          <EvrRunDelay>83333</EvrRunDelay>
          <EvrRunOpCode>0x28</EvrRunOpCode>
+         <BeamDelay>83333</BeamDelay>
+         <DarkDelay>100</DarkDelay>
+         <BeamCode>161</BeamCode>
       </evrCntrl>
       <Enabled>True</Enabled>
       <digFpga index="0">

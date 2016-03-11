@@ -40,7 +40,7 @@ int main (int argc, char **argv) {
    stringstream  cmd;
 
    if ( argc > 1 ) defFile = argv[1];
-   else defFile = "";
+   else defFile = "xml/esa_1.xml";
 
    // Catch signals
    signal (SIGINT,&sigTerm);

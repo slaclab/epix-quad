@@ -59,12 +59,13 @@ EpixEsaControl::EpixEsaControl ( CommLink *commLink, string defFile, EpixType ep
 
    // Set run rates
    vector<string> rates;
-   rates.resize(5);
+   rates.resize(6);
    rates[0] = "1Hz";
    rates[1] = "5Hz";
    rates[2] = "10Hz";
    rates[3] = "120Hz";
-   rates[4] = "Beam";
+   rates[4] = "Dark";
+   rates[5] = "Beam";
    getVariable("RunRate")->setEnums(rates);
 
    getVariable("RunCount")->setRange(0,0);
@@ -231,7 +232,6 @@ void EpixEsaControl::hardReset ( ) {
 // Method to set run state
 void EpixEsaControl::setRunState ( string state ) {
    uint         runNumber;
-   uint         bCode;
 
    // Stopped state is requested
    if ( state == "Stopped" ) {
@@ -250,17 +250,39 @@ void EpixEsaControl::setRunState ( string state ) {
 
    // EVR Running
    else if ( !hwRunning_ && state == "Evr Running" ) {
+      Device * evr = device("evrCntrl",0);
 
       // Update run rate
-      if      ( getVariable("RunRate")->get() == "1Hz"   ) bCode = 45;
-      else if ( getVariable("RunRate")->get() == "5Hz"   ) bCode = 44;
-      else if ( getVariable("RunRate")->get() == "10Hz"  ) bCode = 43;
-      else if ( getVariable("RunRate")->get() == "120Hz" ) bCode = 40;
-      else if ( getVariable("RunRate")->get() == "Beam"  ) bCode = 161; // ESA beam
-      else bCode = 45; // 1hz
+      if      ( getVariable("RunRate")->get() == "1Hz"   ) {
+         evr->setInt("EvrRunOpCode",45);
+         evr->set("EvrRunDelay",evr->get("DarkDelay"));
+      }
+      else if ( getVariable("RunRate")->get() == "5Hz"   ) {
+         evr->setInt("EvrRunOpCode",44);
+         evr->set("EvrRunDelay",evr->get("DarkDelay"));
+      }
+      else if ( getVariable("RunRate")->get() == "10Hz"  ) {
+         evr->setInt("EvrRunOpCode",43);
+         evr->set("EvrRunDelay",evr->get("DarkDelay"));
+      }
+      else if ( getVariable("RunRate")->get() == "120Hz" ) {
+         evr->setInt("EvrRunOpCode",40);
+         evr->set("EvrRunDelay",evr->get("DarkDelay"));
+      }
+      else if ( getVariable("RunRate")->get() == "Beam"  ) {
+         evr->set("EvrRunOpCode",evr->get("BeamCode"));
+         evr->set("EvrRunDelay",evr->get("BeamDelay"));
+      }
+      else if ( getVariable("RunRate")->get() == "Dark"  ) {
+         evr->set("EvrRunOpCode",evr->get("BeamCode"));
+         evr->set("EvrRunDelay",evr->get("DarkDelay"));
+      }
+      else {
+         evr->setInt("EvrRunOpCode",45); // 1Hz
+         evr->set("EvrRunDelay",evr->get("DarkDelay"));
+      }
 
-      // Set beam code
-      device("evrCntrl",0)->setInt("EvrRunOpCode",bCode);
+      // Commit settings
       writeConfig(false);
 
       // Increment run number
