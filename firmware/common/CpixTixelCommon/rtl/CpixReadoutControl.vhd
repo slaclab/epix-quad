@@ -61,6 +61,8 @@ entity CpixReadoutControl is
       acqCount       : in  slv(31 downto 0);
       seqCount       : out slv(31 downto 0);
       envData        : in  Slv32Array(8 downto 0);
+      frameErr       : out Slv32Array(1 downto 0);
+      frameErrRst    : in  sl;
       
       -- stream out signals
       mAxisMaster    : out AxiStreamMasterType;
@@ -110,10 +112,14 @@ architecture rtl of CpixReadoutControl is
    signal frameError             : std_logic_vector(1 downto 0);
    signal codeError              : std_logic_vector(1 downto 0);
    signal frameRdEn              : std_logic_vector(1 downto 0);
+   signal frameValidRaw          : std_logic_vector(1 downto 0);
    signal frameValid             : std_logic_vector(1 downto 0);
    signal frameEmpty             : std_logic_vector(1 downto 0);
+   signal frameDataRaw           : Slv32Array(1 downto 0);
    signal frameData              : Slv32Array(1 downto 0);
    signal frameRst               : std_logic;
+   type Unsigned32Array is array (natural range <>) of unsigned(31 downto 0);
+   signal frameErrCnt            : Unsigned32Array(1 downto 0);
    
    attribute keep : string;
    attribute keep of state : signal is "true";
@@ -164,10 +170,49 @@ begin
          codeError      => codeError(i),
          rd_clk         => sysClk,
          rd_en          => frameRdEn(i),
-         dout           => frameData(i),
+         dout           => frameDataRaw(i),
          valid          => frameValid(i),
          empty          => frameEmpty(i)
       );
+      
+      -- High 15 bit Look-Up Table
+      U_CpixLUTHi : entity work.CpixLUT
+      port map ( 
+         sysClk   => sysClk,
+         address  => frameDataRaw(i)(30 downto 16),
+         dataOut  => frameData(i)(30 downto 16),
+         enable   => '1'
+      );
+      
+      -- Low 15 bit Look-Up Table
+      U_CpixLUTLo : entity work.CpixLUT
+      port map ( 
+         sysClk   => sysClk,
+         address  => frameDataRaw(i)(14 downto 0),
+         dataOut  => frameData(i)(14 downto 0),
+         enable   => '1'
+      );
+      
+      -- Unused data bits
+      frameData(i)(31) <= '0';
+      frameData(i)(15) <= '0';
+      
+      -- status counters
+      fsm_seq_p: process ( sysClk ) 
+      begin
+         
+         -- frame error counters
+         if rising_edge(sysClk) then
+            if sysClkRst = '1' or frameErrRst = '1' then
+               frameErrCnt(i) <= (others => '0')    after TPD_G;
+            elsif frameError(i) = '1' then
+               frameErrCnt(i) <= frameErrCnt(i) + 1 after TPD_G;
+            end if;
+         end if;
+      
+      end process;
+      
+      frameErr(i) <= std_logic_vector(frameErrCnt(i));
       
    end generate G_AsicFrame;
    
@@ -226,12 +271,23 @@ begin
          end if;
       end if;
       
+      -- delayed frame valid indicating when the LUT data is available
+      if rising_edge(sysClk) then
+         if sysClkRst = '1' then
+            frameValidRaw(0) <= '0'    after TPD_G;
+            frameValidRaw(1) <= '0'    after TPD_G;
+         else
+            frameValidRaw(0) <= frameValid(0)   after TPD_G;
+            frameValidRaw(1) <= frameValid(1)   after TPD_G;
+         end if;
+      end if;
+      
    end process;
    
 
    fsm_cmb_p: process ( 
       state, acqStartSys, dataSendSys, dwordCnt, timeCnt, asicCnt, mAxisSlave,
-      headerData, epixConfig, frameDone, frameData, frameValid,  channelID) 
+      headerData, epixConfig, frameDone, frameData, frameValid, frameValidRaw,  channelID) 
       variable mAxisMasterVar : AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
    begin
       next_state <= state;
@@ -307,7 +363,7 @@ begin
          when RD_FIFO => 
             mAxisMasterVar.tData(31 downto 0) := frameData(asicCnt);
             
-            if frameValid(asicCnt) = '1' then
+            if frameValidRaw(asicCnt) = '1' then
                mAxisMasterVar.tValid := '1';
             else
                mAxisMasterVar.tValid := '0';

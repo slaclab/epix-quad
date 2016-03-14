@@ -693,6 +693,7 @@ begin
       epixConfig     <= r.epixRegOut;
       scopeConfig    <= r.scopeRegOut;
       saciReadoutAck <= r.saciReadoutAck;
+      adcPdwn <= r.epixRegOut.adcPdwn;
       
    end process comb;
    

@@ -219,6 +219,7 @@ architecture top_level of CpixCore is
    signal codeErr    : slv(1 downto 0);
    signal dispErr    : slv(1 downto 0);
    signal inSync     : slv(1 downto 0);
+   signal frameErr   : Slv32Array(1 downto 0);
    
    attribute keep : boolean;
    attribute keep of coreClk : signal is true;
@@ -472,49 +473,49 @@ begin
    --     Master Register Controller         --
    --------------------------------------------   
    U_RegControl : entity work.RegControlGen2
-      generic map (
-         TPD_G                => TPD_G,
-         NUM_ASICS_G          => NUM_ASICS_C,
-         NUM_FAST_ADCS_G      => NUM_FAST_ADCS_C,
-         CLK_PERIOD_G         => 10.0e-9
-      )
-      port map (
-         axiClk         => coreClk,
-         axiRst         => axiRst,
-         sysRst         => sysRst,
-         -- AXI-Lite Register Interface (axiClk domain)
-         axiReadMaster  => mAxiReadMasters(COMMON_AXI_INDEX_C),
-         axiReadSlave   => mAxiReadSlaves(COMMON_AXI_INDEX_C),
-         axiWriteMaster => mAxiWriteMasters(COMMON_AXI_INDEX_C),
-         axiWriteSlave  => mAxiWriteSlaves(COMMON_AXI_INDEX_C),
-         -- Register Inputs/Outputs (axiClk domain)
-         epixStatus     => epixStatus,
-         epixConfig     => epixConfig,
-         scopeConfig    => scopeConfig,
-         -- SACI prep-for-readout command request
-         saciReadoutReq => saciPrepReadoutReq,
-         saciReadoutAck => saciPrepReadoutAck,
-         -- SACI interfaces to ASIC(s)
-         saciClk        => saciClk,
-         saciSelL       => iSaciSelL,
-         saciCmd        => saciCmd,
-         saciRsp        => saciRsp,
-         -- SACI 
-         -- Guard ring DAC interfaces
-         dacSclk        => vGuardDacSclk,
-         dacDin         => vGuardDacDin,
-         dacCsb         => vGuardDacCsb,
-         dacClrb        => vGuardDacClrb,
-         -- 1-wire board ID interfaces
-         serialIdIo     => serialIdIo,
-         -- Fast ADC control 
-         adcSpiClk      => adcSpiClk,
-         adcSpiDataOut  => adcSpiDataOut,
-         adcSpiDataIn   => adcSpiDataIn,
-         adcSpiDataEn   => adcSpiDataEn,
-         adcSpiCsb      => adcSpiCsb,
-         adcPdwn        => iAdcPdwn
-      );
+   generic map (
+      TPD_G                => TPD_G,
+      NUM_ASICS_G          => NUM_ASICS_C,
+      NUM_FAST_ADCS_G      => NUM_FAST_ADCS_C,
+      CLK_PERIOD_G         => 10.0e-9
+   )
+   port map (
+      axiClk         => coreClk,
+      axiRst         => axiRst,
+      sysRst         => sysRst,
+      -- AXI-Lite Register Interface (axiClk domain)
+      axiReadMaster  => mAxiReadMasters(COMMON_AXI_INDEX_C),
+      axiReadSlave   => mAxiReadSlaves(COMMON_AXI_INDEX_C),
+      axiWriteMaster => mAxiWriteMasters(COMMON_AXI_INDEX_C),
+      axiWriteSlave  => mAxiWriteSlaves(COMMON_AXI_INDEX_C),
+      -- Register Inputs/Outputs (axiClk domain)
+      epixStatus     => epixStatus,
+      epixConfig     => epixConfig,
+      scopeConfig    => scopeConfig,
+      -- SACI prep-for-readout command request
+      saciReadoutReq => saciPrepReadoutReq,
+      saciReadoutAck => saciPrepReadoutAck,
+      -- SACI interfaces to ASIC(s)
+      saciClk        => saciClk,
+      saciSelL       => iSaciSelL,
+      saciCmd        => saciCmd,
+      saciRsp        => saciRsp,
+      -- SACI 
+      -- Guard ring DAC interfaces
+      dacSclk        => vGuardDacSclk,
+      dacDin         => vGuardDacDin,
+      dacCsb         => vGuardDacCsb,
+      dacClrb        => vGuardDacClrb,
+      -- 1-wire board ID interfaces
+      serialIdIo     => serialIdIo,
+      -- Fast ADC control 
+      adcSpiClk      => adcSpiClk,
+      adcSpiDataOut  => adcSpiDataOut,
+      adcSpiDataIn   => adcSpiDataIn,
+      adcSpiDataEn   => adcSpiDataEn,
+      adcSpiCsb      => adcSpiCsb,
+      adcPdwn        => iAdcPdwn
+   );
    
    adcPdwn <= iAdcPdwn;
 
@@ -522,59 +523,59 @@ begin
    -- Trig control    --
    ---------------------
    U_TrigControl : entity work.TrigControl 
-      port map ( 
-         -- Core clock, reset
-         sysClk         => coreClk,
-         sysClkRst      => axiRst,
-         -- PGP clock, reset
-         pgpClk         => pgpClk,
-         pgpClkRst      => sysRst,
-         -- TTL triggers in 
-         runTrigger     => iRunTrigger,
-         daqTrigger     => iDaqTrigger,
-         -- SW trigger in (from VC)
-         ssiCmd         => ssiCmd,
-         -- PGP RxOutType (to trigger from sideband)
-         pgpRxOut       => pgpRxOut,
-         -- Opcode associated with this trigger
-         opCodeOut      => opCode,
-         -- Configuration
-         epixConfig     => epixConfig,
-         -- Status output
-         acqCount       => epixStatus.acqCount,
-         -- Interface to other blocks
-         acqStart       => acqStart,
-         dataSend       => dataSend
-      );   
+   port map ( 
+      -- Core clock, reset
+      sysClk         => coreClk,
+      sysClkRst      => axiRst,
+      -- PGP clock, reset
+      pgpClk         => pgpClk,
+      pgpClkRst      => sysRst,
+      -- TTL triggers in 
+      runTrigger     => iRunTrigger,
+      daqTrigger     => iDaqTrigger,
+      -- SW trigger in (from VC)
+      ssiCmd         => ssiCmd,
+      -- PGP RxOutType (to trigger from sideband)
+      pgpRxOut       => pgpRxOut,
+      -- Opcode associated with this trigger
+      opCodeOut      => opCode,
+      -- Configuration
+      epixConfig     => epixConfig,
+      -- Status output
+      acqCount       => epixStatus.acqCount,
+      -- Interface to other blocks
+      acqStart       => acqStart,
+      dataSend       => dataSend
+   );   
 
    ---------------------
    -- Acq control     --
    ---------------------      
    U_AcqControl : entity work.CpixAcqControl
-      port map (
-         sysClk          => coreClk,
-         sysClkRst       => axiRst,
-         
-         acqStart        => acqStart,
-         
-         acqBusy         => acqBusy,
-         readDone        => readDone,
-         
-         epixConfig      => epixConfig,
-         
-         saciReadoutReq  => saciPrepReadoutReq,
-         saciReadoutAck  => saciPrepReadoutAck,
-         
-         asicEnA         => asicEnA,
-         asicEnB         => asicEnB,
-         asicVid         => asicVid,
-         asicPPbe        => iAsicPpbe,
-         asicPpmat       => iAsicPpmat,
-         asicR0          => iAsicR0,
-         asicSRO         => asicSRO,
-         asicGlblRst     => iAsicGrst,
-         asicSync        => iAsicSync,
-         asicAcq         => iAsicAcq
+   port map (
+      sysClk          => coreClk,
+      sysClkRst       => axiRst,
+      
+      acqStart        => acqStart,
+      
+      acqBusy         => acqBusy,
+      readDone        => readDone,
+      
+      epixConfig      => epixConfig,
+      
+      saciReadoutReq  => saciPrepReadoutReq,
+      saciReadoutAck  => saciPrepReadoutAck,
+      
+      asicEnA         => asicEnA,
+      asicEnB         => asicEnB,
+      asicVid         => asicVid,
+      asicPPbe        => iAsicPpbe,
+      asicPpmat       => iAsicPpmat,
+      asicR0          => iAsicR0,
+      asicSRO         => asicSRO,
+      asicGlblRst     => iAsicGrst,
+      asicSync        => iAsicSync,
+      asicAcq         => iAsicAcq
    );
    
    asicAcq        <= iAsicAcq;
@@ -590,37 +591,47 @@ begin
    -- Readout control --
    ---------------------      
    U_ReadoutControl : entity work.CpixReadoutControl
-      generic map (
-        TPD_G                      => TPD_G,
-        MASTER_AXI_STREAM_CONFIG_G => ssiAxiStreamConfig(4, TKEEP_COMP_C)
-      )
-      port map (
-         sysClk         => coreClk,
-         sysClkRst      => axiRst,
-         byteClk        => byteClk,
-         byteClkRst     => byteClkRst,
-         
-         acqStart       => acqStart,
-         dataSend       => dataSend,
-         
-         readDone       => readDone,
-         acqBusy        => acqBusy,
-         
-         inSync         => inSync,
-         dataOut        => dataOut,
-         dataKOut       => dataKOut,
-         codeErr        => codeErr,
-         dispErr        => dispErr,
-         
-         epixConfig     => epixConfig,   -- total pixels to read
-         acqCount       => epixStatus.acqCount,
-         seqCount       => epixStatus.seqCount,
-         envData        => epixStatus.envData,
-         
-         mAxisMaster    => userAxisMaster,
-         mAxisSlave     => userAxisSlave
-      );
-         
+   generic map (
+     TPD_G                      => TPD_G,
+     MASTER_AXI_STREAM_CONFIG_G => ssiAxiStreamConfig(4, TKEEP_COMP_C)
+   )
+   port map (
+      sysClk         => coreClk,
+      sysClkRst      => axiRst,
+      byteClk        => byteClk,
+      byteClkRst     => byteClkRst,
+      
+      acqStart       => acqStart,
+      dataSend       => dataSend,
+      
+      readDone       => readDone,
+      acqBusy        => acqBusy,
+      
+      inSync         => inSync,
+      dataOut        => dataOut,
+      dataKOut       => dataKOut,
+      codeErr        => codeErr,
+      dispErr        => dispErr,
+      
+      epixConfig     => epixConfig,   -- total pixels to read
+      acqCount       => epixStatus.acqCount,
+      seqCount       => epixStatus.seqCount,
+      envData        => epixStatus.envData,
+      frameErr       => frameErr,
+      frameErrRst    => '0',
+      
+      mAxisMaster    => userAxisMaster,
+      mAxisSlave     => userAxisSlave
+   );
+   
+   process(coreClk) begin
+      if rising_edge(coreClk) then
+         --epixStatus.slowAdcData(0) <= frameErr(0)(15 downto 0);
+         --epixStatus.slowAdcData(1) <= frameErr(1)(15 downto 0);
+         epixStatus.slowAdcData(2) <= x"000" & "00" & inSync;
+      end if;
+   end process;
+   
    --------------------------------------------
    --     Fast ADC Readout                   --
    --------------------------------------------
@@ -646,152 +657,154 @@ begin
    end process;
    
    U_AdcReadout3x : entity work.AdcReadout3x
-      generic map (
-         TPD_G             => TPD_G,
-         --IDELAYCTRL_FREQ_G => 300.0,
-         IDELAYCTRL_FREQ_G => 200.0,
-         ADC0_INVERT_CH    => ADC0_INVERT_CH,
-         ADC1_INVERT_CH    => ADC1_INVERT_CH,
-         ADC2_INVERT_CH    => ADC2_INVERT_CH
-      )
-      port map ( 
-         -- Master system clock
-         sysClk        => coreClk,
-         sysClkRst     => serdesReset,
-         -- Clock for IDELAYCTRL
-         iDelayCtrlClk => iDelayCtrlClk,
-         iDelayCtrlRst => iDelayCtrlRst,
-         -- Configuration input for delays
-         -- IDELAYCTRL status output
-         epixConfig    => epixConfig,
-         iDelayCtrlRdy => epixStatus.iDelayCtrlRdy,
-         -- ADC Data Interface
-         adcValid      => adcValid,
-         adcData       => adcData,
-         -- ADC Interface Signals
-         adcFClkP      => adcFclkP,
-         adcFClkN      => adcFclkN,
-         adcDClkP      => adcDClkP,
-         adcDClkN      => adcDclkN,
-         adcChP        => adcChP,
-         adcChN        => adcChN
-      );
+   generic map (
+      TPD_G             => TPD_G,
+      --IDELAYCTRL_FREQ_G => 300.0,
+      IDELAYCTRL_FREQ_G => 200.0,
+      ADC0_INVERT_CH    => ADC0_INVERT_CH,
+      ADC1_INVERT_CH    => ADC1_INVERT_CH,
+      ADC2_INVERT_CH    => ADC2_INVERT_CH
+   )
+   port map ( 
+      -- Master system clock
+      sysClk        => coreClk,
+      sysClkRst     => serdesReset,
+      -- Clock for IDELAYCTRL
+      iDelayCtrlClk => iDelayCtrlClk,
+      iDelayCtrlRst => iDelayCtrlRst,
+      -- Configuration input for delays
+      -- IDELAYCTRL status output
+      epixConfig    => epixConfig,
+      iDelayCtrlRdy => epixStatus.iDelayCtrlRdy,
+      -- ADC Data Interface
+      adcValid      => adcValid,
+      adcData       => adcData,
+      -- ADC Interface Signals
+      adcFClkP      => adcFclkP,
+      adcFClkN      => adcFclkN,
+      adcDClkP      => adcDClkP,
+      adcDClkN      => adcDclkN,
+      adcChP        => adcChP,
+      adcChN        => adcChN
+   );
    -- Give a special reset to the SERDES blocks when power
    -- is turned on to ADC card.
    adcCardPowerUp <= epixConfig.powerEnable(0) and epixConfig.powerEnable(1) and epixConfig.powerEnable(2);
    U_AdcCardPowerUpRisingEdge : entity work.SynchronizerEdge
-      generic map (
-         TPD_G       => TPD_G)
-      port map (
-         clk         => coreClk,
-         dataIn      => adcCardPowerUp,
-         risingEdge  => adcCardPowerUpEdge);
+   generic map (
+      TPD_G       => TPD_G)
+   port map (
+      clk         => coreClk,
+      dataIn      => adcCardPowerUp,
+      risingEdge  => adcCardPowerUpEdge
+   );
    U_AdcCardPowerUpReset : entity work.RstSync
-      generic map (
-         TPD_G           => TPD_G,
-         RELEASE_DELAY_G => 50
-      )
-      port map (
-         clk      => coreClk,
-         asyncRst => adcCardPowerUpEdge,
-         syncRst  => serdesReset);
+   generic map (
+      TPD_G           => TPD_G,
+      RELEASE_DELAY_G => 50
+   )
+   port map (
+      clk      => coreClk,
+      asyncRst => adcCardPowerUpEdge,
+      syncRst  => serdesReset
+   );
    
    --------------------------------------------
    --     Slow ADC Readout ADC gen 2         --
    -------------------------------------------- 
      
    U_AdcCntrl : entity work.SlowAdcCntrl
-      generic map (
-         SYS_CLK_PERIOD_G  => 10.0E-9,	   -- 100MHz
-         ADC_CLK_PERIOD_G  => 200.0E-9,	-- 5MHz
-         SPI_SCLK_PERIOD_G => 2.0E-6  	   -- 500kHz
-      )
-      port map ( 
-         -- Master system clock
-         sysClk        => coreClk,
-         sysClkRst     => axiRst,
+   generic map (
+      SYS_CLK_PERIOD_G  => 10.0E-9,	   -- 100MHz
+      ADC_CLK_PERIOD_G  => 200.0E-9,	-- 5MHz
+      SPI_SCLK_PERIOD_G => 2.0E-6  	   -- 500kHz
+   )
+   port map ( 
+      -- Master system clock
+      sysClk        => coreClk,
+      sysClkRst     => axiRst,
 
-         -- Operation Control
-         adcStart      => readDone,
-         adcData       => epixStatus.slowAdc2Data,
+      -- Operation Control
+      adcStart      => acqStart,
+      adcData       => epixStatus.slowAdc2Data,
 
-         -- ADC Control Signals
-         adcRefClk     => slowAdcRefClk,
-         adcDrdy       => slowAdcDrdy,
-         adcSclk       => slowAdcSclk,
-         adcDout       => slowAdcDout,
-         adcCsL        => slowAdcCsb,
-         adcDin        => slowAdcDin
-      );
+      -- ADC Control Signals
+      adcRefClk     => slowAdcRefClk,
+      adcDrdy       => slowAdcDrdy,
+      adcSclk       => slowAdcSclk,
+      adcDout       => slowAdcDout,
+      adcCsL        => slowAdcCsb,
+      adcDin        => slowAdcDin
+   );
    
    --------------------------------------------
    --    Environmental data convertion LUTs  --
    -------------------------------------------- 
    
    U_AdcEnv : entity work.SlowAdcLUT
-      port map ( 
-         -- Master system clock
-         sysClk        => coreClk,
-         sysClkRst     => axiRst,
-         
-         -- ADC raw data inputs
-         adcData       => epixStatus.slowAdc2Data,
+   port map ( 
+      -- Master system clock
+      sysClk        => coreClk,
+      sysClkRst     => axiRst,
+      
+      -- ADC raw data inputs
+      adcData       => epixStatus.slowAdc2Data,
 
-         -- Converted data outputs
-         outEnvData    => epixStatus.envData
-      );
+      -- Converted data outputs
+      outEnvData    => epixStatus.envData
+   );
       
 
    --------------------------------------------
    --     ePix Startup Sequencer             --
    --------------------------------------------
    U_EpixStartup : entity work.EpixStartupGen2
-      generic map (
-         TPD_G => TPD_G
-      )
-      port map (
-         sysClk           => coreClk,
-         sysClkRst        => axiRst,
-         startupReq       => epixConfig.requestStartupCal,
-         startupAck       => epixStatus.startupAck,
-         startupFail      => epixStatus.startupFail,
-         adcValid         => adcValid,
-         adcData          => adcData,
-         pbAxiReadMaster  => sAxiReadMaster(1),
-         pbAxiReadSlave   => sAxiReadSlave(1),
-         pbAxiWriteMaster => sAxiWriteMaster(1),
-         pbAxiWriteSlave  => sAxiWriteSlave(1)
-      );
+   generic map (
+      TPD_G => TPD_G
+   )
+   port map (
+      sysClk           => coreClk,
+      sysClkRst        => axiRst,
+      startupReq       => epixConfig.requestStartupCal,
+      startupAck       => epixStatus.startupAck,
+      startupFail      => epixStatus.startupFail,
+      adcValid         => adcValid,
+      adcData          => adcData,
+      pbAxiReadMaster  => sAxiReadMaster(1),
+      pbAxiReadSlave   => sAxiReadSlave(1),
+      pbAxiWriteMaster => sAxiWriteMaster(1),
+      pbAxiWriteSlave  => sAxiWriteSlave(1)
+   );
 
    --------------------------------------------
    -- Virtual oscilloscope                   --
    --------------------------------------------
    U_PseudoScope : entity work.PseudoScope
-      generic map (
-        TPD_G                      => TPD_G,
-        MASTER_AXI_STREAM_CONFIG_G => ssiAxiStreamConfig(4, TKEEP_COMP_C)      
-      )
-      port map (
-         sysClk         => coreClk,
-         sysClkRst      => axiRst,
-         adcData        => adcData,
-         adcValid       => adcValid,
-         arm            => acqStart,
-         acqStart       => acqStart,
-         asicAcq        => iAsicAcq,
-         asicR0         => iAsicR0,
-         asicPpmat      => iAsicPpmat,
-         asicPpbe       => iAsicPpbe,
-         asicSync       => iAsicSync,
-         asicGr         => iAsicGrst,
-         asicRoClk      => asicRdClk,
-         asicSaciSel    => iSaciSelL,
-         scopeConfig    => scopeConfig,
-         acqCount       => epixStatus.acqCount,
-         seqCount       => epixStatus.seqCount,
-         mAxisMaster    => scopeAxisMaster,
-         mAxisSlave     => scopeAxisSlave
-      );
+   generic map (
+     TPD_G                      => TPD_G,
+     MASTER_AXI_STREAM_CONFIG_G => ssiAxiStreamConfig(4, TKEEP_COMP_C)      
+   )
+   port map (
+      sysClk         => coreClk,
+      sysClkRst      => axiRst,
+      adcData        => adcData,
+      adcValid       => adcValid,
+      arm            => acqStart,
+      acqStart       => acqStart,
+      asicAcq        => iAsicAcq,
+      asicR0         => iAsicR0,
+      asicPpmat      => iAsicPpmat,
+      asicPpbe       => iAsicPpbe,
+      asicSync       => iAsicSync,
+      asicGr         => iAsicGrst,
+      asicRoClk      => asicRdClk,
+      asicSaciSel    => iSaciSelL,
+      scopeConfig    => scopeConfig,
+      acqCount       => epixStatus.acqCount,
+      seqCount       => epixStatus.seqCount,
+      mAxisMaster    => scopeAxisMaster,
+      mAxisSlave     => scopeAxisSlave
+   );
    
 end top_level;
 

@@ -1,4 +1,6 @@
 vhdl work rtl/CpixCore.vhd
+vhdl work rtl/CpixLUT.vhd
+vhdl work rtl/CpixLUTPkg.vhd
 vhdl work rtl/CpixAcqControl.vhd
 vhdl work rtl/CpixReadoutControl.vhd
 vhdl work rtl/Deserializer.vhd

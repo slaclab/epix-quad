@@ -169,6 +169,7 @@ begin
             if inSync = '1' and dataKOut = '0' and dataOut = D102_C then
                next_state <= DATA_IN_S;
             else
+               frameError <= '1';
                next_state <= ERROR_S;
             end if;
          
@@ -180,10 +181,12 @@ begin
             end if;
             
             if byteCnt > unsigned(frameBytes) or overflow = '1' or full = '1' then
+               frameError <= '1';
                next_state <= ERROR_S;
             end if;
             
             if dataKOut = '1' and dataOut /= EOF_C then
+               frameError <= '1';
                next_state <= ERROR_S;
             end if;
             
@@ -196,6 +199,7 @@ begin
             if byteCnt = unsigned(frameBytes) then
                next_state <= DONE_S;
             else
+               frameError <= '1';
                next_state <= ERROR_S;
             end if;
          
@@ -203,7 +207,6 @@ begin
             frameDone <= '1';
          
          when ERROR_S => 
-            frameError <= '1';
             
          when others =>
             next_state <= ERROR_S;
