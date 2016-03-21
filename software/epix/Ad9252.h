@@ -38,6 +38,12 @@ class Ad9252 : public Device {
 
       //! Method to read status registers and update variables
       void readStatus ( );
+   
+      //! Method to read configuration registers and update variables
+      /*! 
+       * Throws string on error.
+      */
+      void readConfig ( );
 
       //! Method to write configuration registers
       /*! 
