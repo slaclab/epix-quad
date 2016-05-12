@@ -1,11 +1,10 @@
 //-----------------------------------------------------------------------------
-// File          : cspadGui.cpp
-// Author        : Ryan Herbst  <rherbst@slac.stanford.edu>
+// File          : cpixThresholdScan.cpp
+// Author        : Maciej Kwiatkowski  <mkwiatko@slac.stanford.edu>
 // Created       : 04/12/2011
 // Project       : CSPAD
 //-----------------------------------------------------------------------------
 // Description :
-// Server application for GUI
 //-----------------------------------------------------------------------------
 // Copyright (c) 2011 by SLAC. All rights reserved.
 // Proprietary and confidential to SLAC.
