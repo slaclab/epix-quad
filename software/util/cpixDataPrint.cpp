@@ -14,7 +14,6 @@
 // 04/12/2011: created
 //----------------------------------------------------------------------------
 #include <PgpLink.h>
-#include <EpixControl.h>
 #include <ControlServer.h>
 #include <Device.h>
 #include <iomanip>
@@ -29,6 +28,7 @@ using namespace std;
 
 #define HEADER_SIZE 14
 #define FOOTER_SIZE 1
+#define PIX_THRESHOLD 50
 
 // Run flag for sig catch
 bool stop;
@@ -40,7 +40,6 @@ void sigTerm (int) {
 }
 
 
-
 int main (int argc, char **argv) {
    
    stop = false;
@@ -49,50 +48,59 @@ int main (int argc, char **argv) {
    signal (SIGINT,&sigTerm);
 
    try {
-      
-      time_t current_time;
-      struct tm * time_info;
-      char timeString[128];
-      ofstream myfile;
 
       DataRead  *dread_;
       Data      *event_;
       uint       dsize_;
+      ofstream frameFile;
+      //unsigned long int bytes = 0;
 
       dread_ = new DataRead;
       event_ = new Data;
-      unsigned int epixData;
 
       dread_->openShared("epix",1);
       
       printf("Waiting for data\n");
       
-      //while (bytes < 20000000) {
       while (!stop) {
          
          if ( dread_->next(event_)) {
            
+           
             // do something with data:
             dsize_ = event_->size(); // 32 bit values
-
-            if (dsize_ < 272651) {
-               cout << "Got packet of size " << dsize_ << " words" << endl;
-               
-               time(&current_time);
-               time_info = localtime(&current_time);
-               strftime(timeString, 128, "%m%d%y%k%M", time_info);
-               string fileName = "/u1/mkwiatko/EPIX_bad_frame_" + string(timeString) + ".bin";
-               myfile.open (fileName.c_str(), ios::out | ios::binary);
-               
-               for (int x = 0; x < event_->size(); x++) {
-                  epixData = event_->data()[x];
-                  myfile.write ((char*)&epixData, sizeof(epixData));
-               }
-               
-               myfile.close();
-               
+            
+            if (dsize_>HEADER_SIZE+FOOTER_SIZE+1) {
+               printf("Payload size %d 32-bit words. Packet size %d 32-bit words. Acq %d, seq %d, cnt%c\n", dsize_-(HEADER_SIZE+FOOTER_SIZE+1), dsize_, event_->data()[1], event_->data()[2], (event_->data()[HEADER_SIZE]&0xf0)!=0?'A':'B');
+               string fileName = "/u1/mkwiatko/CPIX_data.bin";
+               frameFile.open (fileName.c_str(), ios::out | ios::binary);
+               frameFile.write ((char*)event_->data(), dsize_*4);
+               frameFile.close();
+            }
+            else {
+               printf("Empty packet size %d 32-bit words. Acq %d, seq %d\n", dsize_, event_->data()[1], event_->data()[2]);
             }
             
+            for (int x = HEADER_SIZE+1, i=1; x < event_->size() - FOOTER_SIZE; x++, i++) {
+               //if (i < 4) {
+               //   cout << "0x" << hex << setw(4) << setfill('0') << (event_->data()[x]&0x0000ffff) << "    ";
+               //   cout << "0x" << hex << setw(4) << setfill('0') << ((event_->data()[x]&0xffff0000)>>16) << "    ";
+               //}
+               
+               printf("%c", ((event_->data()[x]&0x0000ffff)>PIX_THRESHOLD?'1':'0') );
+               printf("%c", (((event_->data()[x]&0xffff0000)>>16)>PIX_THRESHOLD?'1':'0') );
+               
+               if (!(i%24)) 
+                  printf("\n");
+               
+            }
+            if (dsize_>HEADER_SIZE+FOOTER_SIZE+1)
+               cout << endl;
+            
+            
+            
+            
+
             
             timespec tv;
             tv.tv_sec = 0;

@@ -24,6 +24,16 @@
 #include <signal.h>
 using namespace std;
 
+#define LANE0  0x10
+#define LANE1  0x20
+#define LANE2  0x40
+#define LANE3  0x80
+
+#define VC0    0x01
+#define VC1    0x02
+#define VC2    0x04
+#define VC3    0x08
+
 // Run flag for sig catch
 bool stop;
 
@@ -47,7 +57,7 @@ int main (int argc, char **argv) {
 
    try {
       PgpLink       pgpLink; 
-      EpixControl   epix(&pgpLink,defFile,EPIX100A);
+      EpixControl   epix(&pgpLink,defFile,EPIX100A, 0x01000000, 1);
       //UdpLink       udpLink; 
       //EpixControl   epix(&udpLink,defFile);
       int           pid;
@@ -60,6 +70,7 @@ int main (int argc, char **argv) {
       pgpLink.setDebug(true);
       pgpLink.open("/dev/pgpcard0");
       pgpLink.enableSharedMemory("epix",1);
+      pgpLink.setDataMask( (LANE0|VC0) | (LANE0|VC2) );
       usleep(100);
 
       cout << "Created PGP Link" << endl;

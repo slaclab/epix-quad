@@ -25,7 +25,7 @@ using namespace std;
 
 int main (int argc, char **argv) {
    PgpLink  pgpLink;
-   EpixControl epix(&pgpLink,"",EPIX10KP);
+   EpixControl epix(&pgpLink,"",EPIX10KP, 0x01000000, 1);
 
    try {
 
