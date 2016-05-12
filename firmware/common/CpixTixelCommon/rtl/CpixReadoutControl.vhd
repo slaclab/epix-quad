@@ -24,7 +24,7 @@ use work.StdRtlPkg.all;
 use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
 use work.EpixPkgGen2.all;
-
+use work.CpixPkg.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -43,11 +43,11 @@ entity CpixReadoutControl is
       
       -- trigger inputs
       acqStart       : in  sl;
-      dataSend       : in  sl;
       
       -- handshake signals
-      readDone       : out sl;
-      acqBusy        : in  sl;
+      readPend       : out sl;
+      acqDone        : in  sl;
+      readCntA       : in  sl;
       
       -- decoded data signals
       inSync         : in  slv(1 downto 0);
@@ -57,12 +57,14 @@ entity CpixReadoutControl is
       dispErr        : in  slv(1 downto 0);
       
       -- config/status signals
-      epixConfig     : in  epixConfigType;
+      epixConfig     : in  EpixConfigType;
+      cpixConfig     : in  CpixConfigType;
       acqCount       : in  slv(31 downto 0);
       seqCount       : out slv(31 downto 0);
       envData        : in  Slv32Array(8 downto 0);
-      frameErr       : out Slv32Array(1 downto 0);
-      frameErrRst    : in  sl;
+      errorFrame     : out Slv32Array(1 downto 0);
+      errorCode      : out Slv32Array(1 downto 0);
+      errorTimeout   : out Slv32Array(1 downto 0);
       
       -- stream out signals
       mAxisMaster    : out AxiStreamMasterType;
@@ -72,7 +74,6 @@ end CpixReadoutControl;
 
 architecture rtl of CpixReadoutControl is
 
-   constant DAQ_TIMEOUT_C     : unsigned(31 downto 0) := to_unsigned(50000,32); --500 us at 100 MHz
    constant ASIC_TIMEOUT_C    : unsigned(31 downto 0) := to_unsigned(50000,32); --500 us at 100 MHz
    constant HEADER_SIZE_C     : natural   := 14;
    -- Hard coded words in the data stream for now
@@ -83,7 +84,7 @@ architecture rtl of CpixReadoutControl is
    constant VC_C              : slv( 1 downto 0) := "00";
    constant ZEROWORD_C        : slv(31 downto 0) := x"00000000";
    
-   TYPE STATE_TYPE IS (IDLE, ARMED, WAIT_ASIC, HEADER, SEL_ASIC, SEND_ID, RD_FIFO, FOOTER);
+   TYPE STATE_TYPE IS (IDLE, WAIT_ASIC, HEADER, SEL_ASIC, SEND_ID, RD_FIFO, FOOTER, FRM_RESET, FRM_RESET_WAIT);
    SIGNAL state, next_state   : STATE_TYPE; 
    
    
@@ -104,22 +105,29 @@ architecture rtl of CpixReadoutControl is
    
    signal seqCnt                 : unsigned(31 downto 0);
    signal seqCntEn               : std_logic;
-   signal dataSendSys            : std_logic;
-   signal acqStartSys            : std_logic;
    signal frameRstByte           : std_logic;
    signal frameBytes             : std_logic_vector(31 downto 0);
    signal frameDone              : std_logic_vector(1 downto 0);
+   signal frameDoneSys           : std_logic_vector(1 downto 0);
    signal frameError             : std_logic_vector(1 downto 0);
+   signal frameErrorSys          : std_logic_vector(1 downto 0);
+   signal frameErrorSysEn        : std_logic_vector(1 downto 0);
+   signal fifoFull               : std_logic_vector(1 downto 0);
+   signal fifoFullSys            : std_logic_vector(1 downto 0);
    signal codeError              : std_logic_vector(1 downto 0);
+   signal codeErrorSysEn         : std_logic_vector(1 downto 0);
    signal frameRdEn              : std_logic_vector(1 downto 0);
    signal frameValidRaw          : std_logic_vector(1 downto 0);
    signal frameValid             : std_logic_vector(1 downto 0);
    signal frameEmpty             : std_logic_vector(1 downto 0);
+   signal timeoutErrCntEn        : std_logic_vector(1 downto 0);
    signal frameDataRaw           : Slv32Array(1 downto 0);
    signal frameData              : Slv32Array(1 downto 0);
    signal frameRst               : std_logic;
    type Unsigned32Array is array (natural range <>) of unsigned(31 downto 0);
    signal frameErrCnt            : Unsigned32Array(1 downto 0);
+   signal codeErrCnt             : Unsigned32Array(1 downto 0);
+   signal timeoutErrCnt          : Unsigned32Array(1 downto 0);
    
    attribute keep : string;
    attribute keep of state : signal is "true";
@@ -127,20 +135,6 @@ architecture rtl of CpixReadoutControl is
 begin
 
    -- Edge detection for signals that interface with other blocks
-   U_DataSendSys : entity work.SynchronizerEdge
-   port map (
-      clk        => sysClk,
-      rst        => sysClkRst,
-      dataIn     => dataSend,
-      risingEdge => dataSendSys
-   );
-   U_AcqStartSys : entity work.SynchronizerEdge
-   port map (
-      clk        => sysClk,
-      rst        => sysClkRst,
-      dataIn     => acqStart,
-      risingEdge => acqStartSys
-   );
    U_FrameRstByte : entity work.SynchronizerEdge
    port map (
       clk        => byteClk,
@@ -168,10 +162,11 @@ begin
          frameDone      => frameDone(i),
          frameError     => frameError(i),
          codeError      => codeError(i),
+         fifoFull       => fifoFull(i),
          rd_clk         => sysClk,
          rd_en          => frameRdEn(i),
          dout           => frameDataRaw(i),
-         valid          => frameValid(i),
+         valid          => frameValidRaw(i),
          empty          => frameEmpty(i)
       );
       
@@ -197,22 +192,71 @@ begin
       frameData(i)(31) <= '0';
       frameData(i)(15) <= '0';
       
-      -- status counters
-      fsm_seq_p: process ( sysClk ) 
+      -- synchronizers and error detectors of the error flags
+      U_FrmErrSys : entity work.SynchronizerEdge
+      port map (
+         clk        => sysClk,
+         rst        => sysClkRst,
+         dataIn     => frameError(i),
+         risingEdge => frameErrorSysEn(i)
+      );
+      U_CodeErrSys : entity work.SynchronizerEdge
+      port map (
+         clk        => sysClk,
+         rst        => sysClkRst,
+         dataIn     => codeError(i),
+         risingEdge => codeErrorSysEn(i)
+      );
+      
+      
+      Cnt_p: process ( sysClk ) 
       begin
          
          -- frame error counters
          if rising_edge(sysClk) then
-            if sysClkRst = '1' or frameErrRst = '1' then
+            if sysClkRst = '1' or cpixConfig.cpixErrorRst = '1' then
                frameErrCnt(i) <= (others => '0')    after TPD_G;
-            elsif frameError(i) = '1' then
+            elsif frameErrorSysEn(i) = '1' then
                frameErrCnt(i) <= frameErrCnt(i) + 1 after TPD_G;
+            end if;
+         end if;
+         
+         -- code error counters
+         if rising_edge(sysClk) then
+            if sysClkRst = '1' or cpixConfig.cpixErrorRst = '1' then
+               codeErrCnt(i) <= (others => '0')    after TPD_G;
+            elsif codeErrorSysEn(i) = '1' then
+               codeErrCnt(i) <= codeErrCnt(i) + 1  after TPD_G;
+            end if;
+         end if;
+         
+         -- code error counters
+         if rising_edge(sysClk) then
+            if sysClkRst = '1' or cpixConfig.cpixErrorRst = '1' then
+               timeoutErrCnt(i) <= (others => '0')       after TPD_G;
+            elsif timeoutErrCntEn(i) = '1' then
+               timeoutErrCnt(i) <= timeoutErrCnt(i) + 1  after TPD_G;
+            end if;
+         end if;
+         
+         -- flags synchronizer
+         if rising_edge(sysClk) then
+            if sysClkRst = '1' then
+               frameErrorSys(i) <= '0'             after TPD_G;
+               frameDoneSys(i) <= '0'              after TPD_G;
+               fifoFullSys(i) <= '0'               after TPD_G;
+            else
+               frameErrorSys(i) <= frameError(i)   after TPD_G;
+               frameDoneSys(i) <= frameDone(i)     after TPD_G;
+               fifoFullSys(i) <= fifoFull(i)       after TPD_G;
             end if;
          end if;
       
       end process;
       
-      frameErr(i) <= std_logic_vector(frameErrCnt(i));
+      errorFrame(i) <= std_logic_vector(frameErrCnt(i));
+      errorCode(i) <= std_logic_vector(codeErrCnt(i));
+      errorTimeout(i) <= std_logic_vector(timeoutErrCnt(i));
       
    end generate G_AsicFrame;
    
@@ -265,20 +309,20 @@ begin
       -- sequence/frame counter
       if rising_edge(sysClk) then
          if sysClkRst = '1' or epixConfig.seqCountReset = '1' then
-            seqCnt <= (others => '0')   after TPD_G;
+            seqCnt <= (others => '0')     after TPD_G;
          elsif seqCntEn = '1' then
-            seqCnt <= seqCnt + 1      after TPD_G;
+            seqCnt <= seqCnt + 1          after TPD_G;
          end if;
       end if;
       
       -- delayed frame valid indicating when the LUT data is available
       if rising_edge(sysClk) then
          if sysClkRst = '1' then
-            frameValidRaw(0) <= '0'    after TPD_G;
-            frameValidRaw(1) <= '0'    after TPD_G;
+            frameValid(0) <= '0'                after TPD_G;
+            frameValid(1) <= '0'                after TPD_G;
          else
-            frameValidRaw(0) <= frameValid(0)   after TPD_G;
-            frameValidRaw(1) <= frameValid(1)   after TPD_G;
+            frameValid(0) <= frameValidRaw(0)   after TPD_G;
+            frameValid(1) <= frameValidRaw(1)   after TPD_G;
          end if;
       end if;
       
@@ -286,12 +330,13 @@ begin
    
 
    fsm_cmb_p: process ( 
-      state, acqStartSys, dataSendSys, dwordCnt, timeCnt, asicCnt, mAxisSlave,
-      headerData, epixConfig, frameDone, frameData, frameValid, frameValidRaw,  channelID) 
+      state, dwordCnt, timeCnt, asicCnt, mAxisSlave, acqDone, fifoFullSys,
+      headerData, epixConfig, frameDoneSys, frameErrorSys, frameData, frameValid,  channelID) 
       variable mAxisMasterVar : AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
    begin
       next_state <= state;
       dwordCntRst <= '1';
+      dwordCntEn <= '0';
       asicCntEn <= '0';
       asicCntRst <= '0';
       seqCntEn <= '0';
@@ -300,31 +345,14 @@ begin
       mAxisMasterVar := AXI_STREAM_MASTER_INIT_C;
       frameRdEn <= (others=>'0');
       frameRst <= '0';
+      readPend <= '1';
+      timeoutErrCntEn <= "00";
       
       case state is
       
          when IDLE =>
-            frameRst <= '1';
-            if acqStartSys = '1' then
-               timeLoad <= DAQ_TIMEOUT_C;
-               next_state <= ARMED;
-            end if;
-      
-         when ARMED =>
-            timeCntRst <= '0';
-            if dataSendSys = '1' then
-               seqCntEn <= '1';
-               timeLoad <= ASIC_TIMEOUT_C;
-               next_state <= WAIT_ASIC;
-            elsif timeCnt = 0 then
-               next_state <= IDLE;
-            end if;
-         
-         when WAIT_ASIC => 
-            timeCntRst <= '0';
-            if epixConfig.asicMask(1 downto 0) = "00" or timeCnt = 0 then
-               next_state <= IDLE;
-            elsif frameDone = epixConfig.asicMask(1 downto 0) then
+            readPend <= '0';
+            if acqDone = '1' and epixConfig.daqTriggerEnable = '1' then
                next_state <= HEADER;
             end if;
          
@@ -346,35 +374,54 @@ begin
          
          when SEL_ASIC =>
             if epixConfig.asicMask(asicCnt) = '1' and asicCnt < 2 then
-               next_state <= SEND_ID;
+               timeLoad <= ASIC_TIMEOUT_C;
+               next_state <= WAIT_ASIC;
             elsif asicCnt < 2 then
                asicCntEn <= '1';
             else
                next_state <= FOOTER;
             end if;
          
+         -- need to wait for all frame grabbers to finish 
+         -- it is necessary to buffer the whole ASIC frame to avoid interleaving
+         -- prototype (small) ASIC can be bufferd in a simple FIFO of the frame grabber
+         -- the production ASIC will need to employ the SDRAM memory
+         when WAIT_ASIC => 
+            timeCntRst <= '0';
+            if frameDoneSys(asicCnt) = '1' then
+               next_state <= SEND_ID;
+            elsif frameErrorSys(asicCnt) = '1' then
+               asicCntEn <= '1';
+               next_state <= SEL_ASIC;
+            elsif timeCnt = 0 then
+               timeoutErrCntEn(asicCnt) <= '1';
+               asicCntEn <= '1';
+               next_state <= SEL_ASIC;
+            end if;
+         
          when SEND_ID => 
             mAxisMasterVar.tData(31 downto 0) := channelID;
             mAxisMasterVar.tValid := '1';
             if mAxisSlave.tReady = '1' then
+               frameRdEn(asicCnt) <= '1';
                next_state <= RD_FIFO;
             end if;
          
          when RD_FIFO => 
             mAxisMasterVar.tData(31 downto 0) := frameData(asicCnt);
             
-            if frameValidRaw(asicCnt) = '1' then
+            if frameValid(asicCnt) = '1' then
                mAxisMasterVar.tValid := '1';
             else
                mAxisMasterVar.tValid := '0';
-               asicCntEn <= '1';
-               next_state <= SEL_ASIC;
             end if;
             
             if mAxisSlave.tReady = '1' and frameValid(asicCnt) = '1' then
                frameRdEn(asicCnt) <= '1';
             else
                frameRdEn(asicCnt) <= '0';
+               asicCntEn <= '1';
+               next_state <= SEL_ASIC;
             end if;
 
          
@@ -384,6 +431,19 @@ begin
             mAxisMasterVar.tValid := '1';
             mAxisMasterVar.tLast := '1';
             if mAxisSlave.tReady = '1' then
+               seqCntEn <= '1';
+               next_state <= FRM_RESET;
+            end if;
+         
+         when FRM_RESET =>
+            frameRst <= '1';
+            if frameDoneSys = "00" and frameErrorSys = "00" then
+               next_state <= FRM_RESET_WAIT;
+            end if;
+         
+         -- need that state to make sure the buffer (fifo) is reset and not reporting full
+         when FRM_RESET_WAIT =>
+            if fifoFullSys = "00" then
                next_state <= IDLE;
             end if;
             
@@ -398,7 +458,7 @@ begin
    
    seqCount <= std_logic_vector(seqCnt);
    
-   channelID <= std_logic_vector(to_unsigned(asicCnt, 32));
+   channelID <= x"000000" & "000" & readCntA & std_logic_vector(to_unsigned(asicCnt, 4));
    
    headerData <= 
       x"000000" & "00" & LANE_C & "00" & VC_C      when dwordCnt = 0 else

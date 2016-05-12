@@ -1,7 +1,7 @@
 -------------------------------------------------------------------------------
 -- Title      : Cpix detector acquisition control
 -------------------------------------------------------------------------------
--- File       : CpixAcqControl.vhd
+-- File       : CpixAcquisition.vhd
 -- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 01/19/2016
@@ -28,25 +28,31 @@ use work.CpixPkg.all;
 library unisim;
 use unisim.vcomponents.all;
 
-entity CpixAcqControl is
+entity CpixAcquisition is
    generic (
-      TPD_G                : time := 1 ns
+      TPD_G           : time := 1 ns;
+      NUMBER_OF_ASICS : natural := 2
    );
    port (
+   
+      -- global signals
       sysClk          : in  std_logic;
       sysClkRst       : in  std_logic;
 
-      acqStart        : in  std_logic;
-      readPend        : in  sl;
-      acqDone         : out sl;
-      readCntA        : out sl;
-
+      -- control/status signals (byteClk)
+      cntAcquisition  : out std_logic_vector(31 downto 0);
+      cntSequence     : out std_logic_vector(31 downto 0);
+      cntAReadout     : out std_logic;
+      frameReq        : out std_logic;
+      frameAck        : in  std_logic_vector(NUMBER_OF_ASICS-1 downto 0);
+      headerAck       : in  std_logic_vector(NUMBER_OF_ASICS-1 downto 0);
+      timeoutReq      : out std_logic;
       epixConfig      : in  EpixConfigType;
       cpixConfig      : in  CpixConfigType;
-
       saciReadoutReq  : out std_logic;
       saciReadoutAck  : in  std_logic;
-
+      
+      -- ASICs signals
       asicEnA         : out std_logic;
       asicEnB         : out std_logic;
       asicVid         : out std_logic;
@@ -57,10 +63,11 @@ entity CpixAcqControl is
       asicGlblRst     : out std_logic;
       asicSync        : out std_logic;
       asicAcq         : out std_logic
+      
    );
-end CpixAcqControl;
+end CpixAcquisition;
 
-architecture rtl of CpixAcqControl is
+architecture rtl of CpixAcquisition is
    
    TYPE STATE_TYPE IS (
       IDLE_S, 

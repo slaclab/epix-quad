@@ -5,3 +5,6 @@ vhdl work rtl/CpixAcqControl.vhd
 vhdl work rtl/CpixReadoutControl.vhd
 vhdl work rtl/Deserializer.vhd
 vhdl work rtl/FrameGrabber.vhd
+vhdl work rtl/RegControlCpix.vhd
+vhdl work rtl/CpixPkg.vhd
+vhdl work rtl/Framer.vhd

@@ -9,7 +9,9 @@
 -- Platform   : Vivado 2014.4
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
--- Description: After SOF saves data into FIFO. Monitors for errors unitl EOF.
+-- Description: After SOF the grabber saves data into the FIFO. Monitors for errors unitl EOF.
+--              After completion the grabber indicates frameDone or frameError state until frameRst is asserted.
+--              codeErr does no need to be critical and the frame may be still completed.
 -------------------------------------------------------------------------------
 -- Copyright (c) 2015 SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
@@ -51,6 +53,7 @@ entity FrameGrabber is
       frameDone      : out sl;
       frameError     : out sl;
       codeError      : out sl;
+      fifoFull       : out sl;
       
       -- data out signals
       rd_clk         : in  sl;
@@ -64,9 +67,9 @@ end FrameGrabber;
 architecture rtl of FrameGrabber is
    
    TYPE STATE_TYPE IS (IDLE_S, WAIT_SOF_S, SOF_S, DATA_IN_S, EOF_S, DONE_S, ERROR_S);
-   signal state, next_state   : STATE_TYPE; 
+   signal state, next_state : STATE_TYPE; 
    signal globalRst  : sl; 
-   signal errorDet   : sl; 
+   signal codeErrDet : sl; 
    signal byteCnt    : unsigned(31 downto 0); 
    signal byteWrEn   : sl; 
    signal overflow   : sl; 
@@ -82,6 +85,10 @@ architecture rtl of FrameGrabber is
 begin
 
    globalRst <= byteClkRst or frameRst;
+   
+   -- need it to see when the buffer reset is finished
+   -- sync to byteClk
+   fifoFull <= full;
 
    -----------------------------------------------
    -- FIFO instantiation
@@ -128,11 +135,11 @@ begin
          end if;
       end if;
       
-      -- error flag register
+      -- code error flag register
       if rising_edge(byteClk) then
          if globalRst = '1' then
             codeError <= '0'               after TPD_G;
-         elsif errorDet = '1' then
+         elsif codeErrDet = '1' then
             codeError <= '1'               after TPD_G;         
          end if;
       end if;
@@ -153,7 +160,7 @@ begin
    fsm_cmb_p: process (state, inSync, codeErr, dispErr, dataKOut, dataOut, byteCnt, frameBytes, overflow, full) 
    begin
       next_state <= state;
-      errorDet <= '0';
+      codeErrDet <= '0';
       byteWrEn <= '0';
       frameDone <= '0';
       frameError <= '0';
@@ -169,7 +176,6 @@ begin
             if inSync = '1' and dataKOut = '0' and dataOut = D102_C then
                next_state <= DATA_IN_S;
             else
-               frameError <= '1';
                next_state <= ERROR_S;
             end if;
          
@@ -177,16 +183,15 @@ begin
             byteWrEn <= '1';
          
             if inSync = '0' or codeErr = '1' or dispErr = '1' then
-               errorDet <= '1';
+               codeErrDet <= '1';
             end if;
             
+            -- frameBytes is checked to prevent missing EOF code
             if byteCnt > unsigned(frameBytes) or overflow = '1' or full = '1' then
-               frameError <= '1';
                next_state <= ERROR_S;
             end if;
             
             if dataKOut = '1' and dataOut /= EOF_C then
-               frameError <= '1';
                next_state <= ERROR_S;
             end if;
             
@@ -196,10 +201,10 @@ begin
             end if;
          
          when EOF_S => 
+            -- frameBytes is checked to ensure no missing bytes
             if byteCnt = unsigned(frameBytes) then
                next_state <= DONE_S;
             else
-               frameError <= '1';
                next_state <= ERROR_S;
             end if;
          
@@ -207,6 +212,7 @@ begin
             frameDone <= '1';
          
          when ERROR_S => 
+            frameError <= '1';
             
          when others =>
             next_state <= ERROR_S;

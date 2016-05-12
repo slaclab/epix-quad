@@ -22,6 +22,7 @@ use ieee.numeric_std.all;
 
 use work.StdRtlPkg.all;
 use work.EpixPkgGen2.all;
+use work.CpixPkg.all;
 use work.ScopeTypes.all;
 use work.AxiLitePkg.all;
 use work.AxiStreamPkg.all;
@@ -119,7 +120,34 @@ entity CpixCore is
 end CpixCore;
 
 architecture top_level of CpixCore is
-
+   
+   attribute keep : string;
+   
+   -- ASIC signals
+   signal iAsic01DM1           : sl;
+   signal iAsic01DM2           : sl;
+   signal iAsicEnA             : sl;
+   signal iAsicEnB             : sl;
+   signal iAsicPPbe            : sl;
+   signal iAsicPpmat           : sl;
+   signal iAsicR0              : sl;
+   signal iAsicSRO             : sl;
+   signal iAsicSync            : sl;
+   signal iAsicAcq             : sl;
+   signal iAsicGrst            : sl;
+   
+   attribute keep of iAsic01DM1    : signal is "true";
+   attribute keep of iAsic01DM2    : signal is "true";
+   attribute keep of iAsicEnA      : signal is "true";
+   attribute keep of iAsicEnB      : signal is "true";
+   attribute keep of iAsicPPbe     : signal is "true";
+   attribute keep of iAsicPpmat    : signal is "true";
+   attribute keep of iAsicR0       : signal is "true";
+   attribute keep of iAsicSRO      : signal is "true";
+   attribute keep of iAsicGrst     : signal is "true";
+   attribute keep of iAsicSync     : signal is "true";
+   attribute keep of iAsicAcq      : signal is "true";
+   
    signal coreClk     : sl;
    signal coreClkRst  : sl;
    signal pgpClk      : sl;
@@ -142,15 +170,15 @@ architecture top_level of CpixCore is
    signal pgpRxOut      : Pgp2bRxOutType;
    
    -- AXI-Lite Signals
-   signal sAxiReadMaster  : AxiLiteReadMasterArray(NUM_AXI_SLAVE_SLOTS_C-1 downto 0);
-   signal sAxiReadSlave   : AxiLiteReadSlaveArray(NUM_AXI_SLAVE_SLOTS_C-1 downto 0);
-   signal sAxiWriteMaster : AxiLiteWriteMasterArray(NUM_AXI_SLAVE_SLOTS_C-1 downto 0);
-   signal sAxiWriteSlave  : AxiLiteWriteSlaveArray(NUM_AXI_SLAVE_SLOTS_C-1 downto 0);
+   signal sAxiReadMaster  : AxiLiteReadMasterArray(CPIX_NUM_AXI_SLAVE_SLOTS_C-1 downto 0);
+   signal sAxiReadSlave   : AxiLiteReadSlaveArray(CPIX_NUM_AXI_SLAVE_SLOTS_C-1 downto 0);
+   signal sAxiWriteMaster : AxiLiteWriteMasterArray(CPIX_NUM_AXI_SLAVE_SLOTS_C-1 downto 0);
+   signal sAxiWriteSlave  : AxiLiteWriteSlaveArray(CPIX_NUM_AXI_SLAVE_SLOTS_C-1 downto 0);
    -- AXI-Lite Signals
-   signal mAxiWriteMasters : AxiLiteWriteMasterArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
-   signal mAxiWriteSlaves  : AxiLiteWriteSlaveArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
-   signal mAxiReadMasters  : AxiLiteReadMasterArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
-   signal mAxiReadSlaves   : AxiLiteReadSlaveArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
+   signal mAxiWriteMasters : AxiLiteWriteMasterArray(CPIX_NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
+   signal mAxiWriteSlaves  : AxiLiteWriteSlaveArray(CPIX_NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
+   signal mAxiReadMasters  : AxiLiteReadMasterArray(CPIX_NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
+   signal mAxiReadSlaves   : AxiLiteReadSlaveArray(CPIX_NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
 
    -- AXI-Stream signals
    signal userAxisMaster   : AxiStreamMasterType;
@@ -164,6 +192,8 @@ architecture top_level of CpixCore is
    -- Configuration and status
    signal epixStatus       : EpixStatusType;
    signal epixConfig       : EpixConfigType;
+   signal cpixStatus       : CpixStatusType;
+   signal cpixConfig       : CpixConfigType;
    signal scopeConfig      : ScopeConfigType;
    signal rxReady          : sl;
    signal txReady          : sl;
@@ -180,15 +210,10 @@ architecture top_level of CpixCore is
    
    -- Interfaces between blocks
    signal acqStart           : sl;
-   signal acqBusy            : sl;
+   signal acqDone            : sl;
+   signal readCntA           : sl;
    signal dataSend           : sl;
-   signal readDone           : sl;
-   signal readValidA0        : slv(MAX_OVERSAMPLE_C-1 downto 0);
-   signal readValidA1        : slv(MAX_OVERSAMPLE_C-1 downto 0);
-   signal readValidA2        : slv(MAX_OVERSAMPLE_C-1 downto 0);
-   signal readValidA3        : slv(MAX_OVERSAMPLE_C-1 downto 0);
-   signal adcPulse           : sl;
-   signal readTps            : sl;
+   signal readPend           : sl;
    signal saciPrepReadoutReq : sl;
    signal saciPrepReadoutAck : sl;
    
@@ -196,14 +221,6 @@ architecture top_level of CpixCore is
    signal adcCardPowerUp     : sl;
    signal adcCardPowerUpEdge : sl;
    signal serdesReset        : sl;
-   
-   -- ASIC signals
-   signal iAsicAcq   : sl;
-   signal iAsicR0    : sl;
-   signal iAsicPpmat : sl;
-   signal iAsicPpbe  : sl;
-   signal iAsicSync  : sl;
-   signal iAsicGrst  : sl;
    
    signal iSaciSelL  : slv(3 downto 0);
    
@@ -219,12 +236,14 @@ architecture top_level of CpixCore is
    signal codeErr    : slv(1 downto 0);
    signal dispErr    : slv(1 downto 0);
    signal inSync     : slv(1 downto 0);
-   signal frameErr   : Slv32Array(1 downto 0);
    
-   attribute keep : boolean;
-   attribute keep of coreClk : signal is true;
-   attribute keep of acqBusy : signal is true;
-   attribute keep of acqStart : signal is true;
+   attribute keep of coreClk : signal is "true";
+   attribute keep of acqDone : signal is "true";
+   attribute keep of acqStart : signal is "true";
+   attribute keep of mAxiWriteMasters : signal is "true";
+   attribute keep of sAxiWriteMaster : signal is "true";
+   attribute keep of adcData : signal is "true";
+   attribute keep of adcValid : signal is "true";
    
    
 begin
@@ -240,8 +259,10 @@ begin
    iRunTrigger    <= runTrigger;
    iDaqTrigger    <= daqTrigger;
    -- Triggers out
-   triggerOut     <= iAsicAcq;
-   mpsOut         <= pgpOpCodeOneShot;
+   --triggerOut     <= iAsicAcq;
+   --mpsOut         <= pgpOpCodeOneShot;
+   triggerOut     <= iAsic01DM1;
+   mpsOut         <= iAsic01DM2;
    -- SACI signals
    saciSelL       <= iSaciSelL;
 
@@ -441,8 +462,8 @@ begin
          dispErr        => dispErr(i),
          
          -- control
-         resync         => '0',
-         delay          => "00000"
+         resync         => cpixConfig.doutResync(i),
+         delay          => cpixConfig.doutDelay(i)
       );
    
    end generate;
@@ -454,9 +475,9 @@ begin
    --------------------------------------------
    U_AxiLiteCrossbar : entity work.AxiLiteCrossbar
       generic map (
-         NUM_SLAVE_SLOTS_G  => NUM_AXI_SLAVE_SLOTS_C,
-         NUM_MASTER_SLOTS_G => NUM_AXI_MASTER_SLOTS_C,
-         MASTERS_CONFIG_G   => AXI_CROSSBAR_MASTERS_CONFIG_C)
+         NUM_SLAVE_SLOTS_G  => CPIX_NUM_AXI_SLAVE_SLOTS_C,
+         NUM_MASTER_SLOTS_G => CPIX_NUM_AXI_MASTER_SLOTS_C,
+         MASTERS_CONFIG_G   => CPIX_AXI_CROSSBAR_MASTERS_CONFIG_C)
       port map (
          sAxiWriteMasters    => sAxiWriteMaster,
          sAxiWriteSlaves     => sAxiWriteSlave,
@@ -470,8 +491,11 @@ begin
          axiClkRst           => axiRst);
    
    --------------------------------------------
-   --     Master Register Controller         --
+   --     Master Register Controllers        --
    --------------------------------------------   
+   
+   -- reuse part of the Epix specific registers
+   
    U_RegControl : entity work.RegControlGen2
    generic map (
       TPD_G                => TPD_G,
@@ -484,10 +508,10 @@ begin
       axiRst         => axiRst,
       sysRst         => sysRst,
       -- AXI-Lite Register Interface (axiClk domain)
-      axiReadMaster  => mAxiReadMasters(COMMON_AXI_INDEX_C),
-      axiReadSlave   => mAxiReadSlaves(COMMON_AXI_INDEX_C),
-      axiWriteMaster => mAxiWriteMasters(COMMON_AXI_INDEX_C),
-      axiWriteSlave  => mAxiWriteSlaves(COMMON_AXI_INDEX_C),
+      axiReadMaster  => mAxiReadMasters(EPIX_REG_AXI_INDEX_C),
+      axiReadSlave   => mAxiReadSlaves(EPIX_REG_AXI_INDEX_C),
+      axiWriteMaster => mAxiWriteMasters(EPIX_REG_AXI_INDEX_C),
+      axiWriteSlave  => mAxiWriteSlaves(EPIX_REG_AXI_INDEX_C),
       -- Register Inputs/Outputs (axiClk domain)
       epixStatus     => epixStatus,
       epixConfig     => epixConfig,
@@ -518,6 +542,25 @@ begin
    );
    
    adcPdwn <= iAdcPdwn;
+   
+   -- define new Cpix specific register set
+   
+   U_RegControlCpix : entity work.RegControlCpix
+   generic map (
+      TPD_G          => TPD_G
+   )
+   port map (
+      axiClk         => coreClk,
+      axiRst         => axiRst,
+      -- AXI-Lite Register Interface (axiClk domain)
+      axiReadMaster  => mAxiReadMasters(CPIX_REG_AXI_INDEX_C),
+      axiReadSlave   => mAxiReadSlaves(CPIX_REG_AXI_INDEX_C),
+      axiWriteMaster => mAxiWriteMasters(CPIX_REG_AXI_INDEX_C),
+      axiWriteSlave  => mAxiWriteSlaves(CPIX_REG_AXI_INDEX_C),
+      -- Register Inputs/Outputs (axiClk domain)
+      cpixStatus     => cpixStatus,
+      cpixConfig     => cpixConfig
+   );
 
    ---------------------
    -- Trig control    --
@@ -553,29 +596,30 @@ begin
    ---------------------      
    U_AcqControl : entity work.CpixAcqControl
    port map (
-      sysClk          => coreClk,
-      sysClkRst       => axiRst,
+      sysClk         => coreClk,
+      sysClkRst      => axiRst,
       
-      acqStart        => acqStart,
+      acqStart       => acqStart,   -- acq trigger
+      acqDone        => acqDone,    -- signal from CpixAcqControl to CpixReadoutControl to request the readout on next acq trigger
+      readPend       => readPend,   -- signal to CpixAcqControl from CpixReadoutControl to stop he acquisition when the readout is pending
+      readCntA       => readCntA,
       
-      acqBusy         => acqBusy,
-      readDone        => readDone,
+      epixConfig     => epixConfig,
+      cpixConfig     => cpixConfig,
       
-      epixConfig      => epixConfig,
+      saciReadoutReq => saciPrepReadoutReq,
+      saciReadoutAck => saciPrepReadoutAck,
       
-      saciReadoutReq  => saciPrepReadoutReq,
-      saciReadoutAck  => saciPrepReadoutAck,
-      
-      asicEnA         => asicEnA,
-      asicEnB         => asicEnB,
-      asicVid         => asicVid,
-      asicPPbe        => iAsicPpbe,
-      asicPpmat       => iAsicPpmat,
-      asicR0          => iAsicR0,
-      asicSRO         => asicSRO,
-      asicGlblRst     => iAsicGrst,
-      asicSync        => iAsicSync,
-      asicAcq         => iAsicAcq
+      asicEnA        => iAsicEnA,
+      asicEnB        => iAsicEnB,
+      asicVid        => asicVid,
+      asicPPbe       => iAsicPpbe,
+      asicPpmat      => iAsicPpmat,
+      asicR0         => iAsicR0,
+      asicSRO        => iAsicSRO,
+      asicGlblRst    => iAsicGrst,
+      asicSync       => iAsicSync,
+      asicAcq        => iAsicAcq
    );
    
    asicAcq        <= iAsicAcq;
@@ -586,6 +630,12 @@ begin
    asicPPbe(1)    <= iAsicPpbe;
    asicSync       <= iAsicSync;
    asicGlblRst    <= iAsicGrst;
+   asicEnA        <= iAsicEnA;
+   asicEnB        <= iAsicEnB;
+   asicSRO        <= iAsicSRO;
+   
+   iAsic01DM1     <= asic01DM1;
+   iAsic01DM2     <= asic01DM2;
  
    ---------------------
    -- Readout control --
@@ -601,11 +651,10 @@ begin
       byteClk        => byteClk,
       byteClkRst     => byteClkRst,
       
-      acqStart       => acqStart,
-      dataSend       => dataSend,
-      
-      readDone       => readDone,
-      acqBusy        => acqBusy,
+      acqStart       => acqStart,   -- acq trigger
+      acqDone        => acqDone,    -- signal from CpixAcqControl to CpixReadoutControl to request the readout on next acq trigger
+      readPend       => readPend,   -- signal to CpixAcqControl from CpixReadoutControl to stop he acquisition when the readout is pending
+      readCntA       => readCntA,
       
       inSync         => inSync,
       dataOut        => dataOut,
@@ -614,23 +663,19 @@ begin
       dispErr        => dispErr,
       
       epixConfig     => epixConfig,   -- total pixels to read
+      cpixConfig     => cpixConfig,
       acqCount       => epixStatus.acqCount,
       seqCount       => epixStatus.seqCount,
       envData        => epixStatus.envData,
-      frameErr       => frameErr,
-      frameErrRst    => '0',
+      errorFrame     => cpixStatus.cpixFrameErr,
+      errorCode      => cpixStatus.cpixCodeErr,
+      errorTimeout   => cpixStatus.cpixTimeoutErr,
       
       mAxisMaster    => userAxisMaster,
       mAxisSlave     => userAxisSlave
    );
    
-   process(coreClk) begin
-      if rising_edge(coreClk) then
-         --epixStatus.slowAdcData(0) <= frameErr(0)(15 downto 0);
-         --epixStatus.slowAdcData(1) <= frameErr(1)(15 downto 0);
-         epixStatus.slowAdcData(2) <= x"000" & "00" & inSync;
-      end if;
-   end process;
+   cpixStatus.cpixAsicInSync <= inSync;
    
    --------------------------------------------
    --     Fast ADC Readout                   --
@@ -641,9 +686,9 @@ begin
    U_AdcClk1 : OBUFDS port map ( I => adcClk1, O => adcClkP(1), OB => adcClkN(1) );
    U_AdcClk2 : OBUFDS port map ( I => adcClk2, O => adcClkP(2), OB => adcClkN(2) );
    
-   adcClk0 <= adcClk when iAdcPdwn(0) = '0' else '0';
-   adcClk1 <= adcClk when iAdcPdwn(1) = '0' else '0';
-   adcClk2 <= adcClk when iAdcPdwn(2) = '0' else '0';
+   adcClk0 <= adcClk; -- when iAdcPdwn(0) = '0' else '0';
+   adcClk1 <= adcClk; -- when iAdcPdwn(1) = '0' else '0';
+   adcClk2 <= adcClk; -- when iAdcPdwn(2) = '0' else '0';
    
    process(coreClk) begin
       if rising_edge(coreClk) then
