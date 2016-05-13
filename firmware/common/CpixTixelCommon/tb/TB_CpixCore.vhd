@@ -76,27 +76,32 @@ architecture beh of TB_CpixCore is
    signal iAsicSync    : std_logic;   
    signal iAsicAcq     : std_logic;   
    signal saciPrepReadoutReq     : std_logic;   
-   signal saciPrepReadoutAck     : std_logic;   
-   signal readPend     : std_logic;   
-   signal acqDone     : std_logic;   
-   signal readCntA     : std_logic;   
+   signal saciPrepReadoutAck     : std_logic;     
    signal acqStart     : std_logic;     
    
    signal epixStatus       : EpixStatusType;
    signal epixConfig       : EpixConfigType;
    signal cpixConfig       : CpixConfigType := CPIX_CONFIG_INIT_C;
    
-   signal frameReq       : sl;
-   signal frameAck       : sl;
-   signal headerAck      : sl;
-   signal timeoutReq     : sl;
-   signal cntFrameDone   : slv(31 downto 0);
-   signal cntFrameError  : slv(31 downto 0);
-   signal cntCodeError   : slv(31 downto 0);
-   signal cntToutError   : slv(31 downto 0);
-   signal cntReset       : sl;
-   signal mAxisMaster    : AxiStreamMasterType;
-   signal mAxisSlave     : AxiStreamSlaveType;
+   constant NUMBER_OF_ASICS   : natural := 2;
+   
+   signal cntAcquisition  : std_logic_vector(31 downto 0);
+   signal cntSequence     : std_logic_vector(31 downto 0);
+   signal cntAReadout     : std_logic;
+   signal frameReq        : std_logic;
+   signal frameAck        : std_logic_vector(NUMBER_OF_ASICS-1 downto 0);
+   signal frameErr        : std_logic_vector(NUMBER_OF_ASICS-1 downto 0);
+   signal headerAck       : std_logic_vector(NUMBER_OF_ASICS-1 downto 0);
+   signal timeoutReq      : std_logic;
+   
+   signal cntFrameDone     : Slv32Array(NUMBER_OF_ASICS-1 downto 0);
+   signal cntFrameError    : Slv32Array(NUMBER_OF_ASICS-1 downto 0);
+   signal cntCodeError     : Slv32Array(NUMBER_OF_ASICS-1 downto 0);
+   signal cntToutError     : Slv32Array(NUMBER_OF_ASICS-1 downto 0);
+   signal framerAxisMaster : AxiStreamMasterArray(NUMBER_OF_ASICS-1 downto 0);
+   signal framerAxisSlave  : AxiStreamSlaveArray(NUMBER_OF_ASICS-1 downto 0);
+   signal pgpAxisMaster    : AxiStreamMasterType;
+   signal pgpAxisSlave     : AxiStreamSlaveType;
    
 
    procedure cpixSerialData ( 
@@ -176,8 +181,7 @@ architecture beh of TB_CpixCore is
                wait for dataClkPeriod;
             end loop;
             -- DATA LOOP
-            --for i in 0 to 2303 loop
-            for i in 0 to 2300 loop
+            for i in 0 to 2303 loop
                encode8b10b (dataIn(7 downto 0), '0', disparity, dataOut, dispOut);
                disparity := dispOut;
                for i in 0 to 9 loop
@@ -300,36 +304,7 @@ begin
       );
       
    end process;
-   
-   
---   -- start of readout handshake
---   
---   process
---   begin
---   
---      sroReq(0) <= '0';
---   
---      wait until rising_edge(asicSRO);
---      
---      sroReq(0) <= '1';
---      
---      wait until rising_edge(sroAck(0));
---      
---   end process;
---   
---   process
---   begin
---
---      sroReq(1) <= '0';
---   
---      wait until rising_edge(asicSRO);
---      
---      sroReq(1) <= '1';
---      
---      wait until rising_edge(sroAck(1));
---      
---   end process;
-   
+
    -- triggers
    
    process
@@ -358,8 +333,8 @@ begin
    cpixConfig.cpixSyncWidth        <= std_logic_vector(to_unsigned(5, 32));
    cpixConfig.cpixSROWidth         <= std_logic_vector(to_unsigned(5, 32));
    cpixConfig.cpixNRuns            <= std_logic_vector(to_unsigned(4, 32));
-   cpixConfig.cpixCntAnotB         <= x"ffffffff";
-   cpixConfig.syncMode             <= "10";
+   cpixConfig.cpixCntAnotB         <= x"5A5A5A5A";
+   cpixConfig.syncMode             <= "00";
    saciPrepReadoutAck              <= '1';
    --epixConfig.manualPinControl(1)  <= '1';
    --epixConfig.manualPinControl(2)  <= '1';
@@ -401,12 +376,57 @@ begin
       S  => '0'
    );
    
+   ------------------------------------------
+   -- Common ASIC acquisition control            --
+   ------------------------------------------      
+   U_ASIC_Acquisition : entity work.CpixAcquisition
+   generic map(
+      NUMBER_OF_ASICS   => NUMBER_OF_ASICS
+   )
+   port map(
    
-   -------------------------------------------------------
-   -- ASIC deserializers
-   -------------------------------------------------------
-   G_ASIC : for i in 0 to 1 generate 
+      -- global signals
+      sysClk            => coreClk,
+      sysClkRst         => axiRst,
+   
+      -- trigger
+      acqStart          => acqStart,
       
+      -- control/status signals (byteClk)
+      cntAcquisition    => cntAcquisition,
+      cntSequence       => cntSequence,
+      cntAReadout       => cntAReadout,
+      frameReq          => frameReq,
+      frameAck          => frameAck,
+      frameErr          => frameErr,
+      headerAck         => headerAck,
+      timeoutReq        => timeoutReq,
+      
+      epixConfig        => epixConfig,
+      cpixConfig        => cpixConfig,
+      saciReadoutReq    => saciPrepReadoutReq,
+      saciReadoutAck    => saciPrepReadoutAck,
+      
+      -- ASICs signals
+      asicEnA           => asicEnA,
+      asicEnB           => asicEnB,
+      asicVid           => asicVid,
+      asicPPbe          => iAsicPpbe,
+      asicPpmat         => iAsicPpmat,
+      asicR0            => iAsicR0,
+      asicSRO           => asicSRO,
+      asicGlblRst       => iAsicGrst,
+      asicSync          => iAsicSync,
+      asicAcq           => iAsicAcq
+      
+   );
+   
+   
+   G_ASIC : for i in 0 to NUMBER_OF_ASICS-1 generate  
+      
+      -------------------------------------------------------
+      -- ASIC deserializers
+      -------------------------------------------------------
       U_AsicDeser : entity work.Deserializer
       port map ( 
          bitClk         => bitClk,
@@ -432,77 +452,105 @@ begin
          resync         => '0',
          delay          => "00000"
       );
+      
+      -------------------------------------------------------
+      -- ASIC AXI stream framers
+      -------------------------------------------------------
+      U_ASIC_Framer : entity work.Framer
+      generic map(
+         ASIC_NUMBER_G  => std_logic_vector(to_unsigned(i, 4))
+      )
+      port map(
+         -- global signals
+         sysClk         => coreClk,
+         sysRst         => axiRst,
+         byteClk        => byteClk,
+         byteClkRst     => byteClkRst,
+         
+         -- decoded data signals (byteClk)
+         inSync         => inSync(0),
+         dataOut        => dataOut(0),
+         dataKOut       => dataKOut(0),
+         codeErr        => codeErr(0),
+         dispErr        => dispErr(0),
+         
+         -- control/status signals (byteClk)
+         cntAcquisition => cntAcquisition,
+         cntSequence    => cntSequence,
+         cntAReadout    => cntAReadout,
+         frameReq       => frameReq     ,
+         frameAck       => frameAck(i)     ,
+         frameErr       => frameErr(i)     ,
+         headerAck      => headerAck(i)    ,
+         timeoutReq     => timeoutReq   ,
+         cntFrameDone   => cntFrameDone(i) ,
+         cntFrameError  => cntFrameError(i),
+         cntCodeError   => cntCodeError(i) ,
+         cntToutError   => cntToutError(i) ,
+         cntReset       => '0'     ,
+         epixConfig     => epixConfig,
+         
+         -- AXI Stream Master Port (sysClk)
+         mAxisMaster    => framerAxisMaster(i),
+         mAxisSlave     => framerAxisSlave(i)
+      );
+      
+      -- start of readout handshake
+      -- only for simulation procedure
+      process
+      begin
+      
+         sroReq(i) <= '0';
+      
+         wait until rising_edge(asicSRO);
+         
+         sroReq(i) <= '1';
+         
+         wait until rising_edge(sroAck(i));
+         
+      end process;
    
    end generate;
    
-   
-   ---------------------
-   -- ASIC Framer     --
-   ---------------------      
-   U_ASIC_Framer : entity work.Framer
+   -------------------------------------------------------
+   -- AXI stream mux
+   -------------------------------------------------------
+   U_AxiStreamMux : entity work.AxiStreamMux
    generic map(
-      ASIC_NUMBER_G  => "1010"
+      NUM_SLAVES_G   => NUMBER_OF_ASICS
    )
    port map(
-      -- global signals
-      sysClk         => coreClk,
-      sysRst         => axiRst,
-      byteClk        => byteClk,
-      byteClkRst     => byteClkRst,
+      -- Clock and reset
+      axisClk        => coreClk,
+      axisRst        => axiRst,
+      -- Slaves
+      sAxisMasters   => framerAxisMaster,
+      sAxisSlaves    => framerAxisSlave,
+      -- Master
+      mAxisMaster    => pgpAxisMaster,
+      mAxisSlave     => pgpAxisSlave
       
-      -- decoded data signals (byteClk)
-      inSync         => inSync(0),
-      dataOut        => dataOut(0),
-      dataKOut       => dataKOut(0),
-      codeErr        => codeErr(0),
-      dispErr        => dispErr(0),
-      
-      -- control/status signals (byteClk)
-      cntAcquisition => x"04030201",
-      cntSequence    => x"08070605",
-      cntAReadout    => '1',
-      frameReq       => frameReq     ,
-      frameAck       => frameAck     ,
-      headerAck      => headerAck    ,
-      timeoutReq     => timeoutReq   ,
-      cntFrameDone   => cntFrameDone ,
-      cntFrameError  => cntFrameError,
-      cntCodeError   => cntCodeError ,
-      cntToutError   => cntToutError ,
-      cntReset       => cntReset     ,
-      
-      -- AXI Stream Master Port (sysClk)
-      mAxisMaster    => mAxisMaster,
-      mAxisSlave     => mAxisSlave
    );
-      
-   mAxisSlave.tReady <= '1';
    
-   process
-   begin
-      
-      timeoutReq <= '0';
-      cntReset <= '0';
-      frameReq <= '0';
-      sroReq(0) <= '0';
-      
-      
-      wait for 100 us;
-      
-      frameReq <= '1';
-      
-      wait until rising_edge(headerAck);
-      
-      frameReq <= '0';
-      sroReq(0) <= '1';
-      
-      wait until rising_edge(sroAck(0));
-      
-      sroReq(0) <= '0';
-      
-      wait until rising_edge(frameAck);
-      
-   end process;
+   -- only for the simulation
+   pgpAxisSlave.tReady <= '1';
+   
+   --process
+   --begin
+   --   
+   --   timeoutReq <= '0';
+   --   
+   --   wait for 101589 ns;
+   --   
+   --   timeoutReq <= '1';
+   --   
+   --   wait for 200 ns;
+   --   
+   --   timeoutReq <= '0';
+   --   
+   --   wait;
+   --   
+   --end process;
 
 end beh;
 

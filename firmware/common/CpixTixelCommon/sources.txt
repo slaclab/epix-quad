@@ -8,3 +8,4 @@ vhdl work rtl/FrameGrabber.vhd
 vhdl work rtl/RegControlCpix.vhd
 vhdl work rtl/CpixPkg.vhd
 vhdl work rtl/Framer.vhd
+vhdl work rtl/CpixAcquisition.vhd

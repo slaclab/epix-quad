@@ -55,6 +55,7 @@ entity Framer is
       cntAReadout    : in  sl;
       frameReq       : in  sl;
       frameAck       : out sl;
+      frameErr       : out sl;
       headerAck      : out sl;
       timeoutReq     : in  sl;
       cntFrameDone   : out slv(31 downto 0);
@@ -62,6 +63,7 @@ entity Framer is
       cntCodeError   : out slv(31 downto 0);
       cntToutError   : out slv(31 downto 0);
       cntReset       : in  sl;
+      epixConfig     : in  EpixConfigType;
       
       -- AXI Stream Master Port (sysClk)
       mAxisMaster    : out AxiStreamMasterType;
@@ -94,6 +96,7 @@ architecture rtl of Framer is
    signal timeoutErrCntEn  : sl;
    
    signal frameReqSync     : sl;
+   signal frameReqMask     : sl;
    signal timeoutReqSync   : sl;
    signal cntResetSync     : sl;
    
@@ -179,13 +182,13 @@ begin
             timeoutReqSync <= '0'         after TPD_G;
             cntResetSync <= '0'           after TPD_G;
          else
-            frameReqSync <= frameReq      after TPD_G;
+            frameReqSync <= frameReqMask  after TPD_G;
             timeoutReqSync <= timeoutReq  after TPD_G;
             cntResetSync <= cntReset      after TPD_G;
          end if;
       end if;
       
-      -- 2 stage pipeline
+      -- 3 stage pipeline
       if rising_edge(byteClk) then
          if byteClkRst = '1' then
             inSyncD1 <= '0'               after TPD_G;
@@ -267,7 +270,20 @@ begin
          end if;
       end if;
       
+      -- frame error flag register
+      if rising_edge(byteClk) then
+         if (frameReqSync = '1' and state = IDLE_S) or byteClkRst = '1' then
+            frameErr <= '0'               after TPD_G;
+         elsif timeoutErrCntEn = '1' or frameErrCntEn = '1' then
+            frameErr <= '1'               after TPD_G;
+         end if;
+      end if;
+      
+      
    end process;
+   
+   -- apply ASIC mask
+   frameReqMask <= frameReq and epixConfig.asicMask(to_integer(unsigned(ASIC_NUMBER_G)));
    
    cntFrameDone   <= std_logic_vector(frameCnt);
    cntFrameError  <= std_logic_vector(frameErrCnt);
@@ -348,7 +364,6 @@ begin
             
             -- cannot stop the ASIC readout when the slave is not ready
             if sAxisSlave.tReady = '0' then
-               byteCntEn <= '0';
                frameErrCntEn <= '1';
                next_state <= ERROR_S;
             end if;
@@ -373,7 +388,6 @@ begin
             end if;
          
          when EOF_S => 
-            byteCntRst <= '0';
             -- number of bytes is checked to ensure no missing bytes
             if byteCnt = FRAME_BYTES_G then
                frameCntEn <= '1';
@@ -386,14 +400,14 @@ begin
          when DONE_S => 
             byteCntRst <= '0';
             
-            sAxisMasterVar.tData(7 downto 0) := x"00";   -- 1 dword footer
+            sAxisMasterVar.tData(7 downto 0) := x"00";   -- 4 x zero bytes footer
             sAxisMasterVar.tValid := '1';
             
             if sAxisSlave.tReady = '1' then
                byteCntEn <= '1';
             end if;
             
-            if byteCnt(1 downto 0) = "11" then
+            if byteCnt >= 3 then
                sAxisMasterVar.tLast := '1';
                ssiSetUserEofe(SLAVE_AXI_CONFIG_C, sAxisMasterVar, '0'); --EOF
                next_state <= IDLE_S;
@@ -404,15 +418,10 @@ begin
             
             sAxisMasterVar.tData(7 downto 0) := x"00";
             sAxisMasterVar.tValid := '1';
+            sAxisMasterVar.tLast := '1';
+            ssiSetUserEofe(SLAVE_AXI_CONFIG_C, sAxisMasterVar, '1'); --EOFE
             
             if sAxisSlave.tReady = '1' then
-               byteCntEn <= '1';
-            end if;
-            
-            -- the stream output must be 32 bit aligned (?)
-            if byteCnt(1 downto 0) = "11" then
-               sAxisMasterVar.tLast := '1';
-               ssiSetUserEofe(SLAVE_AXI_CONFIG_C, sAxisMasterVar, '1'); --EOFE
                next_state <= IDLE_S;
             end if;
             

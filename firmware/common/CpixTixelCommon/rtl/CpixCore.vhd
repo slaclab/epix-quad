@@ -181,6 +181,8 @@ architecture top_level of CpixCore is
    signal mAxiReadSlaves   : AxiLiteReadSlaveArray(CPIX_NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
 
    -- AXI-Stream signals
+   signal framerAxisMaster : AxiStreamMasterArray(NUMBER_OF_ASICS-1 downto 0);
+   signal framerAxisSlave  : AxiStreamSlaveArray(NUMBER_OF_ASICS-1 downto 0);
    signal userAxisMaster   : AxiStreamMasterType;
    signal userAxisSlave    : AxiStreamSlaveType;
    signal scopeAxisMaster  : AxiStreamMasterType;
@@ -209,11 +211,17 @@ architecture top_level of CpixCore is
    signal pgpOpCodeOneShot : sl;
    
    -- Interfaces between blocks
+   signal cntAcquisition  : std_logic_vector(31 downto 0);
+   signal cntSequence     : std_logic_vector(31 downto 0);
+   signal cntAReadout     : std_logic;
+   signal frameReq        : std_logic;
+   signal frameAck        : std_logic_vector(NUMBER_OF_ASICS-1 downto 0);
+   signal frameErr        : std_logic_vector(NUMBER_OF_ASICS-1 downto 0);
+   signal headerAck       : std_logic_vector(NUMBER_OF_ASICS-1 downto 0);
+   signal timeoutReq      : std_logic;
+   
    signal acqStart           : sl;
-   signal acqDone            : sl;
-   signal readCntA           : sl;
    signal dataSend           : sl;
-   signal readPend           : sl;
    signal saciPrepReadoutReq : sl;
    signal saciPrepReadoutAck : sl;
    
@@ -238,7 +246,6 @@ architecture top_level of CpixCore is
    signal inSync     : slv(1 downto 0);
    
    attribute keep of coreClk : signal is "true";
-   attribute keep of acqDone : signal is "true";
    attribute keep of acqStart : signal is "true";
    attribute keep of mAxiWriteMasters : signal is "true";
    attribute keep of sAxiWriteMaster : signal is "true";
@@ -435,11 +442,11 @@ begin
       S  => '0'
    );
    
-   -------------------------------------------------------
-   -- ASIC deserializers
-   -------------------------------------------------------
    G_ASIC : for i in 0 to 1 generate 
-      
+   
+      -------------------------------------------------------
+      -- ASIC deserializers
+      -------------------------------------------------------
       U_AsicDeser : entity work.Deserializer
       port map ( 
          bitClk         => bitClk,
@@ -465,9 +472,134 @@ begin
          resync         => cpixConfig.doutResync(i),
          delay          => cpixConfig.doutDelay(i)
       );
+      
+      -------------------------------------------------------
+      -- ASIC AXI stream framers
+      -------------------------------------------------------
+      U_ASIC_Framer : entity work.Framer
+      generic map(
+         ASIC_NUMBER_G  => std_logic_vector(to_unsigned(i, 4))
+      )
+      port map(
+         -- global signals
+         sysClk         => coreClk,
+         sysRst         => axiRst,
+         byteClk        => byteClk,
+         byteClkRst     => byteClkRst,
+         
+         -- decoded data signals (byteClk)
+         inSync         => inSync(0),
+         dataOut        => dataOut(0),
+         dataKOut       => dataKOut(0),
+         codeErr        => codeErr(0),
+         dispErr        => dispErr(0),
+         
+         -- control/status signals (byteClk)
+         cntAcquisition => cntAcquisition,
+         cntSequence    => cntSequence,
+         cntAReadout    => cntAReadout,
+         frameReq       => frameReq     ,
+         frameAck       => frameAck(i)     ,
+         frameErr       => frameErr(i)     ,
+         headerAck      => headerAck(i)    ,
+         timeoutReq     => timeoutReq   ,
+         cntFrameDone   => cpixStatus.cpixFramesGood(i) ,
+         cntFrameError  => cpixStatus.cpixFrameErr(i),
+         cntCodeError   => cpixStatus.cpixCodeErr(i) ,
+         cntToutError   => cpixStatus.cpixTimeoutErr(i) ,
+         cntReset       => cpixConfig.cpixErrorRst,
+         epixConfig     => epixConfig,
+         
+         -- AXI Stream Master Port (sysClk)
+         mAxisMaster    => framerAxisMaster(i),
+         mAxisSlave     => framerAxisSlave(i)
+      );
    
    end generate;
+   
+   cpixStatus.cpixAsicInSync <= inSync;
+   
+   -------------------------------------------------------
+   -- AXI stream mux
+   -------------------------------------------------------
+   U_AxiStreamMux : entity work.AxiStreamMux
+   generic map(
+      NUM_SLAVES_G   => NUMBER_OF_ASICS
+   )
+   port map(
+      -- Clock and reset
+      axisClk        => coreClk,
+      axisRst        => axiRst,
+      -- Slaves
+      sAxisMasters   => framerAxisMaster,
+      sAxisSlaves    => framerAxisSlave,
+      -- Master
+      mAxisMaster    => userAxisMaster,
+      mAxisSlave     => userAxisSlave
       
+   );
+   
+   ------------------------------------------
+   -- Common ASIC acquisition control            --
+   ------------------------------------------      
+   U_ASIC_Acquisition : entity work.CpixAcquisition
+   generic map(
+      NUMBER_OF_ASICS   => NUMBER_OF_ASICS
+   )
+   port map(
+   
+      -- global signals
+      sysClk            => coreClk,
+      sysClkRst         => axiRst,
+   
+      -- trigger
+      acqStart          => acqStart,
+      
+      -- control/status signals (byteClk)
+      cntAcquisition    => cntAcquisition,
+      cntSequence       => cntSequence,
+      cntAReadout       => cntAReadout,
+      frameReq          => frameReq,
+      frameAck          => frameAck,
+      frameErr          => frameErr,
+      headerAck         => headerAck,
+      timeoutReq        => timeoutReq,
+      
+      epixConfig        => epixConfig,
+      cpixConfig        => cpixConfig,
+      saciReadoutReq    => saciPrepReadoutReq,
+      saciReadoutAck    => saciPrepReadoutAck,
+      
+      -- ASICs signals
+      asicEnA           => iAsicEnA,
+      asicEnB           => iAsicEnB,
+      asicVid           => asicVid,
+      asicPPbe          => iAsicPpbe,
+      asicPpmat         => iAsicPpmat,
+      asicR0            => iAsicR0,
+      asicSRO           => iAsicSRO,
+      asicGlblRst       => iAsicGrst,
+      asicSync          => iAsicSync,
+      asicAcq           => iAsicAcq
+      
+   );
+   
+   asicAcq        <= iAsicAcq;
+   asicR0         <= iAsicR0;
+   asicPpmat(0)   <= iAsicPpmat;
+   asicPpmat(1)   <= iAsicPpmat;
+   asicPPbe(0)    <= iAsicPpbe;
+   asicPPbe(1)    <= iAsicPpbe;
+   asicSync       <= iAsicSync;
+   asicGlblRst    <= iAsicGrst;
+   asicEnA        <= iAsicEnA;
+   asicEnB        <= iAsicEnB;
+   asicSRO        <= iAsicSRO;
+   
+   iAsic01DM1     <= asic01DM1;
+   iAsic01DM2     <= asic01DM2;
+   
+   
    --------------------------------------------
    -- AXI Lite Crossbar for register control --
    -- Master 0 : PGP register controller     --
@@ -590,92 +722,6 @@ begin
       acqStart       => acqStart,
       dataSend       => dataSend
    );   
-
-   ---------------------
-   -- Acq control     --
-   ---------------------      
-   U_AcqControl : entity work.CpixAcqControl
-   port map (
-      sysClk         => coreClk,
-      sysClkRst      => axiRst,
-      
-      acqStart       => acqStart,   -- acq trigger
-      acqDone        => acqDone,    -- signal from CpixAcqControl to CpixReadoutControl to request the readout on next acq trigger
-      readPend       => readPend,   -- signal to CpixAcqControl from CpixReadoutControl to stop he acquisition when the readout is pending
-      readCntA       => readCntA,
-      
-      epixConfig     => epixConfig,
-      cpixConfig     => cpixConfig,
-      
-      saciReadoutReq => saciPrepReadoutReq,
-      saciReadoutAck => saciPrepReadoutAck,
-      
-      asicEnA        => iAsicEnA,
-      asicEnB        => iAsicEnB,
-      asicVid        => asicVid,
-      asicPPbe       => iAsicPpbe,
-      asicPpmat      => iAsicPpmat,
-      asicR0         => iAsicR0,
-      asicSRO        => iAsicSRO,
-      asicGlblRst    => iAsicGrst,
-      asicSync       => iAsicSync,
-      asicAcq        => iAsicAcq
-   );
-   
-   asicAcq        <= iAsicAcq;
-   asicR0         <= iAsicR0;
-   asicPpmat(0)   <= iAsicPpmat;
-   asicPpmat(1)   <= iAsicPpmat;
-   asicPPbe(0)    <= iAsicPpbe;
-   asicPPbe(1)    <= iAsicPpbe;
-   asicSync       <= iAsicSync;
-   asicGlblRst    <= iAsicGrst;
-   asicEnA        <= iAsicEnA;
-   asicEnB        <= iAsicEnB;
-   asicSRO        <= iAsicSRO;
-   
-   iAsic01DM1     <= asic01DM1;
-   iAsic01DM2     <= asic01DM2;
- 
-   ---------------------
-   -- Readout control --
-   ---------------------      
-   U_ReadoutControl : entity work.CpixReadoutControl
-   generic map (
-     TPD_G                      => TPD_G,
-     MASTER_AXI_STREAM_CONFIG_G => ssiAxiStreamConfig(4, TKEEP_COMP_C)
-   )
-   port map (
-      sysClk         => coreClk,
-      sysClkRst      => axiRst,
-      byteClk        => byteClk,
-      byteClkRst     => byteClkRst,
-      
-      acqStart       => acqStart,   -- acq trigger
-      acqDone        => acqDone,    -- signal from CpixAcqControl to CpixReadoutControl to request the readout on next acq trigger
-      readPend       => readPend,   -- signal to CpixAcqControl from CpixReadoutControl to stop he acquisition when the readout is pending
-      readCntA       => readCntA,
-      
-      inSync         => inSync,
-      dataOut        => dataOut,
-      dataKOut       => dataKOut,
-      codeErr        => codeErr,
-      dispErr        => dispErr,
-      
-      epixConfig     => epixConfig,   -- total pixels to read
-      cpixConfig     => cpixConfig,
-      acqCount       => epixStatus.acqCount,
-      seqCount       => epixStatus.seqCount,
-      envData        => epixStatus.envData,
-      errorFrame     => cpixStatus.cpixFrameErr,
-      errorCode      => cpixStatus.cpixCodeErr,
-      errorTimeout   => cpixStatus.cpixTimeoutErr,
-      
-      mAxisMaster    => userAxisMaster,
-      mAxisSlave     => userAxisSlave
-   );
-   
-   cpixStatus.cpixAsicInSync <= inSync;
    
    --------------------------------------------
    --     Fast ADC Readout                   --

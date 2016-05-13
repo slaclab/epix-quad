@@ -8,6 +8,8 @@ use work.AxiLitePkg.all;
 use work.Version.all;
 
 package CpixPkg is
+
+   constant NUMBER_OF_ASICS   : natural := 2;
    
    constant CPIX_NUM_AXI_MASTER_SLOTS_C : natural := 2;
    constant CPIX_NUM_AXI_SLAVE_SLOTS_C : natural := 2;
@@ -41,9 +43,9 @@ package CpixPkg is
       cpixAsicPinControl   : slv(31 downto 0);
       cpixAsicPins         : slv(31 downto 0);
       cpixErrorRst         : sl;
-      syncMode             : slv(1 downto 0);
-      doutResync           : slv(1 downto 0);
-      doutDelay            : Slv5Array(1 downto 0);
+      syncMode             : slv(NUMBER_OF_ASICS-1 downto 0);
+      doutResync           : slv(NUMBER_OF_ASICS-1 downto 0);
+      doutDelay            : Slv5Array(NUMBER_OF_ASICS-1 downto 0);
    end record;
    constant CPIX_CONFIG_INIT_C : CpixConfigType := (
       cpixRunToAcq         => (others => '0'),
@@ -63,13 +65,15 @@ package CpixPkg is
    );
    
    type CpixStatusType is record
-      cpixAsicInSync       : slv(1 downto 0);
-      cpixFrameErr         : Slv32Array(1 downto 0);
-      cpixCodeErr          : Slv32Array(1 downto 0);
-      cpixTimeoutErr       : Slv32Array(1 downto 0);
+      cpixAsicInSync       : slv(NUMBER_OF_ASICS-1 downto 0);
+      cpixFramesGood       : Slv32Array(NUMBER_OF_ASICS-1 downto 0);
+      cpixFrameErr         : Slv32Array(NUMBER_OF_ASICS-1 downto 0);
+      cpixCodeErr          : Slv32Array(NUMBER_OF_ASICS-1 downto 0);
+      cpixTimeoutErr       : Slv32Array(NUMBER_OF_ASICS-1 downto 0);
    end record;
    constant CPIX_STATUS_INIT_C : CpixStatusType := (
       cpixAsicInSync       => (others => '0'),
+      cpixFramesGood       => (others => (others => '0')),
       cpixFrameErr         => (others => (others => '0')),
       cpixCodeErr          => (others => (others => '0')),
       cpixTimeoutErr       => (others => (others => '0'))
