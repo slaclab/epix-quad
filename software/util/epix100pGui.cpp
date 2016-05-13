@@ -22,6 +22,18 @@
 #include <fstream>
 #include <iostream>
 #include <signal.h>
+
+#define LANE0  0x10
+#define LANE1  0x20
+#define LANE2  0x40
+#define LANE3  0x80
+
+#define VC0    0x01
+#define VC1    0x02
+#define VC2    0x04
+#define VC3    0x08
+
+
 using namespace std;
 
 // Run flag for sig catch
@@ -60,6 +72,7 @@ int main (int argc, char **argv) {
       pgpLink.setDebug(true);
       pgpLink.open("/dev/pgpcard0");
       pgpLink.enableSharedMemory("epix",1);
+      pgpLink.setDataMask( (LANE0|VC0) | (LANE0|VC2) );
       usleep(100);
 
       // Create and setup PGP link
