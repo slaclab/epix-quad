@@ -271,7 +271,11 @@ begin
          if a2bRst = '1' then
             a2bCnt <= 0                   after TPD_G;
          elsif a2bCntEn = '1' then
-            a2bCnt <= a2bCnt + 1          after TPD_G;
+            if a2bCnt < 31 then
+               a2bCnt <= a2bCnt + 1       after TPD_G;
+            else
+               a2bCnt <= 0                after TPD_G;
+            end if;
          end if;
       end if;
       

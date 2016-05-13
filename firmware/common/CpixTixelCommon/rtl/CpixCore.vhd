@@ -488,11 +488,11 @@ begin
          byteClkRst     => byteClkRst,
          
          -- decoded data signals (byteClk)
-         inSync         => inSync(0),
-         dataOut        => dataOut(0),
-         dataKOut       => dataKOut(0),
-         codeErr        => codeErr(0),
-         dispErr        => dispErr(0),
+         inSync         => inSync(i),
+         dataOut        => dataOut(i),
+         dataKOut       => dataKOut(i),
+         codeErr        => codeErr(i),
+         dispErr        => dispErr(i),
          
          -- control/status signals (byteClk)
          cntAcquisition => cntAcquisition,

@@ -132,6 +132,7 @@ begin
       axiSlaveRegisterR(x"000203" & "00",  0, cpixStatus.cpixTimeoutErr(0));
       axiSlaveRegisterW(x"000204" & "00",  0, v.cpixRegOut.doutResync(0));
       axiSlaveRegisterW(x"000205" & "00",  0, v.cpixRegOut.doutDelay(0));
+      axiSlaveRegisterR(x"000206" & "00",  0, cpixStatus.cpixFramesGood(0));
       
       axiSlaveRegisterR(x"000300" & "00",  0, cpixStatus.cpixAsicInSync(1));
       axiSlaveRegisterR(x"000301" & "00",  0, cpixStatus.cpixFrameErr(1));
@@ -139,6 +140,7 @@ begin
       axiSlaveRegisterR(x"000303" & "00",  0, cpixStatus.cpixTimeoutErr(1));
       axiSlaveRegisterW(x"000304" & "00",  0, v.cpixRegOut.doutResync(1));
       axiSlaveRegisterW(x"000305" & "00",  0, v.cpixRegOut.doutDelay(1));
+      axiSlaveRegisterR(x"000306" & "00",  0, cpixStatus.cpixFramesGood(1));
       
       -- keep addresses x"000400" and x"000500" for future ASICs
       
