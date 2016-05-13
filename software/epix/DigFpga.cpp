@@ -13,6 +13,7 @@
 // 06/07/2013: created
 //-----------------------------------------------------------------------------
 #include <DigFpga.h>
+#include <DigFpgaCpix.h>
 #include <Epix100pAsic.h>
 #include <Epix100aAsic.h>
 #include <Epix10kpAsic.h>
@@ -35,66 +36,67 @@ using namespace std;
 #define CLOCK_PERIOD_IN_US (0.010)
 
 // Constructor
-DigFpga::DigFpga ( uint destination, uint index, Device *parent, EpixType epixType ) : 
+DigFpga::DigFpga ( uint destination, uint baseAddress, uint index, Device *parent, uint addrSize, EpixType epixType ) : 
                    Device(destination,0,"digFpga",index,parent) {
    stringstream tmp;
    uint         x;
 
    //Set ePix type
    epixType_ = epixType;
+   baseAddress_ = baseAddress;
    
    // Description
    desc_ = "Digital FPGA Object.";
 
    // Setup registers & variables
-   addRegister(new Register("Version", 0x01000000));
+   addRegister(new Register("Version", baseAddress_ + addrSize*0x00000000));
    addVariable(new Variable("Version", Variable::Status));
    getVariable("Version")->setDescription("FPGA version field");
 
-   addRegister(new Register("RunTrigEnable", 0x01000001));
+   addRegister(new Register("RunTrigEnable", baseAddress_ + addrSize*0x00000001));
    addVariable(new Variable("RunTrigEnable", Variable::Configuration));
    getVariable("RunTrigEnable")->setDescription("Run Trigger Enable");
    getVariable("RunTrigEnable")->setTrueFalse();
 
-   addRegister(new Register("RunTrigDelay", 0x01000002));
+   addRegister(new Register("RunTrigDelay", baseAddress_ + addrSize*0x00000002));
    addVariable(new Variable("RunTrigDelay", Variable::Configuration));
    getVariable("RunTrigDelay")->setDescription("Run Trigger Delay");
    getVariable("RunTrigDelay")->setRange(0,0x7FFFFFFF);
 
-   addRegister(new Register("DaqTrigEnable", 0x01000003));
+   addRegister(new Register("DaqTrigEnable", baseAddress_ + addrSize*0x00000003));
    addVariable(new Variable("DaqTrigEnable", Variable::Configuration));
    getVariable("DaqTrigEnable")->setDescription("Daq Trigger Enable");
    getVariable("DaqTrigEnable")->setTrueFalse();
 
-   addRegister(new Register("DaqTrigDelay", 0x01000004));
+   addRegister(new Register("DaqTrigDelay", baseAddress_ + addrSize*0x00000004));
    addVariable(new Variable("DaqTrigDelay", Variable::Configuration));
    getVariable("DaqTrigDelay")->setDescription("Daq Trigger Delay");
    getVariable("DaqTrigDelay")->setRange(0,0x7FFFFFFF);
 
-   addRegister(new Register("AcqCount", 0x01000005));
+   addRegister(new Register("AcqCount", baseAddress_ + addrSize*0x00000005));
    addVariable(new Variable("AcqCount", Variable::Status));
    getVariable("AcqCount")->setDescription("Acquisition Counter");
 
-   addRegister(new Register("AcqCountReset", 0x01000006));
+   addRegister(new Register("AcqCountReset", baseAddress_ + addrSize*0x00000006));
 
-   addRegister(new Register("SeqCount", 0x0100000B));
+   addRegister(new Register("SeqCount", baseAddress_ + addrSize*0x0000000B));
    addVariable(new Variable("SeqCount", Variable::Status));
    getVariable("SeqCount")->setDescription("Sequence (Frame) Counter");
 
-   addRegister(new Register("SeqCountReset", 0x0100000C));
+   addRegister(new Register("SeqCountReset", baseAddress_ + addrSize*0x0000000C));
 
-   addRegister(new Register("asicMask", 0x0100000D));
+   addRegister(new Register("asicMask", baseAddress_ + addrSize*0x0000000D));
    addVariable(new Variable("asicMask", Variable::Configuration));
    getVariable("asicMask")->setDescription("ASIC Mask (1-present, 0-not present)");
    getVariable("asicMask")->setRange(0,0xF);
 
-   addRegister(new Register("DacSetting", 0x01000007));
+   addRegister(new Register("DacSetting", baseAddress_ + addrSize*0x00000007));
    addVariable(new Variable("DacSetting", Variable::Configuration));
    getVariable("DacSetting")->setDescription("DAC Setting");
    getVariable("DacSetting")->setRange(0,0xFFFF);
    getVariable("DacSetting")->setComp(0,4.883e-5,0,"V");
 
-   addRegister(new Register("PowerEnable", 0x01000008));
+   addRegister(new Register("PowerEnable", baseAddress_ + addrSize*0x00000008));
 
    addVariable(new Variable("AnalogPowerEnable", Variable::Configuration));
    getVariable("AnalogPowerEnable")->setDescription("Analog Power Enable");
@@ -108,14 +110,14 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent, EpixType epixTy
    getVariable("FpgaOutputEnable")->setDescription("Fpga Output Enable");
    getVariable("FpgaOutputEnable")->setRange(0,0x1);
 
-   addRegister(new Register("IDelayCtrlRdy", 0x0100000A));
+   addRegister(new Register("IDelayCtrlRdy", baseAddress_ + addrSize*0x0000000A));
    addVariable(new Variable("IDelayCtrlRdy", Variable::Status));
    getVariable("IDelayCtrlRdy")->setDescription("Ready flag for IDELAYCTRL block");
 
    for (x=0; x < 3; x++) {
       tmp.str("");
       tmp << "Adc" << dec << x << "FrameDelay";
-      addRegister(new Register(tmp.str(), 0x01000060 + x));
+      addRegister(new Register(tmp.str(), baseAddress_ + addrSize*(0x00000060 + x)));
       addVariable(new Variable(tmp.str(), Variable::Configuration));
       getVariable(tmp.str())->setDescription(tmp.str());
       getVariable(tmp.str())->setRange(0,0x3F);
@@ -123,7 +125,7 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent, EpixType epixTy
    for (x=0; x < 8; x++) {
       tmp.str("");
       tmp << "Adc0Ch" << dec << x << "Delay";
-      addRegister(new Register(tmp.str(), 0x01000063 + x));
+      addRegister(new Register(tmp.str(), baseAddress_ + addrSize*(0x00000063 + x)));
       addVariable(new Variable(tmp.str(), Variable::Configuration));
       getVariable(tmp.str())->setDescription(tmp.str());
       getVariable(tmp.str())->setRange(0,0x3F);
@@ -131,7 +133,7 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent, EpixType epixTy
    for (x=0; x < 8; x++) {
       tmp.str("");
       tmp << "Adc1Ch" << dec << x << "Delay";
-      addRegister(new Register(tmp.str(), 0x0100006B + x));
+      addRegister(new Register(tmp.str(), baseAddress_ + addrSize*(0x0000006B + x)));
       addVariable(new Variable(tmp.str(), Variable::Configuration));
       getVariable(tmp.str())->setDescription(tmp.str());
       getVariable(tmp.str())->setRange(0,0x3F);
@@ -139,13 +141,13 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent, EpixType epixTy
    for (x=0; x < 4; x++) {
       tmp.str("");
       tmp << "Adc2Ch" << dec << x << "Delay";
-      addRegister(new Register(tmp.str(), 0x01000073 + x));
+      addRegister(new Register(tmp.str(), baseAddress_ + addrSize*(0x00000073 + x)));
       addVariable(new Variable(tmp.str(), Variable::Configuration));
       getVariable(tmp.str())->setDescription(tmp.str());
       getVariable(tmp.str())->setRange(0,0x3F);
    }
 
-   addRegister(new Register("Startup",0x01000080));
+   addRegister(new Register("Startup",baseAddress_ + addrSize*0x00000080));
    addVariable(new Variable("RequestStartup", Variable::Configuration));
    addVariable(new Variable("StartupDone", Variable::Status));
    addVariable(new Variable("StartupFail", Variable::Status));
@@ -157,28 +159,28 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent, EpixType epixTy
    getVariable("StartupFail")->setTrueFalse();
 
    // Setup registers & variables
-   addRegister(new Register("BaseClock", 0x01000010));
+   addRegister(new Register("BaseClock", baseAddress_ + addrSize*0x00000010));
    addVariable(new Variable("BaseClock", Variable::Status));
    getVariable("BaseClock")->setDescription("FPGA Base Clock Frequency"); 
 
    //Autotriggers
-   addRegister(new Register("AutoRunEnable", 0x01000011));
+   addRegister(new Register("AutoRunEnable", baseAddress_ + addrSize*0x00000011));
    addVariable(new Variable("AutoRunEnable", Variable::Configuration));
    getVariable("AutoRunEnable")->setDescription("Auto Run Enable");
    getVariable("AutoRunEnable")->setTrueFalse();
 
-   addRegister(new Register("AutoRunPeriod", 0x01000012));
+   addRegister(new Register("AutoRunPeriod", baseAddress_ + addrSize*0x00000012));
    addVariable(new Variable("AutoRunPeriod", Variable::Configuration));
    getVariable("AutoRunPeriod")->setDescription("Auto Run Enable");
    getVariable("AutoRunPeriod")->setComp(0,0.000010,0,"ms");
 
-   addRegister(new Register("AutoDaqEnable", 0x01000013));
+   addRegister(new Register("AutoDaqEnable", baseAddress_ + addrSize*0x00000013));
    addVariable(new Variable("AutoDaqEnable", Variable::Configuration));
    getVariable("AutoDaqEnable")->setDescription("Auto Daq Enable");
    getVariable("AutoDaqEnable")->setTrueFalse();
 
    // Manual ASIC pin controls
-   addRegister(new Register("AsicPins", 0x01000029));
+   addRegister(new Register("AsicPins", baseAddress_ + addrSize*0x00000029));
 
    addVariable(new Variable("AsicGR", Variable::Configuration));
    getVariable("AsicGR")->setDescription("ASIC Global Reset");
@@ -199,7 +201,7 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent, EpixType epixTy
    getVariable("AsicRoClk")->setDescription("ASIC RO Clock Signal");
    getVariable("AsicRoClk")->setRange(0,0x0001);
 
-   addRegister(new Register("AsicPinControl", 0x0100002A));
+   addRegister(new Register("AsicPinControl", baseAddress_ + addrSize*0x0000002A));
 
    addVariable(new Variable("AsicGRControl", Variable::Configuration));
    getVariable("AsicGRControl")->setDescription("Manual ASIC Global Reset Enabled");
@@ -247,7 +249,7 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent, EpixType epixTy
       tmp.str("");
       tmp << "AdcValue" << dec << setw(2) << setfill('0') << x;
 
-      addRegister(new Register(tmp.str(), 0x01000100 + x));
+      addRegister(new Register(tmp.str(), baseAddress_ + addrSize*(0x00000100 + x)));
 
       addVariable(new Variable(tmp.str(), Variable::Status));
       getVariable(tmp.str())->setDescription(tmp.str());
@@ -265,7 +267,7 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent, EpixType epixTy
       tmp.str("");
       tmp << "Adc2Value" << dec << setw(2) << setfill('0') << x;
 
-      addRegister(new Register(tmp.str(), 0x01000110 + x));
+      addRegister(new Register(tmp.str(), baseAddress_ + addrSize*(0x00000110 + x)));
 
       addVariable(new Variable(tmp.str(), Variable::Status));
       getVariable(tmp.str())->setDescription(tmp.str());
@@ -280,47 +282,47 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent, EpixType epixTy
    getVariable("Adc2Value07")->setComp(0,2.5/16777215.*3.0,0,"V (AVin)"); //Analog raw voltage
    getVariable("Adc2Value08")->setComp(0,2.5/16777215.*3.0,0,"V (DVin)"); //Digital raw voltage
    
-   addRegister(new Register("EnvData00", 0x01000140));
+   addRegister(new Register("EnvData00", baseAddress_ + addrSize*0x00000140));
    addVariable(new Variable("EnvData00", Variable::Status));
    getVariable("EnvData00")->setDescription("Thermistor0 temperature");
    getVariable("EnvData00")->setComp(0,.01,0,"C");
    
-   addRegister(new Register("EnvData01", 0x01000141));
+   addRegister(new Register("EnvData01", baseAddress_ + addrSize*0x00000141));
    addVariable(new Variable("EnvData01", Variable::Status));
    getVariable("EnvData01")->setDescription("Thermistor1 temperature");
    getVariable("EnvData01")->setComp(0,.01,0,"C");
    
-   addRegister(new Register("EnvData02", 0x01000142));
+   addRegister(new Register("EnvData02", baseAddress_ + addrSize*0x00000142));
    addVariable(new Variable("EnvData02", Variable::Status));
    getVariable("EnvData02")->setDescription("Humidity");
    getVariable("EnvData02")->setComp(0,.01,0,"%RH");
    
-   addRegister(new Register("EnvData03", 0x01000143));
+   addRegister(new Register("EnvData03", baseAddress_ + addrSize*0x00000143));
    addVariable(new Variable("EnvData03", Variable::Status));
    getVariable("EnvData03")->setDescription("ASIC analog current");
    getVariable("EnvData03")->setComp(0,1.0,0,"mA");
    
-   addRegister(new Register("EnvData04", 0x01000144));
+   addRegister(new Register("EnvData04", baseAddress_ + addrSize*0x00000144));
    addVariable(new Variable("EnvData04", Variable::Status));
    getVariable("EnvData04")->setDescription("ASIC digital current");
    getVariable("EnvData04")->setComp(0,1.0,0,"mA");
    
-   addRegister(new Register("EnvData05", 0x01000145));
+   addRegister(new Register("EnvData05", baseAddress_ + addrSize*0x00000145));
    addVariable(new Variable("EnvData05", Variable::Status));
    getVariable("EnvData05")->setDescription("Guard ring current");
    getVariable("EnvData05")->setComp(0,.001,0,"mA");
    
-   addRegister(new Register("EnvData06", 0x01000146));
+   addRegister(new Register("EnvData06", baseAddress_ + addrSize*0x00000146));
    addVariable(new Variable("EnvData06", Variable::Status));
    getVariable("EnvData06")->setDescription("Detector bias current");
    getVariable("EnvData06")->setComp(0,.001,0,"mA");
    
-   addRegister(new Register("EnvData07", 0x01000147));
+   addRegister(new Register("EnvData07", baseAddress_ + addrSize*0x00000147));
    addVariable(new Variable("EnvData07", Variable::Status));
    getVariable("EnvData07")->setDescription("Analog raw input voltage");
    getVariable("EnvData07")->setComp(0,.001,0,"V");
    
-   addRegister(new Register("EnvData08", 0x01000148));
+   addRegister(new Register("EnvData08", baseAddress_ + addrSize*0x00000148));
    addVariable(new Variable("EnvData08", Variable::Status));
    getVariable("EnvData08")->setDescription("Digital raw input voltage");
    getVariable("EnvData08")->setComp(0,.001,0,"V");
@@ -330,102 +332,102 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent, EpixType epixTy
    getVariable("EnvData09")->setDescription("Recalculated humidity on the cold side");
    getVariable("EnvData09")->setComp(0,.01,0,"%RH");
 
-   addRegister(new Register("StrongbackTemp", 0x01000106));
+   addRegister(new Register("StrongbackTemp", baseAddress_ + addrSize*0x00000106));
    addVariable(new Variable("StrongbackTemp", Variable::Status));
    getVariable("StrongbackTemp")->setDescription("Strongback temp in degrees C");
 
-   addRegister(new Register("Humidity", 0x01000107));
+   addRegister(new Register("Humidity", baseAddress_ + addrSize*0x00000107));
    addVariable(new Variable("Humidity", Variable::Status));
    getVariable("Humidity")->setDescription("Humidity in percent RH");
 
-   addRegister(new Register("doutPipelineDelay", 0x0100001F));
+   addRegister(new Register("doutPipelineDelay", baseAddress_ + addrSize*0x0000001F));
    addVariable(new Variable("doutPipelineDelay", Variable::Configuration));
    getVariable("doutPipelineDelay")->setDescription("Number of clock cycles to delay ASIC digital output bit");
    getVariable("doutPipelineDelay")->setRange(0,0xFF);
 
-   addRegister(new Register("acqToAsicR0Delay", 0x01000020)); 
+   addRegister(new Register("acqToAsicR0Delay", baseAddress_ + addrSize*0x00000020)); 
    addVariable(new Variable("acqToAsicR0Delay", Variable::Configuration));
    getVariable("acqToAsicR0Delay")->setDescription("");
    getVariable("acqToAsicR0Delay")->setRange(0,0x7FFFFFFF);
    getVariable("acqToAsicR0Delay")->setComp(0,CLOCK_PERIOD_IN_US,0,"us");
 
-   addRegister(new Register("asicR0ToAsicAcq", 0x01000021));
+   addRegister(new Register("asicR0ToAsicAcq", baseAddress_ + addrSize*0x00000021));
    addVariable(new Variable("asicR0ToAsicAcq", Variable::Configuration));
    getVariable("asicR0ToAsicAcq")->setDescription("");
    getVariable("asicR0ToAsicAcq")->setRange(0,0x7FFFFFFF);
    getVariable("asicR0ToAsicAcq")->setComp(0,CLOCK_PERIOD_IN_US,0,"us");
 
    
-   addRegister(new Register("asicAcqWidth", 0x01000022));
+   addRegister(new Register("asicAcqWidth", baseAddress_ + addrSize*0x00000022));
    addVariable(new Variable("asicAcqWidth", Variable::Configuration));
    getVariable("asicAcqWidth")->setDescription("");
    getVariable("asicAcqWidth")->setRange(0,0x7FFFFFFF);
    getVariable("asicAcqWidth")->setComp(0,CLOCK_PERIOD_IN_US,0,"us");
 
-   addRegister(new Register("asicAcqLToPPmatL", 0x01000023));
+   addRegister(new Register("asicAcqLToPPmatL", baseAddress_ + addrSize*0x00000023));
    addVariable(new Variable("asicAcqLToPPmatL", Variable::Configuration));
    getVariable("asicAcqLToPPmatL")->setDescription("");
    getVariable("asicAcqLToPPmatL")->setRange(0,0x7FFFFFFF);
    getVariable("asicAcqLToPPmatL")->setComp(0,CLOCK_PERIOD_IN_US,0,"us");
 
-   addRegister(new Register("asicRoClkHalfT", 0x01000024));
+   addRegister(new Register("asicRoClkHalfT", baseAddress_ + addrSize*0x00000024));
    addVariable(new Variable("asicRoClkHalfT", Variable::Configuration));
    getVariable("asicRoClkHalfT")->setDescription("");
    getVariable("asicRoClkHalfT")->setRange(0,0x7FFFFFFF);
 //   getVariable("asicRoClkHalfT")->setComp(0,0,0,"MHz");
 
-   addRegister(new Register("adcReadsPerPixel", 0x01000025));
+   addRegister(new Register("adcReadsPerPixel", baseAddress_ + addrSize*0x00000025));
    addVariable(new Variable("adcReadsPerPixel", Variable::Configuration));
    getVariable("adcReadsPerPixel")->setDescription("");
    getVariable("adcReadsPerPixel")->setRange(0,0x7FFFFFFF);
 
-   addRegister(new Register("adcClkHalfT", 0x01000026));
+   addRegister(new Register("adcClkHalfT", baseAddress_ + addrSize*0x00000026));
    addVariable(new Variable("adcClkHalfT", Variable::Configuration));
    getVariable("adcClkHalfT")->setDescription("Half Period of ADC Clock");
    getVariable("adcClkHalfT")->setRange(0,0x7FFFFFFF);
 
-   addRegister(new Register("totalPixelsToRead", 0x01000027));
+   addRegister(new Register("totalPixelsToRead", baseAddress_ + addrSize*0x00000027));
    addVariable(new Variable("totalPixelsToRead", Variable::Configuration));
    getVariable("totalPixelsToRead")->setDescription("");
    getVariable("totalPixelsToRead")->setRange(0,0x7FFFFFFF);
 
-   addRegister(new Register("saciClkBit", 0x01000028));
+   addRegister(new Register("saciClkBit", baseAddress_ + addrSize*0x00000028));
    addVariable(new Variable("saciClkBit", Variable::Configuration));
    getVariable("saciClkBit")->setDescription("Bit of 125 MHz counter to use for SACI clock");
    getVariable("saciClkBit")->setRange(0,0x0007);
 
-   addRegister(new Register("asicR0Width", 0x0100002B));
+   addRegister(new Register("asicR0Width", baseAddress_ + addrSize*0x0000002B));
    addVariable(new Variable("asicR0Width", Variable::Configuration));
    getVariable("asicR0Width")->setDescription("Width of R0 low pulse");
    getVariable("asicR0Width")->setRange(0,0x7FFFFFFF);
    getVariable("asicR0Width")->setComp(0,CLOCK_PERIOD_IN_US,0,"us");
 
-   addRegister(new Register("adcPipelineDelay", 0x0100002C));
+   addRegister(new Register("adcPipelineDelay", baseAddress_ + addrSize*0x0000002C));
    addVariable(new Variable("adcPipelineDelay", Variable::Configuration));
    getVariable("adcPipelineDelay")->setDescription("Number of samples to delay ADC reads");
    getVariable("adcPipelineDelay")->setRange(0,0xFF);
    
-   addRegister(new Register("adcPipelineDelayA0", 0x01000090));
+   addRegister(new Register("adcPipelineDelayA0", baseAddress_ + addrSize*0x00000090));
    addVariable(new Variable("adcPipelineDelayA0", Variable::Configuration));
    getVariable("adcPipelineDelayA0")->setDescription("Number of samples to delay ADC reads of the ASIC0 channels");
    getVariable("adcPipelineDelayA0")->setRange(0,0xFF);
    
-   addRegister(new Register("adcPipelineDelayA1", 0x01000091));
+   addRegister(new Register("adcPipelineDelayA1", baseAddress_ + addrSize*0x00000091));
    addVariable(new Variable("adcPipelineDelayA1", Variable::Configuration));
    getVariable("adcPipelineDelayA1")->setDescription("Number of samples to delay ADC reads of the ASIC1 channels");
    getVariable("adcPipelineDelayA1")->setRange(0,0xFF);
    
-   addRegister(new Register("adcPipelineDelayA2", 0x01000092));
+   addRegister(new Register("adcPipelineDelayA2", baseAddress_ + addrSize*0x00000092));
    addVariable(new Variable("adcPipelineDelayA2", Variable::Configuration));
    getVariable("adcPipelineDelayA2")->setDescription("Number of samples to delay ADC reads of the ASIC2 channels");
    getVariable("adcPipelineDelayA2")->setRange(0,0xFF);
    
-   addRegister(new Register("adcPipelineDelayA3", 0x01000093));
+   addRegister(new Register("adcPipelineDelayA3", baseAddress_ + addrSize*0x00000093));
    addVariable(new Variable("adcPipelineDelayA3", Variable::Configuration));
    getVariable("adcPipelineDelayA3")->setDescription("Number of samples to delay ADC reads of the ASIC3 channels");
    getVariable("adcPipelineDelayA3")->setRange(0,0xFF);
 
-   addRegister(new Register("syncSettings", 0x0100002D));
+   addRegister(new Register("syncSettings", baseAddress_ + addrSize*0x0000002D));
    addVariable(new Variable("syncWidth", Variable::Configuration));
    getVariable("syncWidth")->setDescription("Width of ASIC SYNC signal");
    getVariable("syncWidth")->setRange(0,0x7FFFFFFF);
@@ -433,25 +435,25 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent, EpixType epixTy
    getVariable("syncDelay")->setDescription("Delay of ASIC SYNC signal");
    getVariable("syncDelay")->setRange(0,0x7FFFFFFF);
 
-   addRegister(new Register("prepulseR0Width", 0x0100002E));
+   addRegister(new Register("prepulseR0Width", baseAddress_ + addrSize*0x0000002E));
    addVariable(new Variable("prepulseR0Width", Variable::Configuration));
    getVariable("prepulseR0Width")->setDescription("Width of R0 low prepulse");
    getVariable("prepulseR0Width")->setRange(0,0x7FFFFFFF);
    getVariable("prepulseR0Width")->setComp(0,CLOCK_PERIOD_IN_US,0,"us");
 
-   addRegister(new Register("prepulseR0Delay", 0x0100002F));
+   addRegister(new Register("prepulseR0Delay", baseAddress_ + addrSize*0x0000002F));
    addVariable(new Variable("prepulseR0Delay", Variable::Configuration));
    getVariable("prepulseR0Delay")->setDescription("Delay of R0 low prepulse");
    getVariable("prepulseR0Delay")->setRange(0,0x7FFFFFFF);
    getVariable("prepulseR0Delay")->setComp(0,CLOCK_PERIOD_IN_US,0,"us");
 
-   addRegister(new Register("asicPPmatToReadout", 0x0100003A));
+   addRegister(new Register("asicPPmatToReadout", baseAddress_ + addrSize*0x0000003A));
    addVariable(new Variable("asicPPmatToReadout", Variable::Configuration));
    getVariable("asicPPmatToReadout")->setDescription("");
    getVariable("asicPPmatToReadout")->setRange(0,0x7FFFFFFF);
    getVariable("asicPPmatToReadout")->setComp(0,CLOCK_PERIOD_IN_US,0,"us");
 
-   addRegister(new Register("tpsTiming", 0x01000040));
+   addRegister(new Register("tpsTiming", baseAddress_ + addrSize*0x00000040));
    addVariable(new Variable("tpsEdge", Variable::Configuration));
    getVariable("tpsEdge")->setDescription("Sync TPS to rising or falling edge of Acq");
    getVariable("tpsEdge")->setTrueFalse();
@@ -459,22 +461,22 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent, EpixType epixTy
    getVariable("tpsDelay")->setDescription("Delay TPS signal");
    getVariable("tpsDelay")->setRange(0,0xFFFF);
 
-   addRegister(new Register("digitalCardId0",0x01000030));
-   addRegister(new Register("digitalCardId1",0x01000031));
+   addRegister(new Register("digitalCardId0",baseAddress_ + addrSize*0x00000030));
+   addRegister(new Register("digitalCardId1",baseAddress_ + addrSize*0x00000031));
    addVariable(new Variable("digitalCardId0", Variable::Status));
    addVariable(new Variable("digitalCardId1", Variable::Status));
    getVariable("digitalCardId0")->setDescription("Digital Card Serial Number (low 32 bits)");
    getVariable("digitalCardId1")->setDescription("Digital Card Serial Number (high 32 bits)");
 
-   addRegister(new Register("analogCardId0",0x01000032));
-   addRegister(new Register("analogCardId1",0x01000033));
+   addRegister(new Register("analogCardId0",baseAddress_ + addrSize*0x00000032));
+   addRegister(new Register("analogCardId1",baseAddress_ + addrSize*0x00000033));
    addVariable(new Variable("analogCardId0", Variable::Status));
    addVariable(new Variable("analogCardId1", Variable::Status));
    getVariable("analogCardId0")->setDescription("Analog Card Serial Number (low 32 bits)");
    getVariable("analogCardId1")->setDescription("Analog Card Serial Number (high 32 bits)");
 
-   addRegister(new Register("carrierCardId0",0x0100003B));
-   addRegister(new Register("carrierCardId1",0x0100003C));
+   addRegister(new Register("carrierCardId0",baseAddress_ + addrSize*0x0000003B));
+   addRegister(new Register("carrierCardId1",baseAddress_ + addrSize*0x0000003C));
    addVariable(new Variable("carrierCardId0", Variable::Status));
    addVariable(new Variable("carrierCardId1", Variable::Status));
    getVariable("carrierCardId0")->setDescription("Carrier Card Serial Number (low 32 bits)");
@@ -487,20 +489,20 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent, EpixType epixTy
    addVariable(new Variable("carrierCRC", Variable::Status)); 
    getVariable("carrierCRC")->setTrueFalse();
 
-   addRegister(new Register("EepromWriteAddr", 0x01000034));
+   addRegister(new Register("EepromWriteAddr", baseAddress_ + addrSize*0x00000034));
    addVariable(new Variable("EepromWriteAddr", Variable::Configuration));
    getVariable("EepromWriteAddr")->setRange(0,0xF);
-   addRegister(new Register("EepromDataIn0", 0x01000035));
+   addRegister(new Register("EepromDataIn0", baseAddress_ + addrSize*0x00000035));
    addVariable(new Variable("EepromDataIn0", Variable::Configuration));
-   addRegister(new Register("EepromDataIn1", 0x01000036));
+   addRegister(new Register("EepromDataIn1", baseAddress_ + addrSize*0x00000036));
    addVariable(new Variable("EepromDataIn1", Variable::Configuration));
-   addRegister(new Register("EepromReadAddr", 0x01000037));
+   addRegister(new Register("EepromReadAddr", baseAddress_ + addrSize*0x00000037));
    addVariable(new Variable("EepromReadAddr", Variable::Configuration));
    addVariable(new Variable("EepromAddr", Variable::Status));
 	getVariable("EepromReadAddr")->setRange(0,0xF);
-   addRegister(new Register("EepromDataOut0", 0x01000038));
+   addRegister(new Register("EepromDataOut0", baseAddress_ + addrSize*0x00000038));
    addVariable(new Variable("EepromDataOut0", Variable::Status));
-	addRegister(new Register("EepromDataOut1", 0x01000039));
+	addRegister(new Register("EepromDataOut1", baseAddress_ + addrSize*0x00000039));
    addVariable(new Variable("EepromDataOut1", Variable::Status));  
    addCommand(new Command("MasterReset"));
    getCommand("MasterReset")->setDescription("Master Board Reset");
@@ -527,33 +529,35 @@ DigFpga::DigFpga ( uint destination, uint index, Device *parent, EpixType epixTy
    getCommand("ClearMatrix")->setDescription("Clear configuration bits of all pixels in all ASICs");
 
    // Add sub-devices
-   addDevice(new   PseudoScope(destination, 0x01000000, 0, this));
-   addDevice(new   Ad9252(destination, 0x01008000, 0, this));
-   addDevice(new   Ad9252(destination, 0x0100A000, 1, this));
-   addDevice(new   Ad9252(destination, 0x0100C000, 2, this));
+   addDevice(new   PseudoScope(destination, baseAddress_ + 0x00000000*addrSize, 0, this, addrSize));
+   addDevice(new   Ad9252(destination, baseAddress_ + 0x00008000*addrSize, 0, this, addrSize));
+   addDevice(new   Ad9252(destination, baseAddress_ + 0x0000A000*addrSize, 1, this, addrSize));
+   addDevice(new   Ad9252(destination, baseAddress_ + 0x0000C000*addrSize, 2, this, addrSize));
    if (epixType == EPIX100P) {
-      addDevice(new Epix100pAsic(destination, 0x01800000, 0, this));
-      addDevice(new Epix100pAsic(destination, 0x01900000, 1, this));
-      addDevice(new Epix100pAsic(destination, 0x01A00000, 2, this));
-      addDevice(new Epix100pAsic(destination, 0x01B00000, 3, this));
+      addDevice(new Epix100pAsic(destination, baseAddress_ + 0x00800000*addrSize, 0, this, addrSize));
+      addDevice(new Epix100pAsic(destination, baseAddress_ + 0x00900000*addrSize, 1, this, addrSize));
+      addDevice(new Epix100pAsic(destination, baseAddress_ + 0x00A00000*addrSize, 2, this, addrSize));
+      addDevice(new Epix100pAsic(destination, baseAddress_ + 0x00B00000*addrSize, 3, this, addrSize));
    } else if (epixType == EPIX100A) {
-      addDevice(new Epix100aAsic(destination, 0x01800000, 0, this));
-      addDevice(new Epix100aAsic(destination, 0x01900000, 1, this));
-      addDevice(new Epix100aAsic(destination, 0x01A00000, 2, this));
-      addDevice(new Epix100aAsic(destination, 0x01B00000, 3, this));
+      addDevice(new Epix100aAsic(destination, baseAddress_ + 0x00800000*addrSize, 0, this, addrSize));
+      addDevice(new Epix100aAsic(destination, baseAddress_ + 0x00900000*addrSize, 1, this, addrSize));
+      addDevice(new Epix100aAsic(destination, baseAddress_ + 0x00A00000*addrSize, 2, this, addrSize));
+      addDevice(new Epix100aAsic(destination, baseAddress_ + 0x00B00000*addrSize, 3, this, addrSize));
    } else if (epixType == EPIX10KP) {
-      addDevice(new Epix10kpAsic(destination, 0x01800000, 0, this));
-      addDevice(new Epix10kpAsic(destination, 0x01900000, 1, this));
-      addDevice(new Epix10kpAsic(destination, 0x01A00000, 2, this));
-      addDevice(new Epix10kpAsic(destination, 0x01B00000, 3, this));
+      addDevice(new Epix10kpAsic(destination, baseAddress_ + 0x00800000*addrSize, 0, this, addrSize));
+      addDevice(new Epix10kpAsic(destination, baseAddress_ + 0x00900000*addrSize, 1, this, addrSize));
+      addDevice(new Epix10kpAsic(destination, baseAddress_ + 0x00A00000*addrSize, 2, this, addrSize));
+      addDevice(new Epix10kpAsic(destination, baseAddress_ + 0x00B00000*addrSize, 3, this, addrSize));
    } else if (epixType == EPIXS) {
-      addDevice(new EpixSAsic(destination, 0x01800000, 0, this));
-      addDevice(new EpixSAsic(destination, 0x01900000, 1, this));
-      addDevice(new EpixSAsic(destination, 0x01A00000, 2, this));
-      addDevice(new EpixSAsic(destination, 0x01B00000, 3, this));
+      addDevice(new EpixSAsic(destination, baseAddress_ + 0x00800000*addrSize, 0, this, addrSize));
+      addDevice(new EpixSAsic(destination, baseAddress_ + 0x00900000*addrSize, 1, this, addrSize));
+      addDevice(new EpixSAsic(destination, baseAddress_ + 0x00A00000*addrSize, 2, this, addrSize));
+      addDevice(new EpixSAsic(destination, baseAddress_ + 0x00B00000*addrSize, 3, this, addrSize));
    } else if (epixType == CPIXP) {
-      addDevice(new CpixPAsic(destination, 0x01800000, 0, this));
-      addDevice(new CpixPAsic(destination, 0x01900000, 1, this));
+      addDevice(new CpixPAsic(destination, baseAddress_ + 0x00800000*addrSize, 0, this, addrSize));
+      addDevice(new CpixPAsic(destination, baseAddress_ + 0x00900000*addrSize, 1, this, addrSize));
+      //CPIX specific FPGA registers
+      addDevice(new DigFpgaCpix(destination, baseAddress_ + 0x01000000*addrSize, 0, this, addrSize));
    }
 
    getVariable("Enabled")->setHidden(true);

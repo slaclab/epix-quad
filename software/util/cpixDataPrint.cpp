@@ -21,14 +21,16 @@
 #include <iostream>
 #include <signal.h>
 #include <pthread.h>
-#include <Data.h>
+#include <Data.h>cpixcpixPixelThreshold
 #include <DataRead.h>
 
 using namespace std;
 
 #define HEADER_SIZE 14
 #define FOOTER_SIZE 1
-#define PIX_THRESHOLD 50
+#define PRINT_PIXELS 1
+#define PRINT_ALL_PIXELS 1
+#define PIXEL_THRESHOLD 50
 
 // Run flag for sig catch
 bool stop;
@@ -37,6 +39,14 @@ bool stop;
 void sigTerm (int) { 
    cout << "Got Signal!" << endl;
    stop = true; 
+}
+
+char cpixPixelThreshold(int pixel, int pixThreshold) {
+   
+   if (pixel < pixThreshold)
+      return '0';
+   else
+      return '1';
 }
 
 
@@ -70,32 +80,47 @@ int main (int argc, char **argv) {
             // do something with data:
             dsize_ = event_->size(); // 32 bit values
             
-            if (dsize_>HEADER_SIZE+FOOTER_SIZE+1) {
-               printf("Payload size %d 32-bit words. Packet size %d 32-bit words. Acq %d, seq %d, cnt%c\n", dsize_-(HEADER_SIZE+FOOTER_SIZE+1), dsize_, event_->data()[1], event_->data()[2], (event_->data()[HEADER_SIZE]&0xf0)!=0?'A':'B');
+            if (dsize_==1168) {
+               
+               //print packet size
+               printf("Payload size %d 32-bit words. Packet size %d 32-bit words. Acq %d, seq %d, ASIC %d, cnt%c\n", dsize_-(HEADER_SIZE+FOOTER_SIZE+1), dsize_, event_->data()[1], event_->data()[2], (event_->data()[HEADER_SIZE]&0xf), (event_->data()[HEADER_SIZE]&0xf0)!=0?'A':'B');
                string fileName = "/u1/mkwiatko/CPIX_data.bin";
+               
+               // save last frame
                frameFile.open (fileName.c_str(), ios::out | ios::binary);
                frameFile.write ((char*)event_->data(), dsize_*4);
                frameFile.close();
+               
+               // print packet content
+               for (int x = HEADER_SIZE+1, i=1; x < event_->size() - FOOTER_SIZE && PRINT_PIXELS; x++, i++) {
+                  
+                  if (!PRINT_ALL_PIXELS) {
+                     if (i < 4) {
+                        cout << "0x" << hex << setw(4) << setfill('0') << (event_->data()[x]&0x0000ffff) << "    ";
+                        cout << "0x" << hex << setw(4) << setfill('0') << ((event_->data()[x]&0xffff0000)>>16) << "    ";
+                     }
+                     if (i==4)
+                        cout << endl;
+                  }
+                  else {
+                  
+                     printf("%c", cpixPixelThreshold(((event_->data()[x]&0x0000ffff)), PIXEL_THRESHOLD));
+                     printf("%c", cpixPixelThreshold(((event_->data()[x]&0xffff0000)>>16), PIXEL_THRESHOLD)); 
+                  
+                     if (!(i%24)) 
+                        printf("\n");
+                  }
+               }
+            }
+            else if (dsize_ >= HEADER_SIZE) {
+               printf("Wrong size packet %d 32-bit words. Acq %d, seq %d, ASIC %d, cnt%c\n", dsize_, event_->data()[1], event_->data()[2], (event_->data()[HEADER_SIZE]&0xf), (event_->data()[HEADER_SIZE]&0xf0)!=0?'A':'B');
             }
             else {
-               printf("Empty packet size %d 32-bit words. Acq %d, seq %d\n", dsize_, event_->data()[1], event_->data()[2]);
+               printf("Wrong size packet %d 32-bit words.\n", dsize_);
             }
             
-            for (int x = HEADER_SIZE+1, i=1; x < event_->size() - FOOTER_SIZE; x++, i++) {
-               //if (i < 4) {
-               //   cout << "0x" << hex << setw(4) << setfill('0') << (event_->data()[x]&0x0000ffff) << "    ";
-               //   cout << "0x" << hex << setw(4) << setfill('0') << ((event_->data()[x]&0xffff0000)>>16) << "    ";
-               //}
-               
-               printf("%c", ((event_->data()[x]&0x0000ffff)>PIX_THRESHOLD?'1':'0') );
-               printf("%c", (((event_->data()[x]&0xffff0000)>>16)>PIX_THRESHOLD?'1':'0') );
-               
-               if (!(i%24)) 
-                  printf("\n");
-               
-            }
-            if (dsize_>HEADER_SIZE+FOOTER_SIZE+1)
-               cout << endl;
+            
+            
             
             
             

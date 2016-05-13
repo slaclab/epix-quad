@@ -31,7 +31,7 @@ class Epix100pAsic : public Device {
        * \param index       Device index
        * \param parent      Parent device
       */
-      Epix100pAsic ( uint destination, uint baseAddress, uint index, Device *parent );
+      Epix100pAsic ( uint destination, uint baseAddress, uint index, Device *parent, uint addrSize );
 
       //! Deconstructor
       ~Epix100pAsic ( );

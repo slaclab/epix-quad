@@ -31,7 +31,7 @@ class CpixPAsic : public Device {
        * \param index       Device index
        * \param parent      Parent device
       */
-      CpixPAsic ( uint destination, uint baseAddress, uint index, Device *parent );
+      CpixPAsic ( uint destination, uint baseAddress, uint index, Device *parent, uint addrSize );
 
       //! Deconstructor
       ~CpixPAsic ( );

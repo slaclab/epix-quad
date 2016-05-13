@@ -161,8 +161,8 @@ int main (int argc, char **argv) {
             dsize_ = event_->size(); // 32 bit values
             
             if (dsize_ >= 1168) {
-               // Print data size
-               printf("Payload size %d 32-bit words. Packet size %d 32-bit words. Acq %d, seq %d, cnt%c, %d\n", dsize_-(HEADER_SIZE+FOOTER_SIZE+1), dsize_, event_->data()[1], event_->data()[2], (event_->data()[HEADER_SIZE]&0xf0)!=0?'A':'B', (event_->data()[HEADER_SIZE]&0xf0)!=0?cntAevent:cntBevent);
+               //print packet size
+               printf("Payload size %d 32-bit words. Packet size %d 32-bit words. Acq %d, seq %d, ASIC %d, cnt%c\n", dsize_-(HEADER_SIZE+FOOTER_SIZE+1), dsize_, event_->data()[1], event_->data()[2], (event_->data()[HEADER_SIZE]&0xf), (event_->data()[HEADER_SIZE]&0xf0)!=0?'A':'B');
                //print a couple of pixels
                for (int x = HEADER_SIZE+1, i=0; x < event_->size() - FOOTER_SIZE; x++, i++) {
                   if (i < 4) {
@@ -245,11 +245,11 @@ int main (int argc, char **argv) {
                }
                
             }
-            else if (dsize_ > 5) {
-               printf("Empty packet size %d 32-bit words. Acq %d, seq %d\n", dsize_, event_->data()[1], event_->data()[2]);
+            else if (dsize_ >= HEADER_SIZE) {
+               printf("Wrong size packet %d 32-bit words. Acq %d, seq %d, ASIC %d, cnt%c\n", dsize_, event_->data()[1], event_->data()[2], (event_->data()[HEADER_SIZE]&0xf), (event_->data()[HEADER_SIZE]&0xf0)!=0?'A':'B');
             }
             else {
-               printf("Wrong packet size %d 32-bit words\n", dsize_);
+               printf("Wrong size packet %d 32-bit words.\n", dsize_);
             }
             
             timespec tv;

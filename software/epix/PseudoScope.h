@@ -31,7 +31,7 @@ class PseudoScope : public Device {
        * \param index       Device index
        * \param parent      Parent device
       */
-      PseudoScope ( uint destination, uint baseAddress, uint index, Device *parent );
+      PseudoScope ( uint destination, uint baseAddress, uint index, Device *parent, uint addrSize );
 
       //! Deconstructor
       ~PseudoScope ( );

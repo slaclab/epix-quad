@@ -29,7 +29,7 @@ class EpixControl : public System {
    public:
 
       //! Constructor
-      EpixControl ( CommLink *commLink_, string defFile, EpixType epixType);
+      EpixControl ( CommLink *commLink_, string defFile, EpixType epixType, uint baseAddress, uint addrSize );
 
       //! Deconstructor
       ~EpixControl ( );

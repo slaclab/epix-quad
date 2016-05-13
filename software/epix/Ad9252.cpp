@@ -23,33 +23,33 @@
 using namespace std;
 
 // Constructor
-Ad9252::Ad9252 ( uint destination, uint baseAddress, uint index, Device *parent ) : 
+Ad9252::Ad9252 ( uint destination, uint baseAddress, uint index, Device *parent, uint addrSize ) : 
                         Device(destination,baseAddress,"ad9252",index,parent) {
 
    // Description
    desc_ = "AD9252 ADC object.";
 
    // Create Registers: name, address
-   addRegister(new Register("ChipPortConfig",  baseAddress_ + 0x00, 1));
-   addRegister(new Register("ChipId",          baseAddress_ + 0x01, 1));
-   addRegister(new Register("ChipGrade",       baseAddress_ + 0x02, 1));
-   addRegister(new Register("DeviceIndex2",    baseAddress_ + 0x04, 1));
-   addRegister(new Register("DeviceIndex1",    baseAddress_ + 0x05, 1));
-   addRegister(new Register("Modes",           baseAddress_ + 0x08, 1));
-   addRegister(new Register("Clock",           baseAddress_ + 0x09, 1));
-   addRegister(new Register("TestIo",          baseAddress_ + 0x0D, 1));
-   addRegister(new Register("OutputMode",      baseAddress_ + 0x14, 1));
-   addRegister(new Register("OutputAdjust",    baseAddress_ + 0x15, 1));
-   addRegister(new Register("OutputPhase",     baseAddress_ + 0x16, 1));
-   addRegister(new Register("UserPatt1Lsb",    baseAddress_ + 0x19, 1));
-   addRegister(new Register("UserPatt1Msb",    baseAddress_ + 0x1A, 1));
-   addRegister(new Register("UserPatt2Lsb",    baseAddress_ + 0x1B, 1));
-   addRegister(new Register("UserPatt2Msb",    baseAddress_ + 0x1C, 1));
-   addRegister(new Register("SerialControl",   baseAddress_ + 0x21, 1));
-   addRegister(new Register("SerialControl",   baseAddress_ + 0x21, 1));
-   addRegister(new Register("SerialChStat",    baseAddress_ + 0x22, 1));
-   addRegister(new Register("DeviceUpdate",    baseAddress_ + 0xFF, 1));
-
+   addRegister(new Register("ChipPortConfig",  baseAddress_ + 0x00*addrSize, 1));
+   addRegister(new Register("ChipId",          baseAddress_ + 0x01*addrSize, 1));
+   addRegister(new Register("ChipGrade",       baseAddress_ + 0x02*addrSize, 1));
+   addRegister(new Register("DeviceIndex2",    baseAddress_ + 0x04*addrSize, 1));
+   addRegister(new Register("DeviceIndex1",    baseAddress_ + 0x05*addrSize, 1));
+   addRegister(new Register("Modes",           baseAddress_ + 0x08*addrSize, 1));
+   addRegister(new Register("Clock",           baseAddress_ + 0x09*addrSize, 1));
+   addRegister(new Register("TestIo",          baseAddress_ + 0x0D*addrSize, 1));
+   addRegister(new Register("OutputMode",      baseAddress_ + 0x14*addrSize, 1));
+   addRegister(new Register("OutputAdjust",    baseAddress_ + 0x15*addrSize, 1));
+   addRegister(new Register("OutputPhase",     baseAddress_ + 0x16*addrSize, 1));
+   addRegister(new Register("UserPatt1Lsb",    baseAddress_ + 0x19*addrSize, 1));
+   addRegister(new Register("UserPatt1Msb",    baseAddress_ + 0x1A*addrSize, 1));
+   addRegister(new Register("UserPatt2Lsb",    baseAddress_ + 0x1B*addrSize, 1));
+   addRegister(new Register("UserPatt2Msb",    baseAddress_ + 0x1C*addrSize, 1));
+   addRegister(new Register("SerialControl",   baseAddress_ + 0x21*addrSize, 1));
+   addRegister(new Register("SerialControl",   baseAddress_ + 0x21*addrSize, 1));
+   addRegister(new Register("SerialChStat",    baseAddress_ + 0x22*addrSize, 1));
+   addRegister(new Register("DeviceUpdate",    baseAddress_ + 0xFF*addrSize, 1));
+   
    // Variables
    addVariable(new Variable("ConfigEn", Variable::Configuration));
    getVariable("ConfigEn")->setDescription("Set to 'True' to enable register writes to ADC.");

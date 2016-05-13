@@ -38,7 +38,7 @@
 using namespace std;
 
 // Constructor
-EpixEsaControl::EpixEsaControl ( CommLink *commLink, string defFile, EpixType epixType ) : System("EpixEsaControl",commLink) {
+EpixEsaControl::EpixEsaControl ( CommLink *commLink, string defFile, EpixType epixType, uint baseAddress, uint addrSize ) : System("EpixEsaControl",commLink) {
 
    // Description
    desc_ = "Epix Control";
@@ -72,7 +72,7 @@ EpixEsaControl::EpixEsaControl ( CommLink *commLink, string defFile, EpixType ep
    getVariable("RunCount")->setInt(0);
 
    // Add sub-devices
-   addDevice(new DigFpga(0, 0, this, epixType));
+   addDevice(new DigFpga(0, baseAddress, 0, this, addrSize, epixType));
    addDevice(new EvrCntrl(this));
 
    //Set ePix type

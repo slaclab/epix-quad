@@ -4,7 +4,7 @@ DEF    :=
 BIN    := $(PWD)/bin
 OBJ    := $(PWD)/.obj
 CFLAGS := -Wall `xml2-config --cflags` -I$(PWD)/generic -I$(PWD)/epix -I$(PWD)/offline
-LFLAGS := `xml2-config --libs` -pthread -lrt -lbz2
+LFLAGS := `xml2-config --libs` -pthread -lrt -lbz2 -lgsl -lgslcblas -lm
 
 # Generic Sources
 GEN_DIR := $(PWD)/generic

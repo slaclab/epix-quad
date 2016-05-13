@@ -37,20 +37,21 @@
 using namespace std;
 
 // Constructor
-EpixControl::EpixControl ( CommLink *commLink, string defFile, EpixType epixType ) : System("EpixControl",commLink) {
+EpixControl::EpixControl ( CommLink *commLink, string defFile, EpixType epixType, uint baseAddress, uint addrSize ) : System("EpixControl",commLink) {
 
    // Description
    desc_ = "Epix Control";
    
    // Data mask, lane 0, vc 0 (primary); lane 0, vc 2 (scope)
-   commLink->setDataMask( (LANE0|VC0) | (LANE0|VC2) );
+   //commLink->setDataMask( (LANE0|VC0) | (LANE0|VC2) );
 //   commLink->setDataMask( (LANE0|VC0) );
 
    if ( defFile == "" ) defaults_ = "xml/defaults.xml";
    else defaults_ = defFile;
 
    // Add sub-devices
-   addDevice(new DigFpga(0, 0, this, epixType));
+   uint linkConfig = 0x00000100;    // Lane 0 VC 0 for commands, lane 0 VC 1 for registers
+   addDevice(new DigFpga(linkConfig, baseAddress, 0, this, addrSize, epixType));
 
    //Set ePix type
    epixType_ = epixType;

@@ -173,84 +173,91 @@ int main (int argc, char **argv) {
          
          if ( dread_->next(event_)) {
            
-           
+            
             // do something with data:
             dsize_ = event_->size(); // 32 bit values
             
-            if (dsize_>HEADER_SIZE+FOOTER_SIZE+1) 
-               printf("Payload size %d 32-bit words. Packet size %d 32-bit words. Acq %d, seq %d, cnt%c, %d\n", dsize_-(HEADER_SIZE+FOOTER_SIZE+1), dsize_, event_->data()[1], event_->data()[2], (event_->data()[HEADER_SIZE]&0xf0)!=0?'A':'B', (event_->data()[HEADER_SIZE]&0xf0)!=0?cntAevent:cntBevent);
-            else
-               printf("Empty packet size %d 32-bit words. Acq %d, seq %d\n", dsize_, event_->data()[1], event_->data()[2]);
-            
-            //print a couple of pixels
-            for (int x = HEADER_SIZE+1, i=0; x < event_->size() - FOOTER_SIZE; x++, i++) {
-               if (i < 4) {
-                  cout << "0x" << hex << setw(4) << setfill('0') << (event_->data()[x]&0x0000ffff) << "    ";
-                  cout << "0x" << hex << setw(4) << setfill('0') << ((event_->data()[x]&0xffff0000)>>16) << "    ";
-               }
-            }
-            
-            //Not empty frame was received
-            if (dsize_>HEADER_SIZE+FOOTER_SIZE+1) {
+            if (dsize_==1168) {
                
-               cout << endl;
-               
-               //Frame with cntA was received
-               if ((event_->data()[HEADER_SIZE]&0xf0)!=0) {
-                  cntAevent++;
-                  if (!(cntAevent%EVENTS_PER_FRAME)) {
-                     if (cntAframe < FRAMES_PER_STEP) {
-                        // save the file
-                        ostringstream cnvN;
-                        cnvN << nRuns;
-                        string fileName = "/u1/mkwiatko/CPIX_" + string(timeString) + "_cntA_nRuns_" + cnvN.str() + ".bin";
-                        frameFile.open (fileName.c_str(), ios::out | ios::binary | ios::app);
-                        frameFile.write ((char*)event_->data(), dsize_*4);
-                        frameFile.close();
-                        // move the nRuns to the next value
-                        cntAframe++;
-                     }
-                  }
-               }
-               //Frame with cntB was received
-               else {
-                  cntBevent++;
-                  if (!(cntBevent%EVENTS_PER_FRAME)) {
-                     if (cntBframe < FRAMES_PER_STEP) {
-                        // save the file
-                        ostringstream cnvN;
-                        cnvN << nRuns;
-                        string fileName = "/u1/mkwiatko/CPIX_" + string(timeString) + "_cntB_nRuns_" + cnvN.str() + ".bin";
-                        frameFile.open (fileName.c_str(), ios::out | ios::binary | ios::app);
-                        frameFile.write ((char*)event_->data(), dsize_*4);
-                        frameFile.close();
-                        // move the threshold to the next value
-                        cntBframe++;
-                     }
+               //print packet size
+               printf("Payload size %d 32-bit words. Packet size %d 32-bit words. Acq %d, seq %d, ASIC %d, cnt%c\n", dsize_-(HEADER_SIZE+FOOTER_SIZE+1), dsize_, event_->data()[1], event_->data()[2], (event_->data()[HEADER_SIZE]&0xf), (event_->data()[HEADER_SIZE]&0xf0)!=0?'A':'B');
+            
+               //print a couple of pixels
+               for (int x = HEADER_SIZE+1, i=0; x < event_->size() - FOOTER_SIZE; x++, i++) {
+                  if (i < 4) {
+                     cout << "0x" << hex << setw(4) << setfill('0') << (event_->data()[x]&0x0000ffff) << "    ";
+                     cout << "0x" << hex << setw(4) << setfill('0') << ((event_->data()[x]&0xffff0000)>>16) << "    ";
                   }
                }
                
-               if (cntAframe >= FRAMES_PER_STEP-1 && cntBframe >= FRAMES_PER_STEP-1) {
-                  epix.device("digFpga",0)->writeSingle("AutoRunEnable", 0);
-                  cntAframe = 0;
-                  cntBframe = 0;
-                  nRuns += NRUNS_STEP;
-                  fSet = (int)round((1.0 / (TIME_WINDOW_FREQ * nRuns)) / 0.00000001);
-                  epix.device("digFpga",0)->device("DigFpgaCpix",0)->writeSingle("cpixNRuns", nRuns);
-                  epix.device("digFpga",0)->writeSingle("AutoRunPeriod", fSet);
-                  printf("Nruns set to %d\n", nRuns);
-                  printf("Auto run period set to %d\n", fSet);
-                  epix.device("digFpga",0)->writeSingle("AutoRunEnable", 1);
+               //Not empty frame was received
+               if (dsize_>HEADER_SIZE+FOOTER_SIZE+1) {
+                  
+                  cout << endl;
+                  
+                  //Frame with cntA was received
+                  if ((event_->data()[HEADER_SIZE]&0xf0)!=0) {
+                     cntAevent++;
+                     if (!(cntAevent%EVENTS_PER_FRAME)) {
+                        if (cntAframe < FRAMES_PER_STEP) {
+                           // save the file
+                           ostringstream cnvN;
+                           cnvN << nRuns;
+                           string fileName = "/u1/mkwiatko/CPIX_" + string(timeString) + "_cntA_nRuns_" + cnvN.str() + ".bin";
+                           frameFile.open (fileName.c_str(), ios::out | ios::binary | ios::app);
+                           frameFile.write ((char*)event_->data(), dsize_*4);
+                           frameFile.close();
+                           // move the nRuns to the next value
+                           cntAframe++;
+                        }
+                     }
+                  }
+                  //Frame with cntB was received
+                  else {
+                     cntBevent++;
+                     if (!(cntBevent%EVENTS_PER_FRAME)) {
+                        if (cntBframe < FRAMES_PER_STEP) {
+                           // save the file
+                           ostringstream cnvN;
+                           cnvN << nRuns;
+                           string fileName = "/u1/mkwiatko/CPIX_" + string(timeString) + "_cntB_nRuns_" + cnvN.str() + ".bin";
+                           frameFile.open (fileName.c_str(), ios::out | ios::binary | ios::app);
+                           frameFile.write ((char*)event_->data(), dsize_*4);
+                           frameFile.close();
+                           // move the threshold to the next value
+                           cntBframe++;
+                        }
+                     }
+                  }
+                  
+                  if (cntAframe >= FRAMES_PER_STEP-1 && cntBframe >= FRAMES_PER_STEP-1) {
+                     epix.device("digFpga",0)->writeSingle("AutoRunEnable", 0);
+                     cntAframe = 0;
+                     cntBframe = 0;
+                     nRuns += NRUNS_STEP;
+                     fSet = (int)round((1.0 / (TIME_WINDOW_FREQ * nRuns)) / 0.00000001);
+                     epix.device("digFpga",0)->device("DigFpgaCpix",0)->writeSingle("cpixNRuns", nRuns);
+                     epix.device("digFpga",0)->writeSingle("AutoRunPeriod", fSet);
+                     printf("Nruns set to %d\n", nRuns);
+                     printf("Auto run period set to %d\n", fSet);
+                     epix.device("digFpga",0)->writeSingle("AutoRunEnable", 1);
+                  }
+                  
+                  
                }
                
-               
+               if (nRuns > NRUNS_STOP) {
+                  printf("Testing finished!\n");
+                  break;
+               }
+            }
+            else if (dsize_ >= HEADER_SIZE) {
+               printf("Wrong size packet %d 32-bit words. Acq %d, seq %d, ASIC %d, cnt%c\n", dsize_, event_->data()[1], event_->data()[2], (event_->data()[HEADER_SIZE]&0xf), (event_->data()[HEADER_SIZE]&0xf0)!=0?'A':'B');
+            }
+            else {
+               printf("Wrong size packet %d 32-bit words.\n", dsize_);
             }
             
-            if (nRuns > NRUNS_STOP) {
-               printf("Testing finished!\n");
-               break;
-            }
-
             
             timespec tv;
             tv.tv_sec = 0;

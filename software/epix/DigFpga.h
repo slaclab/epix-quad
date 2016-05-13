@@ -35,7 +35,7 @@ class DigFpga : public Device {
        * \param index       Device index
        * \param parent      Parent Device
       */
-      DigFpga ( uint destination, uint index, Device *parent, EpixType epixType );
+      DigFpga ( uint destination, uint baseAddress, uint index, Device *parent, uint addrSize, EpixType epixType );
 
       //! Deconstructor
       ~DigFpga ( );

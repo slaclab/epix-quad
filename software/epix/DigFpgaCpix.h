@@ -1,40 +1,40 @@
 //-----------------------------------------------------------------------------
-// File          : Epix100aAsic.h
+// File          : DigFpgaCpix.h
 // Author        : Ryan Herbst  <rherbst@slac.stanford.edu>
-// Created       : 06/06/2013
-// Project       : EPIX ASIC
+// Created       : 06/07/2013
+// Project       : Digital FPGA
 //-----------------------------------------------------------------------------
 // Description :
-// EPIX ASIC container
+// Digital FPGA container
 //-----------------------------------------------------------------------------
 // Copyright (c) 2013 by SLAC. All rights reserved.
 // Proprietary and confidential to SLAC.
 //-----------------------------------------------------------------------------
 // Modification history :
-// 06/06/2013: created
+// 06/07/2013: created
 //-----------------------------------------------------------------------------
-#ifndef __EPIX100A_ASIC_H__
-#define __EPIX100A_ASIC_H__
+#ifndef __DIG_FPGA_CPIX_H__
+#define __DIG_FPGA_CPIX_H__
 
 #include <Device.h>
+
 using namespace std;
 
-//! Class to contain Kpix ASIC
-class Epix100aAsic : public Device {
-
+//! Class to contain APV25 
+class DigFpgaCpix : public Device {
+   
    public:
 
       //! Constructor
       /*! 
        * \param destination Device destination
-       * \param baseAddress Device base address
        * \param index       Device index
-       * \param parent      Parent device
+       * \param parent      Parent Device
       */
-      Epix100aAsic ( uint destination, uint baseAddress, uint index, Device *parent, uint addrSize );
+      DigFpgaCpix ( uint destination, uint baseAddress, uint index, Device *parent, uint addrSize );
 
       //! Deconstructor
-      ~Epix100aAsic ( );
+      ~DigFpgaCpix ( );
 
       //! Method to process a command
       /*!

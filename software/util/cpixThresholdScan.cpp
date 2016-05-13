@@ -170,120 +170,125 @@ int main (int argc, char **argv) {
             // do something with data:
             dsize_ = event_->size(); // 32 bit values
             
-            if (dsize_>HEADER_SIZE+FOOTER_SIZE+1) 
-               printf("Payload size %d 32-bit words. Packet size %d 32-bit words. Acq %d, seq %d, cnt%c, %d\n", dsize_-(HEADER_SIZE+FOOTER_SIZE+1), dsize_, event_->data()[1], event_->data()[2], (event_->data()[HEADER_SIZE]&0xf0)!=0?'A':'B', (event_->data()[HEADER_SIZE]&0xf0)!=0?cntAevent:cntBevent);
-            else
-               printf("Empty packet size %d 32-bit words. Acq %d, seq %d\n", dsize_, event_->data()[1], event_->data()[2]);
+            if (dsize_ >= 1168) {
+               //print packet size
+               printf("Payload size %d 32-bit words. Packet size %d 32-bit words. Acq %d, seq %d, ASIC %d, cnt%c\n", dsize_-(HEADER_SIZE+FOOTER_SIZE+1), dsize_, event_->data()[1], event_->data()[2], (event_->data()[HEADER_SIZE]&0xf), (event_->data()[HEADER_SIZE]&0xf0)!=0?'A':'B');
             
-            //print a couple of pixels
-            for (int x = HEADER_SIZE+1, i=0; x < event_->size() - FOOTER_SIZE; x++, i++) {
-               if (i < 4) {
-                  cout << "0x" << hex << setw(4) << setfill('0') << (event_->data()[x]&0x0000ffff) << "    ";
-                  cout << "0x" << hex << setw(4) << setfill('0') << ((event_->data()[x]&0xffff0000)>>16) << "    ";
+               //print a couple of pixels
+               for (int x = HEADER_SIZE+1, i=0; x < event_->size() - FOOTER_SIZE; x++, i++) {
+                  if (i < 4) {
+                     cout << "0x" << hex << setw(4) << setfill('0') << (event_->data()[x]&0x0000ffff) << "    ";
+                     cout << "0x" << hex << setw(4) << setfill('0') << ((event_->data()[x]&0xffff0000)>>16) << "    ";
+                  }
                }
-            }
-            
-            //Not empty frame was received
-            if (dsize_>HEADER_SIZE+FOOTER_SIZE+1) {
                
-               cout << endl;
+               //Not empty frame was received
+               if (dsize_>HEADER_SIZE+FOOTER_SIZE+1) {
+                  
+                  cout << endl;
+                  
+                  //Frame with cntA was received
+                  if ((event_->data()[HEADER_SIZE]&0xf0)!=0) {
+                     cntAevent++;
+                     if (!(cntAevent%EVENTS_PER_FRAME)  && compTh1DAC < COMP_TH1_STOP) {
+                        // save the file
+                        ostringstream cnvTh;
+                        ostringstream cnvMTrm;
+                        cnvTh << compTh1DAC;
+                        cnvMTrm << matrixTrm;
+                        string fileName = "/u1/mkwiatko/CPIX_" + string(timeString) + "_cntA_Thr_" + cnvTh.str() + "_MatrixTrm_" + cnvMTrm.str() + ".bin";
+                        frameFile.open (fileName.c_str(), ios::out | ios::binary | ios::app);
+                        frameFile.write ((char*)event_->data(), dsize_*4);
+                        frameFile.close();
+                        // move the threshold to the next value
+                        if (cntAframe >= FRAMES_PER_THRESHOLD-1) {
+                           cntAframe = 0;
+                           compTh1DAC++;
+                        }
+                        else {
+                           cntAframe++;
+                        }
+                        printf("Threshold (A) compTh1DAC changed to %d\n", compTh1DAC);
+                        value = epix.device("digFpga",0)->device("CpixPAsic",0)->readSingle("Config1");
+                        epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("Config1", (value&0xffffffC0)|(compTh1DAC&0x3F));    //test only ASIC 0 (CpixPAsic, 0)
+                     }
+                  }
+                  //Frame with cntB was received
+                  else {
+                     cntBevent++;
+                     if (!(cntBevent%EVENTS_PER_FRAME)  && compTh2DAC < COMP_TH2_STOP) {
+                        // save the file
+                        ostringstream cnvTh;
+                        ostringstream cnvMTrm;
+                        cnvTh << compTh2DAC;
+                        cnvMTrm << matrixTrm;
+                        string fileName = "/u1/mkwiatko/CPIX_" + string(timeString) + "_cntB_Thr_" + cnvTh.str() + "_MatrixTrm_" + cnvMTrm.str() + ".bin";
+                        frameFile.open (fileName.c_str(), ios::out | ios::binary | ios::app);
+                        frameFile.write ((char*)event_->data(), dsize_*4);
+                        frameFile.close();
+                        // move the threshold to the next value
+                        if (cntBframe >= FRAMES_PER_THRESHOLD-1) {
+                           cntBframe = 0;
+                           compTh2DAC++;
+                        }
+                        else {
+                           cntBframe++;
+                        }
+                        printf("Threshold (B) compTh2DAC changed to %d\n", compTh2DAC);
+                        value = epix.device("digFpga",0)->device("CpixPAsic",0)->readSingle("Config12");
+                        epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("Config12",(value&0xffffffC0)|(compTh2DAC&0x3F));    //test only ASIC 0 (CpixPAsic, 0)
+                     }
+                  }
+               }
                
-               //Frame with cntA was received
-               if ((event_->data()[HEADER_SIZE]&0xf0)!=0) {
-                  cntAevent++;
-                  if (!(cntAevent%EVENTS_PER_FRAME)  && compTh1DAC < COMP_TH1_STOP) {
-                     // save the file
-                     ostringstream cnvTh;
-                     ostringstream cnvMTrm;
-                     cnvTh << compTh1DAC;
-                     cnvMTrm << matrixTrm;
-                     string fileName = "/u1/mkwiatko/CPIX_" + string(timeString) + "_cntA_Thr_" + cnvTh.str() + "_MatrixTrm_" + cnvMTrm.str() + ".bin";
-                     frameFile.open (fileName.c_str(), ios::out | ios::binary | ios::app);
-                     frameFile.write ((char*)event_->data(), dsize_*4);
-                     frameFile.close();
-                     // move the threshold to the next value
-                     if (cntAframe >= FRAMES_PER_THRESHOLD-1) {
-                        cntAframe = 0;
-                        compTh1DAC++;
+               
+               if (compTh1DAC >= COMP_TH1_STOP && compTh2DAC >= COMP_TH2_STOP) {
+                  
+                  if (matrixTrm < MATRIX_TRM_STOP) {
+                     matrixTrm++;
+                     printf("Setting matrich config bits to 0x%X\n", MATRIX_TEST_BIT | (matrixTrm<<2));
+                     //stop auto run to config the matrix
+                     epix.device("digFpga",0)->writeSingle("AutoRunEnable", 0);
+                     //set the initial matrix config
+                     epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("PrepareMultiConfig", 0);
+                     epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("WriteMatrixData", MATRIX_TEST_BIT | (matrixTrm<<2) );
+                     epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("CmdPrepForRead", 0);
+                     //set selected column and row if required
+                     if (MATRIX_TEST_ROW > 0 && MATRIX_TEST_ROW <= 47) {
+                        epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("PrepareMultiConfig", 0);
+                        epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("RowCounter", MATRIX_TEST_ROW);
+                        epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("WriteRowData", 0x1 | (matrixTrm<<2));
                      }
-                     else {
-                        cntAframe++;
+                     if (MATRIX_TEST_COL > 0 && MATRIX_TEST_COL <= 47) {
+                        epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("PrepareMultiConfig", 0);
+                        epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("ColCounter", MATRIX_TEST_COL);
+                        epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("WriteColData", 0x1 | (matrixTrm<<2));
                      }
+                     //reset thresholds for the next test run
+                     compTh1DAC = COMP_TH1_START;
+                     compTh2DAC = COMP_TH2_START;
+                     //set initial ASIC thresholds
                      printf("Threshold (A) compTh1DAC changed to %d\n", compTh1DAC);
-                     value = epix.device("digFpga",0)->device("CpixPAsic",0)->readSingle("Config1");
-                     epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("Config1", (value&0xffffffC0)|(compTh1DAC&0x3F));    //test only ASIC 0 (CpixPAsic, 0)
-                  }
-               }
-               //Frame with cntB was received
-               else {
-                  cntBevent++;
-                  if (!(cntBevent%EVENTS_PER_FRAME)  && compTh2DAC < COMP_TH2_STOP) {
-                     // save the file
-                     ostringstream cnvTh;
-                     ostringstream cnvMTrm;
-                     cnvTh << compTh2DAC;
-                     cnvMTrm << matrixTrm;
-                     string fileName = "/u1/mkwiatko/CPIX_" + string(timeString) + "_cntB_Thr_" + cnvTh.str() + "_MatrixTrm_" + cnvMTrm.str() + ".bin";
-                     frameFile.open (fileName.c_str(), ios::out | ios::binary | ios::app);
-                     frameFile.write ((char*)event_->data(), dsize_*4);
-                     frameFile.close();
-                     // move the threshold to the next value
-                     if (cntBframe >= FRAMES_PER_THRESHOLD-1) {
-                        cntBframe = 0;
-                        compTh2DAC++;
-                     }
-                     else {
-                        cntBframe++;
-                     }
                      printf("Threshold (B) compTh2DAC changed to %d\n", compTh2DAC);
+                     value = epix.device("digFpga",0)->device("CpixPAsic",0)->readSingle("Config1");
+                     epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("Config1", (value&0xffffffC0)|(compTh1DAC&0x3F));
                      value = epix.device("digFpga",0)->device("CpixPAsic",0)->readSingle("Config12");
-                     epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("Config12",(value&0xffffffC0)|(compTh2DAC&0x3F));    //test only ASIC 0 (CpixPAsic, 0)
+                     epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("Config12",(value&0xffffffC0)|(compTh2DAC&0x3F));
+                     //start auto run when done
+                     epix.device("digFpga",0)->writeSingle("AutoRunEnable", 1);
+                  }
+                  else {
+                     printf("Testing finished!\n");
+                     break;
                   }
                }
             }
-            
-            
-            if (compTh1DAC >= COMP_TH1_STOP && compTh2DAC >= COMP_TH2_STOP) {
-               
-               if (matrixTrm < MATRIX_TRM_STOP) {
-                  matrixTrm++;
-                  printf("Setting matrich config bits to 0x%X\n", MATRIX_TEST_BIT | (matrixTrm<<2));
-                  //stop auto run to config the matrix
-                  epix.device("digFpga",0)->writeSingle("AutoRunEnable", 0);
-                  //set the initial matrix config
-                  epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("PrepareMultiConfig", 0);
-                  epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("WriteMatrixData", MATRIX_TEST_BIT | (matrixTrm<<2) );
-                  epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("CmdPrepForRead", 0);
-                  //set selected column and row if required
-                  if (MATRIX_TEST_ROW > 0 && MATRIX_TEST_ROW <= 47) {
-                     epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("PrepareMultiConfig", 0);
-                     epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("RowCounter", MATRIX_TEST_ROW);
-                     epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("WriteRowData", 0x1 | (matrixTrm<<2));
-                  }
-                  if (MATRIX_TEST_COL > 0 && MATRIX_TEST_COL <= 47) {
-                     epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("PrepareMultiConfig", 0);
-                     epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("ColCounter", MATRIX_TEST_COL);
-                     epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("WriteColData", 0x1 | (matrixTrm<<2));
-                  }
-                  //reset thresholds for the next test run
-                  compTh1DAC = COMP_TH1_START;
-                  compTh2DAC = COMP_TH2_START;
-                  //set initial ASIC thresholds
-                  printf("Threshold (A) compTh1DAC changed to %d\n", compTh1DAC);
-                  printf("Threshold (B) compTh2DAC changed to %d\n", compTh2DAC);
-                  value = epix.device("digFpga",0)->device("CpixPAsic",0)->readSingle("Config1");
-                  epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("Config1", (value&0xffffffC0)|(compTh1DAC&0x3F));
-                  value = epix.device("digFpga",0)->device("CpixPAsic",0)->readSingle("Config12");
-                  epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("Config12",(value&0xffffffC0)|(compTh2DAC&0x3F));
-                  //start auto run when done
-                  epix.device("digFpga",0)->writeSingle("AutoRunEnable", 1);
-               }
-               else {
-                  printf("Testing finished!\n");
-                  break;
-               }
+            else if (dsize_ >= HEADER_SIZE) {
+               printf("Wrong size packet %d 32-bit words. Acq %d, seq %d, ASIC %d, cnt%c\n", dsize_, event_->data()[1], event_->data()[2], (event_->data()[HEADER_SIZE]&0xf), (event_->data()[HEADER_SIZE]&0xf0)!=0?'A':'B');
             }
-
+            else {
+               printf("Wrong size packet %d 32-bit words.\n", dsize_);
+            }
             
             timespec tv;
             tv.tv_sec = 0;
