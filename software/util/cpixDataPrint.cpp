@@ -21,7 +21,7 @@
 #include <iostream>
 #include <signal.h>
 #include <pthread.h>
-#include <Data.h>cpixcpixPixelThreshold
+#include <Data.h>
 #include <DataRead.h>
 
 using namespace std;
@@ -30,7 +30,7 @@ using namespace std;
 #define FOOTER_SIZE 1
 #define PRINT_PIXELS 1
 #define PRINT_ALL_PIXELS 1
-#define PIXEL_THRESHOLD 50
+#define PIXEL_THRESHOLD 10000
 
 // Run flag for sig catch
 bool stop;
@@ -62,6 +62,8 @@ int main (int argc, char **argv) {
       DataRead  *dread_;
       Data      *event_;
       uint       dsize_;
+      uint       seqNum;
+      bool       first;
       ofstream frameFile;
       //unsigned long int bytes = 0;
 
@@ -72,6 +74,8 @@ int main (int argc, char **argv) {
       
       printf("Waiting for data\n");
       
+      first = true;
+      
       while (!stop) {
          
          if ( dread_->next(event_)) {
@@ -81,6 +85,27 @@ int main (int argc, char **argv) {
             dsize_ = event_->size(); // 32 bit values
             
             if (dsize_==1168) {
+               
+               
+               //drop frames following failed acquisitions
+               //it is related to (possibly ASIC bug) the counter not being reset properly after a SACI command
+               if(first) {
+                  seqNum = event_->data()[2];
+                  if ((event_->data()[HEADER_SIZE]&0xf0)==0) // cntB
+                     first = false; //make sure to start with good cntA
+                  continue;
+               }
+               if (event_->data()[2] != seqNum+1) {
+                  printf("Dropping frame seqNo %d that arrived after frame seqNo %d\n", event_->data()[2], seqNum);
+                  if ((event_->data()[HEADER_SIZE]&0xf0)!=0) // cntA
+                     first = true; // drop also cntB
+                  seqNum = event_->data()[2];
+                  continue;
+               }
+               else {
+                  seqNum = event_->data()[2];
+               }
+               
                
                //print packet size
                printf("Payload size %d 32-bit words. Packet size %d 32-bit words. Acq %d, seq %d, ASIC %d, cnt%c\n", dsize_-(HEADER_SIZE+FOOTER_SIZE+1), dsize_, event_->data()[1], event_->data()[2], (event_->data()[HEADER_SIZE]&0xf), (event_->data()[HEADER_SIZE]&0xf0)!=0?'A':'B');
@@ -113,10 +138,10 @@ int main (int argc, char **argv) {
                }
             }
             else if (dsize_ >= HEADER_SIZE) {
-               printf("Wrong size packet %d 32-bit words. Acq %d, seq %d, ASIC %d, cnt%c\n", dsize_, event_->data()[1], event_->data()[2], (event_->data()[HEADER_SIZE]&0xf), (event_->data()[HEADER_SIZE]&0xf0)!=0?'A':'B');
+               //printf("Wrong size packet %d 32-bit words. Acq %d, seq %d, ASIC %d, cnt%c\n", dsize_, event_->data()[1], event_->data()[2], (event_->data()[HEADER_SIZE]&0xf), (event_->data()[HEADER_SIZE]&0xf0)!=0?'A':'B');
             }
             else {
-               printf("Wrong size packet %d 32-bit words.\n", dsize_);
+               //printf("Wrong size packet %d 32-bit words.\n", dsize_);
             }
             
             

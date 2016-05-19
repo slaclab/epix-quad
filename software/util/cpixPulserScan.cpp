@@ -96,6 +96,8 @@ int main (int argc, char **argv) {
       DataRead  *dread_;
       Data      *event_;
       uint       dsize_;
+      uint       seqNum;
+      bool       first;
       //unsigned long int bytes = 0;
 
       dread_ = new DataRead;
@@ -108,23 +110,23 @@ int main (int argc, char **argv) {
       //stop auto run to config the matrix
       epix.device("digFpga",0)->writeSingle("AutoRunEnable", 0);
       
-      //set the initial matrix config
-      printf("Setting matrich config bits to 0x%X\n", MATRIX_TEST_BIT | (7<<2));
-      epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("PrepareMultiConfig", 0);
-      epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("WriteMatrixData", MATRIX_TEST_BIT | (7<<2) );
-      epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("CmdPrepForRead", 0);
-      
-      //set selected column and row if requested
-      if (MATRIX_TEST_ROW > 0 && MATRIX_TEST_ROW <= 47) {
-         epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("PrepareMultiConfig", 0);
-         epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("RowCounter", MATRIX_TEST_ROW);
-         epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("WriteRowData", 0x1 | (7<<2));
-      }
-      if (MATRIX_TEST_COL > 0 && MATRIX_TEST_COL <= 47) {
-         epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("PrepareMultiConfig", 0);
-         epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("ColCounter", MATRIX_TEST_COL);
-         epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("WriteColData", 0x1 | (7<<2));
-      }
+      ////set the initial matrix config
+      //printf("Setting matrich config bits to 0x%X\n", MATRIX_TEST_BIT | (7<<2));
+      //epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("PrepareMultiConfig", 0);
+      //epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("WriteMatrixData", MATRIX_TEST_BIT | (7<<2) );
+      //epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("CmdPrepForRead", 0);
+      //
+      ////set selected column and row if requested
+      //if (MATRIX_TEST_ROW > 0 && MATRIX_TEST_ROW <= 47) {
+      //   epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("PrepareMultiConfig", 0);
+      //   epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("RowCounter", MATRIX_TEST_ROW);
+      //   epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("WriteRowData", 0x1 | (7<<2));
+      //}
+      //if (MATRIX_TEST_COL > 0 && MATRIX_TEST_COL <= 47) {
+      //   epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("PrepareMultiConfig", 0);
+      //   epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("ColCounter", MATRIX_TEST_COL);
+      //   epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("WriteColData", 0x1 | (7<<2));
+      //}
       
       //set pulser here
       printf("Pulser changed to %d\n", pulser);
@@ -154,6 +156,8 @@ int main (int argc, char **argv) {
       cntAframe = 0;
       cntBframe = 0;
       
+      first = true;
+      
       while (!stop) {
          
          if ( dread_->next(event_) ) {
@@ -161,6 +165,28 @@ int main (int argc, char **argv) {
             dsize_ = event_->size(); // 32 bit values
             
             if (dsize_ >= 1168) {
+               
+               
+               //drop frames following failed acquisitions
+               //it is related to (possibly ASIC bug) the counter not being reset properly after a SACI command
+               if(first) {
+                  seqNum = event_->data()[2];
+                  if ((event_->data()[HEADER_SIZE]&0xf0)==0) // cntB
+                     first = false; //make sure to start with good cntA
+                  continue;
+               }
+               if (event_->data()[2] != seqNum+1) {
+                  printf("Dropping frame seqNo %d that arrived after frame seqNo %d\n", event_->data()[2], seqNum);
+                  if ((event_->data()[HEADER_SIZE]&0xf0)!=0) // cntA
+                     first = true; // drop also cntB
+                  seqNum = event_->data()[2];
+                  continue;
+               }
+               else {
+                  seqNum = event_->data()[2];
+               }
+               
+               
                //print packet size
                printf("Payload size %d 32-bit words. Packet size %d 32-bit words. Acq %d, seq %d, ASIC %d, cnt%c\n", dsize_-(HEADER_SIZE+FOOTER_SIZE+1), dsize_, event_->data()[1], event_->data()[2], (event_->data()[HEADER_SIZE]&0xf), (event_->data()[HEADER_SIZE]&0xf0)!=0?'A':'B');
                //print a couple of pixels
