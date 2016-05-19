@@ -239,18 +239,24 @@ architecture top_level of CpixCore is
    signal adcCnt             : unsigned(31 downto 0) := (others => '0');
    signal iAdcPdwn           : slv(2 downto 0);
    
-   signal dataOut    : Slv8Array(1 downto 0);
-   signal dataKOut   : slv(1 downto 0);
-   signal codeErr    : slv(1 downto 0);
-   signal dispErr    : slv(1 downto 0);
-   signal inSync     : slv(1 downto 0);
+   signal dataOut    : Slv8Array(NUMBER_OF_ASICS-1 downto 0);
+   signal dataKOut   : slv(NUMBER_OF_ASICS-1 downto 0);
+   signal codeErr    : slv(NUMBER_OF_ASICS-1 downto 0);
+   signal dispErr    : slv(NUMBER_OF_ASICS-1 downto 0);
+   signal inSync     : slv(NUMBER_OF_ASICS-1 downto 0);
    
    attribute keep of coreClk : signal is "true";
+   attribute keep of byteClk : signal is "true";
    attribute keep of acqStart : signal is "true";
    attribute keep of mAxiWriteMasters : signal is "true";
    attribute keep of sAxiWriteMaster : signal is "true";
    attribute keep of adcData : signal is "true";
    attribute keep of adcValid : signal is "true";
+   attribute keep of saciPrepReadoutReq : signal is "true";
+   attribute keep of saciPrepReadoutAck : signal is "true";
+   attribute keep of cntAReadout : signal is "true";
+   attribute keep of frameErr : signal is "true";
+   attribute keep of timeoutReq : signal is "true";
    
    
 begin
@@ -442,7 +448,7 @@ begin
       S  => '0'
    );
    
-   G_ASIC : for i in 0 to 1 generate 
+   G_ASIC : for i in 0 to NUMBER_OF_ASICS-1 generate 
    
       -------------------------------------------------------
       -- ASIC deserializers

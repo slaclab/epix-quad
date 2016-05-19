@@ -13,7 +13,11 @@
 -------------------------------------------------------------------------------
 -- Copyright (c) 2015 SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
---
+-- Change log:
+-- [MK] 05/18/2016 - Added an option to force reading a frame if only a SOF was
+--                   detected. When activated the pixels may be erroneous but
+--                   less frames will be dropped. That mode is useful and should
+--                   be used only with the prototype ASICs.
 
 
 library ieee;
@@ -50,6 +54,7 @@ entity Framer is
       dispErr        : in  sl;
       
       -- control/status signals (byteClk)
+      forceFrameRead : in  sl;
       cntAcquisition : in  slv(31 downto 0);
       cntSequence    : in  slv(31 downto 0);
       cntAReadout    : in  sl;
@@ -131,6 +136,7 @@ architecture rtl of Framer is
    
    attribute keep : string;
    attribute keep of state : signal is "true";
+   attribute keep of frameErrCntEn : signal is "true";
    
 begin
    
@@ -291,7 +297,7 @@ begin
    cntToutError   <= std_logic_vector(timeoutErrCnt);
    
 
-   fsm_cmb_p: process (state, frameReqSync, timeoutReqSync, sAxisSlave, headerData, inSyncD3, codeErrD3, dispErrD3, dataKOutD3, dataOutD3, byteCnt) 
+   fsm_cmb_p: process (state, frameReqSync, timeoutReqSync, sAxisSlave, headerData, inSyncD3, codeErrD3, dispErrD3, dataKOutD3, dataOutD3, byteCnt, lutData, forceFrameRead) 
    variable sAxisMasterVar : AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
    begin
       next_state <= state;
@@ -338,7 +344,9 @@ begin
             end if;
       
          when SOF_S =>
-            if inSyncD3 = '1' and dataKOutD3 = '0' and dataOutD3 = D102_C then
+            if forceFrameRead = '1' then
+               next_state <= DATA_IN_S;
+            elsif inSyncD3 = '1' and dataKOutD3 = '0' and dataOutD3 = D102_C then
                next_state <= DATA_IN_S;
             else
                frameErrCntEn <= '1';
@@ -375,13 +383,21 @@ begin
             end if;
             
             -- K byte that is not EOF
-            if dataKOutD3 = '1' and dataOutD3 /= EOF_C then
+            if dataKOutD3 = '1' and dataOutD3 /= EOF_C and forceFrameRead = '0' then
                frameErrCntEn <= '1';
                next_state <= ERROR_S;
             end if;
             
+            -- if forced read skip checking the EOF
+            if byteCnt = FRAME_BYTES_G and forceFrameRead = '1' then 
+               sAxisMasterVar.tValid := '0';
+               frameCntEn <= '1';
+               byteCntRst <= '1';
+               next_state <= DONE_S;
+            end if;
+            
             -- EOF
-            if dataKOutD3 = '1' and dataOutD3 = EOF_C then
+            if dataKOutD3 = '1' and dataOutD3 = EOF_C and forceFrameRead = '0' then
                sAxisMasterVar.tValid := '0';
                byteCntEn <= '0';
                next_state <= EOF_S;

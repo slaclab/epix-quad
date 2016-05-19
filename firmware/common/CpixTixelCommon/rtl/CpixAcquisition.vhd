@@ -139,6 +139,7 @@ architecture rtl of CpixAcquisition is
    
    signal acqCnt     : unsigned(31 downto 0);
    signal seqCnt     : unsigned(31 downto 0);
+   signal acqCntEn   : std_logic;
    signal seqCntEn   : std_logic;
    
 begin
@@ -225,7 +226,7 @@ begin
       if rising_edge(sysClk) then
          if epixConfig.acqCountReset = '1' or sysClkRst = '1' then
             acqCnt <= (others=>'0')          after TPD_G;
-         elsif acqStartSys = '1' then
+         elsif acqCntEn = '1' then
             acqCnt <= acqCnt + 1             after TPD_G;
          end if;
       end if;
@@ -335,6 +336,7 @@ begin
       a2bRst <= '0';
       cntAReadout <= '0';
       seqCntEn <= '0';
+      acqCntEn <= '0';
       frameReq <= '0';
       timeoutReq <= '0';
       
@@ -379,6 +381,7 @@ begin
             iAsicR0 <= '1';
             iAsicAcq <= '1';
             if delayCnt >= to_integer(acqWidth) - 1 then
+               acqCntEn <= '1';        -- acq counts ASIC's ACQ pulses
                next_state <= ACQ_LOW_S;
             end if;
          
@@ -394,15 +397,13 @@ begin
             end if;
             -- wait for the headers to be transmitted before requesting the ASIC to start the readout
             if unsigned(headerAckSync) = to_unsigned(2**NUMBER_OF_ASICS-1, NUMBER_OF_ASICS) then
-               if runsCnt = 1 then
-                  seqCntEn <= '1';
-               end if;
                next_state <= SRO_HIGH_S;
             end if;
             
          when SRO_HIGH_S =>
             asicSRO <= '1';
             if delayCnt >= to_integer(sROWidth) - 1 then
+               seqCntEn <= '1';        -- sequence counter counts all SRO pulses, even when EOFE will be asserted
                delayCntRst <= '1';
                next_state <= WAIT_READOUT_S;
             end if;
@@ -436,7 +437,6 @@ begin
             -- wait for all stuck framers to timeout
             if unsigned(frameAckSync) = to_unsigned(2**NUMBER_OF_ASICS-1, NUMBER_OF_ASICS) then
                runsCntRst <= '1';
-               seqCntEn <= '1';
                -- sync the ASICs via sync pin or SACI command
                if syncMode = "00" then
                   delayCntRst <= '1';
@@ -454,11 +454,11 @@ begin
             end if;
          
          when SACI_SYNC_S =>
-            saciReadoutReq <= '1';
-            if saciReadoutAck = '1' then
-               saciReadoutReq <= '0';
+            --saciReadoutReq <= '1';
+            --if saciReadoutAck = '1' then
+               --saciReadoutReq <= '0';
                next_state <= IDLE_S;
-            end if;
+            --end if;
             
          when others =>
             next_state <= IDLE_S;

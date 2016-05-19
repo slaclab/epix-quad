@@ -85,6 +85,7 @@ architecture beh of TB_CpixCore is
    
    constant NUMBER_OF_ASICS   : natural := 2;
    
+   signal forceFrameRead  : std_logic;
    signal cntAcquisition  : std_logic_vector(31 downto 0);
    signal cntSequence     : std_logic_vector(31 downto 0);
    signal cntAReadout     : std_logic;
@@ -474,6 +475,7 @@ begin
          dispErr        => dispErr(i),
          
          -- control/status signals (byteClk)
+         forceFrameRead => forceFrameRead,
          cntAcquisition => cntAcquisition,
          cntSequence    => cntSequence,
          cntAReadout    => cntAReadout,
@@ -533,6 +535,19 @@ begin
    
    -- only for the simulation
    pgpAxisSlave.tReady <= '1';
+   
+   process
+   begin
+   
+      forceFrameRead <= '1';
+   
+      wait for 461568 ns;
+      
+      forceFrameRead <= '0';
+      
+      wait;
+      
+   end process;
    
 
 end beh;
