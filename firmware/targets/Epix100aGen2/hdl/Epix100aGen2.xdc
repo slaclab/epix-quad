@@ -4,9 +4,18 @@
 
 create_clock -period  6.400 -name gtRefClk0P   -waveform {0.000  3.200} [get_ports gtRefClk0P]
 create_clock -period  6.400 -name pgpClk       -waveform {0.000  3.200} [get_pins {U_EpixCore/U_PgpFrontEnd/U_Pgp2bVarLatWrapper/Pgp2bGtp7VarLat_Inst/MuliLane_Inst/GTP7_CORE_GEN[0].Gtp7Core_Inst/gtpe2_i/TXOUTCLK}]
+create_clock -period  10.00 -name coreClk      -waveform {0.000  5.000} [get_pins {U_EpixCore/U_CoreClockGen/ClkOutGen[0].U_Bufg/O}]
 create_clock -period 20.000 -name adc0DoClkP   -waveform {0.000 10.000} [get_ports {adcDoClkP[0]}]
 create_clock -period 20.000 -name adc1DoClkP   -waveform {0.000 10.000} [get_ports {adcDoClkP[1]}]
 create_clock -period 20.000 -name adcMonDoClkP -waveform {0.000 10.000} [get_ports {adcDoClkP[2]}]
+
+set_clock_groups -asynchronous \
+   -group [get_clocks -include_generated_clocks pgpClk] \
+   -group [get_clocks -include_generated_clocks coreClk] \
+   -group [get_clocks -include_generated_clocks gtRefClk0P] \
+   -group [get_clocks -include_generated_clocks adc0DoClkP] \
+   -group [get_clocks -include_generated_clocks adc1DoClkP] \
+   -group [get_clocks -include_generated_clocks adcMonDoClkP]
 
 set_max_delay 20 -datapath_only -from [get_clocks {CLKOUT0_1}] -to [get_clocks {adcBitClkR}]
 set_max_delay 20 -datapath_only -from [get_clocks {adcBitClkR}] -to [get_clocks {CLKOUT0_1}]
