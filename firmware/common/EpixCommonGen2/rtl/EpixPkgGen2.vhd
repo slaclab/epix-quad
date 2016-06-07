@@ -69,6 +69,7 @@ package EpixPkgGen2 is
       tpsEdge            : sl;
       dataDelay          : DataDelayArray;
       requestStartupCal  : sl;
+      pgpTrigEn          : sl;
    end record;
    constant EPIX_CONFIG_INIT_C : EpixConfigType := (
       runTriggerEnable   => '0',
@@ -108,7 +109,8 @@ package EpixPkgGen2 is
       tpsEdge            => '0',
       frameDelay         => (others => (others => '0')),
       dataDelay          => (others => (others => (others => '0'))),
-      requestStartupCal  => '1'
+      requestStartupCal  => '1',
+      pgpTrigEn          => '0'
    );
    
    type EpixStatusType is record

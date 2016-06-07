@@ -107,7 +107,7 @@ set_property PACKAGE_PIN AB13 [get_ports {asicSaciSel[1]}]
 set_property PACKAGE_PIN  AB8 [get_ports {asicSaciRsp}]
 set_property IOSTANDARD LVCMOS25 [get_ports {asicSaci*}]
 
-set_property PACKAGE_PIN AB6[get_ports {asicEnA}]
+set_property PACKAGE_PIN AB6 [get_ports {asicEnA}]
 set_property PACKAGE_PIN AA8 [get_ports {asicEnB}]
 set_property PACKAGE_PIN B1 [get_ports {asicVid}]
 set_property IOSTANDARD LVCMOS25 [get_ports {asicEnA}]

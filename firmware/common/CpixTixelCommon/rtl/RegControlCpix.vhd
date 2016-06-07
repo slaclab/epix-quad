@@ -125,6 +125,7 @@ begin
       axiSlaveRegisterW(x"00000A" & "00",  0, v.cpixRegOut.cpixAsicPins );
       
       axiSlaveRegisterW(x"000100" & "00",  0, v.cpixRegOut.cpixErrorRst );
+      axiSlaveRegisterW(x"000101" & "00",  0, v.cpixRegOut.forceFrameRead );
       
       axiSlaveRegisterR(x"000200" & "00",  0, cpixStatus.cpixAsicInSync(0));
       axiSlaveRegisterR(x"000201" & "00",  0, cpixStatus.cpixFrameErr(0));

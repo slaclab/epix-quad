@@ -44,6 +44,7 @@ package CpixPkg is
       cpixAsicPins         : slv(31 downto 0);
       cpixErrorRst         : sl;
       syncMode             : slv(NUMBER_OF_ASICS-1 downto 0);
+      forceFrameRead       : sl;
       doutResync           : slv(NUMBER_OF_ASICS-1 downto 0);
       doutDelay            : Slv5Array(NUMBER_OF_ASICS-1 downto 0);
    end record;
@@ -60,6 +61,7 @@ package CpixPkg is
       cpixAsicPins         => (others => '0'),
       cpixErrorRst         => '0',
       syncMode             => (others => '0'),
+      forceFrameRead       => '0',
       doutResync           => (others => '0'),
       doutDelay            => (others => (others => '0'))
    );

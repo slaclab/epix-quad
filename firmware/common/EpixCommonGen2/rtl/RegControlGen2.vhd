@@ -303,6 +303,7 @@ begin
       axiSlaveRegisterW(x"00003A" & "00",  0, v.epixRegOut.asicPPmatToReadout);
       axiSlaveRegisterR(x"00003B" & "00",  0, ite(idValids(2) = '1',idValues(2)(31 downto  0), x"00000000")); --Carrier card ID low
       axiSlaveRegisterR(x"00003C" & "00",  0, ite(idValids(2) = '1',idValues(2)(63 downto 32), x"00000000")); --Carrier card ID high
+      axiSlaveRegisterW(x"00003D" & "00",  0, v.epixRegOut.pgpTrigEn);
       axiSlaveRegisterW(x"000040" & "00",  0, v.epixRegOut.tpsDelay);
       axiSlaveRegisterW(x"000040" & "00", 16, v.epixRegOut.tpsEdge);
       axiSlaveRegisterW(x"000050" & "00",  0, v.scopeRegOut.arm);
@@ -693,7 +694,12 @@ begin
       epixConfig     <= r.epixRegOut;
       scopeConfig    <= r.scopeRegOut;
       saciReadoutAck <= r.saciReadoutAck;
-      adcPdwn <= r.epixRegOut.adcPdwn;
+      
+      -- ADC disable feature causes the picoblaze program to fail the ADC auto-alignment.
+      -- There is the ADC power cycle procedure in the program that was newer used before as the 
+      -- assignment below was always missing
+      
+      --adcPdwn <= r.epixRegOut.adcPdwn;
       
    end process comb;
    
@@ -772,9 +778,6 @@ begin
    
    -- Actual SACI Master
    U_Saci : entity work.SaciMasterSync 
-   generic map (
-      SACI_HALF_CLK_TICKS => 5
-   )
    port map (
        clk           => axiClk,
        rst           => saciRst,
@@ -782,6 +785,7 @@ begin
        saciSelL      => iSaciSelL,
        saciCmd       => saciCmd,
        saciRsp       => iSaciRsp,
+       saciHalfClk   => x"0A",      -- saciClk fixed @ ~4.5MHz
        saciMasterIn  => r.saciSelIn,
        saciMasterOut => iSaciSelOut
    );

@@ -2,19 +2,22 @@
 ## Timing Constraints                ##
 #######################################
 
-create_clock -period  6.400 -name gtRefClk0P   -waveform {0.000  3.200} [get_ports gtRefClk0P]
-create_clock -period  6.400 -name pgpClk       -waveform {0.000  3.200} [get_pins {U_EpixCore/U_PgpFrontEnd/U_Pgp2bVarLatWrapper/Pgp2bGtp7VarLat_Inst/MuliLane_Inst/GTP7_CORE_GEN[0].Gtp7Core_Inst/gtpe2_i/TXOUTCLK}]
-create_clock -period 20.000 -name adc0DoClkP   -waveform {0.000 10.000} [get_ports {adcDoClkP[0]}]
-create_clock -period 20.000 -name adc1DoClkP   -waveform {0.000 10.000} [get_ports {adcDoClkP[1]}]
-create_clock -period 20.000 -name adcMonDoClkP -waveform {0.000 10.000} [get_ports {adcDoClkP[2]}]
+create_clock -period  6.400 -name pgpClk        -waveform {0.000  3.200} [get_pins {U_TixelCore/U_PgpFrontEnd/U_Pgp2bVarLatWrapper/U_BUFG_PGP/O}]
+create_clock -period  2.50  -name iDelayCtrlClk -waveform {0.000  1.250} [get_pins {U_TixelCore/U_CoreClockGen/ClkOutGen[0].U_Bufg/O}]
+create_clock -period  10.00 -name coreClk       -waveform {0.000  5.000} [get_pins {U_TixelCore/U_CoreClockGen/ClkOutGen[1].U_Bufg/O}]
+create_clock -period  4.00  -name bitClk        -waveform {0.000  2.000} [get_pins {U_TixelCore/U_CoreClockGen/ClkOutGen[2].U_Bufg/O}]
+create_clock -period  40.00 -name asicRdClk     -waveform {0.000  20.00} [get_pins {U_TixelCore/U_CoreClockGen/ClkOutGen[3].U_Bufg/O}]
+create_clock -period  50.00 -name asicRefClk    -waveform {0.000  25.00} [get_pins {U_TixelCore/U_CoreClockGen/ClkOutGen[4].U_Bufg/O}]
+create_clock -period  20.00 -name byteClk       -waveform {0.000  10.00} [get_pins {U_TixelCore/U_BUFR/O}]
 
-set_max_delay 20 -datapath_only -from [get_clocks {CLKOUT0_1}] -to [get_clocks {adcBitClkR}]
-set_max_delay 20 -datapath_only -from [get_clocks {adcBitClkR}] -to [get_clocks {CLKOUT0_1}]
-set_max_delay 20 -datapath_only -from [get_clocks {refClkDiv2}] -to [get_clocks {CLKOUT0_1}]
-set_max_delay 20 -datapath_only -from [get_clocks {refClkDiv2}] -to [get_clocks {pgpClk}]
-set_max_delay 20 -datapath_only -from [get_clocks {pgpClk}] -to [get_clocks {refClkDiv2}]
-set_max_delay 20 -datapath_only -from [get_clocks {pgpClk}] -to [get_clocks {CLKOUT0_1}]
-set_max_delay 20 -datapath_only -from [get_clocks {CLKOUT0_1}] -to [get_clocks {pgpClk}]
+set_clock_groups -asynchronous \
+    -group [get_clocks -include_generated_clocks pgpClk] \
+    -group [get_clocks -include_generated_clocks coreClk] \
+    -group [get_clocks -include_generated_clocks iDelayCtrlClk] \
+    -group [get_clocks -include_generated_clocks bitClk] \
+    -group [get_clocks -include_generated_clocks asicRdClk] \
+    -group [get_clocks -include_generated_clocks asicRefClk] \
+    -group [get_clocks -include_generated_clocks byteClk] 
 
 #######################################
 ## Pin locations, IO standards, etc. ##

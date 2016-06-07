@@ -501,6 +501,7 @@ begin
          dispErr        => dispErr(i),
          
          -- control/status signals (byteClk)
+         forceFrameRead => cpixConfig.forceFrameRead,
          cntAcquisition => cntAcquisition,
          cntSequence    => cntSequence,
          cntAReadout    => cntAReadout,

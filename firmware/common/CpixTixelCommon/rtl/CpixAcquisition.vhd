@@ -107,7 +107,6 @@ architecture rtl of CpixAcquisition is
    signal runsCntRst    : std_logic;
    signal delayCnt      : natural;
    signal delayCntRst   : std_logic;
-   constant sroDly      : natural := 1000;
    signal acqStartSys   : std_logic;
    signal startAbDly    : std_logic;
    
@@ -319,7 +318,7 @@ begin
 
    fsm_cmb_p: process (
       state, acqStartSys, frameAckSync, headerAckSync, frameErrSync, delayCnt, runsCnt,
-      runToR0, r0ToAcq, acqWidth, syncMode,
+      runToR0, r0ToAcq, acqWidth, syncMode, epixConfig,
       syncWidth, sROWidth, nRuns, saciReadoutAck
    ) 
    begin
@@ -454,11 +453,11 @@ begin
             end if;
          
          when SACI_SYNC_S =>
-            --saciReadoutReq <= '1';
-            --if saciReadoutAck = '1' then
-               --saciReadoutReq <= '0';
+            saciReadoutReq <= '1';
+            if saciReadoutAck = '1' then
+               saciReadoutReq <= '0';
                next_state <= IDLE_S;
-            --end if;
+            end if;
             
          when others =>
             next_state <= IDLE_S;

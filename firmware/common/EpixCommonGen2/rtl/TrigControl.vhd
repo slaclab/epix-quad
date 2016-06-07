@@ -82,6 +82,7 @@ architecture TrigControl of TrigControl is
    signal hwDaqTrig     : std_logic;
    signal autoRunEn     : std_logic;
    signal autoDaqEn     : std_logic;
+   signal pgpTrigEn     : std_logic;
 
    -- Op code signals
    signal pgpOpCode  : slv(7 downto 0) := (others => '0');
@@ -159,8 +160,10 @@ begin
    --------------------------------------------------
    -- Combine with TTL triggers and look for edges --
    --------------------------------------------------
-   combinedRunTrig <= coreSidebandRun or runTrigger;
-   combinedDaqTrig <= coreSidebandDaq or daqTrigger;
+   combinedRunTrig <= (coreSidebandRun and pgpTrigEn) or (runTrigger and not pgpTrigEn);
+   combinedDaqTrig <= (coreSidebandDaq and pgpTrigEn) or (daqTrigger and not pgpTrigEn);
+   
+   pgpTrigEn <= epixConfig.pgpTrigEn;
    
    --------------------------------
    -- Run Input

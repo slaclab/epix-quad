@@ -19,7 +19,7 @@ USE ieee.std_logic_1164.ALL;
 
 package Version is
 
-constant FPGA_VERSION_C    : std_logic_vector(31 downto 0) := x"EA020003"; -- MAKE_VERSION
+constant FPGA_VERSION_C    : std_logic_vector(31 downto 0) := x"EA020004"; -- MAKE_VERSION
 
 constant BUILD_STAMP_C     : string := "EpixDigGen2: Built Mon Mar 16 17:26:54 PDT 2015 by mkwiatko";
 
@@ -35,7 +35,9 @@ end Version;
 -- 09/30/2015 (0xEA020001): First release of the EPIX100a firmware for the analog card gen2
 -- 02/23/2016 (0xEA020002): Fixed SACI reliability issues, ADC wrong default encoding, carier ID readout. 
 --                          Removed unused ASIC sync modes fixed random packet without data.
--- 02/23/2016 (0xEA020003): New working copy version number (change date when release)
+-- 06/03/2016 (0xEA020003): Reduced SACI clock to 4.5MHz to avoid matrix setup issues
+-- 06/03/2016 (0xEA020004): New working copy version number (change date when released)
+--                          Added optical/TTL trigger switch into the register space
 --               
 -------------------------------------------------------------------------------
 

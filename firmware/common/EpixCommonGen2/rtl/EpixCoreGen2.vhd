@@ -229,6 +229,7 @@ architecture top_level of EpixCoreGen2 is
    attribute keep of coreClk : signal is true;
    attribute keep of acqBusy : signal is true;
    attribute keep of acqStart : signal is true;
+   attribute keep of dataSend : signal is true;
    
 begin
 

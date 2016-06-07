@@ -93,14 +93,14 @@ begin
                      -- In external mode, if we see double the timeout, 
                      -- reset the counter and switch to internal
                      when EXTERNAL_T =>
-                        if (timeoutCnt = timeoutTarget) then
+                        if (timeoutCnt >= timeoutTarget) then
                            timeoutCnt <= (others => '0') after tpd;
                            trigSel    <= INTERNAL_T      after tpd;
                         end if;
                      -- In internal mode, fire off a trigger if we 
                      -- get to the target count and reset the count
                      when INTERNAL_T =>
-                        if (timeoutCnt = trigTarget) then
+                        if (timeoutCnt >= trigTarget) then
                            timeoutCnt  <= (others => '0') after tpd;
                            iRunTrigOut <= '1'             after tpd;
                         end if;

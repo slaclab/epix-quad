@@ -259,7 +259,7 @@ begin
    end process;
 
    process(curState,wordCnt,bufferReadyA,bufferReadyB,bufferDataA,bufferDataB,
-           oddEven,mAxisSlave,trigger,bufferDoneA,bufferDoneB,
+           oddEven,mAxisSlave,triggerToUse,bufferDoneA,bufferDoneB,
            adcWordPackedA,adcWordPackedB,bufferRdEnA,bufferRdEnB,
            acqCount, seqCount) 
       variable vAxisMaster : AxiStreamMasterType;
@@ -278,7 +278,7 @@ begin
       if (mAxisSlave.tReady = '1') then
          case curState is
             when IDLE_S =>
-               if trigger = '1' then
+               if triggerToUse = '1' then
                   wordCntRst <= '1';
                   nxtState   <= WAIT_SCOPE_S;
                end if;

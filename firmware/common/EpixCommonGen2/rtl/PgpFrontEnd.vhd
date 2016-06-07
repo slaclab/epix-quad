@@ -204,6 +204,7 @@ begin
    U_Vc1AxiMasterRegisters : entity work.SsiAxiLiteMaster 
       generic map (
          USE_BUILT_IN_G      => false,
+         EN_32BIT_ADDR_G     => true,
          AXI_STREAM_CONFIG_G => SSI_PGP2B_CONFIG_C
       )
       port map (

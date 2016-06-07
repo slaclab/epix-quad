@@ -346,11 +346,13 @@ begin
          when SOF_S =>
             if forceFrameRead = '1' then
                next_state <= DATA_IN_S;
-            elsif inSyncD3 = '1' and dataKOutD3 = '0' and dataOutD3 = D102_C then
-               next_state <= DATA_IN_S;
             else
-               frameErrCntEn <= '1';
-               next_state <= ERROR_S;
+               if inSyncD3 = '1' and dataKOutD3 = '0' and dataOutD3 = D102_C then
+                  next_state <= DATA_IN_S;
+               else
+                  frameErrCntEn <= '1';
+                  next_state <= ERROR_S;
+               end if;
             end if;
          
          when DATA_IN_S =>
