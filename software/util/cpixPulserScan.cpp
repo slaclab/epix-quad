@@ -37,9 +37,10 @@ using namespace std;
 
 #define PULSER_START 0
 #define PULSER_STOP 1023
-#define PULSER_STEP 10
+#define PULSER_STEP 1
 
 #define MATRIX_TEST_BIT 0x1
+#define MATRIX_TRIM 0x7
 #define MATRIX_TEST_ROW 0
 #define MATRIX_TEST_COL 0
 
@@ -110,23 +111,23 @@ int main (int argc, char **argv) {
       //stop auto run to config the matrix
       epix.device("digFpga",0)->writeSingle("AutoRunEnable", 0);
       
-      ////set the initial matrix config
-      //printf("Setting matrich config bits to 0x%X\n", MATRIX_TEST_BIT | (7<<2));
-      //epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("PrepareMultiConfig", 0);
-      //epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("WriteMatrixData", MATRIX_TEST_BIT | (7<<2) );
-      //epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("CmdPrepForRead", 0);
-      //
-      ////set selected column and row if requested
-      //if (MATRIX_TEST_ROW > 0 && MATRIX_TEST_ROW <= 47) {
-      //   epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("PrepareMultiConfig", 0);
-      //   epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("RowCounter", MATRIX_TEST_ROW);
-      //   epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("WriteRowData", 0x1 | (7<<2));
-      //}
-      //if (MATRIX_TEST_COL > 0 && MATRIX_TEST_COL <= 47) {
-      //   epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("PrepareMultiConfig", 0);
-      //   epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("ColCounter", MATRIX_TEST_COL);
-      //   epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("WriteColData", 0x1 | (7<<2));
-      //}
+      //set the initial matrix config
+      printf("Setting matrich config bits to 0x%X\n", MATRIX_TEST_BIT | (7<<2));
+      epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("PrepareMultiConfig", 0);
+      epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("WriteMatrixData", MATRIX_TEST_BIT | (MATRIX_TRIM<<2) );
+      epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("CmdPrepForRead", 0);
+      
+      //set selected column and row if requested
+      if (MATRIX_TEST_ROW > 0 && MATRIX_TEST_ROW <= 47) {
+         epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("PrepareMultiConfig", 0);
+         epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("RowCounter", MATRIX_TEST_ROW);
+         epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("WriteRowData", 0x1 | (MATRIX_TRIM<<2));
+      }
+      if (MATRIX_TEST_COL > 0 && MATRIX_TEST_COL <= 47) {
+         epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("PrepareMultiConfig", 0);
+         epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("ColCounter", MATRIX_TEST_COL);
+         epix.device("digFpga",0)->device("CpixPAsic",0)->writeSingle("WriteColData", 0x1 | (MATRIX_TRIM<<2));
+      }
       
       //set pulser here
       printf("Pulser changed to %d\n", pulser);

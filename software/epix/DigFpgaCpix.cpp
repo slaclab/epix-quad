@@ -95,6 +95,11 @@ DigFpgaCpix::DigFpgaCpix ( uint destination, uint baseAddress, uint index, Devic
    getVariable("cpixErrorRst")->setDescription("Reset ASIC error counters.");
    getVariable("cpixErrorRst")->setTrueFalse();
    
+   addRegister(new Register("cpixForceFrameRead", baseAddress_ + addrSize*0x101, 1)); 
+   addVariable(new Variable("cpixForceFrameRead", Variable::Configuration));
+   getVariable("cpixForceFrameRead")->setDescription("Force reading ASIC data frame even with errors.");
+   getVariable("cpixForceFrameRead")->setTrueFalse();
+   
    addRegister(new Register("cpixAsic0InSync", baseAddress_ + addrSize*0x200, 1));
    addVariable(new Variable("cpixAsic0InSync", Variable::Status));
    getVariable("cpixAsic0InSync")->setDescription("ASIC0 data output in sync bit");
@@ -238,6 +243,9 @@ void DigFpgaCpix::readConfig ( ) {
    readRegister(getRegister("cpixErrorRst"));
    getVariable("cpixErrorRst")->setInt(getRegister("cpixErrorRst")->get());
    
+   readRegister(getRegister("cpixForceFrameRead"));
+   getVariable("cpixForceFrameRead")->setInt(getRegister("cpixForceFrameRead")->get());
+   
    readRegister(getRegister("cpixSyncMode"));
    getVariable("cpixSyncMode")->setInt(getRegister("cpixSyncMode")->get());
    
@@ -299,6 +307,9 @@ void DigFpgaCpix::writeConfig ( bool force ) {
    getRegister("cpixErrorRst")->set(getVariable("cpixErrorRst")->getInt());
    writeRegister(getRegister("cpixErrorRst"),force);
    
+   getRegister("cpixForceFrameRead")->set(getVariable("cpixForceFrameRead")->getInt());
+   writeRegister(getRegister("cpixForceFrameRead"),force);
+   
    getRegister("cpixSyncMode")->set(getVariable("cpixSyncMode")->getInt());
    writeRegister(getRegister("cpixSyncMode"),force);
    
@@ -341,6 +352,7 @@ void DigFpgaCpix::verifyConfig ( ) {
    verifyRegister(getRegister("cpixNRuns"));
    verifyRegister(getRegister("cpixCntAnotB"));
    verifyRegister(getRegister("cpixErrorRst"));
+   verifyRegister(getRegister("cpixForceFrameRead"));
    verifyRegister(getRegister("cpixSyncMode"));
    verifyRegister(getRegister("cpixAsicPinControl"));
    verifyRegister(getRegister("cpixAsicPins"));

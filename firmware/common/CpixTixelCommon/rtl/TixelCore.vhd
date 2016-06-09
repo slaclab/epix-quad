@@ -1,7 +1,7 @@
 -------------------------------------------------------------------------------
--- Title      : Cpix Detector Readout System Core
+-- Title      : Tixel Detector Readout System Core
 -------------------------------------------------------------------------------
--- File       : CpixCore.vhd
+-- File       : TixelCore.vhd
 -- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 03/02/2016
@@ -22,7 +22,7 @@ use ieee.numeric_std.all;
 
 use work.StdRtlPkg.all;
 use work.EpixPkgGen2.all;
-use work.CpixPkg.all;
+use work.TixelPkg.all;
 use work.ScopeTypes.all;
 use work.AxiLitePkg.all;
 use work.AxiStreamPkg.all;
@@ -34,7 +34,7 @@ use work.Version.all;
 library unisim;
 use unisim.vcomponents.all;
 
-entity CpixCore is
+entity TixelCore is
    generic (
       TPD_G             : time := 1 ns;
       ADC0_INVERT_CH    : slv(7 downto 0) := "00000000";
@@ -103,50 +103,47 @@ entity CpixCore is
       -- ASIC Control
       asic01DM1           : in sl;
       asic01DM2           : in sl;
-      asicEnA             : out sl;
-      asicEnB             : out sl;
-      asicVid             : out sl;
-      asicPPbe            : out slv(1 downto 0);
-      asicPpmat           : out slv(1 downto 0);
+      asicPPbe            : out sl;
+      asicPpmat           : out sl;
+      asicTpulse          : out sl;
+      asicStart           : out sl;
       asicR0              : out sl;
-      asicSRO             : out sl;
       asicGlblRst         : out sl;
       asicSync            : out sl;
       asicAcq             : out sl;
       asicDoutP           : in  slv(1 downto 0);
       asicDoutM           : in  slv(1 downto 0);
+      asicRefClk          : out slv(1 downto 0);
       asicRoClk           : out slv(1 downto 0)
    );
-end CpixCore;
+end TixelCore;
 
-architecture top_level of CpixCore is
+architecture top_level of TixelCore is
    
    attribute keep : string;
    
    -- ASIC signals
    signal iAsic01DM1           : sl;
    signal iAsic01DM2           : sl;
-   signal iAsicEnA             : sl;
-   signal iAsicEnB             : sl;
+   signal iAsicTpulse          : sl;
+   signal iAsicStart           : sl;
    signal iAsicPPbe            : sl;
    signal iAsicPpmat           : sl;
    signal iAsicR0              : sl;
-   signal iAsicSRO             : sl;
    signal iAsicSync            : sl;
    signal iAsicAcq             : sl;
    signal iAsicGrst            : sl;
    
    attribute keep of iAsic01DM1    : signal is "true";
    attribute keep of iAsic01DM2    : signal is "true";
-   attribute keep of iAsicEnA      : signal is "true";
-   attribute keep of iAsicEnB      : signal is "true";
    attribute keep of iAsicPPbe     : signal is "true";
    attribute keep of iAsicPpmat    : signal is "true";
    attribute keep of iAsicR0       : signal is "true";
-   attribute keep of iAsicSRO      : signal is "true";
    attribute keep of iAsicGrst     : signal is "true";
    attribute keep of iAsicSync     : signal is "true";
    attribute keep of iAsicAcq      : signal is "true";
+   attribute keep of iAsicStart    : signal is "true";
+   attribute keep of iAsicTpulse   : signal is "true";
    
    signal coreClk     : sl;
    signal coreClkRst  : sl;
@@ -157,6 +154,8 @@ architecture top_level of CpixCore is
    signal txLinkReady : sl;
    signal rxLinkReady : sl;
    
+   signal asicRfClk     : sl;
+   signal asicRfClkRst  : sl;
    signal asicRdClk     : sl;
    signal asicRdClkRst  : sl;
    signal bitClk        : sl;
@@ -170,15 +169,15 @@ architecture top_level of CpixCore is
    signal pgpRxOut      : Pgp2bRxOutType;
    
    -- AXI-Lite Signals
-   signal sAxiReadMaster  : AxiLiteReadMasterArray(CPIX_NUM_AXI_SLAVE_SLOTS_C-1 downto 0);
-   signal sAxiReadSlave   : AxiLiteReadSlaveArray(CPIX_NUM_AXI_SLAVE_SLOTS_C-1 downto 0);
-   signal sAxiWriteMaster : AxiLiteWriteMasterArray(CPIX_NUM_AXI_SLAVE_SLOTS_C-1 downto 0);
-   signal sAxiWriteSlave  : AxiLiteWriteSlaveArray(CPIX_NUM_AXI_SLAVE_SLOTS_C-1 downto 0);
+   signal sAxiReadMaster  : AxiLiteReadMasterArray(TIXEL_NUM_AXI_SLAVE_SLOTS_C-1 downto 0);
+   signal sAxiReadSlave   : AxiLiteReadSlaveArray(TIXEL_NUM_AXI_SLAVE_SLOTS_C-1 downto 0);
+   signal sAxiWriteMaster : AxiLiteWriteMasterArray(TIXEL_NUM_AXI_SLAVE_SLOTS_C-1 downto 0);
+   signal sAxiWriteSlave  : AxiLiteWriteSlaveArray(TIXEL_NUM_AXI_SLAVE_SLOTS_C-1 downto 0);
    -- AXI-Lite Signals
-   signal mAxiWriteMasters : AxiLiteWriteMasterArray(CPIX_NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
-   signal mAxiWriteSlaves  : AxiLiteWriteSlaveArray(CPIX_NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
-   signal mAxiReadMasters  : AxiLiteReadMasterArray(CPIX_NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
-   signal mAxiReadSlaves   : AxiLiteReadSlaveArray(CPIX_NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
+   signal mAxiWriteMasters : AxiLiteWriteMasterArray(TIXEL_NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
+   signal mAxiWriteSlaves  : AxiLiteWriteSlaveArray(TIXEL_NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
+   signal mAxiReadMasters  : AxiLiteReadMasterArray(TIXEL_NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
+   signal mAxiReadSlaves   : AxiLiteReadSlaveArray(TIXEL_NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
 
    -- AXI-Stream signals
    signal framerAxisMaster : AxiStreamMasterArray(NUMBER_OF_ASICS-1 downto 0);
@@ -188,9 +187,6 @@ architecture top_level of CpixCore is
    signal scopeAxisMaster  : AxiStreamMasterType;
    signal scopeAxisSlave   : AxiStreamSlaveType;
    signal deserAxisMaster  : AxiStreamMasterArray(NUMBER_OF_ASICS-1 downto 0);
-   signal lutAxisMaster    : AxiStreamMasterArray(NUMBER_OF_ASICS-1 downto 0);
-   
-   signal inSync           : slv(NUMBER_OF_ASICS-1 downto 0);
    
    -- Command interface
    signal ssiCmd           : SsiCmdMasterType;
@@ -198,8 +194,8 @@ architecture top_level of CpixCore is
    -- Configuration and status
    signal epixStatus       : EpixStatusType;
    signal epixConfig       : EpixConfigType;
-   signal cpixStatus       : CpixStatusType;
-   signal cpixConfig       : CpixConfigType;
+   signal tixelStatus       : TixelStatusType;
+   signal tixelConfig       : TixelConfigType;
    signal scopeConfig      : ScopeConfigType;
    signal rxReady          : sl;
    signal txReady          : sl;
@@ -236,12 +232,14 @@ architecture top_level of CpixCore is
    
    signal iSaciSelL  : slv(3 downto 0);
    
-   signal adcClk             : std_logic := '0';
-   signal adcClk0            : std_logic;
-   signal adcClk1            : std_logic;
-   signal adcClk2            : std_logic;
-   signal adcCnt             : unsigned(31 downto 0) := (others => '0');
-   signal iAdcPdwn           : slv(2 downto 0);
+   signal adcClk           : std_logic := '0';
+   signal adcClk0          : std_logic;
+   signal adcClk1          : std_logic;
+   signal adcClk2          : std_logic;
+   signal adcCnt           : unsigned(31 downto 0) := (others => '0');
+   signal iAdcPdwn         : slv(2 downto 0);
+   
+   signal inSync           : slv(NUMBER_OF_ASICS-1 downto 0);
    
    attribute keep of coreClk : signal is "true";
    attribute keep of byteClk : signal is "true";
@@ -360,10 +358,11 @@ begin
    -- Generate clocks from 156.25 MHz PGP  --
    ------------------------------------------
    -- clkIn     : 156.25 MHz PGP
-   -- clkOut(0) : 100.00 MHz system clock
-   -- clkOut(1) : 200 MHz Idelaye2 calibration clock
+   -- clkOut(0) : 400 MHz Idelaye2 calibration clock
+   -- clkOut(1) : 100.00 MHz system clock
    -- clkOut(2) : 100 MHz serial data bit clock
    -- clkOut(3) : 5 MHz ASIC readout clock
+   -- clkOut(4) : 20 MHz ASIC reference clock
    U_CoreClockGen : entity work.ClockManager7
    generic map (
       INPUT_BUFG_G         => false,
@@ -377,15 +376,15 @@ begin
       CLKOUT0_PHASE_G      => 0.0,
       CLKOUT0_DUTY_CYCLE_G => 0.5,
       
-      CLKOUT1_DIVIDE_G     => 3,
-      CLKOUT1_PHASE_G      => 0.0,
+      CLKOUT1_DIVIDE_G     => 6,
+      CLKOUT1_PHASE_G      => 120.0,
       CLKOUT1_DUTY_CYCLE_G => 0.5,
       
-      CLKOUT2_DIVIDE_G     => 6,
-      CLKOUT2_PHASE_G      => 90.0,
+      CLKOUT2_DIVIDE_G     => 120,
+      CLKOUT2_PHASE_G      => 0.0,
       CLKOUT2_DUTY_CYCLE_G => 0.5,
       
-      CLKOUT3_DIVIDE_G     => 120,
+      CLKOUT3_DIVIDE_G     => 30,
       CLKOUT3_PHASE_G      => 0.0,
       CLKOUT3_DUTY_CYCLE_G => 0.5
    )
@@ -393,13 +392,36 @@ begin
       clkIn     => pgpClk,
       rstIn     => sysRst,
       clkOut(0) => coreClk,
-      clkOut(1) => iDelayCtrlClk,
-      clkOut(2) => bitClk,
-      clkOut(3) => asicRdClk,
+      clkOut(1) => bitClk,
+      clkOut(2) => asicRdClk,
+      clkOut(3) => asicRfClk,
       rstOut(0) => coreClkRst,
-      rstOut(1) => iDelayCtrlRst,
-      rstOut(2) => bitClkRst,
-      rstOut(3) => asicRdClkRst,
+      rstOut(1) => bitClkRst,
+      rstOut(2) => asicRdClkRst,
+      rstOut(3) => asicRfClkRst,
+      locked    => open
+   );
+   
+   -- clkIn     : 156.25 MHz PGP
+   -- clkOut(0) : 400 MHz Idelaye2 calibration clock
+   U_CoreClockGen2 : entity work.ClockManager7
+   generic map (
+      INPUT_BUFG_G         => false,
+      FB_BUFG_G            => true,
+      NUM_CLOCKS_G         => 1,
+      CLKIN_PERIOD_G       => 6.4,
+      DIVCLK_DIVIDE_G      => 5,
+      CLKFBOUT_MULT_F_G    => 32.0,
+      
+      CLKOUT0_DIVIDE_F_G   => 2.5,
+      CLKOUT0_PHASE_G      => 0.0,
+      CLKOUT0_DUTY_CYCLE_G => 0.5
+   )
+   port map (
+      clkIn     => pgpClk,
+      rstIn     => sysRst,
+      clkOut(0) => iDelayCtrlClk,
+      rstOut(0) => iDelayCtrlRst,
       locked    => open
    );
 
@@ -446,15 +468,34 @@ begin
       S  => '0'
    );
    
+   refClk0Ddr_i : ODDR 
+   port map ( 
+      Q  => asicRefClk(0),
+      C  => asicRfClk,
+      CE => '1',
+      D1 => '1',
+      D2 => '0',
+      R  => '0',
+      S  => '0'
+   );
+   
+   refClk1Ddr_i : ODDR 
+   port map ( 
+      Q  => asicRefClk(1),
+      C  => asicRfClk,
+      CE => '1',
+      D1 => '1',
+      D2 => '0',
+      R  => '0',
+      S  => '0'
+   );
+   
    G_ASIC : for i in 0 to NUMBER_OF_ASICS-1 generate 
    
       -------------------------------------------------------
       -- ASIC deserializers
       -------------------------------------------------------
       U_AsicDeser : entity work.Deserializer
-      generic map (
-         INVERT_SDATA_G => true
-      )
       port map ( 
          bitClk         => bitClk,
          byteClk        => byteClk,
@@ -468,27 +509,11 @@ begin
          inSync         => inSync(i),
          
          -- control
-         resync         => cpixConfig.doutResync(i),
-         delay          => cpixConfig.doutDelay(i),
+         resync         => tixelConfig.doutResync(i),
+         delay          => tixelConfig.doutDelay(i),
          
          -- decoded data Stream Master Port (byteClk)
          mAxisMaster    => deserAxisMaster(i)
-      );
-      
-      -------------------------------------------------------
-      -- CPIX LUT ranslators
-      -------------------------------------------------------
-      U_CpixLUT : entity work.CpixLUT
-      port map (
-         sysClk         => byteClk,
-         sysRst         => byteClkRst,
-         
-         -- input stream
-         sAxisMaster    => deserAxisMaster(i),
-         
-         -- output stream
-         mAxisMaster    => lutAxisMaster(i)
-         
       );
       
       -------------------------------------------------------
@@ -506,7 +531,7 @@ begin
          byteClkRst     => byteClkRst,
          
          -- control/status signals (byteClk)
-         forceFrameRead => cpixConfig.forceFrameRead,
+         forceFrameRead => tixelConfig.forceFrameRead,
          cntAcquisition => cntAcquisition,
          cntSequence    => cntSequence,
          cntAReadout    => cntAReadout,
@@ -515,15 +540,15 @@ begin
          frameErr       => frameErr(i)     ,
          headerAck      => headerAck(i)    ,
          timeoutReq     => timeoutReq   ,
-         cntFrameDone   => cpixStatus.cpixFramesGood(i) ,
-         cntFrameError  => cpixStatus.cpixFrameErr(i),
-         cntCodeError   => cpixStatus.cpixCodeErr(i) ,
-         cntToutError   => cpixStatus.cpixTimeoutErr(i) ,
-         cntReset       => cpixConfig.cpixErrorRst,
+         cntFrameDone   => tixelStatus.tixelFramesGood(i) ,
+         cntFrameError  => tixelStatus.tixelFrameErr(i),
+         cntCodeError   => tixelStatus.tixelCodeErr(i) ,
+         cntToutError   => tixelStatus.tixelTimeoutErr(i) ,
+         cntReset       => tixelConfig.tixelErrorRst,
          epixConfig     => epixConfig,
          
          -- decoded data input stream (byteClk)
-         sAxisMaster    => lutAxisMaster(i),
+         sAxisMaster    => deserAxisMaster(i),
          
          -- AXI Stream Master Port (sysClk)
          mAxisMaster    => framerAxisMaster(i),
@@ -532,7 +557,7 @@ begin
    
    end generate;
    
-   cpixStatus.cpixAsicInSync <= inSync;
+   tixelStatus.tixelAsicInSync <= inSync;
    
    -------------------------------------------------------
    -- AXI stream mux
@@ -557,7 +582,7 @@ begin
    ------------------------------------------
    -- Common ASIC acquisition control            --
    ------------------------------------------      
-   U_ASIC_Acquisition : entity work.CpixAcquisition
+   U_ASIC_Acquisition : entity work.TixelAcquisition
    generic map(
       NUMBER_OF_ASICS   => NUMBER_OF_ASICS
    )
@@ -581,18 +606,16 @@ begin
       timeoutReq        => timeoutReq,
       
       epixConfig        => epixConfig,
-      cpixConfig        => cpixConfig,
+      tixelConfig        => tixelConfig,
       saciReadoutReq    => saciPrepReadoutReq,
       saciReadoutAck    => saciPrepReadoutAck,
       
       -- ASICs signals
-      asicEnA           => iAsicEnA,
-      asicEnB           => iAsicEnB,
-      asicVid           => asicVid,
       asicPPbe          => iAsicPpbe,
       asicPpmat         => iAsicPpmat,
+      asicTpulse        => iAsicTpulse,
+      asicStart         => iAsicStart,
       asicR0            => iAsicR0,
-      asicSRO           => iAsicSRO,
       asicGlblRst       => iAsicGrst,
       asicSync          => iAsicSync,
       asicAcq           => iAsicAcq
@@ -601,15 +624,10 @@ begin
    
    asicAcq        <= iAsicAcq;
    asicR0         <= iAsicR0;
-   asicPpmat(0)   <= iAsicPpmat;
-   asicPpmat(1)   <= iAsicPpmat;
-   asicPPbe(0)    <= iAsicPpbe;
-   asicPPbe(1)    <= iAsicPpbe;
+   asicPpmat      <= iAsicPpmat;
+   asicPPbe       <= iAsicPpbe;
    asicSync       <= iAsicSync;
    asicGlblRst    <= iAsicGrst;
-   asicEnA        <= iAsicEnA;
-   asicEnB        <= iAsicEnB;
-   asicSRO        <= iAsicSRO;
    
    iAsic01DM1     <= asic01DM1;
    iAsic01DM2     <= asic01DM2;
@@ -622,9 +640,9 @@ begin
    --------------------------------------------
    U_AxiLiteCrossbar : entity work.AxiLiteCrossbar
       generic map (
-         NUM_SLAVE_SLOTS_G  => CPIX_NUM_AXI_SLAVE_SLOTS_C,
-         NUM_MASTER_SLOTS_G => CPIX_NUM_AXI_MASTER_SLOTS_C,
-         MASTERS_CONFIG_G   => CPIX_AXI_CROSSBAR_MASTERS_CONFIG_C)
+         NUM_SLAVE_SLOTS_G  => TIXEL_NUM_AXI_SLAVE_SLOTS_C,
+         NUM_MASTER_SLOTS_G => TIXEL_NUM_AXI_MASTER_SLOTS_C,
+         MASTERS_CONFIG_G   => TIXEL_AXI_CROSSBAR_MASTERS_CONFIG_C)
       port map (
          sAxiWriteMasters    => sAxiWriteMaster,
          sAxiWriteSlaves     => sAxiWriteSlave,
@@ -690,9 +708,9 @@ begin
    
    adcPdwn <= iAdcPdwn;
    
-   -- define new Cpix specific register set
+   -- define new Tixel specific register set
    
-   U_RegControlCpix : entity work.RegControlCpix
+   U_RegControlTixel : entity work.RegControlTixel
    generic map (
       TPD_G          => TPD_G
    )
@@ -700,13 +718,13 @@ begin
       axiClk         => coreClk,
       axiRst         => axiRst,
       -- AXI-Lite Register Interface (axiClk domain)
-      axiReadMaster  => mAxiReadMasters(CPIX_REG_AXI_INDEX_C),
-      axiReadSlave   => mAxiReadSlaves(CPIX_REG_AXI_INDEX_C),
-      axiWriteMaster => mAxiWriteMasters(CPIX_REG_AXI_INDEX_C),
-      axiWriteSlave  => mAxiWriteSlaves(CPIX_REG_AXI_INDEX_C),
+      axiReadMaster  => mAxiReadMasters(TIXEL_REG_AXI_INDEX_C),
+      axiReadSlave   => mAxiReadSlaves(TIXEL_REG_AXI_INDEX_C),
+      axiWriteMaster => mAxiWriteMasters(TIXEL_REG_AXI_INDEX_C),
+      axiWriteSlave  => mAxiWriteSlaves(TIXEL_REG_AXI_INDEX_C),
       -- Register Inputs/Outputs (axiClk domain)
-      cpixStatus     => cpixStatus,
-      cpixConfig     => cpixConfig
+      tixelStatus     => tixelStatus,
+      tixelConfig     => tixelConfig
    );
 
    ---------------------

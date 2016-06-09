@@ -308,8 +308,8 @@ begin
    -- ASIC control signals (single ended)
    asicR0         <= iAsicR0      when iFpgaOutputEn = '1' else 'Z';
    asicAcq        <= iAsicAcq     when iFpgaOutputEn = '1' else 'Z';
-   asicPpmat      <= iAsicPpmat   when iFpgaOutputEn = '1' else "ZZ";
-   asicPPbe       <= iAsicPPbe    when iFpgaOutputEn = '1' else "ZZ";
+   asicPpmat      <= iAsicPpmat   when iFpgaOutputEn = '1' else 'Z';
+   asicPPbe       <= iAsicPPbe    when iFpgaOutputEn = '1' else 'Z';
    asicGlblRst    <= iAsicGlblRst when iFpgaOutputEn = '1' else 'Z';
    asicSync       <= iAsicSync    when iFpgaOutputEn = '1' else 'Z';  
    asicTpulse     <= iAsicTpulse  when iFpgaOutputEn = '1' else 'Z';  

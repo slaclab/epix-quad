@@ -102,7 +102,7 @@ int main (int argc, char **argv) {
 
       cout << "Created PGP Link" << endl;
 
-      EpixControl   epix(pgpLink,defFile,CPIXP, baseAddress, addrSize);
+      EpixControl   epix(pgpLink,defFile,TIXELP, baseAddress, addrSize);
       epix.setDebug(true);
       
       // Setup control server

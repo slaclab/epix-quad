@@ -5,15 +5,15 @@ open_run synth_1
 
 ### Configure the Core
 set ilaName u_ila_0
-set ilaName1 u_ila_1
+#set ilaName1 u_ila_1
 CreateDebugCore ${ilaName}
-CreateDebugCore ${ilaName1}
+#CreateDebugCore ${ilaName1}
 #
 ### Increase the record depth
 #set_property C_DATA_DEPTH 1024 [get_debug_cores ${ilaName}]
 #set_property C_DATA_DEPTH 2048 [get_debug_cores ${ilaName}]
 set_property C_DATA_DEPTH 16384 [get_debug_cores ${ilaName}]
-set_property C_DATA_DEPTH 16384 [get_debug_cores ${ilaName1}]
+#set_property C_DATA_DEPTH 16384 [get_debug_cores ${ilaName1}]
 #
 #############################################################################
 #############################################################################
@@ -23,7 +23,7 @@ set_property C_DATA_DEPTH 16384 [get_debug_cores ${ilaName1}]
 ##SetDebugCoreClk ${ilaName} {U_EpixCore/coreClk}
 #SetDebugCoreClk ${ilaName} {tixWrdClk}
 SetDebugCoreClk ${ilaName} {U_CpixCore/coreClk}
-SetDebugCoreClk ${ilaName1} {U_CpixCore/byteClk}
+#SetDebugCoreClk ${ilaName1} {U_CpixCore/byteClk}
 
 #ConfigProbe ${ilaName} {tixDecode_gen[0].tixDeser_i/delay_en}
 #ConfigProbe ${ilaName} {tixDecode_gen[0].tixDeser_i/pattern_ok}
@@ -74,8 +74,8 @@ ConfigProbe ${ilaName} {U_CpixCore/saciPrepReadoutAck}
 ConfigProbe ${ilaName} {U_CpixCore/cntAReadout}
 ConfigProbe ${ilaName} {U_CpixCore/frameErr[0]}
 ConfigProbe ${ilaName} {U_CpixCore/timeoutReq}
-ConfigProbe ${ilaName1} {U_CpixCore/G_ASIC[0].U_ASIC_Framer/state[*]}
-ConfigProbe ${ilaName1} {U_CpixCore/G_ASIC[0].U_ASIC_Framer/frameErrCntEn}
+#ConfigProbe ${ilaName1} {U_CpixCore/G_ASIC[0].U_ASIC_Framer/state[*]}
+#ConfigProbe ${ilaName1} {U_CpixCore/G_ASIC[0].U_ASIC_Framer/frameErrCntEn}
 
 ###ADC data
 #ConfigProbe ${ilaName} {U_CpixCore/adcData[*][*]}
@@ -87,7 +87,7 @@ ConfigProbe ${ilaName1} {U_CpixCore/G_ASIC[0].U_ASIC_Framer/frameErrCntEn}
 #
 ## Delete the last unused port
 delete_debug_port [get_debug_ports [GetCurrentProbe ${ilaName}]]
-delete_debug_port [get_debug_ports [GetCurrentProbe ${ilaName1}]]
+#delete_debug_port [get_debug_ports [GetCurrentProbe ${ilaName1}]]
 
 ## Write the port map file
-write_debug_probes -force ${PROJ_DIR}/debug/debug_probes.ltx
+#write_debug_probes -force ${PROJ_DIR}/debug/debug_probes.ltx

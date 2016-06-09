@@ -1,5 +1,0 @@
-coregen/asic_vio.xci
-coregen/power_vio.xci
-coregen/saci_vio.xci
-coregen/sync_vio.xci
-

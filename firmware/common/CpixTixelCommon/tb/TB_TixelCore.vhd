@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
--- Title         : Test-bench of CpixCore
--- Project       : Cpix Detector
+-- Title         : Test-bench of TixelCore
+-- Project       : Tixel Detector
 -------------------------------------------------------------------------------
--- File          : TB_CpixCore.vhd
+-- File          : TB_TixelCore.vhd
 -- Author        : Maciej Kwiatkowski, mkwiatko@slac.stanford.edu
 -- Created       : 01/19/2016
 -------------------------------------------------------------------------------
@@ -30,15 +30,15 @@ use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
 use work.SsiCmdMasterPkg.all;
 use work.Pgp2bPkg.all;
-use work.CpixPkg.all;
+use work.TixelPkg.all;
 
-entity TB_CpixCore is 
+entity TB_TixelCore is 
 
-end TB_CpixCore;
+end TB_TixelCore;
 
 
 -- Define architecture
-architecture beh of TB_CpixCore is
+architecture beh of TB_TixelCore is
    
    constant TPD_G             : time := 1 ns;
    
@@ -56,43 +56,43 @@ architecture beh of TB_CpixCore is
    signal asicDoutP           : slv(1 downto 0);
    signal asicDoutM           : slv(1 downto 0);
    
+   signal deserAxisMaster  : AxiStreamMasterArray(NUMBER_OF_ASICS-1 downto 0);
+   signal inSync     : slv(1 downto 0);
    signal sroAck     : slv(1 downto 0);
    signal sroReq     : slv(1 downto 0);
    
    
-   signal asicEnA      : std_logic;
-   signal asicEnB      : std_logic;
-   signal asicVid      : std_logic;
-   signal iAsicPpbe    : std_logic;
-   signal iAsicPpmat   : std_logic;
-   signal iAsicR0      : std_logic;
-   signal asicSRO      : std_logic;
-   signal iAsicGrst    : std_logic;
-   signal iAsicSync    : std_logic;   
-   signal iAsicAcq     : std_logic;   
+   -- ASIC signals
+   signal iAsic01DM1           : sl;
+   signal iAsic01DM2           : sl;
+   signal iAsicTpulse          : sl;
+   signal iAsicStart           : sl;
+   signal iAsicPPbe            : sl;
+   signal iAsicPpmat           : sl;
+   signal iAsicR0              : sl;
+   signal iAsicSync            : sl;
+   signal iAsicAcq             : sl;
+   signal iAsicGrst            : sl;
+   
    signal saciPrepReadoutReq     : std_logic;   
    signal saciPrepReadoutAck     : std_logic;     
    signal acqStart     : std_logic;     
    
    signal epixStatus       : EpixStatusType;
    signal epixConfig       : EpixConfigType;
-   signal cpixConfig       : CpixConfigType := CPIX_CONFIG_INIT_C;
+   signal tixelConfig       : TixelConfigType := TIXEL_CONFIG_INIT_C;
    
    constant NUMBER_OF_ASICS   : natural := 2;
    
-   signal forceFrameRead   : std_logic;
-   signal cntAcquisition   : std_logic_vector(31 downto 0);
-   signal cntSequence      : std_logic_vector(31 downto 0);
-   signal cntAReadout      : std_logic;
-   signal frameReq         : std_logic;
-   signal frameAck         : std_logic_vector(NUMBER_OF_ASICS-1 downto 0);
-   signal frameErr         : std_logic_vector(NUMBER_OF_ASICS-1 downto 0);
-   signal headerAck        : std_logic_vector(NUMBER_OF_ASICS-1 downto 0);
-   signal timeoutReq       : std_logic;
-   
-   signal deserAxisMaster  : AxiStreamMasterArray(NUMBER_OF_ASICS-1 downto 0);
-   signal lutAxisMaster    : AxiStreamMasterArray(NUMBER_OF_ASICS-1 downto 0);
-   signal inSync           : slv(NUMBER_OF_ASICS-1 downto 0);
+   signal forceFrameRead  : std_logic;
+   signal cntAcquisition  : std_logic_vector(31 downto 0);
+   signal cntSequence     : std_logic_vector(31 downto 0);
+   signal cntAReadout     : std_logic;
+   signal frameReq        : std_logic;
+   signal frameAck        : std_logic_vector(NUMBER_OF_ASICS-1 downto 0);
+   signal frameErr        : std_logic_vector(NUMBER_OF_ASICS-1 downto 0);
+   signal headerAck       : std_logic_vector(NUMBER_OF_ASICS-1 downto 0);
+   signal timeoutReq      : std_logic;
    
    signal cntFrameDone     : Slv32Array(NUMBER_OF_ASICS-1 downto 0);
    signal cntFrameError    : Slv32Array(NUMBER_OF_ASICS-1 downto 0);
@@ -104,7 +104,7 @@ architecture beh of TB_CpixCore is
    signal pgpAxisSlave     : AxiStreamSlaveType;
    
 
-   procedure cpixSerialData ( 
+   procedure tixelSerialData ( 
          signal roClk         : in  std_logic;
          signal sroReq        : in  std_logic;
          signal sroAck        : out std_logic;
@@ -218,7 +218,7 @@ architecture beh of TB_CpixCore is
       
       end loop;
       
-   end procedure cpixSerialData ;
+   end procedure tixelSerialData ;
    
 
 begin
@@ -277,17 +277,17 @@ begin
    end process;
    
    
-   -- process emulating cPix data out
+   -- process emulating tixel data out
    
    process
    begin
    
-      cpixSerialData ( 
+      tixelSerialData ( 
          roClk       => iAsicRoClk,
          sroReq      => sroReq(0),
          sroAck      => sroAck(0),
-         dOutP       => asicDoutM(0),     -- Cpix has swapped P and M pins
-         dOutM       => asicDoutP(0)
+         dOutP       => asicDoutP(0),
+         dOutM       => asicDoutM(0)
       );
       
    end process;
@@ -295,12 +295,12 @@ begin
    process
    begin
    
-      cpixSerialData ( 
+      tixelSerialData ( 
          roClk       => iAsicRoClk,
          sroReq      => sroReq(1),
          sroAck      => sroAck(1),
-         dOutP       => asicDoutM(1),     -- Cpix has swapped P and M pins
-         dOutM       => asicDoutP(1)
+         dOutP       => asicDoutP(1),
+         dOutM       => asicDoutM(1)
       );
       
    end process;
@@ -325,20 +325,14 @@ begin
    epixConfig.manualPinControl <= (others=>'0');
    epixStatus.acqCount <= (others=>'0');
    
-   cpixConfig.cpixRunToAcq         <= std_logic_vector(to_unsigned(100, 32));
-   cpixConfig.cpixR0ToAcq          <= std_logic_vector(to_unsigned(50, 32));
-   cpixConfig.cpixAcqWidth         <= std_logic_vector(to_unsigned(50, 32));
-   cpixConfig.cpixAcqToCnt         <= std_logic_vector(to_unsigned(100, 32));
-   cpixConfig.cpixSyncWidth        <= std_logic_vector(to_unsigned(5, 32));
-   cpixConfig.cpixSROWidth         <= std_logic_vector(to_unsigned(5, 32));
-   cpixConfig.cpixNRuns            <= std_logic_vector(to_unsigned(8, 32));
-   cpixConfig.cpixCntAnotB         <= x"0F0F0F0F";
-   cpixConfig.syncMode             <= "00";
-   saciPrepReadoutAck              <= '1';
-   --epixConfig.manualPinControl(1)  <= '1';
-   --epixConfig.manualPinControl(2)  <= '1';
-   --epixConfig.asicPins(1)          <= '1';
-   --epixConfig.asicPins(2)          <= '1';
+   tixelConfig.tixelRunToR0         <= std_logic_vector(to_unsigned(100, 32));
+   tixelConfig.tixelR0ToStart       <= std_logic_vector(to_unsigned(50, 32));
+   tixelConfig.tixelStartToTpulse   <= std_logic_vector(to_unsigned(50, 32));
+   tixelConfig.tixelTpulseToAcq     <= std_logic_vector(to_unsigned(100, 32));
+   tixelConfig.tixelSyncMode        <= "00";
+   tixelConfig.tixelAsicPinControl  <= (others=>'0');
+   tixelConfig.tixelAsicPins        <= (others=>'0');
+   saciPrepReadoutAck               <= '1';
    
    --DUTs
 
@@ -378,7 +372,7 @@ begin
    ------------------------------------------
    -- Common ASIC acquisition control            --
    ------------------------------------------      
-   U_ASIC_Acquisition : entity work.CpixAcquisition
+   U_ASIC_Acquisition : entity work.TixelAcquisition
    generic map(
       NUMBER_OF_ASICS   => NUMBER_OF_ASICS
    )
@@ -402,18 +396,16 @@ begin
       timeoutReq        => timeoutReq,
       
       epixConfig        => epixConfig,
-      cpixConfig        => cpixConfig,
+      tixelConfig       => tixelConfig,
       saciReadoutReq    => saciPrepReadoutReq,
       saciReadoutAck    => saciPrepReadoutAck,
       
       -- ASICs signals
-      asicEnA           => asicEnA,
-      asicEnB           => asicEnB,
-      asicVid           => asicVid,
       asicPPbe          => iAsicPpbe,
       asicPpmat         => iAsicPpmat,
+      asicTpulse        => iAsicTpulse,
+      asicStart         => iAsicStart,
       asicR0            => iAsicR0,
-      asicSRO           => asicSRO,
       asicGlblRst       => iAsicGrst,
       asicSync          => iAsicSync,
       asicAcq           => iAsicAcq
@@ -427,9 +419,6 @@ begin
       -- ASIC deserializers
       -------------------------------------------------------
       U_AsicDeser : entity work.Deserializer
-      generic map (
-         INVERT_SDATA_G => true
-      )
       port map ( 
          bitClk         => bitClk,
          byteClk        => byteClk,
@@ -450,21 +439,6 @@ begin
          mAxisMaster    => deserAxisMaster(i)
       );
       
-      -------------------------------------------------------
-      -- CPIX LUT ranslators
-      -------------------------------------------------------
-      U_CpixLUT : entity work.CpixLUT
-      port map (
-         sysClk         => byteClk,
-         sysRst         => byteClkRst,
-         
-         -- input stream
-         sAxisMaster    => deserAxisMaster(i),
-         
-         -- output stream
-         mAxisMaster    => lutAxisMaster(i)
-         
-      );
       
       -------------------------------------------------------
       -- ASIC AXI stream framers
@@ -494,11 +468,11 @@ begin
          cntFrameError  => cntFrameError(i),
          cntCodeError   => cntCodeError(i) ,
          cntToutError   => cntToutError(i) ,
-         cntReset       => '0',
+         cntReset       => '0'     ,
          epixConfig     => epixConfig,
          
          -- decoded data input stream (byteClk)
-         sAxisMaster    => lutAxisMaster(i),
+         sAxisMaster    => deserAxisMaster(i),
          
          -- AXI Stream Master Port (sysClk)
          mAxisMaster    => framerAxisMaster(i),
@@ -512,7 +486,7 @@ begin
       
          sroReq(i) <= '0';
       
-         wait until rising_edge(asicSRO);
+         wait until rising_edge(iAsicAcq);
          
          sroReq(i) <= '1';
          

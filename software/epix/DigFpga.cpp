@@ -14,11 +14,13 @@
 //-----------------------------------------------------------------------------
 #include <DigFpga.h>
 #include <DigFpgaCpix.h>
+#include <DigFpgaTixel.h>
 #include <Epix100pAsic.h>
 #include <Epix100aAsic.h>
 #include <Epix10kpAsic.h>
 #include <EpixSAsic.h>
 #include <CpixPAsic.h>
+#include <TixelPAsic.h>
 #include <Ad9252.h>
 #include <PseudoScope.h>
 #include <Register.h>
@@ -393,8 +395,8 @@ DigFpga::DigFpga ( uint destination, uint baseAddress, uint index, Device *paren
 
    addRegister(new Register("saciClkBit", baseAddress_ + addrSize*0x00000028));
    addVariable(new Variable("saciClkBit", Variable::Configuration));
-   getVariable("saciClkBit")->setDescription("Bit of 125 MHz counter to use for SACI clock");
-   getVariable("saciClkBit")->setRange(0,0x0007);
+   getVariable("saciClkBit")->setDescription("100 MHz counter for SACI clock");
+   getVariable("saciClkBit")->setRange(0,0x00FF);
 
    addRegister(new Register("asicR0Width", baseAddress_ + addrSize*0x0000002B));
    addVariable(new Variable("asicR0Width", Variable::Configuration));
@@ -481,6 +483,11 @@ DigFpga::DigFpga ( uint destination, uint baseAddress, uint index, Device *paren
    addVariable(new Variable("carrierCardId1", Variable::Status));
    getVariable("carrierCardId0")->setDescription("Carrier Card Serial Number (low 32 bits)");
    getVariable("carrierCardId1")->setDescription("Carrier Card Serial Number (high 32 bits)");
+   
+   addRegister(new Register("pgpTrigEn", baseAddress_ + addrSize*0x0000003D));
+   addVariable(new Variable("pgpTrigEn", Variable::Configuration));
+   getVariable("pgpTrigEn")->setDescription("Set to enable triggering over PGP. Disables the TTL trigger input.");
+   getVariable("pgpTrigEn")->setTrueFalse();
   
    addVariable(new Variable("analogCRC", Variable::Status)); 
    getVariable("analogCRC")->setTrueFalse();
@@ -558,6 +565,11 @@ DigFpga::DigFpga ( uint destination, uint baseAddress, uint index, Device *paren
       addDevice(new CpixPAsic(destination, baseAddress_ + 0x00900000*addrSize, 1, this, addrSize));
       //CPIX specific FPGA registers
       addDevice(new DigFpgaCpix(destination, baseAddress_ + 0x01000000*addrSize, 0, this, addrSize));
+   } else if (epixType == TIXELP) {
+      addDevice(new TixelPAsic(destination, baseAddress_ + 0x00800000*addrSize, 0, this, addrSize));
+      addDevice(new TixelPAsic(destination, baseAddress_ + 0x00900000*addrSize, 1, this, addrSize));
+      //CPIX specific FPGA registers
+      addDevice(new DigFpgaTixel(destination, baseAddress_ + 0x01000000*addrSize, 0, this, addrSize));
    }
 
    getVariable("Enabled")->setHidden(true);
@@ -854,7 +866,7 @@ void DigFpga::readConfig ( ) {
    getVariable("EepromDataIn1")->setInt(getRegister("EepromDataIn1")->get());
 
    readRegister(getRegister("saciClkBit"));
-   getVariable("saciClkBit")->setInt(getRegister("saciClkBit")->get(0,0x7));
+   getVariable("saciClkBit")->setInt(getRegister("saciClkBit")->get(0,0xff));
 
    readRegister(getRegister("asicR0Width"));
    getVariable("asicR0Width")->setInt(getRegister("asicR0Width")->get());
@@ -893,6 +905,10 @@ void DigFpga::readConfig ( ) {
    readRegister(getRegister("tpsTiming"));
    getVariable("tpsDelay")->setInt(getRegister("tpsTiming")->get(0,0xFFFF));
    getVariable("tpsEdge")->setInt(getRegister("tpsTiming")->get(16,0x1));
+   
+   readRegister(getRegister("pgpTrigEn"));
+   getVariable("pgpTrigEn")->setInt(getRegister("pgpTrigEn")->get(0,0x1));
+   
    
  // Sub devices
    REGISTER_UNLOCK
@@ -1001,7 +1017,7 @@ void DigFpga::writeConfig ( bool force ) {
   
    getRegister("EepromDataIn1")->set(getVariable("EepromDataIn1")->getInt());
 
-   getRegister("saciClkBit")->set(getVariable("saciClkBit")->getInt(),0,0x7);
+   getRegister("saciClkBit")->set(getVariable("saciClkBit")->getInt(),0,0xff);
    writeRegister(getRegister("saciClkBit"),force);
 
    getRegister("asicR0Width")->set(getVariable("asicR0Width")->getInt());
@@ -1041,6 +1057,9 @@ void DigFpga::writeConfig ( bool force ) {
    getRegister("tpsTiming")->set(getVariable("tpsDelay")->getInt(),0,0xFFFF);
    getRegister("tpsTiming")->set(getVariable("tpsEdge")->getInt(),16,0x1);
    writeRegister(getRegister("tpsTiming"),force);
+   
+   getRegister("pgpTrigEn")->set(getVariable("pgpTrigEn")->getInt());
+   writeRegister(getRegister("pgpTrigEn"),force);
 
    //Trigger enables here so that all other registers are set before we start
    getRegister("RunTrigDelay")->set(getVariable("RunTrigDelay")->getInt());
@@ -1105,6 +1124,7 @@ void DigFpga::verifyConfig ( ) {
    verifyRegister(getRegister("prepulseR0Width"));
    verifyRegister(getRegister("prepulseR0Delay"));
    verifyRegister(getRegister("asicPPmatToReadout"));
+   verifyRegister(getRegister("pgpTrigEn"));
    REGISTER_UNLOCK
    Device::verifyConfig();
 }

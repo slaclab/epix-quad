@@ -1,3 +1,4 @@
 tb/TB_Tixel_8b10b.vhd
 tb/TB_CpixCore.vhd
+tb/TB_TixelCore.vhd
 tb/TB_CpixLUT.vhd

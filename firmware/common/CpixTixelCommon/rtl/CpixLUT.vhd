@@ -21,6 +21,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 use work.StdRtlPkg.all;
+use work.AxiStreamPkg.all;
 use work.CpixLUTPkg.all;
 
 
@@ -29,24 +30,61 @@ use unisim.vcomponents.all;
 
 entity CpixLUT is
    generic (
-      TPD_G    : time := 1 ns
+      TPD_G          : time      := 1 ns
    );
    port (
-      sysClk   : in  std_logic;
-      address  : in  std_logic_vector(14 downto 0);
-      dataOut  : out std_logic_vector(14 downto 0);
-      enable   : in  std_logic
+      sysClk         : in  std_logic;
+      sysRst         : in  std_logic;
+      
+      -- input stream
+      sAxisMaster    : in  AxiStreamMasterType;
+      
+      -- output stream
+      mAxisMaster    : out AxiStreamMasterType
+      
    );
 end CpixLUT;
 
 architecture rtl of CpixLUT is
 
-   signal address_a     : std_logic_vector(15 downto 0);
+   signal lutAddress    : std_logic_vector(15 downto 0);
+   signal lutData       : std_logic_vector(14 downto 0);
+   signal dataMux       : std_logic_vector(15 downto 0);
+   signal sAxisMasterD1 : AxiStreamMasterType;
 
 begin
    
    
-   address_a <= '0' & address;
+   seq_p: process ( sysClk ) 
+   begin
+      -- 1 stage pipeline
+      if rising_edge(sysClk) then
+         if sysRst = '1' then
+            sAxisMasterD1 <= AXI_STREAM_MASTER_INIT_C after TPD_G;
+         else
+            sAxisMasterD1 <= sAxisMaster              after TPD_G;
+         end if;
+      end if;
+      
+      -- output stream register
+      if rising_edge(sysClk) then
+         if sysRst = '1' then
+            mAxisMaster <= AXI_STREAM_MASTER_INIT_C      after TPD_G;
+         else
+            mAxisMaster.tData(15 downto 0)   <= dataMux              after TPD_G;
+            mAxisMaster.tKeep                <= sAxisMasterD1.tKeep  after TPD_G;
+            mAxisMaster.tUser                <= sAxisMasterD1.tUser  after TPD_G;
+            mAxisMaster.tValid               <= sAxisMasterD1.tValid after TPD_G;
+         end if;
+      end if;
+   end process;
+   
+   -- only data stream is replaced with LUT data
+   -- tUser(1 downto 0) contains dataKOut(1 downto 0)
+   dataMux <= '0' & lutData when sAxisMasterD1.tUser(1 downto 0) = "00" else sAxisMasterD1.tData(15 downto 0);
+   
+   -- LUT ram
+   lutAddress <= '0' & sAxisMaster.tData(6 downto 0) & sAxisMaster.tData(15 downto 8);
    
    -- the input address is 15 bit therefore the lut size is 32kb
    -- the output converted data is 15 bit
@@ -209,11 +247,11 @@ begin
          INIT_7F              => CPIX_NORMAL_INIT_7F_BITS_C(i)
       )
       port map (   
-         ADDRARDADDR          => address_a,
-         ENARDEN              => enable,
+         ADDRARDADDR          => lutAddress,
+         ENARDEN              => '1',
          CLKARDCLK            => sysClk,
          DOADO(31 downto 1)   => open,
-         DOADO(0)             => dataOut(i),
+         DOADO(0)             => lutData(i),
          DOPADOP              => open, 
          DIADI                => x"00000000",
          DIPADIP              => "0000", 

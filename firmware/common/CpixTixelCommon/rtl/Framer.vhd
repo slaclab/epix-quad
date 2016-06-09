@@ -36,7 +36,7 @@ use unisim.vcomponents.all;
 entity Framer is
    generic (
       TPD_G                : time                  := 1 ns;
-      FRAME_BYTES_G        : natural               := 4608;
+      FRAME_WORDS_G        : natural               := 2304;
       ASIC_NUMBER_G        : slv(3 downto 0)       := "0000"
    );
    port (
@@ -45,13 +45,6 @@ entity Framer is
       byteClkRst     : in  sl;
       sysClk         : in  sl;
       sysRst         : in  sl;
-      
-      -- decoded data signals (byteClk)
-      inSync         : in  sl;
-      dataOut        : in  slv(7 downto 0);
-      dataKOut       : in  sl;
-      codeErr        : in  sl;
-      dispErr        : in  sl;
       
       -- control/status signals (byteClk)
       forceFrameRead : in  sl;
@@ -70,6 +63,9 @@ entity Framer is
       cntReset       : in  sl;
       epixConfig     : in  EpixConfigType;
       
+      -- decoded data input stream (byteClk)
+      sAxisMaster    : in  AxiStreamMasterType;
+      
       -- AXI Stream Master Port (sysClk)
       mAxisMaster    : out AxiStreamMasterType;
       mAxisSlave     : in  AxiStreamSlaveType
@@ -78,18 +74,17 @@ end Framer;
 
 architecture rtl of Framer is
 
-   constant SOF_C                : slv(7 downto 0)       := x"F7";
-   constant EOF_C                : slv(7 downto 0)       := x"FD";
-   constant D102_C               : slv(7 downto 0)       := x"4A";
-   constant HEADER_BYTES_C       : natural               := 60;
+   constant SOF_C                : slv(15 downto 0)       := x"F7" & x"4A";
+   constant EOF_C                : slv(15 downto 0)       := x"FD" & x"4A";
+   constant HEADER_WORDS_C       : natural               := 30;
    constant LANE_C               : slv( 1 downto 0)      := "00";
    constant VC_C                 : slv( 1 downto 0)      := "00";
-   constant ZEROBYTE_C           : slv( 7 downto 0)      := x"00";
-   constant SLAVE_AXI_CONFIG_C   : AxiStreamConfigType   := ssiAxiStreamConfig(1, TKEEP_COMP_C);
+   constant ZEROWORD_C           : slv(15 downto 0)      := x"0000";
+   constant SLAVE_AXI_CONFIG_C   : AxiStreamConfigType   := ssiAxiStreamConfig(2, TKEEP_COMP_C);
    constant MASTER_AXI_CONFIG_C  : AxiStreamConfigType   := ssiAxiStreamConfig(4, TKEEP_COMP_C);
    
-   signal sAxisMaster      : AxiStreamMasterType;
-   signal sAxisSlave       : AxiStreamSlaveType;
+   signal sFifoAxisMaster  : AxiStreamMasterType;
+   signal sFifoAxisSlave   : AxiStreamSlaveType;
    
    signal frameCnt         : unsigned(31 downto 0);
    signal frameErrCnt      : unsigned(31 downto 0);
@@ -105,34 +100,17 @@ architecture rtl of Framer is
    signal timeoutReqSync   : sl;
    signal cntResetSync     : sl;
    
-   signal headerData       : slv(7 downto 0);
+   signal headerData       : slv(15 downto 0);
    signal channelID        : slv(31 downto 0);
    
    signal lutAddr          : slv(15 downto 0);
    signal lutData          : slv(15 downto 0);
    
-   TYPE STATE_TYPE IS (IDLE_S, HEADER_S, WAIT_DATA_S, SOF_S, DATA_IN_S, EOF_S, ERROR_S, DONE_S);
+   TYPE STATE_TYPE IS (IDLE_S, HEADER_S, WAIT_DATA_S, DATA_IN_S, EOF_S, ERROR_S, DONE_S);
    signal state, next_state : STATE_TYPE; 
-   signal byteCnt    : unsigned(31 downto 0); 
-   signal byteCntEn  : sl; 
-   signal byteCntRst : sl;  
-   
-   signal inSyncD1   : sl;
-   signal inSyncD2   : sl;
-   signal inSyncD3   : sl;
-   signal dataOutD1  : slv(7 downto 0);
-   signal dataOutD2  : slv(7 downto 0);
-   signal dataOutD3  : slv(7 downto 0);
-   signal dataKOutD1 : sl;
-   signal dataKOutD2 : sl;
-   signal dataKOutD3 : sl;
-   signal codeErrD1  : sl;
-   signal codeErrD2  : sl;
-   signal codeErrD3  : sl;
-   signal dispErrD1  : sl;
-   signal dispErrD2  : sl;
-   signal dispErrD3  : sl;
-   signal lutByteCnt : sl;
+   signal wordCnt    : unsigned(31 downto 0); 
+   signal wordCntEn  : sl; 
+   signal wordCntRst : sl;  
    
    attribute keep : string;
    attribute keep of state : signal is "true";
@@ -155,8 +133,8 @@ begin
       -- Slave Port
       sAxisClk    => byteClk,
       sAxisRst    => byteClkRst,
-      sAxisMaster => sAxisMaster,
-      sAxisSlave  => sAxisSlave,
+      sAxisMaster => sFifoAxisMaster,
+      sAxisSlave  => sFifoAxisSlave,
       sAxisCtrl   => open,
       -- Master Port
       mAxisClk    => sysClk,
@@ -194,49 +172,12 @@ begin
          end if;
       end if;
       
-      -- 3 stage pipeline
+      -- word counter
       if rising_edge(byteClk) then
-         if byteClkRst = '1' then
-            inSyncD1 <= '0'               after TPD_G;
-            inSyncD2 <= '0'               after TPD_G;
-            inSyncD3 <= '0'               after TPD_G;
-            dataKOutD1 <= '0'             after TPD_G;
-            dataKOutD2 <= '0'             after TPD_G;
-            dataKOutD3 <= '0'             after TPD_G;
-            codeErrD1 <= '0'              after TPD_G;
-            codeErrD2 <= '0'              after TPD_G;
-            codeErrD3 <= '0'              after TPD_G;
-            dispErrD1 <= '0'              after TPD_G;
-            dispErrD2 <= '0'              after TPD_G;
-            dispErrD3 <= '0'              after TPD_G;
-            dataOutD1 <= (others=>'0')    after TPD_G;
-            dataOutD2 <= (others=>'0')    after TPD_G;
-            dataOutD3 <= (others=>'0')    after TPD_G;
-         else
-            inSyncD1 <= inSync            after TPD_G;
-            inSyncD2 <= inSyncD1          after TPD_G;
-            inSyncD3 <= inSyncD2          after TPD_G;
-            dataKOutD1 <= dataKOut        after TPD_G;
-            dataKOutD2 <= dataKOutD1      after TPD_G;
-            dataKOutD3 <= dataKOutD2      after TPD_G;
-            codeErrD1 <= codeErr          after TPD_G;
-            codeErrD2 <= codeErrD1        after TPD_G;
-            codeErrD3 <= codeErrD2        after TPD_G;
-            dispErrD1 <= dispErr          after TPD_G;
-            dispErrD2 <= dispErrD1        after TPD_G;
-            dispErrD3 <= dispErrD2        after TPD_G;
-            dataOutD1 <= dataOut          after TPD_G;
-            dataOutD2 <= dataOutD1        after TPD_G;
-            dataOutD3 <= dataOutD2        after TPD_G;
-         end if;
-      end if;
-      
-      -- byte counter
-      if rising_edge(byteClk) then
-         if byteCntRst = '1' then
-            byteCnt <= (others=>'0')      after TPD_G;
-         elsif byteCntEn = '1' then
-            byteCnt <= byteCnt + 1        after TPD_G;
+         if wordCntRst = '1' then
+            wordCnt <= (others=>'0')      after TPD_G;
+         elsif wordCntEn = '1' then
+            wordCnt <= wordCnt + 1        after TPD_G;
          end if;
       end if;
       
@@ -297,13 +238,13 @@ begin
    cntToutError   <= std_logic_vector(timeoutErrCnt);
    
 
-   fsm_cmb_p: process (state, frameReqSync, timeoutReqSync, sAxisSlave, headerData, inSyncD3, codeErrD3, dispErrD3, dataKOutD3, dataOutD3, byteCnt, lutData, forceFrameRead) 
-   variable sAxisMasterVar : AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
+   fsm_cmb_p: process (state, frameReqSync, timeoutReqSync, sFifoAxisSlave, headerData, sAxisMaster, wordCnt, lutData, forceFrameRead) 
+   variable sFifoAxisMasterVar : AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
    begin
       next_state <= state;
-      sAxisMasterVar := AXI_STREAM_MASTER_INIT_C;
-      byteCntEn <= '0';
-      byteCntRst <= '1';
+      sFifoAxisMasterVar := AXI_STREAM_MASTER_INIT_C;
+      wordCntEn <= '0';
+      wordCntRst <= '1';
       frameAck <= '0';
       headerAck <= '0';
       frameCntEn <= '0';
@@ -320,94 +261,82 @@ begin
             end if;
          
          when HEADER_S =>
-            byteCntRst <= '0';
+            wordCntRst <= '0';
             
-            sAxisMasterVar.tData(7 downto 0) := headerData;
-            sAxisMasterVar.tValid := '1';
+            sFifoAxisMasterVar.tData(15 downto 0) := headerData;
+            sFifoAxisMasterVar.tValid := '1';
             
-            if sAxisSlave.tReady = '1' then
-               byteCntEn <= '1';
+            if sFifoAxisSlave.tReady = '1' then
+               wordCntEn <= '1';
             end if;
-            if byteCnt = 0 then
-               ssiSetUserSof(SLAVE_AXI_CONFIG_C, sAxisMasterVar, '1');
-            elsif byteCnt >= HEADER_BYTES_C - 1 then
+            if wordCnt = 0 then
+               ssiSetUserSof(SLAVE_AXI_CONFIG_C, sFifoAxisMasterVar, '1');
+            elsif wordCnt >= HEADER_WORDS_C - 1 then
                next_state <= WAIT_DATA_S;
             end if;
          
          when WAIT_DATA_S =>
             headerAck <= '1';
-            if inSyncD3 = '1' and dataKOutD3 = '1' and dataOutD3 = SOF_C then
-               next_state <= SOF_S;
+            if sAxisMaster.tData(15 downto 0) = SOF_C and sAxisMaster.tUser(1 downto 0) = "10" and sAxisMaster.tValid = '1' then
+               next_state <= DATA_IN_S;
             elsif timeoutReqSync = '1' then
                timeoutErrCntEn <= '1';
                next_state <= ERROR_S;
             end if;
-      
-         when SOF_S =>
-            if forceFrameRead = '1' then
-               next_state <= DATA_IN_S;
-            else
-               if inSyncD3 = '1' and dataKOutD3 = '0' and dataOutD3 = D102_C then
-                  next_state <= DATA_IN_S;
-               else
-                  frameErrCntEn <= '1';
-                  next_state <= ERROR_S;
-               end if;
-            end if;
          
          when DATA_IN_S =>
-            byteCntEn <= '1';
-            byteCntRst <= '0';
             
-            if byteCnt(0) = '0' then
-               sAxisMasterVar.tData(7 downto 0) := lutData(7 downto 0);
-            else
-               sAxisMasterVar.tData(7 downto 0) := lutData(15 downto 8);
+            if sAxisMaster.tValid = '1' then
+               wordCntEn <= '1';
             end if;
-            --sAxisMasterVar.tData(7 downto 0) := dataOutD3;
-            sAxisMasterVar.tValid := '1';
+            wordCntRst <= '0';
+            
+            sFifoAxisMasterVar.tData := sAxisMaster.tData;
+            sFifoAxisMasterVar.tValid := sAxisMaster.tValid;
             
             -- count potentially not critical errors and continue capturing the data (DATA_IN_S)
-            if inSyncD3 = '0' or codeErrD3 = '1' or dispErrD3 = '1' then
+            -- tUser(3 downto 2) is codeError
+            -- tUser(5 downto 4) is dispError
+            if (sAxisMaster.tUser(3 downto 2) /= "00" or sAxisMaster.tUser(5 downto 4) /= "00") and sAxisMaster.tValid = '1' then
                codeErrCntEn <= '1';
             end if;
             
             -- cannot stop the ASIC readout when the slave is not ready
-            if sAxisSlave.tReady = '0' then
+            if sFifoAxisSlave.tReady = '0' then
                frameErrCntEn <= '1';
                next_state <= ERROR_S;
             end if;
             
             -- number of bytes is checked to prevent missing EOF code
-            if byteCnt > FRAME_BYTES_G then
+            if wordCnt > FRAME_WORDS_G then
                frameErrCntEn <= '1';
                next_state <= ERROR_S;
             end if;
             
             -- K byte that is not EOF
-            if dataKOutD3 = '1' and dataOutD3 /= EOF_C and forceFrameRead = '0' then
+            if sAxisMaster.tUser(1 downto 0) /= "00" and sAxisMaster.tData(15 downto 0) /= EOF_C and sAxisMaster.tValid = '1' and forceFrameRead = '0' then
                frameErrCntEn <= '1';
                next_state <= ERROR_S;
             end if;
             
             -- if forced read skip checking the EOF
-            if byteCnt = FRAME_BYTES_G and forceFrameRead = '1' then 
-               sAxisMasterVar.tValid := '0';
+            if wordCnt = FRAME_WORDS_G and forceFrameRead = '1' then 
+               sFifoAxisMasterVar.tValid := '0';
                frameCntEn <= '1';
-               byteCntRst <= '1';
+               wordCntRst <= '1';
                next_state <= DONE_S;
             end if;
             
             -- EOF
-            if dataKOutD3 = '1' and dataOutD3 = EOF_C and forceFrameRead = '0' then
-               sAxisMasterVar.tValid := '0';
-               byteCntEn <= '0';
+            if sAxisMaster.tUser(1 downto 0) = "10" and sAxisMaster.tData(15 downto 0) = EOF_C and sAxisMaster.tValid = '1' and forceFrameRead = '0' then
+               sFifoAxisMasterVar.tValid := '0';
+               wordCntEn <= '0';
                next_state <= EOF_S;
             end if;
          
          when EOF_S => 
             -- number of bytes is checked to ensure no missing bytes
-            if byteCnt = FRAME_BYTES_G then
+            if wordCnt = FRAME_WORDS_G then
                frameCntEn <= '1';
                next_state <= DONE_S;
             else
@@ -416,30 +345,30 @@ begin
             end if;
          
          when DONE_S => 
-            byteCntRst <= '0';
+            wordCntRst <= '0';
             
-            sAxisMasterVar.tData(7 downto 0) := x"00";   -- 4 x zero bytes footer
-            sAxisMasterVar.tValid := '1';
+            sFifoAxisMasterVar.tData(15 downto 0) := x"0000";   -- 4 x zero bytes footer
+            sFifoAxisMasterVar.tValid := '1';
             
-            if sAxisSlave.tReady = '1' then
-               byteCntEn <= '1';
+            if sFifoAxisSlave.tReady = '1' then
+               wordCntEn <= '1';
             end if;
             
-            if byteCnt >= 3 then
-               sAxisMasterVar.tLast := '1';
-               ssiSetUserEofe(SLAVE_AXI_CONFIG_C, sAxisMasterVar, '0'); --EOF
+            if wordCnt >= 1 then
+               sFifoAxisMasterVar.tLast := '1';
+               ssiSetUserEofe(SLAVE_AXI_CONFIG_C, sFifoAxisMasterVar, '0'); --EOF
                next_state <= IDLE_S;
             end if;
          
          when ERROR_S => 
-            byteCntRst <= '0';
+            wordCntRst <= '0';
             
-            sAxisMasterVar.tData(7 downto 0) := x"00";
-            sAxisMasterVar.tValid := '1';
-            sAxisMasterVar.tLast := '1';
-            ssiSetUserEofe(SLAVE_AXI_CONFIG_C, sAxisMasterVar, '1'); --EOFE
+            sFifoAxisMasterVar.tData(15 downto 0) := x"0000";
+            sFifoAxisMasterVar.tValid := '1';
+            sFifoAxisMasterVar.tLast := '1';
+            ssiSetUserEofe(SLAVE_AXI_CONFIG_C, sFifoAxisMasterVar, '1'); --EOFE
             
-            if sAxisSlave.tReady = '1' then
+            if sFifoAxisSlave.tReady = '1' then
                next_state <= IDLE_S;
             end if;
             
@@ -448,63 +377,25 @@ begin
       
       end case;
       
-      sAxisMaster <= sAxisMasterVar;
+      sFifoAxisMaster <= sFifoAxisMasterVar;
       
    end process;
    
    -- header data mux
+   
    headerData <=
-      ZEROBYTE_C                    when byteCnt = 3  else
-      ZEROBYTE_C                    when byteCnt = 2  else
-      ZEROBYTE_C                    when byteCnt = 1  else
-      "00" & LANE_C & "00" & VC_C   when byteCnt = 0  else
-      cntAcquisition(31 downto 24)  when byteCnt = 7  else
-      cntAcquisition(23 downto 16)  when byteCnt = 6  else
-      cntAcquisition(15 downto  8)  when byteCnt = 5  else
-      cntAcquisition(7  downto  0)  when byteCnt = 4  else
-      cntSequence(31 downto 24)     when byteCnt = 11 else
-      cntSequence(23 downto 16)     when byteCnt = 10 else
-      cntSequence(15 downto  8)     when byteCnt = 9  else
-      cntSequence(7  downto  0)     when byteCnt = 8  else
-      channelID(31 downto 24)       when byteCnt = 59 else     -- 15th dword (ID)
-      channelID(23 downto 16)       when byteCnt = 58 else     -- 15th dword (ID)
-      channelID(15 downto  8)       when byteCnt = 57 else     -- 15th dword (ID)
-      channelID(7  downto  0)       when byteCnt = 56 else     -- 15th dword (ID)
-      ZEROBYTE_C;
+      ZEROWORD_C                          when wordCnt = 1  else
+      x"00" & "00" & LANE_C & "00" & VC_C when wordCnt = 0  else
+      cntAcquisition(31 downto 16)        when wordCnt = 3  else
+      cntAcquisition(15 downto  0)        when wordCnt = 2  else
+      cntSequence(31 downto 16)           when wordCnt = 5  else
+      cntSequence(15 downto  0)           when wordCnt = 4  else
+      channelID(31 downto 16)             when wordCnt = 29 else     -- 15th dword (ID)
+      channelID(15 downto  0)             when wordCnt = 28 else     -- 15th dword (ID)
+      ZEROWORD_C;
    
    -- channel id
    channelID <= x"000000" & "000" & cntAReadout & ASIC_NUMBER_G;
    
-   -- CPIX LUT instance
-   U_CpixLUT : entity work.CpixLUT
-   port map ( 
-      sysClk   => byteClk,
-      address  => lutAddr(14 downto 0),
-      dataOut  => lutData(14 downto 0),
-      enable   => '1'
-   );
-   lutData(15) <= '0';
-   
-   -- LUT address register
-   lut_p: process ( byteClk ) 
-   begin
-      if rising_edge(byteClk) then
-         if byteClkRst = '1' then
-            lutAddr <= (others=>'0')            after TPD_G;
-         -- update LUT address every second byte
-         elsif lutByteCnt = '0' then
-            lutAddr <= dataOut & dataOutD1      after TPD_G; 
-         end if;
-      end if;
-      
-      -- bit used to store 2 address bytes in right order
-      if rising_edge(byteClk) then
-         if inSync = '1' and dataOut = SOF_C and dataKOut = '1' then
-            lutByteCnt <= '0'                   after TPD_G;
-         else
-            lutByteCnt <= not lutByteCnt        after TPD_G; 
-         end if;
-      end if;
-   end process;
    
 end rtl;

@@ -20,16 +20,18 @@ LIBRARY ieee;
 use work.all;
 use ieee.std_logic_1164.all;
 use IEEE.NUMERIC_STD.all;
-use ieee.math_real.all;
+
 use work.StdRtlPkg.all;
+use work.AxiStreamPkg.all;
 
 library UNISIM;
 use UNISIM.vcomponents.all;
 
 entity Deserializer is 
    generic (
-      TPD_G             : time := 1 ns;
-      IDELAYCTRL_FREQ_G : real := 200.0
+      TPD_G             : time      := 1 ns;
+      IDELAYCTRL_FREQ_G : real      := 200.0;
+      INVERT_SDATA_G    : boolean   := false
    );
    port ( 
       bitClk         : in  std_logic;
@@ -41,19 +43,14 @@ entity Deserializer is
       asicDoutM      : in  std_logic;
       
       -- status
-      patternCnt     : out std_logic_vector(31 downto 0);
-      testDone       : out std_logic;
       inSync         : out std_logic;
-      
-      -- decoded data out
-      dataOut        : out std_logic_vector(7 downto 0);
-      dataKOut       : out std_logic;
-      codeErr        : out std_logic;
-      dispErr        : out std_logic;
       
       -- control
       resync         : in  std_logic;
-      delay          : in  std_logic_vector(4 downto 0)
+      delay          : in  std_logic_vector(4 downto 0);
+      
+      -- decoded data Stream Master Port (byteClk)
+      mAxisMaster    : out AxiStreamMasterType
    );
 end Deserializer;
 
@@ -61,11 +58,11 @@ end Deserializer;
 -- Define architecture
 architecture RTL of Deserializer is
 
-   TYPE STATE_TYPE IS (BIT_SLIP, SLIP_WAIT, PT0_CHECK, PT1_CHECK, INSYNC_S);
+   TYPE STATE_TYPE IS (BIT_SLIP_S, SLIP_WAIT_S, PT0_CHECK_S, PT1_CHECK_S, INSYNC_S);
    SIGNAL state, next_state   : STATE_TYPE;
    
    signal bitClkInv     : std_logic;
-   signal asicDoutN     : std_logic;
+   signal asicDataBuf   : std_logic;
    signal asicDout      : std_logic;
    signal asicDoutDly   : std_logic;
    signal pattern_ok    : std_logic;
@@ -78,12 +75,28 @@ architecture RTL of Deserializer is
    signal delayCurr     : std_logic_vector(4 downto 0);
    signal delay_en      : std_logic;
    
-   signal tst_counter   : unsigned(31 downto 0);
-   signal tst_done      : std_logic;
-   signal tr_counter    : unsigned(31 downto 0);
-   
    signal wait_counter  : integer range 0 to 3;
    signal wait_cnt_rst  : std_logic;
+   
+   signal dataOut       : std_logic_vector(15 downto 0);
+   signal dataKOut      : std_logic_vector(1 downto 0);
+   signal codeErr       : std_logic_vector(1 downto 0);
+   signal dispErr       : std_logic_vector(1 downto 0);
+   
+   signal dataOutD0     : std_logic_vector(7 downto 0);
+   signal dataKOutD0    : std_logic;
+   signal codeErrD0     : std_logic;
+   signal dispErrD0     : std_logic;
+   
+   signal dataOutD1     : std_logic_vector(7 downto 0);
+   signal dataKOutD1    : std_logic;
+   signal codeErrD1     : std_logic;
+   signal dispErrD1     : std_logic;
+   
+   signal validWrd      : std_logic;
+   
+   constant IDLE_K_C    : std_logic_vector(7 downto 0) := x"BC";
+   constant IDLE_D_C    : std_logic_vector(7 downto 0) := x"4A";
    
    attribute keep :string;
    attribute keep of iserdese_out : signal is "true";
@@ -97,10 +110,10 @@ begin
    port map (
       I    => asicDoutP,
       IB   => asicDoutM,
-      O    => asicDoutN
+      O    => asicDataBuf
    );
    
-   asicDout <= not asicDoutN;
+   asicDout <= not asicDataBuf when INVERT_SDATA_G = true else asicDataBuf;
    
    -- input delay taps
    U_IDELAYE2 : IDELAYE2
@@ -233,59 +246,28 @@ begin
    --pattern_ok <= '1' when iserdese_out = "1100000101" or iserdese_out = "0011111010" or iserdese_out = "0101010101" else '0';
    pattern_ok <= '1' when iserdese_out = "1010000011" or iserdese_out = "0101111100" or iserdese_out = "1010101010" else '0';
    
-
-   -- test counter
-   tst_cnt_p: process ( byteClk ) 
+   -- bit slip FSM
+   cnt_p: process ( byteClk ) 
    begin
-      if rising_edge(byteClk) then
-         if byteClkRst = '1' or resync = '1' then
-            tst_counter <= (others=>'0') after TPD_G;
-         elsif synced = '1' and tst_done = '0' then
-            tst_counter <= tst_counter + 1 after TPD_G;
-         end if;
-      end if;
-   end process;
-   
-   tst_done <= '1' when std_logic_vector(tst_counter) = x"0FFFFFFF" else '0';
-   testDone <= tst_done;
-   patternCnt <= std_logic_vector(tr_counter);
-
-   
-   -- good training pattern counter
-   tr_cnt_p: process ( byteClk ) 
-   begin
-      if rising_edge(byteClk) then
-         if byteClkRst = '1' or resync = '1' then
-            tr_counter <= (others=>'0') after TPD_G;
-         elsif synced = '1' and pattern_ok = '1' and tst_done = '0' then
-            tr_counter <= tr_counter + 1 after TPD_G;
-         end if;
-      end if;
-   end process;
    
       -- FSM wait counter
-   wait_cnt_p: process ( byteClk ) 
-   begin
       if rising_edge(byteClk) then
          if byteClkRst = '1' or wait_cnt_rst = '1' then
             wait_counter <= 0 after TPD_G;
          else
-            wait_counter <= wait_counter + 1 after TPD_G;         
+            wait_counter <= wait_counter + 1 after TPD_G;
          end if;
       end if;
-   end process;
-   
-   
-   -- Data sync FSM
-   fsm_cnt_p: process ( byteClk ) 
-   begin
+      
+      -- Data sync FSM
       if rising_edge(byteClk) then
          if byteClkRst = '1' then
-            state <= BIT_SLIP after TPD_G;
+            state <= BIT_SLIP_S after TPD_G;
          else
-            state <= next_state after TPD_G;         
+            state <= next_state after TPD_G;
          end if;
       end if;
+      
    end process;
    
    fsm_cmb_p: process (state, wait_counter, pattern_ok, resync) 
@@ -298,26 +280,26 @@ begin
       
       case state is
       
-         when BIT_SLIP =>
+         when BIT_SLIP_S =>
             slip <= '1';
-            next_state <= SLIP_WAIT;
+            next_state <= SLIP_WAIT_S;
       
-         when SLIP_WAIT =>
+         when SLIP_WAIT_S =>
             wait_cnt_rst <= '0';
             if wait_counter >= 2 then
-               next_state <= PT0_CHECK; 
+               next_state <= PT0_CHECK_S; 
             end if;
          
-         when PT0_CHECK =>
+         when PT0_CHECK_S =>
             if pattern_ok = '0' then
-               next_state <= BIT_SLIP;
+               next_state <= BIT_SLIP_S;
             else
-               next_state <= PT1_CHECK;
+               next_state <= PT1_CHECK_S;
             end if;
          
-         when PT1_CHECK =>
+         when PT1_CHECK_S =>
             if pattern_ok = '0' then
-               next_state <= BIT_SLIP;
+               next_state <= BIT_SLIP_S;
             else
                next_state <= INSYNC_S;
             end if;
@@ -325,11 +307,11 @@ begin
          when INSYNC_S => 
             synced <= '1';
             if resync = '1' then
-               next_state <= BIT_SLIP;
+               next_state <= BIT_SLIP_S;
             end if;
          
          when others =>
-            next_state <= BIT_SLIP;
+            next_state <= BIT_SLIP_S;
       
       end case;
       
@@ -348,11 +330,63 @@ begin
       clkEn       => '1',
       rst         => synced,
       dataIn      => iserdese_out,
-      dataOut     => dataOut,
-      dataKOut(0) => dataKOut,
-      codeErr(0)  => codeErr,
-      dispErr(0)  => dispErr
+      dataOut     => dataOutD0,
+      dataKOut(0) => dataKOutD0,
+      codeErr(0)  => codeErrD0,
+      dispErr(0)  => dispErrD0
    );
+   
+   -- byte deserializer (re-order)
+   byteDes_p: process ( byteClk ) 
+   begin
+      
+      -- pipeline registers
+      if rising_edge(byteClk) then
+         if byteClkRst = '1' then
+            dataOutD1 <= (others=>'0')    after TPD_G;
+            dataKOutD1 <= '0'             after TPD_G;
+            codeErrD1 <= '0'              after TPD_G;
+            dispErrD1 <= '0'              after TPD_G;
+         else
+            dataOutD1 <= dataOutD0        after TPD_G;
+            dataKOutD1 <= dataKOutD0      after TPD_G;
+            codeErrD1 <= codeErrD0        after TPD_G;
+            dispErrD1 <= dispErrD0        after TPD_G;
+         end if;
+      end if;
+      
+      -- data valid bit
+      if rising_edge(byteClk) then
+         if byteClkRst = '1' or (dataOutD1 = IDLE_K_C and dataKOutD1 = '1') then
+            validWrd <= '0'               after TPD_G;
+         else
+            validWrd <= not validWrd      after TPD_G;
+         end if;
+      end if;
+      
+   end process;
+   
+   dataOut <= dataOutD1 & dataOutD0;
+   dataKOut <= dataKOutD1 & dataKOutD0;
+   codeErr <= codeErrD1 & codeErrD0;
+   dispErr <= dispErrD1 & dispErrD0;
+   
+   -- stream output register
+   outReg_p: process ( byteClk ) 
+   begin
+      if rising_edge(byteClk) then
+         if byteClkRst = '1' then
+            mAxisMaster <= AXI_STREAM_MASTER_INIT_C      after TPD_G;
+         else
+            mAxisMaster.tData(15 downto 0)   <= dataOut  after TPD_G;
+            mAxisMaster.tKeep                <= x"0003"  after TPD_G;
+            mAxisMaster.tUser(1 downto 0)    <= dataKOut after TPD_G;
+            mAxisMaster.tUser(3 downto 2)    <= codeErr  after TPD_G;
+            mAxisMaster.tUser(5 downto 4)    <= dispErr  after TPD_G;
+            mAxisMaster.tValid               <= validWrd after TPD_G;
+         end if;
+      end if;
+   end process;
 
 end RTL;
 
