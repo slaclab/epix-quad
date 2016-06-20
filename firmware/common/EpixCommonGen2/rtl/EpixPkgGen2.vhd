@@ -10,16 +10,28 @@ use work.Version.all;
 package EpixPkgGen2 is
 
    -- AXI-Lite Constants
-   constant NUM_AXI_MASTER_SLOTS_C : natural := 1;
+   constant NUM_AXI_MASTER_SLOTS_C : natural := 3;
    constant NUM_AXI_SLAVE_SLOTS_C : natural := 2;
 
    constant COMMON_AXI_INDEX_C  : natural := 0;
+   constant VERSION_AXI_INDEX_C : natural := 1;
+   constant BOOTMEM_AXI_INDEX_C : natural := 2;
    
    constant COMMON_AXI_BASE_ADDR_C    : slv(31 downto 0) := X"00000000";
+   constant VERSION_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"08000000";
+   constant BOOTMEM_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"0C000000";
    
    constant AXI_CROSSBAR_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0) := (
       COMMON_AXI_INDEX_C      => (
          baseAddr             => COMMON_AXI_BASE_ADDR_C,
+         addrBits             => 26,
+         connectivity         => x"0003"),
+      VERSION_AXI_INDEX_C      => (
+         baseAddr             => VERSION_AXI_BASE_ADDR_C,
+         addrBits             => 26,
+         connectivity         => x"0003"),
+      BOOTMEM_AXI_INDEX_C      => (
+         baseAddr             => BOOTMEM_AXI_BASE_ADDR_C,
          addrBits             => 26,
          connectivity         => x"0003")
    );
