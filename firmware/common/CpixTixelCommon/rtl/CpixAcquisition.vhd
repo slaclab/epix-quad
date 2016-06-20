@@ -45,7 +45,7 @@ entity CpixAcquisition is
       -- control/status signals (byteClk)
       cntAcquisition  : out std_logic_vector(31 downto 0);
       cntSequence     : out std_logic_vector(31 downto 0);
-      cntAReadout     : out std_logic;
+      cntReadout      : out std_logic_vector( 3 downto 0);
       frameReq        : out std_logic;
       frameAck        : in  std_logic_vector(NUMBER_OF_ASICS-1 downto 0);
       frameErr        : in  std_logic_vector(NUMBER_OF_ASICS-1 downto 0);
@@ -333,7 +333,7 @@ begin
       saciReadoutReq <= '0';
       startAbDly <= '0';
       a2bRst <= '0';
-      cntAReadout <= '0';
+      cntReadout <= (others=>'0');
       seqCntEn <= '0';
       acqCntEn <= '0';
       frameReq <= '0';
@@ -392,7 +392,7 @@ begin
             delayCntRst <= '1';
             frameReq <= '1';
             if runsCnt = 0 then
-               cntAReadout <= '1';
+               cntReadout <= "0001";
             end if;
             -- wait for the headers to be transmitted before requesting the ASIC to start the readout
             if unsigned(headerAckSync) = to_unsigned(2**NUMBER_OF_ASICS-1, NUMBER_OF_ASICS) then

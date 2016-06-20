@@ -117,6 +117,7 @@ begin
       axiSlaveRegisterW(x"000002" & "00",  0, v.tixelRegOut.tixelStartToTpulse );
       axiSlaveRegisterW(x"000003" & "00",  0, v.tixelRegOut.tixelTpulseToAcq );
       axiSlaveRegisterW(x"000004" & "00",  0, v.tixelRegOut.tixelSyncMode );
+      axiSlaveRegisterW(x"000005" & "00",  0, v.tixelRegOut.tixelReadouts );
       
       axiSlaveRegisterW(x"000009" & "00",  0, v.tixelRegOut.tixelAsicPinControl );
       axiSlaveRegisterW(x"00000A" & "00",  0, v.tixelRegOut.tixelAsicPins );
@@ -139,6 +140,8 @@ begin
       axiSlaveRegisterW(x"000304" & "00",  0, v.tixelRegOut.doutResync(1));
       axiSlaveRegisterW(x"000305" & "00",  0, v.tixelRegOut.doutDelay(1));
       axiSlaveRegisterR(x"000306" & "00",  0, tixelStatus.tixelFramesGood(1));
+      
+      axiSlaveRegisterW(x"000400" & "00",  0, v.tixelRegOut.tixelDebug);
       
       -- keep addresses x"000400" and x"000500" for future ASICs
       

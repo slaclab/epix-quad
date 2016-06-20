@@ -488,6 +488,11 @@ DigFpga::DigFpga ( uint destination, uint baseAddress, uint index, Device *paren
    addVariable(new Variable("pgpTrigEn", Variable::Configuration));
    getVariable("pgpTrigEn")->setDescription("Set to enable triggering over PGP. Disables the TTL trigger input.");
    getVariable("pgpTrigEn")->setTrueFalse();
+   
+   addRegister(new Register("monStreamEn", baseAddress_ + addrSize*0x0000003E));
+   addVariable(new Variable("monStreamEn", Variable::Configuration));
+   getVariable("monStreamEn")->setDescription("Set to enable monitor data stream over PGP.");
+   getVariable("monStreamEn")->setTrueFalse();
   
    addVariable(new Variable("analogCRC", Variable::Status)); 
    getVariable("analogCRC")->setTrueFalse();
@@ -909,6 +914,10 @@ void DigFpga::readConfig ( ) {
    readRegister(getRegister("pgpTrigEn"));
    getVariable("pgpTrigEn")->setInt(getRegister("pgpTrigEn")->get(0,0x1));
    
+   readRegister(getRegister("monStreamEn"));
+   getVariable("monStreamEn")->setInt(getRegister("monStreamEn")->get(0,0x1));
+   
+   
    
  // Sub devices
    REGISTER_UNLOCK
@@ -1060,6 +1069,10 @@ void DigFpga::writeConfig ( bool force ) {
    
    getRegister("pgpTrigEn")->set(getVariable("pgpTrigEn")->getInt());
    writeRegister(getRegister("pgpTrigEn"),force);
+   
+   getRegister("monStreamEn")->set(getVariable("monStreamEn")->getInt());
+   writeRegister(getRegister("monStreamEn"),force);
+   
 
    //Trigger enables here so that all other registers are set before we start
    getRegister("RunTrigDelay")->set(getVariable("RunTrigDelay")->getInt());
@@ -1125,6 +1138,7 @@ void DigFpga::verifyConfig ( ) {
    verifyRegister(getRegister("prepulseR0Delay"));
    verifyRegister(getRegister("asicPPmatToReadout"));
    verifyRegister(getRegister("pgpTrigEn"));
+   verifyRegister(getRegister("monStreamEn"));
    REGISTER_UNLOCK
    Device::verifyConfig();
 }

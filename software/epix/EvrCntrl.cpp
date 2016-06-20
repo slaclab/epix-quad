@@ -46,6 +46,9 @@ EvrCntrl::EvrCntrl ( Device *parent ) : Device(0,0,"evrCntrl",0,parent) {
    addVariable(new Variable("BeamDelay",       Variable::Configuration));
    addVariable(new Variable("DarkDelay",       Variable::Configuration));
    addVariable(new Variable("BeamCode",        Variable::Configuration));
+   
+   addCommand(new Command("SendOpCode"));
+   getCommand("SendOpCode")->setDescription("Send zero opcode");
 
    getVariable("Enabled")->setHidden(true);
 }
@@ -91,8 +94,12 @@ void EvrCntrl::writeConfig ( bool force ) {
 // Method to process a command
 void EvrCntrl::command ( string name, string arg) {
    //stringstream tmp;
-   //PgpCardG3Link *pgp = (PgpCardG3Link*)system_->commLink();
-
-   Device::command(name,arg);
+   PgpCardG3Link *pgp = (PgpCardG3Link*)system_->commLink();
+   
+   if ( name == "SendOpCode" ) {
+      pgp->sendOpCode(0);
+   }
+   else Device::command(name, arg);
+   
 }
 

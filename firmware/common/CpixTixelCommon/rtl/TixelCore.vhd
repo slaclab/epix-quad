@@ -213,7 +213,7 @@ architecture top_level of TixelCore is
    -- Interfaces between blocks
    signal cntAcquisition  : std_logic_vector(31 downto 0);
    signal cntSequence     : std_logic_vector(31 downto 0);
-   signal cntAReadout     : std_logic;
+   signal cntReadout      : std_logic_vector( 3 downto 0);
    signal frameReq        : std_logic;
    signal frameAck        : std_logic_vector(NUMBER_OF_ASICS-1 downto 0);
    signal frameErr        : std_logic_vector(NUMBER_OF_ASICS-1 downto 0);
@@ -230,7 +230,11 @@ architecture top_level of TixelCore is
    signal adcCardPowerUpEdge : sl;
    signal serdesReset        : sl;
    
-   signal iSaciSelL  : slv(3 downto 0);
+   signal iSaciSelL        : slv(3 downto 0);
+   signal iSaciClk         : sl;
+   signal iSaciCmd         : sl;
+   
+   signal tgOutMux         : sl;
    
    signal adcClk           : std_logic := '0';
    signal adcClk0          : std_logic;
@@ -243,6 +247,7 @@ architecture top_level of TixelCore is
    
    attribute keep of coreClk : signal is "true";
    attribute keep of byteClk : signal is "true";
+   attribute keep of asicRfClk : signal is "true";
    attribute keep of acqStart : signal is "true";
    attribute keep of mAxiWriteMasters : signal is "true";
    attribute keep of sAxiWriteMaster : signal is "true";
@@ -250,7 +255,7 @@ architecture top_level of TixelCore is
    attribute keep of adcValid : signal is "true";
    attribute keep of saciPrepReadoutReq : signal is "true";
    attribute keep of saciPrepReadoutAck : signal is "true";
-   attribute keep of cntAReadout : signal is "true";
+   attribute keep of cntReadout : signal is "true";
    attribute keep of frameErr : signal is "true";
    attribute keep of timeoutReq : signal is "true";
    
@@ -270,11 +275,31 @@ begin
    -- Triggers out
    --triggerOut     <= iAsicAcq;
    --mpsOut         <= pgpOpCodeOneShot;
-   triggerOut     <= iAsic01DM1;
+   triggerOut     <= tgOutMux;
    mpsOut         <= iAsic01DM2;
    -- SACI signals
    saciSelL       <= iSaciSelL;
-
+   saciClk        <= iSaciClk;
+   saciCmd        <= iSaciCmd;
+   
+   
+   tgOutMux <= 
+      iAsic01DM1                       when tixelConfig.tixelDebug = "00000" else
+      iAsic01DM1 and not iAsicSync     when tixelConfig.tixelDebug = "00001" else
+      iAsic01DM1 and not iAsicStart    when tixelConfig.tixelDebug = "00010" else
+      iAsic01DM1 and not iAsicAcq      when tixelConfig.tixelDebug = "00011" else
+      iAsic01DM1 and not iAsicTpulse   when tixelConfig.tixelDebug = "00100" else
+      iAsic01DM1 and iAsicR0           when tixelConfig.tixelDebug = "00101" else
+      iAsicSync                        when tixelConfig.tixelDebug = "00110" else
+      iAsicStart                       when tixelConfig.tixelDebug = "00111" else
+      iAsicAcq                         when tixelConfig.tixelDebug = "01000" else
+      iAsicTpulse                      when tixelConfig.tixelDebug = "01001" else
+      iAsicR0                          when tixelConfig.tixelDebug = "01010" else
+      iSaciClk                         when tixelConfig.tixelDebug = "01011" else
+      iSaciCmd                         when tixelConfig.tixelDebug = "01100" else
+      asicRdClk                        when tixelConfig.tixelDebug = "01101" else
+      '0';   
+   
    -- Temporary one-shot for grabbing PGP op code
    U_OpCodeEnOneShot : entity work.SynchronizerOneShot
       generic map (
@@ -341,11 +366,11 @@ begin
          mAxiLiteWriteMaster => sAxiWriteMaster(0),
          mAxiLiteWriteSlave  => sAxiWriteSlave(0),
          -- Streaming data Links (axiClk domain)      
-         userAxisMaster      => userAxisMaster,
-         userAxisSlave       => userAxisSlave,
+         primaryAxisMaster   => userAxisMaster,
+         primaryAxisSlave    => userAxisSlave,
          -- Scope streaming data (axiClk domain)
-         scopeAxisMaster     => scopeAxisMaster,
-         scopeAxisSlave      => scopeAxisSlave,
+         auxiliaryAxisMaster => scopeAxisMaster,
+         auxiliaryAxisSlave  => scopeAxisSlave,
          -- Command interface
          ssiCmd              => ssiCmd,
          -- Sideband interface
@@ -358,11 +383,10 @@ begin
    -- Generate clocks from 156.25 MHz PGP  --
    ------------------------------------------
    -- clkIn     : 156.25 MHz PGP
-   -- clkOut(0) : 400 MHz Idelaye2 calibration clock
+   -- clkOut(0) : 160 MHz serial data bit clock
    -- clkOut(1) : 100.00 MHz system clock
-   -- clkOut(2) : 100 MHz serial data bit clock
-   -- clkOut(3) : 5 MHz ASIC readout clock
-   -- clkOut(4) : 20 MHz ASIC reference clock
+   -- clkOut(2) : 8 MHz ASIC readout clock
+   -- clkOut(3) : 20 MHz ASIC reference clock
    U_CoreClockGen : entity work.ClockManager7
    generic map (
       INPUT_BUFG_G         => false,
@@ -372,15 +396,15 @@ begin
       DIVCLK_DIVIDE_G      => 10,
       CLKFBOUT_MULT_F_G    => 38.4,
       
-      CLKOUT0_DIVIDE_F_G   => 6.0,
+      CLKOUT0_DIVIDE_F_G   => 3.75,
       CLKOUT0_PHASE_G      => 0.0,
       CLKOUT0_DUTY_CYCLE_G => 0.5,
       
       CLKOUT1_DIVIDE_G     => 6,
-      CLKOUT1_PHASE_G      => 120.0,
+      CLKOUT1_PHASE_G      => 0.0,
       CLKOUT1_DUTY_CYCLE_G => 0.5,
       
-      CLKOUT2_DIVIDE_G     => 120,
+      CLKOUT2_DIVIDE_G     => 75,
       CLKOUT2_PHASE_G      => 0.0,
       CLKOUT2_DUTY_CYCLE_G => 0.5,
       
@@ -391,19 +415,19 @@ begin
    port map (
       clkIn     => pgpClk,
       rstIn     => sysRst,
-      clkOut(0) => coreClk,
-      clkOut(1) => bitClk,
+      clkOut(0) => bitClk,
+      clkOut(1) => coreClk,
       clkOut(2) => asicRdClk,
       clkOut(3) => asicRfClk,
-      rstOut(0) => coreClkRst,
-      rstOut(1) => bitClkRst,
+      rstOut(0) => bitClkRst,
+      rstOut(1) => coreClkRst,
       rstOut(2) => asicRdClkRst,
       rstOut(3) => asicRfClkRst,
       locked    => open
    );
    
    -- clkIn     : 156.25 MHz PGP
-   -- clkOut(0) : 400 MHz Idelaye2 calibration clock
+   -- clkOut(0) : 200 MHz Idelaye2 calibration clock
    U_CoreClockGen2 : entity work.ClockManager7
    generic map (
       INPUT_BUFG_G         => false,
@@ -413,7 +437,7 @@ begin
       DIVCLK_DIVIDE_G      => 5,
       CLKFBOUT_MULT_F_G    => 32.0,
       
-      CLKOUT0_DIVIDE_F_G   => 2.5,
+      CLKOUT0_DIVIDE_F_G   => 5.0,
       CLKOUT0_PHASE_G      => 0.0,
       CLKOUT0_DUTY_CYCLE_G => 0.5
    )
@@ -519,7 +543,7 @@ begin
       -------------------------------------------------------
       -- ASIC AXI stream framers
       -------------------------------------------------------
-      U_ASIC_Framer : entity work.Framer
+      U_ASIC_Framer : entity work.FramerExtended
       generic map(
          ASIC_NUMBER_G  => std_logic_vector(to_unsigned(i, 4))
       )
@@ -534,7 +558,7 @@ begin
          forceFrameRead => tixelConfig.forceFrameRead,
          cntAcquisition => cntAcquisition,
          cntSequence    => cntSequence,
-         cntAReadout    => cntAReadout,
+         cntReadout     => cntReadout,
          frameReq       => frameReq     ,
          frameAck       => frameAck(i)     ,
          frameErr       => frameErr(i)     ,
@@ -598,7 +622,7 @@ begin
       -- control/status signals (byteClk)
       cntAcquisition    => cntAcquisition,
       cntSequence       => cntSequence,
-      cntAReadout       => cntAReadout,
+      cntReadout        => cntReadout,
       frameReq          => frameReq,
       frameAck          => frameAck,
       frameErr          => frameErr,
@@ -685,9 +709,9 @@ begin
       saciReadoutReq => saciPrepReadoutReq,
       saciReadoutAck => saciPrepReadoutAck,
       -- SACI interfaces to ASIC(s)
-      saciClk        => saciClk,
+      saciClk        => iSaciClk,
       saciSelL       => iSaciSelL,
-      saciCmd        => saciCmd,
+      saciCmd        => iSaciCmd,
       saciRsp        => saciRsp,
       -- SACI 
       -- Guard ring DAC interfaces

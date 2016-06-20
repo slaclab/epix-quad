@@ -20,8 +20,10 @@
 LIBRARY ieee;
 use work.all;
 use ieee.std_logic_1164.all;
-use ieee.std_logic_arith.all;
-use ieee.std_logic_unsigned.all;
+use ieee.numeric_std.all;
+
+use work.StdRtlPkg.all;
+use work.AxiStreamPkg.all;
 
 
 entity TB_SlowAdcCntrl is 
@@ -39,6 +41,13 @@ architecture beh of TB_SlowAdcCntrl is
    signal adcDin :      std_logic;
    signal adcRefClk :      std_logic;
    signal trigger :      std_logic;
+   
+   signal adcData         : Slv24Array(8 downto 0);
+   signal adcDataLUT      : Slv32Array(8 downto 0);
+   signal allChRd         : std_logic;
+   
+   signal mAxisMaster     : AxiStreamMasterType;
+   signal mAxisSlave      : AxiStreamSlaveType;
 
 begin
 
@@ -69,29 +78,57 @@ begin
    
    
    --DUT
-   Dut_i: entity work.SlowAdcCntrl
-      generic map (
-         SPI_SCLK_PERIOD_G => 100.0E-9  	-- 10 MHz for simulation
-      )
-      port map ( 
-         -- Master system clock
-         sysClk          => clk,
-         sysClkRst       => rst,
+   DutADC_i: entity work.SlowAdcCntrl
+   generic map (
+      SPI_SCLK_PERIOD_G => 100.0E-9  	-- 10 MHz for simulation
+   )
+   port map ( 
+      -- Master system clock
+      sysClk          => clk,
+      sysClkRst       => rst,
 
-         -- Operation Control
-         adcStart        => trigger,
-         adcData         => open,
+      -- Operation Control
+      adcStart        => trigger,
+      adcData         => adcData,
+      allChRd         => allChRd,
 
-         -- ADC Control Signals
-         adcRefClk     => adcRefClk,
-         adcDrdy       => trigger,
-         adcSclk       => adcSclk,
-         adcDout       => trigger,
-         adcCsL        => adcCsL,
-         adcDin        => adcDin
-      );
+      -- ADC Control Signals
+      adcRefClk     => adcRefClk,
+      adcDrdy       => trigger,
+      adcSclk       => adcSclk,
+      adcDout       => trigger,
+      adcCsL        => adcCsL,
+      adcDin        => adcDin
+   );
    
+   U_AdcEnv : entity work.SlowAdcLUT
+   port map ( 
+      -- Master system clock
+      sysClk        => clk,
+      sysClkRst     => rst,
+      
+      -- ADC raw data inputs
+      adcData       => adcData,
+
+      -- Converted data outputs
+      outEnvData    => adcDataLUT
+   );
    
+   DutStrm_i: entity work.SlowAdcStream
+   port map ( 
+      sysClk          => clk,
+      sysRst          => rst,
+      acqCount        => x"00000001",
+      seqCount        => x"00000002",
+      trig            => allChRd,
+      dataIn          => adcDataLUT,
+      mAxisMaster     => mAxisMaster,
+      mAxisSlave      => mAxisSlave
+      
+   );
+   
+   -- only for the simulation
+   mAxisSlave.tReady <= '1';
 
 end beh;
 

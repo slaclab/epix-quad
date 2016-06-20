@@ -1,7 +1,7 @@
 -------------------------------------------------------------------------------
 -- Title      : Frame grabber module
 -------------------------------------------------------------------------------
--- File       : Framer.vhd
+-- File       : FramerExtended.vhd
 -- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 01/19/2016
@@ -33,7 +33,7 @@ use work.CpixPkg.all;
 library unisim;
 use unisim.vcomponents.all;
 
-entity Framer is
+entity FramerExtended is
    generic (
       TPD_G                : time                  := 1 ns;
       FRAME_WORDS_G        : natural               := 2304;
@@ -70,17 +70,17 @@ entity Framer is
       mAxisMaster    : out AxiStreamMasterType;
       mAxisSlave     : in  AxiStreamSlaveType
    );
-end Framer;
+end FramerExtended;
 
-architecture rtl of Framer is
+architecture rtl of FramerExtended is
 
    constant SOF_C                : slv(15 downto 0)       := x"F7" & x"4A";
    constant EOF_C                : slv(15 downto 0)       := x"FD" & x"4A";
-   constant HEADER_WORDS_C       : natural               := 30;
+   constant HEADER_WORDS_C       : natural               := 15;
    constant LANE_C               : slv( 1 downto 0)      := "00";
    constant VC_C                 : slv( 1 downto 0)      := "00";
    constant ZEROWORD_C           : slv(15 downto 0)      := x"0000";
-   constant SLAVE_AXI_CONFIG_C   : AxiStreamConfigType   := ssiAxiStreamConfig(2, TKEEP_COMP_C);
+   constant SLAVE_AXI_CONFIG_C   : AxiStreamConfigType   := ssiAxiStreamConfig(4, TKEEP_COMP_C);
    constant MASTER_AXI_CONFIG_C  : AxiStreamConfigType   := ssiAxiStreamConfig(4, TKEEP_COMP_C);
    
    signal sFifoAxisMaster  : AxiStreamMasterType;
@@ -100,7 +100,7 @@ architecture rtl of Framer is
    signal timeoutReqSync   : sl;
    signal cntResetSync     : sl;
    
-   signal headerData       : slv(15 downto 0);
+   signal headerData       : slv(31 downto 0);
    signal channelID        : slv(31 downto 0);
    
    TYPE STATE_TYPE IS (IDLE_S, HEADER_S, WAIT_DATA_S, DATA_IN_S, EOF_S, ERROR_S, DONE_S);
@@ -260,7 +260,7 @@ begin
          when HEADER_S =>
             wordCntRst <= '0';
             
-            sFifoAxisMasterVar.tData(15 downto 0) := headerData;
+            sFifoAxisMasterVar.tData(31 downto 0) := headerData;
             sFifoAxisMasterVar.tValid := '1';
             
             if sFifoAxisSlave.tReady = '1' then
@@ -288,12 +288,13 @@ begin
             end if;
             wordCntRst <= '0';
             
-            sFifoAxisMasterVar.tData := sAxisMaster.tData;
+            -- tUser(3 downto 2) is codeError
+            -- tUser(5 downto 4) is dispError
+            sFifoAxisMasterVar.tData(31 downto 16) := "000000" & sAxisMaster.tUser(5) & sAxisMaster.tUser(3) & "000000" & sAxisMaster.tUser(4) & sAxisMaster.tUser(2);
+            sFifoAxisMasterVar.tData(15 downto  0) := sAxisMaster.tData(15 downto 0);
             sFifoAxisMasterVar.tValid := sAxisMaster.tValid;
             
             -- count potentially not critical errors and continue capturing the data (DATA_IN_S)
-            -- tUser(3 downto 2) is codeError
-            -- tUser(5 downto 4) is dispError
             if (sAxisMaster.tUser(3 downto 2) /= "00" or sAxisMaster.tUser(5 downto 4) /= "00") and sAxisMaster.tValid = '1' then
                codeErrCntEn <= '1';
             end if;
@@ -342,25 +343,19 @@ begin
             end if;
          
          when DONE_S => 
-            wordCntRst <= '0';
             
-            sFifoAxisMasterVar.tData(15 downto 0) := x"0000";   -- 4 x zero bytes footer
+            sFifoAxisMasterVar.tData(31 downto 0) := x"00000000";   -- 4 x zero bytes footer
             sFifoAxisMasterVar.tValid := '1';
+            ssiSetUserEofe(SLAVE_AXI_CONFIG_C, sFifoAxisMasterVar, '0'); --EOF
+            sFifoAxisMasterVar.tLast := '1';
             
             if sFifoAxisSlave.tReady = '1' then
-               wordCntEn <= '1';
-            end if;
-            
-            if wordCnt >= 1 then
-               sFifoAxisMasterVar.tLast := '1';
-               ssiSetUserEofe(SLAVE_AXI_CONFIG_C, sFifoAxisMasterVar, '0'); --EOF
                next_state <= IDLE_S;
             end if;
          
          when ERROR_S => 
-            wordCntRst <= '0';
             
-            sFifoAxisMasterVar.tData(15 downto 0) := x"0000";
+            sFifoAxisMasterVar.tData(31 downto 0) := x"00000000";
             sFifoAxisMasterVar.tValid := '1';
             sFifoAxisMasterVar.tLast := '1';
             ssiSetUserEofe(SLAVE_AXI_CONFIG_C, sFifoAxisMasterVar, '1'); --EOFE
@@ -381,15 +376,11 @@ begin
    -- header data mux
    
    headerData <=
-      ZEROWORD_C                          when wordCnt = 1  else
-      x"00" & "00" & LANE_C & "00" & VC_C when wordCnt = 0  else
-      cntAcquisition(31 downto 16)        when wordCnt = 3  else
-      cntAcquisition(15 downto  0)        when wordCnt = 2  else
-      cntSequence(31 downto 16)           when wordCnt = 5  else
-      cntSequence(15 downto  0)           when wordCnt = 4  else
-      channelID(31 downto 16)             when wordCnt = 29 else     -- 15th dword (ID)
-      channelID(15 downto  0)             when wordCnt = 28 else     -- 15th dword (ID)
-      ZEROWORD_C;
+      ZEROWORD_C & x"00" & "00" & LANE_C & "00" & VC_C   when wordCnt = 0  else
+      cntAcquisition(31 downto 0)                        when wordCnt = 1  else
+      cntSequence(31 downto 0)                           when wordCnt = 2  else
+      channelID(31 downto 0)                             when wordCnt = 14 else     -- 15th dword (ID)
+      ZEROWORD_C & ZEROWORD_C;
    
    -- channel id
    channelID <= x"000000" & cntReadout & ASIC_NUMBER_G;

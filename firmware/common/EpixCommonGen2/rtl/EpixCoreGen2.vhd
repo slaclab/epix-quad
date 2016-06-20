@@ -150,6 +150,8 @@ architecture top_level of EpixCoreGen2 is
    signal heartBeat   : sl;
    signal txLinkReady : sl;
    signal rxLinkReady : sl;
+   signal allChRd     : sl;
+   signal monitorTrig : sl;
 
    signal adcClk      : sl := '0';
    
@@ -170,10 +172,17 @@ architecture top_level of EpixCoreGen2 is
    signal mAxiReadSlaves   : AxiLiteReadSlaveArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
 
    -- AXI-Stream signals
-   signal userAxisMaster   : AxiStreamMasterType;
-   signal userAxisSlave    : AxiStreamSlaveType;
-   signal scopeAxisMaster  : AxiStreamMasterType;
-   signal scopeAxisSlave   : AxiStreamSlaveType;
+   signal primaryAxisMaster   : AxiStreamMasterType;
+   signal primaryAxisSlave    : AxiStreamSlaveType;
+   signal auxiliaryAxisMaster : AxiStreamMasterType;
+   signal auxiliaryAxisSlave  : AxiStreamSlaveType;
+   signal scopeAxisMaster     : AxiStreamMasterType;
+   signal scopeAxisSlave      : AxiStreamSlaveType;
+   signal monitorAxisMaster   : AxiStreamMasterType;
+   signal monitorAxisSlave    : AxiStreamSlaveType;
+   signal auxMuxAxisMaster    : AxiStreamMasterArray(1 downto 0);
+   signal auxMuxAxisSlave     : AxiStreamSlaveArray(1 downto 0);
+   
    
    -- Command interface
    signal ssiCmd           : SsiCmdMasterType;
@@ -324,11 +333,10 @@ begin
          mAxiLiteWriteMaster => sAxiWriteMaster(0),
          mAxiLiteWriteSlave  => sAxiWriteSlave(0),
          -- Streaming data Links (axiClk domain)      
-         userAxisMaster      => userAxisMaster,
-         userAxisSlave       => userAxisSlave,
-         -- Scope streaming data (axiClk domain)
-         scopeAxisMaster     => scopeAxisMaster,
-         scopeAxisSlave      => scopeAxisSlave,
+         primaryAxisMaster   => primaryAxisMaster,
+         primaryAxisSlave    => primaryAxisSlave,
+         auxiliaryAxisMaster => auxiliaryAxisMaster,
+         auxiliaryAxisSlave  => auxiliaryAxisSlave,
          -- Command interface
          ssiCmd              => ssiCmd,
          -- Sideband interface
@@ -543,8 +551,8 @@ begin
          adcData        => adcData,
          slowAdcData    => epixStatus.slowAdcData,
          envData        => epixStatus.envData,
-         mAxisMaster    => userAxisMaster,
-         mAxisSlave     => userAxisSlave,
+         mAxisMaster    => primaryAxisMaster,
+         mAxisSlave     => primaryAxisSlave,
          mpsOut         => open,
          asicDout       => asicDout
       );
@@ -609,22 +617,25 @@ begin
    G_EPIX100A_SLOW_ADC_GEN1 : if (FPGA_VERSION_C(31 downto 16) = x"EA01") generate
    
       U_AdcCntrl : entity work.AdcCntrl 
-         generic map (
-            TPD_G        => TPD_G,
-            N_CHANNELS_G => 8
-         )
-         port map ( 
-            sysClk        => coreClk,
-            sysClkRst     => axiRst,
-            adcChanCount  => "0111",
-            adcStart      => readDone,
-            adcData       => epixStatus.slowAdcData,
-            adcStrobe     => open,
-            adcSclk       => slowAdcSclk,
-            adcDout       => slowAdcDout,
-            adcCsL        => slowAdcCsb,
-            adcDin        => slowAdcDin
-         );
+      generic map (
+         TPD_G        => TPD_G,
+         N_CHANNELS_G => 8
+      )
+      port map ( 
+         sysClk        => coreClk,
+         sysClkRst     => axiRst,
+         adcChanCount  => "0111",
+         adcStart      => readDone,
+         adcData       => epixStatus.slowAdcData,
+         adcStrobe     => open,
+         adcSclk       => slowAdcSclk,
+         adcDout       => slowAdcDout,
+         adcCsL        => slowAdcCsb,
+         adcDin        => slowAdcDin
+      );
+      
+      auxiliaryAxisMaster <= scopeAxisMaster;
+      scopeAxisSlave <= auxiliaryAxisSlave;
       
    end generate;
    
@@ -634,45 +645,126 @@ begin
    G_EPIX100A_SLOW_ADC_GEN2 : if (FPGA_VERSION_C(31 downto 16) = x"EA02") generate
      
       U_AdcCntrl : entity work.SlowAdcCntrl
-         generic map (
-            SYS_CLK_PERIOD_G  => 10.0E-9,	   -- 100MHz
-            ADC_CLK_PERIOD_G  => 200.0E-9,	-- 5MHz
-            SPI_SCLK_PERIOD_G => 2.0E-6  	   -- 500kHz
-         )
-         port map ( 
-            -- Master system clock
-            sysClk        => coreClk,
-            sysClkRst     => axiRst,
+      generic map (
+         SYS_CLK_PERIOD_G  => 10.0E-9,	   -- 100MHz
+         ADC_CLK_PERIOD_G  => 200.0E-9,	-- 5MHz
+         SPI_SCLK_PERIOD_G => 2.0E-6  	   -- 500kHz
+      )
+      port map ( 
+         -- Master system clock
+         sysClk        => coreClk,
+         sysClkRst     => axiRst,
 
-            -- Operation Control
-            adcStart      => readDone,
-            adcData       => epixStatus.slowAdc2Data,
+         -- Operation Control
+         adcStart      => readDone,
+         adcData       => epixStatus.slowAdc2Data,
+         allChRd       => allChRd,
 
-            -- ADC Control Signals
-            adcRefClk     => slowAdcRefClk,
-            adcDrdy       => slowAdcDrdy,
-            adcSclk       => slowAdcSclk,
-            adcDout       => slowAdcDout,
-            adcCsL        => slowAdcCsb,
-            adcDin        => slowAdcDin
-         );
+         -- ADC Control Signals
+         adcRefClk     => slowAdcRefClk,
+         adcDrdy       => slowAdcDrdy,
+         adcSclk       => slowAdcSclk,
+         adcDout       => slowAdcDout,
+         adcCsL        => slowAdcCsb,
+         adcDin        => slowAdcDin
+      );
       
       --------------------------------------------
       --    Environmental data convertion LUTs  --
       -------------------------------------------- 
       
       U_AdcEnv : entity work.SlowAdcLUT
-         port map ( 
-            -- Master system clock
-            sysClk        => coreClk,
-            sysClkRst     => axiRst,
-            
-            -- ADC raw data inputs
-            adcData       => epixStatus.slowAdc2Data,
+      port map ( 
+         -- Master system clock
+         sysClk        => coreClk,
+         sysClkRst     => axiRst,
+         
+         -- ADC raw data inputs
+         adcData       => epixStatus.slowAdc2Data,
 
-            -- Converted data outputs
-            outEnvData    => epixStatus.envData
-         );
+         -- Converted data outputs
+         outEnvData    => epixStatus.envData
+      );
+      
+      --------------------------------------------
+      --    Environmental data streamer         --
+      --------------------------------------------
+      U_AdcStrm: entity work.SlowAdcStream
+      port map ( 
+         sysClk          => coreClk,
+         sysRst          => axiRst,
+         acqCount        => epixStatus.acqCount,
+         seqCount        => epixStatus.seqCount,
+         trig            => monitorTrig,
+         dataIn          => epixStatus.envData,
+         mAxisMaster     => monitorAxisMaster,
+         mAxisSlave      => monitorAxisSlave
+         
+      );
+      
+      -- monitor stream enable
+      monitorTrig <= allChRd and epixConfig.monitorEnable;
+      
+      U_ScopeFifo : entity work.AxiStreamFifo
+      generic map(
+         TPD_G                => TPD_G,
+         FIFO_ADDR_WIDTH_G    => 7,
+         SLAVE_AXI_CONFIG_G   => ssiAxiStreamConfig(4, TKEEP_COMP_C),
+         MASTER_AXI_CONFIG_G  => ssiAxiStreamConfig(4, TKEEP_COMP_C)
+      )
+      port map(
+         -- Slave Port
+         sAxisClk    => coreClk,
+         sAxisRst    => axiRst,
+         sAxisMaster => scopeAxisMaster,
+         sAxisSlave  => scopeAxisSlave,
+         sAxisCtrl   => open,
+         -- Master Port
+         mAxisClk    => coreClk,
+         mAxisRst    => axiRst,
+         mAxisMaster => auxMuxAxisMaster(1),
+         mAxisSlave  => auxMuxAxisSlave(1),
+         mTLastTUser => open
+      );
+      
+      U_MonitorFifo : entity work.AxiStreamFifo
+      generic map(
+         TPD_G                => TPD_G,
+         FIFO_ADDR_WIDTH_G    => 7,
+         SLAVE_AXI_CONFIG_G   => ssiAxiStreamConfig(4, TKEEP_COMP_C),
+         MASTER_AXI_CONFIG_G  => ssiAxiStreamConfig(4, TKEEP_COMP_C)
+      )
+      port map(
+         -- Slave Port
+         sAxisClk    => coreClk,
+         sAxisRst    => axiRst,
+         sAxisMaster => monitorAxisMaster,
+         sAxisSlave  => monitorAxisSlave,
+         sAxisCtrl   => open,
+         -- Master Port
+         mAxisClk    => coreClk,
+         mAxisRst    => axiRst,
+         mAxisMaster => auxMuxAxisMaster(0),
+         mAxisSlave  => auxMuxAxisSlave(0),
+         mTLastTUser => open
+      );
+      
+      U_AxiStreamMux : entity work.AxiStreamMux
+      generic map(
+         NUM_SLAVES_G   => 2
+      )
+      port map(
+         -- Clock and reset
+         axisClk           => coreClk,
+         axisRst           => axiRst,
+         -- Slaves
+         sAxisMasters      => auxMuxAxisMaster,
+         sAxisSlaves       => auxMuxAxisSlave,
+         -- Master
+         mAxisMaster       => auxiliaryAxisMaster,
+         mAxisSlave        => auxiliaryAxisSlave
+         
+      );
       
    end generate;
 
@@ -680,51 +772,51 @@ begin
    --     ePix Startup Sequencer             --
    --------------------------------------------
    U_EpixStartup : entity work.EpixStartupGen2
-      generic map (
-         TPD_G => TPD_G
-      )
-      port map (
-         sysClk           => coreClk,
-         sysClkRst        => axiRst,
-         startupReq       => epixConfig.requestStartupCal,
-         startupAck       => epixStatus.startupAck,
-         startupFail      => epixStatus.startupFail,
-         adcValid         => adcValid,
-         adcData          => adcData,
-         pbAxiReadMaster  => sAxiReadMaster(1),
-         pbAxiReadSlave   => sAxiReadSlave(1),
-         pbAxiWriteMaster => sAxiWriteMaster(1),
-         pbAxiWriteSlave  => sAxiWriteSlave(1)
-      );
+   generic map (
+      TPD_G => TPD_G
+   )
+   port map (
+      sysClk           => coreClk,
+      sysClkRst        => axiRst,
+      startupReq       => epixConfig.requestStartupCal,
+      startupAck       => epixStatus.startupAck,
+      startupFail      => epixStatus.startupFail,
+      adcValid         => adcValid,
+      adcData          => adcData,
+      pbAxiReadMaster  => sAxiReadMaster(1),
+      pbAxiReadSlave   => sAxiReadSlave(1),
+      pbAxiWriteMaster => sAxiWriteMaster(1),
+      pbAxiWriteSlave  => sAxiWriteSlave(1)
+   );
 
    --------------------------------------------
    -- Virtual oscilloscope                   --
    --------------------------------------------
    U_PseudoScope : entity work.PseudoScope
-      generic map (
-        TPD_G                      => TPD_G,
-        MASTER_AXI_STREAM_CONFIG_G => ssiAxiStreamConfig(4, TKEEP_COMP_C)      
-      )
-      port map (
-         sysClk         => coreClk,
-         sysClkRst      => axiRst,
-         adcData        => adcData,
-         adcValid       => adcValid,
-         arm            => acqStart,
-         acqStart       => acqStart,
-         asicAcq        => iAsicAcq,
-         asicR0         => iAsicR0,
-         asicPpmat      => iAsicPpmat,
-         asicPpbe       => iAsicPpbe,
-         asicSync       => iAsicSync,
-         asicGr         => iAsicGrst,
-         asicRoClk      => iAsicRoClk,
-         asicSaciSel    => iSaciSelL,
-         scopeConfig    => scopeConfig,
-         acqCount       => epixStatus.acqCount,
-         seqCount       => epixStatus.seqCount,
-         mAxisMaster    => scopeAxisMaster,
-         mAxisSlave     => scopeAxisSlave
-      );
+   generic map (
+     TPD_G                      => TPD_G,
+     MASTER_AXI_STREAM_CONFIG_G => ssiAxiStreamConfig(4, TKEEP_COMP_C)      
+   )
+   port map (
+      sysClk         => coreClk,
+      sysClkRst      => axiRst,
+      adcData        => adcData,
+      adcValid       => adcValid,
+      arm            => acqStart,
+      acqStart       => acqStart,
+      asicAcq        => iAsicAcq,
+      asicR0         => iAsicR0,
+      asicPpmat      => iAsicPpmat,
+      asicPpbe       => iAsicPpbe,
+      asicSync       => iAsicSync,
+      asicGr         => iAsicGrst,
+      asicRoClk      => iAsicRoClk,
+      asicSaciSel    => iSaciSelL,
+      scopeConfig    => scopeConfig,
+      acqCount       => epixStatus.acqCount,
+      seqCount       => epixStatus.seqCount,
+      mAxisMaster    => scopeAxisMaster,
+      mAxisSlave     => scopeAxisSlave
+   );
       
 end top_level;

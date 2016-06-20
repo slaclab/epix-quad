@@ -45,7 +45,7 @@ entity TixelAcquisition is
       -- control/status signals (byteClk)
       cntAcquisition  : out std_logic_vector(31 downto 0);
       cntSequence     : out std_logic_vector(31 downto 0);
-      cntAReadout     : out std_logic;
+      cntReadout      : out std_logic_vector( 3 downto 0);
       frameReq        : out std_logic;
       frameAck        : in  std_logic_vector(NUMBER_OF_ASICS-1 downto 0);
       frameErr        : in  std_logic_vector(NUMBER_OF_ASICS-1 downto 0);
@@ -110,6 +110,7 @@ architecture rtl of TixelAcquisition is
    signal acqCntEn   : std_logic;
    signal seqCntEn   : std_logic;
    
+   signal readouts      : unsigned(3 downto 0);
    signal runToR0       : unsigned(31 downto 0);
    signal r0ToStart     : unsigned(31 downto 0);
    signal startToTpulse : unsigned(31 downto 0);
@@ -160,6 +161,7 @@ begin
    asicSync <= 
       iAsicSync               when tixelConfig.tixelSyncMode = "00" else      -- sync pin used as ASIC sync
       '0'                     when tixelConfig.tixelSyncMode = "01" else      -- saci command used as ASIC sync
+      '1'                     when tixelConfig.tixelSyncMode = "10" else      -- saci command used as ASIC sync
       '0';
    
    -- apply ASIC mask to handshake signals
@@ -232,14 +234,17 @@ begin
       
    end process;
    
+   readouts <= unsigned(tixelConfig.tixelReadouts);
    runToR0 <= unsigned(tixelConfig.tixelRunToR0);
    r0ToStart <= unsigned(tixelConfig.tixelR0ToStart);
    startToTpulse <= unsigned(tixelConfig.tixelStartToTpulse);
    tpulseToAcq <= unsigned(tixelConfig.tixelTpulseToAcq);
+   
+   cntReadout <= std_logic_vector(to_unsigned(rdoutCnt,4));
 
    fsm_cmb_p: process (
       state, acqStartSys, frameAckSync, headerAckSync, frameErrSync, delayCnt, rdoutCnt,
-      runToR0, r0ToStart, startToTpulse, tpulseToAcq, saciReadoutAck, epixConfig
+      readouts, runToR0, r0ToStart, startToTpulse, tpulseToAcq, saciReadoutAck, epixConfig
    ) 
    begin
       next_state <= state;
@@ -252,7 +257,6 @@ begin
       iAsicAcq <= '0';
       iAsicSync <= '0';
       saciReadoutReq <= '0';
-      cntAReadout <= '0';
       seqCntEn <= '0';
       acqCntEn <= '0';
       frameReq <= '0';
@@ -303,15 +307,35 @@ begin
             iAsicTpulse <= '1';
             if delayCnt >= 4 then
                delayCntRst <= '1';
+               rdoutCntRst <= '1';
+               if tixelConfig.tixelSyncMode = "01" then
+                  next_state <= SACI_SYNC_S;
+               else
+                  next_state <= SYNC_S;
+               end if;
+            end if;
+         
+         
+         when SYNC_S =>
+            iAsicSync <= '1';
+            if delayCnt >= 1000 then
                if epixConfig.daqTriggerEnable = '1' then
-                  rdoutCntRst <= '1';
+                  delayCntRst <= '1';
                   next_state <= WAIT_ACQ_S;
                else
-                  if tixelConfig.tixelSyncMode = "00" then
-                     next_state <= SYNC_S;
-                  else
-                     next_state <= SACI_SYNC_S;
-                  end if;
+                  next_state <= IDLE_S;
+               end if;
+            end if;
+         
+         when SACI_SYNC_S =>
+            saciReadoutReq <= '1';
+            if saciReadoutAck = '1' then
+               saciReadoutReq <= '0';
+               if epixConfig.daqTriggerEnable = '1' then
+                  delayCntRst <= '1';
+                  next_state <= WAIT_ACQ_S;
+               else
+                  next_state <= IDLE_S;
                end if;
             end if;
          
@@ -324,9 +348,6 @@ begin
          when WAIT_HDR_TX_S =>
             delayCntRst <= '1';
             frameReq <= '1';
-            if rdoutCnt = 0 then
-               cntAReadout <= '1';
-            end if;
             -- wait for the headers to be transmitted before requesting the ASIC to start the readout
             if unsigned(headerAckSync) = to_unsigned(2**NUMBER_OF_ASICS-1, NUMBER_OF_ASICS) then
                next_state <= ACQ_S;
@@ -342,55 +363,41 @@ begin
             
          when WAIT_READOUT_S =>
             -- wait for all Framers to complete the ASIC readout or timeout
-            if delayCnt >= ASIC_TIMEOUT_C  then
+            if delayCnt >= ASIC_TIMEOUT_C then
                next_state <= TIMEOUT_S;
             elsif unsigned(frameAckSync) = to_unsigned(2**NUMBER_OF_ASICS-1, NUMBER_OF_ASICS) then
-               -- read twice only if 1st read was success otherwise reset ASICs (sync)
-               -- at 1st read the ASICs output cntA
-               -- at 2nd read the ASICs output cntB
-               if rdoutCnt < 1 and unsigned(frameErrSync) = to_unsigned(0, NUMBER_OF_ASICS) then
-                  delayCntRst <= '1';
+               if rdoutCnt < to_integer(readouts) then
                   rdoutCntEn <= '1';
-                  next_state <= WAIT_HDR_TX_S;
-               else
-                  rdoutCntRst <= '1';
-                  -- sync the ASICs via sync pin or SACI command
-                  if tixelConfig.tixelSyncMode = "00" then
-                     delayCntRst <= '1';
-                     next_state <= SYNC_S;
-                  else
+                  delayCntRst <= '1';
+                  if tixelConfig.tixelSyncMode = "01" then
                      next_state <= SACI_SYNC_S;
-                  end if;   
-               end if;   
+                  else
+                     next_state <= SYNC_S;
+                  end if;
+               else
+                  next_state <= IDLE_S;
+               end if;
             end if;  
          
          when TIMEOUT_S =>
             timeoutReq <= '1';
             -- wait for all stuck framers to timeout
             if unsigned(frameAckSync) = to_unsigned(2**NUMBER_OF_ASICS-1, NUMBER_OF_ASICS) then
-               rdoutCntRst <= '1';
-               -- sync the ASICs via sync pin or SACI command
-               if tixelConfig.tixelSyncMode = "00" then
+               --if rdoutCnt < to_integer(readouts) then
+                  --rdoutCntEn <= '1';
                   delayCntRst <= '1';
-                  next_state <= SYNC_S;
-               else
-                  next_state <= SACI_SYNC_S;
-               end if;   
+                  if tixelConfig.tixelSyncMode = "01" then
+                     next_state <= SACI_SYNC_S;
+                  else
+                     next_state <= SYNC_S;
+                  end if;
+               --else
+               --   next_state <= IDLE_S;
+               --end if;
             end if;
             
          
-         when SYNC_S =>
-            iAsicSync <= '1';
-            if delayCnt >= 4 then
-               next_state <= IDLE_S;
-            end if;
          
-         when SACI_SYNC_S =>
-            saciReadoutReq <= '1';
-            if saciReadoutAck = '1' then
-               saciReadoutReq <= '0';
-               next_state <= IDLE_S;
-            end if;
             
          when others =>
             next_state <= IDLE_S;

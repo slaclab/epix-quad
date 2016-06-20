@@ -32,30 +32,34 @@ package TixelPkg is
    );
    
    type TixelConfigType is record
-      tixelRunToR0          : slv(31 downto 0);
-      tixelR0ToStart        : slv(31 downto 0);
-      tixelStartToTpulse    : slv(31 downto 0);
-      tixelTpulseToAcq      : slv(31 downto 0);
-      tixelSyncMode         : slv(1 downto 0);
-      tixelAsicPinControl   : slv(31 downto 0);
-      tixelAsicPins         : slv(31 downto 0);
-      tixelErrorRst         : sl;
+      tixelReadouts        : slv(3 downto 0);
+      tixelRunToR0         : slv(31 downto 0);
+      tixelR0ToStart       : slv(31 downto 0);
+      tixelStartToTpulse   : slv(31 downto 0);
+      tixelTpulseToAcq     : slv(31 downto 0);
+      tixelSyncMode        : slv(1 downto 0);
+      tixelAsicPinControl  : slv(31 downto 0);
+      tixelAsicPins        : slv(31 downto 0);
+      tixelErrorRst        : sl;
       forceFrameRead       : sl;
       doutResync           : slv(NUMBER_OF_ASICS-1 downto 0);
       doutDelay            : Slv5Array(NUMBER_OF_ASICS-1 downto 0);
+      tixelDebug           : slv(4 downto 0);
    end record;
    constant TIXEL_CONFIG_INIT_C : TixelConfigType := (
-      tixelRunToR0          => (others => '0'),
-      tixelR0ToStart        => (others => '0'),
-      tixelStartToTpulse    => (others => '0'),
-      tixelTpulseToAcq      => (others => '0'),
-      tixelSyncMode         => (others => '0'),
-      tixelAsicPinControl   => (others => '0'),
-      tixelAsicPins         => (others => '0'),
-      tixelErrorRst         => '0',
+      tixelReadouts        => x"1",
+      tixelRunToR0         => (others => '0'),
+      tixelR0ToStart       => (others => '0'),
+      tixelStartToTpulse   => (others => '0'),
+      tixelTpulseToAcq     => (others => '0'),
+      tixelSyncMode        => (others => '0'),
+      tixelAsicPinControl  => (others => '0'),
+      tixelAsicPins        => (others => '0'),
+      tixelErrorRst        => '0',
       forceFrameRead       => '0',
       doutResync           => (others => '0'),
-      doutDelay            => (others => (others => '0'))
+      doutDelay            => (others => (others => '0')),
+      tixelDebug           => (others => '0')
    );
    
    type TixelStatusType is record

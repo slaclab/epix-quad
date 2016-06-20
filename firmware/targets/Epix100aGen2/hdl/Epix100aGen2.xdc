@@ -17,13 +17,6 @@ set_clock_groups -asynchronous \
    -group [get_clocks -include_generated_clocks adc1DoClkP] \
    -group [get_clocks -include_generated_clocks adcMonDoClkP]
 
-set_max_delay 20 -datapath_only -from [get_clocks {CLKOUT0_1}] -to [get_clocks {adcBitClkR}]
-set_max_delay 20 -datapath_only -from [get_clocks {adcBitClkR}] -to [get_clocks {CLKOUT0_1}]
-set_max_delay 20 -datapath_only -from [get_clocks {refClkDiv2}] -to [get_clocks {CLKOUT0_1}]
-set_max_delay 20 -datapath_only -from [get_clocks {refClkDiv2}] -to [get_clocks {pgpClk}]
-set_max_delay 20 -datapath_only -from [get_clocks {pgpClk}] -to [get_clocks {refClkDiv2}]
-set_max_delay 20 -datapath_only -from [get_clocks {pgpClk}] -to [get_clocks {CLKOUT0_1}]
-set_max_delay 20 -datapath_only -from [get_clocks {CLKOUT0_1}] -to [get_clocks {pgpClk}]
 
 #######################################
 ## Pin locations, IO standards, etc. ##

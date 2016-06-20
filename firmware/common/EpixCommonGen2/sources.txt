@@ -17,6 +17,7 @@ vhdl work rtl/AdcCntrl.vhd
 vhdl work rtl/SlowAdcCntrl.vhd
 vhdl work rtl/SlowAdcLUT.vhd
 vhdl work rtl/SlowAdcPkg.vhd
+vhdl work rtl/SlowAdcStream.vhd
 vhdl work rtl/PseudoScope.vhd
 vhdl work rtl/RingBuffer.vhd
 vhdl work rtl/EpixRowBlockRam.vhd

@@ -304,6 +304,7 @@ begin
       axiSlaveRegisterR(x"00003B" & "00",  0, ite(idValids(2) = '1',idValues(2)(31 downto  0), x"00000000")); --Carrier card ID low
       axiSlaveRegisterR(x"00003C" & "00",  0, ite(idValids(2) = '1',idValues(2)(63 downto 32), x"00000000")); --Carrier card ID high
       axiSlaveRegisterW(x"00003D" & "00",  0, v.epixRegOut.pgpTrigEn);
+      axiSlaveRegisterW(x"00003E" & "00",  0, v.epixRegOut.monitorEnable);
       axiSlaveRegisterW(x"000040" & "00",  0, v.epixRegOut.tpsDelay);
       axiSlaveRegisterW(x"000040" & "00", 16, v.epixRegOut.tpsEdge);
       axiSlaveRegisterW(x"000050" & "00",  0, v.scopeRegOut.arm);

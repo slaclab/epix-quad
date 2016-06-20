@@ -55,6 +55,11 @@ DigFpgaTixel::DigFpgaTixel ( uint destination, uint baseAddress, uint index, Dev
    addVariable(new Variable("tixelSyncMode", Variable::Configuration));
    getVariable("tixelSyncMode")->setDescription(""); 
    
+   addRegister(new Register("tixelReadouts", baseAddress_ + addrSize*0x5, 1)); 
+   addVariable(new Variable("tixelReadouts", Variable::Configuration));
+   getVariable("tixelReadouts")->setRange(0,0xf);
+   getVariable("tixelReadouts")->setDescription(""); 
+   
    addRegister(new Register("tixelAsicPinControl", baseAddress_ + addrSize*0x9, 1)); 
    addVariable(new Variable("tixelGlblRstCntrl", Variable::Configuration));
    getVariable("tixelGlblRstCntrl")->setDescription("Enable manual control of GlblRst pin.");
@@ -171,6 +176,10 @@ DigFpgaTixel::DigFpgaTixel ( uint destination, uint baseAddress, uint index, Dev
    addVariable(new Variable("tixelAsic1FramesGood", Variable::Status));
    getVariable("tixelAsic1FramesGood")->setDescription("ASIC1 good frames counter counter");
    
+   addRegister(new Register("tixelDebug", baseAddress_ + addrSize*0x400, 1));
+   addVariable(new Variable("tixelDebug", Variable::Configuration));
+   getVariable("tixelDebug")->setDescription("tixelDebug");
+   
 }
 
 // Deconstructor
@@ -242,6 +251,9 @@ void DigFpgaTixel::readConfig ( ) {
    readRegister(getRegister("tixelSyncMode"));
    getVariable("tixelSyncMode")->setInt(getRegister("tixelSyncMode")->get());
    
+   readRegister(getRegister("tixelReadouts"));
+   getVariable("tixelReadouts")->setInt(getRegister("tixelReadouts")->get());
+   
    readRegister(getRegister("tixelErrorRst"));
    getVariable("tixelErrorRst")->setInt(getRegister("tixelErrorRst")->get());
    
@@ -278,6 +290,9 @@ void DigFpgaTixel::readConfig ( ) {
    readRegister(getRegister("tixelAsic1DoutDelay"));
    getVariable("tixelAsic1DoutDelay")->setInt(getRegister("tixelAsic1DoutDelay")->get());
    
+   readRegister(getRegister("tixelDebug"));
+   getVariable("tixelDebug")->setInt(getRegister("tixelDebug")->get());
+   
    REGISTER_UNLOCK
    
    // Sub devices
@@ -303,6 +318,9 @@ void DigFpgaTixel::writeConfig ( bool force ) {
    
    getRegister("tixelSyncMode")->set(getVariable("tixelSyncMode")->getInt());
    writeRegister(getRegister("tixelSyncMode"),force);
+   
+   getRegister("tixelReadouts")->set(getVariable("tixelReadouts")->getInt());
+   writeRegister(getRegister("tixelReadouts"),force);
    
    getRegister("tixelErrorRst")->set(getVariable("tixelErrorRst")->getInt());
    writeRegister(getRegister("tixelErrorRst"),force);
@@ -340,6 +358,9 @@ void DigFpgaTixel::writeConfig ( bool force ) {
    getRegister("tixelAsic1DoutDelay")->set(getVariable("tixelAsic1DoutDelay")->getInt());
    writeRegister(getRegister("tixelAsic1DoutDelay"),force);
    
+   getRegister("tixelDebug")->set(getVariable("tixelDebug")->getInt());
+   writeRegister(getRegister("tixelDebug"),force);
+   
    REGISTER_UNLOCK
    
    // Sub devices
@@ -355,6 +376,7 @@ void DigFpgaTixel::verifyConfig ( ) {
    verifyRegister(getRegister("tixelStartToTpulse"));
    verifyRegister(getRegister("tixelTpulseToAcq"));
    verifyRegister(getRegister("tixelSyncMode"));
+   verifyRegister(getRegister("tixelReadouts"));
    verifyRegister(getRegister("tixelErrorRst"));
    verifyRegister(getRegister("tixelForceFrameRead"));
    verifyRegister(getRegister("tixelAsicPinControl"));
@@ -363,6 +385,7 @@ void DigFpgaTixel::verifyConfig ( ) {
    verifyRegister(getRegister("tixelAsic0DoutDelay"));
    verifyRegister(getRegister("tixelAsic1DoutResync"));
    verifyRegister(getRegister("tixelAsic1DoutDelay"));
+   verifyRegister(getRegister("tixelDebug"));
    
    REGISTER_UNLOCK
    

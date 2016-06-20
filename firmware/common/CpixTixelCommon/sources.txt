@@ -5,6 +5,7 @@ vhdl work rtl/Deserializer.vhd
 vhdl work rtl/RegControlCpix.vhd
 vhdl work rtl/CpixPkg.vhd
 vhdl work rtl/Framer.vhd
+vhdl work rtl/FramerExtended.vhd
 vhdl work rtl/CpixAcquisition.vhd
 vhdl work rtl/TixelCore.vhd
 vhdl work rtl/TixelPkg.vhd

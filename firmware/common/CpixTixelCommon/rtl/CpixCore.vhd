@@ -217,7 +217,7 @@ architecture top_level of CpixCore is
    -- Interfaces between blocks
    signal cntAcquisition  : std_logic_vector(31 downto 0);
    signal cntSequence     : std_logic_vector(31 downto 0);
-   signal cntAReadout     : std_logic;
+   signal cntAeadout      : std_logic_vector( 3 downto 0);
    signal frameReq        : std_logic;
    signal frameAck        : std_logic_vector(NUMBER_OF_ASICS-1 downto 0);
    signal frameErr        : std_logic_vector(NUMBER_OF_ASICS-1 downto 0);
@@ -252,7 +252,7 @@ architecture top_level of CpixCore is
    attribute keep of adcValid : signal is "true";
    attribute keep of saciPrepReadoutReq : signal is "true";
    attribute keep of saciPrepReadoutAck : signal is "true";
-   attribute keep of cntAReadout : signal is "true";
+   attribute keep of cntReadout : signal is "true";
    attribute keep of frameErr : signal is "true";
    attribute keep of timeoutReq : signal is "true";
    
@@ -343,11 +343,11 @@ begin
          mAxiLiteWriteMaster => sAxiWriteMaster(0),
          mAxiLiteWriteSlave  => sAxiWriteSlave(0),
          -- Streaming data Links (axiClk domain)      
-         userAxisMaster      => userAxisMaster,
-         userAxisSlave       => userAxisSlave,
+         primaryAxisMaster   => userAxisMaster,
+         primaryAxisSlave    => userAxisSlave,
          -- Scope streaming data (axiClk domain)
-         scopeAxisMaster     => scopeAxisMaster,
-         scopeAxisSlave      => scopeAxisSlave,
+         auxiliaryAxisMaster => scopeAxisMaster,
+         auxiliaryAxisSlave  => scopeAxisSlave,
          -- Command interface
          ssiCmd              => ssiCmd,
          -- Sideband interface
@@ -509,7 +509,7 @@ begin
          forceFrameRead => cpixConfig.forceFrameRead,
          cntAcquisition => cntAcquisition,
          cntSequence    => cntSequence,
-         cntAReadout    => cntAReadout,
+         cntReadout     => cntReadout,
          frameReq       => frameReq     ,
          frameAck       => frameAck(i)     ,
          frameErr       => frameErr(i)     ,
@@ -573,7 +573,7 @@ begin
       -- control/status signals (byteClk)
       cntAcquisition    => cntAcquisition,
       cntSequence       => cntSequence,
-      cntAReadout       => cntAReadout,
+      cntReadout        => cntReadout,
       frameReq          => frameReq,
       frameAck          => frameAck,
       frameErr          => frameErr,

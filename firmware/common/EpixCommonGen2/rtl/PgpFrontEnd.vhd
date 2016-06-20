@@ -55,11 +55,11 @@ entity PgpFrontEnd is
       mAxiLiteWriteMaster : out AxiLiteWriteMasterType;
       mAxiLiteWriteSlave  : in  AxiLiteWriteSlaveType;
       -- Streaming data Links (axiClk domain)      
-      userAxisMaster  : in  AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
-      userAxisSlave   : out AxiStreamSlaveType;
+      primaryAxisMaster   : in  AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
+      primaryAxisSlave    : out AxiStreamSlaveType;
       -- Scope streaming data Links (axiClk domain)      
-      scopeAxisMaster : in  AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
-      scopeAxisSlave  : out AxiStreamSlaveType;
+      auxiliaryAxisMaster : in  AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
+      auxiliaryAxisSlave  : out AxiStreamSlaveType;
       -- VC Command interface
       ssiCmd         : out SsiCmdMasterType;
       -- To access sideband commands
@@ -176,8 +176,8 @@ begin
          -- Slave Port
          sAxisClk    => axiClk,
          sAxisRst    => axiRst,
-         sAxisMaster => userAxisMaster,
-         sAxisSlave  => userAxisSlave,
+         sAxisMaster => primaryAxisMaster,
+         sAxisSlave  => primaryAxisSlave,
          -- Master Port
          mAxisClk    => iPgpClk,
          mAxisRst    => stableRst,
@@ -245,8 +245,8 @@ begin
          -- Slave Port
          sAxisClk    => axiClk,
          sAxisRst    => axiRst,
-         sAxisMaster => scopeAxisMaster,
-         sAxisSlave  => scopeAxisSlave,
+         sAxisMaster => auxiliaryAxisMaster,
+         sAxisSlave  => auxiliaryAxisSlave,
          -- Master Port
          mAxisClk    => iPgpClk,
          mAxisRst    => stableRst,

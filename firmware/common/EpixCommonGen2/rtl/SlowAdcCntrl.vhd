@@ -40,6 +40,7 @@ entity SlowAdcCntrl is
       -- Operation Control
       adcStart        : in  std_logic;
       adcData         : out Slv24Array(8 downto 0);
+      allChRd         : out std_logic;
 
       -- ADC Control Signals
       adcRefClk     : out   std_logic;
@@ -303,7 +304,9 @@ begin
          if sysClkRst = '1' then
             ch_counter <= 0 after TPD_G;
          elsif channel_en = '1' then
-            if ch_counter < 8 then
+            if ch_counter = 5 then     -- skip removed channel 6
+               ch_counter <= ch_counter + 2 after TPD_G;
+            elsif ch_counter < 8 then
                ch_counter <= ch_counter + 1 after TPD_G;
             else
                ch_counter <= 0 after TPD_G;
@@ -312,6 +315,8 @@ begin
       end if;
    end process;
    ch_sel <= CONV_STD_LOGIC_VECTOR(ch_counter, 4);
+   
+   allChRd <= '1' when channel_en = '1' and ch_counter = 8 else '0';
    
    -- acquisition data storage
    data_reg_p: process ( sysClk ) 
