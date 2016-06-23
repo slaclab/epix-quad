@@ -136,7 +136,11 @@ entity EpixCoreGen2 is
       asicRoClk           : out sl;
       asicSync            : out sl;
       -- ASIC digital data
-      asicDout            : in  slv(3 downto 0) := "0000"
+      asicDout            : in  slv(3 downto 0) := "0000";
+      -- Boot Memory Ports
+      bootCsL             : out sl;
+      bootMosi            : out sl;
+      bootMiso            : in  sl
    );
 end EpixCoreGen2;
 
@@ -231,6 +235,9 @@ architecture top_level of EpixCoreGen2 is
    signal iAsicGrst  : sl;
    signal iAsicRoClk : sl;
    signal iAsicSync  : sl;
+   
+   signal fpgaReload : sl;
+   signal bootSck    : sl;
    
    signal iSaciSelL  : slv(3 downto 0);
    
@@ -818,5 +825,88 @@ begin
       mAxisMaster    => scopeAxisMaster,
       mAxisSlave     => scopeAxisSlave
    );
-      
+   
+   
+   --------------------------
+   -- AXI-Lite Version Module
+   --------------------------          
+   U_AxiVersion : entity work.AxiVersion
+   generic map (
+      TPD_G           => TPD_G,
+      EN_DEVICE_DNA_G => true)   
+   port map (
+      fpgaReload     => fpgaReload,
+      -- AXI-Lite Register Interface
+      axiReadMaster  => mAxiReadMasters(VERSION_AXI_INDEX_C),
+      axiReadSlave   => mAxiReadSlaves(VERSION_AXI_INDEX_C),
+      axiWriteMaster => mAxiWriteMasters(VERSION_AXI_INDEX_C),
+      axiWriteSlave  => mAxiWriteSlaves(VERSION_AXI_INDEX_C),
+      -- Clocks and Resets
+      axiClk         => coreClk,
+      axiRst         => axiRst
+   );
+
+   ---------------------
+   -- FPGA Reboot Module
+   ---------------------
+   U_Iprog7Series : entity work.Iprog7Series
+   generic map (
+      TPD_G => TPD_G)   
+   port map (
+      clk         => coreClk,
+      rst         => axiRst,
+      start       => fpgaReload,
+      bootAddress => X"00000000"
+   );
+   
+   -----------------------------------------------------
+   -- Using the STARTUPE2 to access the FPGA's CCLK port
+   -----------------------------------------------------
+   U_STARTUPE2 : STARTUPE2
+   port map (
+      CFGCLK    => open,             -- 1-bit output: Configuration main clock output
+      CFGMCLK   => open,  -- 1-bit output: Configuration internal oscillator clock output
+      EOS       => open,  -- 1-bit output: Active high output signal indicating the End Of Startup.
+      PREQ      => open,             -- 1-bit output: PROGRAM request to fabric output
+      CLK       => '0',              -- 1-bit input: User start-up clock input
+      GSR       => '0',  -- 1-bit input: Global Set/Reset input (GSR cannot be used for the port name)
+      GTS       => '0',  -- 1-bit input: Global 3-state input (GTS cannot be used for the port name)
+      KEYCLEARB => '0',  -- 1-bit input: Clear AES Decrypter Key input from Battery-Backed RAM (BBRAM)
+      PACK      => '0',              -- 1-bit input: PROGRAM acknowledge input
+      USRCCLKO  => bootSck,          -- 1-bit input: User CCLK input
+      USRCCLKTS => '0',              -- 1-bit input: User CCLK 3-state enable input
+      USRDONEO  => '1',              -- 1-bit input: User DONE pin output control
+      USRDONETS => '1'               -- 1-bit input: User DONE 3-state enable output            
+   );
+   
+   --------------------
+   -- Boot Flash Module
+   --------------------
+   U_AxiMicronN25QCore : entity work.AxiMicronN25QCore
+   generic map (
+      TPD_G          => TPD_G,
+      PIPE_STAGES_G  => 1,
+      AXI_CLK_FREQ_G => 100000000)  -- units of Hz
+   port map (
+      -- FLASH Memory Ports
+      csL            => bootCsL,
+      sck            => bootSck,
+      mosi           => bootMosi,
+      miso           => bootMiso,
+      -- AXI-Lite Register Interface
+      axiReadMaster  => mAxiReadMasters(BOOTMEM_AXI_INDEX_C),
+      axiReadSlave   => mAxiReadSlaves(BOOTMEM_AXI_INDEX_C),
+      axiWriteMaster => mAxiWriteMasters(BOOTMEM_AXI_INDEX_C),
+      axiWriteSlave  => mAxiWriteSlaves(BOOTMEM_AXI_INDEX_C),
+      -- AXI Streaming Interface (Optional)
+      mAxisMaster    => open,
+      mAxisSlave     => AXI_STREAM_SLAVE_FORCE_C,
+      sAxisMaster    => AXI_STREAM_MASTER_INIT_C,
+      sAxisSlave     => open,
+      -- Clocks and Resets
+      axiClk         => coreClk,
+      axiRst         => axiRst
+   );   
+   
+   
 end top_level;
