@@ -555,6 +555,9 @@ DigFpga::DigFpga ( uint destination, uint baseAddress, uint index, Device *paren
       addDevice(new Epix100aAsic(destination, baseAddress_ + 0x00900000*addrSize, 1, this, addrSize));
       addDevice(new Epix100aAsic(destination, baseAddress_ + 0x00A00000*addrSize, 2, this, addrSize));
       addDevice(new Epix100aAsic(destination, baseAddress_ + 0x00B00000*addrSize, 3, this, addrSize));
+      //epix100a firmware added support for the PGP firmware loading
+      addDevice(new AxiVersion(destination, baseAddress_ + 0x02000000*addrSize,  0, this, addrSize)); 
+      addDevice(new AxiMicronN25Q(destination, baseAddress_ + 0x03000000*addrSize, 0, this, addrSize)); 
    } else if (epixType == EPIX10KP) {
       addDevice(new Epix10kpAsic(destination, baseAddress_ + 0x00800000*addrSize, 0, this, addrSize));
       addDevice(new Epix10kpAsic(destination, baseAddress_ + 0x00900000*addrSize, 1, this, addrSize));
