@@ -886,7 +886,9 @@ begin
    generic map (
       TPD_G          => TPD_G,
       PIPE_STAGES_G  => 1,
-      AXI_CLK_FREQ_G => 100.0E+6)  -- units of Hz
+      AXI_CLK_FREQ_G => 100.0E+6,   -- units of Hz
+      SPI_CLK_FREQ_G => 25.0E+6     -- units of Hz
+   )
    port map (
       -- FLASH Memory Ports
       csL            => bootCsL,

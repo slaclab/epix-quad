@@ -65,7 +65,6 @@ int main (int argc, char **argv) {
 #else
       PgpLink       *pgpLink; 
 #endif
-      int           pid;
       uint          baseAddress;
       uint          addrSize;
       
@@ -80,7 +79,7 @@ int main (int argc, char **argv) {
       pgpLink->setDebug(false);
       pgpLink->setMaxRxTx(0x800000);
       pgpLink->open(1,dest);
-      pgpLink->enableSharedMemory("epix",1);   
+      pgpLink->enableSharedMemory("epix",1);
       pgpLink->setXmlStore(false);
 #else
       baseAddress = 0x01000000;
@@ -126,10 +125,10 @@ int main (int argc, char **argv) {
          return(1);      
       } 
       // Compare the .mcs file with the FPGA's PROM
-      //if(!prom->verifyBootProm()) {
-      //   cout << "Error in AxiMicronN25Q->verifyBootProm() function" << endl;
-      //   return(1);      
-      //}  
+      if(!prom->verifyBootProm()) {
+         cout << "Error in AxiMicronN25Q->verifyBootProm() function" << endl;
+         return(1);      
+      }  
       
       // Display Reminder
       prom->rebootReminder(false); 
