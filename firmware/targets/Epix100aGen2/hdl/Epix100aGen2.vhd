@@ -100,7 +100,11 @@ entity Epix100aGen2 is
 --      asicDoutP           : in  slv(3 downto 0);
 --      asicDoutM           : in  slv(3 downto 0);
       asicRoClkP          : out slv(3 downto 0);
-      asicRoClkM          : out slv(3 downto 0)
+      asicRoClkM          : out slv(3 downto 0);
+      -- Boot Memory Ports
+      bootCsL             : out sl;
+      bootMosi            : out sl;
+      bootMiso            : in  sl
       -- TODO: Add DDR pins
       -- TODO: Add I2C pins for SFP
       -- TODO: Add sync pins for DC/DCs
@@ -140,6 +144,9 @@ architecture top_level of Epix100aGen2 is
    signal iAdcSpiClk     : sl;   
    signal iAdcClkP       : slv( 2 downto 0);
    signal iAdcClkM       : slv( 2 downto 0);
+   
+   signal iBootCsL      : sl;
+   signal iBootMosi     : sl;
    
    signal iAsicRoClk    : sl;
    signal iAsicR0       : sl;
@@ -240,7 +247,11 @@ begin
          asicRoClk           => iAsicRoClk,
          asicSync            => iAsicSync,
          -- ASIC digital data
-         asicDout            => iAsicDout
+         asicDout            => iAsicDout,
+         -- Boot Memory Ports
+         bootCsL             => iBootCsL,
+         bootMosi            => iBootMosi,
+         bootMiso            => bootMiso
       );
       
       adcClkP(0) <= iAdcClkP(0);      
@@ -253,6 +264,10 @@ begin
    -- Map ports/signals/etc. --
    ----------------------------
    led <= iLed when iLedEn = '1' else (others => '0');
+   
+   -- Boot Memory Ports
+   bootCsL  <= iBootCsL    when iFpgaOutputEn = '1' else 'Z';
+   bootMosi <= iBootMosi   when iFpgaOutputEn = '1' else 'Z';
    
    -- Guard ring DAC
    vGuardDacSclk <= iVGuardDacSclk when iFpgaOutputEn = '1' else 'Z';

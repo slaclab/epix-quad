@@ -8,7 +8,7 @@ export PRJ_PART = XC7A200TSBG484-3
 # List of build core directories.
 export MODULE_DIRS = $(PROJ_DIR)/../../common/StdLib  \
                      $(PROJ_DIR)/../../common/StdLib/obsolete  \
-                     $(PROJ_DIR)/../../common/Saci/rtl  \
+                     $(PROJ_DIR)/../../common/AxiMicronN25QCore  \
                      $(PROJ_DIR)/../../common/pgp2b_core/gtp7 \
                      $(PROJ_DIR)/../../common/pgp2b_core/core \
                      $(PROJ_DIR)/../../common/MgtLib/gtp7  \

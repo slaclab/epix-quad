@@ -3,8 +3,14 @@ CC     := g++
 DEF    :=
 BIN    := $(PWD)/bin
 OBJ    := $(PWD)/.obj
-CFLAGS := -Wall `xml2-config --cflags` -I$(PWD)/generic -I$(PWD)/epix -I$(PWD)/offline
+CFLAGS := -Wall `xml2-config --cflags` -I$(PWD)/deviceLib -I$(PWD)/generic -I$(PWD)/epix -I$(PWD)/offline
 LFLAGS := `xml2-config --libs` -pthread -lrt -lbz2 -lgsl -lgslcblas -lm
+
+# Device Lib Sources
+DEV_DIR := $(PWD)/deviceLib
+DEV_SRC := $(wildcard $(DEV_DIR)/*.cpp)
+DEV_HDR := $(wildcard $(DEV_DIR)/*.h)
+DEV_OBJ := $(patsubst $(DEV_DIR)/%.cpp,$(OBJ)/%.o,$(DEV_SRC))
 
 # Generic Sources
 GEN_DIR := $(PWD)/generic
@@ -24,7 +30,7 @@ UTL_SRC := $(wildcard $(UTL_DIR)/*.cpp)
 UTL_BIN := $(patsubst $(UTL_DIR)/%.cpp,$(BIN)/%,$(UTL_SRC))
 
 # Default
-all: dir $(GEN_OBJ) $(EPX_OBJ) $(UTL_BIN) gui ana online pylibs
+all: dir $(DEV_OBJ) $(GEN_OBJ) $(EPX_OBJ) $(UTL_BIN) gui ana online pylibs
 #all: dir $(GEN_OBJ) $(EPX_OBJ) $(UTL_BIN) gui ana online 
 
 # Object directory
@@ -42,8 +48,12 @@ ifneq ($(QWTDIR),)
 	cd onlineGui; qmake; gmake clean
 endif
 
+# Compile Dev Lib Sources
+$(OBJ)/%.o: $(DEV_DIR)/%.cpp $(DEV_DIR)/%.h 
+	$(CC) -c $(CFLAGS) $(DEF) -o $@ $<
+
 # Compile Common Sources
-$(OBJ)/%.o: $(GEN_DIR)/%.cpp $(GEN_DIR)/%.h
+$(OBJ)/%.o: $(GEN_DIR)/%.cpp $(GEN_DIR)/%.h 
 	$(CC) -c $(CFLAGS) $(DEF) -o $@ $<
 
 # Compile Tracker Sources
@@ -51,7 +61,7 @@ $(OBJ)/%.o: $(EPX_DIR)/%.cpp $(EPX_DIR)/%.h
 	$(CC) -c $(CFLAGS) $(DEF) -o $@ $<
 
 # Comile utilities
-$(BIN)/%: $(UTL_DIR)/%.cpp $(GEN_OBJ) $(EPX_OBJ)
+$(BIN)/%: $(UTL_DIR)/%.cpp $(DEV_OBJ) $(GEN_OBJ) $(EPX_OBJ)
 	$(CC) $(CFLAGS) $(DEF) $(OBJ)/* -o $@ $< $(LFLAGS) 
 
 # root

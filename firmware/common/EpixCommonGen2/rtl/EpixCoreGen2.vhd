@@ -833,7 +833,7 @@ begin
    U_AxiVersion : entity work.AxiVersion
    generic map (
       TPD_G           => TPD_G,
-      EN_DEVICE_DNA_G => true)   
+      EN_DEVICE_DNA_G => false)   
    port map (
       fpgaReload     => fpgaReload,
       -- AXI-Lite Register Interface
@@ -886,7 +886,7 @@ begin
    generic map (
       TPD_G          => TPD_G,
       PIPE_STAGES_G  => 1,
-      AXI_CLK_FREQ_G => 100000000)  -- units of Hz
+      AXI_CLK_FREQ_G => 100.0E+6)  -- units of Hz
    port map (
       -- FLASH Memory Ports
       csL            => bootCsL,

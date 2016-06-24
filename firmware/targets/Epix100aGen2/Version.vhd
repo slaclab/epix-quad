@@ -39,6 +39,7 @@ end Version;
 -- 06/03/2016 (0xEA020004): New working copy version number (change date when released)
 --                          Added optical/TTL trigger switch into the register space
 --                          Added monitoring data stream via PGP VC2 (shared with pseudo scope)
+--                          Added FPGA flash programming over the PGP
 --               
 -------------------------------------------------------------------------------
 

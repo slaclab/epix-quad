@@ -1,24 +1,25 @@
 //-----------------------------------------------------------------------------
-// File          : epixGui.cpp
+// File          : epixFirmwareLoader.cpp
 // Author        : Ryan Herbst  <rherbst@slac.stanford.edu>
-// Created       : 05/14/2013
-// Project       : EPIX
+// Created       : 04/12/2011
+// Project       : CSPAD
 //-----------------------------------------------------------------------------
 // Description :
 // Server application for GUI
 //-----------------------------------------------------------------------------
-// Copyright (c) 2013 by SLAC. All rights reserved.
+// Copyright (c) 2011 by SLAC. All rights reserved.
 // Proprietary and confidential to SLAC.
 //-----------------------------------------------------------------------------
 // Modification history :
-// 05/14/2013: created
+// 04/12/2011: created
 //----------------------------------------------------------------------------
 #include <PgpLink.h>
 #include <UdpLink.h>
 #include <MultDestPgp.h>
 #include <MultLink.h>
 #include <EpixControl.h>
-#include <ControlServer.h>
+#include <AxiMicronN25Q.h>
+#include <AxiVersion.h>
 #include <Device.h>
 #include <iomanip>
 #include <fstream>
@@ -38,30 +39,26 @@ using namespace std;
 #define VC2    0x04
 #define VC3    0x08
 
-// Run flag for sig catch
-bool stop;
-
-// Function to catch cntrl-c
-void sigTerm (int) { 
-   cout << "Got Signal!" << endl;
-   stop = true; 
-}
-
 int main (int argc, char **argv) {
-   ControlServer cntrlServer;
-   string        defFile;
-   int           port;
-   stringstream  cmd;
-
-   if ( argc > 1 ) defFile = argv[1];
-   else defFile = "";
-
-   // Catch signals
-   signal (SIGINT,&sigTerm);
+   
+   AxiMicronN25Q * prom;
+   AxiVersion    * fpga;
+   string          pathToFile;
+   
+   // Check for .mcs file path
+   if ( argc > 1 ){ 
+      pathToFile = argv[1];
+   }else{ 
+      printf("\n############################\n");
+      printf("usage: %s MCS_PATH\n", argv[0]);
+      printf("\tMCS_PATH: File path to the .mcs file to be loaded\n");
+      printf("############################\n");   
+      return(1);
+   }
 
    try {
-      
-      
+
+      // Create and setup PGP link
 #if USE_MULTLINK
       MultLink     *pgpLink;
       MultDest     *dest;  
@@ -80,7 +77,7 @@ int main (int argc, char **argv) {
       dest->addDataSource(0x00000000); // VC0 - acq data
       //dest->addDataSource(0x02000000); // VC2 - oscilloscope
       pgpLink = new MultLink();
-      pgpLink->setDebug(true);
+      pgpLink->setDebug(false);
       pgpLink->setMaxRxTx(0x800000);
       pgpLink->open(1,dest);
       pgpLink->enableSharedMemory("epix",1);   
@@ -102,50 +99,50 @@ int main (int argc, char **argv) {
 
       cout << "Created PGP Link" << endl;
 
-      EpixControl   epix(pgpLink,defFile,EPIX100A, baseAddress, addrSize);
-      epix.setDebug(true);
+      EpixControl * epix = new EpixControl(pgpLink,"",EPIX100A, baseAddress, addrSize);
+      epix->setDebug(false);
       
-      cntrlServer.enableSharedMemory("epix",1);
-      port = cntrlServer.startListen(0);
-      cntrlServer.setSystem(&epix);
-      cout << "Control id = 1" << endl;
+      prom   = (AxiMicronN25Q*)(epix->device("digFpga",0)->device("AxiMicronN25Q",0));
+      fpga   =    (AxiVersion*)(epix->device("digFpga",0)->device("AxiVersion",0));
+      
+      // Set the path to the FPGA's .mcs file
+      prom->setFilePath(pathToFile); 
 
-      cout << "Created control server" << endl;
+      // Check if the .mcs file exists
+      if(!prom->fileExist()){
+         cout << "Error opening: " << pathToFile << endl;
+         return(1);      
+      }    
+      
+      // Get & Set the FPGA's PROM code size
+      prom->setPromSize(prom->getPromSize(pathToFile)); 
 
-      // Fork and start gui
-      stop = false;
-      switch (pid = fork()) {
+      // Erase the FPGA's PROM
+      prom->eraseBootProm();  
+    
+      // Write the .mcs file to the FPGA's PROM
+      if(!prom->writeBootProm()){
+         cout << "Error in AxiMicronN25Q->writeBootProm() function" << endl;
+         return(1);      
+      } 
+      // Compare the .mcs file with the FPGA's PROM
+      //if(!prom->verifyBootProm()) {
+      //   cout << "Error in AxiMicronN25Q->verifyBootProm() function" << endl;
+      //   return(1);      
+      //}  
+      
+      // Display Reminder
+      prom->rebootReminder(false); 
 
-         // Error
-         case -1:
-            cout << "Error occured in fork!" << endl;
-            return(1);
-            break;
-
-         // Child
-         case 0:
-            usleep(100);
-            cout << "Starting GUI" << endl;
-            cmd.str("");
-            cmd << "cntrlGui localhost " << dec << port;
-            system(cmd.str().c_str());
-            cout << "GUI stopped" << endl;
-            kill(getppid(),SIGINT);
-            break;
-
-         // Server
-         default:
-            cout << "Starting server at port " << dec << port << endl;
-            while ( ! stop ) cntrlServer.receive(100);
-            cntrlServer.stopListen();
-            cout << "Stopped server" << endl;
-            break;
-      }
+      // Reboot the FPGA
+      fpga->command("FpgaReload","");
+      sleep(1);
+      
+      return(0);
 
    } catch ( string error ) {
       cout << "Caught Error: " << endl;
       cout << error << endl;
-      cntrlServer.stopListen();
    }
 }
 

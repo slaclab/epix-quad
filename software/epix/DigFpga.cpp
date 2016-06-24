@@ -26,6 +26,8 @@
 #include <Register.h>
 #include <Variable.h>
 #include <Command.h>
+#include <AxiVersion.h>
+#include <AxiMicronN25Q.h>
 #include <sstream>
 #include <iostream>
 #include <string>

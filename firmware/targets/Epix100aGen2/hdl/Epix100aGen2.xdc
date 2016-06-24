@@ -2,25 +2,39 @@
 ## Timing Constraints                ##
 #######################################
 
-create_clock -period  6.400 -name gtRefClk0P   -waveform {0.000  3.200} [get_ports gtRefClk0P]
-create_clock -period  6.400 -name pgpClk       -waveform {0.000  3.200} [get_pins {U_EpixCore/U_PgpFrontEnd/U_Pgp2bVarLatWrapper/Pgp2bGtp7VarLat_Inst/MuliLane_Inst/GTP7_CORE_GEN[0].Gtp7Core_Inst/gtpe2_i/TXOUTCLK}]
-create_clock -period  10.00 -name coreClk      -waveform {0.000  5.000} [get_pins {U_EpixCore/U_CoreClockGen/ClkOutGen[0].U_Bufg/O}]
-create_clock -period 20.000 -name adc0DoClkP   -waveform {0.000 10.000} [get_ports {adcDoClkP[0]}]
-create_clock -period 20.000 -name adc1DoClkP   -waveform {0.000 10.000} [get_ports {adcDoClkP[1]}]
-create_clock -period 20.000 -name adcMonDoClkP -waveform {0.000 10.000} [get_ports {adcDoClkP[2]}]
+create_clock -name gtRefClk0P   -period  6.400 [get_ports gtRefClk0P]
+create_clock -name pgpClk       -period  6.400 [get_pins {U_EpixCore/U_PgpFrontEnd/U_Pgp2bVarLatWrapper/Pgp2bGtp7VarLat_Inst/MuliLane_Inst/GTP7_CORE_GEN[0].Gtp7Core_Inst/gtpe2_i/TXOUTCLK}]
+create_clock -name adc0DoClkP   -period 20.000 [get_ports {adcDoClkP[0]}]
+create_clock -name adc1DoClkP   -period 20.000 [get_ports {adcDoClkP[1]}]
+create_clock -name adcMonDoClkP -period 20.000 [get_ports {adcDoClkP[2]}]
+
+create_generated_clock -name coreClk      [get_pins {U_EpixCore/U_CoreClockGen/MmcmGen.U_Mmcm/CLKOUT0}]
+create_generated_clock -name delayCtrlClk [get_pins {U_EpixCore/U_CalClockGen/MmcmGen.U_Mmcm/CLKOUT0}]
+create_generated_clock -name progClk      [get_pins {U_EpixCore/U_Iprog7Series/DIVCLK_GEN.BUFR_ICPAPE2/O}]  
 
 set_clock_groups -asynchronous \
    -group [get_clocks -include_generated_clocks pgpClk] \
    -group [get_clocks -include_generated_clocks coreClk] \
+   -group [get_clocks -include_generated_clocks delayCtrlClk] \
    -group [get_clocks -include_generated_clocks gtRefClk0P] \
    -group [get_clocks -include_generated_clocks adc0DoClkP] \
    -group [get_clocks -include_generated_clocks adc1DoClkP] \
-   -group [get_clocks -include_generated_clocks adcMonDoClkP]
+   -group [get_clocks -include_generated_clocks adcMonDoClkP] \
+   -group [get_clocks -include_generated_clocks progClk]
 
 
 #######################################
 ## Pin locations, IO standards, etc. ##
 #######################################
+
+# Boot Memory Port Mapping
+set_property PACKAGE_PIN T19     [get_ports {bootCsL}]
+set_property IOSTANDARD LVCMOS33 [get_ports {bootCsL}] 
+set_property PACKAGE_PIN P22     [get_ports {bootMosi}]
+set_property IOSTANDARD LVCMOS33 [get_ports {bootMosi}] 
+set_property PACKAGE_PIN R22     [get_ports {bootMiso}]
+set_property IOSTANDARD LVCMOS33 [get_ports {bootMiso}] 
+
 
 set_property PACKAGE_PIN Y6  [get_ports {led[0]}]
 set_property PACKAGE_PIN AA6 [get_ports {led[1]}]

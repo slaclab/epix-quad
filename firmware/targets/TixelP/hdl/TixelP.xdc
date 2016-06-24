@@ -2,13 +2,13 @@
 ## Timing Constraints                ##
 #######################################
 
-create_clock -period  6.400 -name pgpClk        -waveform {0.000  3.200} [get_pins {U_TixelCore/U_PgpFrontEnd/U_Pgp2bVarLatWrapper/U_BUFG_PGP/O}]
-create_clock -period  5.00  -name iDelayCtrlClk -waveform {0.000  2.500} [get_pins {U_TixelCore/U_CoreClockGen2/ClkOutGen[0].U_Bufg/O}]
-create_clock -period  10.00 -name coreClk       -waveform {0.000  5.000} [get_pins {U_TixelCore/U_CoreClockGen/ClkOutGen[1].U_Bufg/O}]
-create_clock -period  6.250 -name bitClk        -waveform {0.000  3.125} [get_pins {U_TixelCore/U_CoreClockGen/ClkOutGen[0].U_Bufg/O}]
-create_clock -period  125.0 -name asicRdClk     -waveform {0.000  62.50} [get_pins {U_TixelCore/U_CoreClockGen/ClkOutGen[2].U_Bufg/O}]
-create_clock -period  50.00 -name asicRefClk    -waveform {0.000  25.00} [get_pins {U_TixelCore/U_CoreClockGen/ClkOutGen[3].U_Bufg/O}]
-create_clock -period  31.25 -name byteClk       -waveform {0.000  15.625} [get_pins {U_TixelCore/U_BUFR/O}]
+create_clock -name pgpClk -period 6.400    [get_pins {U_TixelCore/U_PgpFrontEnd/U_Pgp2bVarLatWrapper/U_BUFG_PGP/O}]
+create_generated_clock -name iDelayCtrlClk [get_pins {U_TixelCore/U_CoreClockGen2/MmcmGen.U_Mmcm/CLKOUT0}]
+create_generated_clock -name coreClk       [get_pins {U_TixelCore/U_CoreClockGen/MmcmGen.U_Mmcm/CLKOUT1}]
+create_generated_clock -name bitClk        [get_pins {U_TixelCore/U_CoreClockGen/MmcmGen.U_Mmcm/CLKOUT0}]
+create_generated_clock -name asicRdClk     [get_pins {U_TixelCore/U_CoreClockGen/MmcmGen.U_Mmcm/CLKOUT2}]
+create_generated_clock -name asicRefClk    [get_pins {U_TixelCore/U_CoreClockGen/MmcmGen.U_Mmcm/CLKOUT3}]
+create_generated_clock -name byteClk       [get_pins {U_TixelCore/U_BUFR/O}]
 
 set_clock_groups -asynchronous \
     -group [get_clocks -include_generated_clocks pgpClk] \

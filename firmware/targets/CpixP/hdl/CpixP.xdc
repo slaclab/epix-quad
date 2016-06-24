@@ -2,12 +2,12 @@
 ## Timing Constraints                ##
 #######################################
 
-create_clock -period  6.400 -name pgpClk        -waveform {0.000  3.200} [get_pins {U_CpixCore/U_PgpFrontEnd/U_Pgp2bVarLatWrapper/U_BUFG_PGP/O}]
-create_clock -period  10.00 -name coreClk       -waveform {0.000  5.000} [get_pins {U_CpixCore/U_CoreClockGen/ClkOutGen[0].U_Bufg/O}]
-create_clock -period  5.000 -name iDelayCtrlClk -waveform {0.000  2.500} [get_pins {U_CpixCore/U_CoreClockGen/ClkOutGen[1].U_Bufg/O}]
-create_clock -period  10.00 -name bitClk        -waveform {0.000  5.000} [get_pins {U_CpixCore/U_CoreClockGen/ClkOutGen[2].U_Bufg/O}]
-create_clock -period  200.00 -name asicRdClk    -waveform {0.000  100.0} [get_pins {U_CpixCore/U_CoreClockGen/ClkOutGen[3].U_Bufg/O}]
-create_clock -period  50.000 -name byteClk      -waveform {0.000  25.00} [get_pins {U_CpixCore/U_BUFR/O}]
+create_clock -name pgpClk -period 6.400    [get_pins {U_CpixCore/U_PgpFrontEnd/U_Pgp2bVarLatWrapper/U_BUFG_PGP/O}]
+create_generated_clock -name coreClk       [get_pins {U_CpixCore/U_CoreClockGen/MmcmGen.U_Mmcm/CLKOUT0}]
+create_generated_clock -name iDelayCtrlClk [get_pins {U_CpixCore/U_CoreClockGen/MmcmGen.U_Mmcm/CLKOUT1}]
+create_generated_clock -name bitClk        [get_pins {U_CpixCore/U_CoreClockGen/MmcmGen.U_Mmcm/CLKOUT2}]
+create_generated_clock -name asicRdClk     [get_pins {U_CpixCore/U_CoreClockGen/MmcmGen.U_Mmcm/CLKOUT3}]
+create_generated_clock -name byteClk       [get_pins {U_CpixCore/U_BUFR/O}]
 
 set_clock_groups -asynchronous \
     -group [get_clocks -include_generated_clocks pgpClk] \
