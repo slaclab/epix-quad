@@ -67,9 +67,6 @@ entity ReadoutControl is
       adcPulse            : in    sl;
       adcValid            : in    slv(19 downto 0);
       adcData             : in    Slv16Array(19 downto 0);
-
-      -- Slow ADC data (ADC board gen1)
-      slowAdcData         : in    Slv16Array(7 downto 0);
       
       -- monitoring data (ADC board gen2)
       envData             : in    Slv32Array(8 downto 0);
@@ -278,15 +275,7 @@ begin
       tpsData(1) <= r.adcData(16+3);
       tpsData(2) <= r.adcData(16+2);
       tpsData(3) <= r.adcData(16+0);
-      monitorData(0) <= slowAdcData(1) & slowAdcData(0);
-      monitorData(1) <= slowAdcData(3) & slowAdcData(2);
-      monitorData(2) <= slowAdcData(5) & slowAdcData(4);
-      monitorData(3) <= slowAdcData(7) & slowAdcData(6);
-      monitorData(4) <= (others=>'0');
-      monitorData(5) <= (others=>'0');
-      monitorData(6) <= (others=>'0');
-      monitorData(7) <= (others=>'0');
-      monitorData(8) <= (others=>'0');
+      monitorData <= (others=>(others=>'0'));
    end generate;
    G_EPIX100P_CARRIER : if (FPGA_VERSION_C(31 downto 24) = x"E0") generate
       iAdcValid    <= adcValid;
@@ -300,15 +289,7 @@ begin
       tpsData(1) <= r.adcData(16+1);
       tpsData(2) <= r.adcData(16+2);
       tpsData(3) <= r.adcData(16+3);
-      monitorData(0) <= slowAdcData(1) & slowAdcData(0);
-      monitorData(1) <= slowAdcData(3) & slowAdcData(2);
-      monitorData(2) <= slowAdcData(5) & slowAdcData(4);
-      monitorData(3) <= slowAdcData(7) & slowAdcData(6);
-      monitorData(4) <= (others=>'0');
-      monitorData(5) <= (others=>'0');
-      monitorData(6) <= (others=>'0');
-      monitorData(7) <= (others=>'0');
-      monitorData(8) <= (others=>'0');
+      monitorData <= (others=>(others=>'0'));
    end generate;
    G_EPIX10KP_CARRIER : if (FPGA_VERSION_C(31 downto 24) = x"E2") generate
       iAdcValid    <= adcValid;
@@ -322,15 +303,7 @@ begin
       tpsData(1) <= r.adcData(16+1);
       tpsData(2) <= r.adcData(16+2);
       tpsData(3) <= r.adcData(16+3);
-      monitorData(0) <= slowAdcData(1) & slowAdcData(0);
-      monitorData(1) <= slowAdcData(3) & slowAdcData(2);
-      monitorData(2) <= slowAdcData(5) & slowAdcData(4);
-      monitorData(3) <= slowAdcData(7) & slowAdcData(6);
-      monitorData(4) <= (others=>'0');
-      monitorData(5) <= (others=>'0');
-      monitorData(6) <= (others=>'0');
-      monitorData(7) <= (others=>'0');
-      monitorData(8) <= (others=>'0');
+      monitorData <= (others=>(others=>'0'));
    end generate;
    G_EPIXS_CARRIER : if (FPGA_VERSION_C(31 downto 24) = x"E3") generate
       iAdcValid    <= adcValid;
@@ -344,15 +317,7 @@ begin
       tpsData(1) <= r.adcData(16+1);
       tpsData(2) <= r.adcData(16+2);
       tpsData(3) <= r.adcData(16+3);
-      monitorData(0) <= slowAdcData(1) & slowAdcData(0);
-      monitorData(1) <= slowAdcData(3) & slowAdcData(2);
-      monitorData(2) <= slowAdcData(5) & slowAdcData(4);
-      monitorData(3) <= slowAdcData(7) & slowAdcData(6);
-      monitorData(4) <= (others=>'0');
-      monitorData(5) <= (others=>'0');
-      monitorData(6) <= (others=>'0');
-      monitorData(7) <= (others=>'0');
-      monitorData(8) <= (others=>'0');
+      monitorData <= (others=>(others=>'0'));
    end generate;
 
    -- Edge detection for signals that interface with other blocks

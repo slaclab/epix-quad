@@ -16,7 +16,6 @@
 -- [MK] 01/28/2016 - Fixed carrier ID readout
 -- [MK] 02/23/2016 - Increased SACI clock frequency to 10MHz. Improved SACI FSM to better handle 
 --                   simultaneous prepare for readout commands and SACI register accesses.
---                   Obsolete regs replaced by removedRegs dummy (writable for software compatibility).
 -------------------------------------------------------------------------------
 -- Description: Adaptation of Gen1 ePix register controller to Gen2 dig. card.
 -------------------------------------------------------------------------------
@@ -43,7 +42,6 @@ entity RegControlGen2 is
    generic (
       TPD_G                : time                  := 1 ns;
       NUM_ASICS_G          : natural range 1 to 8  := 4;
-      NUM_FAST_ADCS_G      : natural range 1 to 3  := 3;
       CLK_PERIOD_G         : real := 10.0e-9
    );
    port (
@@ -74,20 +72,12 @@ entity RegControlGen2 is
       dacCsb         : out sl;
       dacClrb        : out sl;
       -- 1-wire board ID interfaces
-      serialIdIo     : inout slv(1 downto 0);
-      -- Fast ADC control 
-      adcSpiClk      : out sl;
-      adcSpiDataOut  : out sl;
-      adcSpiDataIn   : in  sl;
-      adcSpiDataEn   : out sl;
-      adcSpiCsb      : out slv(NUM_FAST_ADCS_G-1 downto 0);
-      adcPdwn        : out slv(NUM_FAST_ADCS_G-1 downto 0)
+      serialIdIo     : inout slv(1 downto 0)
    );
 end RegControlGen2;
 
 architecture rtl of RegControlGen2 is
 
-   type AdcState is (ADC_IDLE_S, ADC_READ_S, ADC_WRITE_S, ADC_DONE_S);
    type SaciState is (SACI_IDLE_S, SACI_REG_S, SACI_PAUSE_S, SACI_CMD_S, 
                       SACI_PIXEL_ROW_S, SACI_PIXEL_ROW_PAUSE_S, 
                       SACI_PIXEL_COL_S, SACI_PIXEL_COL_PAUSE_S,
@@ -116,16 +106,9 @@ architecture rtl of RegControlGen2 is
    
    type RegType is record
       usrRst         : sl;
-      adcRegWrReq    : sl;
-      adcWrReq       : sl;
-      adcRegRdReq    : sl;
-      adcRdReq       : sl;
       saciTimeout    : sl;
       saciReadoutAck : sl;
       saciChipCnt    : slv(1 downto 0);
-      adcAddr        : slv(12 downto 0);
-      adcWrData      : slv(7 downto 0);
-      adcSel         : slv(1 downto 0);
       saciTimeoutCnt : slv(15 downto 0);
       saciAxiRsp     : slv(1 downto 0);
       globalMultiPix : MultiPixelWriteType;
@@ -133,26 +116,18 @@ architecture rtl of RegControlGen2 is
       saciRegIn      : SaciMasterInType;
       saciSelIn      : SaciMasterInType;
       saciState      : SaciState;
-      adcState       : AdcState;
       epixRegOut     : EpixConfigType;
       scopeRegOut    : ScopeConfigType;
       axiReadSlave   : AxiLiteReadSlaveType;
       axiWriteSlave  : AxiLiteWriteSlaveType;
-      removedRegs    : Slv32Array(7 downto 0);
+      reqStartupD1   : sl;
    end record RegType;
    
    constant REG_INIT_C : RegType := (
       usrRst         => '0',
-      adcRegWrReq    => '0',
-      adcWrReq       => '0',
-      adcRegRdReq    => '0',
-      adcRdReq       => '0',
       saciTimeout    => '0',
       saciReadoutAck => '0',
       saciChipCnt    => (others => '0'),
-      adcAddr        => (others => '0'),
-      adcWrData      => (others => '0'),
-      adcSel         => (others => '0'),
       saciTimeoutCnt => (others => '0'),
       saciAxiRsp     => AXI_RESP_OK_C,
       globalMultiPix => MULTI_PIXEL_WRITE_INIT_C,
@@ -160,12 +135,11 @@ architecture rtl of RegControlGen2 is
       saciRegIn      => SACI_MASTER_IN_INIT_C,
       saciSelIn      => SACI_MASTER_IN_INIT_C,
       saciState      => SACI_IDLE_S,
-      adcState       => ADC_IDLE_S,
       epixRegOut     => EPIX_CONFIG_INIT_C,
       scopeRegOut    => SCOPE_CONFIG_INIT_C,
       axiReadSlave   => AXI_LITE_READ_SLAVE_INIT_C,
       axiWriteSlave  => AXI_LITE_WRITE_SLAVE_INIT_C,
-      removedRegs    => (others => (others => '0'))
+      reqStartupD1   => '0'
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -175,9 +149,6 @@ architecture rtl of RegControlGen2 is
    
    signal idValues : Slv64Array(2 downto 0);
    signal idValids : slv(2 downto 0);
-
-   signal iAdcAck    : sl;
-   signal iAdcRdData : slv(7 downto 0);
    
    signal iSaciSelL       : slv(NUM_ASICS_G-1 downto 0);
    signal iSaciRsp        : sl;
@@ -199,7 +170,7 @@ begin
    -- Configuration Register
    -------------------------------  
    comb : process (axiReadMaster, axiReset, axiWriteMaster, r, saciReadoutReq, iSaciSelOut,
-                   ePixStatus, idValids, idValues, iAdcAck, iAdcRdData) is
+                   ePixStatus, idValids, idValues) is
       variable v            : RegType;
       variable axiStatus    : AxiLiteStatusType;
 
@@ -241,6 +212,16 @@ begin
       v.scopeRegOut.trig         := '0';
       v.saciReadoutAck           := '0';
       
+      -- sum all time delays leading to the ACQ pulse and expose in a read only register
+      v.epixRegOut.asicPreAcqTime := r.epixRegOut.acqToAsicR0Delay + r.epixRegOut.asicR0Width + r.epixRegOut.asicR0ToAsicAcq;
+      
+      -- reset Ack and Fail when calibration requested (Req rising edge)
+      v.reqStartupD1 := r.epixRegOut.requestStartupCal;
+      if r.epixRegOut.requestStartupCal = '1' and r.reqStartupD1 = '0' then
+         v.epixRegOut.startupAck := '0';
+         v.epixRegOut.startupFail := '0';
+      end if;
+      
       -- add a feature to disable the pseudoscope when the DAC trigger is disabled
       v.scopeRegOut.triggerEnable:= r.epixRegOut.daqTriggerEnable;
       
@@ -260,9 +241,6 @@ begin
       axiSlaveRegisterW(x"000006" & "00",  0, v.epixRegOut.acqCountReset);
       axiSlaveRegisterW(x"000007" & "00",  0, v.epixRegOut.vguardDacSetting);
       axiSlaveRegisterW(x"000008" & "00",  0, v.epixRegOut.powerEnable);
-      axiSlaveRegisterW(x"000009" & "00",  0, v.epixRegOut.frameDelay(0));
-      axiSlaveRegisterW(x"000009" & "00",  6, v.epixRegOut.frameDelay(1));
-      axiSlaveRegisterW(x"000009" & "00", 12, v.epixRegOut.frameDelay(2));
       axiSlaveRegisterR(x"00000A" & "00",  0, epixStatus.iDelayCtrlRdy);
       axiSlaveRegisterR(x"00000B" & "00",  0, epixStatus.seqCount);
       axiSlaveRegisterW(x"00000C" & "00",  0, v.epixRegOut.seqCountReset);
@@ -271,7 +249,6 @@ begin
       axiSlaveRegisterW(x"000011" & "00",  0, v.epixRegOut.autoRunEn);
       axiSlaveRegisterW(x"000012" & "00",  0, v.epixRegOut.autoTrigPeriod);
       axiSlaveRegisterW(x"000013" & "00",  0, v.epixRegOut.autoDaqEn);
-      axiSlaveRegisterW(x"00001E" & "00",  0, v.epixRegOut.adcPdwn);
       axiSlaveRegisterW(x"00001F" & "00",  0, v.epixRegOut.doutPipelineDelay);
       axiSlaveRegisterW(x"000020" & "00",  0, v.epixRegOut.acqToAsicR0Delay);
       axiSlaveRegisterW(x"000021" & "00",  0, v.epixRegOut.asicR0ToAsicAcq);
@@ -281,20 +258,13 @@ begin
       axiSlaveRegisterW(x"000025" & "00",  0, v.epixRegOut.adcReadsPerPixel);
       axiSlaveRegisterW(x"000026" & "00",  0, v.epixRegOut.adcClkHalfT);
       axiSlaveRegisterW(x"000027" & "00",  0, v.epixRegOut.totalPixelsToRead);
-      axiSlaveRegisterW(x"000028" & "00",  0, v.removedRegs(0));
       axiSlaveRegisterW(x"000029" & "00",  0, v.epixRegOut.asicPins);
       axiSlaveRegisterW(x"00002A" & "00",  0, v.epixRegOut.manualPinControl);
-      axiSlaveRegisterW(x"00002A" & "00",  6, v.removedRegs(1)(0));
       axiSlaveRegisterW(x"00002A" & "00",  7, v.epixRegOut.adcStreamMode);
       axiSlaveRegisterW(x"00002A" & "00",  8, v.epixRegOut.testPattern);
-      axiSlaveRegisterW(x"00002A" & "00",  9, v.removedRegs(2)(1 downto 0));
       axiSlaveRegisterW(x"00002A" & "00", 11, v.epixRegOut.asicR0Mode);
       axiSlaveRegisterW(x"00002B" & "00",  0, v.epixRegOut.asicR0Width);
-      axiSlaveRegisterW(x"00002C" & "00",  0, v.removedRegs(3));
-      axiSlaveRegisterW(x"00002D" & "00",  0, v.removedRegs(4)(15 downto 0));
-      axiSlaveRegisterW(x"00002D" & "00", 16, v.removedRegs(5)(15 downto 0));
-      axiSlaveRegisterW(x"00002E" & "00",  0, v.removedRegs(6));
-      axiSlaveRegisterW(x"00002F" & "00",  0, v.removedRegs(7));
+      axiSlaveRegisterR(x"00002C" & "00",  0, r.epixRegOut.asicPreAcqTime);
       axiSlaveRegisterR(x"000030" & "00",  0, ite(idValids(0) = '1',idValues(0)(31 downto  0), x"00000000")); --Digital card ID low
       axiSlaveRegisterR(x"000031" & "00",  0, ite(idValids(0) = '1',idValues(0)(63 downto 32), x"00000000")); --Digital card ID high
       axiSlaveRegisterR(x"000032" & "00",  0, ite(idValids(1) = '1',idValues(1)(31 downto  0), x"00000000")); --Analog card ID low
@@ -320,57 +290,15 @@ begin
       axiSlaveRegisterW(x"000054" & "00", 13, v.scopeRegOut.skipSamples);
       axiSlaveRegisterW(x"000055" & "00",  0, v.scopeRegOut.inputChannelA);
       axiSlaveRegisterW(x"000055" & "00",  5, v.scopeRegOut.inputChannelB);
-      axiSlaveRegisterW(x"000060" & "00",  0, v.epixRegOut.frameDelay(0));
-      axiSlaveRegisterW(x"000061" & "00",  0, v.epixRegOut.frameDelay(1));
-      axiSlaveRegisterW(x"000062" & "00",  0, v.epixRegOut.frameDelay(2));
-      axiSlaveRegisterW(x"000063" & "00",  0, v.epixRegOut.dataDelay(0)(0));
-      axiSlaveRegisterW(x"000064" & "00",  0, v.epixRegOut.dataDelay(0)(1));
-      axiSlaveRegisterW(x"000065" & "00",  0, v.epixRegOut.dataDelay(0)(2));
-      axiSlaveRegisterW(x"000066" & "00",  0, v.epixRegOut.dataDelay(0)(3));
-      axiSlaveRegisterW(x"000067" & "00",  0, v.epixRegOut.dataDelay(0)(4));
-      axiSlaveRegisterW(x"000068" & "00",  0, v.epixRegOut.dataDelay(0)(5));
-      axiSlaveRegisterW(x"000069" & "00",  0, v.epixRegOut.dataDelay(0)(6));
-      axiSlaveRegisterW(x"00006A" & "00",  0, v.epixRegOut.dataDelay(0)(7));
-      axiSlaveRegisterW(x"00006B" & "00",  0, v.epixRegOut.dataDelay(1)(0));
-      axiSlaveRegisterW(x"00006C" & "00",  0, v.epixRegOut.dataDelay(1)(1));
-      axiSlaveRegisterW(x"00006D" & "00",  0, v.epixRegOut.dataDelay(1)(2));
-      axiSlaveRegisterW(x"00006E" & "00",  0, v.epixRegOut.dataDelay(1)(3));
-      axiSlaveRegisterW(x"00006F" & "00",  0, v.epixRegOut.dataDelay(1)(4));
-      axiSlaveRegisterW(x"000070" & "00",  0, v.epixRegOut.dataDelay(1)(5));
-      axiSlaveRegisterW(x"000071" & "00",  0, v.epixRegOut.dataDelay(1)(6));
-      axiSlaveRegisterW(x"000072" & "00",  0, v.epixRegOut.dataDelay(1)(7));
-      axiSlaveRegisterW(x"000073" & "00",  0, v.epixRegOut.dataDelay(2)(0));
-      axiSlaveRegisterW(x"000074" & "00",  0, v.epixRegOut.dataDelay(2)(1));
-      axiSlaveRegisterW(x"000075" & "00",  0, v.epixRegOut.dataDelay(2)(2));
-      axiSlaveRegisterW(x"000076" & "00",  0, v.epixRegOut.dataDelay(2)(3));
       axiSlaveRegisterW(x"000080" & "00",  0, v.epixRegOut.requestStartupCal);
-      axiSlaveRegisterR(x"000080" & "00",  1, epixStatus.startupAck);
-      axiSlaveRegisterR(x"000080" & "00",  2, epixStatus.startupFail);
+      axiSlaveRegisterW(x"000080" & "00",  1, v.epixRegOut.startupAck);          -- set by Microblaze
+      axiSlaveRegisterW(x"000080" & "00",  2, v.epixRegOut.startupFail);         -- set by Microblaze
       
       axiSlaveRegisterW(x"000090" & "00",  0, v.epixRegOut.pipelineDelayA0);
       axiSlaveRegisterW(x"000091" & "00",  0, v.epixRegOut.pipelineDelayA1);
       axiSlaveRegisterW(x"000092" & "00",  0, v.epixRegOut.pipelineDelayA2);
       axiSlaveRegisterW(x"000093" & "00",  0, v.epixRegOut.pipelineDelayA3);
       
-      -- slow ADC registers of the analog card gen1
-      axiSlaveRegisterR(x"000100" & "00",  0, epixStatus.slowAdcData(0));
-      axiSlaveRegisterR(x"000101" & "00",  0, epixStatus.slowAdcData(1));
-      axiSlaveRegisterR(x"000102" & "00",  0, epixStatus.slowAdcData(2));
-      axiSlaveRegisterR(x"000103" & "00",  0, epixStatus.slowAdcData(3));
-      axiSlaveRegisterR(x"000104" & "00",  0, epixStatus.slowAdcData(4));
-      axiSlaveRegisterR(x"000105" & "00",  0, epixStatus.slowAdcData(5));
-      axiSlaveRegisterR(x"000106" & "00",  0, epixStatus.slowAdcData(6));
-      axiSlaveRegisterR(x"000107" & "00",  0, epixStatus.slowAdcData(7));
-      -- slow ADC registers of the analog card gen2
-      axiSlaveRegisterR(x"000110" & "00",  0, epixStatus.slowAdc2Data(0));
-      axiSlaveRegisterR(x"000111" & "00",  0, epixStatus.slowAdc2Data(1));
-      axiSlaveRegisterR(x"000112" & "00",  0, epixStatus.slowAdc2Data(2));
-      axiSlaveRegisterR(x"000113" & "00",  0, epixStatus.slowAdc2Data(3));
-      axiSlaveRegisterR(x"000114" & "00",  0, epixStatus.slowAdc2Data(4));
-      axiSlaveRegisterR(x"000115" & "00",  0, epixStatus.slowAdc2Data(5));
-      axiSlaveRegisterR(x"000116" & "00",  0, epixStatus.slowAdc2Data(6));
-      axiSlaveRegisterR(x"000117" & "00",  0, epixStatus.slowAdc2Data(7));
-      axiSlaveRegisterR(x"000118" & "00",  0, epixStatus.slowAdc2Data(8));      
       -- gen 2 slow ADC data transformed to real numbers
       axiSlaveRegisterR(x"000140" & "00",  0, epixStatus.envData(0));
       axiSlaveRegisterR(x"000141" & "00",  0, epixStatus.envData(1));
@@ -403,19 +331,12 @@ begin
       
       -- These are external devices that require waiting 
       -- on another interface to give a response.
-      -- 0x008000 - 0x00FFFF - Fast ADC control
       -- 0x080000 - 0x0FFFFF - Pseudo SACI Space
       -- 0x800000 - 0xFFFFFF - SACI Space
       if (axiStatus.writeEnable = '1') then
          -- Special reset for write to address 00
          if (axiWriteMaster.awaddr = 0) then
             v.usrRst := '1';
-         -- Fast Adc Commands
-         elsif (axiWriteMaster.awaddr(25 downto 17) = x"00" & '1') then 
-            v.adcSel      := axiWriteMaster.awaddr(16 downto 15);
-            v.adcAddr     := axiWriteMaster.awaddr(14 downto 2);
-            v.adcWrData   := axiWriteMaster.wdata(7 downto 0);
-            v.adcRegWrReq := '1';
          -- Pseudo SACI Commands (multi-pixel write)
          elsif (axiWriteMaster.awaddr(25 downto 0) = x"080005" & "00") then
             v.globalMultiPix.data(3) := axiWriteMaster.wdata(15 downto 0);
@@ -434,13 +355,8 @@ begin
       end if;
       
       if (axiStatus.readEnable = '1') then
-         -- Fast Adc Commands
-         if (axiReadMaster.araddr(25 downto 17) = x"00" & '1') then
-            v.adcSel      := axiReadMaster.araddr(16 downto 15);
-            v.adcAddr     := axiReadMaster.araddr(14 downto 2);
-            v.adcRegRdReq := '1';
          -- Pseudo SACI Commands (multi-pixel write only... just return success)
-         elsif (axiReadMaster.araddr(25 downto 0) = x"080005" & "00") then
+         if (axiReadMaster.araddr(25 downto 0) = x"080005" & "00") then
             axiSlaveDefault(AXI_RESP_OK_C);
          -- SACI Commands
          elsif (axiReadMaster.araddr(25) = '1') then
@@ -454,36 +370,7 @@ begin
             axiSlaveDefault(AXI_RESP_OK_C);
          end if;
       end if;
-
-      -- State machine to mediate ADC SPI requests
-      case(r.adcState) is
-         when ADC_IDLE_S  =>
-            if (r.adcRegRdReq = '1') then
-               v.adcRdReq := '1';
-               v.adcState := ADC_READ_S;
-            elsif (r.adcRegWrReq = '1') then
-               v.adcWrReq := '1';
-               v.adcState := ADC_WRITE_S;
-            end if;
-         when ADC_READ_S  =>
-            if (iAdcAck = '1') then
-               axiSlaveReadResponse(v.axiReadSlave, AXI_RESP_OK_C);
-               v.axiReadSlave.rdata := x"000000" & iAdcRdData;
-               v.adcRegRdReq := '0';
-               v.adcRdReq    := '0';
-               v.adcState    := ADC_IDLE_S;
-            end if;
-         when ADC_WRITE_S =>
-            v.adcWrReq := '1';
-            if (iAdcAck = '1') then
-               axiSlaveWriteResponse(v.axiWriteSlave,AXI_RESP_OK_C);
-               v.adcRegWrReq := '0';
-               v.adcWrReq    := '0';
-               v.adcState    := ADC_IDLE_S;
-            end if;
-         when others =>
-            v.adcState := ADC_IDLE_S;
-      end case;
+      
 
       -- SACI mediation
       -- By default let the SACI counter count
@@ -696,12 +583,6 @@ begin
       scopeConfig    <= r.scopeRegOut;
       saciReadoutAck <= r.saciReadoutAck;
       
-      -- ADC disable feature causes the picoblaze program to fail the ADC auto-alignment.
-      -- There is the ADC power cycle procedure in the program that was newer used before as the 
-      -- assignment below was always missing
-      
-      --adcPdwn <= r.epixRegOut.adcPdwn;
-      
    end process comb;
    
    
@@ -728,34 +609,6 @@ begin
          dacSclk         => dacSclk,
          dacCsL          => dacCsb,
          dacClrL         => dacClrb
-      );   
-   
-   -----------------------------------------------
-   -- Fast ADC Control
-   -----------------------------------------------
-   -- AD9252 has a minimum period of 40 ns for SPI clock
-   -- and minimum high/low times of 16 ns.
-   U_AdcConfig : entity work.AdcConfig
-      generic map (
-         TPD_G           => TPD_G,
-         CLK_PERIOD_G    => CLK_PERIOD_G,
-         CLK_EN_PERIOD_G => 20.0e-9
-      )
-      port map (
-         sysClk     => axiClk,
-         sysClkRst  => axiReset,
-         adcWrData  => r.adcWrData,
-         adcRdData  => iAdcRdData,
-         adcAddr    => r.adcAddr,
-         adcWrReq   => r.adcWrReq,
-         adcRdReq   => r.adcRdReq,
-         adcAck     => iAdcAck,
-         adcSel     => r.adcSel,
-         adcSClk    => adcSpiClk,
-         adcSDin    => adcSpiDataIn,
-         adcSDout   => adcSpiDataOut,
-         adcSDEn    => adcSpiDataEn,
-         adcCsb     => adcSpiCsb
       );
 
    -----------------------------------------------
@@ -826,7 +679,7 @@ begin
 
    -- Special reset to the DS2411 to re-read in the event of a start up request event
    -- Start up (picoblaze) is disabling the ASIC digital monitors to ensure proper carrier ID readout
-   adcCardStartUp <= epixStatus.startupAck or epixStatus.startupFail;
+   adcCardStartUp <= r.epixRegOut.startupAck or r.epixRegOut.startupFail;
    U_adcCardStartUpRisingEdge : entity work.SynchronizerEdge
       generic map (
          TPD_G       => TPD_G)

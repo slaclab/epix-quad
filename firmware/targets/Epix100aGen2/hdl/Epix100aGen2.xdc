@@ -4,13 +4,16 @@
 
 create_clock -name gtRefClk0P   -period  6.400 [get_ports gtRefClk0P]
 create_clock -name pgpClk       -period  6.400 [get_pins {U_EpixCore/U_PgpFrontEnd/U_Pgp2bVarLatWrapper/Pgp2bGtp7VarLat_Inst/MuliLane_Inst/GTP7_CORE_GEN[0].Gtp7Core_Inst/gtpe2_i/TXOUTCLK}]
-create_clock -name adc0DoClkP   -period 20.000 [get_ports {adcDoClkP[0]}]
-create_clock -name adc1DoClkP   -period 20.000 [get_ports {adcDoClkP[1]}]
-create_clock -name adcMonDoClkP -period 20.000 [get_ports {adcDoClkP[2]}]
+create_clock -name adc0DoClkP   -period  2.857 [get_ports {adcDoClkP[0]}]
+create_clock -name adc1DoClkP   -period  2.857 [get_ports {adcDoClkP[1]}]
+create_clock -name adcMonDoClkP -period  2.857 [get_ports {adcDoClkP[2]}]
 
 create_generated_clock -name coreClk      [get_pins {U_EpixCore/U_CoreClockGen/MmcmGen.U_Mmcm/CLKOUT0}]
 create_generated_clock -name delayCtrlClk [get_pins {U_EpixCore/U_CalClockGen/MmcmGen.U_Mmcm/CLKOUT0}]
-create_generated_clock -name progClk      [get_pins {U_EpixCore/U_Iprog7Series/DIVCLK_GEN.BUFR_ICPAPE2/O}]  
+create_generated_clock -name progClk      [get_pins {U_EpixCore/U_Iprog7Series/DIVCLK_GEN.BUFR_ICPAPE2/O}]
+create_generated_clock -name adc0BitClkR  [get_pins {U_EpixCore/G_AdcReadout[0].U_AdcReadout/U_AdcBitClkR/O}]
+create_generated_clock -name adc1BitClkR  [get_pins {U_EpixCore/G_AdcReadout[1].U_AdcReadout/U_AdcBitClkR/O}]
+create_generated_clock -name adcMonBitClkR [get_pins {U_EpixCore/U_MonAdcReadout/U_AdcBitClkR/O}]
 
 set_clock_groups -asynchronous \
    -group [get_clocks -include_generated_clocks pgpClk] \
@@ -20,6 +23,9 @@ set_clock_groups -asynchronous \
    -group [get_clocks -include_generated_clocks adc0DoClkP] \
    -group [get_clocks -include_generated_clocks adc1DoClkP] \
    -group [get_clocks -include_generated_clocks adcMonDoClkP] \
+   -group [get_clocks -include_generated_clocks adc0BitClkR] \
+   -group [get_clocks -include_generated_clocks adc1BitClkR] \
+   -group [get_clocks -include_generated_clocks adcMonBitClkR] \
    -group [get_clocks -include_generated_clocks progClk]
 
 
@@ -99,11 +105,16 @@ set_property IOSTANDARD LVCMOS25 [get_ports {slowAdcDout}]
 
 
 set_property PACKAGE_PIN  Y12 [get_ports {adcSpiData}]
-## set_property PULLUP TRUE [get_ports {adcSpiData}]
+# set_property PULLUP TRUE [get_ports {adcSpiData}]
 set_property PACKAGE_PIN  W16 [get_ports {adcSpiClk}]
+# set_property PULLUP TRUE [get_ports {adcSpiClk}]
 set_property PACKAGE_PIN  U15 [get_ports {adcSpiCsb[0]}]
 set_property PACKAGE_PIN  V15 [get_ports {adcSpiCsb[1]}]
 set_property PACKAGE_PIN  W15 [get_ports {adcSpiCsb[2]}]
+# vset_property PULLUP TRUE [get_ports {adcSpiCsb[*]}]
+
+
+
 set_property PACKAGE_PIN   U7 [get_ports {adcPdwn01}]
 set_property PACKAGE_PIN   W9 [get_ports {adcPdwnMon}]
 set_property IOSTANDARD LVCMOS25 [get_ports {adcSpi*}]

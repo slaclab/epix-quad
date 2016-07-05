@@ -1,2 +1,3 @@
 tb/TB_SlowAdcCntrl.vhd
 tb/TB_RegControlGen2.vhd
+tb/TB_Ad9249ConfigNoPullup.vhd

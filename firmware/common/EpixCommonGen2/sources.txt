@@ -22,3 +22,4 @@ vhdl work rtl/PseudoScope.vhd
 vhdl work rtl/RingBuffer.vhd
 vhdl work rtl/EpixRowBlockRam.vhd
 vhdl work rtl/EpixPgp2bGtp7Wrapper.vhd
+vhdl work rtl/StreamPatternTester.vhd

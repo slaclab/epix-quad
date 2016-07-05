@@ -10,20 +10,32 @@
 ###CreateDebugCore ${ilaName1}
 ##
 #### Increase the record depth
-#set_property C_DATA_DEPTH 8192 [get_debug_cores ${ilaName}]
+##set_property C_DATA_DEPTH 8192 [get_debug_cores ${ilaName}]
 ###set_property C_DATA_DEPTH 16384 [get_debug_cores ${ilaName}]
-###set_property C_DATA_DEPTH 2048 [get_debug_cores ${ilaName}]
+#set_property C_DATA_DEPTH 2048 [get_debug_cores ${ilaName}]
 ##
 ##############################################################################
 ##############################################################################
 ##############################################################################
 ##
 #### Core debug signals
-#SetDebugCoreClk ${ilaName} {U_EpixCore/coreClk}
+##SetDebugCoreClk ${ilaName} {U_EpixCore/coreClk}
+#SetDebugCoreClk ${ilaName} {U_EpixCore/G_AdcReadout[0].U_AdcReadout/adcBitClkR}
 ##
-####Triggers Debug
-#ConfigProbe ${ilaName} {U_EpixCore/acqStart}
-#ConfigProbe ${ilaName} {U_EpixCore/dataSend}
+#
+#ConfigProbe ${ilaName} {U_EpixCore/G_AdcReadout[0].U_AdcReadout/adcFrame[*]}
+#ConfigProbe ${ilaName} {U_EpixCore/G_AdcReadout[0].U_AdcReadout/adcR[slip]}
+#ConfigProbe ${ilaName} {U_EpixCore/G_AdcReadout[0].U_AdcReadout/adcR[locked]}
+#ConfigProbe ${ilaName} {U_EpixCore/G_AdcReadout[0].U_AdcReadout/adcR[count][*]}
+#
+##ConfigProbe ${ilaName} {U_EpixCore/G_AdcReadout[0].U_AdcReadout/curDelayFrame[*]}
+##ConfigProbe ${ilaName} {U_EpixCore/G_AdcReadout[0].U_AdcReadout/curDelayData[*][*]}
+##ConfigProbe ${ilaName} {U_EpixCore/G_AdcReadout[0].U_AdcReadout/lockedSync}
+##ConfigProbe ${ilaName} {U_EpixCore/G_AdcReadout[0].U_AdcReadout/lockedFallCount[*]}
+##ConfigProbe ${ilaName} {U_EpixCore/G_AdcReadout[0].U_AdcReadout/axilR[frameDelaySet]}
+##ConfigProbe ${ilaName} {U_EpixCore/G_AdcReadout[0].U_AdcReadout/axilR[delay][*]}
+##ConfigProbe ${ilaName} {U_EpixCore/G_AdcReadout[0].U_AdcReadout/axilR[dataDelaySet][*]}
+#
 #
 ####SACI Debug
 ###ConfigProbe ${ilaName} {U_EpixCore/U_RegControl/U_Saci/saciClk}
@@ -70,5 +82,4 @@
 ###delete_debug_port [get_debug_ports [GetCurrentProbe ${ilaName1}]]
 ##
 #### Write the port map file
-#write_debug_probes -force ${PROJ_DIR}/debug/debug_probes.ltx
-##
+#

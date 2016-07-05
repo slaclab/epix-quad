@@ -10,16 +10,28 @@ use work.Version.all;
 package EpixPkgGen2 is
 
    -- AXI-Lite Constants
-   constant NUM_AXI_MASTER_SLOTS_C : natural := 3;
+   constant NUM_AXI_MASTER_SLOTS_C : natural := 9;
    constant NUM_AXI_SLAVE_SLOTS_C : natural := 2;
 
    constant COMMON_AXI_INDEX_C  : natural := 0;
    constant VERSION_AXI_INDEX_C : natural := 1;
    constant BOOTMEM_AXI_INDEX_C : natural := 2;
+   constant ADCTEST_AXI_INDEX_C : natural := 3;
+   constant ADC0_RD_AXI_INDEX_C : natural := 4;
+   constant ADC1_RD_AXI_INDEX_C : natural := 5;
+   constant ADC2_RD_AXI_INDEX_C : natural := 6;
+   constant ADC_CFG_AXI_INDEX_C : natural := 7;
+   constant MEM_LOG_AXI_INDEX_C : natural := 8;
    
    constant COMMON_AXI_BASE_ADDR_C    : slv(31 downto 0) := X"00000000";
    constant VERSION_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"08000000";
    constant BOOTMEM_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"0C000000";
+   constant ADCTEST_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"10000000";
+   constant ADC0_RD_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"14000000";
+   constant ADC1_RD_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"18000000";
+   constant ADC2_RD_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"1C000000";
+   constant ADC_CFG_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"20000000";
+   constant MEM_LOG_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"24000000";
    
    constant AXI_CROSSBAR_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0) := (
       COMMON_AXI_INDEX_C      => (
@@ -33,10 +45,32 @@ package EpixPkgGen2 is
       BOOTMEM_AXI_INDEX_C      => (
          baseAddr             => BOOTMEM_AXI_BASE_ADDR_C,
          addrBits             => 26,
+         connectivity         => x"0003"),
+      ADCTEST_AXI_INDEX_C      => (
+         baseAddr             => ADCTEST_AXI_BASE_ADDR_C,
+         addrBits             => 26,
+         connectivity         => x"0003"),
+      ADC0_RD_AXI_INDEX_C      => (
+         baseAddr             => ADC0_RD_AXI_BASE_ADDR_C,
+         addrBits             => 26,
+         connectivity         => x"0003"),
+      ADC1_RD_AXI_INDEX_C      => (
+         baseAddr             => ADC1_RD_AXI_BASE_ADDR_C,
+         addrBits             => 26,
+         connectivity         => x"0003"),
+      ADC2_RD_AXI_INDEX_C      => (
+         baseAddr             => ADC2_RD_AXI_BASE_ADDR_C,
+         addrBits             => 26,
+         connectivity         => x"0003"),
+      ADC_CFG_AXI_INDEX_C      => (
+         baseAddr             => ADC_CFG_AXI_BASE_ADDR_C,
+         addrBits             => 26,
+         connectivity         => x"0003"),
+      MEM_LOG_AXI_INDEX_C      => (
+         baseAddr             => MEM_LOG_AXI_BASE_ADDR_C,
+         addrBits             => 26,
          connectivity         => x"0003")
    );
-
-   type DataDelayArray is array(2 downto 0) of Slv5Array(7 downto 0);
    
    constant NUM_FAST_ADCS_C  : natural := 3;
    constant NUM_ASICS_C      : natural := 4;
@@ -50,19 +84,18 @@ package EpixPkgGen2 is
       acqCountReset      : sl;
       vguardDacSetting   : slv(15 downto 0);
       powerEnable        : slv( 7 downto 0);
-      frameDelay         : Slv5Array(NUM_FAST_ADCS_C-1 downto 0);
       seqCountReset      : sl;
       asicMask           : slv(NUM_ASICS_C-1 downto 0);
       autoRunEn          : sl;
       autoTrigPeriod     : slv(31 downto 0);
       autoDaqEn          : sl;
-      adcPdwn            : slv(NUM_FAST_ADCS_C-1 downto 0);
       doutPipelineDelay  : slv(31 downto 0);
       acqToAsicR0Delay   : slv(31 downto 0);
       asicR0ToAsicAcq    : slv(31 downto 0);
       asicAcqWidth       : slv(31 downto 0);
       asicAcqLToPPmatL   : slv(31 downto 0);
       asicRoClkHalfT     : slv(31 downto 0);
+      asicPreAcqTime     : slv(31 downto 0);
       adcReadsPerPixel   : slv(31 downto 0);
       adcClkHalfT        : slv(31 downto 0);
       totalPixelsToRead  : slv(31 downto 0);
@@ -79,8 +112,9 @@ package EpixPkgGen2 is
       asicPpmatToReadout : slv(31 downto 0);
       tpsDelay           : slv(15 downto 0);
       tpsEdge            : sl;
-      dataDelay          : DataDelayArray;
       requestStartupCal  : sl;
+      startupAck         : sl;
+      startupFail        : sl;
       pgpTrigEn          : sl;
       monitorEnable      : sl;
    end record;
@@ -97,13 +131,13 @@ package EpixPkgGen2 is
       autoRunEn          => '0',
       autoTrigPeriod     => x"000CB735",
       autoDaqEn          => '0',
-      adcPdwn            => (others => '0'),
       doutPipelineDelay  => (others => '0'),
       acqToAsicR0Delay   => (others => '0'),
       asicR0ToAsicAcq    => (others => '0'),
       asicAcqWidth       => (others => '0'),
       asicAcqLToPPmatL   => (others => '0'),
       asicRoClkHalfT     => x"0000000A",
+      asicPreAcqTime     => (others => '0'),
       adcReadsPerPixel   => x"00000001",
       adcClkHalfT        => x"00000001",
       totalPixelsToRead  => x"000084C0",
@@ -120,9 +154,9 @@ package EpixPkgGen2 is
       asicPpmatToReadout => (others => '0'),
       tpsDelay           => (others => '0'),
       tpsEdge            => '0',
-      frameDelay         => (others => (others => '0')),
-      dataDelay          => (others => (others => (others => '0'))),
       requestStartupCal  => '1',
+      startupAck         => '0',
+      startupFail        => '0',
       pgpTrigEn          => '0',
       monitorEnable      => '0'
    );
@@ -133,8 +167,6 @@ package EpixPkgGen2 is
       seqCount           : slv(31 downto 0);
       startupAck         : sl;
       startupFail        : sl;
-      slowAdcData        : Slv16Array(7 downto 0);
-      slowAdc2Data       : Slv24Array(8 downto 0);
       envData            : Slv32Array(8 downto 0);
    end record;
    constant EPIX_STATUS_INIT_C : EpixStatusType := (
@@ -143,8 +175,6 @@ package EpixPkgGen2 is
       seqCount           => (others => '0'),
       startupAck         => '0',
       startupFail        => '0',
-      slowAdcData        => (others => (others => '0')),
-      slowAdc2Data       => (others => (others => '0')),
       envData            => (others => (others => '0'))
    );
 

@@ -170,16 +170,7 @@ begin
       dacSclk        => open,
       dacDin         => open,
       dacCsb         => open,
-      dacClrb        => open,
-      -- 1-wire board ID interfaces
-      --serialIdIo     => "ZZ",
-      -- Fast ADC control 
-      adcSpiClk      => open,
-      adcSpiDataOut  => open,
-      adcSpiDataIn   => '0',
-      adcSpiDataEn   => open,
-      adcSpiCsb      => open,
-      adcPdwn        => open
+      dacClrb        => open
    );
    
    epixStatus <= EPIX_STATUS_INIT_C;

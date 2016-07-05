@@ -1,0 +1,1 @@
+set_property top TB_Ad9249ConfigNoPullup [current_fileset]
