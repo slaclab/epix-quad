@@ -1,9 +1,9 @@
 #include "log.h"
 
-unsigned int memPtr;
-unsigned int memLen;
-
 void logInit(void) {
+   
+   unsigned int memPtr;
+   unsigned int memLen;
    
    //zero the memory
    memset((void*)LOG_MEM_OFFSET, 0, 1024*4);
@@ -22,6 +22,8 @@ void logInit(void) {
 void logPush(char *string) {
    
    //read the pointer
+   unsigned int memPtr = Xil_In32(LOG_MEM_OFFSET)&0xFFFF;
+   unsigned int memLen = Xil_In32(LOG_MEM_OFFSET)>>16;
    unsigned int len = strlen(string);
    
    if (memPtr+len-1 <= MAX_ADDRESS) {
