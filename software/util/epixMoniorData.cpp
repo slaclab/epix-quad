@@ -26,8 +26,7 @@
 
 using namespace std;
 
-#define HEADER_SIZE 8
-#define FOOTER_SIZE 1
+#define PACKET_SIZE 17
 
 // Run flag for sig catch
 bool stop;
@@ -67,20 +66,20 @@ int main (int argc, char **argv) {
             
             dsize_ = event_->size(); // 32 bit values
             
-            if (dsize_>=HEADER_SIZE) {
+            if (dsize_==PACKET_SIZE) {
                
-               if ((event_->data()[0]&0xF) == 0x2 && event_->data()[3] == 0x1) {    // check if VC=2 and not osciloscope data
-               
-                  for (int x = HEADER_SIZE+1, i=1; x < event_->size() - FOOTER_SIZE; x++, i++) {
-                     printf("Temperature 1 [C]: %f\n", (double)((int)event_->data()[8])/100);
-                     printf("Temperature 2 [C]: %f\n", (double)((int)event_->data()[9])/100);
-                     printf("Humidity [%%]: %f\n", (double)(event_->data()[10])/100);
-                     printf("ASIC analog current [mA]: %d\n", (event_->data()[11]));
-                     printf("ASIC digital current [mA]: %d\n", (event_->data()[12]));
-                     printf("ASIC guad ring current [uA]: %d\n", (event_->data()[13]));
-                     printf("Analog input voltage [mV]: %d\n", (event_->data()[14]));
-                     printf("Digital input voltage [mV]: %d\n", (event_->data()[15]));
-                  }
+               if ((event_->data()[0]&0xF) == 0x3) {    // check if VC=3
+                  
+                  printf("Received size %d, sequence no %d\n", dsize_, (event_->data()[2]));
+
+                  printf("Temperature 1 [C]: %f\n", (double)((int)event_->data()[8])/100);
+                  printf("Temperature 2 [C]: %f\n", (double)((int)event_->data()[9])/100);
+                  printf("Humidity [%%]: %f\n", (double)(event_->data()[10])/100);
+                  printf("ASIC analog current [mA]: %d\n", (event_->data()[11]));
+                  printf("ASIC digital current [mA]: %d\n", (event_->data()[12]));
+                  printf("ASIC guad ring current [uA]: %d\n", (event_->data()[13]));
+                  printf("Analog input voltage [mV]: %d\n", (event_->data()[14]));
+                  printf("Digital input voltage [mV]: %d\n", (event_->data()[15]));
                }
             }
             

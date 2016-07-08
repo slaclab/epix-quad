@@ -29,6 +29,7 @@ use ieee.std_logic_arith.all;
 
 use work.StdRtlPkg.all;
 use work.AxiLitePkg.all;
+use work.AxiStreamPkg.all;
 use work.SaciMasterPkg.all;
 
 use work.EpixPkgGen2.all;
@@ -54,6 +55,8 @@ entity RegControlGen2 is
       axiReadSlave   : out AxiLiteReadSlaveType;
       axiWriteMaster : in  AxiLiteWriteMasterType;
       axiWriteSlave  : out AxiLiteWriteSlaveType;
+      -- Monitoring enable command incoming stream
+      monEnAxisMaster : in AxiStreamMasterType;
       -- Register Inputs/Outputs (axiClk domain)
       epixStatus     : in  EpixStatusType;
       epixConfig     : out EpixConfigType;
@@ -121,6 +124,7 @@ architecture rtl of RegControlGen2 is
       axiReadSlave   : AxiLiteReadSlaveType;
       axiWriteSlave  : AxiLiteWriteSlaveType;
       reqStartupD1   : sl;
+      dummyRegs      : Slv32Array(4 downto 0);
    end record RegType;
    
    constant REG_INIT_C : RegType := (
@@ -139,7 +143,8 @@ architecture rtl of RegControlGen2 is
       scopeRegOut    => SCOPE_CONFIG_INIT_C,
       axiReadSlave   => AXI_LITE_READ_SLAVE_INIT_C,
       axiWriteSlave  => AXI_LITE_WRITE_SLAVE_INIT_C,
-      reqStartupD1   => '0'
+      reqStartupD1   => '0',
+      dummyRegs      => (others=>(others=>'0'))
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -170,7 +175,7 @@ begin
    -- Configuration Register
    -------------------------------  
    comb : process (axiReadMaster, axiReset, axiWriteMaster, r, saciReadoutReq, iSaciSelOut,
-                   ePixStatus, idValids, idValues) is
+                   ePixStatus, idValids, idValues, monEnAxisMaster) is
       variable v            : RegType;
       variable axiStatus    : AxiLiteStatusType;
 
@@ -211,6 +216,12 @@ begin
       v.scopeRegOut.arm          := '0';
       v.scopeRegOut.trig         := '0';
       v.saciReadoutAck           := '0';
+      
+      -- dedicated axi stream channel to set or clear monitorEnable register
+      if monEnAxisMaster.tValid = '1' and monEnAxisMaster.tLast = '1' then
+         v.epixRegOut.monitorEnable := monEnAxisMaster.tData(0);
+      end if;
+      
       
       -- sum all time delays leading to the ACQ pulse and expose in a read only register
       v.epixRegOut.asicPreAcqTime := r.epixRegOut.acqToAsicR0Delay + r.epixRegOut.asicR0Width + r.epixRegOut.asicR0ToAsicAcq;
@@ -260,16 +271,21 @@ begin
       axiSlaveRegisterW(x"000027" & "00",  0, v.epixRegOut.totalPixelsToRead);
       axiSlaveRegisterW(x"000029" & "00",  0, v.epixRegOut.asicPins);
       axiSlaveRegisterW(x"00002A" & "00",  0, v.epixRegOut.manualPinControl);
+      axiSlaveRegisterW(x"00002A" & "00",  6, v.dummyRegs(0)(0));
       axiSlaveRegisterW(x"00002A" & "00",  7, v.epixRegOut.adcStreamMode);
       axiSlaveRegisterW(x"00002A" & "00",  8, v.epixRegOut.testPattern);
       axiSlaveRegisterW(x"00002A" & "00", 11, v.epixRegOut.asicR0Mode);
       axiSlaveRegisterW(x"00002B" & "00",  0, v.epixRegOut.asicR0Width);
-      axiSlaveRegisterR(x"00002C" & "00",  0, r.epixRegOut.asicPreAcqTime);
+      axiSlaveRegisterW(x"00002C" & "00",  0, v.dummyRegs(1));
+      axiSlaveRegisterW(x"00002D" & "00",  0, v.dummyRegs(2));
+      axiSlaveRegisterW(x"00002E" & "00",  0, v.dummyRegs(3));
+      axiSlaveRegisterW(x"00002F" & "00",  0, v.dummyRegs(4));
       axiSlaveRegisterR(x"000030" & "00",  0, ite(idValids(0) = '1',idValues(0)(31 downto  0), x"00000000")); --Digital card ID low
       axiSlaveRegisterR(x"000031" & "00",  0, ite(idValids(0) = '1',idValues(0)(63 downto 32), x"00000000")); --Digital card ID high
       axiSlaveRegisterR(x"000032" & "00",  0, ite(idValids(1) = '1',idValues(1)(31 downto  0), x"00000000")); --Analog card ID low
       axiSlaveRegisterR(x"000033" & "00",  0, ite(idValids(1) = '1',idValues(1)(63 downto 32), x"00000000")); --Analog card ID high
-      -- Addresses 34-39 were for & "00" digital card 1-wire EEPROM, no longer present
+      
+      axiSlaveRegisterR(x"000039" & "00",  0, r.epixRegOut.asicPreAcqTime);
       axiSlaveRegisterW(x"00003A" & "00",  0, v.epixRegOut.asicPPmatToReadout);
       axiSlaveRegisterR(x"00003B" & "00",  0, ite(idValids(2) = '1',idValues(2)(31 downto  0), x"00000000")); --Carrier card ID low
       axiSlaveRegisterR(x"00003C" & "00",  0, ite(idValids(2) = '1',idValues(2)(63 downto 32), x"00000000")); --Carrier card ID high

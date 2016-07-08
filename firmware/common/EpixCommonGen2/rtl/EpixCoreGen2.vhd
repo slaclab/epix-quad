@@ -2,45 +2,24 @@
 -- Title      : 
 -------------------------------------------------------------------------------
 -- File       : EpixCoreGen2.vhd
--- Author     : Kurtis Nishimura <kurtisn@slac.stanford.edu>
+-- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-03-17
--- Last update: 2015-03-17
--- Platform   : Vivado 2014.4
+-- Last update: 2016-08-07
+-- Platform   : Vivado 2016.1
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- Copyright (c) 2015 SLAC National Accelerator Laboratory
+-- This file is part of 'SLAC Firmware Standard Library'.
+-- It is subject to the license terms in the LICENSE.txt file found in the 
+-- top-level directory of this distribution and at: 
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
+-- No part of 'SLAC Firmware Standard Library', including this file, 
+-- may be copied, modified, propagated, or distributed except according to 
+-- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 --
---Missing items:
---[X] Add user reset at write to register 0
---[~] Add Pseudoscope
---[~] Adapt pseudoscope to axistream
---[ ] Fix ring buffer issue (off by 1?) in pseudoscope
---[X] SACI command master in reg controller
---[~] Multipixel writes (implemented for 100a only)
---[A] Startup sequencer (PB for Artix-7)
---[X] Adapt readoutcontrol to axistream
---[X] IDs re-read on power/FPGA enable
---[X] ADC clock moves back into AcqControl
---[~] Instantiate slow ADC
---[~] Choose readout point of slow ADC (was this causing some common mode noise previously...?)
---[X] Fix implementation of PGP triggering to match Larry's
---[ ] Speed up ADC configuration (right now effective SPI CLK rate is ~200 kHz)
---[ ] Add assert to avoid successful compilation with an invalid ASIC code.
---[ ] Permanent 50 MHz ADC clock
---[ ] Add DDR
---[ ] Add I2C for SFP
---[ ] Add sync signals for DC-DC's
---[ ] Pins for digital outputs are all effed up, fix on new ADC card 
---[ ] Need a graceful way to handle overloading of Dm1/Dm2 with snIoCarrierCard
---
---[ ] Verify guard ring DAC
---[ ] Verify fast ADC handshaking (mainly for autocal and Ryan's DAQ)
---[ ] Verify strongback thermistor
---[ ] Make ASIC mask an AND of auto and user?
 
 library ieee;
 use ieee.std_logic_1164.all;
@@ -156,7 +135,6 @@ architecture top_level of EpixCoreGen2 is
    signal heartBeat   : sl;
    signal txLinkReady : sl;
    signal rxLinkReady : sl;
-   signal allChRd     : sl;
    signal monitorTrig : sl;
 
    signal adcClk      : sl := '0';
@@ -178,16 +156,13 @@ architecture top_level of EpixCoreGen2 is
    signal mAxiReadSlaves   : AxiLiteReadSlaveArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
 
    -- AXI-Stream signals
-   signal primaryAxisMaster   : AxiStreamMasterType;
-   signal primaryAxisSlave    : AxiStreamSlaveType;
-   signal auxiliaryAxisMaster : AxiStreamMasterType;
-   signal auxiliaryAxisSlave  : AxiStreamSlaveType;
+   signal dataAxisMaster      : AxiStreamMasterType;
+   signal dataAxisSlave       : AxiStreamSlaveType;
    signal scopeAxisMaster     : AxiStreamMasterType;
    signal scopeAxisSlave      : AxiStreamSlaveType;
    signal monitorAxisMaster   : AxiStreamMasterType;
    signal monitorAxisSlave    : AxiStreamSlaveType;
-   signal auxMuxAxisMaster    : AxiStreamMasterArray(1 downto 0);
-   signal auxMuxAxisSlave     : AxiStreamSlaveArray(1 downto 0);
+   signal monEnAxisMaster     : AxiStreamMasterType;
    
    
    -- Command interface
@@ -248,6 +223,8 @@ architecture top_level of EpixCoreGen2 is
    
    signal monAdc     : Ad9249SerialGroupType;
    signal asicAdc    : Ad9249SerialGroupArray(1 downto 0);
+   
+   signal monTrigCnt : integer;
    
    constant ADC_INVERT_CH_C : Slv8Array(1 downto 0) := (
       0 => ADC0_INVERT_CH,
@@ -356,10 +333,14 @@ begin
          mAxiLiteWriteMaster => sAxiWriteMaster(0),
          mAxiLiteWriteSlave  => sAxiWriteSlave(0),
          -- Streaming data Links (axiClk domain)      
-         primaryAxisMaster   => primaryAxisMaster,
-         primaryAxisSlave    => primaryAxisSlave,
-         auxiliaryAxisMaster => auxiliaryAxisMaster,
-         auxiliaryAxisSlave  => auxiliaryAxisSlave,
+         dataAxisMaster    => dataAxisMaster,
+         dataAxisSlave     => dataAxisSlave,
+         scopeAxisMaster   => scopeAxisMaster,
+         scopeAxisSlave    => scopeAxisSlave,
+         monitorAxisMaster => monitorAxisMaster,
+         monitorAxisSlave  => monitorAxisSlave,
+         -- Monitoring enable command incoming stream
+         monEnAxisMaster   => monEnAxisMaster,
          -- Command interface
          ssiCmd              => ssiCmd,
          -- Sideband interface
@@ -417,8 +398,8 @@ begin
       
    --------------------------------------------
    -- AXI Lite Crossbar for register control --
-   -- Master 0 : PGP register controller     --
-   -- Master 1 : Microblaze reg controller    --
+   -- Master 0 : PGP front end controller     --
+   -- Master 1 : Microblaze startup controller    --
    --------------------------------------------
    U_AxiLiteCrossbar : entity work.AxiLiteCrossbar
       generic map (
@@ -455,6 +436,8 @@ begin
          axiReadSlave   => mAxiReadSlaves(COMMON_AXI_INDEX_C),
          axiWriteMaster => mAxiWriteMasters(COMMON_AXI_INDEX_C),
          axiWriteSlave  => mAxiWriteSlaves(COMMON_AXI_INDEX_C),
+         -- Monitoring enable command incoming stream
+         monEnAxisMaster => monEnAxisMaster,
          -- Register Inputs/Outputs (axiClk domain)
          epixStatus     => epixStatus,
          epixConfig     => epixConfig,
@@ -564,8 +547,8 @@ begin
       adcValid       => adcValid,
       adcData        => adcData,
       envData        => epixStatus.envData,
-      mAxisMaster    => primaryAxisMaster,
-      mAxisSlave     => primaryAxisSlave,
+      mAxisMaster    => dataAxisMaster,
+      mAxisSlave     => dataAxisSlave,
       mpsOut         => open,
       asicDout       => asicDout
    );
@@ -736,7 +719,7 @@ begin
       -- Operation Control
       adcStart      => readDone,
       adcData       => slowAdcData,
-      allChRd       => allChRd,
+      allChRd       => open,
 
       -- ADC Control Signals
       adcRefClk     => slowAdcRefClk,
@@ -780,69 +763,18 @@ begin
       
    );
    
-   -- monitor stream enable
-   monitorTrig <= allChRd and epixConfig.monitorEnable;
-   
-   U_ScopeFifo : entity work.AxiStreamFifo
-   generic map(
-      TPD_G                => TPD_G,
-      FIFO_ADDR_WIDTH_G    => 7,
-      SLAVE_AXI_CONFIG_G   => ssiAxiStreamConfig(4, TKEEP_COMP_C),
-      MASTER_AXI_CONFIG_G  => ssiAxiStreamConfig(4, TKEEP_COMP_C)
-   )
-   port map(
-      -- Slave Port
-      sAxisClk    => coreClk,
-      sAxisRst    => axiRst,
-      sAxisMaster => scopeAxisMaster,
-      sAxisSlave  => scopeAxisSlave,
-      sAxisCtrl   => open,
-      -- Master Port
-      mAxisClk    => coreClk,
-      mAxisRst    => axiRst,
-      mAxisMaster => auxMuxAxisMaster(1),
-      mAxisSlave  => auxMuxAxisSlave(1),
-      mTLastTUser => open
-   );
-   
-   U_MonitorFifo : entity work.AxiStreamFifo
-   generic map(
-      TPD_G                => TPD_G,
-      FIFO_ADDR_WIDTH_G    => 7,
-      SLAVE_AXI_CONFIG_G   => ssiAxiStreamConfig(4, TKEEP_COMP_C),
-      MASTER_AXI_CONFIG_G  => ssiAxiStreamConfig(4, TKEEP_COMP_C)
-   )
-   port map(
-      -- Slave Port
-      sAxisClk    => coreClk,
-      sAxisRst    => axiRst,
-      sAxisMaster => monitorAxisMaster,
-      sAxisSlave  => monitorAxisSlave,
-      sAxisCtrl   => open,
-      -- Master Port
-      mAxisClk    => coreClk,
-      mAxisRst    => axiRst,
-      mAxisMaster => auxMuxAxisMaster(0),
-      mAxisSlave  => auxMuxAxisSlave(0),
-      mTLastTUser => open
-   );
-   
-   U_AxiStreamMux : entity work.AxiStreamMux
-   generic map(
-      NUM_SLAVES_G   => 2
-   )
-   port map(
-      -- Clock and reset
-      axisClk           => coreClk,
-      axisRst           => axiRst,
-      -- Slaves
-      sAxisMasters      => auxMuxAxisMaster,
-      sAxisSlaves       => auxMuxAxisSlave,
-      -- Master
-      mAxisMaster       => auxiliaryAxisMaster,
-      mAxisSlave        => auxiliaryAxisSlave
-      
-   );
+   -- trigger monitor data stream at 1Hz
+   P_MonStrTrig: process (coreClk)
+   begin
+      if rising_edge(coreClk) then
+         if axiRst = '1' or monitorTrig = '1' then
+            monTrigCnt <= 0;
+         elsif epixConfig.monitorEnable = '1' then
+            monTrigCnt <= monTrigCnt + 1;
+         end if;
+      end if;   
+   end process;
+   monitorTrig <= '1' when monTrigCnt >= 99999999 else '0';
    
    ---------------------------------------------
    -- Microblaze based ePix Startup Sequencer --

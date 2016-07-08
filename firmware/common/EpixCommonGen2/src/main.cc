@@ -5,27 +5,23 @@
 #include "microblaze_sleep.h"
 #include "xil_printf.h"
 #include "regs.h"
-#include "log.h"
-#include "printf.h"
+#include "ssi_printf.h"
 
 #define CLEAR_ASIC_MATRIX_ON_STARTUP 1
 #define FRM_DLY_START 12
 #define FRM_DLY_STOP 18
 
-#pragma GCC diagnostic ignored "-Wwrite-strings"
 
 void epixInit(void);
 unsigned int findAsics(void);
 void asicInit(unsigned int);
 unsigned int adcAlign(unsigned int, unsigned int);
 
-char str[255];
-
 int main() { 
    
    unsigned int asicMask, res, i, req = 0;
    
-   logInit();
+   ssi_printf_init(LOG_MEM_OFFSET, 1024);
    
    while (1) {
       
@@ -35,11 +31,8 @@ int main() {
       Xil_Out32( EPIX_ASIC_MASK_REG, asicMask);
       asicInit(asicMask);
       
-      tfp_sprintf(str,"ASIC mask 0x%X\n", asicMask);
-      logPush(str);
-      
-      tfp_sprintf(str,"ADC REQ %d\n", req);
-      logPush(str);
+      ssi_printf("ASIC mask 0x%X\n", asicMask);
+      ssi_printf("ADC REQ %d\n", req);
       
       //align ADCs
       for (res = 0, i = 0; i <= 2; i++)
@@ -164,15 +157,13 @@ unsigned int adcAlign(unsigned int adcNo, unsigned int maxCh) {
       //check if locked bit is 1 and lock fall out counter is 0
       if (Xil_In32(frmLocAdc[adcNo]) == 0x10000) {
          //log message
-         tfp_sprintf(str,"ADC%d FRM DLY%d OK\n", adcNo, delay);
-         logPush(str);
+         ssi_printf("ADC%d FRM DLY%d OK\n", adcNo, delay);
          break;
       }
       else if (delay == FRM_DLY_STOP) {
          fail |= 1;
          //log message
-         tfp_sprintf(str,"ADC%d FRM FAIL; FRM REG 0x%X\n", adcNo, Xil_In32(frameAdc[adcNo]));
-         logPush(str);
+         ssi_printf("ADC%d FRM FAIL; FRM REG 0x%X\n", adcNo, Xil_In32(frameAdc[adcNo]));
       }
    }
    
@@ -223,14 +214,12 @@ unsigned int adcAlign(unsigned int adcNo, unsigned int maxCh) {
       if (firstDly == -1 || lastDly == -1) {
          fail |= 1;                                                              // channel failed
          //log message
-         tfp_sprintf(str,"ADC%d CH%d FAIL; DBGS 0x%X\n", adcNo, adcCh, debugSample);
-         logPush(str);
+         ssi_printf("ADC%d CH%d FAIL; DBGS 0x%X\n", adcNo, adcCh, debugSample);
       }
       else {
          Xil_Out32(dataDlyChAdc[adcNo][adcCh], ((lastDly-firstDly)/2+firstDly) | (0x1<<5));   // set the delay in the middle
          //log message
-         tfp_sprintf(str,"ADC%d CH%d DLY%d OK\n", adcNo, adcCh, (lastDly-firstDly)/2+firstDly);
-         logPush(str);
+         ssi_printf("ADC%d CH%d DLY%d OK\n", adcNo, adcCh, (lastDly-firstDly)/2+firstDly);
       }
       
    }

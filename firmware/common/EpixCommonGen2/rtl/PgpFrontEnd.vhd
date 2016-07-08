@@ -54,16 +54,21 @@ entity PgpFrontEnd is
       mAxiLiteReadSlave   : in  AxiLiteReadSlaveType;
       mAxiLiteWriteMaster : out AxiLiteWriteMasterType;
       mAxiLiteWriteSlave  : in  AxiLiteWriteSlaveType;
-      -- Streaming data Links (axiClk domain)      
-      primaryAxisMaster   : in  AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
-      primaryAxisSlave    : out AxiStreamSlaveType;
+      -- Acquisition streaming data Links (axiClk domain)      
+      dataAxisMaster    : in  AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
+      dataAxisSlave     : out AxiStreamSlaveType;
       -- Scope streaming data Links (axiClk domain)      
-      auxiliaryAxisMaster : in  AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
-      auxiliaryAxisSlave  : out AxiStreamSlaveType;
+      scopeAxisMaster   : in  AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
+      scopeAxisSlave    : out AxiStreamSlaveType;
+      -- Monitoring streaming data Links (axiClk domain)      
+      monitorAxisMaster : in  AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
+      monitorAxisSlave  : out AxiStreamSlaveType;
+      -- Monitoring enable command incoming stream
+      monEnAxisMaster   : out AxiStreamMasterType;
       -- VC Command interface
-      ssiCmd         : out SsiCmdMasterType;
+      ssiCmd            : out SsiCmdMasterType;
       -- To access sideband commands
-      pgpRxOut       : out Pgp2bRxOutType
+      pgpRxOut          : out Pgp2bRxOutType
    );        
 end PgpFrontEnd;
 
@@ -176,8 +181,8 @@ begin
          -- Slave Port
          sAxisClk    => axiClk,
          sAxisRst    => axiRst,
-         sAxisMaster => primaryAxisMaster,
-         sAxisSlave  => primaryAxisSlave,
+         sAxisMaster => dataAxisMaster,
+         sAxisSlave  => dataAxisSlave,
          -- Master Port
          mAxisClk    => iPgpClk,
          mAxisRst    => stableRst,
@@ -245,8 +250,8 @@ begin
          -- Slave Port
          sAxisClk    => axiClk,
          sAxisRst    => axiRst,
-         sAxisMaster => auxiliaryAxisMaster,
-         sAxisSlave  => auxiliaryAxisSlave,
+         sAxisMaster => scopeAxisMaster,
+         sAxisSlave  => scopeAxisSlave,
          -- Master Port
          mAxisClk    => iPgpClk,
          mAxisRst    => stableRst,
@@ -254,37 +259,60 @@ begin
          mAxisSlave  => pgpTxSlaves(2));     
    -- Lane 0, VC2 RX unused (reserved for programming via fiber?)
    
-   -- Lane 0, VC3 TX/RX loopback (reserved for telemetry)
-   U_Vc3SsiLoopbackFifo : entity work.AxiStreamFifo
-      generic map (
-         --EN_FRAME_FILTER_G   => true,
-         CASCADE_SIZE_G      => 1,
-         BRAM_EN_G           => true,
-         USE_BUILT_IN_G      => false,  
-         GEN_SYNC_FIFO_G     => true,    
-         FIFO_ADDR_WIDTH_G   => 14,
-         FIFO_FIXED_THRESH_G => true,
-         FIFO_PAUSE_THRESH_G => 128,    
-         SLAVE_AXI_CONFIG_G  => ssiAxiStreamConfig(4),
-         MASTER_AXI_CONFIG_G => SSI_PGP2B_CONFIG_C) 
-      port map (   
-         -- Slave Port
-         sAxisClk    => iPgpClk,
-         sAxisRst    => stableRst,
-         sAxisMaster => pgpRxMasters(3),
-         sAxisSlave  => open,
-         sAxisCtrl   => pgpRxCtrl(3),
-         -- Master Port
-         mAxisClk    => iPgpClk,
-         mAxisRst    => stableRst,
-         mAxisMaster => pgpTxMasters(3),
-         mAxisSlave  => pgpTxSlaves(3));     
-
-
-   -- If we have unused RX CTRL or TX MASTERS
+   -- Lane 0, VC3 TX monitoring data stream
+   U_Vc3SsiMonitorFifo : entity work.AxiStreamFifo
+   generic map (
+      --EN_FRAME_FILTER_G   => true,
+      CASCADE_SIZE_G      => 1,
+      BRAM_EN_G           => true,
+      USE_BUILT_IN_G      => false,  
+      GEN_SYNC_FIFO_G     => false,    
+      FIFO_ADDR_WIDTH_G   => 9,
+      FIFO_FIXED_THRESH_G => true,
+      FIFO_PAUSE_THRESH_G => 128,    
+      SLAVE_AXI_CONFIG_G  => ssiAxiStreamConfig(4),
+      MASTER_AXI_CONFIG_G => SSI_PGP2B_CONFIG_C) 
+   port map (   
+      -- Slave Port
+      sAxisClk    => axiClk,
+      sAxisRst    => axiRst,
+      sAxisMaster => monitorAxisMaster,
+      sAxisSlave  => monitorAxisSlave,
+      -- Master Port
+      mAxisClk    => iPgpClk,
+      mAxisRst    => stableRst,
+      mAxisMaster => pgpTxMasters(3),
+      mAxisSlave  => pgpTxSlaves(3)
+   );
+   -- Lane 0, VC3 RX monitoring stream enable command fifo
+   U_Vc3SsiMonitorCmd : entity work.AxiStreamFifo
+   generic map (
+      --EN_FRAME_FILTER_G   => true,
+      CASCADE_SIZE_G      => 1,
+      BRAM_EN_G           => true,
+      USE_BUILT_IN_G      => false,  
+      GEN_SYNC_FIFO_G     => false,    
+      FIFO_ADDR_WIDTH_G   => 9,
+      FIFO_FIXED_THRESH_G => true,
+      FIFO_PAUSE_THRESH_G => 128,    
+      SLAVE_AXI_CONFIG_G  => SSI_PGP2B_CONFIG_C,
+      MASTER_AXI_CONFIG_G => ssiAxiStreamConfig(4)) 
+   port map (   
+      -- Slave Port
+      sAxisClk    => iPgpClk,
+      sAxisRst    => stableRst,
+      sAxisMaster => pgpRxMasters(3),
+      sAxisSlave  => open,
+      -- Master Port
+      mAxisClk    => axiClk,
+      mAxisRst    => axiRst,
+      mAxisMaster => monEnAxisMaster,
+      mAxisSlave  => AXI_STREAM_SLAVE_FORCE_C
+   );
+   
+   -- If we have unused RX CTRL
    pgpRxCtrl(2) <= AXI_STREAM_CTRL_UNUSED_C;
-   --pgpRxCtrl(3) <= AXI_STREAM_CTRL_UNUSED_C;
-   --pgpTxMasters(3) <= AXI_STREAM_MASTER_INIT_C;
+   pgpRxCtrl(3) <= AXI_STREAM_CTRL_UNUSED_C;
       
 end mapping;
 

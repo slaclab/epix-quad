@@ -77,6 +77,12 @@ EpixControl::EpixControl ( CommLink *commLink, string defFile, EpixType epixType
 
    addCommand(new Command("PrepForRead"));
    getCommand("PrepForRead")->setDescription("Sends SACI prepare for readout");
+   
+   addCommand(new Command("MonitorStreamEnable"));
+   getCommand("MonitorStreamEnable")->setDescription("Enable the monitor streaming");
+   
+   addCommand(new Command("MonitorStreamDisable"));
+   getCommand("MonitorStreamDisable")->setDescription("Disable the monitor streaming");
 
 }
 
@@ -162,6 +168,18 @@ void EpixControl::command ( string name, string arg) {
             device("digFpga",0)->device("epixSAsic",asic)->command("WriteColData","");
          }
       }
+   } else if ( name == "MonitorStreamEnable" ) {
+      uint32_t txBuf = 0x1;
+      uint32_t lane = 0x1;    //lane 0
+      uint32_t vc = 0x8;      //vc 3
+      uint32_t linkConfig = 3 << 24;
+      this->commLink()->queueDataTx(linkConfig, lane << 4 | vc, &txBuf, 1);
+   } else if ( name == "MonitorStreamDisable" ) {
+      uint32_t txBuf = 0x0;
+      uint32_t lane = 0x1;    //lane 0
+      uint32_t vc = 0x8;      //vc 3
+      uint32_t linkConfig = 3 << 24;
+      this->commLink()->queueDataTx(linkConfig, lane << 4 | vc, &txBuf, 1);
    } else System::command(name, arg);
 }
 

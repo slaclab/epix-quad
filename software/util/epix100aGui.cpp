@@ -78,7 +78,8 @@ int main (int argc, char **argv) {
       addrSize = 4;
       dest = new MultDestPgp("/dev/pgpcard0");
       dest->addDataSource(0x00000000); // VC0 - acq data
-      //dest->addDataSource(0x02000000); // VC2 - oscilloscope
+      dest->addDataSource(0x02000000); // VC2 - oscilloscope
+      dest->addDataSource(0x03000000); // VC3 - monitoring
       pgpLink = new MultLink();
       pgpLink->setDebug(true);
       pgpLink->setMaxRxTx(0x800000);

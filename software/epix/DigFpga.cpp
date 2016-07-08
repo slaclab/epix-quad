@@ -232,9 +232,6 @@ DigFpga::DigFpga ( uint destination, uint baseAddress, uint index, Device *paren
    addVariable(new Variable("AsicRoClkControl", Variable::Configuration));
    getVariable("AsicRoClkControl")->setDescription("Manual ASIC RO Clock Enabled");
    getVariable("AsicRoClkControl")->setRange(0,0x1);
-   addVariable(new Variable("prepulseR0En", Variable::Configuration));
-   getVariable("prepulseR0En")->setDescription("Prepulse R0 Enable");
-   getVariable("prepulseR0En")->setRange(0,0x1);
    addVariable(new Variable("ADCTest", Variable::Configuration));
    getVariable("ADCTest")->setDescription("Enables manual test of ADC");
    getVariable("ADCTest")->setRange(0,0x1);
@@ -313,7 +310,7 @@ DigFpga::DigFpga ( uint destination, uint baseAddress, uint index, Device *paren
    getVariable("asicR0ToAsicAcq")->setRange(0,0x7FFFFFFF);
    getVariable("asicR0ToAsicAcq")->setComp(0,CLOCK_PERIOD_IN_US,0,"us");
 
-   addRegister(new Register("asicPreAcqTime", baseAddress_ + addrSize*0x0000002C));
+   addRegister(new Register("asicPreAcqTime", baseAddress_ + addrSize*0x00000039));
    addVariable(new Variable("asicPreAcqTime", Variable::Status));
    getVariable("asicPreAcqTime")->setDescription("Sum of time delays leading to the ASIC ACQ pulse");
    getVariable("asicPreAcqTime")->setComp(0,CLOCK_PERIOD_IN_US,0,"us");
@@ -684,7 +681,6 @@ void DigFpga::readConfig ( ) {
    getVariable("AsicPpmatControl")->setInt(getRegister("AsicPinControl")->get(3,0x1));
    getVariable("AsicPpbeControl")->setInt(getRegister("AsicPinControl")->get(4,0x1));
    getVariable("AsicRoClkControl")->setInt(getRegister("AsicPinControl")->get(5,0x1));
-   getVariable("prepulseR0En")->setInt(getRegister("AsicPinControl")->get(6,0x1));
    getVariable("ADCTest")->setInt(getRegister("AsicPinControl")->get(7,0x1));
    getVariable("TestPattern")->setInt(getRegister("AsicPinControl")->get(8,0x1));
    getVariable("AsicR0Mode")->setInt(getRegister("AsicPinControl")->get(11,0x1));
@@ -810,7 +806,6 @@ void DigFpga::writeConfig ( bool force ) {
    getRegister("AsicPinControl")->set(getVariable("AsicPpmatControl")->getInt(),3,0x1);
    getRegister("AsicPinControl")->set(getVariable("AsicPpbeControl")->getInt(),4,0x1);
    getRegister("AsicPinControl")->set(getVariable("AsicRoClkControl")->getInt(),5,0x1);
-   getRegister("AsicPinControl")->set(getVariable("prepulseR0En")->getInt(),6,0x1);
    getRegister("AsicPinControl")->set(getVariable("ADCTest")->getInt(),7,0x1);
    getRegister("AsicPinControl")->set(getVariable("TestPattern")->getInt(),8,0x1);
    getRegister("AsicPinControl")->set(getVariable("AsicR0Mode")->getInt(),11,0x1);

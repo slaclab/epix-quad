@@ -92,7 +92,7 @@ char* LogMemory::getBuffer() {
    REGISTER_LOCK
    
    readRegister(getRegister("MemInfo"));
-   ptr = getRegister("MemInfo")->get(0,0xFFFF) - 4;
+   ptr = getRegister("MemInfo")->get(0,0xFFFF);
    len = getRegister("MemInfo")->get(16,0xFFFF);
 
    readRegister(getRegister("MemoryLow"));

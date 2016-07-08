@@ -66,7 +66,7 @@ architecture rtl of SlowAdcStream is
    
    -- Hard coded words in the data stream for now
    constant LANE_C     : slv( 1 downto 0) := "00";
-   constant VC_C       : slv( 1 downto 0) := "10";
+   constant VC_C       : slv( 1 downto 0) := "11";
    constant QUAD_C     : slv( 1 downto 0) := "00";
    constant OPCODE_C   : slv( 7 downto 0) := x"00";
    constant ZEROWORD_C : slv(31 downto 0) := x"00000000";
@@ -128,8 +128,6 @@ begin
                mAxisMasterVar.tData(31 downto 0) := x"0" & "00" & QUAD_C & OPCODE_C & std_logic_vector(acqCount(15 downto 0));
             elsif dwordCnt = 2 then
                mAxisMasterVar.tData(31 downto 0) := std_logic_vector(seqCount);
-            elsif dwordCnt = 3 then
-               mAxisMasterVar.tData(31 downto 0) := x"00000001";
             elsif dwordCnt >= HEADER_SIZE_C then
                next_state <= DATA_S;
                dwordCntRst <= '1';
