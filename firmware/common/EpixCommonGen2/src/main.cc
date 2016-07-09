@@ -21,7 +21,7 @@ int main() {
    
    unsigned int asicMask, res, i, req = 0;
    
-   ssi_printf_init(LOG_MEM_OFFSET, 1024);
+   ssi_printf_init(LOG_MEM_OFFSET, 1024*4);
    
    while (1) {
       

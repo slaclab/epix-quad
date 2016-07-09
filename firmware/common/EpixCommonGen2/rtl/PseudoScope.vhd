@@ -199,7 +199,7 @@ begin
    adcChA <= adcData(to_integer(unsigned(scopeConfig.inputChannelA)));
    adcChB <= adcData(to_integer(unsigned(scopeConfig.inputChannelB)));
    adcChAValid <= adcValid(to_integer(unsigned(scopeConfig.inputChannelA)));
-   adcChBValid <= adcValid(to_integer(unsigned(scopeConfig.inputChannelA)));
+   adcChBValid <= adcValid(to_integer(unsigned(scopeConfig.inputChannelB)));
 
    -- Instantiate ring buffers for storing the ADC data
    RingBufferA : entity work.RingBuffer
