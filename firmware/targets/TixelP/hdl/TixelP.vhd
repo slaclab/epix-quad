@@ -113,7 +113,11 @@ entity TixelP is
       asicRoClkP          : out slv(1 downto 0);
       asicRoClkM          : out slv(1 downto 0);
       asicRefClkP         : out slv(1 downto 0);
-      asicRefClkM         : out slv(1 downto 0)
+      asicRefClkM         : out slv(1 downto 0);
+            -- Boot Memory Ports
+      bootCsL             : out sl;
+      bootMosi            : out sl;
+      bootMiso            : in  sl
       -- TODO: Add DDR pins
       -- TODO: Add I2C pins for SFP
       -- TODO: Add sync pins for DC/DCs
@@ -154,6 +158,9 @@ architecture RTL of TixelP is
    signal iAdcSpiClk     : sl;   
    signal iAdcClkP       : slv( 2 downto 0);
    signal iAdcClkM       : slv( 2 downto 0);
+   
+   signal iBootCsL      : sl;
+   signal iBootMosi     : sl;
    
    signal iAsicRoClk    : slv(1 downto 0);
    signal iAsicRefClk   : slv(1 downto 0);
@@ -253,11 +260,12 @@ begin
          asicDoutP           => asicDoutP,
          asicDoutM           => asicDoutM,
          asicRefClk          => iAsicRefClk,
-         asicRoClk           => iAsicRoClk
+         asicRoClk           => iAsicRoClk,
+         -- Boot Memory Ports
+         bootCsL             => iBootCsL,
+         bootMosi            => iBootMosi,
+         bootMiso            => bootMiso
       );
-      
-      adcClkP(0) <= iAdcClkP(0);      
-      adcClkM(0) <= iAdcClkM(0);
       
       adcClkP(1) <= iAdcClkP(2);
       adcClkM(1) <= iAdcClkM(2);
@@ -266,6 +274,10 @@ begin
    -- Map ports/signals/etc. --
    ----------------------------
    led <= iLed when iLedEn = '1' else (others => '0');
+   
+   -- Boot Memory Ports
+   bootCsL  <= iBootCsL    when iFpgaOutputEn = '1' else 'Z';
+   bootMosi <= iBootMosi   when iFpgaOutputEn = '1' else 'Z';
    
    -- Guard ring DAC
    vGuardDacSclk <= iVGuardDacSclk when iFpgaOutputEn = '1' else 'Z';

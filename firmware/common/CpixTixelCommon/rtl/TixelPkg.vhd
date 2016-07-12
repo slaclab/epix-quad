@@ -6,19 +6,20 @@ use ieee.std_logic_unsigned.all;
 use work.StdRtlPkg.all;
 use work.AxiLitePkg.all;
 use work.Version.all;
+use work.EpixPkgGen2.all;
 
 package TixelPkg is
 
-   constant NUMBER_OF_ASICS   : natural := 2;
+   constant NUMBER_OF_ASICS   : natural := 2;   
    
-   constant TIXEL_NUM_AXI_MASTER_SLOTS_C : natural := 2;
+   constant TIXEL_NUM_AXI_MASTER_SLOTS_C : natural := 10;
    constant TIXEL_NUM_AXI_SLAVE_SLOTS_C : natural := 2;
 
-   constant EPIX_REG_AXI_INDEX_C  : natural := 0;
-   constant TIXEL_REG_AXI_INDEX_C  : natural := 1;
+   constant EPIX_REG_AXI_INDEX_C    : natural := 0;
+   constant TIXEL_REG_AXI_INDEX_C   : natural := 9;
    
-   constant EPIX_REG_AXI_BASE_ADDR_C    : slv(31 downto 0) := X"00000000";
-   constant TIXEL_REG_AXI_BASE_ADDR_C    : slv(31 downto 0) := X"04000000";
+   constant EPIX_REG_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"00000000";
+   constant TIXEL_REG_AXI_BASE_ADDR_C  : slv(31 downto 0) := X"04000000";
    
    constant TIXEL_AXI_CROSSBAR_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(TIXEL_NUM_AXI_MASTER_SLOTS_C-1 downto 0) := (
       EPIX_REG_AXI_INDEX_C      => (
@@ -27,6 +28,38 @@ package TixelPkg is
          connectivity         => x"0003"),
       TIXEL_REG_AXI_INDEX_C      => (
          baseAddr             => TIXEL_REG_AXI_BASE_ADDR_C,
+         addrBits             => 26,
+         connectivity         => x"0003"),
+      VERSION_AXI_INDEX_C      => (
+         baseAddr             => VERSION_AXI_BASE_ADDR_C,
+         addrBits             => 26,
+         connectivity         => x"0003"),
+      BOOTMEM_AXI_INDEX_C      => (
+         baseAddr             => BOOTMEM_AXI_BASE_ADDR_C,
+         addrBits             => 26,
+         connectivity         => x"0003"),
+      ADCTEST_AXI_INDEX_C      => (
+         baseAddr             => ADCTEST_AXI_BASE_ADDR_C,
+         addrBits             => 26,
+         connectivity         => x"0003"),
+      ADC0_RD_AXI_INDEX_C      => (
+         baseAddr             => ADC0_RD_AXI_BASE_ADDR_C,
+         addrBits             => 26,
+         connectivity         => x"0003"),
+      ADC1_RD_AXI_INDEX_C      => (
+         baseAddr             => ADC1_RD_AXI_BASE_ADDR_C,
+         addrBits             => 26,
+         connectivity         => x"0003"),
+      ADC2_RD_AXI_INDEX_C      => (
+         baseAddr             => ADC2_RD_AXI_BASE_ADDR_C,
+         addrBits             => 26,
+         connectivity         => x"0003"),
+      ADC_CFG_AXI_INDEX_C      => (
+         baseAddr             => ADC_CFG_AXI_BASE_ADDR_C,
+         addrBits             => 26,
+         connectivity         => x"0003"),
+      MEM_LOG_AXI_INDEX_C      => (
+         baseAddr             => MEM_LOG_AXI_BASE_ADDR_C,
          addrBits             => 26,
          connectivity         => x"0003")
    );

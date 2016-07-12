@@ -44,7 +44,6 @@ using namespace std;
 DigFpga::DigFpga ( uint destination, uint baseAddress, uint index, Device *parent, uint addrSize, EpixType epixType ) : 
                    Device(destination,0,"digFpga",index,parent) {
    stringstream tmp;
-   uint         x;
 
    //Set ePix type
    epixType_ = epixType;
@@ -118,45 +117,6 @@ DigFpga::DigFpga ( uint destination, uint baseAddress, uint index, Device *paren
    addRegister(new Register("IDelayCtrlRdy", baseAddress_ + addrSize*0x0000000A));
    addVariable(new Variable("IDelayCtrlRdy", Variable::Status));
    getVariable("IDelayCtrlRdy")->setDescription("Ready flag for IDELAYCTRL block");
-   
-   // different delay register addresses for the old firmware version without the microblaze
-   // the access will not work if the firmware version is old (below 0xXXXXXXX4 for epix100a)
-   for (x=0; x < 8; x++) {
-      tmp.str("");
-      tmp << "Adc0Ch" << dec << x << "Delay";
-      addRegister(new Register(tmp.str(), baseAddress_ + addrSize*(0x5000000 + x)));
-      addVariable(new Variable(tmp.str(), Variable::Configuration));
-      getVariable(tmp.str())->setDescription(tmp.str());
-      getVariable(tmp.str())->setRange(0,0x3F);
-   }
-   addRegister(new Register("Adc0FrameDelay", baseAddress_ + addrSize*0x5000008));
-   addVariable(new Variable("Adc0FrameDelay", Variable::Configuration));
-   getVariable("Adc0FrameDelay")->setDescription("Adc0FrameDelay");
-   getVariable("Adc0FrameDelay")->setRange(0,0x3F);
-   for (x=0; x < 8; x++) {
-      tmp.str("");
-      tmp << "Adc1Ch" << dec << x << "Delay";
-      addRegister(new Register(tmp.str(), baseAddress_ + addrSize*(0x6000000 + x)));
-      addVariable(new Variable(tmp.str(), Variable::Configuration));
-      getVariable(tmp.str())->setDescription(tmp.str());
-      getVariable(tmp.str())->setRange(0,0x3F);
-   }
-   addRegister(new Register("Adc1FrameDelay", baseAddress_ + addrSize*0x6000008));
-   addVariable(new Variable("Adc1FrameDelay", Variable::Configuration));
-   getVariable("Adc1FrameDelay")->setDescription("Adc1FrameDelay");
-   getVariable("Adc1FrameDelay")->setRange(0,0x3F);
-   for (x=0; x < 4; x++) {
-      tmp.str("");
-      tmp << "Adc2Ch" << dec << x << "Delay";
-      addRegister(new Register(tmp.str(), baseAddress_ + addrSize*(0x7000000 + x)));
-      addVariable(new Variable(tmp.str(), Variable::Configuration));
-      getVariable(tmp.str())->setDescription(tmp.str());
-      getVariable(tmp.str())->setRange(0,0x3F);
-   }
-   addRegister(new Register("Adc2FrameDelay", baseAddress_ + addrSize*0x7000008));
-   addVariable(new Variable("Adc2FrameDelay", Variable::Configuration));
-   getVariable("Adc2FrameDelay")->setDescription("Adc2FrameDelay");
-   getVariable("Adc2FrameDelay")->setRange(0,0x3F);
 
    addRegister(new Register("Startup",baseAddress_ + addrSize*0x00000080));
    addVariable(new Variable("RequestStartup", Variable::Configuration));
@@ -485,6 +445,9 @@ DigFpga::DigFpga ( uint destination, uint baseAddress, uint index, Device *paren
       addDevice(new TixelPAsic(destination, baseAddress_ + 0x00900000*addrSize, 1, this, addrSize));
       //CPIX specific FPGA registers
       addDevice(new DigFpgaTixel(destination, baseAddress_ + 0x01000000*addrSize, 0, this, addrSize));
+      addDevice(new AxiVersion(destination, baseAddress_ + 0x02000000*addrSize,  0, this, addrSize)); 
+      addDevice(new AxiMicronN25Q(destination, baseAddress_ + 0x03000000*addrSize, 0, this, addrSize)); 
+      addDevice(new LogMemory(destination, baseAddress_ + 0x09000000*addrSize, 0, this, addrSize)); 
    }
 
    getVariable("Enabled")->setHidden(true);
@@ -602,7 +565,6 @@ void DigFpga::readStatus ( ) {
 // Method to read configuration registers and update variables
 void DigFpga::readConfig ( ) {
    stringstream tmp;
-   uint x;
 
    REGISTER_LOCK
 
@@ -637,31 +599,6 @@ void DigFpga::readConfig ( ) {
    getVariable("FpgaOutputEnable")->setInt(getRegister("PowerEnable")->get(2,0x1));
    getVariable("AnalogPowerEnable")->setInt(getRegister("PowerEnable")->get(1,0x1));
    getVariable("DigitalPowerEnable")->setInt(getRegister("PowerEnable")->get(0,0x1));
-
-   for (x = 0; x < 3; ++x) {
-      tmp.str("");
-      tmp << "Adc" << dec << x << "FrameDelay";
-      readRegister(getRegister(tmp.str()));
-      getVariable(tmp.str())->setInt(getRegister(tmp.str())->get(0,0x3f));
-   }
-   for (x = 0; x < 8; ++x) {
-      tmp.str("");
-      tmp << "Adc0Ch" << dec << x << "Delay";
-      readRegister(getRegister(tmp.str()));
-      getVariable(tmp.str())->setInt(getRegister(tmp.str())->get(0,0x3f));
-   }
-   for (x = 0; x < 8; ++x) {
-      tmp.str("");
-      tmp << "Adc1Ch" << dec << x << "Delay";
-      readRegister(getRegister(tmp.str()));
-      getVariable(tmp.str())->setInt(getRegister(tmp.str())->get(0,0x3f));
-   }
-   for (x = 0; x < 4; ++x) {
-      tmp.str("");
-      tmp << "Adc2Ch" << dec << x << "Delay";
-      readRegister(getRegister(tmp.str()));
-      getVariable(tmp.str())->setInt(getRegister(tmp.str())->get(0,0x3f));
-   }
 
    readRegister(getRegister("Startup"));
    getVariable("RequestStartup")->setInt(getRegister("Startup")->get(0,0x1));
@@ -749,7 +686,6 @@ void DigFpga::readConfig ( ) {
 // Method to write configuration registers
 void DigFpga::writeConfig ( bool force ) {
    stringstream tmp;
-   uint x;
 
    REGISTER_LOCK
 
@@ -763,31 +699,6 @@ void DigFpga::writeConfig ( bool force ) {
    getRegister("PowerEnable")->set(getVariable("AnalogPowerEnable")->getInt(),1,0x1);
    getRegister("PowerEnable")->set(getVariable("DigitalPowerEnable")->getInt(),0,0x1);
    writeRegister(getRegister("PowerEnable"),force);
-
-   for (x = 0; x < 3; ++x) {
-      tmp.str("");
-      tmp << "Adc" << dec << x << "FrameDelay";
-      getRegister(tmp.str())->set(getVariable(tmp.str())->getInt(),0,0x3F);
-      writeRegister(getRegister(tmp.str()),force);
-   }
-   for (x = 0; x < 8; ++x) {
-      tmp.str("");
-      tmp << "Adc0Ch" << dec << x << "Delay";
-      getRegister(tmp.str())->set(getVariable(tmp.str())->getInt(),0,0x3F);
-      writeRegister(getRegister(tmp.str()),force);
-   }
-   for (x = 0; x < 8; ++x) {
-      tmp.str("");
-      tmp << "Adc1Ch" << dec << x << "Delay";
-      getRegister(tmp.str())->set(getVariable(tmp.str())->getInt(),0,0x3F);
-      writeRegister(getRegister(tmp.str()),force);
-   }
-   for (x = 0; x < 4; ++x) {
-      tmp.str("");
-      tmp << "Adc2Ch" << dec << x << "Delay";
-      getRegister(tmp.str())->set(getVariable(tmp.str())->getInt(),0,0x3F);
-      writeRegister(getRegister(tmp.str()),force);
-   }
 
    getRegister("Startup")->set(getVariable("RequestStartup")->getInt(),0,0x1);
    writeRegister(getRegister("Startup"),force);

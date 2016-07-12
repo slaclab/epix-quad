@@ -31,6 +31,7 @@ entity Deserializer is
    generic (
       TPD_G             : time      := 1 ns;
       IDELAYCTRL_FREQ_G : real      := 200.0;
+      IODELAY_GROUP_G   : string    := "DEFAULT_GROUP";
       INVERT_SDATA_G    : boolean   := false
    );
    port ( 
@@ -97,6 +98,9 @@ architecture RTL of Deserializer is
    
    constant IDLE_K_C    : std_logic_vector(7 downto 0) := x"BC";
    constant IDLE_D_C    : std_logic_vector(7 downto 0) := x"4A";
+   
+   attribute IODELAY_GROUP : string;
+   attribute IODELAY_GROUP of U_IDELAYE2 : label is IODELAY_GROUP_G;
    
    attribute keep :string;
    attribute keep of iserdese_out : signal is "true";

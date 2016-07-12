@@ -306,6 +306,7 @@ begin
       axiSlaveRegisterW(x"000054" & "00", 13, v.scopeRegOut.skipSamples);
       axiSlaveRegisterW(x"000055" & "00",  0, v.scopeRegOut.inputChannelA);
       axiSlaveRegisterW(x"000055" & "00",  5, v.scopeRegOut.inputChannelB);
+      axiSlaveRegisterW(x"000056" & "00",  0, v.scopeRegOut.triggerDelay);
       axiSlaveRegisterW(x"000080" & "00",  0, v.epixRegOut.requestStartupCal);
       axiSlaveRegisterW(x"000080" & "00",  1, v.epixRegOut.startupAck);          -- set by Microblaze
       axiSlaveRegisterW(x"000080" & "00",  2, v.epixRegOut.startupFail);         -- set by Microblaze

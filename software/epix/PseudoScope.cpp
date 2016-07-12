@@ -52,7 +52,11 @@ PseudoScope::PseudoScope ( uint destination, uint baseAddress, uint index, Devic
    addRegister(new Register("Settings4",      baseAddress_ + 0x55*addrSize, 1));
    addVariable(new Variable("InputChannelA",    Variable::Configuration));
    addVariable(new Variable("InputChannelB",    Variable::Configuration));
-
+   
+   addRegister(new Register("TriggerDelay",   baseAddress_ + 0x56*addrSize, 1));
+   addVariable(new Variable("TriggerDelay",    Variable::Configuration));
+   getVariable("TriggerDelay")->setRange(0,0x1FFF);
+   
    // Add command for scope arm and trigger
    addCommand(new Command("Arm"));
    addCommand(new Command("Trig")); 
@@ -164,6 +168,9 @@ void PseudoScope::readConfig ( ) {
    readRegister(getRegister("Settings4"));
    getVariable("InputChannelA")->setInt(getRegister("Settings4")->get(0,0x1F));
    getVariable("InputChannelB")->setInt(getRegister("Settings4")->get(5,0x1F));
+   
+   readRegister(getRegister("TriggerDelay"));
+   getVariable("TriggerDelay")->setInt(getRegister("TriggerDelay")->get());
 
    REGISTER_UNLOCK
 
@@ -193,6 +200,9 @@ void PseudoScope::writeConfig ( bool force ) {
    getRegister("Settings4")->set(getVariable("InputChannelA")->getInt(),0,0x1F);
    getRegister("Settings4")->set(getVariable("InputChannelB")->getInt(),5,0x1F);
    writeRegister(getRegister("Settings4"),force);
+   
+   getRegister("TriggerDelay")->set(getVariable("TriggerDelay")->getInt());
+   writeRegister(getRegister("TriggerDelay"),force);
 
    REGISTER_UNLOCK
 }

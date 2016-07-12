@@ -81,13 +81,26 @@ class Form(QMainWindow):
         chAdata = []
         chBdata = []
         oscWords = size-8-5
-
+         
+        # converted to volts
         for val in data[8:8+oscWords/2-1]:
-            chAdata.append((val >> 16) & 0xFFFF)
-            chAdata.append(val & 0xFFFF)
+            convHi = -1.0 + ((val >> 16) & 0xFFFF) * (2.0/2**14)
+            convLo = -1.0 + (val & 0xFFFF) * (2.0/2**14)
+            chAdata.append(convHi)
+            chAdata.append(convLo)
         for val in data[8+oscWords/2:8+oscWords-1]:
-            chBdata.append((val >> 16) & 0xFFFF)
-            chBdata.append(val & 0xFFFF)
+            convHi = -1.0 + ((val >> 16) & 0xFFFF) * (2.0/2**14)
+            convLo = -1.0 + (val & 0xFFFF) * (2.0/2**14)
+            chBdata.append(convHi)
+            chBdata.append(convLo)
+        
+        ## raw bit data
+        #for val in data[8:8+oscWords/2-1]:
+        #    chAdata.append((val >> 16) & 0xFFFF)
+        #    chAdata.append(val & 0xFFFF)
+        #for val in data[8+oscWords/2:8+oscWords-1]:
+        #    chBdata.append((val >> 16) & 0xFFFF)
+        #    chBdata.append(val & 0xFFFF)
          
         #print chAdata
         #print chBdata

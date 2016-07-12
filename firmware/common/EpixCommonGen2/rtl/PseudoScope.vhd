@@ -14,6 +14,7 @@
 -- Modification history:
 -- 03/10/2014: created.
 -- 04/07/2015: migrated to gen2 digital card (A7)
+-- 07/11/2016: added trigger delay (Maciej Kwiatkowski)
 -------------------------------------------------------------------------------
 
 LIBRARY ieee;
@@ -79,6 +80,11 @@ architecture PseudoScope of PseudoScope is
    signal triggerRising    : sl := '0';
    signal triggerFalling   : sl := '0';
    signal triggerToUse     : sl := '0';
+   signal triggerEdgeSel   : sl := '0';
+   signal armed            : sl := '0';
+   signal triggerDelayed   : sl := '0';
+   signal triggerDelayEdge : sl := '0';
+   signal trigDelCnt       : integer;
    signal triggerChannel   : integer range 0 to 15 := 0;
    signal triggerMode      : integer range 0 to 3  := 0;
    signal adcChA           : slv(15 downto 0);
@@ -175,9 +181,41 @@ begin
       ); 
 
    -- And make the final trigger output
-   triggerToUse <= triggerRising  when scopeConfig.triggerEdge = '1' else
-                   triggerFalling when scopeConfig.triggerEdge = '0' else
-                   'X';
+   triggerEdgeSel <= 
+      triggerRising  when scopeConfig.triggerEdge = '1' else
+      triggerFalling when scopeConfig.triggerEdge = '0' else
+      'X';
+   
+   -- trigger delay
+   process (sysClk)
+   begin
+      if rising_edge(sysClk) then
+         if sysClkRst = '1' or (triggerEdgeSel = '1' and armed = '0') then
+            trigDelCnt <= to_integer(unsigned(scopeConfig.triggerDelay));
+         elsif trigDelCnt /= 0 then
+            trigDelCnt <= trigDelCnt - 1;
+         end if;
+         
+         if sysClkRst = '1' or triggerDelayed = '1' then
+            armed <= '0';
+         elsif triggerEdgeSel = '1' then
+            armed <= '1';
+         end if;
+      end if;
+   end process;
+   
+   triggerDelayed <= '1' when trigDelCnt = 0 else '0';
+   
+   U_DelEdge : entity work.SynchronizerEdge 
+      port map (
+         clk         => sysClk,
+         rst         => sysClkRst,
+         dataIn      => triggerDelayed,
+         risingEdge  => triggerDelayEdge,
+         fallingEdge => open
+      ); 
+   
+   triggerToUse <= triggerEdgeSel when unsigned(scopeConfig.triggerDelay) = 0 else triggerDelayEdge;
 
    -- Logic for the levels on the ADCs
    process(sysClk) begin

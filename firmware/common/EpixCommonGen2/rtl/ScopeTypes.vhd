@@ -33,6 +33,7 @@ package ScopeTypes is
       triggerAdcThresh  : std_logic_vector(15 downto 0);
       triggerHoldoff    : std_logic_vector(12 downto 0);
       triggerOffset     : std_logic_vector(12 downto 0);
+      triggerDelay      : std_logic_vector(12 downto 0);
       traceLength       : std_logic_vector(12 downto 0);
       skipSamples       : std_logic_vector(12 downto 0);
       inputChannelA     : std_logic_vector(4 downto 0);
@@ -51,6 +52,7 @@ package ScopeTypes is
       triggerAdcThresh => (others => '0'),
       triggerHoldoff   => (others => '0'),
       triggerOffset    => (others => '0'),
+      triggerDelay     => (others => '0'),
       traceLength      => (others => '0'),
       skipSamples      => (others => '0'),
       inputChannelA    => (others => '0'),
