@@ -1,2 +1,6 @@
 vhdl work Version.vhd
 vhdl work hdl/Coulter.vhd
+vhdl work hdl/AcquisitionControl.vhd
+vhdl work hdl/ELine100Config.vhd
+vhdl work hdl/ELine100Pkg.vhd
+vhdl work hdl/CoulterPgp.vhd

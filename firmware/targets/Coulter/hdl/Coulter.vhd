@@ -5,7 +5,7 @@
 -- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 09/30/2015
--- Last update: 2016-05-25
+-- Last update: 2016-06-07
 -- Platform   : Vivado 2014.4
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -19,20 +19,19 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 use work.StdRtlPkg.all;
-
 use work.AxiLitePkg.all;
 use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
 use work.SsiCmdMasterPkg.all;
-use work.EpixPkgGen2.all;
+use work.Ad9249Pkg.all;
 
 library unisim;
 use unisim.vcomponents.all;
 
 entity Coulter is
    generic (
-      TPD_G : time := 1 ns
-      );
+      TPD_G        : time    := 1 ns;
+      SIMULATION_G : boolean := false);
    port (
       -- Debugging IOs
       led                : out   slv(3 downto 0);
@@ -51,11 +50,6 @@ entity Coulter is
       gtDataRxN          : in    sl;
       -- SFP control signals
       sfpDisable         : out   sl;
-      -- Guard ring DAC
---       vGuardDacSclk       : out sl;
---       vGuardDacDin        : out sl;
---       vGuardDacCsb        : out sl;
---       vGuardDacClrb       : out sl;
       -- External Signals
       runTg              : in    sl;
       daqTg              : in    sl;
@@ -65,19 +59,19 @@ entity Coulter is
       snIoAdcCard        : inout sl;
       snIoCarrier        : inout sl;
       -- Slow ADC
-      slowAdcSclk        : out   sl;
-      slowAdcDin         : out   sl;
-      slowAdcCsb         : out   sl;
-      slowAdcRefClk      : out   sl;
-      slowAdcDout        : in    sl;
-      slowAdcDrdy        : in    sl;
-      slowAdcSync        : out   sl;    --unconnected by default
+--       slowAdcSclk        : out   sl;
+--       slowAdcDin         : out   sl;
+--       slowAdcCsb         : out   sl;
+--       slowAdcRefClk      : out   sl;
+--       slowAdcDout        : in    sl;
+--       slowAdcDrdy        : in    sl;
+--       slowAdcSync        : out   sl;    --unconnected by default
       -- Fast ADC Control
       adcSpiClk          : out   sl;
       adcSpiData         : inout sl;
-      adcSpiCsb          : out   slv(2 downto 0);
+      adcSpiCsb          : out   slv(2 downto 0) := (others => '1');
       adcPdwn01          : out   sl;
-      adcPdwnMon         : out   sl;
+      adcPdwnMon         : out   sl              := '1';
       -- ADC readout signals
       adcClkP            : out   sl;
       adcClkM            : out   sl;
@@ -90,211 +84,367 @@ entity Coulter is
       adcOverflow        : in    slv(1 downto 0);
       -- ELine100 Config
       elineResetL        : out   sl;
-
-      elineEnaAMon : out slv(1 downto 0);
-      elineMck     : out slv(1 downto 0);
-      elineSc      : out slv(1 downto 0);
-      elineSclk    : out slv(1 downto 0);
-      elineRnW     : out slv(1 downto 0);
-      elineSdi     : out slv(1 downto 0);
-      elineSdo     : in  slv(1 downto 0));
+      elineEnaAMon       : out   slv(1 downto 0);
+      elineMckP          : out   slv(1 downto 0);
+      elineMckN          : out   slv(1 downto 0);
+      elineScP           : out   slv(1 downto 0);
+      elineScN           : out   slv(1 downto 0);
+      elineSclk          : out   slv(1 downto 0);
+      elineRnW           : out   slv(1 downto 0);
+      elineSen           : out   slv(1 downto 0);
+      elineSdi           : out   slv(1 downto 0);
+      elineSdo           : in    slv(1 downto 0));
 end Coulter;
 
 architecture top_level of Coulter is
-   signal iLed          : slv(3 downto 0);
-   signal iFpgaOutputEn : sl;
-   signal iLedEn        : sl;
 
-   -- Internal versions of signals so that we don't
-   -- drive anything unpowered until the components
-   -- are online.
-   signal iVGuardDacClrb : sl;
-   signal iVGuardDacSclk : sl;
-   signal iVGuardDacDin  : sl;
-   signal iVGuardDacCsb  : sl;
+   -------------------------------------------------------------------------------------------------
+   -- AXI-Lite config
+   -------------------------------------------------------------------------------------------------
+   constant AXIL_MASTERS_C       : integer      := 8;
+   constant VERSION_AXIL_C       : integer      := 0;
+   constant ASIC_CONFIG_AXIL_C   : IntegerArray := (0 => 1, 1 => 2);
+   constant ADC_CONFIG_AXIL_C    : integer      := 3;
+   constant ADC_READOUT_0_AXIL_C : integer      := 4;
+   constant ADC_READOUT_1_AXIL_C : integer      := 5;
+   constant ACQ_CTRL_AXIL_C      : integer      := 6;
+   constant PGP_AXIL_C           : integer      := 7;
 
+   constant AXIL_CROSSBAR_CONFIG_C : AxiLiteCrossbarMasterConfigArray(AXIL_MASTERS_C-1 downto 0) :=
+      genAxiLiteConfig(AXIL_MASTERS_C, X"00000000", 16, 12);
+
+   constant AXIL_CLK_PERIOD_C  : real := 6.4e-9;
+   constant ASIC_SCLK_PERIOD_C : real := 1.0e-6;
+   constant ADC_SCLK_PERIOD_C  : real := 1.0e-6;
+
+   signal srpAxilWriteMaster : AxiLiteWriteMasterType;
+   signal srpAxilWriteSlave  : AxiLiteWriteSlaveType;
+   signal srpAxilReadMaster  : AxiLiteReadMasterType;
+   signal srpAxilReadSlave   : AxiLiteReadSlaveType;
+
+   signal locAxilWriteMasters : AxiLiteWriteMasterArray(AXIL_MASTERS_C-1 downto 0);
+   signal locAxilWriteSlaves  : AxiLiteWriteSlaveArray(AXIL_MASTERS_C-1 downto 0);
+   signal locAxilReadMasters  : AxiLiteReadMasterArray(AXIL_MASTERS_C-1 downto 0);
+   signal locAxilReadSlaves   : AxiLiteReadSlaveArray(AXIL_MASTERS_C-1 downto 0);
+
+   signal axilClk : sl;
+   signal axilRst : sl;
+
+   signal ssiCmd : SsiCmdMasterType;
+
+   signal adcSerial  : Ad9249SerialGroupArray(1 downto 0);
+   signal adcStreams : AxiStreamMasterArray(15 downto 0);
+
+   signal userAxisMaster : AxiStreamMasterType;
+   signal userAxisSlave  : AxiStreamSlaveType;
+
+   -- Led signals
+   signal iLed   : slv(3 downto 0);
+   signal iLedEn : sl;
+
+   -- External trigger signals
    signal iRunTg : sl;
    signal iDaqTg : sl;
    signal iMps   : sl;
    signal iTgOut : sl;
 
-   signal iSerialIdIo : slv(1 downto 0);
+   signal userValues : Slv32Array(0 to 63) := (others => X"00000000");
 
-   signal iSaciClk  : sl;
-   signal iSaciSelL : slv(3 downto 0);
-   signal iSaciCmd  : sl;
-   signal iSaciRsp  : slv(3 downto 0);
+   -- 250 MHz clk drives ASIC readout signals
+   signal clk250 : sl;
+   signal rst250 : sl;
 
-   signal iAdcSpiDataOut : sl;
-   signal iAdcSpiDataIn  : sl;
-   signal iAdcSpiDataEn  : sl;
-   signal iAdcPdwn       : slv(2 downto 0);
-   signal iAdcSpiCsb     : slv(2 downto 0);
-   signal iAdcSpiClk     : sl;
-   signal iAdcClkP       : slv(2 downto 0);
-   signal iAdcClkM       : slv(2 downto 0);
+   signal elineRst  : sl;
+   signal elineSc   : sl;
+   signal elineMck  : sl;
+   signal adcValid  : sl;
+   signal adcDone   : sl;
+   signal adcClk    : sl;
+   signal adcClkRst : sl;
 
+   -- 200 Mhz clock drives IDELAY_CTRL
+   signal clk200 : sl;
+   signal rst200 : sl;
 
 begin
 
    -------------------------------------------------------------------------------------------------
    -- PGP
    -------------------------------------------------------------------------------------------------
+   U_CoulterPgp_1 : entity work.CoulterPgp
+      generic map (
+         TPD_G => TPD_G)
+      port map (
+         gtClkP           => gtRefClk0P,                       -- [in]
+         gtClkN           => gtRefClk0N,                       -- [in]
+         gtRxP            => gtDataRxP,                        -- [in]
+         gtRxN            => gtDataRxN,                        -- [in]
+         gtTxP            => gtDataTxP,                        -- [out]
+         gtTxN            => gtDataTxN,                        -- [out]
+         powerBad         => '0',                              -- [in]
+         rxLinkReady      => open,                             -- [out]
+         txLinkReady      => open,                             -- [out]
+         axilClk          => axilClk,                          -- [out]
+         axilRst          => axilRst,                          -- [out]
+         mAxilReadMaster  => srpAxilReadMaster,                -- [out]
+         mAxilReadSlave   => srpAxilReadSlave,                 -- [in]
+         mAxilWriteMaster => srpAxilWriteMaster,               -- [out]
+         mAxilWriteSlave  => srpAxilWriteSlave,                -- [in]
+         sAxilReadMaster  => locAxilReadMasters(PGP_AXIL_C),   -- [out]
+         sAxilReadSlave   => locAxilReadSlaves(PGP_AXIL_C),    -- [in]
+         sAxilWriteMaster => locAxilWriteMasters(PGP_AXIL_C),  -- [out]
+         sAxilWriteSlave  => locAxilWriteSlaves(PGP_AXIL_C),   -- [in]
+         userAxisMaster   => userAxisMaster,                   -- [in]
+         userAxisSlave    => userAxisSlave,                    -- [out]
+         ssiCmd           => ssiCmd);                          -- [out]
+
+   -------------------------------------------------------------------------------------------------
+   -- Clock Manager (create 250 Mhz clock and 200 MHz clock)
+   -- Could bring out stableClk to drive this.
+   -------------------------------------------------------------------------------------------------
+   U_CtrlClockManager7 : entity work.ClockManager7
+      generic map (
+         TPD_G              => TPD_G,
+         TYPE_G             => "MMCM",
+         INPUT_BUFG_G       => false,
+         FB_BUFG_G          => true,
+         NUM_CLOCKS_G       => 2,
+         BANDWIDTH_G        => "OPTIMIZED",
+         CLKIN_PERIOD_G     => 6.4,
+         DIVCLK_DIVIDE_G    => 5,
+         CLKFBOUT_MULT_F_G  => 32.0,
+         CLKOUT0_DIVIDE_F_G => 4.0,
+         CLKOUT1_DIVIDE_G   => 5)
+      port map (
+         clkIn     => axilClk,
+         rstIn     => axilRst,
+         clkOut(0) => clk250,
+         clkOut(1) => clk200,
+         rstOut(0) => rst250,
+         rstOut(1) => rst200);
+
 
    -------------------------------------------------------------------------------------------------
    -- Crossbar
    -------------------------------------------------------------------------------------------------
-
-   -------------------------------------------------------------------------------------------------
-   -- Version
-   -------------------------------------------------------------------------------------------------
-
-   
-
-   ---------------------------
-   -- Core block            --
-   ---------------------------
-   U_EpixCore : entity work.EpixCoreGen2
+   U_AxiLiteCrossbar_1 : entity work.AxiLiteCrossbar
       generic map (
-         TPD_G          => TPD_G,
-         -- Polarity of selected LVDS data lanes is swapped on gen2 ADC board
-         ADC1_INVERT_CH => "10000000",
-         ADC2_INVERT_CH => "00000010"
-         )
+         TPD_G              => TPD_G,
+         NUM_SLAVE_SLOTS_G  => 1,
+         NUM_MASTER_SLOTS_G => AXIL_MASTERS_C,
+         DEC_ERROR_RESP_G   => AXI_RESP_DECERR_C,
+         MASTERS_CONFIG_G   => AXIL_CROSSBAR_CONFIG_C,
+         DEBUG_G            => true)
       port map (
-         -- Debugging IOs
-         led            => iLed,
-         -- Power enables
-         digitalPowerEn => analogCardDigPwrEn,
-         analogPowerEn  => analogCardAnaPwrEn,
-         fpgaOutputEn   => iFpgaOutputEn,
-         ledEn          => iLedEn,
-         -- Clocks and reset
-         powerGood      => powerGood,
-         gtRefClk0P     => gtRefClk0P,
-         gtRefClk0N     => gtRefClk0N,
-         -- SFP interfaces
-         sfpDisable     => sfpDisable,
-         -- SFP TX/RX
-         gtDataRxP      => gtDataRxP,
-         gtDataRxN      => gtDataRxN,
-         gtDataTxP      => gtDataTxP,
-         gtDataTxN      => gtDataTxN,
-         -- Guard ring DAC
-         vGuardDacSclk  => iVGuardDacSclk,
-         vGuardDacDin   => iVGuardDacDin,
-         vGuardDacCsb   => iVGuardDacCsb,
-         vGuardDacClrb  => iVGuardDacClrb,
-         -- External Signals
-         runTrigger     => iRunTg,
-         daqTrigger     => iDaqTg,
-         mpsOut         => iMps,
-         triggerOut     => iTgOut,
-         -- Board IDs
-         serialIdIo(1)  => snIoCarrier,
-         serialIdIo(0)  => snIoAdcCard,
-         -- Slow ADC
-         slowAdcRefClk  => slowAdcRefClk,
-         slowAdcSclk    => slowAdcSclk,
-         slowAdcDin     => slowAdcDin,
-         slowAdcCsb     => slowAdcCsb,
-         slowAdcDout    => slowAdcDout,
-         slowAdcDrdy    => slowAdcDrdy,
-         -- SACI
-         saciClk        => iSaciClk,
-         saciSelL       => iSaciSelL,
-         saciCmd        => iSaciCmd,
-         saciRsp        => iSaciRsp,
-         -- Fast ADC Control
-         adcSpiClk      => iAdcSpiClk,
-         adcSpiDataOut  => iAdcSpiDataOut,
-         adcSpiDataIn   => iAdcSpiDataIn,
-         adcSpiDataEn   => iAdcSpiDataEn,
-         adcSpiCsb      => iAdcSpiCsb,
-         adcPdwn        => iAdcPdwn,
-         -- Fast ADC readout
-         adcClkP        => iAdcClkP,
-         adcClkN        => iAdcClkM,
-         adcFClkP       => adcFrameClkP,
-         adcFClkN       => adcFrameClkM,
-         adcDClkP       => adcDoClkP,
-         adcDClkN       => adcDoClkM,
-         adcChP         => adcDoP,
-         adcChN         => adcDoM,
-         -- ASIC Control
-         asicR0         => iAsicR0,
-         asicPpmat      => iAsicPpmat,
-         asicPpbe       => open,
-         asicGrst       => iAsicGlblRst,
-         asicAcq        => iAsicAcq,
-         asic0Dm2       => iAsicDm1,
-         asic0Dm1       => iAsicDm2,
-         asicRoClk      => iAsicRoClk,
-         asicSync       => iAsicSync,
-         -- ASIC digital data
-         asicDout       => iAsicDout
-         );
+         axiClk              => axilClk,              -- [in]
+         axiClkRst           => axilRst,              -- [in]
+         sAxiWriteMasters(0) => srpAxilWriteMaster,   -- [in]
+         sAxiWriteSlaves(0)  => srpAxilWriteSlave,    -- [out]
+         sAxiReadMasters(0)  => srpAxilReadMaster,    -- [in]
+         sAxiReadSlaves(0)   => srpAxilReadSlave,     -- [out]
+         mAxiWriteMasters    => locAxilWriteMasters,  -- [out]
+         mAxiWriteSlaves     => locAxilWriteSlaves,   -- [in]
+         mAxiReadMasters     => locAxilReadMasters,   -- [out]
+         mAxiReadSlaves      => locAxilReadSlaves);   -- [in]
 
-   adcClkP(0) <= iAdcClkP(0);
-   adcClkM(0) <= iAdcClkM(0);
+   -------------------------------------------------------------------------------------------------
+   -- Version (12-bits)
+   -------------------------------------------------------------------------------------------------
+   U_AxiVersion_1 : entity work.AxiVersion
+      generic map (
+         TPD_G            => TPD_G,
+         AXI_ERROR_RESP_G => AXI_RESP_DECERR_C,
+         CLK_PERIOD_G     => AXIL_CLK_PERIOD_C,
+         XIL_DEVICE_G     => "7SERIES",
+         EN_DEVICE_DNA_G  => true,
+         EN_DS2411_G      => false,
+         EN_ICAP_G        => true,
+         USE_SLOWCLK_G    => false,
+         BUFR_CLK_DIV_G   => 8,
+         AUTO_RELOAD_EN_G => false)
+      port map (
+         axiClk         => axilClk,                              -- [in]
+         axiRst         => axilRst,                              -- [in]
+         axiReadMaster  => locAxilReadMasters(VERSION_AXIL_C),   -- [in]
+         axiReadSlave   => locAxilReadSlaves(VERSION_AXIL_C),    -- [out]
+         axiWriteMaster => locAxilWriteMasters(VERSION_AXIL_C),  -- [in]
+         axiWriteSlave  => locAxilWriteSlaves(VERSION_AXIL_C),   -- [out]
+         userValues     => userValues);                          -- [in] Bring Board ID's in here
 
-   adcClkP(1) <= iAdcClkP(2);
-   adcClkM(1) <= iAdcClkM(2);
+   U_DS2411_ADC_BOARD : entity work.DS2411Core
+      generic map (
+         TPD_G        => TPD_G,
+         CLK_PERIOD_G => AXIL_CLK_PERIOD_C)
+      port map (
+         clk                    => axilClk,
+         rst                    => axilRst,  -- might need special reset
+         fdSerSdio              => snIoAdcCard,
+         fdSerial(31 downto 0)  => userValues(1),
+         fdSerial(63 downto 32) => userValues(2),
+         fdValid                => userValues(0)(0));
 
-   ----------------------------
-   -- Map ports/signals/etc. --
-   ----------------------------
-   led <= iLed when iLedEn = '1' else (others => '0');
+   U_DS2411_CARRIER_BOARD : entity work.DS2411Core
+      generic map (
+         TPD_G        => TPD_G,
+         CLK_PERIOD_G => AXIL_CLK_PERIOD_C)
+      port map (
+         clk                    => axilClk,
+         rst                    => axilRst,
+         fdSerSdio              => snIoCarrier,
+         fdSerial(31 downto 0)  => userValues(4),
+         fdSerial(63 downto 32) => userValues(5),
+         fdValid                => userValues(3)(0));
 
-   -- Guard ring DAC
-   vGuardDacSclk <= iVGuardDacSclk when iFpgaOutputEn = '1' else 'Z';
-   vGuardDacDin  <= iVGuardDacDin  when iFpgaOutputEn = '1' else 'Z';
-   vGuardDacCsb  <= iVGuardDacCsb  when iFpgaOutputEn = '1' else 'Z';
-   vGuardDacClrb <= ivGuardDacClrb when iFpgaOutputEn = '1' else 'Z';
+   -------------------------------------------------------------------------------------------------
+   -- ASIC config (8 bits each)
+   -------------------------------------------------------------------------------------------------
+   ELINE_CFG_GEN : for i in 1 downto 0 generate
+      U_ELine100Config_1 : entity work.ELine100Config
+         generic map (
+            TPD_G              => TPD_G,
+            AXIL_ERR_RESP_G    => AXI_RESP_DECERR_C,
+            AXIL_CLK_PERIOD_G  => AXIL_CLK_PERIOD_C,
+            ASIC_SCLK_PERIOD_G => ASIC_SCLK_PERIOD_C)
+         port map (
+            axilClk         => axilClk,                                     -- [in]
+            axilRst         => axilRst,                                     -- [in]
+            axilWriteMaster => locAxilWriteMasters(ASIC_CONFIG_AXIL_C(i)),  -- [in]
+            axilWriteSlave  => locAxilWriteSlaves(ASIC_CONFIG_AXIL_C(i)),   -- [out]
+            axilReadMaster  => locAxilReadMasters(ASIC_CONFIG_AXIL_C(i)),   -- [in]
+            axilReadSlave   => locAxilReadSlaves(ASIC_CONFIG_AXIL_C(i)),    -- [out]
+            asicSclk        => elineSclk(i),                                -- [out]
+            asicSdi         => elineSdi(i),                                 -- [out]
+            asicSdo         => elineSdo(i),                                 -- [in]
+            asicSen         => elineSen(i),                                 -- [out]
+            asicRw          => elineRnW(i));                                -- [out]
+   end generate ELINE_CFG_GEN;
 
-   -- TTL interfaces (accounting for inverters on ADC card)
-   mps    <= not(iMps)   when iFpgaOutputEn = '1' else 'Z';
-   tgOut  <= not(iTgOut) when iFpgaOutputEn = '1' else 'Z';
-   iRunTg <= not(runTg);
-   iDaqTg <= not(daqTg);
 
-   -- ASIC SACI interfaces
-   asicSaciCmd <= iSaciCmd when iFpgaOutputEn = '1' else 'Z';
-   asicSaciClk <= iSaciClk when iFpgaOutputEn = '1' else 'Z';
-   G_SACISEL : for i in 0 to 3 generate
-      asicSaciSel(i) <= iSaciSelL(i) when iFpgaOutputEn = '1' else 'Z';
-      iSaciRsp(i)    <= asicSaciRsp;
-   end generate;
+   -------------------------------------------------------------------------------------------------
+   -- Adc Config (12 bits total)
+   -------------------------------------------------------------------------------------------------
+   U_Ad9249Config_1 : entity work.Ad9249Config
+      generic map (
+         TPD_G             => TPD_G,
+         NUM_CHIPS_G       => 1,
+         SIMULATION_G      => SIMULATION_G,
+         SCLK_PERIOD_G     => ADC_SCLK_PERIOD_C,
+         AXIL_CLK_PERIOD_G => AXIL_CLK_PERIOD_C,
+         AXIL_ERR_RESP_G   => AXI_RESP_DECERR_C)
+      port map (
+         axilClk         => axilClk,                                 -- [in]
+         axilRst         => axilRst,                                 -- [in]
+         axilReadMaster  => locAxilReadMasters(ADC_CONFIG_AXIL_C),   -- [in]
+         axilReadSlave   => locAxilReadSlaves(ADC_CONFIG_AXIL_C),    -- [out]
+         axilWriteMaster => locAxilWriteMasters(ADC_CONFIG_AXIL_C),  -- [in]
+         axilWriteSlave  => locAxilWriteSlaves(ADC_CONFIG_AXIL_C),   -- [out]
+         adcPdwn         => adcPdwn01,                               -- [out]
+         adcSclk         => adcSpiClk,                               -- [out]
+         adcSdio         => adcSpiData,                              -- [inout]
+         adcCsb          => adcSpiCsb(1 downto 0));                  -- [out]
 
-   -- Fast ADC Configuration
-   adcSpiClk     <= iAdcSpiClk     when iFpgaOutputEn = '1'                         else 'Z';
-   --adcSpiData    <= '0' when iAdcSpiDataOut = '0' and iAdcSpiDataEn = '1' and iFpgaOutputEn = '1' else 'Z';
-   adcSpiData    <= iAdcSpiDataOut when iAdcSpiDataEn = '1' and iFpgaOutputEn = '1' else 'Z';
-   iAdcSpiDataIn <= adcSpiData;
-   adcSpiCsb(0)  <= iAdcSpiCsb(0)  when iFpgaOutputEn = '1'                         else 'Z';
-   adcSpiCsb(1)  <= iAdcSpiCsb(1)  when iFpgaOutputEn = '1'                         else 'Z';
-   adcSpiCsb(2)  <= iAdcSpiCsb(2)  when iFpgaOutputEn = '1'                         else 'Z';
-   adcPdwn01     <= iAdcPdwn(0)    when iFpgaOutputEn = '1'                         else '0';
-   --adcPdwn(1)    <= iAdcPdwn(1) when iFpgaOutputEn = '1' else '0';
-   adcPdwnMon    <= iAdcPdwn(2)    when iFpgaOutputEn = '1'                         else '0';
+   -------------------------------------------------------------------------------------------------
+   -- ADC Readout (8 bits each)
+   -------------------------------------------------------------------------------------------------
+   -- Map raw IO into record structures
+   AdcLvdsMap : for i in 1 downto 0 generate
+      adcSerial(i).fClkP <= adcFrameClkP(i);
+      adcSerial(i).fClkN <= adcFrameClkM(i);
+      adcSerial(i).dClkP <= adcDoClkP(i);
+      adcSerial(i).dClkN <= adcDoClkM(i);
+      adcSerial(i).chP   <= adcDoP((i+1)*8-1 downto i*8);
+      adcSerial(i).chN   <= adcDoM((i+1)*8-1 downto i*8);
+   end generate AdcLvdsMap;
 
-   -- ASIC Connections
-   -- Digital bits, unused in this design but used to check pinout
---   G_ASIC_DOUT : for i in 0 to 3 generate
---      U_ASIC_DOUT_IBUFDS : IBUFDS port map (I => asicDoutP(i), IB => asicDoutM(i), O => iAsicDout(i));
---   end generate;
-   -- ASIC control signals (differential)
-   G_ROCLK : for i in 0 to 3 generate
-      U_ASIC_ROCLK_OBUFTDS : OBUFTDS port map (I => iAsicRoClk, T => not(iFpgaOutputEn), O => asicRoClkP(i), OB => asicRoClkM(i));
-   end generate;
-   -- ASIC control signals (single ended)
-   asicR0      <= iAsicR0      when iFpgaOutputEn = '1' else 'Z';
-   asicAcq     <= iAsicAcq     when iFpgaOutputEn = '1' else 'Z';
-   asicPpmat   <= iAsicPpmat   when iFpgaOutputEn = '1' else 'Z';
-   asicGlblRst <= iAsicGlblRst when iFpgaOutputEn = '1' else 'Z';
-   asicSync    <= iAsicSync    when iFpgaOutputEn = '1' else 'Z';
-   -- On this carrier ASIC digital monitors are shared with SN device
-   --iAsicDm1    <= snIoCarrier;
-   --iAsicDm2    <= snIoCarrier;
+   IDELAYCTRL_0 : IDELAYCTRL
+      port map (
+         RDY    => open,
+         REFCLK => clk200,
+         RST    => rst200);
+
+   U_Ad9249ReadoutGroup_0 : entity work.Ad9249ReadoutGroup
+      generic map (
+         TPD_G             => TPD_G,
+         NUM_CHANNELS_G    => 8,
+         IODELAY_GROUP_G   => "DEFAULT_GROUP",
+         IDELAYCTRL_FREQ_G => 200.0,
+         DEFAULT_DELAY_G   => "00000",
+         ADC_INVERT_CH_G   => X"00")
+      port map (
+         axilClk         => axilClk,                                    -- [in]
+         axilRst         => axilRst,                                    -- [in]
+         axilWriteMaster => locAxilWriteMasters(ADC_READOUT_0_AXIL_C),  -- [in]
+         axilWriteSlave  => locAxilWriteSlaves(ADC_READOUT_0_AXIL_C),   -- [out]
+         axilReadMaster  => locAxilReadMasters(ADC_READOUT_0_AXIL_C),   -- [in]
+         axilReadSlave   => locAxilReadSlaves(ADC_READOUT_0_AXIL_C),    -- [out]
+         adcClkRst       => adcClkRst,                                  -- [in]
+         adcSerial       => adcSerial(0),                               -- [in]
+         adcStreams      => adcStreams(7 downto 0));                    -- [out]
+
+   U_Ad9249ReadoutGroup_1 : entity work.Ad9249ReadoutGroup
+      generic map (
+         TPD_G             => TPD_G,
+         NUM_CHANNELS_G    => 8,
+         IODELAY_GROUP_G   => "DEFAULT_GROUP",
+         IDELAYCTRL_FREQ_G => 200.0,
+         DEFAULT_DELAY_G   => "00000",
+         ADC_INVERT_CH_G   => X"00")
+      port map (
+         axilClk         => axilClk,                                    -- [in]
+         axilRst         => axilRst,                                    -- [in]
+         axilWriteMaster => locAxilWriteMasters(ADC_READOUT_1_AXIL_C),  -- [in]
+         axilWriteSlave  => locAxilWriteSlaves(ADC_READOUT_1_AXIL_C),   -- [out]
+         axilReadMaster  => locAxilReadMasters(ADC_READOUT_1_AXIL_C),   -- [in]
+         axilReadSlave   => locAxilReadSlaves(ADC_READOUT_1_AXIL_C),    -- [out]
+         adcClkRst       => adcClkRst,                                  -- [in]
+         adcSerial       => adcSerial(1),                               -- [in]
+         adcStreams      => adcStreams(15 downto 8));                   -- [out]
+
+   -------------------------------------------------------------------------------------------------
+   -- Acquisition Control (8 bits)
+   -------------------------------------------------------------------------------------------------
+   U_AcquisitionControl_1 : entity work.AcquisitionControl
+      generic map (
+         TPD_G => TPD_G)
+      port map (
+         axilClk         => axilClk,                               -- [in]
+         axilRst         => axilRst,                               -- [in]
+         axilReadMaster  => locAxilReadMasters(ACQ_CTRL_AXIL_C),   -- [in]
+         axilReadSlave   => locAxilReadSlaves(ACQ_CTRL_AXIL_C),    -- [out]
+         axilWriteMaster => locAxilWriteMasters(ACQ_CTRL_AXIL_C),  -- [in]
+         axilWriteSlave  => locAxilWriteSlaves(ACQ_CTRL_AXIL_C),   -- [out]
+         clk250          => clk250,                                -- [in]
+         rst250          => rst250,                                -- [in]
+         trigger         => ssiCmd.valid,
+         elineRst        => elineRst,                              -- [out]
+         elineSc         => elineSc,                               -- [out]
+         elineMck        => elineMck,                              -- [out]
+         adcValid        => adcValid,                              -- [out]
+         adcDone         => adcDone,                               -- [out]
+         adcClk          => adcClk,                                -- [out]
+         adcClkRst       => adcClkRst);                            -- [out]
+
+   elineResetL <= not elineRst;
+
+   SC_MCK_OBUF_GEN : for i in 1 downto 0 generate
+      SC_OBUF : OBUFDS
+         port map (
+            I  => elineSc,
+            O  => elineScP(i),
+            OB => elineScN(i));
+
+      MCK_OBUF : OBUFDS
+         port map (
+            I  => elineMck,
+            O  => elineMckP(i),
+            OB => elineMckN(i));
+
+   end generate SC_MCK_OBUF_GEN;
+
+   ADCCLK_OBUF : OBUFDS
+      port map (
+         I  => adcClk,
+         O  => adcClkP,
+         OB => adcClkM);
 
 end top_level;
