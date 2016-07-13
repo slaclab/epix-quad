@@ -19,9 +19,9 @@ USE ieee.std_logic_1164.ALL;
 
 package Version is
 
-constant FPGA_VERSION_C    : std_logic_vector(31 downto 0) := x"EB010001"; -- MAKE_VERSION
+constant FPGA_VERSION_C    : std_logic_vector(31 downto 0) := x"EC010002"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "";
+constant BUILD_STAMP_C : string := "CpixP: Vivado v2016.1 (x86_64) Built Tue Jul 12 15:06:47 PDT 2016 by mkwiatko";
 
 constant FPGA_BASE_CLOCK_C : std_logic_vector(31 downto 0) := x"00" & x"100000";  
 

@@ -30,6 +30,7 @@ use work.SsiPkg.all;
 use work.SsiCmdMasterPkg.all;
 use work.Pgp2bPkg.all;
 use work.Version.all;
+use work.Ad9249Pkg.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -39,7 +40,8 @@ entity CpixCore is
       TPD_G             : time := 1 ns;
       ADC0_INVERT_CH    : slv(7 downto 0) := "00000000";
       ADC1_INVERT_CH    : slv(7 downto 0) := "00000000";
-      ADC2_INVERT_CH    : slv(7 downto 0) := "00000000"
+      ADC2_INVERT_CH    : slv(7 downto 0) := "00000000";
+      IODELAY_GROUP_G   : string          := "DEFAULT_GROUP"
    );
    port (
       -- Debugging IOs
@@ -115,7 +117,11 @@ entity CpixCore is
       asicAcq             : out sl;
       asicDoutP           : in  slv(1 downto 0);
       asicDoutM           : in  slv(1 downto 0);
-      asicRoClk           : out slv(1 downto 0)
+      asicRoClk           : out slv(1 downto 0);
+      -- Boot Memory Ports
+      bootCsL             : out sl;
+      bootMosi            : out sl;
+      bootMiso            : in  sl
    );
 end CpixCore;
 
@@ -181,14 +187,17 @@ architecture top_level of CpixCore is
    signal mAxiReadSlaves   : AxiLiteReadSlaveArray(CPIX_NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
 
    -- AXI-Stream signals
-   signal framerAxisMaster : AxiStreamMasterArray(NUMBER_OF_ASICS-1 downto 0);
-   signal framerAxisSlave  : AxiStreamSlaveArray(NUMBER_OF_ASICS-1 downto 0);
-   signal userAxisMaster   : AxiStreamMasterType;
-   signal userAxisSlave    : AxiStreamSlaveType;
-   signal scopeAxisMaster  : AxiStreamMasterType;
-   signal scopeAxisSlave   : AxiStreamSlaveType;
-   signal deserAxisMaster  : AxiStreamMasterArray(NUMBER_OF_ASICS-1 downto 0);
-   signal lutAxisMaster    : AxiStreamMasterArray(NUMBER_OF_ASICS-1 downto 0);
+   signal framerAxisMaster    : AxiStreamMasterArray(NUMBER_OF_ASICS-1 downto 0);
+   signal framerAxisSlave     : AxiStreamSlaveArray(NUMBER_OF_ASICS-1 downto 0);
+   signal userAxisMaster      : AxiStreamMasterType;
+   signal userAxisSlave       : AxiStreamSlaveType;
+   signal scopeAxisMaster     : AxiStreamMasterType;
+   signal scopeAxisSlave      : AxiStreamSlaveType;
+   signal deserAxisMaster     : AxiStreamMasterArray(NUMBER_OF_ASICS-1 downto 0);
+   signal lutAxisMaster       : AxiStreamMasterArray(NUMBER_OF_ASICS-1 downto 0);
+   signal monitorAxisMaster   : AxiStreamMasterType;
+   signal monitorAxisSlave    : AxiStreamSlaveType;
+   signal monEnAxisMaster     : AxiStreamMasterType;
    
    signal inSync           : slv(NUMBER_OF_ASICS-1 downto 0);
    
@@ -207,6 +216,7 @@ architecture top_level of CpixCore is
    -- ADC signals
    signal adcValid         : slv(19 downto 0);
    signal adcData          : Slv16Array(19 downto 0);
+   signal adcStreams       : AxiStreamMasterArray(19 downto 0) := (others=>AXI_STREAM_MASTER_INIT_C);
    
    -- Triggers and associated signals
    signal iDaqTrigger      : sl;
@@ -217,7 +227,7 @@ architecture top_level of CpixCore is
    -- Interfaces between blocks
    signal cntAcquisition  : std_logic_vector(31 downto 0);
    signal cntSequence     : std_logic_vector(31 downto 0);
-   signal cntAeadout      : std_logic_vector( 3 downto 0);
+   signal cntReadout      : std_logic_vector( 3 downto 0);
    signal frameReq        : std_logic;
    signal frameAck        : std_logic_vector(NUMBER_OF_ASICS-1 downto 0);
    signal frameErr        : std_logic_vector(NUMBER_OF_ASICS-1 downto 0);
@@ -236,12 +246,19 @@ architecture top_level of CpixCore is
    
    signal iSaciSelL  : slv(3 downto 0);
    
-   signal adcClk             : std_logic := '0';
-   signal adcClk0            : std_logic;
-   signal adcClk1            : std_logic;
-   signal adcClk2            : std_logic;
-   signal adcCnt             : unsigned(31 downto 0) := (others => '0');
-   signal iAdcPdwn           : slv(2 downto 0);
+   signal adcClk           : std_logic := '0';
+   signal adcCnt           : unsigned(31 downto 0) := (others => '0');
+   
+   signal monitorTrig   : sl;
+   signal monTrigCnt    : integer;
+   signal slowAdcData   : Slv24Array(8 downto 0);
+   signal monAdc        : Ad9249SerialGroupType;
+   
+   signal fpgaReload : sl;
+   signal bootSck    : sl;
+   
+   attribute IODELAY_GROUP : string;
+   attribute IODELAY_GROUP of U_IDelayCtrl : label is IODELAY_GROUP_G;
    
    attribute keep of coreClk : signal is "true";
    attribute keep of byteClk : signal is "true";
@@ -343,11 +360,14 @@ begin
          mAxiLiteWriteMaster => sAxiWriteMaster(0),
          mAxiLiteWriteSlave  => sAxiWriteSlave(0),
          -- Streaming data Links (axiClk domain)      
-         primaryAxisMaster   => userAxisMaster,
-         primaryAxisSlave    => userAxisSlave,
-         -- Scope streaming data (axiClk domain)
-         auxiliaryAxisMaster => scopeAxisMaster,
-         auxiliaryAxisSlave  => scopeAxisSlave,
+         dataAxisMaster    => userAxisMaster,
+         dataAxisSlave     => userAxisSlave,
+         scopeAxisMaster   => scopeAxisMaster,
+         scopeAxisSlave    => scopeAxisSlave,
+         monitorAxisMaster => monitorAxisMaster,
+         monitorAxisSlave  => monitorAxisSlave,
+         -- Monitoring enable command incoming stream
+         monEnAxisMaster   => monEnAxisMaster,
          -- Command interface
          ssiCmd              => ssiCmd,
          -- Sideband interface
@@ -453,7 +473,8 @@ begin
       -------------------------------------------------------
       U_AsicDeser : entity work.Deserializer
       generic map (
-         INVERT_SDATA_G => true
+         INVERT_SDATA_G    => true,
+         IODELAY_GROUP_G   => IODELAY_GROUP_G
       )
       port map ( 
          bitClk         => bitClk,
@@ -618,7 +639,7 @@ begin
    --------------------------------------------
    -- AXI Lite Crossbar for register control --
    -- Master 0 : PGP register controller     --
-   -- Master 1 : Picoblaze reg controller    --
+   -- Master 1 : Microblaze reg controller    --
    --------------------------------------------
    U_AxiLiteCrossbar : entity work.AxiLiteCrossbar
       generic map (
@@ -647,7 +668,6 @@ begin
    generic map (
       TPD_G                => TPD_G,
       NUM_ASICS_G          => NUM_ASICS_C,
-      NUM_FAST_ADCS_G      => NUM_FAST_ADCS_C,
       CLK_PERIOD_G         => 10.0e-9
    )
    port map (
@@ -659,6 +679,8 @@ begin
       axiReadSlave   => mAxiReadSlaves(EPIX_REG_AXI_INDEX_C),
       axiWriteMaster => mAxiWriteMasters(EPIX_REG_AXI_INDEX_C),
       axiWriteSlave  => mAxiWriteSlaves(EPIX_REG_AXI_INDEX_C),
+      -- Monitoring enable command incoming stream
+      monEnAxisMaster => monEnAxisMaster,
       -- Register Inputs/Outputs (axiClk domain)
       epixStatus     => epixStatus,
       epixConfig     => epixConfig,
@@ -678,17 +700,8 @@ begin
       dacCsb         => vGuardDacCsb,
       dacClrb        => vGuardDacClrb,
       -- 1-wire board ID interfaces
-      serialIdIo     => serialIdIo,
-      -- Fast ADC control 
-      adcSpiClk      => adcSpiClk,
-      adcSpiDataOut  => adcSpiDataOut,
-      adcSpiDataIn   => adcSpiDataIn,
-      adcSpiDataEn   => adcSpiDataEn,
-      adcSpiCsb      => adcSpiCsb,
-      adcPdwn        => iAdcPdwn
+      serialIdIo     => serialIdIo
    );
-   
-   adcPdwn <= iAdcPdwn;
    
    -- define new Cpix specific register set
    
@@ -743,13 +756,7 @@ begin
    --------------------------------------------
    
    -- ADC Clock outputs
-   U_AdcClk0 : OBUFDS port map ( I => adcClk0, O => adcClkP(0), OB => adcClkN(0) );
-   U_AdcClk1 : OBUFDS port map ( I => adcClk1, O => adcClkP(1), OB => adcClkN(1) );
-   U_AdcClk2 : OBUFDS port map ( I => adcClk2, O => adcClkP(2), OB => adcClkN(2) );
-   
-   adcClk0 <= adcClk; -- when iAdcPdwn(0) = '0' else '0';
-   adcClk1 <= adcClk; -- when iAdcPdwn(1) = '0' else '0';
-   adcClk2 <= adcClk; -- when iAdcPdwn(2) = '0' else '0';
+   U_AdcClk2 : OBUFDS port map ( I => adcClk, O => adcClkP(2), OB => adcClkN(2) );
    
    process(coreClk) begin
       if rising_edge(coreClk) then
@@ -762,37 +769,51 @@ begin
       end if;
    end process;
    
-   U_AdcReadout3x : entity work.AdcReadout3x
+   -- Tap delay calibration  
+   U_IDelayCtrl : IDELAYCTRL
+   port map (
+      REFCLK => iDelayCtrlClk,
+      RST    => iDelayCtrlRst,
+      RDY    => epixStatus.iDelayCtrlRdy
+   );   
+   
+   monAdc.fClkP <= adcFClkP(2);
+   monAdc.fClkN <= adcFClkN(2);
+   monAdc.dClkP <= adcDClkP(2);
+   monAdc.dClkN <= adcDClkN(2);
+   monAdc.chP   <= adcChP(19 downto 16);
+   monAdc.chN   <= adcChN(19 downto 16);
+      
+   U_MonAdcReadout : entity work.Ad9249ReadoutGroup
    generic map (
       TPD_G             => TPD_G,
-      --IDELAYCTRL_FREQ_G => 300.0,
+      NUM_CHANNELS_G    => 4,
+      IODELAY_GROUP_G   => IODELAY_GROUP_G,
       IDELAYCTRL_FREQ_G => 200.0,
-      ADC0_INVERT_CH    => ADC0_INVERT_CH,
-      ADC1_INVERT_CH    => ADC1_INVERT_CH,
-      ADC2_INVERT_CH    => ADC2_INVERT_CH
+      ADC_INVERT_CH_G   => ADC2_INVERT_CH
    )
-   port map ( 
-      -- Master system clock
-      sysClk        => coreClk,
-      sysClkRst     => serdesReset,
-      -- Clock for IDELAYCTRL
-      iDelayCtrlClk => iDelayCtrlClk,
-      iDelayCtrlRst => iDelayCtrlRst,
-      -- Configuration input for delays
-      -- IDELAYCTRL status output
-      epixConfig    => epixConfig,
-      iDelayCtrlRdy => epixStatus.iDelayCtrlRdy,
-      -- ADC Data Interface
-      adcValid      => adcValid,
-      adcData       => adcData,
-      -- ADC Interface Signals
-      adcFClkP      => adcFclkP,
-      adcFClkN      => adcFclkN,
-      adcDClkP      => adcDClkP,
-      adcDClkN      => adcDclkN,
-      adcChP        => adcChP,
-      adcChN        => adcChN
+   port map (
+      -- Master system clock, 125Mhz
+      axilClk           => coreClk,
+      axilRst           => axiRst,
+      
+      -- Axi Interface
+      axilReadMaster    => mAxiReadMasters(ADC2_RD_AXI_INDEX_C),
+      axilReadSlave     => mAxiReadSlaves(ADC2_RD_AXI_INDEX_C),
+      axilWriteMaster   => mAxiWriteMasters(ADC2_RD_AXI_INDEX_C),
+      axilWriteSlave    => mAxiWriteSlaves(ADC2_RD_AXI_INDEX_C),
+
+      -- Reset for adc deserializer
+      adcClkRst         => serdesReset,
+
+      -- Serial Data from ADC
+      adcSerial         => monAdc,
+
+      -- Deserialized ADC Data
+      adcStreams        => adcStreams(19 downto 16)
    );
+   
+   
    -- Give a special reset to the SERDES blocks when power
    -- is turned on to ADC card.
    adcCardPowerUp <= epixConfig.powerEnable(0) and epixConfig.powerEnable(1) and epixConfig.powerEnable(2);
@@ -816,6 +837,37 @@ begin
    );
    
    --------------------------------------------
+   --     Fast ADC Config                    --
+   --------------------------------------------
+      
+   U_AdcConf : entity work.Ad9249ConfigNoPullup
+   generic map (
+      TPD_G             => TPD_G,
+      CLK_PERIOD_G      => 10.0e-9,
+      CLK_EN_PERIOD_G   => 20.0e-9,
+      NUM_CHIPS_G       => 2,
+      AXIL_ERR_RESP_G   => AXI_RESP_OK_C
+   )
+   port map (
+      axilClk           => coreClk,
+      axilRst           => axiRst,
+      
+      axilReadMaster    => mAxiReadMasters(ADC_CFG_AXI_INDEX_C),
+      axilReadSlave     => mAxiReadSlaves(ADC_CFG_AXI_INDEX_C),
+      axilWriteMaster   => mAxiWriteMasters(ADC_CFG_AXI_INDEX_C),
+      axilWriteSlave    => mAxiWriteSlaves(ADC_CFG_AXI_INDEX_C),
+      
+      adcSClk              => adcSpiClk,
+      adcSDin              => adcSpiDataIn,
+      adcSDout             => adcSpiDataOut,
+      adcSDEn              => adcSpiDataEn,
+      adcCsb(2 downto 0)   => adcSpiCsb,
+      adcCsb(3)            => open,
+      adcPdwn(2 downto 0)  => adcPdwn,
+      adcPdwn(3)           => open
+   );
+   
+   --------------------------------------------
    --     Slow ADC Readout ADC gen 2         --
    -------------------------------------------- 
      
@@ -832,7 +884,8 @@ begin
 
       -- Operation Control
       adcStart      => acqStart,
-      adcData       => epixStatus.slowAdc2Data,
+      adcData       => slowAdcData,
+      allChRd       => open,
 
       -- ADC Control Signals
       adcRefClk     => slowAdcRefClk,
@@ -854,32 +907,104 @@ begin
       sysClkRst     => axiRst,
       
       -- ADC raw data inputs
-      adcData       => epixStatus.slowAdc2Data,
+      adcData       => slowAdcData,
 
       -- Converted data outputs
       outEnvData    => epixStatus.envData
    );
+   
+   --------------------------------------------
+   --    Environmental data streamer         --
+   --------------------------------------------
+   U_AdcStrm: entity work.SlowAdcStream
+   port map ( 
+      sysClk          => coreClk,
+      sysRst          => axiRst,
+      acqCount        => epixStatus.acqCount,
+      seqCount        => epixStatus.seqCount,
+      trig            => monitorTrig,
+      dataIn          => epixStatus.envData,
+      mAxisMaster     => monitorAxisMaster,
+      mAxisSlave      => monitorAxisSlave
       
+   );
+   
+   -- trigger monitor data stream at 1Hz
+   P_MonStrTrig: process (coreClk)
+   begin
+      if rising_edge(coreClk) then
+         if axiRst = '1' or monitorTrig = '1' then
+            monTrigCnt <= 0;
+         elsif epixConfig.monitorEnable = '1' then
+            monTrigCnt <= monTrigCnt + 1;
+         end if;
+      end if;   
+   end process;
+   monitorTrig <= '1' when monTrigCnt >= 99999999 else '0';
 
-   --------------------------------------------
-   --     ePix Startup Sequencer             --
-   --------------------------------------------
-   U_EpixStartup : entity work.EpixStartupGen2
+   ---------------------------------------------
+   -- Microblaze based ePix Startup Sequencer --
+   ---------------------------------------------
+   U_CPU : entity work.MicroblazeBasicCoreWrapper
    generic map (
-      TPD_G => TPD_G
+      TPD_G            => TPD_G)
+   port map (
+      -- Master AXI-Lite Interface: [0x00000000:0x7FFFFFFF]
+      mAxilWriteMaster => sAxiWriteMaster(1),
+      mAxilWriteSlave  => sAxiWriteSlave(1),
+      mAxilReadMaster  => sAxiReadMaster(1),
+      mAxilReadSlave   => sAxiReadSlave(1),
+      -- Clock and Reset
+      clk              => coreClk,
+      rst              => axiRst
+   );
+   
+   U_AdcTester : entity work.StreamPatternTester
+   generic map (
+      TPD_G             => TPD_G,
+      NUM_CHANNELS_G    => 20
+   )
+   port map ( 
+      -- Master system clock
+      clk               => coreClk,
+      rst               => axiRst,
+      -- ADC data stream inputs
+      adcStreams        => adcStreams,
+      -- Axi Interface
+      axilReadMaster  => mAxiReadMasters(ADCTEST_AXI_INDEX_C),
+      axilReadSlave   => mAxiReadSlaves(ADCTEST_AXI_INDEX_C),
+      axilWriteMaster => mAxiWriteMasters(ADCTEST_AXI_INDEX_C),
+      axilWriteSlave  => mAxiWriteSlaves(ADCTEST_AXI_INDEX_C)
+   );
+   
+   ---------------------------------------------
+   -- Microblaze log memory                   --
+   ---------------------------------------------
+   U_LogMem : entity work.AxiDualPortRam
+   generic map (
+      TPD_G            => TPD_G,
+      ADDR_WIDTH_G     => 10,
+      DATA_WIDTH_G     => 32
    )
    port map (
-      sysClk           => coreClk,
-      sysClkRst        => axiRst,
-      startupReq       => epixConfig.requestStartupCal,
-      startupAck       => epixStatus.startupAck,
-      startupFail      => epixStatus.startupFail,
-      adcValid         => adcValid,
-      adcData          => adcData,
-      pbAxiReadMaster  => sAxiReadMaster(1),
-      pbAxiReadSlave   => sAxiReadSlave(1),
-      pbAxiWriteMaster => sAxiWriteMaster(1),
-      pbAxiWriteSlave  => sAxiWriteSlave(1)
+      axiClk         => coreClk,
+      axiRst         => axiRst,
+      axiReadMaster  => mAxiReadMasters(MEM_LOG_AXI_INDEX_C),
+      axiReadSlave   => mAxiReadSlaves(MEM_LOG_AXI_INDEX_C),
+      axiWriteMaster => mAxiWriteMasters(MEM_LOG_AXI_INDEX_C),
+      axiWriteSlave  => mAxiWriteSlaves(MEM_LOG_AXI_INDEX_C),
+      clk            => '0',
+      en             => '1',
+      we             => '0',
+      weByte         => (others => '0'),
+      rst            => '0',
+      addr           => (others => '0'),
+      din            => (others => '0'),
+      dout           => open,
+      axiWrValid     => open,
+      axiWrStrobe    => open,
+      axiWrAddr      => open,
+      axiWrData      => open
    );
 
    --------------------------------------------
@@ -911,6 +1036,94 @@ begin
       mAxisMaster    => scopeAxisMaster,
       mAxisSlave     => scopeAxisSlave
    );
+   
+   GenAdcStr : for i in 0 to 19 generate 
+      adcData(i)  <= adcStreams(i).tData(15 downto 0);
+      adcValid(i) <= adcStreams(i).tValid;
+   end generate;
+   
+   --------------------------
+   -- AXI-Lite Version Module
+   --------------------------          
+   U_AxiVersion : entity work.AxiVersion
+   generic map (
+      TPD_G           => TPD_G,
+      EN_DEVICE_DNA_G => false)   
+   port map (
+      fpgaReload     => fpgaReload,
+      -- AXI-Lite Register Interface
+      axiReadMaster  => mAxiReadMasters(VERSION_AXI_INDEX_C),
+      axiReadSlave   => mAxiReadSlaves(VERSION_AXI_INDEX_C),
+      axiWriteMaster => mAxiWriteMasters(VERSION_AXI_INDEX_C),
+      axiWriteSlave  => mAxiWriteSlaves(VERSION_AXI_INDEX_C),
+      -- Clocks and Resets
+      axiClk         => coreClk,
+      axiRst         => axiRst
+   );
+
+   ---------------------
+   -- FPGA Reboot Module
+   ---------------------
+   U_Iprog7Series : entity work.Iprog7Series
+   generic map (
+      TPD_G => TPD_G)   
+   port map (
+      clk         => coreClk,
+      rst         => axiRst,
+      start       => fpgaReload,
+      bootAddress => X"00000000"
+   );
+   
+   -----------------------------------------------------
+   -- Using the STARTUPE2 to access the FPGA's CCLK port
+   -----------------------------------------------------
+   U_STARTUPE2 : STARTUPE2
+   port map (
+      CFGCLK    => open,             -- 1-bit output: Configuration main clock output
+      CFGMCLK   => open,  -- 1-bit output: Configuration internal oscillator clock output
+      EOS       => open,  -- 1-bit output: Active high output signal indicating the End Of Startup.
+      PREQ      => open,             -- 1-bit output: PROGRAM request to fabric output
+      CLK       => '0',              -- 1-bit input: User start-up clock input
+      GSR       => '0',  -- 1-bit input: Global Set/Reset input (GSR cannot be used for the port name)
+      GTS       => '0',  -- 1-bit input: Global 3-state input (GTS cannot be used for the port name)
+      KEYCLEARB => '0',  -- 1-bit input: Clear AES Decrypter Key input from Battery-Backed RAM (BBRAM)
+      PACK      => '0',              -- 1-bit input: PROGRAM acknowledge input
+      USRCCLKO  => bootSck,          -- 1-bit input: User CCLK input
+      USRCCLKTS => '0',              -- 1-bit input: User CCLK 3-state enable input
+      USRDONEO  => '1',              -- 1-bit input: User DONE pin output control
+      USRDONETS => '1'               -- 1-bit input: User DONE 3-state enable output            
+   );
+   
+   --------------------
+   -- Boot Flash Module
+   --------------------
+   U_AxiMicronN25QCore : entity work.AxiMicronN25QCore
+   generic map (
+      TPD_G          => TPD_G,
+      PIPE_STAGES_G  => 1,
+      AXI_CLK_FREQ_G => 100.0E+6,   -- units of Hz
+      SPI_CLK_FREQ_G => 25.0E+6     -- units of Hz
+   )
+   port map (
+      -- FLASH Memory Ports
+      csL            => bootCsL,
+      sck            => bootSck,
+      mosi           => bootMosi,
+      miso           => bootMiso,
+      -- AXI-Lite Register Interface
+      axiReadMaster  => mAxiReadMasters(BOOTMEM_AXI_INDEX_C),
+      axiReadSlave   => mAxiReadSlaves(BOOTMEM_AXI_INDEX_C),
+      axiWriteMaster => mAxiWriteMasters(BOOTMEM_AXI_INDEX_C),
+      axiWriteSlave  => mAxiWriteSlaves(BOOTMEM_AXI_INDEX_C),
+      -- AXI Streaming Interface (Optional)
+      mAxisMaster    => open,
+      mAxisSlave     => AXI_STREAM_SLAVE_FORCE_C,
+      sAxisMaster    => AXI_STREAM_MASTER_INIT_C,
+      sAxisSlave     => open,
+      -- Clocks and Resets
+      axiClk         => coreClk,
+      axiRst         => axiRst
+   );   
    
 end top_level;
 

@@ -113,7 +113,11 @@ entity CpixP is
       asicDoutP           : in  slv(1 downto 0);
       asicDoutM           : in  slv(1 downto 0);
       asicRoClkP          : out slv(1 downto 0);
-      asicRoClkM          : out slv(1 downto 0)
+      asicRoClkM          : out slv(1 downto 0);
+      -- Boot Memory Ports
+      bootCsL             : out sl;
+      bootMosi            : out sl;
+      bootMiso            : in  sl
    );
 end CpixP;
 
@@ -151,6 +155,9 @@ architecture RTL of CpixP is
    signal iAdcSpiClk     : sl;   
    signal iAdcClkP       : slv( 2 downto 0);
    signal iAdcClkM       : slv( 2 downto 0);
+   
+   signal iBootCsL      : sl;
+   signal iBootMosi     : sl;
    
    signal iAsicRoClk    : slv(1 downto 0);
    signal iAsicR0       : sl;
@@ -252,7 +259,11 @@ begin
          asicAcq             => iAsicAcq,
          asicDoutP           => asicDoutP,
          asicDoutM           => asicDoutM,
-         asicRoClk           => iAsicRoClk
+         asicRoClk           => iAsicRoClk,
+         -- Boot Memory Ports
+         bootCsL             => iBootCsL,
+         bootMosi            => iBootMosi,
+         bootMiso            => bootMiso
       );
       
       adcClkP(0) <= iAdcClkP(0);      
@@ -265,6 +276,10 @@ begin
    -- Map ports/signals/etc. --
    ----------------------------
    led <= iLed when iLedEn = '1' else (others => '0');
+   
+   -- Boot Memory Ports
+   bootCsL  <= iBootCsL    when iFpgaOutputEn = '1' else 'Z';
+   bootMosi <= iBootMosi   when iFpgaOutputEn = '1' else 'Z';
    
    -- Guard ring DAC
    vGuardDacSclk <= iVGuardDacSclk when iFpgaOutputEn = '1' else 'Z';

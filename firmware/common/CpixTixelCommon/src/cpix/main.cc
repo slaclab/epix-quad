@@ -99,13 +99,13 @@ unsigned int findAsics(void) {
    
    //find installed ASICs by testing the digital monitor register
    for (i = 0; i <= 3; i++) {
-      dm = Xil_In32( cfg13Asic[i]);
-      Xil_Out32( cfg13Asic[i], (0x5A<<8));
-      test = Xil_In32( cfg13Asic[i]);
-      ssi_printf("ASIC%d write 0x5A read 0x%X\n", i, test>>8);
-      if ((test&0xFF00) == (0x5A<<8)) 
+      dm = Xil_In32( cfg4Asic[i]);
+      Xil_Out32( cfg4Asic[i], 0x5A);
+      test = Xil_In32( cfg4Asic[i]);
+      ssi_printf("ASIC%d write 0x5A read 0x%X\n", i, test);
+      if ((test&0xFF) == 0x5A) 
          mask |= (1<<i);
-      Xil_Out32( cfg13Asic[i], dm);
+      Xil_Out32( cfg4Asic[i], dm);
    }
    
    return mask;
@@ -125,8 +125,8 @@ void asicInit(unsigned int mask) {
    
    for (i = 0; i <= 3; i++) {
       if (mask&(1<<i)) {
-         reg = Xil_In32( cfg13Asic[i]) | 0x3;
-         Xil_Out32( cfg13Asic[i], reg);
+         reg = Xil_In32( cfg16Asic[i]) | (0x1<<5);
+         Xil_Out32( cfg16Asic[i], reg);
 #if CLEAR_ASIC_MATRIX_ON_STARTUP
          for (col = 0; col < 96; col++ ) {
             Xil_Out32( prepMultCfgAsic[i], 0x0);

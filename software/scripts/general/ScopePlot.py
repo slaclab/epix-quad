@@ -84,13 +84,13 @@ class Form(QMainWindow):
          
         # converted to volts
         for val in data[8:8+oscWords/2-1]:
-            convHi = -1.0 + ((val >> 16) & 0xFFFF) * (2.0/2**14)
-            convLo = -1.0 + (val & 0xFFFF) * (2.0/2**14)
+            convHi = -1.0 + ((val >> 16) & 0x3FFF) * (2.0/2**14)
+            convLo = -1.0 + (val & 0x3FFF) * (2.0/2**14)
             chAdata.append(convHi)
             chAdata.append(convLo)
         for val in data[8+oscWords/2:8+oscWords-1]:
-            convHi = -1.0 + ((val >> 16) & 0xFFFF) * (2.0/2**14)
-            convLo = -1.0 + (val & 0xFFFF) * (2.0/2**14)
+            convHi = -1.0 + ((val >> 16) & 0x3FFF) * (2.0/2**14)
+            convLo = -1.0 + (val & 0x3FFF) * (2.0/2**14)
             chBdata.append(convHi)
             chBdata.append(convLo)
         

@@ -421,7 +421,6 @@ DigFpga::DigFpga ( uint destination, uint baseAddress, uint index, Device *paren
       addDevice(new Epix100aAsic(destination, baseAddress_ + 0x00900000*addrSize, 1, this, addrSize));
       addDevice(new Epix100aAsic(destination, baseAddress_ + 0x00A00000*addrSize, 2, this, addrSize));
       addDevice(new Epix100aAsic(destination, baseAddress_ + 0x00B00000*addrSize, 3, this, addrSize));
-      //epix100a firmware added support for the PGP firmware loading
       addDevice(new AxiVersion(destination, baseAddress_ + 0x02000000*addrSize,  0, this, addrSize)); 
       addDevice(new AxiMicronN25Q(destination, baseAddress_ + 0x03000000*addrSize, 0, this, addrSize)); 
       addDevice(new LogMemory(destination, baseAddress_ + 0x09000000*addrSize, 0, this, addrSize)); 
@@ -430,6 +429,9 @@ DigFpga::DigFpga ( uint destination, uint baseAddress, uint index, Device *paren
       addDevice(new Epix10kpAsic(destination, baseAddress_ + 0x00900000*addrSize, 1, this, addrSize));
       addDevice(new Epix10kpAsic(destination, baseAddress_ + 0x00A00000*addrSize, 2, this, addrSize));
       addDevice(new Epix10kpAsic(destination, baseAddress_ + 0x00B00000*addrSize, 3, this, addrSize));
+      addDevice(new AxiVersion(destination, baseAddress_ + 0x02000000*addrSize,  0, this, addrSize)); 
+      addDevice(new AxiMicronN25Q(destination, baseAddress_ + 0x03000000*addrSize, 0, this, addrSize)); 
+      addDevice(new LogMemory(destination, baseAddress_ + 0x09000000*addrSize, 0, this, addrSize)); 
    } else if (epixType == EPIXS) {
       addDevice(new EpixSAsic(destination, baseAddress_ + 0x00800000*addrSize, 0, this, addrSize));
       addDevice(new EpixSAsic(destination, baseAddress_ + 0x00900000*addrSize, 1, this, addrSize));
@@ -438,13 +440,14 @@ DigFpga::DigFpga ( uint destination, uint baseAddress, uint index, Device *paren
    } else if (epixType == CPIXP) {
       addDevice(new CpixPAsic(destination, baseAddress_ + 0x00800000*addrSize, 0, this, addrSize));
       addDevice(new CpixPAsic(destination, baseAddress_ + 0x00900000*addrSize, 1, this, addrSize));
-      //CPIX specific FPGA registers
-      addDevice(new DigFpgaCpix(destination, baseAddress_ + 0x01000000*addrSize, 0, this, addrSize));
+      addDevice(new DigFpgaCpix(destination, baseAddress_ + 0x01000000*addrSize, 0, this, addrSize));    //CPIX specific FPGA registers
+      addDevice(new AxiVersion(destination, baseAddress_ + 0x02000000*addrSize,  0, this, addrSize)); 
+      addDevice(new AxiMicronN25Q(destination, baseAddress_ + 0x03000000*addrSize, 0, this, addrSize)); 
+      addDevice(new LogMemory(destination, baseAddress_ + 0x09000000*addrSize, 0, this, addrSize)); 
    } else if (epixType == TIXELP) {
       addDevice(new TixelPAsic(destination, baseAddress_ + 0x00800000*addrSize, 0, this, addrSize));
       addDevice(new TixelPAsic(destination, baseAddress_ + 0x00900000*addrSize, 1, this, addrSize));
-      //CPIX specific FPGA registers
-      addDevice(new DigFpgaTixel(destination, baseAddress_ + 0x01000000*addrSize, 0, this, addrSize));
+      addDevice(new DigFpgaTixel(destination, baseAddress_ + 0x01000000*addrSize, 0, this, addrSize));   //Tixel specific FPGA registers
       addDevice(new AxiVersion(destination, baseAddress_ + 0x02000000*addrSize,  0, this, addrSize)); 
       addDevice(new AxiMicronN25Q(destination, baseAddress_ + 0x03000000*addrSize, 0, this, addrSize)); 
       addDevice(new LogMemory(destination, baseAddress_ + 0x09000000*addrSize, 0, this, addrSize)); 

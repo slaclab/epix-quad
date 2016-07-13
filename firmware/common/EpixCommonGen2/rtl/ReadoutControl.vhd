@@ -291,7 +291,7 @@ begin
       tpsData(3) <= r.adcData(16+3);
       monitorData <= (others=>(others=>'0'));
    end generate;
-   G_EPIX10KP_CARRIER : if (FPGA_VERSION_C(31 downto 24) = x"E2") generate
+   G_EPIX10KP_CARRIER_ADC_GEN1 : if (FPGA_VERSION_C(31 downto 16) = x"E200") generate
       iAdcValid    <= adcValid;
       iAdcData     <= adcData;
       channelOrder <= (4,5,6,7,8,9,10,11,3,2,1,0,15,14,13,12) when r.streamMode = '0' else
@@ -304,6 +304,66 @@ begin
       tpsData(2) <= r.adcData(16+2);
       tpsData(3) <= r.adcData(16+3);
       monitorData <= (others=>(others=>'0'));
+   end generate;
+   G_EPIX10KP_CARRIER_ADC_GEN2 : if (FPGA_VERSION_C(31 downto 16) = x"E202") generate
+      iAdcValid(0) <= adcValid(8);
+      iAdcValid(1) <= adcValid(3);
+      iAdcValid(2) <= adcValid(4);
+      iAdcValid(3) <= adcValid(9);
+      iAdcValid(4) <= adcValid(1);
+      iAdcValid(5) <= adcValid(2);
+      iAdcValid(6) <= adcValid(0);
+      iAdcValid(7) <= adcValid(10);
+      iAdcValid(8) <= adcValid(5);
+      iAdcValid(9) <= adcValid(7);
+      iAdcValid(10) <= adcValid(15);
+      iAdcValid(11) <= adcValid(6);
+      iAdcValid(12) <= adcValid(12);
+      iAdcValid(13) <= adcValid(13);
+      iAdcValid(14) <= adcValid(11);
+      iAdcValid(15) <= adcValid(14);
+      iAdcValid(16) <= adcValid(16);
+      iAdcValid(17) <= adcValid(17);
+      iAdcValid(18) <= adcValid(18);
+      iAdcValid(19) <= adcValid(19);
+      iAdcData(0) <= adcData(8);
+      iAdcData(1) <= adcData(3);
+      iAdcData(2) <= adcData(4);
+      iAdcData(3) <= adcData(9);
+      iAdcData(4) <= adcData(1);
+      iAdcData(5) <= adcData(2);
+      iAdcData(6) <= adcData(0);
+      iAdcData(7) <= adcData(10);
+      iAdcData(8) <= adcData(5);
+      iAdcData(9) <= adcData(7);
+      iAdcData(10) <= adcData(15);
+      iAdcData(11) <= adcData(6);
+      iAdcData(12) <= adcData(12);
+      iAdcData(13) <= adcData(13);
+      iAdcData(14) <= adcData(11);
+      iAdcData(15) <= adcData(14);
+      iAdcData(16) <= adcData(16);
+      iAdcData(17) <= adcData(17);
+      iAdcData(18) <= adcData(18);
+      iAdcData(19) <= adcData(19);
+      channelOrder <= (4,5,6,7,8,9,10,11,3,2,1,0,15,14,13,12) when r.streamMode = '0' else
+                      (15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0); 
+      channelValid  <= (others => '1');
+      adcMemRdOrder <= x"0FF0" when r.streamMode = '0' else
+                       x"0000";
+      tpsData(0) <= r.adcData(16+0);
+      tpsData(1) <= r.adcData(16+1);
+      tpsData(2) <= r.adcData(16+2);
+      tpsData(3) <= r.adcData(16+3);
+      monitorData(0) <= envData(0);
+      monitorData(1) <= envData(1);
+      monitorData(2) <= envData(2);
+      monitorData(3) <= envData(3);
+      monitorData(4) <= envData(4);
+      monitorData(5) <= envData(5);
+      monitorData(6) <= envData(6);
+      monitorData(7) <= envData(7);
+      monitorData(8) <= envData(8);
    end generate;
    G_EPIXS_CARRIER : if (FPGA_VERSION_C(31 downto 24) = x"E3") generate
       iAdcValid    <= adcValid;

@@ -17,7 +17,7 @@ export MODULE_DIRS = $(PROJ_DIR)/../../common/StdLib  \
                      $(PROJ_DIR)/../../common/MicroblazeBasicCore \
                      $(PROJ_DIR)
 
-export SDK_SRC_PATH = $(PROJ_DIR)/../../common/EpixCommonGen2/src/ePix100a
+export SDK_SRC_PATH = $(PROJ_DIR)/../../common/EpixCommonGen2/src/ePix10kp
 
 # Max number of smart explorer runs
 export SMART_MAX_RUNS = 10

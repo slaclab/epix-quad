@@ -1,20 +1,23 @@
 -------------------------------------------------------------------------------
 -- Title      : 
 -------------------------------------------------------------------------------
--- File       : TixelP.vhd
+-- File       : Epix10kp.vhd
 -- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2014-12-11
--- Last update: 2014-12-11
--- Platform   : Vivado 2014.4
+-- Created    : 07/12/2016
+-- Last update: 07/12/2016
+-- Platform   : Vivado 2016.1
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- Copyright (c) 2014 SLAC National Accelerator Laboratory
--------------------------------------------------------------------------------
--- Modification history:
--- 09/01/2015: created.
+-- This file is part of 'SLAC Firmware Standard Library'.
+-- It is subject to the license terms in the LICENSE.txt file found in the 
+-- top-level directory of this distribution and at: 
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
+-- No part of 'SLAC Firmware Standard Library', including this file, 
+-- may be copied, modified, propagated, or distributed except according to 
+-- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -27,14 +30,11 @@ use work.AxiLitePkg.all;
 use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
 use work.SsiCmdMasterPkg.all;
-use work.SaciMasterPkg.all;
-use work.Pgp2bPkg.all;
-
 
 library unisim;
 use unisim.vcomponents.all;
 
-entity TixelP is
+entity Epix10kp is
    generic (
       TPD_G : time := 1 ns
    );
@@ -68,7 +68,6 @@ entity TixelP is
       tgOut               : out sl;
       -- Board IDs
       snIoAdcCard         : inout sl;
-      snIoCarrier         : inout sl;
       -- Slow ADC
       slowAdcSclk         : out sl;
       slowAdcDin          : out sl;
@@ -86,8 +85,8 @@ entity TixelP is
       -- ASIC SACI Interface
       asicSaciCmd         : out sl;
       asicSaciClk         : out sl;
-      asicSaciSel         : out slv(1 downto 0);
-      asicSaciRsp         : in  sl;
+      asicSaciSel         : out slv(3 downto 0);
+      asicSaciRsp         : in  slv(3 downto 0);
       -- ADC readout signals
       adcClkP             : out slv( 1 downto 0);
       adcClkM             : out slv( 1 downto 0);
@@ -98,22 +97,21 @@ entity TixelP is
       adcDoP              : in  slv(19 downto 0);
       adcDoM              : in  slv(19 downto 0);
       -- ASIC Control
-      asic01DM1           : in sl;
-      asic01DM2           : in sl;
-      asicTpulse          : out sl;
-      asicStart           : out sl;
-      asicPPbe            : out sl;
+      asicDm1             : inout sl;
       asicR0              : out sl;
       asicPpmat           : out sl;
+      asicPpbe            : out sl;
       asicGlblRst         : out sl;
       asicSync            : out sl;
       asicAcq             : out sl;
-      asicDoutP           : in  slv(1 downto 0);
-      asicDoutM           : in  slv(1 downto 0);
-      asicRoClkP          : out slv(1 downto 0);
-      asicRoClkM          : out slv(1 downto 0);
-      asicRefClkP         : out slv(1 downto 0);
-      asicRefClkM         : out slv(1 downto 0);
+      asic01DoutP         : in  sl;
+      asic01DoutM         : in  sl;
+      asic01RoClkP        : out sl;
+      asic01RoClkM        : out sl;
+      asic23DoutP         : in  sl;
+      asic23DoutM         : in  sl;
+      asic23RoClkP        : out sl;
+      asic23RoClkM        : out sl;
       -- Boot Memory Ports
       bootCsL             : out sl;
       bootMosi            : out sl;
@@ -122,10 +120,9 @@ entity TixelP is
       -- TODO: Add I2C pins for SFP
       -- TODO: Add sync pins for DC/DCs
    );
-end TixelP;
+end Epix10kp;
 
-architecture RTL of TixelP is
-
+architecture top_level of Epix10kp is
    signal iLed          : slv(3 downto 0);
    signal iFpgaOutputEn : sl;
    signal iLedEn        : sl;
@@ -162,24 +159,31 @@ architecture RTL of TixelP is
    signal iBootCsL      : sl;
    signal iBootMosi     : sl;
    
-   signal iAsicRoClk    : slv(1 downto 0);
-   signal iAsicRefClk   : slv(1 downto 0);
+   signal iAsicRoClk    : sl;
    signal iAsicR0       : sl;
    signal iAsicAcq      : sl;
    signal iAsicPpmat    : sl;
-   signal iAsicPPbe     : sl;
+   signal iAsicPpbe     : sl;
    signal iAsicGlblRst  : sl;
    signal iAsicSync     : sl;
-   signal iAsicTpulse   : sl;
-   signal iAsicStart    : sl;
-
+   signal iAsicDm1      : sl;
+   signal iAsicDm2      : sl;
+   signal iAsicDout     : slv(3 downto 0);
+   signal iAsic01Dout   : sl;
+   signal iAsic23Dout   : sl;
+   
+   -- Keep douts from getting trimmed even if they're not used in this design
+   attribute dont_touch : string;
+   attribute dont_touch of iAsicDout : signal is "true";
+   attribute dont_touch of iAsicDm1  : signal is "true";
+   attribute dont_touch of iAsicDm2  : signal is "true";
    
 begin
 
-   ---------------------------------------------------------------------------------
-   -- Tixel Core
-   ---------------------------------------------------------------------------------
-   U_TixelCore : entity work.TixelCore
+   ---------------------------
+   -- Core block            --
+   ---------------------------
+   U_EpixCore : entity work.EpixCoreGen2
       generic map (
          TPD_G => TPD_G,
          -- Polarity of selected LVDS data lanes is swapped on gen2 ADC board
@@ -216,7 +220,7 @@ begin
          mpsOut              => iMps,
          triggerOut          => iTgOut,
          -- Board IDs
-         serialIdIo(1)       => snIoCarrier,
+         serialIdIo(1)       => asicDm1,
          serialIdIo(0)       => snIoAdcCard,
          -- Slow ADC
          slowAdcRefClk       => slowAdcRefClk,
@@ -247,25 +251,25 @@ begin
          adcChP              => adcDoP,
          adcChN              => adcDoM,
          -- ASIC Control
-         asic01DM1           => asic01DM1,
-         asic01DM2           => asic01DM2,
-         asicPPbe            => iAsicPPbe,
-         asicPpmat           => iAsicPpmat,
-         asicTpulse          => iAsicTpulse,
-         asicStart           => iAsicStart,
          asicR0              => iAsicR0,
-         asicGlblRst         => iAsicGlblRst,
-         asicSync            => iAsicSync,
+         asicPpmat           => iAsicPpmat,
+         asicPpbe            => iAsicPpbe,
+         asicGrst            => iAsicGlblRst,
          asicAcq             => iAsicAcq,
-         asicDoutP           => asicDoutP,
-         asicDoutM           => asicDoutM,
-         asicRefClk          => iAsicRefClk,
+         asic0Dm2            => iAsicDm1,
+         asic0Dm1            => iAsicDm2,
          asicRoClk           => iAsicRoClk,
+         asicSync            => iAsicSync,
+         -- ASIC digital data
+         asicDout            => iAsicDout,
          -- Boot Memory Ports
          bootCsL             => iBootCsL,
          bootMosi            => iBootMosi,
          bootMiso            => bootMiso
       );
+      
+      adcClkP(0) <= iAdcClkP(0);      
+      adcClkM(0) <= iAdcClkM(0);
       
       adcClkP(1) <= iAdcClkP(2);
       adcClkM(1) <= iAdcClkM(2);
@@ -294,12 +298,10 @@ begin
    -- ASIC SACI interfaces
    asicSaciCmd    <= iSaciCmd when iFpgaOutputEn = '1' else 'Z';
    asicSaciClk    <= iSaciClk when iFpgaOutputEn = '1' else 'Z';
-   G_SACISEL : for i in 0 to 1 generate
+   G_SACISEL : for i in 0 to 3 generate
       asicSaciSel(i) <= iSaciSelL(i) when iFpgaOutputEn = '1' else 'Z';
-      iSaciRsp(i)    <= asicSaciRsp;
+      iSaciRsp(i)    <= asicSaciRsp(i);
    end generate;
-   iSaciRsp(2)    <= '0';
-   iSaciRsp(3)    <= '0';
 
    -- Fast ADC Configuration
    adcSpiClk     <= iAdcSpiClk when iFpgaOutputEn = '1' else 'Z';
@@ -309,22 +311,29 @@ begin
    adcSpiCsb(0)  <= iAdcSpiCsb(0) when iFpgaOutputEn = '1' else 'Z';
    adcSpiCsb(1)  <= iAdcSpiCsb(1) when iFpgaOutputEn = '1' else 'Z';
    adcSpiCsb(2)  <= iAdcSpiCsb(2) when iFpgaOutputEn = '1' else 'Z';
-   adcPdwn01     <= iAdcPdwn(0)   when iFpgaOutputEn = '1' else '0';
-   adcPdwnMon    <= iAdcPdwn(2)   when iFpgaOutputEn = '1' else '0';
+   adcPdwn01     <= iAdcPdwn(0) when iFpgaOutputEn = '1' else '0';
+   --adcPdwn(1)    <= iAdcPdwn(1) when iFpgaOutputEn = '1' else '0';
+   adcPdwnMon    <= iAdcPdwn(2) when iFpgaOutputEn = '1' else '0';
    
    -- ASIC control signals (differential)
-   G_ROCLK : for i in 0 to 1 generate
-      U_ASIC_ROCLK_OBUFTDS : OBUFTDS port map ( I => iAsicRoClk(i), T => not(iFpgaOutputEn), O => asicRoClkP(i), OB => asicRoClkM(i) );
-      U_ASIC_RFCLK_OBUFTDS : OBUFTDS port map ( I => iAsicRefClk(i), T => not(iFpgaOutputEn), O => asicRefClkP(i), OB => asicRefClkM(i) );
-   end generate;
-   -- ASIC control signals (single ended)
-   asicR0         <= iAsicR0      when iFpgaOutputEn = '1' else 'Z';
-   asicAcq        <= iAsicAcq     when iFpgaOutputEn = '1' else 'Z';
-   asicPpmat      <= iAsicPpmat   when iFpgaOutputEn = '1' else 'Z';
-   asicPPbe       <= iAsicPPbe    when iFpgaOutputEn = '1' else 'Z';
-   asicGlblRst    <= iAsicGlblRst when iFpgaOutputEn = '1' else 'Z';
-   asicSync       <= iAsicSync    when iFpgaOutputEn = '1' else 'Z';  
-   asicTpulse     <= iAsicTpulse  when iFpgaOutputEn = '1' else 'Z';  
-   asicStart      <= iAsicStart  when iFpgaOutputEn = '1' else 'Z';  
+   U_ASIC01_DOUT_IBUFDS : IBUFDS port map (I => asic01DoutP, IB => asic01DoutM, O => iAsic01Dout);
+   U_ASIC23_DOUT_IBUFDS : IBUFDS port map (I => asic23DoutP, IB => asic23DoutM, O => iAsic23Dout);
+   iAsicDout(0) <= iAsic01Dout;
+   iAsicDout(1) <= iAsic01Dout;
+   iAsicDout(2) <= iAsic23Dout;
+   iAsicDout(3) <= iAsic23Dout;
+   U_ASIC01_ROCLK_OBUFTDS : OBUFTDS port map ( I => iAsicRoClk, T => not(iFpgaOutputEn), O => asic01RoClkP, OB => asic01RoClkM );
+   U_ASIC23_ROCLK_OBUFTDS : OBUFTDS port map ( I => iAsicRoClk, T => not(iFpgaOutputEn), O => asic23RoClkP, OB => asic23RoClkM );
    
-end RTL;
+   -- ASIC control signals (single ended)
+   asicR0      <= iAsicR0      when iFpgaOutputEn = '1' else 'Z';
+   asicAcq     <= iAsicAcq     when iFpgaOutputEn = '1' else 'Z';
+   asicPpmat   <= iAsicPpmat   when iFpgaOutputEn = '1' else 'Z';
+   asicPpbe    <= iAsicPpbe    when iFpgaOutputEn = '1' else 'Z';
+   asicGlblRst <= iAsicGlblRst when iFpgaOutputEn = '1' else 'Z';
+   asicSync    <= iAsicSync    when iFpgaOutputEn = '1' else 'Z';
+   -- On this carrier ASIC digital monitors are shared with SN device
+   --iAsicDm1    <= snIoCarrier;
+   --iAsicDm2    <= snIoCarrier;
+   
+end top_level;

@@ -15,6 +15,8 @@
 //----------------------------------------------------------------------------
 #include <PgpLink.h>
 #include <UdpLink.h>
+#include <MultDestPgp.h>
+#include <MultLink.h>
 #include <EpixControl.h>
 #include <ControlServer.h>
 #include <Device.h>
@@ -35,6 +37,7 @@ using namespace std;
 #define VC2    0x04
 #define VC3    0x08
 
+#define USE_MULTLINK 1
 
 // Run flag for sig catch
 bool stop;
@@ -58,29 +61,50 @@ int main (int argc, char **argv) {
    signal (SIGINT,&sigTerm);
 
    try {
-      PgpLink       pgpLink; 
-      EpixControl   epix(&pgpLink,defFile,EPIX10KP, 0x01000000, 1);
-      //UdpLink       udpLink; 
-      //EpixControl   epix(&udpLink,defFile);
+#if USE_MULTLINK
+      MultLink     *pgpLink;
+      MultDest     *dest;  
+#else
+      PgpLink       *pgpLink; 
+#endif
+      
       int           pid;
-
-      // Setup top level device
-      epix.setDebug(true);
+      uint          baseAddress;
+      uint          addrSize;
 
       // Create and setup PGP link
-      pgpLink.setMaxRxTx(550000);
-      pgpLink.setDebug(true);
-      pgpLink.open("/dev/pgpcard0");
-      pgpLink.enableSharedMemory("epix",1);
-      pgpLink.setDataMask( (LANE0|VC0) | (LANE0|VC2) );
+#if USE_MULTLINK
+      baseAddress = 0x00000000;
+      addrSize = 4;
+      dest = new MultDestPgp("/dev/pgpcard0");
+      dest->addDataSource(0x00000000); // VC0 - acq data
+      dest->addDataSource(0x02000000); // VC2 - oscilloscope
+      dest->addDataSource(0x03000000); // VC3 - monitoring
+      pgpLink = new MultLink();
+      pgpLink->setDebug(true);
+      pgpLink->setMaxRxTx(0x800000);
+      pgpLink->open(1,dest);
+      pgpLink->enableSharedMemory("epix",1);   
+      pgpLink->setXmlStore(false);
+#else
+      baseAddress = 0x01000000;
+      addrSize = 1;
+      pgpLink = new PgpLink();
+      pgpLink->setMaxRxTx(550000);
+      pgpLink->setDebug(true);
+      pgpLink->open("/dev/pgpcard0");
+      pgpLink->enableSharedMemory("epix",1);
+      //Write out only the event data, no XML
+      pgpLink->setXmlStore(false);
+      pgpLink->setDataMask( (LANE0|VC0) | (LANE0|VC2) );
+#endif
+
       usleep(100);
 
-      // Create and setup PGP link
-      //udpLink.setMaxRxTx(550000);
-      //udpLink.setDebug(true);
-      //udpLink.open(8090,1,"127.0.0.1");
-      //udpLink.enableSharedMemory("epix",1);
-      //usleep(100);
+      cout << "Created PGP Link" << endl;
+      
+      EpixControl   epix(pgpLink,defFile,EPIX10KP, baseAddress, addrSize);
+      epix.setDebug(true);
 
       // Setup control server
       //cntrlServer.setDebug(true);
@@ -88,9 +112,6 @@ int main (int argc, char **argv) {
       port = cntrlServer.startListen(0);
       cntrlServer.setSystem(&epix);
       cout << "Control id = 1" << endl;
-
-      //Write out only the event data, no XML
-      pgpLink.setXmlStore(false);
 
       // Fork and start gui
       stop = false;

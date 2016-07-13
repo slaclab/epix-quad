@@ -73,7 +73,7 @@ void epixInit() {
    // enable the power supply
    Xil_Out32( EPIX_PWR_REG, 0x3);
    // let the power settle
-   MB_Sleep(100);
+   MB_Sleep(500);
    
    // enable the FPGA outputs
    Xil_Out32( EPIX_PWR_REG, 0x7);
@@ -97,14 +97,16 @@ void epixInit() {
 
 unsigned int findAsics(void) {
    
-   unsigned int i, dm, mask;
+   unsigned int i, dm, test, mask;
    mask = 0;
    
    //find installed ASICs by testing the digital monitor register
    for (i = 0; i <= 3; i++) {
       dm = Xil_In32( cfg4Asic[i]);
       Xil_Out32( cfg4Asic[i], 0x5A);
-      if (Xil_In32( cfg4Asic[i]) == 0x5A)
+      test = Xil_In32( cfg4Asic[i]);
+      ssi_printf("ASIC%d write 0x5A read 0x%X\n", i, test);
+      if ((test&0xFF) == 0x5A) 
          mask |= (1<<i);
       Xil_Out32( cfg4Asic[i], dm);
    }

@@ -683,7 +683,7 @@ begin
    --------------------------------------------
    -- AXI Lite Crossbar for register control --
    -- Master 0 : PGP register controller     --
-   -- Master 1 : Picoblaze reg controller    --
+   -- Master 1 : Microblaze reg controller    --
    --------------------------------------------
    U_AxiLiteCrossbar : entity work.AxiLiteCrossbar
       generic map (

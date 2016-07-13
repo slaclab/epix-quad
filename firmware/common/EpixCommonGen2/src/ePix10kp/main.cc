@@ -19,7 +19,7 @@ unsigned int adcAlign(unsigned int, unsigned int);
 
 int main() { 
    
-   unsigned int asicMask, res, req = 0;
+   unsigned int asicMask, res, i, req = 0;
    
    ssi_printf_init(LOG_MEM_OFFSET, 1024*4);
    
@@ -34,11 +34,12 @@ int main() {
       ssi_printf("ASIC mask 0x%X\n", asicMask);
       ssi_printf("ADC REQ %d\n", req);
       
-      // only monitoring ADC in use with tixel or cpix
-      res = adcAlign(2,  4);
+      //align ADCs
+      for (res = 0, i = 0; i <= 2; i++)
+         res |= (adcAlign(i,  (i!=2?8:4))<<i);   //ADC number 2 has only 4 channels in use
       
       // set success or fail
-      if (res == 1)
+      if (res == 7)
          Xil_Out32(EPIX_ADC_ALIGN_REG, 0x00000002);   //ack, no fail
       else 
          Xil_Out32(EPIX_ADC_ALIGN_REG, 0x00000006);   //ack, fail
@@ -78,15 +79,17 @@ void epixInit() {
    Xil_Out32( EPIX_PWR_REG, 0x7);
    
    // Perform ADC soft reset
+   Xil_Out32( ADC0_PWRMOD_REG, 3);
+   Xil_Out32( ADC1_PWRMOD_REG, 3);
    Xil_Out32( ADC2_PWRMOD_REG, 3);
    MB_Sleep(10);
+   Xil_Out32( ADC0_PWRMOD_REG, 0);
+   Xil_Out32( ADC1_PWRMOD_REG, 0);
    Xil_Out32( ADC2_PWRMOD_REG, 0);
    
-   //power down not used ADCs
-   Xil_Out32( ADC0_PWRMOD_REG, 1);
-   Xil_Out32( ADC1_PWRMOD_REG, 1);
-   
    // Switch ADC default data format to offset binary
+   Xil_Out32( ADC0_OUTMOD_REG, 0);
+   Xil_Out32( ADC1_OUTMOD_REG, 0);
    Xil_Out32( ADC2_OUTMOD_REG, 0);
    
 }
@@ -99,13 +102,13 @@ unsigned int findAsics(void) {
    
    //find installed ASICs by testing the digital monitor register
    for (i = 0; i <= 3; i++) {
-      dm = Xil_In32( cfg13Asic[i]);
-      Xil_Out32( cfg13Asic[i], (0x5A<<8));
-      test = Xil_In32( cfg13Asic[i]);
-      ssi_printf("ASIC%d write 0x5A read 0x%X\n", i, test>>8);
-      if ((test&0xFF00) == (0x5A<<8)) 
+      dm = Xil_In32( cfg4Asic[i]);
+      Xil_Out32( cfg4Asic[i], 0x5A);
+      test = Xil_In32( cfg4Asic[i]);
+      ssi_printf("ASIC%d write 0x5A read 0x%X\n", i, test);
+      if ((test&0xFF) == 0x5A) 
          mask |= (1<<i);
-      Xil_Out32( cfg13Asic[i], dm);
+      Xil_Out32( cfg4Asic[i], dm);
    }
    
    return mask;
@@ -125,8 +128,8 @@ void asicInit(unsigned int mask) {
    
    for (i = 0; i <= 3; i++) {
       if (mask&(1<<i)) {
-         reg = Xil_In32( cfg13Asic[i]) | 0x3;
-         Xil_Out32( cfg13Asic[i], reg);
+         reg = Xil_In32( cfg16Asic[i]) | (0x1<<5);
+         Xil_Out32( cfg16Asic[i], reg);
 #if CLEAR_ASIC_MATRIX_ON_STARTUP
          for (col = 0; col < 96; col++ ) {
             Xil_Out32( prepMultCfgAsic[i], 0x0);
