@@ -566,6 +566,10 @@ begin
       -------------------------------------------------------
       -- ASIC AXI stream framers
       -------------------------------------------------------
+      
+      -- replace with standard framer when the 8b10b 
+      -- error information is not needed in the stream
+      
       U_ASIC_Framer : entity work.FramerExtended
       generic map(
          ASIC_NUMBER_G  => std_logic_vector(to_unsigned(i, 4))
