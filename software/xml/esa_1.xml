@@ -62,7 +62,7 @@
          <EepromWriteAddr>0x0</EepromWriteAddr>
          <Enabled>True</Enabled>
          <FpgaOutputEnable>0x1</FpgaOutputEnable>
-         <RequestStartup>True</RequestStartup>
+         <RequestStartup>False</RequestStartup>
          <RunTrigDelay>0x0</RunTrigDelay>
          <RunTrigEnable>False</RunTrigEnable>
          <SyncMode>FixedLow</SyncMode>

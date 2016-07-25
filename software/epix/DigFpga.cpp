@@ -128,6 +128,11 @@ DigFpga::DigFpga ( uint destination, uint baseAddress, uint index, Device *paren
    getVariable("StartupDone")->setTrueFalse();
    getVariable("StartupFail")->setDescription("Startup sequence failed");
    getVariable("StartupFail")->setTrueFalse();
+   
+   addRegister(new Register("RequestConfDump", baseAddress_ + addrSize*0x00000081));
+   addVariable(new Variable("RequestConfDump", Variable::Configuration));
+   getVariable("RequestConfDump")->setDescription("RequestConfDump");
+   getVariable("RequestConfDump")->setTrueFalse();
 
    // Setup registers & variables
    addRegister(new Register("BaseClock", baseAddress_ + addrSize*0x00000010));
@@ -605,6 +610,10 @@ void DigFpga::readConfig ( ) {
 
    readRegister(getRegister("Startup"));
    getVariable("RequestStartup")->setInt(getRegister("Startup")->get(0,0x1));
+   
+   readRegister(getRegister("RequestConfDump"));
+   getVariable("RequestConfDump")->setInt(getRegister("RequestConfDump")->get(0,0x1));
+   
 
    readRegister(getRegister("AsicPins"));
    getVariable("AsicGR")->setInt(getRegister("AsicPins")->get(0,0x1));
@@ -705,6 +714,9 @@ void DigFpga::writeConfig ( bool force ) {
 
    getRegister("Startup")->set(getVariable("RequestStartup")->getInt(),0,0x1);
    writeRegister(getRegister("Startup"),force);
+   
+   getRegister("RequestConfDump")->set(getVariable("RequestConfDump")->getInt(),0,0x1);
+   writeRegister(getRegister("RequestConfDump"),force);
 
    getRegister("AsicPins")->set(getVariable("AsicGR")->getInt(),0,0x1);
    getRegister("AsicPins")->set(getVariable("AsicAcq")->getInt(),1,0x1);

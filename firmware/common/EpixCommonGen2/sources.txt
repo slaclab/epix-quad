@@ -17,3 +17,5 @@ vhdl work rtl/RingBuffer.vhd
 vhdl work rtl/EpixRowBlockRam.vhd
 vhdl work rtl/EpixPgp2bGtp7Wrapper.vhd
 vhdl work rtl/StreamPatternTester.vhd
+vhdl work rtl/RegControl.vhd
+#vhdl work rtl/AxiDdrControllerWrapper.vhd

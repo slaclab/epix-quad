@@ -2,6 +2,8 @@
 #include <string.h>
 #include "xil_types.h"
 #include "xil_io.h"
+#include "xintc.h"
+#include "xparameters.h"
 #include "microblaze_sleep.h"
 #include "xil_printf.h"
 #include "regs.h"
@@ -13,13 +15,60 @@
 
 
 void epixInit(void);
-unsigned int findAsics(void);
-void asicInit(unsigned int);
-unsigned int adcAlign(unsigned int, unsigned int);
+uint32_t findAsics(void);
+void asicInit(uint32_t);
+uint32_t adcAlign(uint32_t, uint32_t);
+
+void calibReqHandler(void * data) {
+   uint32_t * request = (uint32_t *)data;
+   
+   Xil_Out32(EPIX_ADC_ALIGN_REG, 0x00000000);
+ 
+   (*request) = 1; 
+}
+
+void confDumpReqHandler(void * data) {
+   uint32_t * request = (uint32_t *)data;
+   uint32_t asicMask, i, regIndex;
+   
+   Xil_Out32(EPIX_CFG_DUMP_REG, 0x00000000);
+   
+   asicMask = Xil_In32(EPIX_ASIC_MASK_REG);
+   
+   ssi_printf("CFG REQ %d\n", *request);
+   
+   // dump ASICs regs
+   
+   for (regIndex = 0; regIndex <= 21 && asicMask != 0; regIndex++) {
+      for (i = 0; i <= 3; i++) {
+         if (asicMask&(1<<i)) {
+            ssi_printf("A%d 0x%02X:0x%04X ", i, dumpAsicReg[regIndex][0]&0xFF, Xil_In32(BUS_OFFSET+asicOffset[i]+(dumpAsicReg[regIndex][0]<<2))&dumpAsicReg[regIndex][1]);
+         }
+      }
+      ssi_printf("\n");
+   }
+   
+   (*request)++;
+}
 
 int main() { 
    
-   unsigned int asicMask, res, i, req = 0;
+   uint32_t asicMask, res, i, adcReqNo = 0;
+   static const XIntc XIntcInit = {0,0,0,0,0};
+   XIntc intc;
+   volatile uint32_t adcReq = 0;
+   volatile uint32_t cfgReqNo = 0;
+   intc = XIntcInit;  // this avoid the program to be stuck when restarting in SDK debugger
+   
+   Xil_Out32(EPIX_ADC_ALIGN_REG, 0x00000000);
+   Xil_Out32(EPIX_CFG_DUMP_REG, 0x00000000);
+   XIntc_Initialize(&intc,XPAR_AXI_INTC_0_DEVICE_ID);
+   microblaze_enable_interrupts();
+   XIntc_Connect(&intc,0,(XInterruptHandler)calibReqHandler,(void*)&adcReq);
+   XIntc_Connect(&intc,1,(XInterruptHandler)confDumpReqHandler,(void*)&cfgReqNo);
+   XIntc_Start(&intc,XIN_REAL_MODE);
+   XIntc_Enable(&intc,0);
+   XIntc_Enable(&intc,1);
    
    ssi_printf_init(LOG_MEM_OFFSET, 1024*4);
    
@@ -32,7 +81,7 @@ int main() {
       asicInit(asicMask);
       
       ssi_printf("ASIC mask 0x%X\n", asicMask);
-      ssi_printf("ADC REQ %d\n", req);
+      ssi_printf("ADC REQ %d\n", adcReqNo);
       
       //align ADCs
       for (res = 0, i = 0; i <= 2; i++)
@@ -47,12 +96,12 @@ int main() {
       //wait until ADC alignment requested
       while (1) {
          
-         MB_Sleep(200);
+         //MB_Sleep(200);
          
-         // poll ADC align request bit
-         if ((Xil_In32(EPIX_ADC_ALIGN_REG)&0x00000001) != 0) {
-            Xil_Out32(EPIX_ADC_ALIGN_REG, 0x00000001);
-            req++;
+         // poll ADC align request flag
+         if (adcReq) {
+            adcReq = 0;
+            adcReqNo++;
             break;
          }
          
@@ -95,9 +144,9 @@ void epixInit() {
 }
 
 
-unsigned int findAsics(void) {
+uint32_t findAsics(void) {
    
-   unsigned int i, dm, test, mask;
+   uint32_t i, dm, test, mask;
    mask = 0;
    
    //find installed ASICs by testing the digital monitor register
@@ -115,7 +164,7 @@ unsigned int findAsics(void) {
    
 }
 
-void asicInit(unsigned int mask) {
+void asicInit(uint32_t mask) {
    
    int i;
 #if CLEAR_ASIC_MATRIX_ON_STARTUP
@@ -141,9 +190,9 @@ void asicInit(unsigned int mask) {
    }
 }
 
-unsigned int adcAlign(unsigned int adcNo, unsigned int maxCh) {
+uint32_t adcAlign(uint32_t adcNo, uint32_t maxCh) {
    
-   unsigned int delay, adcCh, debugSample, fail = 0;
+   uint32_t delay, adcCh, debugSample, fail = 0;
    int firstDly;
    int lastDly;
    

@@ -23,12 +23,14 @@ using namespace std;
 int main(int argc, char **argv) {
    
    AxiMasterSim  *master;
-   uint runTriggerDelayAddr   = (0x00000002)<<2;
+   uint multiPixelData0       = (0x00080002)<<2;
+   uint multiPixelData1       = (0x00080003)<<2;
+   uint multiPixelData2       = (0x00080004)<<2;
+   uint multiPixelData3       = (0x00080005)<<2;
    uint asicMaskAddr          = (0x0000000D)<<2;
    uint saciRowStopAddr       = (0x00801012)<<2;
-   uint saciConfig22Addr      = (0x00801016)<<2;
+   uint saciRowStopAddr2      = (0x00801013)<<2;
    uint rdout1                = 0;
-   uint rdout2                = 0;
    
 
    master = new AxiMasterSim;
@@ -40,19 +42,23 @@ int main(int argc, char **argv) {
 
    master->setVerbose(0);
 
-   usleep(100);
+   usleep(100); 
    
+   //master->write(saciRowStopAddr,0x55);  
+   //master->write(saciRowStopAddr2,0xaa);  
+   //rdout1 = master->read(saciRowStopAddr);
+   //printf("WR:0x55 RD:%X\n", rdout1);
    
    master->write(asicMaskAddr,0xF);
-   master->write(runTriggerDelayAddr,9000);
-   
-   master->write(saciRowStopAddr,0x55);  
-   master->write(saciConfig22Addr,0xaa);  
+   master->write(multiPixelData0,0x0);
+   master->write(multiPixelData1,0x1);
+   master->write(multiPixelData2,0x2);
+   master->write(multiPixelData3,0x3); 
    
    do {
+      master->write(saciRowStopAddr,0x55);  
       rdout1 = master->read(saciRowStopAddr);
-      rdout2 = master->read(saciConfig22Addr);
-      printf("Read: 0x55=%X 0xAA=%X\n", rdout1, rdout2);
+      printf("WR:0x55 RD:%X\n", rdout1);
    }
    while (1);
    

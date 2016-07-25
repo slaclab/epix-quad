@@ -82,10 +82,10 @@ end EpixPgp2bGtp7Wrapper;
 
 architecture mapping of EpixPgp2bGtp7Wrapper is
 
-   signal refClk     : sl;
-   signal refClkDiv2 : sl;
-   signal stableClock  : sl;
-   signal extRstSync : sl;
+   signal refClk      : sl;
+   signal refClkDiv2  : sl;
+   signal stableClock : sl;
+   signal extRstSync  : sl;
 
    signal pgpClock      : sl;
    signal pgpTxRecClock : sl;
@@ -102,9 +102,9 @@ architecture mapping of EpixPgp2bGtp7Wrapper is
    
 begin
 
-   pgpClk     <= pgpClock;
-   pgpRst     <= pgpReset;
-   stableClk <= stableClock;
+   pgpClk      <= pgpClock;
+   pgpRst      <= pgpReset;
+   stableClk   <= stableClock;
 
    IBUFDS_GTE2_Inst : IBUFDS_GTE2
       port map (
@@ -113,11 +113,11 @@ begin
          CEB   => '0',
          ODIV2 => refClkDiv2,  
          O     => refClk);    
-
+   
    BUFG_Inst : BUFG
       port map (
          I => refClkDiv2,
-         O => stableClock);           
+         O => stableClock);          
 
    RstSync_Inst : entity work.RstSync
       generic map(

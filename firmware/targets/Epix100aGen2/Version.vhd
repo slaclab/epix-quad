@@ -25,9 +25,9 @@ USE ieee.std_logic_1164.ALL;
 
 package Version is
 
-constant FPGA_VERSION_C    : std_logic_vector(31 downto 0) := x"EA020005"; -- MAKE_VERSION
+constant FPGA_VERSION_C    : std_logic_vector(31 downto 0) := x"EA020004"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "Epix100aGen2: Vivado v2016.1 (x86_64) Built Tue Jul 12 17:50:26 PDT 2016 by mkwiatko";
+constant BUILD_STAMP_C : string := "Epix100aGen2: Vivado v2016.1 (x86_64) Built Mon Jul 25 10:21:39 PDT 2016 by mkwiatko";
 
 constant FPGA_BASE_CLOCK_C : std_logic_vector(31 downto 0) := x"00" & x"100000";  
 

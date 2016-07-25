@@ -46,6 +46,7 @@ entity PgpFrontEnd is
       txLinkReady : out sl;
       -- Output clocking
       pgpClk      : out sl;
+      refClk      : out sl;
       -- AXI clocking
       axiClk      : in  sl;
       axiRst      : in  sl;
@@ -99,6 +100,7 @@ begin
    rxLinkReady <= iPgpRxOut.remLinkReady;
    txLinkReady <= pgpTxOut.linkReady;
    pgpClk      <= iPgpClk;
+   refClk      <= iStableClk;
    
    -- Generate stable reset signal
    U_PwrUpRst : entity work.PwrUpRst

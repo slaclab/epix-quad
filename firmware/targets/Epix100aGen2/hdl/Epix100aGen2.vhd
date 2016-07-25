@@ -110,8 +110,24 @@ entity Epix100aGen2 is
       -- Boot Memory Ports
       bootCsL             : out sl;
       bootMosi            : out sl;
-      bootMiso            : in  sl
-      -- TODO: Add DDR pins
+      bootMiso            : in  sl;
+      -- DDR pins
+      ddr3_dq             : inout slv(31 downto 0);
+      ddr3_dqs_n          : inout slv(3 downto 0);
+      ddr3_dqs_p          : inout slv(3 downto 0);
+      ddr3_addr           : out   slv(14 downto 0);
+      ddr3_ba             : out   slv(2 downto 0);
+      ddr3_ras_n          : out   sl;
+      ddr3_cas_n          : out   sl;
+      ddr3_we_n           : out   sl;
+      ddr3_reset_n        : out   sl;
+      ddr3_ck_p           : out   slv(0 to 0);
+      ddr3_ck_n           : out   slv(0 to 0);
+      ddr3_cke            : out   slv(0 to 0);
+      ddr3_cs_n           : out   slv(0 to 0);
+      ddr3_dm             : out   slv(3 downto 0);
+      ddr3_odt            : out   slv(0 to 0)
+      
       -- TODO: Add I2C pins for SFP
       -- TODO: Add sync pins for DC/DCs
    );
@@ -258,6 +274,22 @@ begin
          bootCsL             => iBootCsL,
          bootMosi            => iBootMosi,
          bootMiso            => bootMiso
+         -- DDR pins
+         --ddr3_dq             => ddr3_dq,
+         --ddr3_dqs_n          => ddr3_dqs_n,
+         --ddr3_dqs_p          => ddr3_dqs_p,
+         --ddr3_addr           => ddr3_addr,
+         --ddr3_ba             => ddr3_ba,
+         --ddr3_ras_n          => ddr3_ras_n,
+         --ddr3_cas_n          => ddr3_cas_n,
+         --ddr3_we_n           => ddr3_we_n,
+         --ddr3_reset_n        => ddr3_reset_n,
+         --ddr3_ck_p           => ddr3_ck_p,
+         --ddr3_ck_n           => ddr3_ck_n,
+         --ddr3_cke            => ddr3_cke,
+         --ddr3_cs_n           => ddr3_cs_n,
+         --ddr3_dm             => ddr3_dm,
+         --ddr3_odt            => ddr3_odt
       );
       
       adcClkP(0) <= iAdcClkP(0);      

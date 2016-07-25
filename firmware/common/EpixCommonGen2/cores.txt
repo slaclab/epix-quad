@@ -1,1 +1,1 @@
-#coregen/ddr_controller/ddr_controller.xci
+#coregen/AxiDdrCtrl/AxiDdrCtrl.xci

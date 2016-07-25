@@ -10,6 +10,7 @@ use work.Version.all;
 package EpixPkgGen2 is
 
    -- AXI-Lite Constants
+   --constant NUM_AXI_MASTER_SLOTS_C : natural := 10;
    constant NUM_AXI_MASTER_SLOTS_C : natural := 9;
    constant NUM_AXI_SLAVE_SLOTS_C : natural := 2;
 
@@ -22,6 +23,7 @@ package EpixPkgGen2 is
    constant ADC2_RD_AXI_INDEX_C : natural := 6;
    constant ADC_CFG_AXI_INDEX_C : natural := 7;
    constant MEM_LOG_AXI_INDEX_C : natural := 8;
+   constant TESTMEM_AXI_INDEX_C : natural := 9;
    
    constant COMMON_AXI_BASE_ADDR_C    : slv(31 downto 0) := X"00000000";
    constant VERSION_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"08000000";
@@ -32,6 +34,7 @@ package EpixPkgGen2 is
    constant ADC2_RD_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"1C000000";
    constant ADC_CFG_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"20000000";
    constant MEM_LOG_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"24000000";
+   constant TESTMEM_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"28000000";
    
    constant AXI_CROSSBAR_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0) := (
       COMMON_AXI_INDEX_C      => (
@@ -70,6 +73,10 @@ package EpixPkgGen2 is
          baseAddr             => MEM_LOG_AXI_BASE_ADDR_C,
          addrBits             => 26,
          connectivity         => x"0003")
+--      TESTMEM_AXI_INDEX_C      => (
+--         baseAddr             => TESTMEM_AXI_BASE_ADDR_C,
+--         addrBits             => 26,
+--         connectivity         => x"0003")
    );
    
    constant NUM_FAST_ADCS_C  : natural := 3;
@@ -117,6 +124,7 @@ package EpixPkgGen2 is
       startupFail        : sl;
       pgpTrigEn          : sl;
       monitorEnable      : sl;
+      requestConfDump    : sl;
    end record;
    constant EPIX_CONFIG_INIT_C : EpixConfigType := (
       runTriggerEnable   => '0',
@@ -158,7 +166,8 @@ package EpixPkgGen2 is
       startupAck         => '0',
       startupFail        => '0',
       pgpTrigEn          => '0',
-      monitorEnable      => '0'
+      monitorEnable      => '0',
+      requestConfDump    => '0'
    );
    
    type EpixStatusType is record

@@ -28,6 +28,7 @@ use ieee.numeric_std.all;
 use work.StdRtlPkg.all;
 use work.EpixPkgGen2.all;
 use work.ScopeTypes.all;
+use work.AxiPkg.all;
 use work.AxiLitePkg.all;
 use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
@@ -122,6 +123,22 @@ entity EpixCoreGen2 is
       bootCsL             : out sl;
       bootMosi            : out sl;
       bootMiso            : in  sl
+--      -- DDR pins
+--      ddr3_dq             : inout slv(31 downto 0);
+--      ddr3_dqs_n          : inout slv(3 downto 0);
+--      ddr3_dqs_p          : inout slv(3 downto 0);
+--      ddr3_addr           : out   slv(14 downto 0);
+--      ddr3_ba             : out   slv(2 downto 0);
+--      ddr3_ras_n          : out   sl;
+--      ddr3_cas_n          : out   sl;
+--      ddr3_we_n           : out   sl;
+--      ddr3_reset_n        : out   sl;
+--      ddr3_ck_p           : out   slv(0 to 0);
+--      ddr3_ck_n           : out   slv(0 to 0);
+--      ddr3_cke            : out   slv(0 to 0);
+--      ddr3_cs_n           : out   slv(0 to 0);
+--      ddr3_dm             : out   slv(3 downto 0);
+--      ddr3_odt            : out   slv(0 to 0)
    );
 end EpixCoreGen2;
 
@@ -143,6 +160,12 @@ architecture top_level of EpixCoreGen2 is
    signal iDelayCtrlRst : sl;
    
    signal pgpRxOut      : Pgp2bRxOutType;
+   
+   -- AXI Signals
+   signal axiReadMaster   : AxiReadMasterType;
+   signal axiReadSlave    : AxiReadSlaveType;
+   signal axiWriteMaster  : AxiWriteMasterType;
+   signal axiWriteSlave   : AxiWriteSlaveType;
    
    -- AXI-Lite Signals
    signal sAxiReadMaster  : AxiLiteReadMasterArray(NUM_AXI_SLAVE_SLOTS_C-1 downto 0);
@@ -225,6 +248,20 @@ architecture top_level of EpixCoreGen2 is
    signal asicAdc    : Ad9249SerialGroupArray(1 downto 0);
    
    signal monTrigCnt : integer;
+   
+   signal refClk     : sl;
+   signal ddrClk     : sl;
+   signal ddrRst     : sl;
+   signal calibComplete : sl;
+   
+   constant DDR_AXI_CONFIG_C : AxiConfigType := axiConfig(
+      ADDR_WIDTH_C => 30,
+      DATA_BYTES_C => 16,
+      ID_BITS_C    => 4,
+      LEN_BITS_C   => 8);
+   
+   constant START_ADDR_C : slv(DDR_AXI_CONFIG_C.ADDR_WIDTH_C-1 downto 0) := (others => '0');
+   constant STOP_ADDR_C  : slv(DDR_AXI_CONFIG_C.ADDR_WIDTH_C-1 downto 0) := (others => '1');
    
    constant ADC_INVERT_CH_C : Slv8Array(1 downto 0) := (
       0 => ADC0_INVERT_CH,
@@ -324,6 +361,7 @@ begin
          txLinkReady => txReady,
          -- Output clocking
          pgpClk      => pgpClk,
+         refClk      => refClk,
          -- AXI clocking
          axiClk     => coreClk,
          axiRst     => axiRst,
@@ -788,6 +826,10 @@ begin
       mAxilWriteSlave  => sAxiWriteSlave(1),
       mAxilReadMaster  => sAxiReadMaster(1),
       mAxilReadSlave   => sAxiReadSlave(1),
+      -- Interrupt Interface
+      interrupt(7 downto 2)   => "000000",
+      interrupt(1)            => epixConfig.requestConfDump,
+      interrupt(0)            => epixConfig.requestStartupCal,
       -- Clock and Reset
       clk              => coreClk,
       rst              => axiRst
@@ -953,7 +995,72 @@ begin
       -- Clocks and Resets
       axiClk         => coreClk,
       axiRst         => axiRst
-   );   
+   );
    
+   
+--   --------------------
+--   -- DDR memory controller
+--   --------------------
+--   U_AxiDdrControllerWrapper : entity work.AxiDdrControllerWrapper
+--   port map ( 
+--      -- AXI Slave     
+--      axiReadMaster     => axiReadMaster,
+--      axiReadSlave      => axiReadSlave,
+--      axiWriteMaster    => axiWriteMaster,
+--      axiWriteSlave     => axiWriteSlave,
+--      
+--      -- DDR PHY Ref clk
+--      sysClk            => refClk,
+--      dlyClk            => iDelayCtrlClk,
+--      
+--      -- DDR clock from the DDR controller core
+--      ddrClk            => ddrClk,
+--      ddrRst            => ddrRst,
+--
+--      -- DRR Memory interface ports
+--      ddr3_dq           => ddr3_dq,
+--      ddr3_dqs_n        => ddr3_dqs_n,
+--      ddr3_dqs_p        => ddr3_dqs_p,
+--      ddr3_addr         => ddr3_addr,
+--      ddr3_ba           => ddr3_ba,
+--      ddr3_ras_n        => ddr3_ras_n,
+--      ddr3_cas_n        => ddr3_cas_n,
+--      ddr3_we_n         => ddr3_we_n,
+--      ddr3_reset_n      => ddr3_reset_n,
+--      ddr3_ck_p         => ddr3_ck_p,
+--      ddr3_ck_n         => ddr3_ck_n,
+--      ddr3_cke          => ddr3_cke,
+--      ddr3_cs_n         => ddr3_cs_n,
+--      ddr3_dm           => ddr3_dm,
+--      ddr3_odt          => ddr3_odt,
+--      calibComplete     => calibComplete
+--   );
+--   
+--   U_AxiMemTester : entity work.AxiMemTester
+--   generic map (
+--      TPD_G            => TPD_G,
+--      START_ADDR_G     => START_ADDR_C,
+--      STOP_ADDR_G      => STOP_ADDR_C,
+--      AXI_CONFIG_G     => DDR_AXI_CONFIG_C
+--   )
+--   port map (
+--      -- AXI-Lite Interface
+--      axilClk         => coreClk,
+--      axilRst         => axiRst,
+--      axilReadMaster  => mAxiReadMasters(TESTMEM_AXI_INDEX_C),
+--      axilReadSlave   => mAxiReadSlaves(TESTMEM_AXI_INDEX_C),
+--      axilWriteMaster => mAxiWriteMasters(TESTMEM_AXI_INDEX_C),
+--      axilWriteSlave  => mAxiWriteSlaves(TESTMEM_AXI_INDEX_C),
+--      memReady        => open,
+--      memError        => open,
+--      -- DDR Memory Interface
+--      axiClk          => ddrClk,
+--      axiRst          => ddrRst,
+--      start           => calibComplete,
+--      axiWriteMaster  => axiWriteMaster,
+--      axiWriteSlave   => axiWriteSlave,
+--      axiReadMaster   => axiReadMaster,
+--      axiReadSlave    => axiReadSlave
+--   );
    
 end top_level;

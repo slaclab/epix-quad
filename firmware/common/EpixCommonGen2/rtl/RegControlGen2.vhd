@@ -310,6 +310,7 @@ begin
       axiSlaveRegisterW(x"000080" & "00",  0, v.epixRegOut.requestStartupCal);
       axiSlaveRegisterW(x"000080" & "00",  1, v.epixRegOut.startupAck);          -- set by Microblaze
       axiSlaveRegisterW(x"000080" & "00",  2, v.epixRegOut.startupFail);         -- set by Microblaze
+      axiSlaveRegisterW(x"000081" & "00",  0, v.epixRegOut.requestConfDump);
       
       axiSlaveRegisterW(x"000090" & "00",  0, v.epixRegOut.pipelineDelayA0);
       axiSlaveRegisterW(x"000091" & "00",  0, v.epixRegOut.pipelineDelayA1);
