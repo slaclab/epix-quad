@@ -40,15 +40,15 @@ architecture beh of TB_RegControlGen2 is
    signal rstL                 :  sl;
    
    -- AXI-Lite Signals
-   signal sAxiReadMaster  : AxiLiteReadMasterArray(1 downto 0);
-   signal sAxiReadSlave   : AxiLiteReadSlaveArray(1 downto 0);
-   signal sAxiWriteMaster : AxiLiteWriteMasterArray(1 downto 0);
-   signal sAxiWriteSlave  : AxiLiteWriteSlaveArray(1 downto 0);
+   signal sAxiReadMaster  : AxiLiteReadMasterArray(2 downto 0);
+   signal sAxiReadSlave   : AxiLiteReadSlaveArray(2 downto 0);
+   signal sAxiWriteMaster : AxiLiteWriteMasterArray(2 downto 0);
+   signal sAxiWriteSlave  : AxiLiteWriteSlaveArray(2 downto 0);
    -- AXI-Lite Signals
-   signal mAxiWriteMasters : AxiLiteWriteMasterArray(2 downto 0); 
-   signal mAxiWriteSlaves  : AxiLiteWriteSlaveArray(2 downto 0); 
-   signal mAxiReadMasters  : AxiLiteReadMasterArray(2 downto 0); 
-   signal mAxiReadSlaves   : AxiLiteReadSlaveArray(2 downto 0); 
+   signal mAxiWriteMasters : AxiLiteWriteMasterArray(3 downto 0); 
+   signal mAxiWriteSlaves  : AxiLiteWriteSlaveArray(3 downto 0); 
+   signal mAxiReadMasters  : AxiLiteReadMasterArray(3 downto 0); 
+   signal mAxiReadSlaves   : AxiLiteReadSlaveArray(3 downto 0); 
    
    
    signal pgpRxAxisMaster   : AxiStreamMasterType;
@@ -83,16 +83,22 @@ architecture beh of TB_RegControlGen2 is
    signal wrData : Slv32Array(3 downto 0);
 
    constant EPIXREGS_AXI_INDEX_C : natural := 0;
-   constant MULTIPIX_AXI_INDEX_C : natural := 1;
-   constant SACIREGS_AXI_INDEX_C : natural := 2;
+   constant PREPROUT_AXI_INDEX_C : natural := 1;
+   constant MULTIPIX_AXI_INDEX_C : natural := 2;
+   constant SACIREGS_AXI_INDEX_C : natural := 3;
    
    constant EPIXREGS_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"00000000";
+   constant PREPROUT_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"00100000";
    constant MULTIPIX_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"00200000";
    constant SACIREGS_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"02000000";
    
-   constant AXI_CROSSBAR_TB_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(2 downto 0) := (
+   constant AXI_CROSSBAR_TB_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(3 downto 0) := (
       EPIXREGS_AXI_INDEX_C => (
          baseAddr       => EPIXREGS_AXI_BASE_ADDR_C,
+         addrBits       => 20,
+         connectivity   => x"FFFF"),
+      PREPROUT_AXI_INDEX_C => (
+         baseAddr       => PREPROUT_AXI_BASE_ADDR_C,
          addrBits       => 20,
          connectivity   => x"FFFF"),
       MULTIPIX_AXI_INDEX_C => (
@@ -134,7 +140,7 @@ begin
       saciReadoutReq <= '0';
       wait for 100 us;
       saciReadoutReq <= '1';
-      wait until saciReadoutAck = '0';
+      wait until rising_edge (saciReadoutAck);
       --saciReadoutReq <= '0';
       --wait;
    end process;
@@ -232,11 +238,12 @@ begin
    -- AXI Lite Crossbar for register control --
    -- Master 0 : PGP register controller     --
    -- Master 1 : SACI multipixel controller  --
+   -- Master 2 : SACI prepare rdout command controller  --
    --------------------------------------------
    U_AxiLiteCrossbar : entity work.AxiLiteCrossbar
    generic map (
-      NUM_SLAVE_SLOTS_G  => 2,
-      NUM_MASTER_SLOTS_G => 3,
+      NUM_SLAVE_SLOTS_G  => 3,
+      NUM_MASTER_SLOTS_G => 4,
       MASTERS_CONFIG_G   => AXI_CROSSBAR_TB_MASTERS_CONFIG_C)
    port map (
       sAxiWriteMasters    => sAxiWriteMaster,
@@ -268,6 +275,29 @@ begin
       mAxilWriteSlave   => sAxiWriteSlave(1),
       mAxilReadMaster   => sAxiReadMaster(1),
       mAxilReadSlave    => sAxiReadSlave(1)
+   );
+   
+   U_SaciPrepRdout_DUT : entity work.SaciPrepRdout
+   port map (
+      
+      axilClk           => sysClk,
+      axilRst           => sysRst,
+      
+      -- Prepare for readout req/ack
+      prepRdoutReq      => saciReadoutReq,
+      prepRdoutAck      => saciReadoutAck,
+      
+      -- Optional AXI lite slave port for status readout
+      sAxilWriteMaster => mAxiWriteMasters(PREPROUT_AXI_INDEX_C),
+      sAxilWriteSlave  => mAxiWriteSlaves(PREPROUT_AXI_INDEX_C),
+      sAxilReadMaster  => mAxiReadMasters(PREPROUT_AXI_INDEX_C),
+      sAxilReadSlave   => mAxiReadSlaves(PREPROUT_AXI_INDEX_C),
+      
+      -- AXI lite master port
+      mAxilWriteMaster  => sAxiWriteMaster(2),
+      mAxilWriteSlave   => sAxiWriteSlave(2),
+      mAxilReadMaster   => sAxiReadMaster(2),
+      mAxilReadSlave    => sAxiReadSlave(2)
    );
    
    
