@@ -19,12 +19,17 @@
 #include <Device.h>
 using namespace std;
 
+class MultDestPgpG3;
+
 //! Class to contain APV25 
 class EvrCntrl : public Device {
+     
+      MultDestPgpG3 * _mdp;
+
 
    public:
 
-      EvrCntrl ( Device *parent );
+      EvrCntrl ( Device *parent, MultDestPgpG3 *mdp = NULL );
 
       ~EvrCntrl ( );
 
