@@ -24,6 +24,8 @@
 #include <fstream>
 #include <iostream>
 #include <signal.h>
+#include <stdio.h>
+
 using namespace std;
 
 #define USE_MULTLINK 1
@@ -50,11 +52,34 @@ void sigTerm (int) {
 int main (int argc, char **argv) {
    ControlServer cntrlServer;
    string        defFile;
-   int           port;
+   string        pgpFile;
+   int           c, port;
+   int           pflag = 0;
+   int           fflag = 0;
    stringstream  cmd;
-
-   if ( argc > 1 ) defFile = argv[1];
-   else defFile = "";
+   
+   defFile = "";
+   pgpFile = "/dev/pgpcard0";
+   
+   while ((c = getopt (argc, argv, "f:p:")) != -1) {
+      switch (c)
+      {
+         case 'f':
+            fflag = 1;
+            defFile = optarg;
+            break;
+         
+         case 'p':
+            pflag = 1;
+            pgpFile = optarg;
+            break;
+      }
+   }
+   
+   if (pflag == 0)
+      cout << "Using " << pgpFile << " as default PGP device file. Use -p option to change." << endl;
+   if (fflag == 0)
+      cout << "Using " << defFile << " as default configuration xml file. Use -f option to change." << endl;
 
    // Catch signals
    signal (SIGINT,&sigTerm);
@@ -76,7 +101,7 @@ int main (int argc, char **argv) {
 #if USE_MULTLINK
       baseAddress = 0x00000000;
       addrSize = 4;
-      dest = new MultDestPgp("/dev/pgpcard0");
+      dest = new MultDestPgp(pgpFile);
       dest->addDataSource(0x00000000); // VC0 - acq data
       dest->addDataSource(0x02000000); // VC2 - oscilloscope
       dest->addDataSource(0x03000000); // VC3 - monitoring
@@ -92,7 +117,7 @@ int main (int argc, char **argv) {
       pgpLink = new PgpLink();
       pgpLink->setMaxRxTx(550000);
       pgpLink->setDebug(true);
-      pgpLink->open("/dev/pgpcard0");
+      pgpLink->open(pgpFile);
       pgpLink->enableSharedMemory("epix",1);
       //Write out only the event data, no XML
       pgpLink->setXmlStore(false);
