@@ -25,9 +25,9 @@ USE ieee.std_logic_1164.ALL;
 
 package Version is
 
-constant FPGA_VERSION_C    : std_logic_vector(31 downto 0) := x"EA020004"; -- MAKE_VERSION
+constant FPGA_VERSION_C    : std_logic_vector(31 downto 0) := x"EA020005"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "Epix100aGen2: Vivado v2016.1 (x86_64) Built Mon Jul 25 10:21:39 PDT 2016 by mkwiatko";
+constant BUILD_STAMP_C : string := "Epix100aGen2: Vivado v2016.1 (x86_64) Built Tue Jul 26 17:38:03 PDT 2016 by mkwiatko";
 
 constant FPGA_BASE_CLOCK_C : std_logic_vector(31 downto 0) := x"00" & x"100000";  
 
@@ -48,6 +48,10 @@ end Version;
 --                          Old non AXIL components replaced by the new AXIL components
 --                          Picoblaze replaced by Microblaze with AXIL log memory
 -- 07/08/2016 (0xEA020005): New working copy version number (change date when released)
+--                          Instantiated new SACI controller with AXI lite slave bus
+--                          Two more AXI lite masters for SACI multi pixel interface and prepare for readout command
+--                          Added PGP monitoring registers module
+--                          Prepared DDR AXI controller. The onboard memory verified with Axi memory tester. DDR3 ready to be used.
 --               
 -------------------------------------------------------------------------------
 
