@@ -156,7 +156,6 @@ architecture top_level of Epix100aGen2 is
    signal iSaciClk  : sl;
    signal iSaciSelL : slv(3 downto 0);
    signal iSaciCmd  : sl;
-   signal iSaciRsp  : slv(3 downto 0);
    
    signal iAdcSpiDataOut : sl;
    signal iAdcSpiDataIn   : sl;
@@ -241,7 +240,7 @@ begin
          saciClk             => iSaciClk,
          saciSelL            => iSaciSelL,
          saciCmd             => iSaciCmd,
-         saciRsp             => iSaciRsp,
+         saciRsp             => asicSaciRsp,
          -- Fast ADC Control
          adcSpiClk           => iAdcSpiClk,
          adcSpiDataOut       => iAdcSpiDataOut,
@@ -324,7 +323,6 @@ begin
    asicSaciClk    <= iSaciClk when iFpgaOutputEn = '1' else 'Z';
    G_SACISEL : for i in 0 to 3 generate
       asicSaciSel(i) <= iSaciSelL(i) when iFpgaOutputEn = '1' else 'Z';
-      iSaciRsp(i)    <= asicSaciRsp;
    end generate;
 
    -- Fast ADC Configuration

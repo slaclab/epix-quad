@@ -10,22 +10,29 @@ use work.Version.all;
 package EpixPkgGen2 is
 
    -- AXI-Lite Constants
-   --constant NUM_AXI_MASTER_SLOTS_C : natural := 10;
-   constant NUM_AXI_MASTER_SLOTS_C : natural := 9;
-   constant NUM_AXI_SLAVE_SLOTS_C : natural := 2;
-
-   constant COMMON_AXI_INDEX_C  : natural := 0;
-   constant VERSION_AXI_INDEX_C : natural := 1;
-   constant BOOTMEM_AXI_INDEX_C : natural := 2;
-   constant ADCTEST_AXI_INDEX_C : natural := 3;
-   constant ADC0_RD_AXI_INDEX_C : natural := 4;
-   constant ADC1_RD_AXI_INDEX_C : natural := 5;
-   constant ADC2_RD_AXI_INDEX_C : natural := 6;
-   constant ADC_CFG_AXI_INDEX_C : natural := 7;
-   constant MEM_LOG_AXI_INDEX_C : natural := 8;
-   constant TESTMEM_AXI_INDEX_C : natural := 9;
+   constant NUM_AXI_MASTER_SLOTS_C : natural := 13;
+   constant NUM_AXI_SLAVE_SLOTS_C : natural := 4;
    
-   constant COMMON_AXI_BASE_ADDR_C    : slv(31 downto 0) := X"00000000";
+   constant EPIXREGS_AXI_INDEX_C    : natural := 0;
+   constant PREPRDOUT_AXI_INDEX_C   : natural := 1;
+   constant MULTIPIX_AXI_INDEX_C    : natural := 2;
+   constant PGPSTAT_AXI_INDEX_C     : natural := 3;
+   constant SACIREGS_AXI_INDEX_C    : natural := 4;
+   constant VERSION_AXI_INDEX_C     : natural := 5;
+   constant BOOTMEM_AXI_INDEX_C     : natural := 6;
+   constant ADCTEST_AXI_INDEX_C     : natural := 7;
+   constant ADC0_RD_AXI_INDEX_C     : natural := 8;
+   constant ADC1_RD_AXI_INDEX_C     : natural := 9;
+   constant ADC2_RD_AXI_INDEX_C     : natural := 10;
+   constant ADC_CFG_AXI_INDEX_C     : natural := 11;
+   constant MEM_LOG_AXI_INDEX_C     : natural := 12;
+   constant TESTMEM_AXI_INDEX_C     : natural := 13;
+   
+   constant EPIXREGS_AXI_BASE_ADDR_C  : slv(31 downto 0) := X"00000000";
+   constant PREPRDOUT_AXI_BASE_ADDR_C : slv(31 downto 0) := X"00100000";
+   constant MULTIPIX_AXI_BASE_ADDR_C  : slv(31 downto 0) := X"00200000";
+   constant PGPSTAT_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"00300000";
+   constant SACIREGS_AXI_BASE_ADDR_C  : slv(31 downto 0) := X"02000000";
    constant VERSION_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"08000000";
    constant BOOTMEM_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"0C000000";
    constant ADCTEST_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"10000000";
@@ -37,46 +44,62 @@ package EpixPkgGen2 is
    constant TESTMEM_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"28000000";
    
    constant AXI_CROSSBAR_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0) := (
-      COMMON_AXI_INDEX_C      => (
-         baseAddr             => COMMON_AXI_BASE_ADDR_C,
-         addrBits             => 26,
-         connectivity         => x"0003"),
-      VERSION_AXI_INDEX_C      => (
+      EPIXREGS_AXI_INDEX_C    => (
+         baseAddr             => EPIXREGS_AXI_BASE_ADDR_C,
+         addrBits             => 20,
+         connectivity         => x"FFFF"),
+      PREPRDOUT_AXI_INDEX_C   => (
+         baseAddr             => PREPRDOUT_AXI_BASE_ADDR_C,
+         addrBits             => 20,
+         connectivity         => x"FFFF"),
+      MULTIPIX_AXI_INDEX_C    => (
+         baseAddr             => MULTIPIX_AXI_BASE_ADDR_C,
+         addrBits             => 20,
+         connectivity         => x"FFFF"),
+      PGPSTAT_AXI_INDEX_C     => (
+         baseAddr             => PGPSTAT_AXI_BASE_ADDR_C,
+         addrBits             => 20,
+         connectivity         => x"FFFF"),
+      SACIREGS_AXI_INDEX_C    => (
+         baseAddr             => SACIREGS_AXI_BASE_ADDR_C,
+         addrBits             => 24,
+         connectivity         => x"FFFF"),
+      VERSION_AXI_INDEX_C     => (
          baseAddr             => VERSION_AXI_BASE_ADDR_C,
          addrBits             => 26,
-         connectivity         => x"0003"),
-      BOOTMEM_AXI_INDEX_C      => (
+         connectivity         => x"FFFF"),
+      BOOTMEM_AXI_INDEX_C     => (
          baseAddr             => BOOTMEM_AXI_BASE_ADDR_C,
          addrBits             => 26,
-         connectivity         => x"0003"),
-      ADCTEST_AXI_INDEX_C      => (
+         connectivity         => x"FFFF"),
+      ADCTEST_AXI_INDEX_C     => (
          baseAddr             => ADCTEST_AXI_BASE_ADDR_C,
          addrBits             => 26,
-         connectivity         => x"0003"),
-      ADC0_RD_AXI_INDEX_C      => (
+         connectivity         => x"FFFF"),
+      ADC0_RD_AXI_INDEX_C     => (
          baseAddr             => ADC0_RD_AXI_BASE_ADDR_C,
          addrBits             => 26,
-         connectivity         => x"0003"),
+         connectivity         => x"FFFF"),
       ADC1_RD_AXI_INDEX_C      => (
          baseAddr             => ADC1_RD_AXI_BASE_ADDR_C,
          addrBits             => 26,
-         connectivity         => x"0003"),
-      ADC2_RD_AXI_INDEX_C      => (
+         connectivity         => x"FFFF"),
+      ADC2_RD_AXI_INDEX_C     => (
          baseAddr             => ADC2_RD_AXI_BASE_ADDR_C,
          addrBits             => 26,
-         connectivity         => x"0003"),
-      ADC_CFG_AXI_INDEX_C      => (
+         connectivity         => x"FFFF"),
+      ADC_CFG_AXI_INDEX_C     => (
          baseAddr             => ADC_CFG_AXI_BASE_ADDR_C,
          addrBits             => 26,
-         connectivity         => x"0003"),
-      MEM_LOG_AXI_INDEX_C      => (
+         connectivity         => x"FFFF"),
+      MEM_LOG_AXI_INDEX_C     => (
          baseAddr             => MEM_LOG_AXI_BASE_ADDR_C,
          addrBits             => 26,
-         connectivity         => x"0003")
---      TESTMEM_AXI_INDEX_C      => (
+         connectivity         => x"FFFF")
+--      TESTMEM_AXI_INDEX_C     => (
 --         baseAddr             => TESTMEM_AXI_BASE_ADDR_C,
 --         addrBits             => 26,
---         connectivity         => x"0003")
+--         connectivity         => x"FFFF")
    );
    
    constant NUM_FAST_ADCS_C  : natural := 3;
@@ -201,26 +224,6 @@ package EpixPkgGen2 is
    constant EPIXS_COLS_PER_ROW     : integer := 10;
    constant EPIX100A_ROWS_PER_ASIC : integer := 352;
    
-   procedure globalToLocalPixel( constant asicType   : in slv; 
-                                 signal   globalRow  : in slv; 
-                                 signal   globalCol  : in slv; 
-                                 signal   calRowFlag : in sl; 
-                                 signal   calBotFlag : in sl;
-                                 signal   inputData  : in Slv16Array;
-                                 variable localAsic  : inout slv; 
-                                 variable localRow   : inout slv; 
-                                 variable localCol   : inout slv;
-                                 variable localData  : inout Slv16Array);
-   procedure globalToLocalPixelEpix100A( signal   globalRow  : in slv; 
-                                         signal   globalCol  : in slv; 
-                                         signal   calRowFlag : in sl; 
-                                         signal   calBotFlag : in sl;
-                                         signal   inputData  : in Slv16Array;
-                                         variable localAsic  : inout slv; 
-                                         variable localRow   : inout slv; 
-                                         variable localCol   : inout slv;
-                                         variable localData  : inout Slv16Array) ;
-   
 end EpixPkgGen2;
 
 package body EpixPkgGen2 is
@@ -256,92 +259,4 @@ package body EpixPkgGen2 is
          return NCOL_C * 4 * 2 / 2;
       end if; 
    end function;
-
-   procedure globalToLocalPixel (
-       constant asicType   : in slv;
-       signal   globalRow  : in slv;
-       signal   globalCol  : in slv;
-       signal   calRowFlag : in sl;
-       signal   calBotFlag : in sl;
-       signal   inputData  : in Slv16Array;
-       variable localAsic  : inout slv;
-       variable localRow   : inout slv;
-       variable localCol   : inout slv;
-       variable localData  : inout Slv16Array)
-   is
-   begin 
-      assert (asicType = x"EA") report "Multi-pixel writes not supported for this ASIC!" severity warning;   
-      if asicType = x"EA" then
-         globalToLocalPixelEpix100A(globalRow,globalCol,calRowFlag,calBotFlag,inputData,localAsic,localRow,localCol,localData);
-      end if;
-   end procedure globalToLocalPixel;
-   
-   procedure globalToLocalPixelEpix100A (
-       signal   globalRow  : in slv;
-       signal   globalCol  : in slv;
-       signal   calRowFlag : in sl;
-       signal   calBotFlag : in sl;
-       signal   inputData  : in Slv16Array;
-       variable localAsic  : inout slv;
-       variable localRow   : inout slv;
-       variable localCol   : inout slv;
-       variable localData  : inout Slv16Array)
-   is
-      variable asicCol  : slv(9 downto 0);
-   begin 
-      -- Top 2 ASICs
-      if (globalRow < EPIX100A_ROWS_PER_ASIC and calRowFlag = '0') or (calRowFlag = '1' and calBotFlag = '0') then
-         -- ASIC 2 (upper left)
-         if globalCol < NCOL_C * 4 then
-            localAsic := "10";
-            asicCol   := NCOL_C * 4 - globalCol - 1;
-         -- ASIC 1 (upper right)
-         else
-            localAsic := "01";
-            asicCol   := NCOL_C * 4 * 2 - 1 - globalCol;
-         end if;
-         -- For both top ASICs, translate row to local space
-         if calRowFlag = '1' then
-            localRow := conv_std_logic_vector(EPIX100A_ROWS_PER_ASIC,localRow'length);
-         else
-            localRow := EPIX100A_ROWS_PER_ASIC - 1 - globalRow;
-         end if;
-         -- Readout order for top ASICs is 3->0
-         for i in 0 to 3 loop
-            localData(3-i) := inputData(i);
-         end loop;
-      -- Bottom two ASICs
-      else
-         -- ASIC 3 (lower left)
-         if (globalCol < NCOL_C * 4) then
-            localAsic := "11";
-            asicCol   := globalCol;
-         -- ASIC 0 (lower right)
-         else
-            localAsic := "00";
-            asicCol   := globalCol - NCOL_C * 4;
-         end if;
-         -- For both bottom ASICs, translate row to local space
-         if calRowFlag = '1' then
-            localRow := conv_std_logic_vector(EPIX100A_ROWS_PER_ASIC,localRow'length);
-         else
-            localRow := globalRow - EPIX100A_ROWS_PER_ASIC;
-         end if;
-         -- Readout order for bottom ASICs is 0->3
-         for i in 0 to 3 loop
-            localData(i) := inputData(i);
-         end loop;
-      end if;
-      -- Decode column to column within a bank   
-      if asicCol  < NCOL_C then
-         localCol := asicCol;
-      elsif asicCol < NCOL_C * 2 then
-         localCol := asicCol - NCOL_C;
-      elsif asicCol < NCOL_C * 3 then
-         localCol := asicCol - NCOL_C * 2;
-      else
-         localCol := asicCol - NCOL_C * 3;
-      end if;
-   end procedure globalToLocalPixelEpix100A;  
-   
 end package body EpixPkgGen2;

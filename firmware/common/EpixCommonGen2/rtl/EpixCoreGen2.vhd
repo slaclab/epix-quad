@@ -90,7 +90,7 @@ entity EpixCoreGen2 is
       saciClk             : out sl;
       saciSelL            : out slv(3 downto 0);
       saciCmd             : out sl;
-      saciRsp             : in  slv(3 downto 0);
+      saciRsp             : in  sl;
       -- Fast ADC Control
       adcSpiClk           : out sl;
       adcSpiDataIn        : in  sl;
@@ -254,6 +254,9 @@ architecture top_level of EpixCoreGen2 is
    signal ddrRst     : sl;
    signal calibComplete : sl;
    
+   signal iAdcSpiCsb : slv(3 downto 0);
+   signal iAdcPdwn   : slv(3 downto 0);
+   
    constant DDR_AXI_CONFIG_C : AxiConfigType := axiConfig(
       ADDR_WIDTH_C => 30,
       DATA_BYTES_C => 16,
@@ -306,20 +309,68 @@ begin
 
    -- Temporary one-shot for grabbing PGP op code
    U_OpCodeEnOneShot : entity work.SynchronizerOneShot
-      generic map (
-         TPD_G           => TPD_G,
-         RST_POLARITY_G  => '1',
-         RST_ASYNC_G     => false,
-         BYPASS_SYNC_G   => true,
-         RELEASE_DELAY_G => 10,
-         IN_POLARITY_G   => '1',
-         OUT_POLARITY_G  => '1')
-      port map (
-         clk     => pgpClk,
-         rst     => '0',
-         dataIn  => pgpRxOut.opCodeEn,
-         dataOut => pgpOpCodeOneShot);
-
+   generic map (
+      TPD_G           => TPD_G,
+      RST_POLARITY_G  => '1',
+      RST_ASYNC_G     => false,
+      BYPASS_SYNC_G   => true,
+      RELEASE_DELAY_G => 10,
+      IN_POLARITY_G   => '1',
+      OUT_POLARITY_G  => '1')
+   port map (
+      clk     => pgpClk,
+      rst     => '0',
+      dataIn  => pgpRxOut.opCodeEn,
+      dataOut => pgpOpCodeOneShot
+   );
+   
+   ------------------------------------------
+   -- Generate clocks from 156.25 MHz PGP  --
+   ------------------------------------------
+   -- clkIn     : 156.25 MHz PGP
+   -- clkOut(0) : 100.00 MHz system clock
+   U_CoreClockGen : entity work.ClockManager7
+   generic map (
+      INPUT_BUFG_G         => false,
+      FB_BUFG_G            => true,
+      NUM_CLOCKS_G         => 1,
+      CLKIN_PERIOD_G       => 6.4,
+      DIVCLK_DIVIDE_G      => 5,
+      CLKFBOUT_MULT_F_G    => 32.0,
+      CLKOUT0_DIVIDE_F_G   => 10.0,
+      CLKOUT0_PHASE_G      => 0.0,
+      CLKOUT0_DUTY_CYCLE_G => 0.5
+   )
+   port map (
+      clkIn     => pgpClk,
+      rstIn     => sysRst,
+      clkOut(0) => coreClk,
+      rstOut(0) => coreClkRst,
+      locked    => open
+   );
+   -- clkIn     : 156.25 MHz PGP
+   -- clkOut(0) : 200.00 MHz IDELAYCTRL clock
+   U_CalClockGen : entity work.ClockManager7
+   generic map (
+      INPUT_BUFG_G         => false,
+      FB_BUFG_G            => true,
+      NUM_CLOCKS_G         => 1,
+      CLKIN_PERIOD_G       => 6.4,
+      DIVCLK_DIVIDE_G      => 1,
+      --CLKFBOUT_MULT_F_G    => 6.0,
+      CLKFBOUT_MULT_F_G    => 4.0,
+      CLKOUT0_DIVIDE_F_G   => 3.125,
+      CLKOUT0_PHASE_G      => 0.0,
+      CLKOUT0_DUTY_CYCLE_G => 0.5,
+      CLKOUT0_RST_HOLD_G   => 32
+   )
+   port map (
+      clkIn     => pgpClk,
+      rstIn     => sysRst,
+      clkOut(0) => iDelayCtrlClk,
+      rstOut(0) => iDelayCtrlRst,
+      locked    => open
+   );
    
    ---------------------
    -- Diagnostic LEDs --
@@ -332,229 +383,272 @@ begin
    -- Heart beat LED  --
    ---------------------
    U_Heartbeat : entity work.Heartbeat
-      generic map(
-         PERIOD_IN_G => 10.0E-9
-      )   
-      port map (
-         clk => coreClk,
-         o   => heartBeat
-      );    
+   generic map(
+      PERIOD_IN_G => 10.0E-9
+   )   
+   port map (
+      clk => coreClk,
+      o   => heartBeat
+   );
 
    ---------------------
    -- PGP Front end   --
    ---------------------
    U_PgpFrontEnd : entity work.PgpFrontEnd
-      port map (
-         -- GTX 7 Ports
-         gtClkP      => gtRefClk0P,
-         gtClkN      => gtRefClk0N,
-         gtRxP       => gtDataRxP,
-         gtRxN       => gtDataRxN,
-         gtTxP       => gtDataTxP,
-         gtTxN       => gtDataTxN,
-         -- Input power status
-         powerBad    => not(powerGood),
-         -- Output reset
-         pgpRst      => sysRst,
-         -- Output status
-         rxLinkReady => rxReady,
-         txLinkReady => txReady,
-         -- Output clocking
-         pgpClk      => pgpClk,
-         refClk      => refClk,
-         -- AXI clocking
-         axiClk     => coreClk,
-         axiRst     => axiRst,
-         -- Axi Master Interface - Registers (axiClk domain)
-         mAxiLiteReadMaster  => sAxiReadMaster(0),
-         mAxiLiteReadSlave   => sAxiReadSlave(0),
-         mAxiLiteWriteMaster => sAxiWriteMaster(0),
-         mAxiLiteWriteSlave  => sAxiWriteSlave(0),
-         -- Streaming data Links (axiClk domain)      
-         dataAxisMaster    => dataAxisMaster,
-         dataAxisSlave     => dataAxisSlave,
-         scopeAxisMaster   => scopeAxisMaster,
-         scopeAxisSlave    => scopeAxisSlave,
-         monitorAxisMaster => monitorAxisMaster,
-         monitorAxisSlave  => monitorAxisSlave,
-         -- Monitoring enable command incoming stream
-         monEnAxisMaster   => monEnAxisMaster,
-         -- Command interface
-         ssiCmd              => ssiCmd,
-         -- Sideband interface
-         pgpRxOut            => pgpRxOut
-      );
-
-   ------------------------------------------
-   -- Generate clocks from 156.25 MHz PGP  --
-   ------------------------------------------
-   -- clkIn     : 156.25 MHz PGP
-   -- clkOut(0) : 100.00 MHz system clock
-   U_CoreClockGen : entity work.ClockManager7
-      generic map (
-         INPUT_BUFG_G         => false,
-         FB_BUFG_G            => true,
-         NUM_CLOCKS_G         => 1,
-         CLKIN_PERIOD_G       => 6.4,
-         DIVCLK_DIVIDE_G      => 5,
-         CLKFBOUT_MULT_F_G    => 32.0,
-         CLKOUT0_DIVIDE_F_G   => 10.0,
-         CLKOUT0_PHASE_G      => 0.0,
-         CLKOUT0_DUTY_CYCLE_G => 0.5
-      )
-      port map (
-         clkIn     => pgpClk,
-         rstIn     => sysRst,
-         clkOut(0) => coreClk,
-         rstOut(0) => coreClkRst,
-         locked    => open
-      );
-   -- clkIn     : 156.25 MHz PGP
-   -- clkOut(0) : 200.00 MHz IDELAYCTRL clock
-   U_CalClockGen : entity work.ClockManager7
-      generic map (
-         INPUT_BUFG_G         => false,
-         FB_BUFG_G            => true,
-         NUM_CLOCKS_G         => 1,
-         CLKIN_PERIOD_G       => 6.4,
-         DIVCLK_DIVIDE_G      => 1,
-         --CLKFBOUT_MULT_F_G    => 6.0,
-         CLKFBOUT_MULT_F_G    => 4.0,
-         CLKOUT0_DIVIDE_F_G   => 3.125,
-         CLKOUT0_PHASE_G      => 0.0,
-         CLKOUT0_DUTY_CYCLE_G => 0.5,
-         CLKOUT0_RST_HOLD_G   => 32
-      )
-      port map (
-         clkIn     => pgpClk,
-         rstIn     => sysRst,
-         clkOut(0) => iDelayCtrlClk,
-         rstOut(0) => iDelayCtrlRst,
-         locked    => open
-      );
+   port map (
+      -- GTX 7 Ports
+      gtClkP      => gtRefClk0P,
+      gtClkN      => gtRefClk0N,
+      gtRxP       => gtDataRxP,
+      gtRxN       => gtDataRxN,
+      gtTxP       => gtDataTxP,
+      gtTxN       => gtDataTxN,
+      -- Input power status
+      powerBad    => not(powerGood),
+      -- Output reset
+      pgpRst      => sysRst,
+      -- Output status
+      rxLinkReady => rxReady,
+      txLinkReady => txReady,
+      -- Output clocking
+      pgpClk      => pgpClk,
+      refClk      => refClk,
+      -- AXI clocking
+      axiClk     => coreClk,
+      axiRst     => axiRst,
+      -- Axi Master Interface - Registers (axiClk domain)
+      mAxiLiteReadMaster  => sAxiReadMaster(0),
+      mAxiLiteReadSlave   => sAxiReadSlave(0),
+      mAxiLiteWriteMaster => sAxiWriteMaster(0),
+      mAxiLiteWriteSlave  => sAxiWriteSlave(0),
+      -- Axi Slave Interface - PGP Status Registers (axiClk domain)
+      sAxiLiteReadMaster  => mAxiReadMasters(PGPSTAT_AXI_INDEX_C),
+      sAxiLiteReadSlave   => mAxiReadSlaves(PGPSTAT_AXI_INDEX_C),
+      sAxiLiteWriteMaster => mAxiWriteMasters(PGPSTAT_AXI_INDEX_C),
+      sAxiLiteWriteSlave  => mAxiWriteSlaves(PGPSTAT_AXI_INDEX_C),
+      -- Streaming data Links (axiClk domain)      
+      dataAxisMaster    => dataAxisMaster,
+      dataAxisSlave     => dataAxisSlave,
+      scopeAxisMaster   => scopeAxisMaster,
+      scopeAxisSlave    => scopeAxisSlave,
+      monitorAxisMaster => monitorAxisMaster,
+      monitorAxisSlave  => monitorAxisSlave,
+      -- Monitoring enable command incoming stream
+      monEnAxisMaster   => monEnAxisMaster,
+      -- Command interface
+      ssiCmd              => ssiCmd,
+      -- Sideband interface
+      pgpRxOut            => pgpRxOut
+   );
+   
+   ---------------------------------------------
+   -- Microblaze based ePix Startup Sequencer --
+   ---------------------------------------------
+   U_CPU : entity work.MicroblazeBasicCoreWrapper
+   generic map (
+      TPD_G            => TPD_G)
+   port map (
+      -- Master AXI-Lite Interface: [0x00000000:0x7FFFFFFF]
+      mAxilWriteMaster => sAxiWriteMaster(1),
+      mAxilWriteSlave  => sAxiWriteSlave(1),
+      mAxilReadMaster  => sAxiReadMaster(1),
+      mAxilReadSlave   => sAxiReadSlave(1),
+      -- Interrupt Interface
+      interrupt(7 downto 2)   => "000000",
+      interrupt(1)            => epixConfig.requestConfDump,
+      interrupt(0)            => epixConfig.requestStartupCal,
+      -- Clock and Reset
+      clk              => coreClk,
+      rst              => axiRst
+   );
+   
+   ---------------------------------------------
+   -- SACI multipixel configurator Master     --
+   ---------------------------------------------
+   U_SaciMultiPixel : entity work.SaciMultiPixel
+   port map (
+      axilClk           => coreClk,
+      axilRst           => axiRst,
       
+      -- AXI lite slave port
+      sAxilWriteMaster => mAxiWriteMasters(MULTIPIX_AXI_INDEX_C),
+      sAxilWriteSlave  => mAxiWriteSlaves(MULTIPIX_AXI_INDEX_C),
+      sAxilReadMaster  => mAxiReadMasters(MULTIPIX_AXI_INDEX_C),
+      sAxilReadSlave   => mAxiReadSlaves(MULTIPIX_AXI_INDEX_C),
       
+      -- AXI lite master port
+      mAxilWriteMaster  => sAxiWriteMaster(2),
+      mAxilWriteSlave   => sAxiWriteSlave(2),
+      mAxilReadMaster   => sAxiReadMaster(2),
+      mAxilReadSlave    => sAxiReadSlave(2)
+   );
+   
+   ---------------------------------------------
+   -- SACI prepare for readout command Master --
+   ---------------------------------------------
+   U_SaciPrepRdout : entity work.SaciPrepRdout
+   port map (
+      
+      axilClk           => coreClk,
+      axilRst           => axiRst,
+      
+      -- Prepare for readout req/ack
+      prepRdoutReq      => saciPrepReadoutReq,
+      prepRdoutAck      => saciPrepReadoutAck,
+      
+      -- Optional AXI lite slave port for status readout
+      sAxilWriteMaster => mAxiWriteMasters(PREPRDOUT_AXI_INDEX_C),
+      sAxilWriteSlave  => mAxiWriteSlaves(PREPRDOUT_AXI_INDEX_C),
+      sAxilReadMaster  => mAxiReadMasters(PREPRDOUT_AXI_INDEX_C),
+      sAxilReadSlave   => mAxiReadSlaves(PREPRDOUT_AXI_INDEX_C),
+      
+      -- AXI lite master port
+      mAxilWriteMaster  => sAxiWriteMaster(3),
+      mAxilWriteSlave   => sAxiWriteSlave(3),
+      mAxilReadMaster   => sAxiReadMaster(3),
+      mAxilReadSlave    => sAxiReadSlave(3)
+   );
+   
    --------------------------------------------
-   -- AXI Lite Crossbar for register control --
-   -- Master 0 : PGP front end controller     --
-   -- Master 1 : Microblaze startup controller    --
+   -- AXI Lite Crossbar for register control
+   -- Master 0 : PGP front end controller
+   -- Master 1 : Microblaze startup controller
+   -- Master 2 : SACI multipixel controller
+   -- Master 3 : SACI prepare rdout command controller
    --------------------------------------------
    U_AxiLiteCrossbar : entity work.AxiLiteCrossbar
-      generic map (
-         NUM_SLAVE_SLOTS_G  => NUM_AXI_SLAVE_SLOTS_C,
-         NUM_MASTER_SLOTS_G => NUM_AXI_MASTER_SLOTS_C,
-         MASTERS_CONFIG_G   => AXI_CROSSBAR_MASTERS_CONFIG_C)
-      port map (
-         sAxiWriteMasters    => sAxiWriteMaster,
-         sAxiWriteSlaves     => sAxiWriteSlave,
-         sAxiReadMasters     => sAxiReadMaster,
-         sAxiReadSlaves      => sAxiReadSlave,
-         mAxiWriteMasters    => mAxiWriteMasters,
-         mAxiWriteSlaves     => mAxiWriteSlaves,
-         mAxiReadMasters     => mAxiReadMasters,
-         mAxiReadSlaves      => mAxiReadSlaves,
-         axiClk              => coreClk,
-         axiClkRst           => axiRst);
+   generic map (
+      NUM_SLAVE_SLOTS_G  => NUM_AXI_SLAVE_SLOTS_C,
+      NUM_MASTER_SLOTS_G => NUM_AXI_MASTER_SLOTS_C,
+      MASTERS_CONFIG_G   => AXI_CROSSBAR_MASTERS_CONFIG_C)
+   port map (
+      sAxiWriteMasters    => sAxiWriteMaster,
+      sAxiWriteSlaves     => sAxiWriteSlave,
+      sAxiReadMasters     => sAxiReadMaster,
+      sAxiReadSlaves      => sAxiReadSlave,
+      mAxiWriteMasters    => mAxiWriteMasters,
+      mAxiWriteSlaves     => mAxiWriteSlaves,
+      mAxiReadMasters     => mAxiReadMasters,
+      mAxiReadSlaves      => mAxiReadSlaves,
+      axiClk              => coreClk,
+      axiClkRst           => axiRst
+   );
    
    --------------------------------------------
    --     Master Register Controller         --
    --------------------------------------------   
-   U_RegControl : entity work.RegControlGen2
-      generic map (
-         TPD_G                => TPD_G,
-         NUM_ASICS_G          => NUM_ASICS_C,
-         CLK_PERIOD_G         => 10.0e-9
-      )
-      port map (
-         axiClk         => coreClk,
-         axiRst         => axiRst,
-         sysRst         => sysRst,
-         -- AXI-Lite Register Interface (axiClk domain)
-         axiReadMaster  => mAxiReadMasters(COMMON_AXI_INDEX_C),
-         axiReadSlave   => mAxiReadSlaves(COMMON_AXI_INDEX_C),
-         axiWriteMaster => mAxiWriteMasters(COMMON_AXI_INDEX_C),
-         axiWriteSlave  => mAxiWriteSlaves(COMMON_AXI_INDEX_C),
-         -- Monitoring enable command incoming stream
-         monEnAxisMaster => monEnAxisMaster,
-         -- Register Inputs/Outputs (axiClk domain)
-         epixStatus     => epixStatus,
-         epixConfig     => epixConfig,
-         scopeConfig    => scopeConfig,
-         -- SACI prep-for-readout command request
-         saciReadoutReq => saciPrepReadoutReq,
-         saciReadoutAck => saciPrepReadoutAck,
-         -- SACI interfaces to ASIC(s)
-         saciClk        => saciClk,
-         saciSelL       => iSaciSelL,
-         saciCmd        => saciCmd,
-         saciRsp        => saciRsp,
-         -- SACI 
-         -- Guard ring DAC interfaces
-         dacSclk        => vGuardDacSclk,
-         dacDin         => vGuardDacDin,
-         dacCsb         => vGuardDacCsb,
-         dacClrb        => vGuardDacClrb,
-         -- 1-wire board ID interfaces
-         serialIdIo     => serialIdIo
-      );
+   U_RegControl : entity work.RegControl
+   generic map (
+      TPD_G                => TPD_G,
+      CLK_PERIOD_G         => 10.0e-9
+   )
+   port map (
+      axiClk         => coreClk,
+      axiRst         => axiRst,
+      sysRst         => sysRst,
+      -- AXI-Lite Register Interface (axiClk domain)
+      axiReadMaster  => mAxiReadMasters(EPIXREGS_AXI_INDEX_C),
+      axiReadSlave   => mAxiReadSlaves(EPIXREGS_AXI_INDEX_C),
+      axiWriteMaster => mAxiWriteMasters(EPIXREGS_AXI_INDEX_C),
+      axiWriteSlave  => mAxiWriteSlaves(EPIXREGS_AXI_INDEX_C),
+      -- Monitoring enable command incoming stream
+      monEnAxisMaster => monEnAxisMaster,
+      -- Register Inputs/Outputs (axiClk domain)
+      epixStatus     => epixStatus,
+      epixConfig     => epixConfig,
+      scopeConfig    => scopeConfig,
+      -- Guard ring DAC interfaces
+      dacSclk        => vGuardDacSclk,
+      dacDin         => vGuardDacDin,
+      dacCsb         => vGuardDacCsb,
+      dacClrb        => vGuardDacClrb,
+      -- 1-wire board ID interfaces
+      serialIdIo     => serialIdIo
+   );
+   
+   --------------------------------------------
+   -- SACI interface controller              --
+   -------------------------------------------- 
+   U_AxiLiteSaciMaster : entity work.AxiLiteSaciMaster
+   generic map (
+      AXIL_CLK_PERIOD_G  => 10.0E-9, -- In units of seconds
+      AXIL_TIMEOUT_G     => 1.0E-3,  -- In units of seconds
+      SACI_CLK_PERIOD_G  => 0.25E-6, -- In units of seconds
+      SACI_CLK_FREERUN_G => false,
+      SACI_RSP_BUSSED_G  => true,
+      SACI_NUM_CHIPS_G   => 4)
+   port map (
+      -- SACI interface
+      saciClk           => saciClk,
+      saciCmd           => saciCmd,
+      saciSelL          => iSaciSelL,
+      saciRsp(0)        => saciRsp,
+      -- AXI-Lite Register Interface
+      axilClk           => coreClk,
+      axilRst           => axiRst,
+      axilReadMaster    => mAxiReadMasters(SACIREGS_AXI_INDEX_C),
+      axilReadSlave     => mAxiReadSlaves(SACIREGS_AXI_INDEX_C),
+      axilWriteMaster   => mAxiWriteMasters(SACIREGS_AXI_INDEX_C),
+      axilWriteSlave    => mAxiWriteSlaves(SACIREGS_AXI_INDEX_C)
+   );
 
    ---------------------
    -- Trig control    --
    ---------------------
    U_TrigControl : entity work.TrigControl 
-      port map ( 
-         -- Core clock, reset
-         sysClk         => coreClk,
-         sysClkRst      => axiRst,
-         -- PGP clock, reset
-         pgpClk         => pgpClk,
-         pgpClkRst      => sysRst,
-         -- TTL triggers in 
-         runTrigger     => iRunTrigger,
-         daqTrigger     => iDaqTrigger,
-         -- SW trigger in (from VC)
-         ssiCmd         => ssiCmd,
-         -- PGP RxOutType (to trigger from sideband)
-         pgpRxOut       => pgpRxOut,
-         -- Opcode associated with this trigger
-         opCodeOut      => opCode,
-         -- Configuration
-         epixConfig     => epixConfig,
-         -- Status output
-         acqCount       => epixStatus.acqCount,
-         -- Interface to other blocks
-         acqStart       => acqStart,
-         dataSend       => dataSend
-      );   
+   port map ( 
+      -- Core clock, reset
+      sysClk         => coreClk,
+      sysClkRst      => axiRst,
+      -- PGP clock, reset
+      pgpClk         => pgpClk,
+      pgpClkRst      => sysRst,
+      -- TTL triggers in 
+      runTrigger     => iRunTrigger,
+      daqTrigger     => iDaqTrigger,
+      -- SW trigger in (from VC)
+      ssiCmd         => ssiCmd,
+      -- PGP RxOutType (to trigger from sideband)
+      pgpRxOut       => pgpRxOut,
+      -- Opcode associated with this trigger
+      opCodeOut      => opCode,
+      -- Configuration
+      epixConfig     => epixConfig,
+      -- Status output
+      acqCount       => epixStatus.acqCount,
+      -- Interface to other blocks
+      acqStart       => acqStart,
+      dataSend       => dataSend
+   );   
 
    ---------------------
    -- Acq control     --
    ---------------------      
    U_AcqControl : entity work.AcqControl
-      port map (
-         sysClk          => coreClk,
-         sysClkRst       => axiRst,
-         acqStart        => acqStart,
-         acqBusy         => acqBusy,
-         readDone        => readDone,
-         readValidA0     => readValidA0,
-         readValidA1     => readValidA1,
-         readValidA2     => readValidA2,
-         readValidA3     => readValidA3,
-         adcClkP         => adcClkP,
-         adcClkM         => adcClkN,
-         adcPulse        => adcPulse,
-         readTps         => readTps,
-         epixConfig      => epixConfig,
-         saciReadoutReq  => saciPrepReadoutReq,
-         saciReadoutAck  => saciPrepReadoutAck,
-         asicR0          => iAsicR0,
-         asicPpmat       => iAsicPpmat,
-         asicPpbe        => iAsicPpbe,
-         asicGlblRst     => iAsicGrst,
-         asicAcq         => iAsicAcq,
-         asicSync        => iAsicSync,
-         asicRoClk       => iAsicRoClk
+   port map (
+      sysClk          => coreClk,
+      sysClkRst       => axiRst,
+      acqStart        => acqStart,
+      acqBusy         => acqBusy,
+      readDone        => readDone,
+      readValidA0     => readValidA0,
+      readValidA1     => readValidA1,
+      readValidA2     => readValidA2,
+      readValidA3     => readValidA3,
+      adcClkP         => adcClkP,
+      adcClkM         => adcClkN,
+      adcPulse        => adcPulse,
+      readTps         => readTps,
+      epixConfig      => epixConfig,
+      saciReadoutReq  => saciPrepReadoutReq,
+      saciReadoutAck  => saciPrepReadoutAck,
+      asicR0          => iAsicR0,
+      asicPpmat       => iAsicPpmat,
+      asicPpbe        => iAsicPpbe,
+      asicGlblRst     => iAsicGrst,
+      asicAcq         => iAsicAcq,
+      asicSync        => iAsicSync,
+      asicRoClk       => iAsicRoClk
    );
  
    ---------------------
@@ -707,6 +801,27 @@ begin
       syncRst  => serdesReset
    );
    
+   --------------------------------------------
+   -- ADC stream pattern tester              --
+   --------------------------------------------
+   
+   U_AdcTester : entity work.StreamPatternTester
+   generic map (
+      TPD_G             => TPD_G,
+      NUM_CHANNELS_G    => 20
+   )
+   port map ( 
+      -- Master system clock
+      clk               => coreClk,
+      rst               => axiRst,
+      -- ADC data stream inputs
+      adcStreams        => adcStreams,
+      -- Axi Interface
+      axilReadMaster  => mAxiReadMasters(ADCTEST_AXI_INDEX_C),
+      axilReadSlave   => mAxiReadSlaves(ADCTEST_AXI_INDEX_C),
+      axilWriteMaster => mAxiWriteMasters(ADCTEST_AXI_INDEX_C),
+      axilWriteSlave  => mAxiWriteSlaves(ADCTEST_AXI_INDEX_C)
+   );
    
    --------------------------------------------
    --     Fast ADC Config                    --
@@ -729,15 +844,16 @@ begin
       axilWriteMaster   => mAxiWriteMasters(ADC_CFG_AXI_INDEX_C),
       axilWriteSlave    => mAxiWriteSlaves(ADC_CFG_AXI_INDEX_C),
       
-      adcSClk              => adcSpiClk,
-      adcSDin              => adcSpiDataIn,
-      adcSDout             => adcSpiDataOut,
-      adcSDEn              => adcSpiDataEn,
-      adcCsb(2 downto 0)   => adcSpiCsb,
-      adcCsb(3)            => open,
-      adcPdwn(2 downto 0)  => adcPdwn,
-      adcPdwn(3)           => open
+      adcSClk           => adcSpiClk,
+      adcSDin           => adcSpiDataIn,
+      adcSDout          => adcSpiDataOut,
+      adcSDEn           => adcSpiDataEn,
+      adcCsb            => iAdcSpiCsb,
+      adcPdwn           => iAdcPdwn
    );
+   
+   adcSpiCsb <= iAdcSpiCsb(2 downto 0);
+   adcPdwn <= iAdcPdwn(2 downto 0);
    
    --------------------------------------------
    --     Slow ADC Readout ADC gen 2         --
@@ -813,45 +929,6 @@ begin
       end if;   
    end process;
    monitorTrig <= '1' when monTrigCnt >= 99999999 else '0';
-   
-   ---------------------------------------------
-   -- Microblaze based ePix Startup Sequencer --
-   ---------------------------------------------
-   U_CPU : entity work.MicroblazeBasicCoreWrapper
-   generic map (
-      TPD_G            => TPD_G)
-   port map (
-      -- Master AXI-Lite Interface: [0x00000000:0x7FFFFFFF]
-      mAxilWriteMaster => sAxiWriteMaster(1),
-      mAxilWriteSlave  => sAxiWriteSlave(1),
-      mAxilReadMaster  => sAxiReadMaster(1),
-      mAxilReadSlave   => sAxiReadSlave(1),
-      -- Interrupt Interface
-      interrupt(7 downto 2)   => "000000",
-      interrupt(1)            => epixConfig.requestConfDump,
-      interrupt(0)            => epixConfig.requestStartupCal,
-      -- Clock and Reset
-      clk              => coreClk,
-      rst              => axiRst
-   );
-   
-   U_AdcTester : entity work.StreamPatternTester
-   generic map (
-      TPD_G             => TPD_G,
-      NUM_CHANNELS_G    => 20
-   )
-   port map ( 
-      -- Master system clock
-      clk               => coreClk,
-      rst               => axiRst,
-      -- ADC data stream inputs
-      adcStreams        => adcStreams,
-      -- Axi Interface
-      axilReadMaster  => mAxiReadMasters(ADCTEST_AXI_INDEX_C),
-      axilReadSlave   => mAxiReadSlaves(ADCTEST_AXI_INDEX_C),
-      axilWriteMaster => mAxiWriteMasters(ADCTEST_AXI_INDEX_C),
-      axilWriteSlave  => mAxiWriteSlaves(ADCTEST_AXI_INDEX_C)
-   );
    
    ---------------------------------------------
    -- Microblaze log memory                   --

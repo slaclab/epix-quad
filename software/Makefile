@@ -34,6 +34,11 @@ UTL_EPIX_DIR := $(PWD)/util/epix
 UTL_EPIX_SRC := $(wildcard $(UTL_EPIX_DIR)/*.cpp)
 UTL_EPIX_BIN := $(patsubst $(UTL_EPIX_DIR)/%.cpp,$(BIN)/%,$(UTL_EPIX_SRC))
 
+# Epix10k util Sources
+UTL_EPIX10K_DIR := $(PWD)/util/epix10k
+UTL_EPIX10K_SRC := $(wildcard $(UTL_EPIX10K_DIR)/*.cpp)
+UTL_EPIX10K_BIN := $(patsubst $(UTL_EPIX10K_DIR)/%.cpp,$(BIN)/%,$(UTL_EPIX10K_SRC))
+
 # Tixel util Sources
 UTL_TIXE_DIR := $(PWD)/util/tixel
 UTL_TIXE_SRC := $(wildcard $(UTL_TIXE_DIR)/*.cpp)
@@ -50,11 +55,12 @@ UTL_COMM_SRC := $(wildcard $(UTL_COMM_DIR)/*.cpp)
 UTL_COMM_BIN := $(patsubst $(UTL_COMM_DIR)/%.cpp,$(BIN)/%,$(UTL_COMM_SRC))
 
 # Default
-all: dir $(DEV_OBJ) $(GEN_OBJ) $(EPX_OBJ) $(UTL_EPIX_BIN) $(UTL_TIXE_BIN) $(UTL_CPIX_BIN) $(UTL_COMM_BIN) gui ana online pylibs
+all: dir $(DEV_OBJ) $(GEN_OBJ) $(EPX_OBJ) $(UTL_EPIX_BIN) $(UTL_EPIX10K_BIN) $(UTL_TIXE_BIN) $(UTL_CPIX_BIN) $(UTL_COMM_BIN) gui ana online pylibs
 #all: dir $(DEV_OBJ) $(GEN_OBJ) $(EPX_OBJ) $(UTL_BIN) gui ana online pylibs
 #all: dir $(GEN_OBJ) $(EPX_OBJ) $(UTL_BIN) gui ana online 
 
 epix: dir $(DEV_OBJ) $(GEN_OBJ) $(EPX_OBJ) $(UTL_EPIX_BIN) gui online pylibs
+epix10k: dir $(DEV_OBJ) $(GEN_OBJ) $(EPX_OBJ) $(UTL_EPIX10K_BIN) gui online pylibs
 tixel: dir $(DEV_OBJ) $(GEN_OBJ) $(EPX_OBJ) $(UTL_TIXE_BIN) gui online pylibs
 cpix: dir $(DEV_OBJ) $(GEN_OBJ) $(EPX_OBJ) $(UTL_CPIX_BIN) gui online pylibs
 comm: dir $(DEV_OBJ) $(GEN_OBJ) $(EPX_OBJ) $(UTL_COMM_BIN) gui online pylibs
@@ -91,6 +97,9 @@ $(OBJ)/%.o: $(EPX_DIR)/%.cpp $(EPX_DIR)/%.h
 #	$(CC) $(CFLAGS) $(DEF) $(OBJ)/* -o $@ $< $(LFLAGS) 
 
 $(BIN)/%: $(UTL_EPIX_DIR)/%.cpp $(DEV_OBJ) $(GEN_OBJ) $(EPX_OBJ)
+	$(CC) $(CFLAGS) $(DEF) $(OBJ)/* -o $@ $< $(LFLAGS) 
+
+$(BIN)/%: $(UTL_EPIX10K_DIR)/%.cpp $(DEV_OBJ) $(GEN_OBJ) $(EPX_OBJ)
 	$(CC) $(CFLAGS) $(DEF) $(OBJ)/* -o $@ $< $(LFLAGS) 
 
 $(BIN)/%: $(UTL_TIXE_DIR)/%.cpp $(DEV_OBJ) $(GEN_OBJ) $(EPX_OBJ)

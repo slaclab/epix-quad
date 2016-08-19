@@ -71,6 +71,11 @@ architecture beh of TB_RegControlGen2 is
    signal saciReadoutReq : std_logic;
    signal saciReadoutAck : std_logic;
    
+   signal iSaciClk  : std_logic;
+   signal iSaciSelL : std_logic_vector(3 downto 0);
+   signal iSaciCmd  : std_logic;
+   signal outputEn  : std_logic;
+   
    signal saciClk  : std_logic;
    signal saciRsp  : std_logic;
    signal saciCmd  : std_logic;
@@ -145,6 +150,25 @@ begin
       --wait;
    end process;
    
+   --process
+   --begin
+   --   outputEn <= '0';
+   --   wait for 500 us;
+   --   outputEn <= '1';
+   --   wait until rising_edge (saciReadoutReq);
+   --   wait for 1 us;
+   --   outputEn <= '0';
+   --   wait for 22 us;
+   --   outputEn <= '1';
+   --   wait;
+   --end process;
+   
+   outputEn <= '1';
+   saciCmd <= iSaciCmd when outputEn = '1' else 'Z';
+   saciSelL <= iSaciSelL when outputEn = '1' else "ZZZZ";
+   saciClk <= iSaciClk when outputEn = '1' else 'Z';
+   
+   
    
    -- SACI slaves
    
@@ -184,7 +208,6 @@ begin
     saciRsp  => saciRsp
    );
    
-   
    U_RegControlGen2_DUT : entity work.RegControl
    port map (
       -- Global Signals
@@ -214,16 +237,17 @@ begin
    U_AxiLiteSaciMaster_DUT : entity work.AxiLiteSaciMaster
    generic map (
       AXIL_CLK_PERIOD_G  => 10.0E-9, -- In units of seconds
-      AXIL_TIMEOUT_G     => 1.0E-3,  -- In units of seconds
+      --AXIL_TIMEOUT_G     => 1.0E-3,  -- In units of seconds
+      AXIL_TIMEOUT_G     => 0.5E-3,  -- In units of seconds
       SACI_CLK_PERIOD_G  => 0.25E-6, -- In units of seconds
       SACI_CLK_FREERUN_G => false,
       SACI_RSP_BUSSED_G  => true,
       SACI_NUM_CHIPS_G   => 4)
    port map (
       -- SACI interface
-      saciClk         => saciClk,
-      saciCmd         => saciCmd,
-      saciSelL        => saciSelL,
+      saciClk         => iSaciClk,
+      saciCmd         => iSaciCmd,
+      saciSelL        => iSaciSelL,
       saciRsp(0)      => saciRsp,
       -- AXI-Lite Register Interface
       axilClk           => sysClk,

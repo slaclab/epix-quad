@@ -497,6 +497,9 @@ Epix10kpAsic::Epix10kpAsic ( uint destination, uint baseAddress, uint index, Dev
    addVariable(new Variable("PixelGA", Variable::Configuration));
    getVariable("PixelGA")->setDescription("Pixel Gain Mode");
    getVariable("PixelGA")->setTrueFalse();
+   
+   addCommand(new Command("ClearMatrix"));
+   getCommand("ClearMatrix")->setDescription("Clear configuration bits of all pixels");
 
    // To Write a single pixel:
       // CMD = 6, Addr = 17 : Row start address[9:0]
@@ -526,9 +529,17 @@ Epix10kpAsic::~Epix10kpAsic ( ) { }
 // Method to process a command
 void Epix10kpAsic::command ( string name, string arg) {
    stringstream tmp;
+   uint32_t i;
 
    // Command is local
-   if ( name == "PrepForRead" ) {
+   if ( name == "ClearMatrix" ) {
+      for (i=0; i < 48; i++){
+         writeSingleV2("PrepareMultiConfig",0);
+         writeSingleV2("ColCounter",i);
+         writeSingleV2("WriteColData",0);
+      }
+      writeSingleV2("CmdPrepForRead",0);
+   } else if ( name == "PrepForRead" ) {
       REGISTER_LOCK
       writeRegister(getRegister("CmdPrepForRead"),true,true);
       REGISTER_UNLOCK
@@ -611,7 +622,7 @@ void Epix10kpAsic::readConfig ( ) {
    //                    : Bit  7   = PulserSync
    readRegister(getRegister("Config1"));
    getVariable("CompTH_DAC")->setInt(getRegister("Config1")->get(0,0x3F));
-//   getVariable("CompEn")->setInt(getRegister("Config1")->get(6,0x1));
+   getVariable("CompEn")->setInt(getRegister("Config1")->get(6,0x1));
    getVariable("PulserSync")->setInt(getRegister("Config1")->get(7,0x1));
 
    // CMD = 1, Addr = 2  : Pixel dummy, write data

@@ -26,6 +26,7 @@
 #include <Register.h>
 #include <Variable.h>
 #include <Command.h>
+#include <Pgp2bAxi.h>
 #include <AxiVersion.h>
 #include <AxiMicronN25Q.h>
 #include <LogMemory.h>
@@ -426,9 +427,12 @@ DigFpga::DigFpga ( uint destination, uint baseAddress, uint index, Device *paren
       addDevice(new Epix100aAsic(destination, baseAddress_ + 0x00900000*addrSize, 1, this, addrSize));
       addDevice(new Epix100aAsic(destination, baseAddress_ + 0x00A00000*addrSize, 2, this, addrSize));
       addDevice(new Epix100aAsic(destination, baseAddress_ + 0x00B00000*addrSize, 3, this, addrSize));
+      addDevice(new Pgp2bAxi(destination, baseAddress_ + 0x000C0000*addrSize,  0, this, addrSize)); 
       addDevice(new AxiVersion(destination, baseAddress_ + 0x02000000*addrSize,  0, this, addrSize)); 
       addDevice(new AxiMicronN25Q(destination, baseAddress_ + 0x03000000*addrSize, 0, this, addrSize)); 
       addDevice(new LogMemory(destination, baseAddress_ + 0x09000000*addrSize, 0, this, addrSize)); 
+      //disable to avoid errors in the old firmware not supporting new devices
+      device("Pgp2bAxi",0)->getVariable("Enabled")->set("False"); 
    } else if (epixType == EPIX10KP) {
       addDevice(new Epix10kpAsic(destination, baseAddress_ + 0x00800000*addrSize, 0, this, addrSize));
       addDevice(new Epix10kpAsic(destination, baseAddress_ + 0x00900000*addrSize, 1, this, addrSize));
@@ -476,6 +480,14 @@ void DigFpga::command ( string name, string arg) {
             device("epix100aAsic",1)->command("ClearMatrix","");
             device("epix100aAsic",2)->command("ClearMatrix","");
             device("epix100aAsic",3)->command("ClearMatrix","");
+         }
+      }
+      if (epixType_ == EPIX10KP) {
+         if (getVariable("ClearMatrixEnabled")->getInt()) {
+            device("epix10kpAsic",0)->command("ClearMatrix","");
+            device("epix10kpAsic",1)->command("ClearMatrix","");
+            device("epix10kpAsic",2)->command("ClearMatrix","");
+            device("epix10kpAsic",3)->command("ClearMatrix","");
          }
       }
    }

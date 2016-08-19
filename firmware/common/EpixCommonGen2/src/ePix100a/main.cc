@@ -14,10 +14,13 @@
 #define FRM_DLY_STOP 18
 
 
-void epixInit(void);
-uint32_t findAsics(void);
-void asicInit(uint32_t);
+void hwInit(void);
+void adcInit(void);
+void findAsics(void);
+void asicInit(void);
 uint32_t adcAlign(uint32_t, uint32_t);
+
+static XIntc intc;
 
 void calibReqHandler(void * data) {
    uint32_t * request = (uint32_t *)data;
@@ -25,6 +28,8 @@ void calibReqHandler(void * data) {
    Xil_Out32(EPIX_ADC_ALIGN_REG, 0x00000000);
  
    (*request) = 1; 
+   
+   XIntc_Acknowledge(&intc, 0);
 }
 
 void confDumpReqHandler(void * data) {
@@ -49,16 +54,15 @@ void confDumpReqHandler(void * data) {
    }
    
    (*request)++;
+   
+   XIntc_Acknowledge(&intc, 1);
 }
 
 int main() { 
    
-   uint32_t asicMask, res, i, adcReqNo = 0;
-   static const XIntc XIntcInit = {0,0,0,0,0};
-   XIntc intc;
+   uint32_t res, i, adcReqNo = 0;
    volatile uint32_t adcReq = 0;
    volatile uint32_t cfgReqNo = 0;
-   intc = XIntcInit;  // this avoid the program to be stuck when restarting in SDK debugger
    
    Xil_Out32(EPIX_ADC_ALIGN_REG, 0x00000000);
    Xil_Out32(EPIX_CFG_DUMP_REG, 0x00000000);
@@ -72,15 +76,15 @@ int main() {
    
    ssi_printf_init(LOG_MEM_OFFSET, 1024*4);
    
+   //initialize
+   hwInit();
+   adcInit();
+   findAsics();
+   asicInit();
+   
    while (1) {
       
-      //initialize
-      epixInit();
-      asicMask = findAsics();
-      Xil_Out32( EPIX_ASIC_MASK_REG, asicMask);
-      asicInit(asicMask);
       
-      ssi_printf("ASIC mask 0x%X\n", asicMask);
       ssi_printf("ADC REQ %d\n", adcReqNo);
       
       //align ADCs
@@ -100,6 +104,10 @@ int main() {
          
          // poll ADC align request flag
          if (adcReq) {
+            //reset ADCs
+            adcInit();
+            //check installed asics
+            findAsics();
             adcReq = 0;
             adcReqNo++;
             break;
@@ -113,19 +121,18 @@ int main() {
    return 0;
 }
 
-void epixInit() {
+void hwInit() {
    
    //set ADC clock to 50 MHz
    Xil_Out32( EPIX_ADCCLK_REG, 0x1);
-   // disable the power supply
-   Xil_Out32( EPIX_PWR_REG, 0x0);
    // enable the power supply
-   Xil_Out32( EPIX_PWR_REG, 0x3);
-   // let the power settle
-   MB_Sleep(500);
-   
-   // enable the FPGA outputs
    Xil_Out32( EPIX_PWR_REG, 0x7);
+   // let the power settle
+   MB_Sleep(1000);
+   
+}
+
+void adcInit() {
    
    // Perform ADC soft reset
    Xil_Out32( ADC0_PWRMOD_REG, 3);
@@ -144,7 +151,7 @@ void epixInit() {
 }
 
 
-uint32_t findAsics(void) {
+void findAsics(void) {
    
    uint32_t i, dm, test, mask;
    mask = 0;
@@ -160,16 +167,19 @@ uint32_t findAsics(void) {
       Xil_Out32( cfg4Asic[i], dm);
    }
    
-   return mask;
+   Xil_Out32( EPIX_ASIC_MASK_REG, mask);
+   ssi_printf("ASIC mask 0x%X\n", mask);
    
 }
 
-void asicInit(uint32_t mask) {
+void asicInit(void) {
    
-   int i;
+   uint32_t mask, i;
 #if CLEAR_ASIC_MATRIX_ON_STARTUP
-   int col;
+   uint32_t col;
 #endif
+   
+   mask = Xil_In32(EPIX_ASIC_MASK_REG);
    
    //Disable digital monitors to let the carrier ID readout
    //Enable SLVDS termination resistors

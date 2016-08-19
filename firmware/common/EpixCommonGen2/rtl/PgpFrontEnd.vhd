@@ -55,6 +55,11 @@ entity PgpFrontEnd is
       mAxiLiteReadSlave   : in  AxiLiteReadSlaveType;
       mAxiLiteWriteMaster : out AxiLiteWriteMasterType;
       mAxiLiteWriteSlave  : in  AxiLiteWriteSlaveType;
+      -- Axi Slave Interface - PGP Status Registers (axiClk domain)
+      sAxiLiteReadMaster  : in  AxiLiteReadMasterType;
+      sAxiLiteReadSlave   : out AxiLiteReadSlaveType;
+      sAxiLiteWriteMaster : in  AxiLiteWriteMasterType;
+      sAxiLiteWriteSlave  : out AxiLiteWriteSlaveType;
       -- Acquisition streaming data Links (axiClk domain)      
       dataAxisMaster    : in  AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
       dataAxisSlave     : out AxiStreamSlaveType;
@@ -160,12 +165,29 @@ begin
          gtTxN            => gtTxN,
          gtRxP            => gtRxP,
          gtRxN            => gtRxN
-      );   
-
-   -- These should be replaced with Pgp2bAxi interface
-   pgpRxIn <= PGP2B_RX_IN_INIT_C;
-   pgpTxIn <= PGP2B_TX_IN_INIT_C;
-
+      ); 
+   
+   U_Pgp2bAxi : entity work.Pgp2bAxi
+   generic map (
+      AXI_CLK_FREQ_G     => 100.0E+6
+   )
+   port map (
+      pgpTxClk         => iPgpClk,
+      pgpTxClkRst      => stableRst,
+      pgpTxIn          => pgpTxIn,
+      pgpTxOut         => pgpTxOut,
+      pgpRxClk         => iPgpClk,
+      pgpRxClkRst      => stableRst,
+      pgpRxIn          => pgpRxIn,
+      pgpRxOut         => iPgpRxOut,
+      axilClk          => axiClk,
+      axilRst          => axiRst,
+      axilReadMaster   => sAxiLiteReadMaster,
+      axilReadSlave    => sAxiLiteReadSlave,
+      axilWriteMaster  => sAxiLiteWriteMaster,
+      axilWriteSlave   => sAxiLiteWriteSlave
+   );   
+   
    -- Lane 0, VC0 TX, streaming data out 
    U_Vc0SsiTxFifo : entity work.AxiStreamFifo
       generic map (
