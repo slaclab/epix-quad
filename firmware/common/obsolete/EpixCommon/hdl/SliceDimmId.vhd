@@ -10,7 +10,13 @@
 -- Contains controller for DS2411 serial ID Prom On Flash DIMM.
 -- SerClkIn is asserted for one clock every 6.55us.
 -------------------------------------------------------------------------------
--- Copyright (c) 2007 by Ryan Herbst. All rights reserved.
+-- This file is part of 'EPIX Development Firmware'.
+-- It is subject to the license terms in the LICENSE.txt file found in the 
+-- top-level directory of this distribution and at: 
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
+-- No part of 'EPIX Development Firmware', including this file, 
+-- may be copied, modified, propagated, or distributed except according to 
+-- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 -- Modification history:
 -- 12/19/2007: created.

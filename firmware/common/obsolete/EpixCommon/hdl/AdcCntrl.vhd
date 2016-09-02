@@ -11,7 +11,13 @@
 -- from the AD7490 or AD7928 ADC on the analog board.
 -- The AD7928 is an 8 channel ADC while the AD7490 is an 8 channel ADC.
 -------------------------------------------------------------------------------
--- Copyright (c) 2012 by Ryan Herbst. All rights reserved.
+-- This file is part of 'EPIX Development Firmware'.
+-- It is subject to the license terms in the LICENSE.txt file found in the 
+-- top-level directory of this distribution and at: 
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
+-- No part of 'EPIX Development Firmware', including this file, 
+-- may be copied, modified, propagated, or distributed except according to 
+-- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 -- Modification history:
 -- 09/27/2012: created.

@@ -11,7 +11,13 @@
 -- temperatures from the ADS1217 on the generation 2 EPIX analog board.
 -- The ADS1217 is an 8 channel ADC.
 -------------------------------------------------------------------------------
--- Copyright (c) 2015 by Maciej Kwiatkowski. All rights reserved.
+-- This file is part of 'EPIX Development Firmware'.
+-- It is subject to the license terms in the LICENSE.txt file found in the 
+-- top-level directory of this distribution and at: 
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
+-- No part of 'EPIX Development Firmware', including this file, 
+-- may be copied, modified, propagated, or distributed except according to 
+-- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 -- Modification history:
 -- 10/29/2015: created.
