@@ -81,7 +81,8 @@ entity EpixS is
       adcSpiClk           : out sl;
       adcSpiData          : inout sl;
       adcSpiCsb           : out slv(2 downto 0);
-      adcPdwn             : out slv(2 downto 0);
+      adcPdwn01           : out sl;
+      adcPdwnMon          : out sl;
       -- ASIC SACI Interface
       asicSaciCmd         : out sl;
       asicSaciClk         : out sl;
@@ -292,14 +293,16 @@ begin
 
    -- Fast ADC Configuration
    adcSpiClk     <= iAdcSpiClk when iFpgaOutputEn = '1' else 'Z';
-   adcSpiData    <= '0' when iAdcSpiDataOut = '0' and iAdcSpiDataEn = '1' and iFpgaOutputEn = '1' else 'Z';
+   --adcSpiData    <= '0' when iAdcSpiDataOut = '0' and iAdcSpiDataEn = '1' and iFpgaOutputEn = '1' else 'Z';
+   adcSpiData    <= iAdcSpiDataOut when  iAdcSpiDataEn = '1' and iFpgaOutputEn = '1' else 'Z';
    iAdcSpiDataIn <= adcSpiData;
    adcSpiCsb(0)  <= iAdcSpiCsb(0) when iFpgaOutputEn = '1' else 'Z';
    adcSpiCsb(1)  <= iAdcSpiCsb(1) when iFpgaOutputEn = '1' else 'Z';
    adcSpiCsb(2)  <= iAdcSpiCsb(2) when iFpgaOutputEn = '1' else 'Z';
-   adcPdwn(0)    <= iAdcPdwn(0) when iFpgaOutputEn = '1' else '0';
-   adcPdwn(1)    <= iAdcPdwn(1) when iFpgaOutputEn = '1' else '0';
-   adcPdwn(2)    <= iAdcPdwn(2) when iFpgaOutputEn = '1' else '0';
+   adcPdwn01     <= iAdcPdwn(0) when iFpgaOutputEn = '1' else '0';
+   --adcPdwn(1)    <= iAdcPdwn(1) when iFpgaOutputEn = '1' else '0';
+   adcPdwnMon    <= iAdcPdwn(2) when iFpgaOutputEn = '1' else '0';
+   
    
    -- ASIC Connections
    -- Digital bits, unused in this design but used to check pinout
@@ -314,9 +317,9 @@ begin
    asicR0      <= iAsicR0      when iFpgaOutputEn = '1' else 'Z';
    asicAcq     <= iAsicAcq     when iFpgaOutputEn = '1' else 'Z';
    asicPpmat   <= iAsicPpmat   when iFpgaOutputEn = '1' else 'Z';
-   asicPpmat   <= iAsicPpbe    when iFpgaOutputEn = '1' else 'Z';
+   asicPpbe    <= iAsicPpbe    when iFpgaOutputEn = '1' else 'Z';
    asicGlblRst <= iAsicGlblRst when iFpgaOutputEn = '1' else 'Z';
-   --asicSync    <= iAsicSync    when iFpgaOutputEn = '1' else 'Z';
+   asicSync    <= iAsicSync    when iFpgaOutputEn = '1' else 'Z';
    -- On this carrier ASIC digital monitors are shared with SN device
    --iAsicDm1    <= snIoCarrier;
    iAsicDm2    <= asicDm2;

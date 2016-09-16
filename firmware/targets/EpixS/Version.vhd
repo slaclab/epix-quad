@@ -29,7 +29,7 @@ package Version is
 
 constant FPGA_VERSION_C    : std_logic_vector(31 downto 0) := x"E3020000"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "EpixS: Vivado v2016.1 (x86_64) Built Thu Sep 15 15:01:49 PDT 2016 by mkwiatko";
+constant BUILD_STAMP_C : string := "EpixS: Vivado v2016.1 (x86_64) Built Thu Sep 15 16:33:47 PDT 2016 by mkwiatko";
 
 constant FPGA_BASE_CLOCK_C : std_logic_vector(31 downto 0) := x"00" & x"100000";  
 
