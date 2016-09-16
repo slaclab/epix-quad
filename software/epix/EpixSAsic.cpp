@@ -468,6 +468,9 @@ EpixSAsic::EpixSAsic ( uint destination, uint baseAddress, uint index, Device *p
    addVariable(new Variable("PixelFilter", Variable::Configuration));
    getVariable("PixelFilter")->setDescription("Pixel Filter");
    getVariable("PixelFilter")->setRange(0,0x3);
+   
+   addCommand(new Command("ClearMatrix"));
+   getCommand("ClearMatrix")->setDescription("Clear configuration bits of all pixels");
 
    // To Write a single pixel:
       // CMD = 6, Addr = 17 : Row start address[9:0]
@@ -497,9 +500,17 @@ EpixSAsic::~EpixSAsic ( ) { }
 // Method to process a command
 void EpixSAsic::command ( string name, string arg) {
    stringstream tmp;
+   uint32_t i;
 
    // Command is local
-   if ( name == "PrepForRead" ) {
+   if ( name == "ClearMatrix" ) {
+      for (i=0; i < 10; i++){
+         writeSingleV2("PrepareMultiConfig",0);
+         writeSingleV2("ColCounter",i);
+         writeSingleV2("WriteColData",0);
+      }
+      writeSingleV2("CmdPrepForRead",0);
+   } else if ( name == "PrepForRead" ) {
       REGISTER_LOCK
       writeRegister(getRegister("CmdPrepForRead"),true,true);
       REGISTER_UNLOCK
