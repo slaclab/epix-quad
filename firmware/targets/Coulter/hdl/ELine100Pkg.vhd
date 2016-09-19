@@ -240,6 +240,7 @@ package body ELine100Pkg is
       assignRecord(i, vec, cfg.tres(0));  -- 340
       i := i+1;          -- 341 null
 
+      return cfg;
    end function toELine100Cfg;
 
 end package body ELine100Pkg;
