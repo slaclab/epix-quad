@@ -5,19 +5,29 @@ target: prom
 # Define target part
 export PRJ_PART = XC7A200TSBG484-3
 
+export COMMON = $(abspath $(PWD)/../../common)
+export MODULES = $(abspath $(PWD)/../../modules)
+export RUCKUS_DIR = $(abspath $(PWD)/../../modules/ruckus)
+
+
 # List of build core directories.
-export MODULE_DIRS = $(PROJ_DIR)/../../common/StdLib  \
-                     $(PROJ_DIR)/../../common/pgp2b_core/gtp7 \
-                     $(PROJ_DIR)/../../common/pgp2b_core/core \
-                     $(PROJ_DIR)/../../common/MgtLib/gtp7  \
-                     $(PROJ_DIR)/../../common/EpixStartupGen2  \
-                     $(PROJ_DIR)/../../common/EpixCommonGen2  \
-                     $(PROJ_DIR)/../../common/AxiAd9249Core  \
+export MODULE_DIRS = $(MODULES)/surf/base  \
+                     $(MODULES)/surf/axi \
+                     $(MODULES)/surf/protocols/ssi \
+                     $(MODULES)/surf/protocols/srp \
+                     $(MODULES)/surf/protocols/i2c \
+                     $(MODULES)/surf/protocols/spi \
+                     $(MODULES)/surf/protocols/pgp/pgp2b/core \
+                     $(MODULES)/surf/protocols/pgp/pgp2b/gtp7 \
+                     $(MODULES)/surf/xilinx/general \
+                     $(MODULES)/surf/xilinx/7Series/gtp7 \
+                     $(MODULES)/surf/xilinx/7Series/general \
+                     $(MODULES)/surf/devices/AnalogDevices/ad9249 \
+                     $(COMMON)/EpixCommonGen2  \
                      $(PROJ_DIR)
 
 # Max number of smart explorer runs
 export SMART_MAX_RUNS = 10
-export MODULES = common
 
 # Use top level makefile
-include ../../common/StdLib/build/system_vivado_v1.mk
+include $(RUCKUS_DIR)/system_vivado_v1.mk
