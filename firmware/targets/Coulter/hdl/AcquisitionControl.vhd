@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-05-31
--- Last update: 2016-06-06
+-- Last update: 2016-09-20
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -88,7 +88,7 @@ architecture rtl of AcquisitionControl is
       mckNegWidth    : slv(15 downto 0);  -- mck low time
       mckCount       : slv(7 downto 0);   -- Number of MCK pulses per slot
       adcClkPosWidth : slv(15 downto 0);  -- Adc clock high time
-      adcClkNegWidth : slv(15 downto 0);  -- Adc clock high time      
+      adcClkNegWidth : slv(15 downto 0);  -- Adc clock low time      
       adcClkDelay    : slv(15 downto 0);  -- Delay time between trigger and new rising edge of ADC clk
       adcValidDelay  : slv(9 downto 0);   -- Delay between mck start and adc sample capture
       mckDisable     : sl;              -- Disable mck (is this necessary?)
