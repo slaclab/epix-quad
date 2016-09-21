@@ -5,7 +5,7 @@
 -- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 09/30/2015
--- Last update: 2016-06-07
+-- Last update: 2016-09-20
 -- Platform   : Vivado 2014.4
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -63,7 +63,7 @@ entity Coulter is
       tgOut              : out   sl;
       -- Board IDs
       snIoAdcCard        : inout sl;
-      snIoCarrier        : inout sl;
+--      snIoCarrier        : inout sl;
       -- Slow ADC
 --       slowAdcSclk        : out   sl;
 --       slowAdcDin         : out   sl;
@@ -138,6 +138,10 @@ architecture top_level of Coulter is
 
    signal ssiCmd : SsiCmdMasterType;
 
+   signal adcSpiDataIn  : sl;
+   signal adcSpiDataOut : sl;
+   signal adcSpiDataEn  : sl;
+
    signal adcSerial  : Ad9249SerialGroupArray(1 downto 0);
    signal adcStreams : AxiStreamMasterArray(15 downto 0);
 
@@ -171,6 +175,10 @@ architecture top_level of Coulter is
    -- 200 Mhz clock drives IDELAY_CTRL
    signal clk200 : sl;
    signal rst200 : sl;
+
+   -- 100 Mhz clock for IPROG and DeviceDna
+   signal clk100 : sl;
+   signal rst100 : sl;
 
 begin
 
@@ -214,20 +222,23 @@ begin
          TYPE_G             => "MMCM",
          INPUT_BUFG_G       => false,
          FB_BUFG_G          => true,
-         NUM_CLOCKS_G       => 2,
+         NUM_CLOCKS_G       => 3,
          BANDWIDTH_G        => "OPTIMIZED",
          CLKIN_PERIOD_G     => 6.4,
          DIVCLK_DIVIDE_G    => 5,
          CLKFBOUT_MULT_F_G  => 32.0,
          CLKOUT0_DIVIDE_F_G => 4.0,
-         CLKOUT1_DIVIDE_G   => 5)
+         CLKOUT1_DIVIDE_G   => 5,
+         CLKOUT2_DIVIDE_G   => 10)
       port map (
          clkIn     => axilClk,
          rstIn     => axilRst,
          clkOut(0) => clk250,
          clkOut(1) => clk200,
+         clkOut(2) => clk100,
          rstOut(0) => rst250,
-         rstOut(1) => rst200);
+         rstOut(1) => rst200,
+         rstOut(2) => rst100);
 
 
    -------------------------------------------------------------------------------------------------
@@ -265,7 +276,7 @@ begin
          EN_DEVICE_DNA_G  => true,
          EN_DS2411_G      => false,
          EN_ICAP_G        => true,
-         USE_SLOWCLK_G    => false,
+         USE_SLOWCLK_G    => true,
          BUFR_CLK_DIV_G   => 8,
          AUTO_RELOAD_EN_G => false)
       port map (
@@ -275,6 +286,7 @@ begin
          axiReadSlave   => locAxilReadSlaves(VERSION_AXIL_C),    -- [out]
          axiWriteMaster => locAxilWriteMasters(VERSION_AXIL_C),  -- [in]
          axiWriteSlave  => locAxilWriteSlaves(VERSION_AXIL_C),   -- [out]
+         slowClk        => clk100,
          userValues     => userValues);                          -- [in] Bring Board ID's in here
 
    U_DS2411_ADC_BOARD : entity work.DS2411Core
@@ -289,17 +301,17 @@ begin
          fdSerial(63 downto 32) => userValues(2),
          fdValid                => userValues(0)(0));
 
-   U_DS2411_CARRIER_BOARD : entity work.DS2411Core
-      generic map (
-         TPD_G        => TPD_G,
-         CLK_PERIOD_G => AXIL_CLK_PERIOD_C)
-      port map (
-         clk                    => axilClk,
-         rst                    => axilRst,
-         fdSerSdio              => snIoCarrier,
-         fdSerial(31 downto 0)  => userValues(4),
-         fdSerial(63 downto 32) => userValues(5),
-         fdValid                => userValues(3)(0));
+--    U_DS2411_CARRIER_BOARD : entity work.DS2411Core
+--       generic map (
+--          TPD_G        => TPD_G,
+--          CLK_PERIOD_G => AXIL_CLK_PERIOD_C)
+--       port map (
+--          clk                    => axilClk,
+--          rst                    => axilRst,
+--          fdSerSdio              => snIoCarrier,
+--          fdSerial(31 downto 0)  => userValues(4),
+--          fdSerial(63 downto 32) => userValues(5),
+--          fdValid                => userValues(3)(0));
 
    -------------------------------------------------------------------------------------------------
    -- ASIC config (8 bits each)
@@ -329,14 +341,14 @@ begin
    -------------------------------------------------------------------------------------------------
    -- Adc Config (12 bits total)
    -------------------------------------------------------------------------------------------------
-   U_Ad9249Config_1 : entity work.Ad9249Config
+   U_Ad9249Config_1 : entity work.Ad9249ConfigNoPullup
       generic map (
-         TPD_G             => TPD_G,
-         NUM_CHIPS_G       => 1,
-         SIMULATION_G      => SIMULATION_G,
-         SCLK_PERIOD_G     => ADC_SCLK_PERIOD_C,
-         AXIL_CLK_PERIOD_G => AXIL_CLK_PERIOD_C,
-         AXIL_ERR_RESP_G   => AXI_RESP_DECERR_C)
+         TPD_G           => TPD_G,
+         NUM_CHIPS_G     => 1,
+         DEN_POLARITY_G => '0',
+         CLK_EN_PERIOD_G => AXIL_CLK_PERIOD_C*2.0,
+         CLK_PERIOD_G    => AXIL_CLK_PERIOD_C,
+         AXIL_ERR_RESP_G => AXI_RESP_DECERR_C)
       port map (
          axilClk         => axilClk,                                 -- [in]
          axilRst         => axilRst,                                 -- [in]
@@ -344,10 +356,22 @@ begin
          axilReadSlave   => locAxilReadSlaves(ADC_CONFIG_AXIL_C),    -- [out]
          axilWriteMaster => locAxilWriteMasters(ADC_CONFIG_AXIL_C),  -- [in]
          axilWriteSlave  => locAxilWriteSlaves(ADC_CONFIG_AXIL_C),   -- [out]
-         adcPdwn         => adcPdwn01,                               -- [out]
+         adcPdwn(0)      => adcPdwn01,                               -- [out]
          adcSclk         => adcSpiClk,                               -- [out]
-         adcSdio         => adcSpiData,                              -- [inout]
+         adcSDin         => adcSpiDataIn,                            -- [in]
+         adcSDout        => adcSpiDataOut,                           -- [out]
+         adcSDEn         => adcSpiDataEn,                            -- [out]
          adcCsb          => adcSpiCsb(1 downto 0));                  -- [out]
+
+   U_AdcConfigDataIobuf : IOBUF
+      port map (
+         O  => adcSpiDataIn,
+         IO => adcSpiData,
+         I  => adcSpiDataOut,
+         T  => adcSpiDataEn);
+   
+--    adcSpiData   <= adcSpiDataOut when adcSpiDataEn = '1' else 'Z';
+--    adcSpiDataIn <= adcSpiData;
 
    -------------------------------------------------------------------------------------------------
    -- ADC Readout (8 bits each)
@@ -385,6 +409,7 @@ begin
          axilReadSlave   => locAxilReadSlaves(ADC_READOUT_0_AXIL_C),    -- [out]
          adcClkRst       => adcClkRst,                                  -- [in]
          adcSerial       => adcSerial(0),                               -- [in]
+         adcStreamClk    => axilClk,                                    -- [in]
          adcStreams      => adcStreams(7 downto 0));                    -- [out]
 
    U_Ad9249ReadoutGroup_1 : entity work.Ad9249ReadoutGroup
@@ -404,6 +429,7 @@ begin
          axilReadSlave   => locAxilReadSlaves(ADC_READOUT_1_AXIL_C),    -- [out]
          adcClkRst       => adcClkRst,                                  -- [in]
          adcSerial       => adcSerial(1),                               -- [in]
+         adcStreamClk    => axilClk,                                    --[in]
          adcStreams      => adcStreams(15 downto 8));                   -- [out]
 
    -------------------------------------------------------------------------------------------------
@@ -421,7 +447,7 @@ begin
          axilWriteSlave  => locAxilWriteSlaves(ACQ_CTRL_AXIL_C),   -- [out]
          clk250          => clk250,                                -- [in]
          rst250          => rst250,                                -- [in]
-         trigger         => ssiCmd.valid,
+         trigger         => ssiCmd.valid,                          -- [in]
          elineRst        => elineRst,                              -- [out]
          elineSc         => elineSc,                               -- [out]
          elineMck        => elineMck,                              -- [out]
