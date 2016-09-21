@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-06-03
--- Last update: 2016-06-06
+-- Last update: 2016-07-12
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -142,8 +142,8 @@ begin
 --          RXCDR_CFG_G          => RXCDR_CFG_G,
 --          RXLPM_INCM_CFG_G     => RXLPM_INCM_CFG_G,
 --          RXLPM_IPCM_CFG_G     => RXLPM_IPCM_CFG_G,
-         PGP_RX_ENABLE_G      => true,
-         PGP_TX_ENABLE_G      => true,
+         RX_ENABLE_G          => true,
+         TX_ENABLE_G          => true,
          PAYLOAD_CNT_TOP_G    => 7,
          VC_INTERLEAVE_G      => 0,
          NUM_VC_EN_G          => 4)
@@ -299,7 +299,7 @@ begin
          sAxisRst    => pgpRst,
          sAxisMaster => pgpRxMasters(2),
          sAxisSlave  => open,
-         sAxisCtrl    => pgpRxCtrl(2),
+         sAxisCtrl   => pgpRxCtrl(2),
          -- Master Port
          mAxisClk    => pgpClk,
          mAxisRst    => pgpRst,
