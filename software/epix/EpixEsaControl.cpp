@@ -44,13 +44,13 @@
 using namespace std;
 
 // Constructor
-EpixEsaControl::EpixEsaControl ( CommLink *commLink, string defFile, EpixType epixType, uint baseAddress, uint addrSize ) : System("EpixEsaControl",commLink) {
+EpixEsaControl::EpixEsaControl ( CommLink *commLink, string defFile, EpixType epixType, uint baseAddress, uint addrSize, MultDestPgpG3 *mdp ) : System("EpixEsaControl",commLink) {
 
    // Description
    desc_ = "Epix Control";
    
    // Data mask, lane 0, vc 0 (primary); lane 0, vc 2 (scope)
-   commLink->setDataMask( (LANE0|VC0) | (LANE0|VC2) );
+   //commLink->setDataMask( (LANE0|VC0) | (LANE0|VC2) );
 //   commLink->setDataMask( (LANE0|VC0) );
 
    if ( defFile == "" ) defaults_ = "xml/defaults.xml";
@@ -78,8 +78,9 @@ EpixEsaControl::EpixEsaControl ( CommLink *commLink, string defFile, EpixType ep
    getVariable("RunCount")->setInt(0);
 
    // Add sub-devices
-   addDevice(new DigFpga(0, baseAddress, 0, this, addrSize, epixType));
-   addDevice(new EvrCntrl(this));
+   uint linkConfig = 0x00000100;    // Lane 0 VC 0 for commands, lane 0 VC 1 for registers
+   addDevice(new DigFpga(linkConfig, baseAddress, 0, this, addrSize, epixType));
+   addDevice(new EvrCntrl(this, mdp));
 
    //Set ePix type
    epixType_ = epixType;

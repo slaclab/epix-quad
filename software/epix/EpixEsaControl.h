@@ -24,6 +24,7 @@
 
 #include <System.h>
 #include <EpixTypes.h>
+#include <MultDestPgpG3.h>
 using namespace std;
 
 class CommLink;
@@ -35,7 +36,7 @@ class EpixEsaControl : public System {
    public:
 
       //! Constructor
-      EpixEsaControl ( CommLink *commLink_, string defFile, EpixType epixType, uint baseAddress, uint addrSize );
+      EpixEsaControl ( CommLink *commLink_, string defFile, EpixType epixType, uint baseAddress, uint addrSize, MultDestPgpG3 *mdp );
 
       //! Deconstructor
       ~EpixEsaControl ( );
