@@ -5,7 +5,7 @@
 -- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 09/30/2015
--- Last update: 2016-09-20
+-- Last update: 2016-09-21
 -- Platform   : Vivado 2014.4
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -409,7 +409,7 @@ begin
          axilReadSlave   => locAxilReadSlaves(ADC_READOUT_0_AXIL_C),    -- [out]
          adcClkRst       => adcClkRst,                                  -- [in]
          adcSerial       => adcSerial(0),                               -- [in]
-         adcStreamClk    => axilClk,                                    -- [in]
+         adcStreamClk    => clk250,                                    -- [in]
          adcStreams      => adcStreams(7 downto 0));                    -- [out]
 
    U_Ad9249ReadoutGroup_1 : entity work.Ad9249ReadoutGroup
@@ -429,7 +429,7 @@ begin
          axilReadSlave   => locAxilReadSlaves(ADC_READOUT_1_AXIL_C),    -- [out]
          adcClkRst       => adcClkRst,                                  -- [in]
          adcSerial       => adcSerial(1),                               -- [in]
-         adcStreamClk    => axilClk,                                    --[in]
+         adcStreamClk    => clk250,                                    --[in]
          adcStreams      => adcStreams(15 downto 8));                   -- [out]
 
    -------------------------------------------------------------------------------------------------

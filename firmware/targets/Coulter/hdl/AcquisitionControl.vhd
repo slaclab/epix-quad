@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-05-31
--- Last update: 2016-09-20
+-- Last update: 2016-09-22
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -25,9 +25,13 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
+-- Surf packages
 use work.StdRtlPkg.all;
 use work.AxiLitePkg.all;
 use work.AxiStreamPkg.all;
+
+-- Coulter packages
+use work.AcqusitionControlPkg.all;
 
 entity AcquisitionControl is
    generic (
@@ -38,9 +42,9 @@ entity AcquisitionControl is
       -- AXI-Lite Interface for configuration
       axilClk         : in  sl;
       axilRst         : in  sl;
-      axilReadMaster  : in  AxiLiteReadMasterType;
+      axilReadMaster  : in  AxiLiteReadMasterType  := AXI_LITE_READ_MASTER_INIT_C;
       axilReadSlave   : out AxiLiteReadSlaveType;
-      axilWriteMaster : in  AxiLiteWriteMasterType;
+      axilWriteMaster : in  AxiLiteWriteMasterType := AXI_LITE_WRITE_MASTER_INIT_C;
       axilWriteSlave  : out AxiLiteWriteSlaveType;
 
       -- 250 Mhz reference clock
@@ -55,15 +59,12 @@ entity AcquisitionControl is
       elineSc  : out sl;
       elineMck : out sl;
 
-      bla : out slv(31 downto 0);
-
       -- ADC 
-      adcValid   : out sl;
-      adcValid20 : out sl;
-      adcValid0  : out sl;
-      adcDone    : out sl;
-      adcClk     : out sl;
-      adcClkRst  : out sl);
+      adcClk    : out sl;
+      adcClkRst : out sl;
+
+      -- Status
+      acqStatus : out AcquisitionStatusType     );
 
 end AcquisitionControl;
 
@@ -80,64 +81,54 @@ architecture rtl of AcquisitionControl is
 
       -- AXIL config registers
       scDelay        : slv(15 downto 0);  -- delay between trigger and SC rise
-      scPosWidth     : slv(15 downto 0);  -- sc high time
-      scNegWidth     : slv(15 downto 0);  -- sc low time
+      scPosWidth     : slv(15 downto 0);  -- sc high time (baseline sampling)
+      scNegWidth     : slv(15 downto 0);  -- sc low time (Tslot=scPos+scNeg)
       scCount        : slv(11 downto 0);  -- Number of slots in acquisition
-      mckDelay       : slv(15 downto 0);  -- delay between sc fall and mck start
+      mckDelay       : slv(15 downto 0);  -- delay between sc fall and mck start (signal sampling)
       mckPosWidth    : slv(15 downto 0);  -- mck high time
       mckNegWidth    : slv(15 downto 0);  -- mck low time
-      mckCount       : slv(7 downto 0);   -- Number of MCK pulses per slot
+      mckCount       : slv(7 downto 0);   -- Number of MCK pulses per slot (should be 16)
       adcClkPosWidth : slv(15 downto 0);  -- Adc clock high time
       adcClkNegWidth : slv(15 downto 0);  -- Adc clock low time      
       adcClkDelay    : slv(15 downto 0);  -- Delay time between trigger and new rising edge of ADC clk
-      adcValidDelay  : slv(9 downto 0);   -- Delay between mck start and adc sample capture
+      adcWindowDelay  : slv(9 downto 0);   -- Delay between mck start and adc sample capture
       mckDisable     : sl;              -- Disable mck (is this necessary?)
       clkDisable     : sl;              -- Master clock disable (sc, mck, adcClk)
 
       -- Local registers
       state          : StateType;
       scRst          : sl;
-      scLast         : sl;
       scFallCounter  : slv(11 downto 0);
       mckRst         : sl;
-      mckLast        : sl;
       mckFallCounter : slv(7 downto 0);
       adcClkRst      : sl;
-      adcValid       : sl;
-      adcValidStb    : sl;
-      adcDone        : sl;
-      bla            : slv(31 downto 0);
+      acqStatus : AcquisitionStatusType;
    end record RegType;
 
    constant REG_INIT_C : RegType := (
       axilReadSlave  => AXI_LITE_READ_SLAVE_INIT_C,
       axilWriteSlave => AXI_LITE_WRITE_SLAVE_INIT_C,
       scDelay        => (others => '0'),
-      scPosWidth     => (others => '0'),
-      scNegWidth     => (others => '0'),
-      scCount        => (others => '0'),
-      mckDelay       => (others => '0'),
-      mckPosWidth    => (others => '0'),
-      mckNegWidth    => (others => '0'),
-      mckCount       => (others => '0'),
-      adcClkPosWidth => (others => '0'),
-      adcClkNegWidth => (others => '0'),
-      adcClkDelay    => (others => '0'),
-      adcValidDelay  => (others => '0'),
+      scPosWidth     => toSlv(50*16*2, 16),
+      scNegWidth     => toSlv(50*16*2, 16),
+      scCount        => toSlv(256, 12),
+      mckDelay       => toSlv(50*8, 16),
+      mckPosWidth    => toSlv(24, 16),  -- 25*2 * 4ns = 200 ns = 5 Mhz
+      mckNegWidth    => toSlv(24, 16),
+      mckCount       => toSlv(16, 8),   -- 16 pixels per slot
+      adcClkPosWidth => toSlv(12, 16),  -- 10 Mhz ADC clock
+      adcClkNegWidth => toSlv(12, 16),
+      adcClkDelay    => toSlv(0, 16),
+      adcWindowDelay  => toSlv(17*48, 10),
       mckDisable     => '0',
       clkDisable     => '0',
       state          => WAIT_TRIGGER_S,
       scRst          => '0',
-      scLast         => '0',
       scFallCounter  => (others => '0'),
       mckRst         => '0',
-      mckLast        => '0',
       mckFallCounter => (others => '0'),
       adcClkRst      => '0',
-      adcValid       => '0',
-      adcValidStb    => '0',
-      adcDone        => '0',
-      bla            => (others => '0'));
+      acqStatus => ACQUISITION_STATUS_INIT_C);
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
@@ -152,6 +143,11 @@ architecture rtl of AcquisitionControl is
    signal iMck        : sl;
    signal iAdcClk     : sl;
    signal iAdcValid   : sl;
+
+   signal scPreRise  : sl;
+   signal scPreFall  : sl;
+   signal mckPreRise : sl;
+   signal mckPreFall : sl;
 
 begin
 
@@ -194,7 +190,9 @@ begin
          highCount  => r.scPosWidth,    -- [in]
          lowCount   => r.scNegWidth,    -- [in]
          delayCount => r.scDelay,       -- [in]
-         divClk     => iSc);            -- [out]
+         divClk     => iSc,             -- [out]
+         preRise    => scPreRise,       -- [out]
+         preFall    => scPreFall);      -- [out]
 
 
    U_ClockDivider_MCK : entity work.ClockDivider
@@ -206,7 +204,9 @@ begin
          highCount  => r.mckPosWidth,   -- [in]
          lowCount   => r.mckNegWidth,   -- [in]
          delayCount => r.mckDelay,      -- [in]
-         divClk     => iMck);           -- [out]
+         divClk     => iMck,            -- [out]
+         preRise    => mckPreRise,      --[out]
+         preFall    => mckPreFall);     --[out]
 
    U_ClockDivider_ADCCLK : entity work.ClockDivider
       generic map (
@@ -219,22 +219,7 @@ begin
          delayCount => r.adcClkDelay,     -- [in]
          divClk     => iAdcClk);          -- [out]
 
---    U_FifoDelay_AdcValid : entity work.FifoDelay
---       generic map (
---          TPD_G             => TPD_G,
---          DATA_WIDTH_G      => 1,
---          BRAM_EN_G         => false,
---          FIFO_ADDR_WIDTH_G => 4)
---       port map (
---          clk     => clk250,             -- [in]
---          rst     => rst250,             -- [in]
---          din(0)  => r.adcValid,         -- [in]
---          wrEn    => r.adcValidToggle,   -- [in]
---          delay   => r.adcValidDelay,    -- [in]
---          dout(0) => iAdcValid,          -- [out]
---          valid   => open);              -- [out]
-
-   U_SlvDelay_1 : entity work.SlvDelay
+   U_SlvDelay_AdcWindow : entity work.SlvDelay
       generic map (
          TPD_G        => TPD_G,
          SRL_EN_G     => true,
@@ -243,42 +228,36 @@ begin
          WIDTH_G      => 1)
       port map (
          clk     => clk250,             -- [in]
-         delay   => r.adcValidDelay,    -- [in]
-         din(0)  => r.adcValid,         -- [in]
-         dout(0) => iAdcValid);         -- [out]
+         delay   => r.adcWindowDelay,    -- [in]
+         din(0)  => r.acqSatus.adcWindow,         -- [in]
+         dout(0) => acqStatus.adcWindow);         -- [out]
 
-   U_SlvDelay_20 : entity work.SlvDelay
+   U_SlvDelay_AdcWindow : entity work.SlvDelay
       generic map (
-         TPD_G    => TPD_G,
-         SRL_EN_G => false,
-         DELAY_G  => 20,
-         WIDTH_G  => 1)
+         TPD_G        => TPD_G,
+         SRL_EN_G     => true,
+         REG_OUTPUT_G => true,
+         DELAY_G      => 1024,
+         WIDTH_G      => 1)
       port map (
          clk     => clk250,             -- [in]
---         delay   => r.adcValidDelay,    -- [in]
-         din(0)  => r.adcValid,         -- [in]
-         dout(0) => adcValid20);        -- [out]
+         delay   => r.adcWindowDelay,    -- [in]
+         din(0)  => r.acqSatus.adcLast,         -- [in]
+         dout(0) => acqStatus.adcLast);         -- [out]
 
-   U_SlvDelay_0 : entity work.SlvDelay
-      generic map (
-         TPD_G    => TPD_G,
-         SRL_EN_G => true,
-         DELAY_G  => 0,
-         WIDTH_G  => 1)
-      port map (
-         clk     => clk250,             -- [in]
---         delay   => r.adcValidDelay,    -- [in]
-         din(0)  => r.adcValid,         -- [in]
-         dout(0) => adcValid0);         -- [out]
-
-   comb : process (iAdcClk, iAdcValid, iMck, iSc, locAxilReadMaster, locAxilWriteMaster, r, rst250,
-                   triggerRise) is
+   acqStatus.adcWindowStart <= '0';
+   acqStatus.adcWindowEnd <= '0';
+   acqStatus.mckPulse <= '0';
+   
+   -------------------------------------------------------------------------------------------------
+   -- Main logic
+   -------------------------------------------------------------------------------------------------
+   comb : process (iAdcClk, iAdcValid, iMck, iSc, locAxilReadMaster, locAxilWriteMaster, mckPreFall,
+                   mckPreRise, r, rst250, scPreFall, triggerRise) is
       variable v      : RegType;
       variable axilEp : AxiLiteEndpointType;
    begin
       v := r;
-
-      v.bla := X"4";
 
       -- Declare configuration registers
       axiSlaveWaitTxn(axilEp, locAxilWriteMaster, locAxilReadMaster, v.axilWriteSlave, v.axilReadSlave);
@@ -293,23 +272,27 @@ begin
       axiSlaveRegister(axilEp, X"20", 0, v.adcClkPosWidth);
       axiSlaveRegister(axilEp, X"24", 0, v.adcClkNegWidth);
       axiSlaveRegister(axilEp, X"28", 0, v.adcClkDelay);
-      axiSlaveRegister(axilEp, X"2C", 0, v.adcValidDelay);
+      axiSlaveRegister(axilEp, X"2C", 0, v.adcWindowDelay);
       axiSlaveRegister(axilEp, X"30", 0, v.mckDisable);
       axiSlaveRegister(axilEp, X"34", 0, v.clkDisable);
       axiSlaveDefault(axilEp, v.axilWriteSlave, v.axilReadSlave, AXI_ERROR_RESP_G);
 
+      -- Default Register values
       v.adcDone     := '0';
       v.adcClkRst   := '0';
-      v.scLast      := iSc;
-      v.mckLast     := iMck;
-      v.adcValidStb := '0';
+      
+      v.acqStatus.mckPulse    := mckPreRise;
+      v.acqStatus.adcWindowStart := '0';
+      v.acqStatus.adcWindowEnd := '0';
 
       case (r.state) is
          when WAIT_TRIGGER_S =>
             -- Hold SC and MCK in reset between triggers
-            v.adcDone := '1';
-            v.scRst   := '1';
-            v.mckRst  := '1';
+            v.adcDone        := '1';
+            v.scRst          := '1';
+            v.mckRst         := '1';
+            v.scFallCounter  := (others => '0');
+            v.mckFallCounter := (others => '0');
             if (triggerRise = '1') then
                -- Pulse the adcClk reset to realign it upon trigger
                v.adcClkRst := '1';
@@ -318,21 +301,29 @@ begin
 
          when WAIT_SC_FALL_S =>
             -- Release SC reset and wait for a falling edge of SC.
-            v.scRst := '0';
-
-            if (iSc = '0' and r.scLast = '1') then
+            v.scRst          := '0';
+            v.mckFallCounter := (others => '0');
+            if (scPreFall = '1') then
                -- Release MCK rst when SC goes low
                -- Increment  SC fall counter
                v.mckRst        := '0';
                v.scFallCounter := r.scFallCounter + 1;
-               v.adcValid      := '1';
-               v.adcValidStb   := '1';
                v.state         := COUNT_MCK_S;
             end if;
 
          when COUNT_MCK_S =>
+            -- Set adcWindow high on first rising edge (will remain high)
+            if (mckPreRise = '1') then
+               v.acqStatus.adcWindow    := '1';
+               v.acqStatus.adcWindowStart := '1';
+               -- Set adcLast before last on last mck
+               if (r.mckFallCounter = r.mckCount-1) then
+                  v.acqStatus.adcLast := '1';
+               end if;
+            end if;
+
             -- Increment counter with each mck falling edge
-            if (iMck = '0' and r.mckLast = '1') then
+            if (mckPreFall = '1') then
                v.mckFallCounter := r.mckFallCounter + 1;
             end if;
 
@@ -340,8 +331,9 @@ begin
             if (r.mckFallCounter = r.mckCount) then
                -- Done with mck
                v.mckRst      := '1';
-               v.adcValid    := '0';
-               v.adcValidStb := '1';
+               v.acqStatus.adcWindow    := '0';
+               v.acqStatus.adcWindowEnd := '1';
+               v.acqStatus.adcLast := '0';
                if (r.scFallCounter = r.scCount) then
                   -- Done with acquisition
                   v.state := WAIT_TRIGGER_S;
@@ -376,9 +368,6 @@ begin
       elineMck  <= iMck;
       adcClk    <= iAdcClk;
       adcClkRst <= r.adcClkRst;
-      adcValid  <= iAdcValid;
-      adcDone   <= r.adcDone;
-      bla       <= r.bla;
 
    end process comb;
 
