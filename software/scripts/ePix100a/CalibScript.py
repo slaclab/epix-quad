@@ -84,20 +84,42 @@ def main(argv):
    # wait 5 minutes
    print('[daq_worker] : waiting 5 minutes')
    for i in range(0,300):
-      #time.sleep(1)
+      #time.sleep(1)          # uncomment to wait
       sys.stdout.write('.')
       sys.stdout.flush()
    sys.stdout.write('\n')
    print('[daq_worker] : waiting 5 minutes done')
    
-   asic_set_temp_comp(0, 0)
-   asic_set_temp_comp(1, 0)
-   asic_set_temp_comp(2, 0)
-   asic_set_temp_comp(3, 0)
+   acq_times = [5000, 100000] # 50 us and 1 ms
+   save_dir = '/u1/mkwiatko/tmp'
    
-   set_acq_time(6000)
-   
-   set_power_pulsing(1)
+   for i in range(len(acq_times)):
+      for tc in range (0, 2):
+         for ppmat in range (0, 2):
+            #print ('acq %(1)d, tc %(2)d, ppmat %(3)d' % {"1":acq_times[i], "2":tc, "3":ppmat} )
+            print('[daq_worker] : changing settings')
+            asic_set_temp_comp(0, tc)
+            asic_set_temp_comp(1, tc)
+            asic_set_temp_comp(2, tc)
+            asic_set_temp_comp(3, tc)
+            set_acq_time(acq_times[i])
+            set_power_pulsing(ppmat)
+            file_path = save_dir + '/acq' + str(acq_times[i]) + '_tc' + str(tc) + '_ppmat' + str(ppmat)
+            # wait 1 minute before saving data
+            print('[daq_worker] : waiting 1 minute')
+            for j in range(0,60):
+               #time.sleep(1)          # uncomment to wait
+               sys.stdout.write('.')
+               sys.stdout.flush()
+            sys.stdout.write('\n')
+            print('[daq_worker] : waiting 1 minute done')
+            pythonDaq.daqOpenData(file_path)
+            pythonDaq.daqSetRunParameters('120Hz', 1100)
+            # we should wait here until the state is stopped
+            # maybe it should be done other way to avoid stopping (even for just a short time) - see Gabriel's email
+            pythonDaq.daqCloseData()
+            pythonDaq.daqSetRunParameters('120Hz', 10000000)
+            #print file_path
    
 if __name__ == "__main__":
    main(sys.argv[1:])
