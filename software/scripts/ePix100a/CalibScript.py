@@ -1,9 +1,21 @@
 import pythonDaq
+import daq_client
 import time
 import struct
 import os
 import sys
-import getopt
+import re
+import argparse
+
+parser = argparse.ArgumentParser('ePix calibration script.')
+parser.add_argument('-s', '--sleepstart', default=5*60, type=int, help='Time in seconds to wait before starting calibration runs.')
+parser.add_argument('-t', '--sleep', default=60, type=int, help='Time in seconds to wait between each calibration run.')
+parser.add_argument('-d', '--save_dir', default='/u1/phansson/tmp/', type=str, help='Directory where files get saved.')
+parser.add_argument('-n', '--events_per_run', default=1100, type=int, help='Number of events per calibration run.')
+args = parser.parse_args()
+
+
+
 
 def reset_daq():
    print('[daq_worker] : hard reset')
@@ -66,8 +78,40 @@ def set_power_pulsing(val):
       print('[daq_worker] : enabling power pulsing')
       pythonDaq.daqWriteRegister("digFpga(0)","AsicPinControl", dataRead & 0xfffffff7)
 
+def sleep(nsec=1, quiet=False):
+   if not quiet: print('[daq_worker] : sleeping for ' + str(nsec) + ' seconds')
+   for i in range(0,nsec):
+      time.sleep(1)          # uncomment to wait
+      if not quiet:
+         sys.stdout.write('.')
+         sys.stdout.flush()
+   if not quiet:
+      sys.stdout.write('\n')
+      print('[daq_worker] : slept for ' + str(nsec) + ' seconds')
+
+
+def get_processing_status(s):
+   """Extracts the number of events and rate (Hz) from string. Returns a tuple."""
+   m = None
+   n = -1
+   r = -1.0
+   if s != None:
+      m = re.match('(\d+)\s+-\s+(\d+)\s+Hz.*',s)
+      if m != None:
+         n = int(m.group(1))
+         r = float(m.group(2))
+   return (n,r)
+
 def main(argv):
+
+   print (args)
+
+   # open shared mem
    pythonDaq.daqOpen("epix",1)
+
+   # open daq client
+   tcpDaq = daq_client.DaqClient('localhost',8090,True)
+   tcpDaq.enable()
    
    # Reset the DAQ
    reset_daq()
@@ -81,18 +125,18 @@ def main(argv):
    # start running the camera
    start_running()
    
-   # wait 5 minutes
-   print('[daq_worker] : waiting 5 minutes')
-   for i in range(0,300):
-      #time.sleep(1)          # uncomment to wait
-      sys.stdout.write('.')
-      sys.stdout.flush()
-   sys.stdout.write('\n')
-   print('[daq_worker] : waiting 5 minutes done')
+   # wait before starting
+   sleep(nsec=args.sleep, quiet=False)
    
    acq_times = [5000, 100000] # 50 us and 1 ms
-   save_dir = '/u1/mkwiatko/tmp'
-   
+
+   print('[daq_worker] : saving files to '+ args.save_dir)
+
+   print('[daq_worker] : Start calibration loop')
+
+   # for stats
+   n_sum = 0
+
    for i in range(len(acq_times)):
       for tc in range (0, 2):
          for ppmat in range (0, 2):
@@ -104,22 +148,40 @@ def main(argv):
             asic_set_temp_comp(3, tc)
             set_acq_time(acq_times[i])
             set_power_pulsing(ppmat)
-            file_path = save_dir + '/acq' + str(acq_times[i]) + '_tc' + str(tc) + '_ppmat' + str(ppmat)
-            # wait 1 minute before saving data
-            print('[daq_worker] : waiting 1 minute')
-            for j in range(0,60):
-               #time.sleep(1)          # uncomment to wait
-               sys.stdout.write('.')
-               sys.stdout.flush()
-            sys.stdout.write('\n')
-            print('[daq_worker] : waiting 1 minute done')
+            file_path = args.save_dir + '/acq' + str(acq_times[i]) + '_tc' + str(tc) + '_ppmat' + str(ppmat)
+
+            print('[daq_worker] : file to be processed: ' + file_path)
+
+            # wait before saving data
+            sleep(nsec=args.sleep,quiet=False)
+
+            # get the processing status
+            events_start = get_processing_status(tcpDaq.daqReadStatusNode('DataFileCount'))[0]
+            print('[daq_worker] : Start recording events')
+            print('[daq_worker] : event count at start: ' + str(events_start))
+
+            # open the file to start recording events
             pythonDaq.daqOpenData(file_path)
-            pythonDaq.daqSetRunParameters('120Hz', 1100)
-            # we should wait here until the state is stopped
-            # maybe it should be done other way to avoid stopping (even for just a short time) - see Gabriel's email
+
+            # check occassionally until desired number of events has been processed
+            # the accuracy on number of events is not great ~ 100
+            events_processed = 0
+            while events_processed < args.events_per_run:
+               events_processed  = get_processing_status(tcpDaq.daqReadStatusNode('DataFileCount'))[0] - events_start
+               time.sleep(1)
+               print('[daq_worker] : processed ' + str(events_processed) + '/' + str(args.events_per_run) + ' events')
+            print('[daq_worker] : Stop recording events')
+
+            n_sum += events_processed
+
+            # close data file, don't stop acq
             pythonDaq.daqCloseData()
-            pythonDaq.daqSetRunParameters('120Hz', 10000000)
-            #print file_path
+   
+   print('[daq_worker] : Calibration loop done. ')
+   print('[daq_worker] : Saved ' + str(n_sum) + ' events to files')
+   
+   tcpDaq.disable()
+
    
 if __name__ == "__main__":
    main(sys.argv[1:])
