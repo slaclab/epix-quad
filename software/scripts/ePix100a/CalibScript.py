@@ -12,6 +12,7 @@ parser.add_argument('-s', '--sleepstart', default=5*60, type=int, help='Time in 
 parser.add_argument('-t', '--sleep', default=60, type=int, help='Time in seconds to wait between each calibration run.')
 parser.add_argument('-d', '--save_dir', default='/u1/phansson/tmp/', type=str, help='Directory where files get saved.')
 parser.add_argument('-n', '--events_per_run', default=1100, type=int, help='Number of events per calibration run.')
+parser.add_argument('-c', '--config', default='/afs/slac.stanford.edu/u/re/mkwiatko/localSVN/epix/trunk/software/xml/epix100a_4.xml', type=str, help='Default configuration xml file.')
 args = parser.parse_args()
 
 
@@ -39,7 +40,7 @@ def clear_matrix():
 
 def set_defaults():
    print('[daq_worker] : loading default settings')
-   pythonDaq.daqLoadSettings("/afs/slac.stanford.edu/u/re/mkwiatko/localSVN/epix/trunk/software/xml/epix100a_4.xml")
+   pythonDaq.daqLoadSettings(args.config)
    
 def start_running():
    print('[daq_worker] : start running the camera at 120Hz')
