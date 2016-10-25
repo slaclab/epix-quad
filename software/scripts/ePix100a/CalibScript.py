@@ -43,8 +43,16 @@ def set_defaults():
    
 def start_running():
    print('[daq_worker] : start running the camera at 120Hz')
-   pythonDaq.daqSetRunParameters('120Hz', 10000000)
-   pythonDaq.daqSetRunState("Running")
+   #pythonDaq.daqSetRunParameters('120Hz', 10000000)
+   #pythonDaq.daqSetRunState("Running")
+   # use FPGA auto trigger instead of software trigger
+   pythonDaq.daqSetRunState("Stopped")
+   pythonDaq.daqWriteRegister("digFpga(0)","AutoRunPeriod", 833333)
+   pythonDaq.daqWriteRegister("digFpga(0)","RunTrigEnable", 1)
+   pythonDaq.daqWriteRegister("digFpga(0)","DaqTrigEnable", 1)
+   pythonDaq.daqWriteRegister("digFpga(0)","AutoRunEnable", 1)
+   pythonDaq.daqWriteRegister("digFpga(0)","AutoDaqEnable", 1)
+   
 
 def asic_set_temp_comp(asic, val):
    asicStr = "digFpga(0):epix100aAsic("+str(asic)+")";
@@ -137,9 +145,9 @@ def main(argv):
    # for stats
    n_sum = 0
 
-   for i in range(len(acq_times)):
+   for ppmat in range (0, 2):
       for tc in range (0, 2):
-         for ppmat in range (0, 2):
+         for i in range(len(acq_times)):
             #print ('acq %(1)d, tc %(2)d, ppmat %(3)d' % {"1":acq_times[i], "2":tc, "3":ppmat} )
             print('[daq_worker] : changing settings')
             asic_set_temp_comp(0, tc)
@@ -148,6 +156,10 @@ def main(argv):
             asic_set_temp_comp(3, tc)
             set_acq_time(acq_times[i])
             set_power_pulsing(ppmat)
+            # must read the config after changing the registers otherwise 
+            # calling daqOpenData will overwrite the settings
+            pythonDaq.daqReadConfig()
+            
             file_path = args.save_dir + '/acq' + str(acq_times[i]) + '_tc' + str(tc) + '_ppmat' + str(ppmat)
 
             print('[daq_worker] : file to be processed: ' + file_path)
