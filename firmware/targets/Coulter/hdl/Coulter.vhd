@@ -5,7 +5,7 @@
 -- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 09/30/2015
--- Last update: 2016-09-21
+-- Last update: 2016-11-07
 -- Platform   : Vivado 2014.4
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -24,12 +24,16 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+-- Surf Packages
 use work.StdRtlPkg.all;
 use work.AxiLitePkg.all;
 use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
 use work.SsiCmdMasterPkg.all;
 use work.Ad9249Pkg.all;
+
+-- Coulter Packages
+use work.AcquisitionControlPkg.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -107,7 +111,7 @@ architecture top_level of Coulter is
    -------------------------------------------------------------------------------------------------
    -- AXI-Lite config
    -------------------------------------------------------------------------------------------------
-   constant AXIL_MASTERS_C       : integer      := 8;
+   constant AXIL_MASTERS_C       : integer      := 7;
    constant VERSION_AXIL_C       : integer      := 0;
    constant ASIC_CONFIG_AXIL_C   : IntegerArray := (0 => 1, 1 => 2);
    constant ADC_CONFIG_AXIL_C    : integer      := 3;
@@ -142,23 +146,27 @@ architecture top_level of Coulter is
    signal adcSpiDataOut : sl;
    signal adcSpiDataEn  : sl;
 
-   signal adcSerial  : Ad9249SerialGroupArray(1 downto 0);
-   signal adcStreams : AxiStreamMasterArray(15 downto 0);
+   signal adcSerial     : Ad9249SerialGroupArray(1 downto 0);
+   signal adcStreams    : AxiStreamMasterArray(11 downto 0);
+   signal unusedStreams : AxiStreamMasterArray(3 downto 0);
 
    signal userAxisMaster : AxiStreamMasterType;
    signal userAxisSlave  : AxiStreamSlaveType;
+   signal userAxisCtrl   : AxiStreamCtrlType;
 
    -- Led signals
    signal iLed   : slv(3 downto 0);
    signal iLedEn : sl;
 
-   -- External trigger signals
-   signal iRunTg : sl;
-   signal iDaqTg : sl;
-   signal iMps   : sl;
-   signal iTgOut : sl;
+   signal acqStatus : AcquisitionStatusType;
 
    signal userValues : Slv32Array(0 to 63) := (others => X"00000000");
+
+   -- Recovered PGP clk
+   signal distClk      : sl;
+   signal distRst      : sl;
+   signal distOpCodeEn : sl;
+   signal distOpCode   : slv(7 downto 0);
 
    -- 250 MHz clk drives ASIC readout signals
    signal clk250 : sl;
@@ -189,32 +197,32 @@ begin
       generic map (
          TPD_G => TPD_G)
       port map (
-         gtClkP           => gtRefClk0P,                       -- [in]
-         gtClkN           => gtRefClk0N,                       -- [in]
-         gtRxP            => gtDataRxP,                        -- [in]
-         gtRxN            => gtDataRxN,                        -- [in]
-         gtTxP            => gtDataTxP,                        -- [out]
-         gtTxN            => gtDataTxN,                        -- [out]
-         powerBad         => '0',                              -- [in]
-         rxLinkReady      => open,                             -- [out]
-         txLinkReady      => open,                             -- [out]
-         axilClk          => axilClk,                          -- [out]
-         axilRst          => axilRst,                          -- [out]
-         mAxilReadMaster  => srpAxilReadMaster,                -- [out]
-         mAxilReadSlave   => srpAxilReadSlave,                 -- [in]
-         mAxilWriteMaster => srpAxilWriteMaster,               -- [out]
-         mAxilWriteSlave  => srpAxilWriteSlave,                -- [in]
-         sAxilReadMaster  => locAxilReadMasters(PGP_AXIL_C),   -- [out]
-         sAxilReadSlave   => locAxilReadSlaves(PGP_AXIL_C),    -- [in]
-         sAxilWriteMaster => locAxilWriteMasters(PGP_AXIL_C),  -- [out]
-         sAxilWriteSlave  => locAxilWriteSlaves(PGP_AXIL_C),   -- [in]
-         userAxisMaster   => userAxisMaster,                   -- [in]
-         userAxisSlave    => userAxisSlave,                    -- [out]
-         ssiCmd           => ssiCmd);                          -- [out]
+         gtClkP           => gtRefClk0P,          -- [in]
+         gtClkN           => gtRefClk0N,          -- [in]
+         gtRxP            => gtDataRxP,           -- [in]
+         gtRxN            => gtDataRxN,           -- [in]
+         gtTxP            => gtDataTxP,           -- [out]
+         gtTxN            => gtDataTxN,           -- [out]
+         powerBad         => '0',                 -- [in]
+         rxLinkReady      => open,                -- [out]
+         txLinkReady      => open,                -- [out]
+         distClk           => distClk,              -- [out]
+         distRst           => distRst,              -- [out]
+         distOpCodeEn      => distOpCodeEn,         -- [out]
+         distOpCode        => distOpCode,           -- [out]
+         axilClk          => axilClk,             -- [out]
+         axilRst          => axilRst,             -- [out]
+         mAxilReadMaster  => srpAxilReadMaster,   -- [out]
+         mAxilReadSlave   => srpAxilReadSlave,    -- [in]
+         mAxilWriteMaster => srpAxilWriteMaster,  -- [out]
+         mAxilWriteSlave  => srpAxilWriteSlave,   -- [in]
+         userAxisMaster   => userAxisMaster,      -- [in]
+         userAxisSlave    => userAxisSlave,       -- [out]
+         userAxisCtrl     => userAxisCtrl,        -- [out]
+         ssiCmd           => ssiCmd);             -- [out]
 
    -------------------------------------------------------------------------------------------------
    -- Clock Manager (create 250 Mhz clock and 200 MHz clock)
-   -- Could bring out stableClk to drive this.
    -------------------------------------------------------------------------------------------------
    U_CtrlClockManager7 : entity work.ClockManager7
       generic map (
@@ -345,7 +353,7 @@ begin
       generic map (
          TPD_G           => TPD_G,
          NUM_CHIPS_G     => 1,
-         DEN_POLARITY_G => '0',
+         DEN_POLARITY_G  => '0',
          CLK_EN_PERIOD_G => AXIL_CLK_PERIOD_C*2.0,
          CLK_PERIOD_G    => AXIL_CLK_PERIOD_C,
          AXIL_ERR_RESP_G => AXI_RESP_DECERR_C)
@@ -369,7 +377,7 @@ begin
          IO => adcSpiData,
          I  => adcSpiDataOut,
          T  => adcSpiDataEn);
-   
+--    Equivalent of:
 --    adcSpiData   <= adcSpiDataOut when adcSpiDataEn = '1' else 'Z';
 --    adcSpiDataIn <= adcSpiData;
 
@@ -395,42 +403,43 @@ begin
    U_Ad9249ReadoutGroup_0 : entity work.Ad9249ReadoutGroup
       generic map (
          TPD_G             => TPD_G,
-         NUM_CHANNELS_G    => 8,
+         NUM_CHANNELS_G    => 6,
          IODELAY_GROUP_G   => "DEFAULT_GROUP",
          IDELAYCTRL_FREQ_G => 200.0,
          DEFAULT_DELAY_G   => "00000",
          ADC_INVERT_CH_G   => X"00")
       port map (
-         axilClk         => axilClk,                                    -- [in]
-         axilRst         => axilRst,                                    -- [in]
-         axilWriteMaster => locAxilWriteMasters(ADC_READOUT_0_AXIL_C),  -- [in]
-         axilWriteSlave  => locAxilWriteSlaves(ADC_READOUT_0_AXIL_C),   -- [out]
-         axilReadMaster  => locAxilReadMasters(ADC_READOUT_0_AXIL_C),   -- [in]
-         axilReadSlave   => locAxilReadSlaves(ADC_READOUT_0_AXIL_C),    -- [out]
-         adcClkRst       => adcClkRst,                                  -- [in]
-         adcSerial       => adcSerial(0),                               -- [in]
-         adcStreamClk    => clk250,                                    -- [in]
-         adcStreams      => adcStreams(7 downto 0));                    -- [out]
+         axilClk                => axilClk,                                    -- [in]
+         axilRst                => axilRst,                                    -- [in]
+         axilWriteMaster        => locAxilWriteMasters(ADC_READOUT_0_AXIL_C),  -- [in]
+         axilWriteSlave         => locAxilWriteSlaves(ADC_READOUT_0_AXIL_C),   -- [out]
+         axilReadMaster         => locAxilReadMasters(ADC_READOUT_0_AXIL_C),   -- [in]
+         axilReadSlave          => locAxilReadSlaves(ADC_READOUT_0_AXIL_C),    -- [out]
+         adcClkRst              => adcClkRst,                                  -- [in]
+         adcSerial              => adcSerial(0),                               -- [in]
+         adcStreamClk           => clk250,                                     -- [in]
+         adcStreams(5 downto 0) => adcStreams(5 downto 0));                     -- [out]
 
    U_Ad9249ReadoutGroup_1 : entity work.Ad9249ReadoutGroup
       generic map (
          TPD_G             => TPD_G,
-         NUM_CHANNELS_G    => 8,
+         NUM_CHANNELS_G    => 6,
          IODELAY_GROUP_G   => "DEFAULT_GROUP",
          IDELAYCTRL_FREQ_G => 200.0,
          DEFAULT_DELAY_G   => "00000",
          ADC_INVERT_CH_G   => X"00")
       port map (
-         axilClk         => axilClk,                                    -- [in]
-         axilRst         => axilRst,                                    -- [in]
-         axilWriteMaster => locAxilWriteMasters(ADC_READOUT_1_AXIL_C),  -- [in]
-         axilWriteSlave  => locAxilWriteSlaves(ADC_READOUT_1_AXIL_C),   -- [out]
-         axilReadMaster  => locAxilReadMasters(ADC_READOUT_1_AXIL_C),   -- [in]
-         axilReadSlave   => locAxilReadSlaves(ADC_READOUT_1_AXIL_C),    -- [out]
-         adcClkRst       => adcClkRst,                                  -- [in]
-         adcSerial       => adcSerial(1),                               -- [in]
-         adcStreamClk    => clk250,                                    --[in]
-         adcStreams      => adcStreams(15 downto 8));                   -- [out]
+         axilClk                => axilClk,                                    -- [in]
+         axilRst                => axilRst,                                    -- [in]
+         axilWriteMaster        => locAxilWriteMasters(ADC_READOUT_1_AXIL_C),  -- [in]
+         axilWriteSlave         => locAxilWriteSlaves(ADC_READOUT_1_AXIL_C),   -- [out]
+         axilReadMaster         => locAxilReadMasters(ADC_READOUT_1_AXIL_C),   -- [in]
+         axilReadSlave          => locAxilReadSlaves(ADC_READOUT_1_AXIL_C),    -- [out]
+         adcClkRst              => adcClkRst,                                  -- [in]
+         adcSerial              => adcSerial(1),                               -- [in]
+         adcStreamClk           => clk250,                                     --[in]
+         adcStreams(5 downto 0) => adcStreams(11 downto 6));                    -- [out]
+
 
    -------------------------------------------------------------------------------------------------
    -- Acquisition Control (8 bits)
@@ -445,16 +454,32 @@ begin
          axilReadSlave   => locAxilReadSlaves(ACQ_CTRL_AXIL_C),    -- [out]
          axilWriteMaster => locAxilWriteMasters(ACQ_CTRL_AXIL_C),  -- [in]
          axilWriteSlave  => locAxilWriteSlaves(ACQ_CTRL_AXIL_C),   -- [out]
-         clk250          => clk250,                                -- [in]
-         rst250          => rst250,                                -- [in]
-         trigger         => ssiCmd.valid,                          -- [in]
+         distClk          => distClk,                                -- [in]
+         distRst          => distRst,                                -- [in]
+         trigger         => distOpCodeEn,                           -- [in]
          elineRst        => elineRst,                              -- [out]
          elineSc         => elineSc,                               -- [out]
          elineMck        => elineMck,                              -- [out]
-         adcValid        => adcValid,                              -- [out]
-         adcDone         => adcDone,                               -- [out]
          adcClk          => adcClk,                                -- [out]
-         adcClkRst       => adcClkRst);                            -- [out]
+         adcClkRst       => adcClkRst,                             -- [out]
+         acqStatus       => acqStatus);                            -- [out]
+
+   U_ReadoutControl_1 : entity work.ReadoutControl
+      generic map (
+         TPD_G => TPD_G)
+      port map (
+         adcStreamClk   => clk250,          -- [in]
+         adcStreamRst   => rst250,          -- [in]
+         adcStreams     => adcStreams,      -- [in]
+         distClk => distClk,
+         distRst => distRst,
+         distTrigger => distOpCodeEn,
+         clk            => axilClk,         -- [in]
+         rst            => axilRst,         -- [in]
+         acqStatus      => acqStatus,       -- [in]
+         dataAxisMaster => userAxisMaster,  -- [out]
+         dataAxisSlave  => userAxisSlave,   -- [in]
+         dataAxisCtrl   => userAxisCtrl);   -- [in]
 
    elineResetL <= not elineRst;
 

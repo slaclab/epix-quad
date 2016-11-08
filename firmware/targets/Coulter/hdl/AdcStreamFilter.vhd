@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-09-22
--- Last update: 2016-09-22
+-- Last update: 2016-11-07
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -26,28 +26,47 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
+use work.StdRtlPkg.all;
+use work.AxiStreamPkg.all;
+use work.Ad9249Pkg.all;
+
+use work.AcquisitionControlPkg.all;
+
 entity AdcStreamFilter is
 
    generic (
-      TPD_G : time := 1 ns);
+      TPD_G               : time                := 1 ns;
+      FILTERED_AXIS_CFG_G : AxiStreamConfigType := AXI_STREAM_CONFIG_INIT_C);
    port (
       -- Input stream
       adcStreamClk : in sl;
       adcStreamRst : in sl;
       adcStream    : in AxiStreamMasterType;
 
+      -- Main clock and reset
+      clk                : in  sl;
+      rst                : in  sl;
       -- Acquisition timing signals
-      acqStatus : in AcquisitionStatusType;
-
+      acqStatus          : in  AcquisitionStatusType;
       -- Filtered (and buffered) output stream
-      filteredStreamClk    : in  sl;
-      filteredStreamRst    : in  sl;
-      filteredStreamMaster : out AxiStreamMasterType;
-      filteredStreamSlave  : in  AxiStreamSlaveType);
+      filteredAxisMaster : out AxiStreamMasterType;
+      filteredAxisSlave  : in  AxiStreamSlaveType);
 
 end entity AdcStreamFilter;
 
 architecture rtl of AdcStreamFilter is
+
+   type RegType is record
+      capture      : sl;
+      filteredAxis : AxiStreamMasterType;
+   end record RegType;
+
+   constant REG_INIT_C : RegType := (
+      capture      => '0',
+      filteredAxis => AXI_STREAM_MASTER_INIT_C);
+
+   signal r   : RegType := REG_INIT_C;
+   signal rin : RegType;
 
 begin
 
@@ -56,14 +75,14 @@ begin
    begin
       v := r;
 
-      v.filteredStream.tValid := '0';
-      v.filteredStream.tData  := adcStream.tData;
-      v.filteredStream.tLast  := acqStatus.adcLast;
+      v.filteredAxis.tValid := '0';
+      v.filteredAxis.tData  := adcStream.tData;
+      v.filteredAxis.tLast  := acqStatus.adcLast;
 
       -- Filter every other sample when acqStatus.adcWindow = '1'
       if (acqStatus.adcWindow = '1' and adcStream.tvalid = '1') then
-         v.filteredStream.tValid := r.capture;
-         v.capture               := not r.capture;
+         v.filteredAxis.tValid := r.capture;
+         v.capture             := not r.capture;
       end if;
 
       if (adcStreamRst = '1') then
@@ -74,9 +93,9 @@ begin
 
    end process comb;
 
-   seq : process (adcStreamClk) is
+   seq : process (clk) is
    begin
-      if (rising_edge(adcStreamClk)) then
+      if (rising_edge(clk)) then
          r <= rin after TPD_G;
       end if;
    end process seq;
@@ -87,25 +106,25 @@ begin
          INT_PIPE_STAGES_G      => 0,
          PIPE_STAGES_G          => 1,
          SLAVE_READY_EN_G       => true,
-         VALID_THOLD_G          => 1,
+         VALID_THOLD_G          => 0,
          BRAM_EN_G              => false,
          XIL_DEVICE_G           => "7Series",
          USE_BUILT_IN_G         => false,
          GEN_SYNC_FIFO_G        => false,
          FIFO_ADDR_WIDTH_G      => 5,
-         INT_WIDTH_SELECT_G     => "WIDE"
+         INT_WIDTH_SELECT_G     => "WIDE",
          LAST_FIFO_ADDR_WIDTH_G => 0,
          SLAVE_AXI_CONFIG_G     => AD9249_AXIS_CFG_G,
-         MASTER_AXI_CONFIG_G    => AD9249_AXIS_CFG_G)
+         MASTER_AXI_CONFIG_G    => FILTERED_AXIS_CFG_G)
       port map (
-         sAxisClk    => adcStreamClk,          -- [in]
-         sAxisRst    => adcStreamRst,          -- [in]
-         sAxisMaster => r.filteredStream,      -- [in]
-         sAxisSlave  => open,                  -- [out]
-         sAxisCtrl   => open,                  -- [out]
-         mAxisClk    => filteredStreamClk,     -- [in]
-         mAxisRst    => filteredStreamRst,     -- [in]
-         mAxisMaster => filteredStreamMaster,  -- [out]
-         mAxisSlave  => filteredStreamSlave);  -- [in]
+         sAxisClk    => adcStreamClk,        -- [in]
+         sAxisRst    => adcStreamRst,        -- [in]
+         sAxisMaster => r.filteredAxis,      -- [in]
+         sAxisSlave  => open,                -- [out]
+         sAxisCtrl   => open,                -- [out]
+         mAxisClk    => clk,                 -- [in]
+         mAxisRst    => rst,                 -- [in]
+         mAxisMaster => filteredAxisMaster,  -- [out]
+         mAxisSlave  => filteredAxisSlave);  -- [in]
 
 end architecture rtl;

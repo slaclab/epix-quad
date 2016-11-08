@@ -23,7 +23,6 @@ export MODULE_DIRS = $(MODULES)/surf/base  \
                      $(MODULES)/surf/xilinx/7Series/gtp7 \
                      $(MODULES)/surf/xilinx/7Series/general \
                      $(MODULES)/surf/devices/AnalogDevices/ad9249 \
-                     $(COMMON)/EpixCommonGen2  \
                      $(PROJ_DIR)
 
 # Max number of smart explorer runs

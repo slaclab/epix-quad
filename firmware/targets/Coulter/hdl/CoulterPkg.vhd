@@ -1,11 +1,11 @@
 -------------------------------------------------------------------------------
 -- Title      : 
 -------------------------------------------------------------------------------
--- File       : AcquisitionControlPkg.vhd
+-- File       : CoulterPkg.vhd
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-09-22
--- Last update: 2016-09-29
+-- Last update: 2016-11-07
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -24,24 +24,11 @@ library ieee;
 use ieee.std_logic_1164.all;
 
 use work.StdRtlPkg.all;
+use work.AxiStreamPkg.all;
+use work.SsiPkg.all;
 
-package AcquisitionControlPkg is
+package CoulterPkg is
 
-   type AcquisitionStatusType is record
-      trigger        : sl;
-      adcWindow      : sl;
-      adcWindowStart : sl;
-      adcWindowEnd   : sl;
-      adcLast        : sl;
-      mckPulse       : sl;
-   end record AcquisitionStatusType;
+   constant COULTER_AXIS_CFG_C : AxiStreamConfigType := ssiAxiStreamConfig(16, TKEEP_COMP_C, TUSER_FIRST_LAST_C);
 
-   constant ACQUISITION_STATUS_INIT_C : AcquisitionStatusType := (
-      trigger        => '0',
-      adcWindow      => '0',
-      adcWindowStart => '0',
-      adcWindowEnd   => '0',
-      adcLast        => '0',
-      mckPulse       => '0');
-
-end package AcquisitionControlPkg;
+end package CoulterPkg;
