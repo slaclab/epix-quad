@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-05-16
--- Last update: 2016-06-06
+-- Last update: 2016-11-14
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -28,7 +28,7 @@ use work.StdRtlPkg.all;
 
 package ELine100Pkg is
 
-   constant ELINE_100_CFG_SHIFT_SIZE_G : integer := 342;
+   constant ELINE_100_CFG_SHIFT_SIZE_C : integer := 342;
 
    type ELine100ChCfgType is record
       somi : sl;                        -- Channel Selector Enable

@@ -6,4 +6,4 @@ loadSource -path "$::DIR_PATH/Version.vhd"
 loadSource -dir "$::DIR_PATH/hdl/"
 
 # Load Constraints
-loadConstraints -path "$::DIR_PATH/hdl/Coulter.xdc
+loadConstraints -path "$::DIR_PATH/hdl/Coulter.xdc"

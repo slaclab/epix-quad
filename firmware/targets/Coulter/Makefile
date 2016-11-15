@@ -5,9 +5,11 @@ target: prom
 # Define target part
 export PRJ_PART = XC7A200TSBG484-3
 
+export PROJ_DIR = $(abspath $(PWD))
 export COMMON = $(abspath $(PWD)/../../common)
 export MODULES = $(abspath $(PWD)/../../modules)
 export RUCKUS_DIR = $(abspath $(PWD)/../../modules/ruckus)
+
 
 
 # List of build core directories.

@@ -5,7 +5,7 @@
 -- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 09/30/2015
--- Last update: 2016-11-07
+-- Last update: 2016-11-14
 -- Platform   : Vivado 2014.4
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -89,8 +89,8 @@ entity Coulter is
       adcDoClkM          : in    slv(1 downto 0);
       adcFrameClkP       : in    slv(1 downto 0);
       adcFrameClkM       : in    slv(1 downto 0);
-      adcDoP             : in    slv(15 downto 0);
-      adcDoM             : in    slv(15 downto 0);
+      adcDoP             : in    slv6Array(1 downto 0);
+      adcDoM             : in    slv6Array(1 downto 0);
       adcOverflow        : in    slv(1 downto 0);
       -- ELine100 Config
       elineResetL        : out   sl;
@@ -206,10 +206,10 @@ begin
          powerBad         => '0',                 -- [in]
          rxLinkReady      => open,                -- [out]
          txLinkReady      => open,                -- [out]
-         distClk           => distClk,              -- [out]
-         distRst           => distRst,              -- [out]
-         distOpCodeEn      => distOpCodeEn,         -- [out]
-         distOpCode        => distOpCode,           -- [out]
+         distClk          => distClk,             -- [out]
+         distRst          => distRst,             -- [out]
+         distOpCodeEn     => distOpCodeEn,        -- [out]
+         distOpCode       => distOpCode,          -- [out]
          axilClk          => axilClk,             -- [out]
          axilRst          => axilRst,             -- [out]
          mAxilReadMaster  => srpAxilReadMaster,   -- [out]
@@ -386,12 +386,12 @@ begin
    -------------------------------------------------------------------------------------------------
    -- Map raw IO into record structures
    AdcLvdsMap : for i in 1 downto 0 generate
-      adcSerial(i).fClkP <= adcFrameClkP(i);
-      adcSerial(i).fClkN <= adcFrameClkM(i);
-      adcSerial(i).dClkP <= adcDoClkP(i);
-      adcSerial(i).dClkN <= adcDoClkM(i);
-      adcSerial(i).chP   <= adcDoP((i+1)*8-1 downto i*8);
-      adcSerial(i).chN   <= adcDoM((i+1)*8-1 downto i*8);
+      adcSerial(i).fClkP           <= adcFrameClkP(i);
+      adcSerial(i).fClkN           <= adcFrameClkM(i);
+      adcSerial(i).dClkP           <= adcDoClkP(i);
+      adcSerial(i).dClkN           <= adcDoClkM(i);
+      adcSerial(i).chP(5 downto 0) <= adcDoP(i);
+      adcSerial(i).chN(5 downto 0) <= adcDoM(i);
    end generate AdcLvdsMap;
 
    IDELAYCTRL_0 : IDELAYCTRL
@@ -418,7 +418,7 @@ begin
          adcClkRst              => adcClkRst,                                  -- [in]
          adcSerial              => adcSerial(0),                               -- [in]
          adcStreamClk           => clk250,                                     -- [in]
-         adcStreams(5 downto 0) => adcStreams(5 downto 0));                     -- [out]
+         adcStreams(5 downto 0) => adcStreams(5 downto 0));                    -- [out]
 
    U_Ad9249ReadoutGroup_1 : entity work.Ad9249ReadoutGroup
       generic map (
@@ -438,7 +438,7 @@ begin
          adcClkRst              => adcClkRst,                                  -- [in]
          adcSerial              => adcSerial(1),                               -- [in]
          adcStreamClk           => clk250,                                     --[in]
-         adcStreams(5 downto 0) => adcStreams(11 downto 6));                    -- [out]
+         adcStreams(5 downto 0) => adcStreams(11 downto 6));                   -- [out]
 
 
    -------------------------------------------------------------------------------------------------
@@ -454,9 +454,9 @@ begin
          axilReadSlave   => locAxilReadSlaves(ACQ_CTRL_AXIL_C),    -- [out]
          axilWriteMaster => locAxilWriteMasters(ACQ_CTRL_AXIL_C),  -- [in]
          axilWriteSlave  => locAxilWriteSlaves(ACQ_CTRL_AXIL_C),   -- [out]
-         distClk          => distClk,                                -- [in]
-         distRst          => distRst,                                -- [in]
-         trigger         => distOpCodeEn,                           -- [in]
+         distClk         => distClk,                               -- [in]
+         distRst         => distRst,                               -- [in]
+         trigger         => distOpCodeEn,                          -- [in]
          elineRst        => elineRst,                              -- [out]
          elineSc         => elineSc,                               -- [out]
          elineMck        => elineMck,                              -- [out]
@@ -471,9 +471,9 @@ begin
          adcStreamClk   => clk250,          -- [in]
          adcStreamRst   => rst250,          -- [in]
          adcStreams     => adcStreams,      -- [in]
-         distClk => distClk,
-         distRst => distRst,
-         distTrigger => distOpCodeEn,
+         distClk        => distClk,
+         distRst        => distRst,
+         distTrigger    => distOpCodeEn,
          clk            => axilClk,         -- [in]
          rst            => axilRst,         -- [in]
          acqStatus      => acqStatus,       -- [in]
