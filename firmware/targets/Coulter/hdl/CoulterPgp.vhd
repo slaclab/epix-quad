@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-06-03
--- Last update: 2016-11-14
+-- Last update: 2016-11-15
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -61,6 +61,11 @@ entity CoulterPgp is
       mAxilReadSlave   : in  AxiLiteReadSlaveType;
       mAxilWriteMaster : out AxiLiteWriteMasterType;
       mAxilWriteSlave  : in  AxiLiteWriteSlaveType;
+      -- Slave AXIL interface for PGP and GTP
+      sAxilReadMaster  : in AxiLiteReadMasterType;
+      sAxilReadSlave   : out  AxiLiteReadSlaveType;
+      sAxilWriteMaster : in AxiLiteWriteMasterType;
+      sAxilWriteSlave  : out  AxiLiteWriteSlaveType;
       -- Streaming data Links (axiClk domain)      
       userAxisMaster   : in  AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
       userAxisSlave    : out AxiStreamSlaveType;
@@ -93,17 +98,12 @@ architecture mapping of CoulterPgp is
    signal pgpTxOut     : Pgp2bTxOutType;
 
    -- AXIL
-   constant AXIL_MASTERS_C      : integer := 3;
-   constant COULTER_AXI_INDEX_C : integer := 0;
-   constant PGP_AXI_INDEX_C     : integer := 1;
-   constant GTP_AXI_INDEX_C     : integer := 2;
+   constant AXIL_MASTERS_C      : integer := 2;
+   constant PGP_AXI_INDEX_C     : integer := 0;
+   constant GTP_AXI_INDEX_C     : integer := 1;
 
    constant AXIL_XBAR_CFG_C : AxiLiteCrossbarMasterConfigArray(AXIL_MASTERS_C-1 downto 0) := (
-      COULTER_AXI_INDEX_C => (
-         baseAddr         => X"00000000",
-         addrBits         => 28,
-         connectivity     => X"0001"),
-      PGP_AXI_INDEX_C     => (
+       PGP_AXI_INDEX_C     => (
          baseAddr         => X"10000000",
          addrBits         => 8,
          connectivity     => X"0001"),
@@ -147,20 +147,14 @@ begin
       port map (
          axiClk              => pgpTxClk,             -- [in]
          axiClkRst           => pgpTxRst,             -- [in]
-         sAxiWriteMasters(0) => srpAxilWriteMaster,   -- [in]
-         sAxiWriteSlaves(0)  => srpAxilWriteSlave,    -- [out]
-         sAxiReadMasters(0)  => srpAxilReadMaster,    -- [in]
-         sAxiReadSlaves(0)   => srpAxilReadSlave,     -- [out]
+         sAxiWriteMasters(0) => sAxilWriteMaster,   -- [in]
+         sAxiWriteSlaves(0)  => sAxilWriteSlave,    -- [out]
+         sAxiReadMasters(0)  => sAxilReadMaster,    -- [in]
+         sAxiReadSlaves(0)   => sAxilReadSlave,     -- [out]
          mAxiWriteMasters    => locAxilWriteMasters,  -- [out]
          mAxiWriteSlaves     => locAxilWriteSlaves,   -- [in]
          mAxiReadMasters     => locAxilReadMasters,   -- [out]
          mAxiReadSlaves      => locAxilReadSlaves);   -- [in]
-
-   -- Assign loc(COULTER_AXI_INDEX) to the AXIL master port
-   mAxilReadMaster                         <= locAxilReadMasters(COULTER_AXI_INDEX_C);
-   locAxilReadSlaves(COULTER_AXI_INDEX_C)  <= mAxilReadSlave;
-   mAxilWriteMaster                        <= locAxilWriteMasters(COULTER_AXI_INDEX_C);
-   locAxilWriteSlaves(COULTER_AXI_INDEX_C) <= mAxilWriteSlave;
 
    -------------------------------
    --       PGP Core            --
@@ -341,10 +335,10 @@ begin
          -- AXI Lite Bus (axiLiteClk domain)
          axiLiteClk          => pgpTxClk,
          axiLiteRst          => pgpTxRst,
-         mAxiLiteWriteMaster => srpAxilWriteMaster,
-         mAxiLiteWriteSlave  => srpAxilWriteSlave,
-         mAxiLiteReadMaster  => srpAxilReadMaster,
-         mAxiLiteReadSlave   => srpAxilReadSlave);
+         mAxiLiteWriteMaster => mAxilWriteMaster,
+         mAxiLiteWriteSlave  => mAxilWriteSlave,
+         mAxiLiteReadMaster  => mAxilReadMaster,
+         mAxiLiteReadSlave   => mAxilReadSlave);
 
    -- Lane 0, VC1 TX, streaming data out
    U_AxiStreamFifoV2_1 : entity work.AxiStreamFifoV2

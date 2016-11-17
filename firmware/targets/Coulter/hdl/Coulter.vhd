@@ -5,7 +5,7 @@
 -- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 09/30/2015
--- Last update: 2016-11-14
+-- Last update: 2016-11-15
 -- Platform   : Vivado 2014.4
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -111,7 +111,7 @@ architecture top_level of Coulter is
    -------------------------------------------------------------------------------------------------
    -- AXI-Lite config
    -------------------------------------------------------------------------------------------------
-   constant AXIL_MASTERS_C       : integer      := 7;
+   constant AXIL_MASTERS_C       : integer      := 8;
    constant VERSION_AXIL_C       : integer      := 0;
    constant ASIC_CONFIG_AXIL_C   : IntegerArray := (0 => 1, 1 => 2);
    constant ADC_CONFIG_AXIL_C    : integer      := 3;
@@ -197,29 +197,33 @@ begin
       generic map (
          TPD_G => TPD_G)
       port map (
-         gtClkP           => gtRefClk0P,          -- [in]
-         gtClkN           => gtRefClk0N,          -- [in]
-         gtRxP            => gtDataRxP,           -- [in]
-         gtRxN            => gtDataRxN,           -- [in]
-         gtTxP            => gtDataTxP,           -- [out]
-         gtTxN            => gtDataTxN,           -- [out]
-         powerBad         => '0',                 -- [in]
-         rxLinkReady      => open,                -- [out]
-         txLinkReady      => open,                -- [out]
-         distClk          => distClk,             -- [out]
-         distRst          => distRst,             -- [out]
-         distOpCodeEn     => distOpCodeEn,        -- [out]
-         distOpCode       => distOpCode,          -- [out]
-         axilClk          => axilClk,             -- [out]
-         axilRst          => axilRst,             -- [out]
-         mAxilReadMaster  => srpAxilReadMaster,   -- [out]
-         mAxilReadSlave   => srpAxilReadSlave,    -- [in]
-         mAxilWriteMaster => srpAxilWriteMaster,  -- [out]
-         mAxilWriteSlave  => srpAxilWriteSlave,   -- [in]
-         userAxisMaster   => userAxisMaster,      -- [in]
-         userAxisSlave    => userAxisSlave,       -- [out]
-         userAxisCtrl     => userAxisCtrl,        -- [out]
-         ssiCmd           => ssiCmd);             -- [out]
+         gtClkP           => gtRefClk0P,                       -- [in]
+         gtClkN           => gtRefClk0N,                       -- [in]
+         gtRxP            => gtDataRxP,                        -- [in]
+         gtRxN            => gtDataRxN,                        -- [in]
+         gtTxP            => gtDataTxP,                        -- [out]
+         gtTxN            => gtDataTxN,                        -- [out]
+         powerBad         => '0',                              -- [in]
+         rxLinkReady      => open,                             -- [out]
+         txLinkReady      => open,                             -- [out]
+         distClk          => distClk,                          -- [out]
+         distRst          => distRst,                          -- [out]
+         distOpCodeEn     => distOpCodeEn,                     -- [out]
+         distOpCode       => distOpCode,                       -- [out]
+         axilClk          => axilClk,                          -- [out]
+         axilRst          => axilRst,                          -- [out]
+         mAxilReadMaster  => srpAxilReadMaster,                -- [out]
+         mAxilReadSlave   => srpAxilReadSlave,                 -- [in]
+         mAxilWriteMaster => srpAxilWriteMaster,               -- [out]
+         mAxilWriteSlave  => srpAxilWriteSlave,                -- [in]
+         sAxilReadMaster  => locAxilReadMasters(PGP_AXIL_C),   -- [in]
+         sAxilReadSlave   => locAxilReadSlaves(PGP_AXIL_C),    -- [out]
+         sAxilWriteMaster => locAxilWriteMasters(PGP_AXIL_C),  -- [in]
+         sAxilWriteSlave  => locAxilWriteSlaves(PGP_AXIL_C),   -- [out]
+         userAxisMaster   => userAxisMaster,                   -- [in]
+         userAxisSlave    => userAxisSlave,                    -- [out]
+         userAxisCtrl     => userAxisCtrl,                     -- [out]
+         ssiCmd           => ssiCmd);                          -- [out]
 
    -------------------------------------------------------------------------------------------------
    -- Clock Manager (create 250 Mhz clock and 200 MHz clock)
