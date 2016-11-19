@@ -30,49 +30,10 @@ import time
 import sys
 import PyQt4.QtGui
 
-# Custom run control
-class MyRunControl(pyrogue.RunControl):
-   def __init__(self,name):
-      pyrogue.RunControl.__init__(self,name,'Run Controller')
-      self._thread = None
 
-      self.runRate.enum = {1:'1 Hz', 10:'10 Hz', 30:'30 Hz'}
-
-   def _setRunState(self,dev,var,value):
-      if self._runState != value:
-         self._runState = value
-
-         if self._runState == 'Running':
-            self._thread = threading.Thread(target=self._run)
-            self._thread.start()
-         else:
-            self._thread.join()
-            self._thread = None
-
-   def _run(self):
-      self._runCount = 0
-      self._last = int(time.time())
-
-      while (self._runState == 'Running'):
-         delay = 1.0 / ({value: key for key,value in self.runRate.enum.iteritems()}[self._runRate])
-         time.sleep(delay)
-         # Add command here
-         #ExampleCommand: self._root.ssiPrbsTx.oneShot()
-
-         self._runCount += 1
-         if self._last != int(time.time()):
-             self._last = int(time.time())
-             self.runCount._updated()
-
-# Set base
-coulterDaq = pyrogue.Root('CoulterDaq','Coulter Data Acquisition')
-
-# Run control
-febBoard.add(MyRunControl('runControl'))
 
 # File writer
 dataWriter = pyrogue.utilities.fileio.StreamWriter('dataWriter')
-febBoard.add(dataWriter)
 
 # Create the PGP interfaces
 pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,0) # Registers
@@ -88,8 +49,9 @@ pyrogue.streamConnectBiDir(pgpVc0,srp)
 # Add data stream to file as channel 0
 pyrogue.streamConnect(pgpVc1, dataWriter.getChannel(0x0))
 
-# Add registers
-coulterDaq.add(coulter.Coulter(memBase=srp,offset=0x0))
+
+# Instantiate top and pass stream and srp configurations
+coulterDaq = coulter.CoulterRoot(srp0=srp, dataWriter=dataWriter)
 
 # Create GUI
 appTop = PyQt4.QtGui.QApplication(sys.argv)
