@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-09-22
--- Last update: 2016-11-07
+-- Last update: 2016-11-18
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -148,7 +148,7 @@ begin
    end generate;
 
 
-   comb : process (r, rst) is
+   comb : process (channelDone, dataAxisCtrl, muxAxisMaster, r, rst, triggerSync) is
       variable v : RegType;
    begin
       v := r;
