@@ -18,9 +18,12 @@
 # copied, modified, propagated, or distributed except according to the terms 
 # contained in the LICENSE.txt file.
 #-----------------------------------------------------------------------------
-import rogue.hardware.pgp
+#import rogue.hardware.pgp
+import rogue.interfaces.memory
 import pyrogue.utilities.fileio
 import pyrogue.gui
+import pyrogue.mesh
+import pyrogue.epics
 import coulter
 import threading
 import signal
@@ -33,25 +36,41 @@ import PyQt4.QtGui
 
 
 # File writer
-dataWriter = pyrogue.utilities.fileio.StreamWriter('dataWriter')
+#dataWriter = pyrogue.utilities.fileio.StreamWriter('dataWriter')
 
 # Create the PGP interfaces
-pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,0) # Registers
-pgpVc1 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,1) # Data
+#pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,0) # Registers
+#pgpVc1 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,1) # Data
 
-print("")
-print("PGP Card Version: %x" % (pgpVc0.getInfo().version))
+#print("")
+#print("PGP Card Version: %x" % (pgpVc0.getInfo().version))
 
 # Create and Connect SRPv0 to VC0
-srp = rogue.protocols.srp.SrpV0()
-pyrogue.streamConnectBiDir(pgpVc0,srp)
+#srp = rogue.protocols.srp.SrpV0()
+srp = rogue.interfaces.memory.DummySlave()
+#pyrogue.streamConnectBiDir(pgpVc0,srp)
 
 # Add data stream to file as channel 0
-pyrogue.streamConnect(pgpVc1, dataWriter.getChannel(0x0))
+#pyrogue.streamConnect(pgpVc1, dataWriter.getChannel(0x0))
 
 
 # Instantiate top and pass stream and srp configurations
-coulterDaq = coulter.CoulterRoot(srp0=srp, dataWriter=dataWriter)
+coulterDaq = coulter.CoulterRoot(srp0=srp, dataWriter=None)
+#coulterDaq = pyrogue.Root(name="CoulterDaq", description="Coulter Data Acquisition")
+#coulterDaq.add(coulter.CoulterRunControl(name="RunControl"))
+#coulterDaq.add(coulter.Coulter(name="Coulter0"))
+#coulterDaq.add(pyrogue.Device("Test"))
+
+#mNode = pyrogue.mesh.MeshNode('MeshTest', root=coulterDaq, iface='eth1')
+#mNode.start()
+
+#epics = pyrogue.epics.EpicsCaServer('MeshTest', coulterDaq)
+#epics.start()
+
+# def stop():
+#    mNode.stop()
+#    evalBoard.stop()
+#    exit()
 
 # Create GUI
 appTop = PyQt4.QtGui.QApplication(sys.argv)

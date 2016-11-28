@@ -28,7 +28,7 @@ class CoulterRoot(pr.Root):
 
         self.add(CoulterRunControl("RunControl"))
         if dataWriter is not None: self.add(dataWriter)
-        self.add(Coulter("Coulter0", memBase=srp0, offset=0))
+        self.add(Coulter(name="Coulter0", memBase=srp0, offset=0))
 
 # Custom run control
 class CoulterRunControl(pr.RunControl):
@@ -68,7 +68,8 @@ class CoulterRunControl(pr.RunControl):
 class Coulter(pr.Device):
     def __init__(self, name="", offset=0, memBase=None, hidden=False):
 
-        super(self.__class__, self).__init__(name, "Coulter FPGA", 0x10000, memBase, offset, hidden)
+        super(self.__class__, self).__init__(name=name, description="Coulter FPGA",
+                                             membase=memBase, offset=offset, hidden=hidden)
 
         self.add(surf.AxiVersion.create(offset=0x00000000))
         self.add(ELine100Config(name='ASIC0', offset=0x00001000))
@@ -83,7 +84,8 @@ class Coulter(pr.Device):
 class CoulterPgp(pr.Device):
     def __init__(self, name="", offset=0, memBase=None, hidden=False):
         # Double check size param
-        super(self.__class__, self).__init__(name, "CoulterPgp", 0x10000, memBase, offset, hidden)
+        super(self.__class__, self).__init__(name=name, Description="CoulterPgp",
+                                             memBase=memBase, offset=offset, hidden=hidden)
 
         self.add(surf.Pgp2bAxi())
 #        self.add(surf.Gtp7Axi())
@@ -93,32 +95,41 @@ class ELine100Config(pr.Device):
 
     def __init__(self, name=None, offset=0, memBase=None, hidden=False):
 
-        super(self.__class__, self).__init__(name, "ELine 100 ASIC Configuration",
-                                             0x100, memBase, offset, hidden)
+        super(self.__class__, self).__init__(name=name, description="ELine 100 ASIC Configuration",
+                                             memBase=memBase, offset=offset, hidden=hidden)
+
+        class SelMaskTest(pr.Device):
+            def __init__(self, name=None, offset=0, memBase=None, hidden=False, index=0):
+                super(self.__class__, self).__init__(name, "SOMI, SM, and ST",
+                                                     memBase, offset, hidden)
+
+                self.enable.hidden = True
+                self.add(pr.Variable(name= "Ch{:d}_somi".format(index),
+                                  description = "Channel {:d} Selector Enable".format(index),
+                                  offset = index/2,
+                                  bitSize = 1,
+                                  bitOffset = (index%2)*4,
+                                  base = 'bool',
+                                  mode = 'RW'))
+                self.add(pr.Variable(name = "Ch{:d}_sm".format(index),
+                                  description = "Channel {:d} Mask".format(index),
+                                  offset = index/2,
+                                  bitSize = 1,
+                                  bitOffset = (index%2)*4+1,
+                                  base = 'bool',
+                                  mode = 'RW'))
+                self.add(pr.Variable(name = "Ch{:d}_st".format(index),
+                                  description = "Enable Test on channel {:d}".format(index),
+                                  offset = index/2,
+                                  bitSize = 1,
+                                  bitOffset = (index%2)*4+2,
+                                  base = 'bool',
+                                  mode = 'RW'))
 
         for i in xrange(96):
-            self.add(pr.Variable(name= "Ch{:d}_somi".format(i),
-                                 description = "Channel {:d} Selector Enable".format(i),
-                                 offset = i/2,
-                                 bitSize = 1,
-                                 bitOffset = (i%2)*4,
-                                 base = 'bool',
-                                 mode = 'RW'))
-            self.add(pr.Variable(name = "Ch{:d}_sm".format(i),
-                                 description = "Channel {:d} Mask".format(i),
-                                 offset = i/2,
-                                 bitSize = 1,
-                                 bitOffset = (i%2)*4+1,
-                                 base = 'bool',
-                                 mode = 'RW'))
-            self.add(pr.Variable(name = "Ch{:d}_st".format(i),
-                                 description = "Enable Test on channel {:d}".format(i),
-                                 offset = i/2,
-                                 bitSize = 1,
-                                 bitOffset = (i%2)*4+2,
-                                 base = 'bool',
-                                 mode = 'RW'))
-
+            self.add(SelMaskTest("SomiSmSt"+str(i), offset=0, index=i))
+    
+             
         self.add(pr.Variable(name = "pbitt",   offset = 0x30, bitOffset = 0 , bitSize = 1,  description = "Test Pulse Polarity (0=pos, 1=neg)"))
         self.add(pr.Variable(name = "cs",      offset = 0x30, bitOffset = 1 , bitSize = 1,  description = "Disable Outputs"))
         self.add(pr.Variable(name = "atest",   offset = 0x30, bitOffset = 2 , bitSize = 1,  description = "Automatic Test Mode Enable"))
@@ -134,7 +145,7 @@ class ELine100Config(pr.Device):
         self.add(pr.Variable(name = "tr",      offset = 0x30, bitOffset = 22, bitSize = 3,  description = "Baseline Adjust"))
         self.add(pr.Variable(name = "sse",     offset = 0x30, bitOffset = 25, bitSize = 1,  description = "Disable Multiple Firings Inhibit (1-disabled)"))
         self.add(pr.Variable(name = "disen",   offset = 0x30, bitOffset = 26, bitSize = 1,  description = "Disable Pump"))
-        self.add(pr.Variable(name = "pa",      offset = 0x34, bitOffset = 0 , bitSize = 10, description =  "Threshold DAC"))
+        self.add(pr.Variable(name = "pa",      offset = 0x34, bitOffset = 0 , bitSize = 10, description = "Threshold DAC"))
         self.add(pr.Variable(name = "esm",     offset = 0x34, bitOffset = 10, bitSize = 1,  description = "Enable DAC Monitor"))
         self.add(pr.Variable(name = "t",       offset = 0x34, bitOffset = 11, bitSize = 3,  description = "Filter time to flat top"))
         self.add(pr.Variable(name = "dd",      offset = 0x34, bitOffset = 14, bitSize = 1,  description =  "DAC Monitor Select (0-thr, 1-pulser)"))
@@ -142,26 +153,29 @@ class ELine100Config(pr.Device):
         self.add(pr.Variable(name = "clab",    offset = 0x34, bitOffset = 16, bitSize = 3,  description = "Pump Timeout"))
         self.add(pr.Variable(name = "tres",    offset = 0x34, bitOffset = 19, bitSize = 3,  description = "Reset Tweak OP"))
            
-        self.add(pr.Command(name = "WriteAsic", description = "Write the current configuration registers into the ASIC",
-                            offset = 0x40, bitSize = 1, bitOffset = 0, hidden = True))
+        self.add(pr.Command(name = "WriteAsic",
+                            description = "Write the current configuration registers into the ASIC",
+                            offset = 0x40, bitSize = 1, bitOffset = 0, hidden = True,
+                            function = pr.Command.toggle))
         self.add(pr.Command(name = "ReadAsic", description = "Read the current configuration registers from the ASIC",
-                            offset = 0x44, bitSize = 1, bitOffset = 0, hidden = True))
+                            offset = 0x44, bitSize = 1, bitOffset = 0, hidden = True,
+                            function = pr.Command.toggle))
 
         def _afterWrite(self):
-            self.WriteAsic.set()
+            self.WriteAsic()
 
         def _beforeRead(self):
-            self.ReadAsic.set()
+            self.ReadAsic()
 
         def _beforeVerify(self):
-            self.ReadAsic.set()
+            self.ReadAsic()
 
 
 class AcquisitionControl(pr.Device):
     def __init__(self, name="", offset=0, memBase=None, hidden=False, clkFreq=156.25e6):
-        # Double check size param
+
         super(self.__class__, self).__init__(name, "Configure Coulter Acquisition Parameters",
-                                             0x10000, memBase, offset, hidden)
+                                             memBase, offset, hidden)
 
         self.clkFreq = clkFreq
         self.clkPeriod = 1/clkFreq
@@ -170,14 +184,14 @@ class AcquisitionControl(pr.Device):
         self.add(pr.Variable('ScDelay', "Delay between trigger and SC rising edge",
                              0x00, 16, 0, base='hex'))
         self.add(pr.Variable('ScDelayPeriod', "Delay between trigger and SC rising edge",
-                             mode='SL', getFunction=makePeriodConverter(self.ScDelay)))
+                             mode='SL', base='string', getFunction=makePeriodConverter(self.ScDelay)))
 
         self.add(pr.Variable('ScPosWidth', "SC high time (baseline sampling)",
                              0x04, 16, 0, base='hex'))
         self.add(pr.Variable('ScNegWidth', "SC low time",
                              0x08, 16, 0, base='hex'))
         self.add(pr.Variable("ScPeriod", "Tslot. Time for each slot",
-                             mode = 'SL', getFunction=makePeriodConverter([self.ScPosWidth, self.ScNegWidth])))
+                             mode = 'SL',  base='string', getFunction=makePeriodConverter([self.ScPosWidth, self.ScNegWidth])))
 
         self.add(pr.Variable("ScCount", "Number of slots per acquisition",
                              0x0C, 12, 0, base='hex'))
@@ -186,14 +200,14 @@ class AcquisitionControl(pr.Device):
         self.add(pr.Variable('MckDelay', "Delay between trigger and SC rising edge",
                              0x10, 16, 0, base='hex'))
         self.add(pr.Variable('MckDelayPeriod', "Delay between trigger and SC rising edge",
-                             mode='SL', getFunction=makePeriodConverter(self.MckDelay)))
+                             mode='SL',  base='string', getFunction=makePeriodConverter(self.MckDelay)))
 
         self.add(pr.Variable('MckPosWidth', "SC high time (baseline sampling)",
                              0x14, 16, 0, base='hex'))
         self.add(pr.Variable('MckNegWidth', "SC low time",
                              0x18, 16, 0, base='hex'))
         self.add(pr.Variable("MckPeriod", "Tslot. Time for each slot",
-                             mode = 'SL', getFunction=makePeriodConverter([self.MckPosWidth, self.MckNegWidth])))
+                             mode = 'SL', base='string',  getFunction=makePeriodConverter([self.MckPosWidth, self.MckNegWidth])))
 
         self.add(pr.Variable("MckCount", "Number of MCK pulses per slot (should always be 16)",
                              0x1C, 8, 0, base='hex'))
@@ -203,20 +217,20 @@ class AcquisitionControl(pr.Device):
         self.add(pr.Variable('AdcClkDelay', "Delay between trigger and new rising edge of ADC clk",
                              0x28, 16, 0, base='hex'))
         self.add(pr.Variable('AdcClkDelayPeriod', "Delay between trigger and new rising edge of ADC clk",
-                             mode='SL', getFunction=makePeriodConverter(self.AdcClkDelay)))
+                             mode='SL',  base='string', getFunction=makePeriodConverter(self.AdcClkDelay)))
 
         self.add(pr.Variable('AdcClkPosWidth', "AdcClk high time",
                              0x14, 16, 0, base='hex'))
         self.add(pr.Variable('AdcClkNegWidth', "AdcClk low time",
                              0x18, 16, 0, base='hex'))
         self.add(pr.Variable("AdcClkPeriod", "Adc Clk period",
-                             mode = 'SL', getFunction=makePeriodConverter([self.AdcClkPosWidth, self.AdcClkNegWidth])))
+                             mode = 'SL',  base='string', getFunction=makePeriodConverter([self.AdcClkPosWidth, self.AdcClkNegWidth])))
 
         # ADC window
         self.add(pr.Variable("AdcWindowDelay", "Delay between first mck of slot at start of adc sample capture",
                              0x2c, 0, 10, base = 'hex'))
         self.add(pr.Variable("AdcWindowDelayTime", "AdcWindowDelay in readable units",
-                             mode = 'SL', getFunction=makePeriodConverter(self.AdcWindowDelay)))
+                             mode = 'SL',  base='string', getFunction=makePeriodConverter(self.AdcWindowDelay)))
 
         #There are probably useless
         self.add(pr.Variable("MckDisable", "Disables MCK generation",
@@ -229,7 +243,7 @@ def makePeriodConverter(link):
     def conv(dev, var):
         counts = 0
         if isinstance(link, list):
-            counts = reduce(lambda x,y: x._getRawUInt()+y._getRawUInt(False), link)
+            counts = reduce(lambda x,y: x._getRawUInt()+y._getRawUInt(), link)
 
         elif isinstance(link, pr.Variable):
             counts = link._getRawUInt()
