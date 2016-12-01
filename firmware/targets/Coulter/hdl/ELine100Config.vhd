@@ -5,17 +5,17 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-05-16
--- Last update: 2016-11-17
+-- Last update: 2016-11-30
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- This file is part of <PROJECT_NAME>. It is subject to
+-- This file is part of Coulter. It is subject to
 -- the license terms in the LICENSE.txt file found in the top-level directory
 -- of this distribution and at:
 --    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
--- No part of <PROJECT_NAME>, including this file, may be
+-- No part of Coulter, including this file, may be
 -- copied, modified, propagated, or distributed except according to the terms
 -- contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
@@ -123,10 +123,13 @@ begin
    comb : process (axilReadMaster, axilRst, axilWriteMaster, r, spiRdData, spiRdEn) is
       variable v      : RegType;
       variable axilEp : AxiLiteEndpointType;
+      variable chCfg  : slv32Array(0 to 11);
    begin
       v := r;
 
       v.asicSen := '1';
+
+      chCfg := (others => (others => '0'));
 
       axiSlaveWaitTxn(axilEp, axilWriteMaster, axilReadMaster, v.axilWriteSlave, v.axilReadSlave);
 
@@ -134,14 +137,29 @@ begin
          when WAIT_AXIL_S =>
             -- Normal registers
             -- CFG write registers
-            for i in 0 to 95 loop
---                axiSlaveRegister(axilEp, toSlv(i/8*4, 8), ((i*4) mod 32) + 0, v.cfg.chCfg(i).somi);
---                axiSlaveRegister(axilEp, toSlv(i/8*4, 8), ((i*4) mod 32) + 1, v.cfg.chCfg(i).sm);
---                axiSlaveRegister(axilEp, toSlv(i/8*4, 8), ((i*4) mod 32) + 2, v.cfg.chCfg(i).st);
-               axiSlaveRegister(axilEp, X"00", (i*4) + 0, v.cfg.chCfg(i).somi, 'X', string("somi("&str(i)&")"));
-               axiSlaveRegister(axilEp, X"00", (i*4) + 1, v.cfg.chCfg(i).sm, 'X', string("sm("&str(i)&")"));
-               axiSlaveRegister(axilEp, X"00", (i*4) + 2, v.cfg.chCfg(i).st, 'X', string("st("&str(i)&")"));
+--             for i in 0 to 95 loop
+-- --                axiSlaveRegister(axilEp, toSlv(i/8*4, 8), ((i*4) mod 32) + 0, v.cfg.chCfg(i).somi);
+-- --                axiSlaveRegister(axilEp, toSlv(i/8*4, 8), ((i*4) mod 32) + 1, v.cfg.chCfg(i).sm);
+-- --                axiSlaveRegister(axilEp, toSlv(i/8*4, 8), ((i*4) mod 32) + 2, v.cfg.chCfg(i).st);
+--                axiSlaveRegister(axilEp, X"00", (i*4) + 0, v.cfg.chCfg(i).somi, 'X', string("somi("&str(i)&")"));
+--                axiSlaveRegister(axilEp, X"00", (i*4) + 1, v.cfg.chCfg(i).sm, 'X', string("sm("&str(i)&")"));
+--                axiSlaveRegister(axilEp, X"00", (i*4) + 2, v.cfg.chCfg(i).st, 'X', string("st("&str(i)&")"));
+--             end loop;
+
+            for i in 0 to 11 loop
+               for j in 0 to 7 loop
+                  chCfg(i)(j*4)   := r.cfg.chCfg(i*j).somi;
+                  chCfg(i)(j*4+1) := r.cfg.chCfg(i*j).sm;
+                  chCfg(i)(j*4+2) := r.cfg.chCfg(i*j).st;
+               end loop;
+               axiSlaveRegister(axilEp, toSlv(i*4, 8), 0, chCfg(i), "X", string("SomeSmSt("&str(i)&")"));
+               for j in 0 to 7 loop
+                  v.cfg.chCfg(i*j).somi := chCfg(i)(j*4);
+                  v.cfg.chCfg(i*j).sm   := chCfg(i)(j*4+1);
+                  v.cfg.chCfg(i*j).st   := chCfg(i)(j*4+2);
+               end loop;
             end loop;
+
             axiSlaveRegister(axilEp, X"30", 0, v.cfg.pbitt);
             axiSlaveRegister(axilEp, X"30", 1, v.cfg.cs);
             axiSlaveRegister(axilEp, X"30", 2, v.cfg.atest);

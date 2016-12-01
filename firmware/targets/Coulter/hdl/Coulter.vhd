@@ -5,7 +5,7 @@
 -- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 09/30/2015
--- Last update: 2016-11-15
+-- Last update: 2016-12-01
 -- Platform   : Vivado 2014.4
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -59,7 +59,7 @@ entity Coulter is
       gtDataRxP          : in    sl;
       gtDataRxN          : in    sl;
       -- SFP control signals
-      sfpDisable         : out   sl;
+      sfpDisable         : out   sl              := '0';
       -- External Signals
       runTg              : in    sl;
       daqTg              : in    sl;
@@ -188,14 +188,41 @@ architecture top_level of Coulter is
    signal clk100 : sl;
    signal rst100 : sl;
 
+   signal debug : slv(31 downto 0) := (others => '0');
+
 begin
+
+   U_Heartbeat_1 : entity work.Heartbeat
+      generic map (
+         TPD_G        => TPD_G,
+         PERIOD_IN_G  => 6.4e-9,
+         PERIOD_OUT_G => 6.4e-3)
+      port map (
+         clk => axilClk,                -- [in]
+         rst => axilRst,                -- [in]
+         o   => mps);                   -- [out]
+
+   U_Heartbeat_2 : entity work.Heartbeat
+      generic map (
+         TPD_G        => TPD_G,
+         PERIOD_IN_G  => 6.4e-9,
+         PERIOD_OUT_G => 6.4e-3)
+      port map (
+         clk => distClk,                -- [in]
+         rst => distRst,                -- [in]
+         o   => tgOut);                 -- [out]
+
+--    mps <= debug(0);
+--    tgOut <= debug(1);
+
 
    -------------------------------------------------------------------------------------------------
    -- PGP
    -------------------------------------------------------------------------------------------------
    U_CoulterPgp_1 : entity work.CoulterPgp
       generic map (
-         TPD_G => TPD_G)
+         TPD_G        => TPD_G,
+         SIMULATION_G => SIMULATION_G)
       port map (
          gtClkP           => gtRefClk0P,                       -- [in]
          gtClkN           => gtRefClk0N,                       -- [in]
@@ -223,7 +250,8 @@ begin
          userAxisMaster   => userAxisMaster,                   -- [in]
          userAxisSlave    => userAxisSlave,                    -- [out]
          userAxisCtrl     => userAxisCtrl,                     -- [out]
-         ssiCmd           => ssiCmd);                          -- [out]
+         ssiCmd           => ssiCmd,                           -- [out]
+         debug            => debug);
 
    -------------------------------------------------------------------------------------------------
    -- Clock Manager (create 250 Mhz clock and 200 MHz clock)
@@ -286,7 +314,7 @@ begin
          CLK_PERIOD_G     => AXIL_CLK_PERIOD_C,
          XIL_DEVICE_G     => "7SERIES",
          EN_DEVICE_DNA_G  => true,
-         EN_DS2411_G      => false,
+         EN_DS2411_G      => true,
          EN_ICAP_G        => true,
          USE_SLOWCLK_G    => true,
          BUFR_CLK_DIV_G   => 8,
@@ -299,19 +327,19 @@ begin
          axiWriteMaster => locAxilWriteMasters(VERSION_AXIL_C),  -- [in]
          axiWriteSlave  => locAxilWriteSlaves(VERSION_AXIL_C),   -- [out]
          slowClk        => clk100,
-         userValues     => userValues);                          -- [in] Bring Board ID's in here
+         fdSerSdio      => snIoAdcCard);
 
-   U_DS2411_ADC_BOARD : entity work.DS2411Core
-      generic map (
-         TPD_G        => TPD_G,
-         CLK_PERIOD_G => AXIL_CLK_PERIOD_C)
-      port map (
-         clk                    => axilClk,
-         rst                    => axilRst,  -- might need special reset
-         fdSerSdio              => snIoAdcCard,
-         fdSerial(31 downto 0)  => userValues(1),
-         fdSerial(63 downto 32) => userValues(2),
-         fdValid                => userValues(0)(0));
+--    U_DS2411_ADC_BOARD : entity work.DS2411Core
+--       generic map (
+--          TPD_G        => TPD_G,
+--          CLK_PERIOD_G => AXIL_CLK_PERIOD_C)
+--       port map (
+--          clk                    => axilClk,
+--          rst                    => axilRst,  -- might need special reset
+--          fdSerSdio              => snIoAdcCard,
+--          fdSerial(31 downto 0)  => userValues(1),
+--          fdSerial(63 downto 32) => userValues(2),
+--          fdValid                => userValues(0)(0));
 
 --    U_DS2411_CARRIER_BOARD : entity work.DS2411Core
 --       generic map (

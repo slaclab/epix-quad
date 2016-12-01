@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-05-16
--- Last update: 2016-11-14
+-- Last update: 2016-11-30
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -101,7 +101,7 @@ begin
             aOut(i) <= pixels(i)(muxSel) after ANALOG_LATENCY_G;
          end loop;
          if (muxSel = 15) then
-            muxSel = 0;
+            muxSel <= 0;
          else
             muxSel <= muxSel + 1;
          end if;
@@ -109,8 +109,8 @@ begin
    end process ANALOG_MUX;
 
    PIXEL_VALS_I : for i in 5 downto 0 generate
-      PIXEL_VALS_J : for i in 15 downto 0 generate
-         pixels(i)(j) <= = 1.0 + (i * .1) + (j * .01);
+      PIXEL_VALS_J : for j in 15 downto 0 generate
+         pixels(i)(j) <= 1.0 + (i * 0.1) + (j * 0.01);
       end generate PIXEL_VALS_J;
    end generate PIXEL_VALS_I;
 

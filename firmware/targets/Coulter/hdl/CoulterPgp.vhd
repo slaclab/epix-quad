@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-06-03
--- Last update: 2016-11-15
+-- Last update: 2016-11-30
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -50,10 +50,10 @@ entity CoulterPgp is
       rxLinkReady      : out sl;
       txLinkReady      : out sl;
       -- Recovered clock and trigger
-      distClk           : out sl;
-      distRst           : out sl;
-      distOpCodeEn      : out sl;
-      distOpCode        : out slv(7 downto 0);
+      distClk          : out sl;
+      distRst          : out sl;
+      distOpCodeEn     : out sl;
+      distOpCode       : out slv(7 downto 0);
       -- AXIL Interface
       axilClk          : out sl;
       axilRst          : out sl;
@@ -62,16 +62,17 @@ entity CoulterPgp is
       mAxilWriteMaster : out AxiLiteWriteMasterType;
       mAxilWriteSlave  : in  AxiLiteWriteSlaveType;
       -- Slave AXIL interface for PGP and GTP
-      sAxilReadMaster  : in AxiLiteReadMasterType;
-      sAxilReadSlave   : out  AxiLiteReadSlaveType;
-      sAxilWriteMaster : in AxiLiteWriteMasterType;
-      sAxilWriteSlave  : out  AxiLiteWriteSlaveType;
+      sAxilReadMaster  : in  AxiLiteReadMasterType;
+      sAxilReadSlave   : out AxiLiteReadSlaveType;
+      sAxilWriteMaster : in  AxiLiteWriteMasterType;
+      sAxilWriteSlave  : out AxiLiteWriteSlaveType;
       -- Streaming data Links (axiClk domain)      
       userAxisMaster   : in  AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
       userAxisSlave    : out AxiStreamSlaveType;
       userAxisCtrl     : out AxiStreamCtrlType;
       -- VC Command interface
-      ssiCmd           : out SsiCmdMasterType);
+      ssiCmd           : out SsiCmdMasterType;
+      debug            : out slv(31 downto 0)    := (others => '0'));
 end CoulterPgp;
 
 architecture mapping of CoulterPgp is
@@ -98,19 +99,19 @@ architecture mapping of CoulterPgp is
    signal pgpTxOut     : Pgp2bTxOutType;
 
    -- AXIL
-   constant AXIL_MASTERS_C      : integer := 2;
-   constant PGP_AXI_INDEX_C     : integer := 0;
-   constant GTP_AXI_INDEX_C     : integer := 1;
+   constant AXIL_MASTERS_C  : integer := 2;
+   constant PGP_AXI_INDEX_C : integer := 0;
+   constant GTP_AXI_INDEX_C : integer := 1;
 
    constant AXIL_XBAR_CFG_C : AxiLiteCrossbarMasterConfigArray(AXIL_MASTERS_C-1 downto 0) := (
-       PGP_AXI_INDEX_C     => (
-         baseAddr         => X"10000000",
-         addrBits         => 8,
-         connectivity     => X"0001"),
-      GTP_AXI_INDEX_C     => (
-         baseAddr         => X"10010000",
-         addrBits         => 16,
-         connectivity     => X"0001"));
+      PGP_AXI_INDEX_C => (
+         baseAddr     => X"10000000",
+         addrBits     => 8,
+         connectivity => X"0001"),
+      GTP_AXI_INDEX_C => (
+         baseAddr     => X"10010000",
+         addrBits     => 16,
+         connectivity => X"0001"));
 
    signal srpAxilReadMaster   : AxiLiteReadMasterType;
    signal srpAxilReadSlave    : AxiLiteReadSlaveType;
@@ -124,14 +125,15 @@ architecture mapping of CoulterPgp is
 begin
 
    -- Map to signals out
-   rxLinkReady <= pgpRxOut.remLinkReady;
-   txLinkReady <= pgpTxOut.linkReady;
+   rxLinkReady  <= pgpRxOut.remLinkReady;
+   txLinkReady  <= pgpTxOut.linkReady;
    distClk      <= pgpRxClk;
    distRst      <= pgpRxRst;
    distOpCodeEn <= pgpRxOut.opCodeEn;
    distOpCode   <= pgpRxOut.opCode;
-   axilClk     <= pgpTxClk;
-   axilRst     <= pgpTxRst;
+   axilClk      <= pgpTxClk;
+   axilRst      <= pgpTxRst;
+
 
    -------------------------------------------------------------------------------------------------
    -- AXI Lite crossbar
@@ -147,10 +149,10 @@ begin
       port map (
          axiClk              => pgpTxClk,             -- [in]
          axiClkRst           => pgpTxRst,             -- [in]
-         sAxiWriteMasters(0) => sAxilWriteMaster,   -- [in]
-         sAxiWriteSlaves(0)  => sAxilWriteSlave,    -- [out]
-         sAxiReadMasters(0)  => sAxilReadMaster,    -- [in]
-         sAxiReadSlaves(0)   => sAxilReadSlave,     -- [out]
+         sAxiWriteMasters(0) => sAxilWriteMaster,     -- [in]
+         sAxiWriteSlaves(0)  => sAxilWriteSlave,      -- [out]
+         sAxiReadMasters(0)  => sAxilReadMaster,      -- [in]
+         sAxiReadSlaves(0)   => sAxilReadSlave,       -- [out]
          mAxiWriteMasters    => locAxilWriteMasters,  -- [out]
          mAxiWriteSlaves     => locAxilWriteSlaves,   -- [in]
          mAxiReadMasters     => locAxilReadMasters,   -- [out]
@@ -198,8 +200,8 @@ begin
       port map (
          stableClkIn     => '0',        --stableClkIn,       -- [in]
          extRst          => '0',        --extRst,            -- [in]
-         txPllLock       => open,       --txPllLock,         -- [out]
-         rxPllLock       => open,       --rxPllLock,         -- [out]
+         txPllLock       => debug(0),   --txPllLock,         -- [out]
+         rxPllLock       => debug(1),   --rxPllLock,         -- [out]
          pgpTxClkOut     => pgpTxClk,   -- [out]
          pgpTxRstOut     => pgpTxRst,   -- [out]
          pgpRxClkOut     => pgpRxClk,   -- [out] -- Fixed Latency recovered clock
@@ -344,7 +346,7 @@ begin
    U_AxiStreamFifoV2_1 : entity work.AxiStreamFifoV2
       generic map (
          TPD_G                  => TPD_G,
-         INT_PIPE_STAGES_G      => 0,
+         INT_PIPE_STAGES_G      => 1,
          PIPE_STAGES_G          => 1,
          SLAVE_READY_EN_G       => false,
          VALID_THOLD_G          => 1,
@@ -352,9 +354,11 @@ begin
          BRAM_EN_G              => true,
          USE_BUILT_IN_G         => false,
          GEN_SYNC_FIFO_G        => true,
-         FIFO_ADDR_WIDTH_G      => 14,
+         CASCADE_SIZE_G         => 2,
+         CASCADE_PAUSE_SEL_G    => 1,
+         FIFO_ADDR_WIDTH_G      => 13,
          FIFO_FIXED_THRESH_G    => true,
-         FIFO_PAUSE_THRESH_G    => 2**14-6200,
+         FIFO_PAUSE_THRESH_G    => 2**13-6200,
          INT_WIDTH_SELECT_G     => "WIDE",
 --         INT_DATA_WIDTH_G       => INT_DATA_WIDTH_G,
          LAST_FIFO_ADDR_WIDTH_G => 0,

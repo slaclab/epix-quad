@@ -35,12 +35,15 @@ create_clock -period 15.285 -name adc1DoClkP  [get_ports {adcDoClkP[1]}]
 set_clock_groups -asynchronous \
     -group [get_clocks -include_generated_clocks {gtRefClk}] \
     -group [get_clocks -include_generated_clocks {gtRecClk}] \
-    -group [get_clocks -include_generated_clocks {axilClk}] \
+    -group [get_clocks -include_generated_clocks {adc0DoClkP}] \
+    -group [get_clocks -include_generated_clocks {adc1DoClkP}]
+
+set_clock_groups -asynchronous \
+    -group [get_clocks {axilClk}] \    
     -group [get_clocks {clk250}] \
     -group [get_clocks {clk200}] \
     -group [get_clocks {clk100}] \
-    -group [get_clocks -include_generated_clocks {adc0DoClkP}] \
-    -group [get_clocks -include_generated_clocks {adc1DoClkP}] 
+
 
 
 #######################################
