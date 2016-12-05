@@ -5,7 +5,7 @@
 -- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 09/30/2015
--- Last update: 2016-12-01
+-- Last update: 2016-12-02
 -- Platform   : Vivado 2014.4
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -40,16 +40,17 @@ use unisim.vcomponents.all;
 
 entity Coulter is
    generic (
-      TPD_G        : time    := 1 ns;
-      SIMULATION_G : boolean := false);
+      TPD_G           : time    := 1 ns;
+      SIMULATION_G    : boolean := false;
+      FIXED_LATENCY_G : boolean := false);
    port (
       -- Debugging IOs
-      led                : out   slv(3 downto 0);
+      led                : out   slv(3 downto 0) := (others => '0');
       -- Power good
       powerGood          : in    sl;
       -- Power Control
-      analogCardDigPwrEn : out   sl;
-      analogCardAnaPwrEn : out   sl;
+      analogCardDigPwrEn : out   sl := '0';
+      analogCardAnaPwrEn : out   sl := '0';
       -- GT CLK Pins
       gtRefClk0P         : in    sl;
       gtRefClk0N         : in    sl;
@@ -188,7 +189,9 @@ architecture top_level of Coulter is
    signal clk100 : sl;
    signal rst100 : sl;
 
-   signal debug : slv(31 downto 0) := (others => '0');
+   signal debug       : slv(31 downto 0) := (others => '0');
+   signal txLinkReady : sl;
+   signal rxLinkReady : sl;
 
 begin
 
@@ -200,20 +203,20 @@ begin
       port map (
          clk => axilClk,                -- [in]
          rst => axilRst,                -- [in]
-         o   => mps);                   -- [out]
+         o   => led(0));                -- [out]
 
-   U_Heartbeat_2 : entity work.Heartbeat
-      generic map (
-         TPD_G        => TPD_G,
-         PERIOD_IN_G  => 6.4e-9,
-         PERIOD_OUT_G => 6.4e-3)
-      port map (
-         clk => distClk,                -- [in]
-         rst => distRst,                -- [in]
-         o   => tgOut);                 -- [out]
+--    U_Heartbeat_2 : entity work.Heartbeat
+--       generic map (
+--          TPD_G        => TPD_G,
+--          PERIOD_IN_G  => 6.4e-9,
+--          PERIOD_OUT_G => 6.4e-3)
+--       port map (
+--          clk => distClk,                -- [in]
+--          rst => distRst,                -- [in]
+--          o   => tgOut);                 -- [out]
 
---    mps <= debug(0);
---    tgOut <= debug(1);
+   mps   <= rxLinkReady;
+   tgOut <= txLinkReady;
 
 
    -------------------------------------------------------------------------------------------------
@@ -221,8 +224,9 @@ begin
    -------------------------------------------------------------------------------------------------
    U_CoulterPgp_1 : entity work.CoulterPgp
       generic map (
-         TPD_G        => TPD_G,
-         SIMULATION_G => SIMULATION_G)
+         TPD_G           => TPD_G,
+         SIMULATION_G    => SIMULATION_G,
+         FIXED_LATENCY_G => FIXED_LATENCY_G)
       port map (
          gtClkP           => gtRefClk0P,                       -- [in]
          gtClkN           => gtRefClk0N,                       -- [in]
@@ -231,8 +235,8 @@ begin
          gtTxP            => gtDataTxP,                        -- [out]
          gtTxN            => gtDataTxN,                        -- [out]
          powerBad         => '0',                              -- [in]
-         rxLinkReady      => open,                             -- [out]
-         txLinkReady      => open,                             -- [out]
+         rxLinkReady      => rxLinkReady,                      -- [out]
+         txLinkReady      => txLinkReady,                      -- [out]
          distClk          => distClk,                          -- [out]
          distRst          => distRst,                          -- [out]
          distOpCodeEn     => distOpCodeEn,                     -- [out]
