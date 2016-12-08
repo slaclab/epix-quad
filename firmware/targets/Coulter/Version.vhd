@@ -25,16 +25,17 @@ USE ieee.std_logic_1164.ALL;
 
 package Version is
 
-constant FPGA_VERSION_C    : std_logic_vector(31 downto 0) := x"00000000"; -- MAKE_VERSION
+constant FPGA_VERSION_C    : std_logic_vector(31 downto 0) := x"00000001"; -- MAKE_VERSION
 
 constant BUILD_STAMP_C     : string := "EpixDigGen2: Built Mon Mar 16 17:26:54 PDT 2015 by mkwiatko";
-
-constant FPGA_BASE_CLOCK_C : std_logic_vector(31 downto 0) := x"00" & x"100000";  
 
 end Version;
 
 -------------------------------------------------------------------------------
 -- Revision History:
+
+-- 00000000 - First version that software could talk to. Much broken.
+
 
 -------------------------------------------------------------------------------
 

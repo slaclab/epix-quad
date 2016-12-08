@@ -17,7 +17,7 @@ create_clock -period  6.400 -name gtRefClk  [get_ports gtRefClk0P]
 #    [get_pins U_CoulterPgp_1/U_Pgp2bGtp7FixedLatWrapper_1/BUFG_stableClkRef/O]
 
 create_clock -name axilClk -period 6.400 \
-    [get_pins U_CoulterPgp_1/VARIABLE_LATENCY_PGP.U_Pgp2bGtp7VarLatWrapper_1/Pgp2bGtp7VarLat_Inst/MuliLane_Inst/GTP7_CORE_GEN[0].Gtp7Core_Inst/gtpe2_i/TXOUTCLK]
+    [get_pins U_CoulterPgp_1/NO_SIM.VARIABLE_LATENCY_PGP.U_Pgp2bGtp7VarLatWrapper_1/Pgp2bGtp7VarLat_Inst/MuliLane_Inst/GTP7_CORE_GEN[0].Gtp7Core_Inst/gtpe2_i/TXOUTCLK]
 #    [get_pins U_CoulterPgp_1/VARIABLE_LATENCY_PGP.U_Pgp2bGtp7VarLatWrapper_1/U_BUFG_PGP/O]
 #    U_CoulterPgp_1/VARIABLE_LATENCY_PGP.U_Pgp2bGtp7VarLatWrapper_1/U_BUFG_PGP/O
      #U_CoulterPgp_1/U_Pgp2bGtp7FixedLatWrapper_1/TX_CM_GEN.ClockManager7_TX/MmcmGen.U_Mmcm/CLKOUT0]
@@ -32,6 +32,9 @@ create_clock -name axilClk -period 6.400 \
 create_generated_clock -name clk250 [get_pins -hier -filter {NAME =~ U_CtrlClockManager7/*/CLKOUT0}]
 create_generated_clock -name clk200 [get_pins -hier -filter {NAME =~ U_CtrlClockManager7/*/CLKOUT1}]
 create_generated_clock -name clk100 [get_pins -hier -filter {NAME =~ U_CtrlClockManager7/*/CLKOUT2}]
+
+create_generated_clock -name dnaClkInv [get_pins -hier -filter {NAME =~ */DNA_CLK_INV_BUFR/O}] \
+    -invert -multiply_by 1 -source [get_pins -hier -filter {NAME =~ U_CtrlClockManager7/*/CLKOUT2}]
 
 create_clock -period 14.285 -name adc0DoClkP  [get_ports {adcDoClkP[0]}]
 create_clock -period 14.285 -name adc1DoClkP  [get_ports {adcDoClkP[1]}]
@@ -48,6 +51,9 @@ set_clock_groups -asynchronous \
     -group [get_clocks {clk200}] \
     -group [get_clocks {clk100}] \
 
+set_clock_groups -asynchronous \
+    -group [get_clocks {axilClk}] \    
+    -group [get_clocks {dnaClkInv}] \
 
 
 #######################################

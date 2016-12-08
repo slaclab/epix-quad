@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-05-16
--- Last update: 2016-11-30
+-- Last update: 2016-12-05
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -41,8 +41,8 @@ entity ELine100Sim is
       scM  : in  sl;
       mckP : in  sl;
       mckM : in  sl;
-      dOut : out slv(5 downto 0);
-      aOut : out RealArray(5 downto 0);
+      dOut : out slv(5 downto 0)       := (others => '0');
+      aOut : out RealArray(5 downto 0) := (others => 0.0);
       -- ELINE100 configuration interface
       sclk : in  sl;                    -- SCLK
       sdi  : in  sl;                    -- SDI
@@ -55,8 +55,8 @@ end entity ELine100Sim;
 architecture rtl of ELine100Sim is
 
    -- Configuration registers
-   signal shiftReg        : slv(ELINE_100_CFG_SHIFT_SIZE_C-1 downto 0);
-   signal shiftRegLatched : slv(ELINE_100_CFG_SHIFT_SIZE_C-1 downto 0);
+   signal shiftReg        : slv(ELINE_100_CFG_SHIFT_SIZE_C-1 downto 0) := (others => '0');
+   signal shiftRegLatched : slv(ELINE_100_CFG_SHIFT_SIZE_C-1 downto 0) := (others => '0');
 
    -- Analog signals
    type Real6x15Array is array (5 downto 0) of RealArray(15 downto 0);
@@ -96,6 +96,7 @@ begin
    begin
       if (rstN = '0') then
          muxSel <= 0;
+         aOut   <= (others => 0.0);
       elsif (rising_edge(mckP)) then
          for i in 5 downto 0 loop
             aOut(i) <= pixels(i)(muxSel) after ANALOG_LATENCY_G;

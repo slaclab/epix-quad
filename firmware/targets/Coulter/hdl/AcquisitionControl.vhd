@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-05-31
--- Last update: 2016-11-07
+-- Last update: 2016-12-05
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -122,6 +122,7 @@ architecture rtl of AcquisitionControl is
       mckCounter     : slv(7 downto 0);
       adcClkRst      : sl;
       acqStatus      : AcquisitionStatusType;
+      elineRst       : sl;
    end record RegType;
 
    constant REG_INIT_C : RegType := (
@@ -134,7 +135,8 @@ architecture rtl of AcquisitionControl is
       mckRst         => '0',
       mckCounter     => (others => '0'),
       adcClkRst      => '0',
-      acqStatus      => ACQUISITION_STATUS_INIT_C);
+      acqStatus      => ACQUISITION_STATUS_INIT_C,
+      elineRst       => '0');
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
@@ -148,7 +150,6 @@ architecture rtl of AcquisitionControl is
    signal iSc         : sl;
    signal iMck        : sl;
    signal iAdcClk     : sl;
-   signal iAdcValid   : sl;
 
    signal scPreRise  : sl;
    signal scPreFall  : sl;
@@ -168,8 +169,8 @@ begin
          sAxiReadSlave   => axilReadSlave,       -- [out]
          sAxiWriteMaster => axilWriteMaster,     -- [in]
          sAxiWriteSlave  => axilWriteSlave,      -- [out]
-         mAxiClk         => distClk,              -- [in]
-         mAxiClkRst      => distRst,              -- [in]
+         mAxiClk         => distClk,             -- [in]
+         mAxiClkRst      => distRst,             -- [in]
          mAxiReadMaster  => locAxilReadMaster,   -- [out]
          mAxiReadSlave   => r.axilReadSlave,     -- [in]
          mAxiWriteMaster => locAxilWriteMaster,  -- [out]
@@ -180,8 +181,8 @@ begin
       generic map (
          TPD_G => TPD_G)
       port map (
-         clk         => distClk,         -- [in]
-         rst         => distRst,         -- [in]
+         clk         => distClk,        -- [in]
+         rst         => distRst,        -- [in]
          dataIn      => trigger,        -- [in]
          dataOut     => open,           -- [out]
          risingEdge  => triggerRise,    -- [out]
@@ -191,39 +192,39 @@ begin
       generic map (
          TPD_G => TPD_G)
       port map (
-         clk        => distClk,          -- [in]
-         rst        => r.scRst,         -- [in]
-         highCount  => r.cfg.scPosWidth,    -- [in]
-         lowCount   => r.cfg.scNegWidth,    -- [in]
-         delayCount => r.cfg.scDelay,   -- [in]
-         divClk     => iSc,             -- [out]
-         preRise    => scPreRise,       -- [out]
-         preFall    => scPreFall);      -- [out]
+         clk        => distClk,           -- [in]
+         rst        => r.scRst,           -- [in]
+         highCount  => r.cfg.scPosWidth,  -- [in]
+         lowCount   => r.cfg.scNegWidth,  -- [in]
+         delayCount => r.cfg.scDelay,     -- [in]
+         divClk     => iSc,               -- [out]
+         preRise    => scPreRise,         -- [out]
+         preFall    => scPreFall);        -- [out]
 
 
    U_ClockDivider_MCK : entity work.ClockDivider
       generic map (
          TPD_G => TPD_G)
       port map (
-         clk        => distClk,          -- [in]
-         rst        => r.mckRst,        -- [in]
-         highCount  => r.cfg.mckPosWidth,   -- [in]
-         lowCount   => r.cfg.mckNegWidth,   -- [in]
-         delayCount => r.cfg.mckDelay,      -- [in]
-         divClk     => iMck,            -- [out]
-         preRise    => mckPreRise,      --[out]
-         preFall    => mckPreFall);     --[out]
+         clk        => distClk,            -- [in]
+         rst        => r.mckRst,           -- [in]
+         highCount  => r.cfg.mckPosWidth,  -- [in]
+         lowCount   => r.cfg.mckNegWidth,  -- [in]
+         delayCount => r.cfg.mckDelay,     -- [in]
+         divClk     => iMck,               -- [out]
+         preRise    => mckPreRise,         --[out]
+         preFall    => mckPreFall);        --[out]
 
    U_ClockDivider_ADCCLK : entity work.ClockDivider
       generic map (
          TPD_G => TPD_G)
       port map (
-         clk        => distClk,            -- [in]
-         rst        => r.adcClkRst,       -- [in]
+         clk        => distClk,               -- [in]
+         rst        => r.adcClkRst,           -- [in]
          highCount  => r.cfg.adcClkPosWidth,  -- [in]
          lowCount   => r.cfg.adcClkNegWidth,  -- [in]
          delayCount => r.cfg.adcClkDelay,     -- [in]
-         divClk     => iAdcClk);          -- [out]
+         divClk     => iAdcClk);              -- [out]
 
    U_SlvDelay_AdcWindow : entity work.SlvDelay
       generic map (
@@ -234,9 +235,9 @@ begin
          WIDTH_G      => 1)
       port map (
          clk     => distClk,                -- [in]
-         delay   => r.cfg.adcWindowDelay,      -- [in]
+         delay   => r.cfg.adcWindowDelay,   -- [in]
          din(0)  => r.acqStatus.adcWindow,  -- [in]
-         dout(0) => acqStatus.adcWindow);  -- [out]
+         dout(0) => acqStatus.adcWindow);   -- [out]
 
    U_SlvDelay_AdcLast : entity work.SlvDelay
       generic map (
@@ -246,15 +247,15 @@ begin
          DELAY_G      => 1024,
          WIDTH_G      => 1)
       port map (
-         clk     => distClk,              -- [in]
-         delay   => r.cfg.adcWindowDelay,    -- [in]
-         din(0)  => r.acqStatus.adcLast,  -- [in]
-         dout(0) => acqStatus.adcLast);  -- [out]
+         clk     => distClk,               -- [in]
+         delay   => r.cfg.adcWindowDelay,  -- [in]
+         din(0)  => r.acqStatus.adcLast,   -- [in]
+         dout(0) => acqStatus.adcLast);    -- [out]
 
    acqStatus.adcWindowStart <= '0';
    acqStatus.adcWindowEnd   <= '0';
    acqStatus.mckPulse       <= '0';
-   acqStatus.trigger <= r.acqStatus.trigger;
+   acqStatus.trigger        <= r.acqStatus.trigger;
 
    -------------------------------------------------------------------------------------------------
    -- Main logic
@@ -282,6 +283,7 @@ begin
       axiSlaveRegister(axilEp, X"2C", 0, v.cfg.adcWindowDelay);
       axiSlaveRegister(axilEp, X"30", 0, v.cfg.mckDisable);
       axiSlaveRegister(axilEp, X"34", 0, v.cfg.clkDisable);
+      axiSlaveRegister(axilEp, X"38", 0, v.elineRst);
       axiSlaveDefault(axilEp, v.axilWriteSlave, v.axilReadSlave, AXI_ERROR_RESP_G);
 
       -- Default Register values
@@ -378,6 +380,7 @@ begin
       elineMck  <= iMck;
       adcClk    <= iAdcClk;
       adcClkRst <= r.adcClkRst;
+      elineRst <= r.elineRst;
 
    end process comb;
 

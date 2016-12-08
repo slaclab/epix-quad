@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-11-14
--- Last update: 2016-12-01
+-- Last update: 2016-12-06
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -48,8 +48,8 @@ entity CoulterBoardModel is
       gtDataRxP          : out   sl              := '0';
       gtDataRxN          : out   sl              := '0';
       sfpDisable         : in    sl;
-      runTg              : out   sl;
-      daqTg              : out   sl;
+      runTg              : out   sl              := '0';
+      daqTg              : out   sl              := '0';
       mps                : in    sl;
       tgOut              : in    sl;
       snIoAdcCard        : inout sl;
@@ -86,7 +86,7 @@ architecture model of CoulterBoardModel is
    constant REFCLK_FREQ_C : real            := 156.25e6;
    constant LINE_RATE_C   : real            := 3.125e9;
    constant GTP_CFG_C     : Gtp7QPllCfgType := getGtp7QPllCfg(REFCLK_FREQ_C, LINE_RATE_C);
-   
+
    signal eLineDOut : slv6Array(1 downto 0);
    type Real6Array is array (natural range <>) of RealArray(5 downto 0);
    signal eLineAOut : Real6Array(1 downto 0);
@@ -98,6 +98,8 @@ architecture model of CoulterBoardModel is
 
    signal gtRefClkP : sl;
    signal gtRefClkN : sl;
+   signal stableClk : sl;
+   signal stableRst : sl;
 
 begin
 
@@ -112,9 +114,11 @@ begin
          RST_HOLD_TIME_G   => 1 ns,
          SYNC_RESET_G      => false)
       port map (
-         clkP => gtRefClk0P,            -- [out]
-         clkN => gtRefClk0N);           -- [out]
+         clkP => gtRefClkP,             -- [out]
+         clkN => gtRefClkN);            -- [out]
 
+   gtRefClk0P <= gtRefClkP;
+   gtRefClk0N <= gtRefClkN;
 
    -------------------------------------------------------------------------------------------------
    -- ELINE100 Simulation Models
@@ -169,6 +173,8 @@ begin
       end generate PREAMP_J;
    end generate PREAMP_I;
 
+   -- Pullups for adcSpi
+   adcSpiData  <= 'H';
 
    U_Ad9249_1 : entity work.Ad9249
       generic map (
@@ -204,75 +210,73 @@ begin
    -------------------------------------------------------------------------------------------------
    -- PGP
    -------------------------------------------------------------------------------------------------
-      U_ClkRst_2 : entity work.ClkRst
+--    U_ClkRst_2 : entity work.ClkRst
+--       generic map (
+--          CLK_PERIOD_G      => 6.4 ns,
+--          CLK_DELAY_G       => 1 ns,
+--          RST_START_DELAY_G => 0 ns,
+--          RST_HOLD_TIME_G   => 1 ns,
+--          SYNC_RESET_G      => false)
+--       port map (
+--          clkP => gtRefClkP,             -- [out]
+--          clkN => gtRefClkN);            -- [out]
+
+   PwrUpRst_Inst : entity work.PwrUpRst
       generic map (
-         CLK_PERIOD_G      => 6.4 ns,
-         CLK_DELAY_G       => 0 ns,
-         RST_START_DELAY_G => 0 ns,
-         RST_HOLD_TIME_G   => 1 ns,
-         SYNC_RESET_G      => false)
+         TPD_G          => TPD_G,
+         SIM_SPEEDUP_G  => true,
+         IN_POLARITY_G  => '1',
+         OUT_POLARITY_G => '1')
       port map (
-         clkP => gtRefClkP,            -- [out]
-         clkN => gtRefClkN);           -- [out]
-   
-   U_Pgp2bGtp7FixedLatWrapper_1 : entity work.Pgp2bGtp7FixedLatWrapper
-      generic map (
-         TPD_G                   => TPD_G,
-         SIM_GTRESET_SPEEDUP_G   => true,
---         SIM_VERSION_G           => SIM_VERSION_G,
-         SIMULATION_G            => true,
-         VC_INTERLEAVE_G         => 0,
-         PAYLOAD_CNT_TOP_G       => 7,
-         NUM_VC_EN_G             => 1,
-         TX_ENABLE_G             => true,
-         RX_ENABLE_G             => true,
-         TX_CM_EN_G              => true,
-         TX_CM_TYPE_G            => "MMCM",
-         TX_CM_CLKIN_PERIOD_G    => 6.4,
-         TX_CM_DIVCLK_DIVIDE_G   => 1,
-         TX_CM_CLKFBOUT_MULT_F_G => 7.625,
-         TX_CM_CLKOUT_DIVIDE_F_G => 7.625,
-         RX_CM_EN_G              => true,
-         RX_CM_TYPE_G            => "MMCM",
-         RX_CM_CLKIN_PERIOD_G    => 6.4,
-         RX_CM_DIVCLK_DIVIDE_G   => 1,
-         RX_CM_CLKFBOUT_MULT_F_G => 7.625,
-         RX_CM_CLKOUT_DIVIDE_F_G => 7.625,
---          PMA_RSV_G               => PMA_RSV_G,
---          RX_OS_CFG_G             => RX_OS_CFG_G,
---          RXCDR_CFG_G             => RXCDR_CFG_G,
---          RXDFEXYDEN_G            => RXDFEXYDEN_G,
-         STABLE_CLK_SRC_G        => "gtClk0",
-         TX_REFCLK_SRC_G         => "gtClk0",
-         RX_REFCLK_SRC_G         => "gtClk0",
-         TX_PLL_CFG_G            => GTP_CFG_C,
-         RX_PLL_CFG_G            => GTP_CFG_C,
-         TX_PLL_G                => "PLL0",
-         RX_PLL_G                => "PLL0")
-      port map (
-         stableClkIn  => '0',           -- [in]
-         extRst       => '0',           -- [in]
-         txPllLock    => open,          -- [out]
-         rxPllLock    => open,          -- [out]
-         pgpTxClkOut  => open,          -- [out]
-         pgpTxRstOut  => open,          -- [out]
-         pgpRxClkOut  => open,          -- [out] -- Fixed Latency recovered clock
-         pgpRxRstOut  => open,          -- [out]
-         stableClkOut => open,          --stableClkOut,      -- [out]
-         pgpRxIn      => PGP2B_RX_IN_INIT_C,                    -- [in]
-         pgpRxOut     => open,          -- [out]
-         pgpTxIn      => PGP2B_TX_IN_INIT_C,                    -- [in]
-         pgpTxOut     => open,          -- [out]
-         pgpTxMasters => (others => AXI_STREAM_MASTER_INIT_C),  -- [in]
-         pgpTxSlaves  => open,          -- [out]
-         pgpRxMasters => open,          -- [out]
-         pgpRxCtrl    => (others => AXI_STREAM_CTRL_UNUSED_C),  -- [in]
-         gtClk0P      => gtRefClkP,        -- [in]
-         gtClk0N      => gtRefClkN,        -- [in]
-         gtTxP        => gtDataRxP,     -- [out]
-         gtTxN        => gtDataRxN,     -- [out]
-         gtRxP        => gtDataTxP,     -- [in]
-         gtRxN        => gtDataTxN);    -- [in]
+         arst   => '0',
+         clk    => stableClk,
+         rstOut => stableRst);
+
+
+--    U_Pgp2bGtp7VarLatWrapper_1 : entity work.Pgp2bGtp7VarLatWrapper
+--       generic map (
+--          TPD_G                => TPD_G,
+--          CLKIN_PERIOD_G       => (6.4*2),
+--          DIVCLK_DIVIDE_G      => 1,
+--          CLKFBOUT_MULT_F_G    => 12.75,
+--          CLKOUT0_DIVIDE_F_G   => 6.375,
+--          QPLL_REFCLK_SEL_G    => "001",
+--          QPLL_FBDIV_IN_G      => GTP_CFG_C.QPLL_FBDIV_G,
+--          QPLL_FBDIV_45_IN_G   => GTP_CFG_C.QPLL_FBDIV_45_G,
+--          QPLL_REFCLK_DIV_IN_G => GTP_CFG_C.QPLL_REFCLK_DIV_G,
+--          RXOUT_DIV_G          => GTP_CFG_C.OUT_DIV_G,
+--          TXOUT_DIV_G          => GTP_CFG_C.OUT_DIV_G,
+--          RX_CLK25_DIV_G       => GTP_CFG_C.CLK25_DIV_G,
+--          TX_CLK25_DIV_G       => GTP_CFG_C.CLK25_DIV_G,
+--          RX_OS_CFG_G          => X"0000010000000",
+--          RXCDR_CFG_G          => X"0000107FE206001041010",
+
+-- --          RXLPM_INCM_CFG_G     => RXLPM_INCM_CFG_G,
+-- --          RXLPM_IPCM_CFG_G     => RXLPM_IPCM_CFG_G,
+--          RX_ENABLE_G       => true,
+--          TX_ENABLE_G       => true,
+--          PAYLOAD_CNT_TOP_G => 7,
+--          VC_INTERLEAVE_G   => 0,
+--          NUM_VC_EN_G       => 4)
+--       port map (
+--          extRst       => stableRst,                             -- [in]
+--          pgpClk       => open,                                  -- [out]
+--          pgpRst       => open,                                  -- [out]
+--          stableClk    => stableClk,                             -- [out]
+--          pgpTxIn      => PGP2B_TX_IN_INIT_C,                    -- [in]
+--          pgpTxOut     => open,                                  -- [out]
+--          pgpRxIn      => PGP2B_RX_IN_INIT_C,                    -- [in]
+--          pgpRxOut     => open,                                  -- [out]
+--          pgpTxMasters => (others => AXI_STREAM_MASTER_INIT_C),  -- [in]
+--          pgpTxSlaves  => open,                                  -- [out]
+--          pgpRxMasters => open,                                  -- [out]
+--          pgpRxCtrl    => (others => AXI_STREAM_CTRL_INIT_C),    -- [in]
+--          gtClkP       => gtRefClkP,                             -- [in]
+--          gtClkN       => gtRefClkN,                             -- [in]
+--          gtTxP        => gtDataRxP,                             -- [out]
+--          gtTxN        => gtDataRxN,                             -- [out]
+--          gtRxP        => gtDataTxP,                             -- [in]
+--          gtRxN        => gtDataTxN);                            -- [in]
 
 
 end architecture model;

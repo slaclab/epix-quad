@@ -5,7 +5,7 @@
 -- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 09/30/2015
--- Last update: 2016-12-02
+-- Last update: 2016-12-06
 -- Platform   : Vivado 2014.4
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -40,17 +40,18 @@ use unisim.vcomponents.all;
 
 entity Coulter is
    generic (
-      TPD_G           : time    := 1 ns;
-      SIMULATION_G    : boolean := false;
-      FIXED_LATENCY_G : boolean := false);
+      TPD_G                  : time    := 1 ns;
+      SIMULATION_G           : boolean := false;
+      FIXED_LATENCY_G        : boolean := false;
+      ADC_CONFIG_NO_PULLUP_G : boolean := false);
    port (
       -- Debugging IOs
       led                : out   slv(3 downto 0) := (others => '0');
       -- Power good
       powerGood          : in    sl;
       -- Power Control
-      analogCardDigPwrEn : out   sl := '0';
-      analogCardAnaPwrEn : out   sl := '0';
+      analogCardDigPwrEn : out   sl              := '0';
+      analogCardAnaPwrEn : out   sl              := '0';
       -- GT CLK Pins
       gtRefClk0P         : in    sl;
       gtRefClk0N         : in    sl;
@@ -95,7 +96,7 @@ entity Coulter is
       adcOverflow        : in    slv(1 downto 0);
       -- ELine100 Config
       elineResetL        : out   sl;
-      elineEnaAMon       : out   slv(1 downto 0);
+      elineEnaAMon       : out   slv(1 downto 0) := (others => '0');
       elineMckP          : out   slv(1 downto 0);
       elineMckN          : out   slv(1 downto 0);
       elineScP           : out   slv(1 downto 0);
@@ -122,7 +123,7 @@ architecture top_level of Coulter is
    constant PGP_AXIL_C           : integer      := 7;
 
    constant AXIL_CROSSBAR_CONFIG_C : AxiLiteCrossbarMasterConfigArray(AXIL_MASTERS_C-1 downto 0) :=
-      genAxiLiteConfig(AXIL_MASTERS_C, X"00000000", 16, 12);
+      genAxiLiteConfig(AXIL_MASTERS_C, X"00000000", 20, 16);
 
    constant AXIL_CLK_PERIOD_C  : real := 6.4e-9;
    constant ASIC_SCLK_PERIOD_C : real := 1.0e-6;
@@ -273,7 +274,7 @@ begin
          CLKFBOUT_MULT_F_G  => 32.0,
          CLKOUT0_DIVIDE_F_G => 4.0,
          CLKOUT1_DIVIDE_G   => 5,
-         CLKOUT2_DIVIDE_G   => 10)
+         CLKOUT2_DIVIDE_G   => 20)
       port map (
          clkIn     => axilClk,
          rstIn     => axilRst,
@@ -333,30 +334,6 @@ begin
          slowClk        => clk100,
          fdSerSdio      => snIoAdcCard);
 
---    U_DS2411_ADC_BOARD : entity work.DS2411Core
---       generic map (
---          TPD_G        => TPD_G,
---          CLK_PERIOD_G => AXIL_CLK_PERIOD_C)
---       port map (
---          clk                    => axilClk,
---          rst                    => axilRst,  -- might need special reset
---          fdSerSdio              => snIoAdcCard,
---          fdSerial(31 downto 0)  => userValues(1),
---          fdSerial(63 downto 32) => userValues(2),
---          fdValid                => userValues(0)(0));
-
---    U_DS2411_CARRIER_BOARD : entity work.DS2411Core
---       generic map (
---          TPD_G        => TPD_G,
---          CLK_PERIOD_G => AXIL_CLK_PERIOD_C)
---       port map (
---          clk                    => axilClk,
---          rst                    => axilRst,
---          fdSerSdio              => snIoCarrier,
---          fdSerial(31 downto 0)  => userValues(4),
---          fdSerial(63 downto 32) => userValues(5),
---          fdValid                => userValues(3)(0));
-
    -------------------------------------------------------------------------------------------------
    -- ASIC config (8 bits each)
    -------------------------------------------------------------------------------------------------
@@ -374,6 +351,7 @@ begin
             axilWriteSlave  => locAxilWriteSlaves(ASIC_CONFIG_AXIL_C(i)),   -- [out]
             axilReadMaster  => locAxilReadMasters(ASIC_CONFIG_AXIL_C(i)),   -- [in]
             axilReadSlave   => locAxilReadSlaves(ASIC_CONFIG_AXIL_C(i)),    -- [out]
+            asicEnaAMon     => elineEnaAMon(i),                             -- [out]
             asicSclk        => elineSclk(i),                                -- [out]
             asicSdi         => elineSdi(i),                                 -- [out]
             asicSdo         => elineSdo(i),                                 -- [in]
@@ -385,38 +363,62 @@ begin
    -------------------------------------------------------------------------------------------------
    -- Adc Config (12 bits total)
    -------------------------------------------------------------------------------------------------
-   U_Ad9249Config_1 : entity work.Ad9249ConfigNoPullup
-      generic map (
-         TPD_G           => TPD_G,
-         NUM_CHIPS_G     => 1,
-         DEN_POLARITY_G  => '0',
-         CLK_EN_PERIOD_G => AXIL_CLK_PERIOD_C*2.0,
-         CLK_PERIOD_G    => AXIL_CLK_PERIOD_C,
-         AXIL_ERR_RESP_G => AXI_RESP_DECERR_C)
-      port map (
-         axilClk         => axilClk,                                 -- [in]
-         axilRst         => axilRst,                                 -- [in]
-         axilReadMaster  => locAxilReadMasters(ADC_CONFIG_AXIL_C),   -- [in]
-         axilReadSlave   => locAxilReadSlaves(ADC_CONFIG_AXIL_C),    -- [out]
-         axilWriteMaster => locAxilWriteMasters(ADC_CONFIG_AXIL_C),  -- [in]
-         axilWriteSlave  => locAxilWriteSlaves(ADC_CONFIG_AXIL_C),   -- [out]
-         adcPdwn(0)      => adcPdwn01,                               -- [out]
-         adcSclk         => adcSpiClk,                               -- [out]
-         adcSDin         => adcSpiDataIn,                            -- [in]
-         adcSDout        => adcSpiDataOut,                           -- [out]
-         adcSDEn         => adcSpiDataEn,                            -- [out]
-         adcCsb          => adcSpiCsb(1 downto 0));                  -- [out]
+   ADC_CONFIG_NO_PULLUP : if (ADC_CONFIG_NO_PULLUP_G) generate
+      U_Ad9249Config_1 : entity work.Ad9249ConfigNoPullup
+         generic map (
+            TPD_G           => TPD_G,
+            NUM_CHIPS_G     => 1,
+            DEN_POLARITY_G  => '0',
+            CLK_EN_PERIOD_G => AXIL_CLK_PERIOD_C*2.0,
+            CLK_PERIOD_G    => AXIL_CLK_PERIOD_C,
+            AXIL_ERR_RESP_G => AXI_RESP_DECERR_C)
+         port map (
+            axilClk         => axilClk,                                 -- [in]
+            axilRst         => axilRst,                                 -- [in]
+            axilReadMaster  => locAxilReadMasters(ADC_CONFIG_AXIL_C),   -- [in]
+            axilReadSlave   => locAxilReadSlaves(ADC_CONFIG_AXIL_C),    -- [out]
+            axilWriteMaster => locAxilWriteMasters(ADC_CONFIG_AXIL_C),  -- [in]
+            axilWriteSlave  => locAxilWriteSlaves(ADC_CONFIG_AXIL_C),   -- [out]
+            adcPdwn(0)      => adcPdwn01,                               -- [out]
+            adcSclk         => adcSpiClk,                               -- [out]
+            adcSDin         => adcSpiDataIn,                            -- [in]
+            adcSDout        => adcSpiDataOut,                           -- [out]
+            adcSDEn         => adcSpiDataEn,                            -- [out]
+            adcCsb          => adcSpiCsb(1 downto 0));                  -- [out]
 
-   U_AdcConfigDataIobuf : IOBUF
-      port map (
-         O  => adcSpiDataIn,
-         IO => adcSpiData,
-         I  => adcSpiDataOut,
-         T  => adcSpiDataEn);
+      U_AdcConfigDataIobuf : IOBUF
+         port map (
+            O  => adcSpiDataIn,
+            IO => adcSpiData,
+            I  => adcSpiDataOut,
+            T  => adcSpiDataEn);
+
 --    Equivalent of:
 --    adcSpiData   <= adcSpiDataOut when adcSpiDataEn = '1' else 'Z';
 --    adcSpiDataIn <= adcSpiData;
+   end generate ADC_CONFIG_NO_PULLUP;
 
+   ADC_CONFIG_NORMAL : if (not ADC_CONFIG_NO_PULLUP_G) generate
+      U_Ad9249Config_2 : entity work.Ad9249Config
+         generic map (
+            TPD_G             => TPD_G,
+            NUM_CHIPS_G       => 1,
+            SIMULATION_G      => SIMULATION_G,
+            SCLK_PERIOD_G     => 1.0e-6,
+            AXIL_CLK_PERIOD_G => 6.4e-9,
+            AXIL_ERR_RESP_G   => AXI_RESP_DECERR_C)
+         port map (
+            axilClk         => axilClk,                                 -- [in]
+            axilRst         => axilRst,                                 -- [in]
+            axilReadMaster  => locAxilReadMasters(ADC_CONFIG_AXIL_C),   -- [in]
+            axilReadSlave   => locAxilReadSlaves(ADC_CONFIG_AXIL_C),    -- [out]
+            axilWriteMaster => locAxilWriteMasters(ADC_CONFIG_AXIL_C),  -- [in]
+            axilWriteSlave  => locAxilWriteSlaves(ADC_CONFIG_AXIL_C),   -- [out]
+            adcPdwn(0)       => adcPdwn01,                              -- [out]
+            adcSclk         => adcSpiClk,                               -- [out]
+            adcSdio         => adcSpiData,                              -- [inout]
+            adcCsb          => adcSpiCsb(1 downto 0));                              -- [out]
+   end generate ADC_CONFIG_NORMAL;
    -------------------------------------------------------------------------------------------------
    -- ADC Readout (8 bits each)
    -------------------------------------------------------------------------------------------------

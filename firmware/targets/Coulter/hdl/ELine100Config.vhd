@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-05-16
--- Last update: 2016-11-30
+-- Last update: 2016-12-07
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -48,11 +48,12 @@ entity ELine100Config is
       axilReadSlave   : out AxiLiteReadSlaveType;
 
       -- ELINE100 configuration interface
-      asicSclk : out sl;
-      asicSdi  : out sl;
-      asicSdo  : in  sl;
-      asicSen  : out sl;
-      asicRw   : out sl);
+      asicEnaAMon : out sl;
+      asicSclk    : out sl;
+      asicSdi     : out sl;
+      asicSdo     : in  sl;
+      asicSen     : out sl;
+      asicRw      : out sl);
 
 end entity ELine100Config;
 
@@ -66,6 +67,7 @@ architecture rtl of ELine100Config is
    type RegType is record
       state          : StateType;
       cfg            : ELine100CfgType;
+      asicEnaAMon    : sl;
       asicSen        : sl;
       asicRw         : sl;
       spiWrEn        : sl;
@@ -78,6 +80,7 @@ architecture rtl of ELine100Config is
    constant REG_INIT_C : RegType := (
       state          => WAIT_AXIL_S,
       cfg            => E_LINE_100_CFG_INIT_C,
+      asicEnaAMon    => '0',
       asicSen        => '1',
       asicRw         => '1',
       spiWrEn        => '0',
@@ -95,7 +98,8 @@ architecture rtl of ELine100Config is
 
 begin
 
-   spiWrData <= toSlv(r.cfg);
+   -- SPI sends data MSB first. Need to flip so that LSB sent first.
+   spiWrData <= bitReverse(toSlv(r.cfg));
 
    U_SpiMaster_1 : entity work.SpiMaster
       generic map (
@@ -148,15 +152,16 @@ begin
 
             for i in 0 to 11 loop
                for j in 0 to 7 loop
-                  chCfg(i)(j*4)   := r.cfg.chCfg(i*j).somi;
-                  chCfg(i)(j*4+1) := r.cfg.chCfg(i*j).sm;
-                  chCfg(i)(j*4+2) := r.cfg.chCfg(i*j).st;
+                  chCfg(i)(j*4)   := r.cfg.chCfg(i*8+j).somi;
+                  chCfg(i)(j*4+1) := r.cfg.chCfg(i*8+j).sm;
+                  chCfg(i)(j*4+2) := r.cfg.chCfg(i*8+j).st;
+                  chCfg(i)(j*4+3) := '0';
                end loop;
                axiSlaveRegister(axilEp, toSlv(i*4, 8), 0, chCfg(i), "X", string("SomeSmSt("&str(i)&")"));
                for j in 0 to 7 loop
-                  v.cfg.chCfg(i*j).somi := chCfg(i)(j*4);
-                  v.cfg.chCfg(i*j).sm   := chCfg(i)(j*4+1);
-                  v.cfg.chCfg(i*j).st   := chCfg(i)(j*4+2);
+                  v.cfg.chCfg(i*8+j).somi := chCfg(i)(j*4);
+                  v.cfg.chCfg(i*8+j).sm   := chCfg(i)(j*4+1);
+                  v.cfg.chCfg(i*8+j).st   := chCfg(i)(j*4+2);
                end loop;
             end loop;
 
@@ -183,34 +188,8 @@ begin
             axiSlaveRegister(axilEp, X"34", 16, v.cfg.clab);
             axiSlaveRegister(axilEp, X"34", 19, v.cfg.tres);
 
-            -- Asic RD registers
---             for i in 0 to 95 loop
---                axiSlaveRegisterR(axilEp, toSlv(i/8, 8)+X"40", ((i*4) mod 32) + 0, r.readCfg.chCfg(i).somi);
---                axiSlaveRegisterR(axilEp, toSlv(i/8, 8)+X"40", ((i*4) mod 32) + 1, r.readCfg.chCfg(i).sm);
---                axiSlaveRegisterR(axilEp, toSlv(i/8, 8)+X"40", ((i*4) mod 32) + 2, r.readCfg.chCfg(i).st);
---             end loop;
---             axiSlaveRegisterR(axilEp, X"70", 0, r.readCfg.pbitt);
---             axiSlaveRegisterR(axilEp, X"70", 1, r.readCfg.cs);
---             axiSlaveRegisterR(axilEp, X"70", 2, r.readCfg.atest);
---             axiSlaveRegisterR(axilEp, X"70", 3, r.readCfg.vdacm);
---             axiSlaveRegisterR(axilEp, X"70", 4, r.readCfg.hrtest);
---             axiSlaveRegisterR(axilEp, X"70", 5, r.readCfg.sbm);
---             axiSlaveRegisterR(axilEp, X"70", 6, r.readCfg.sb);
---             axiSlaveRegisterR(axilEp, X"70", 7, r.readCfg.test);
---             axiSlaveRegisterR(axilEp, X"70", 8, r.readCfg.saux);
---             axiSlaveRegisterR(axilEp, X"70", 9, r.readCfg.slrb);
---             axiSlaveRegisterR(axilEp, X"70", 11, r.readCfg.claen);
---             axiSlaveRegisterR(axilEp, X"70", 12, r.readCfg.pb);
---             axiSlaveRegisterR(axilEp, X"70", 22, r.readCfg.tr);
---             axiSlaveRegisterR(axilEp, X"70", 25, r.readCfg.sse);
---             axiSlaveRegisterR(axilEp, X"70", 26, r.readCfg.disen);
---             axiSlaveRegisterR(axilEp, X"74", 0, r.readCfg.pa);
---             axiSlaveRegisterR(axilEp, X"74", 10, r.readCfg.esm);
---             axiSlaveRegisterR(axilEp, X"74", 11, r.readCfg.t);
---             axiSlaveRegisterR(axilEp, X"74", 14, r.readCfg.dd);
---             axiSlaveRegisterR(axilEp, X"74", 15, r.readCfg.sabtest);
---             axiSlaveRegisterR(axilEp, X"74", 16, r.readCfg.clab);
---             axiSlaveRegisterR(axilEp, X"74", 19, r.readCfg.tres);
+            axiSlaveRegister(axilEp, X"80", 0, v.asicEnaAMon);
+
 
             -- Special sequences to write and readback SPI config 
             if (axilEp.axiStatus.writeEnable = '1') then
@@ -223,9 +202,10 @@ begin
                      -- Clear spiWrEn when spiRdEn goes low
                      v.spiWrEn := '0';
                   end if;
-                  if (r.doneWr = '1' and spiRdEn = '1') then
+                  if (r.doneWr = '1' and spiRdEn = '1' and r.spiWrEn = '0') then
                      -- When spiRdEn goes back high, done with txn
                      v.doneWr  := '0';
+                     v.spiWrEn := '0';
                      v.asicSen := '0';
                      axiSlaveWriteResponse(axilEp.axiWriteSlave);
                   end if;
@@ -235,14 +215,15 @@ begin
                   v.doneWr   := '1';
                   v.spiWrEn  := '1';
                   v.asicRw   := '0';
-                  v.dataSize := toSlv(1, SHIFT_SIZE_BITS_C);
+                  v.dataSize := toSlv(0, SHIFT_SIZE_BITS_C);
 
                   -- Wait for txn to finish
                   if (spiRdEn = '0') then
                      v.spiWrEn := '0';
                   end if;
-                  if (r.doneWr = '1' and spiRdEn = '1') then
+                  if (r.doneWr = '1' and spiRdEn = '1' and r.spiWrEn = '0') then
                      v.doneWr := '0';
+                     v.spiWrEn := '0';
                      v.asicRw := '1';
                      v.state  := ASIC_READ_S;
                   end if;
@@ -258,18 +239,19 @@ begin
             if (spiRdEn = '0') then
                v.spiWrEn := '0';
             end if;
-            if (v.spiWrEn = '0' and spiRdEn = '1') then
+            if (r.doneWr = '1' and spiRdEn = '1' and r.spiWrEn = '0') then
                -- Assign readback to r.readCfg registers
                v.doneWr := '0';
+               v.spiWrEn := '0';
                v.state  := WAIT_AXIL_S;
-               v.cfg    := toELine100Cfg(spiRdData);
+               v.cfg    := toELine100Cfg(bitReverse(spiRdData));
                axiSlaveWriteResponse(axilEp.axiWriteSlave);
             end if;
 
       end case;
 
-
-      axiSlaveDefault(axilEp, v.axilWriteSlave, v.axilReadSlave, AXIL_ERR_RESP_G);
+      axiSlaveDefault(axilEp, v.axilWriteSlave, v.axilReadSlave, AXIL_ERR_RESP_G,
+                      (v.doneWr or toSl(v.state=ASIC_READ_S)));
 
       if (axilRst = '1') then
          v := REG_INIT_C;
@@ -277,6 +259,7 @@ begin
 
       rin <= v;
 
+      asicEnaAMon    <= r.asicEnaAMon;
       asicSen        <= r.asicSen;
       asicRw         <= r.asicRw;
       axilReadSlave  <= r.axilReadSlave;
