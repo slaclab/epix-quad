@@ -69,16 +69,16 @@ class Coulter(pr.Device):
     def __init__(self, name="", offset=0, memBase=None, hidden=False):
 
         super(self.__class__, self).__init__(name=name, description="Coulter FPGA",
-                                             membase=memBase, offset=offset, hidden=hidden)
+                                             memBase=memBase, offset=offset, hidden=hidden)
 
         self.add(surf.AxiVersion.create(offset=0x00000000))
-        self.add(ELine100Config(name='ASIC0', offset=0x00001000))
-        self.add(ELine100Config(name='ASIC1', offset=0x00002000))
-        self.add(surf.Ad9249Config(name = 'AdcConfig', offset=0x00003000))
-        self.add(surf.Ad9249ReadoutGroup(name = 'AdcReadoutBank0', offset=0x00004000))
-        self.add(surf.Ad9249ReadoutGroup(name = 'AdcReadoutBank1', offset=0x00005000))                
-        self.add(AcquisitionControl(name='AcquisitionControl', offset=0x00006000))
-        self.add(CoulterPgp(name='CoulterPgp', offset=0x00007000))
+        self.add(ELine100Config(name='ASIC0', offset=0x00010000))
+        self.add(ELine100Config(name='ASIC1', offset=0x00020000))
+        self.add(surf.Ad9249Config(name = 'AdcConfig', offset=0x00030000))
+        self.add(surf.Ad9249ReadoutGroup(name = 'AdcReadoutBank0', offset=0x00040000, channels=6))
+        self.add(surf.Ad9249ReadoutGroup(name = 'AdcReadoutBank1', offset=0x00050000, channels=6))                
+        self.add(AcquisitionControl(name='AcquisitionControl', offset=0x00060000))        
+        #self.add(CoulterPgp(name='CoulterPgp', offset=0x00007000))
 
 
 class CoulterPgp(pr.Device):
@@ -98,37 +98,7 @@ class ELine100Config(pr.Device):
         super(self.__class__, self).__init__(name=name, description="ELine 100 ASIC Configuration",
                                              memBase=memBase, offset=offset, hidden=hidden)
 
-        class SelMaskTest(pr.Device):
-            def __init__(self, name=None, offset=0, memBase=None, hidden=False, index=0):
-                super(self.__class__, self).__init__(name, "SOMI, SM, and ST",
-                                                     memBase, offset, hidden)
-
-                self.enable.hidden = True
-                self.add(pr.Variable(name= "Ch{:d}_somi".format(index),
-                                  description = "Channel {:d} Selector Enable".format(index),
-                                  offset = index/2,
-                                  bitSize = 1,
-                                  bitOffset = (index%2)*4,
-                                  base = 'bool',
-                                  mode = 'RW'))
-                self.add(pr.Variable(name = "Ch{:d}_sm".format(index),
-                                  description = "Channel {:d} Mask".format(index),
-                                  offset = index/2,
-                                  bitSize = 1,
-                                  bitOffset = (index%2)*4+1,
-                                  base = 'bool',
-                                  mode = 'RW'))
-                self.add(pr.Variable(name = "Ch{:d}_st".format(index),
-                                  description = "Enable Test on channel {:d}".format(index),
-                                  offset = index/2,
-                                  bitSize = 1,
-                                  bitOffset = (index%2)*4+2,
-                                  base = 'bool',
-                                  mode = 'RW'))
-
-        for i in xrange(96):
-            self.add(SelMaskTest("SomiSmSt"+str(i), offset=0, index=i))
-    
+        self.add(pr.Variable(name = "EnaAnalogMonitor", offset = 0x80, bitSize=1, base='bool', description="Set the ENA_AMON pin on the ASIC"))
              
         self.add(pr.Variable(name = "pbitt",   offset = 0x30, bitOffset = 0 , bitSize = 1,  description = "Test Pulse Polarity (0=pos, 1=neg)"))
         self.add(pr.Variable(name = "cs",      offset = 0x30, bitOffset = 1 , bitSize = 1,  description = "Disable Outputs"))
@@ -148,27 +118,46 @@ class ELine100Config(pr.Device):
         self.add(pr.Variable(name = "pa",      offset = 0x34, bitOffset = 0 , bitSize = 10, description = "Threshold DAC"))
         self.add(pr.Variable(name = "esm",     offset = 0x34, bitOffset = 10, bitSize = 1,  description = "Enable DAC Monitor"))
         self.add(pr.Variable(name = "t",       offset = 0x34, bitOffset = 11, bitSize = 3,  description = "Filter time to flat top"))
-        self.add(pr.Variable(name = "dd",      offset = 0x34, bitOffset = 14, bitSize = 1,  description =  "DAC Monitor Select (0-thr, 1-pulser)"))
+        self.add(pr.Variable(name = "dd",      offset = 0x34, bitOffset = 14, bitSize = 1,  description = "DAC Monitor Select (0-thr, 1-pulser)"))
         self.add(pr.Variable(name = "sabtest", offset = 0x34, bitOffset = 15, bitSize = 1,  description = "Select CDS test"))
         self.add(pr.Variable(name = "clab",    offset = 0x34, bitOffset = 16, bitSize = 3,  description = "Pump Timeout"))
         self.add(pr.Variable(name = "tres",    offset = 0x34, bitOffset = 19, bitSize = 3,  description = "Reset Tweak OP"))
+
+        for i in xrange(12):
+            self.add(pr.Variable('SomiSmSt_{:02d}-{:02d}'.format(i*8+7, i*8),
+                                 description="Channel Selector Enable, Channel Mask, Enable Test",
+                                 offset=i*4,
+                                 bitSize=32,
+                                 bitOffset=0,
+                                 base='hex',
+                                 mode='RW'))
            
         self.add(pr.Command(name = "WriteAsic",
                             description = "Write the current configuration registers into the ASIC",
-                            offset = 0x40, bitSize = 1, bitOffset = 0, hidden = True,
-                            function = pr.Command.toggle))
+                            offset = 0x40, bitSize = 1, bitOffset = 0, hidden = False,
+                            function = pr.Command.touch))
         self.add(pr.Command(name = "ReadAsic", description = "Read the current configuration registers from the ASIC",
-                            offset = 0x44, bitSize = 1, bitOffset = 0, hidden = True,
-                            function = pr.Command.toggle))
+                            offset = 0x44, bitSize = 1, bitOffset = 0, hidden = False,
+                            function = pr.Command.touch))
 
-        def _afterWrite(self):
-            self.WriteAsic()
+        for n,v in self.variables.iteritems():
+            if n != "EnaAnalogMonitor":
+                v.beforeReadCmd = self.ReadAsic
+                v.beforeVerifyCmd = self.ReadAsic
+                v.afterWriteCmd = self.WriteAsic
 
-        def _beforeRead(self):
-            self.ReadAsic()
 
-        def _beforeVerify(self):
-            self.ReadAsic()
+#     def _afterWrite(self):
+#         print self.path+'._afterWrite()'
+#         self.WriteAsic()
+
+#     def _beforeRead(self):
+#         print self.path+"._beforeRead()"
+#         self.ReadAsic()
+
+#     def _beforeVerify(self):
+#         print self.path+"._beforeVerify()"
+#         self.ReadAsic()
 
 
 class AcquisitionControl(pr.Device):
@@ -184,14 +173,14 @@ class AcquisitionControl(pr.Device):
         self.add(pr.Variable('ScDelay', "Delay between trigger and SC rising edge",
                              0x00, 16, 0, base='hex'))
         self.add(pr.Variable('ScDelayPeriod', "Delay between trigger and SC rising edge",
-                             mode='SL', base='string', getFunction=makePeriodConverter(self.ScDelay)))
+                             mode='RO', base='string', getFunction=periodConverter, dependencies=[self.ScDelay]))
 
         self.add(pr.Variable('ScPosWidth', "SC high time (baseline sampling)",
                              0x04, 16, 0, base='hex'))
         self.add(pr.Variable('ScNegWidth', "SC low time",
                              0x08, 16, 0, base='hex'))
         self.add(pr.Variable("ScPeriod", "Tslot. Time for each slot",
-                             mode = 'SL',  base='string', getFunction=makePeriodConverter([self.ScPosWidth, self.ScNegWidth])))
+                             mode = 'RO',  base='string', getFunction=periodConverter, dependencies=[self.ScPosWidth, self.ScNegWidth]))
 
         self.add(pr.Variable("ScCount", "Number of slots per acquisition",
                              0x0C, 12, 0, base='hex'))
@@ -200,14 +189,14 @@ class AcquisitionControl(pr.Device):
         self.add(pr.Variable('MckDelay', "Delay between trigger and SC rising edge",
                              0x10, 16, 0, base='hex'))
         self.add(pr.Variable('MckDelayPeriod', "Delay between trigger and SC rising edge",
-                             mode='SL',  base='string', getFunction=makePeriodConverter(self.MckDelay)))
+                             mode='RO',  base='string', getFunction=periodConverter, dependencies=[self.MckDelay]))
 
         self.add(pr.Variable('MckPosWidth', "SC high time (baseline sampling)",
                              0x14, 16, 0, base='hex'))
         self.add(pr.Variable('MckNegWidth', "SC low time",
                              0x18, 16, 0, base='hex'))
         self.add(pr.Variable("MckPeriod", "Tslot. Time for each slot",
-                             mode = 'SL', base='string',  getFunction=makePeriodConverter([self.MckPosWidth, self.MckNegWidth])))
+                             mode = 'RO', base='string',  getFunction=periodConverter, dependencies=[self.MckPosWidth, self.MckNegWidth]))
 
         self.add(pr.Variable("MckCount", "Number of MCK pulses per slot (should always be 16)",
                              0x1C, 8, 0, base='hex'))
@@ -217,37 +206,46 @@ class AcquisitionControl(pr.Device):
         self.add(pr.Variable('AdcClkDelay', "Delay between trigger and new rising edge of ADC clk",
                              0x28, 16, 0, base='hex'))
         self.add(pr.Variable('AdcClkDelayPeriod', "Delay between trigger and new rising edge of ADC clk",
-                             mode='SL',  base='string', getFunction=makePeriodConverter(self.AdcClkDelay)))
+                             mode='RO',  base='string', getFunction=periodConverter, dependencies=[self.AdcClkDelay]))
 
         self.add(pr.Variable('AdcClkPosWidth', "AdcClk high time",
                              0x14, 16, 0, base='hex'))
         self.add(pr.Variable('AdcClkNegWidth', "AdcClk low time",
                              0x18, 16, 0, base='hex'))
         self.add(pr.Variable("AdcClkPeriod", "Adc Clk period",
-                             mode = 'SL',  base='string', getFunction=makePeriodConverter([self.AdcClkPosWidth, self.AdcClkNegWidth])))
+                             mode = 'RO',  base='string', getFunction=periodConverter, dependencies=[self.AdcClkPosWidth, self.AdcClkNegWidth]))
 
         # ADC window
         self.add(pr.Variable("AdcWindowDelay", "Delay between first mck of slot at start of adc sample capture",
                              0x2c, 0, 10, base = 'hex'))
         self.add(pr.Variable("AdcWindowDelayTime", "AdcWindowDelay in readable units",
-                             mode = 'SL',  base='string', getFunction=makePeriodConverter(self.AdcWindowDelay)))
+                             mode = 'RO',  base='string', getFunction=periodConverter, dependencies=[self.AdcWindowDelay]))
 
         #There are probably useless
         self.add(pr.Variable("MckDisable", "Disables MCK generation",
                              0x30, 0, 10, base = 'bool'))
         self.add(pr.Variable("ClkDisable", "Disable SC, MCK and AdcClk generation",
                              0x34, 0, 1, base = 'bool'))
+
+        self.add(pr.Command(name = "ResetAsic", description = "Reset the ELine100 ASICS",
+                            offset=0x38, bitOffset=0, bitSize=1, function=pr.Command.toggle))
         
 
 def makePeriodConverter(link):
     def conv(dev, var):
         counts = 0
         if isinstance(link, list):
-            counts = reduce(lambda x,y: x._getRawUInt()+y._getRawUInt(), link)
+            print "about to call get()"
+            counts = reduce(lambda x,y: x.get(read=False)+y.get(read=False), link)
 
         elif isinstance(link, pr.Variable):
-            counts = link._getRawUInt()
+            counts = link.get(read=False)
 
         return '{:f} ns'.format(dev.clkPeriod * counts * 1e9)
     return conv
         
+def periodConverter(dev, var):
+    counts = reduce(lambda x,y: x.get(read=False)+y.get(read=False), var.dependencies)
+    if isinstance(counts, pr.Variable):
+        counts = counts.get(read=False)
+    return '{:f} ns'.format(dev.clkPeriod * counts * 1e9)
