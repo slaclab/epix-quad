@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-05-31
--- Last update: 2016-12-05
+-- Last update: 2016-12-12
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -93,18 +93,18 @@ architecture rtl of AcquisitionControl is
    end record CfgRegType;
 
    constant CFG_REG_INIT_C : CfgRegType := (
-      scDelay        => (others => '0'),
+      scDelay        => X"8000",        -- ~200 us for adcs to relock to shifted clock
       scPosWidth     => toSlv(50*16*2, 16),
       scNegWidth     => toSlv(50*16*2, 16),
       scCount        => toSlv(256, 12),
       mckDelay       => toSlv(50*8, 16),
-      mckPosWidth    => toSlv(25, 16),  -- 24*2 * 4ns = 200 ns = 5 Mhz
-      mckNegWidth    => toSlv(25, 16),
-      mckCount       => toSlv(16, 8),   -- 16 pixels per slot
-      adcClkPosWidth => toSlv(13, 16),  -- 10 Mhz ADC clock
-      adcClkNegWidth => toSlv(12, 16),
+      mckPosWidth    => toSlv(19, 16),  -- ~10 MHz
+      mckNegWidth    => toSlv(19, 16),
+      mckCount       => toSlv(16, 8),   -- 16 pixels per slot, this should never change
+      adcClkPosWidth => toSlv(9, 16),   -- ~20 Mhz ADC clock
+      adcClkNegWidth => toSlv(9, 16),
       adcClkDelay    => toSlv(0, 16),
-      adcWindowDelay => toSlv(17*48, 10),
+      adcWindowDelay => toSlv(494, 10),
       mckDisable     => '0',
       clkDisable     => '0');
 
@@ -158,7 +158,7 @@ architecture rtl of AcquisitionControl is
 
 begin
 
-   -- Synchronize the Axi lite bus to 250 Mhz clock
+   -- Synchronize the Axi lite bus to distClk
    U_AxiLiteAsync_1 : entity work.AxiLiteAsync
       generic map (
          TPD_G => TPD_G)
@@ -265,7 +265,8 @@ begin
       variable v      : RegType;
       variable axilEp : AxiLiteEndpointType;
    begin
-      v := r;
+      v           := r;
+      v.adcClkRst := '0';
 
       -- Declare configuration registers
       axiSlaveWaitTxn(axilEp, locAxilWriteMaster, locAxilReadMaster, v.axilWriteSlave, v.axilReadSlave);
@@ -278,7 +279,9 @@ begin
       axiSlaveRegister(axilEp, X"18", 0, v.cfg.mckNegWidth);
       axiSlaveRegister(axilEp, X"1C", 0, v.cfg.mckCount);
       axiSlaveRegister(axilEp, X"20", 0, v.cfg.adcClkPosWidth);
+      axiSlaveRegister(axilEp, X"20", 31, v.adcClkRst, '1');
       axiSlaveRegister(axilEp, X"24", 0, v.cfg.adcClkNegWidth);
+      axiSlaveRegister(axilEp, X"24", 31, v.adcClkRst, '1');
       axiSlaveRegister(axilEp, X"28", 0, v.cfg.adcClkDelay);
       axiSlaveRegister(axilEp, X"2C", 0, v.cfg.adcWindowDelay);
       axiSlaveRegister(axilEp, X"30", 0, v.cfg.mckDisable);
@@ -287,8 +290,6 @@ begin
       axiSlaveDefault(axilEp, v.axilWriteSlave, v.axilReadSlave, AXI_ERROR_RESP_G);
 
       -- Default Register values
-      v.adcClkRst := '0';
-
       v.acqStatus.trigger        := triggerRise;
       v.acqStatus.mckPulse       := mckPreRise;
       v.acqStatus.adcWindowStart := '0';
@@ -380,7 +381,7 @@ begin
       elineMck  <= iMck;
       adcClk    <= iAdcClk;
       adcClkRst <= r.adcClkRst;
-      elineRst <= r.elineRst;
+      elineRst  <= r.elineRst;
 
    end process comb;
 
