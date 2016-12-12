@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-09-22
--- Last update: 2016-11-18
+-- Last update: 2016-12-09
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -99,7 +99,7 @@ begin
       port map (
          rst    => rst,                 -- [in]
          wr_clk => distClk,             -- [in]
-         wr_en  => distTrigger,             -- [in]
+         wr_en  => distTrigger,         -- [in]
          din(0) => '0',                 -- [in]
          rd_clk => clk,                 -- [in]
          rd_en  => '1',                 -- [in]
@@ -116,13 +116,12 @@ begin
             TPD_G               => TPD_G,
             FILTERED_AXIS_CFG_G => COULTER_AXIS_CFG_C)
          port map (
-            adcStreamClk => adcStreamClk,   -- [in]
-            adcStreamRst => adcStreamRst,   -- [in]
-            adcStream    => adcStreams(i),  -- [in]
-
+            adcStreamClk       => adcStreamClk,            -- [in]
+            adcStreamRst       => adcStreamRst,            -- [in]
+            adcStream          => adcStreams(i),           -- [in]
+            acqStatus          => acqStatus,               -- [in]                        
             clk                => clk,                     -- [in]
             rst                => rst,                     -- [in]
-            acqStatus          => acqStatus,               -- [in]            
             filteredAxisMaster => filteredAxisMasters(i),  -- [out]
             filteredAxisSlave  => filteredAxisSlaves(i));  -- [in]
    end generate;

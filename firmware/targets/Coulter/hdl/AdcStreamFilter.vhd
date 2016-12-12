@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-09-22
--- Last update: 2016-11-07
+-- Last update: 2016-12-09
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -42,12 +42,11 @@ entity AdcStreamFilter is
       adcStreamClk : in sl;
       adcStreamRst : in sl;
       adcStream    : in AxiStreamMasterType;
+      acqStatus    : in AcquisitionStatusType;
 
       -- Main clock and reset
       clk                : in  sl;
       rst                : in  sl;
-      -- Acquisition timing signals
-      acqStatus          : in  AcquisitionStatusType;
       -- Filtered (and buffered) output stream
       filteredAxisMaster : out AxiStreamMasterType;
       filteredAxisSlave  : in  AxiStreamSlaveType);
@@ -62,7 +61,7 @@ architecture rtl of AdcStreamFilter is
    end record RegType;
 
    constant REG_INIT_C : RegType := (
-      capture      => '0',
+      capture      => '1',
       filteredAxis => AXI_STREAM_MASTER_INIT_C);
 
    signal r   : RegType := REG_INIT_C;
@@ -79,6 +78,10 @@ begin
       v.filteredAxis.tData  := adcStream.tData;
       v.filteredAxis.tLast  := acqStatus.adcLast;
 
+      if (acqStatus.adcWindow = '0') then
+         v.capture := '1';
+      end if;
+
       -- Filter every other sample when acqStatus.adcWindow = '1'
       if (acqStatus.adcWindow = '1' and adcStream.tvalid = '1') then
          v.filteredAxis.tValid := r.capture;
@@ -93,9 +96,9 @@ begin
 
    end process comb;
 
-   seq : process (clk) is
+   seq : process (adcStreamClk) is
    begin
-      if (rising_edge(clk)) then
+      if (rising_edge(adcStreamClk)) then
          r <= rin after TPD_G;
       end if;
    end process seq;
