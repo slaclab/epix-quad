@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-05-16
--- Last update: 2016-12-07
+-- Last update: 2016-12-12
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -109,7 +109,7 @@ begin
          CPHA_G            => '1',      -- Shift out on rising edge and
          CPOL_G            => '0',      -- sample on falling edge.
          CLK_PERIOD_G      => AXIL_CLK_PERIOD_G,
-         SPI_SCLK_PERIOD_G => 1.0e-6)
+         SPI_SCLK_PERIOD_G => ASIC_SCLK_PERIOD_G)
       port map (
          clk      => axilClk,           -- [in]
          sRst     => axilRst,           -- [in]
