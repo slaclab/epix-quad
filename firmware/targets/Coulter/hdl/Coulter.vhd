@@ -5,7 +5,7 @@
 -- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 09/30/2015
--- Last update: 2016-12-06
+-- Last update: 2016-12-08
 -- Platform   : Vivado 2014.4
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -113,7 +113,7 @@ architecture top_level of Coulter is
    -------------------------------------------------------------------------------------------------
    -- AXI-Lite config
    -------------------------------------------------------------------------------------------------
-   constant AXIL_MASTERS_C       : integer      := 8;
+   constant AXIL_MASTERS_C       : integer      := 9;
    constant VERSION_AXIL_C       : integer      := 0;
    constant ASIC_CONFIG_AXIL_C   : IntegerArray := (0 => 1, 1 => 2);
    constant ADC_CONFIG_AXIL_C    : integer      := 3;
@@ -121,6 +121,7 @@ architecture top_level of Coulter is
    constant ADC_READOUT_1_AXIL_C : integer      := 5;
    constant ACQ_CTRL_AXIL_C      : integer      := 6;
    constant PGP_AXIL_C           : integer      := 7;
+   constant XADC_AXIL_C          : integer      := 8;
 
    constant AXIL_CROSSBAR_CONFIG_C : AxiLiteCrossbarMasterConfigArray(AXIL_MASTERS_C-1 downto 0) :=
       genAxiLiteConfig(AXIL_MASTERS_C, X"00000000", 20, 16);
@@ -414,10 +415,10 @@ begin
             axilReadSlave   => locAxilReadSlaves(ADC_CONFIG_AXIL_C),    -- [out]
             axilWriteMaster => locAxilWriteMasters(ADC_CONFIG_AXIL_C),  -- [in]
             axilWriteSlave  => locAxilWriteSlaves(ADC_CONFIG_AXIL_C),   -- [out]
-            adcPdwn(0)       => adcPdwn01,                              -- [out]
+            adcPdwn(0)      => adcPdwn01,                               -- [out]
             adcSclk         => adcSpiClk,                               -- [out]
             adcSdio         => adcSpiData,                              -- [inout]
-            adcCsb          => adcSpiCsb(1 downto 0));                              -- [out]
+            adcCsb          => adcSpiCsb(1 downto 0));                  -- [out]
    end generate ADC_CONFIG_NORMAL;
    -------------------------------------------------------------------------------------------------
    -- ADC Readout (8 bits each)
@@ -541,5 +542,29 @@ begin
          I  => adcClk,
          O  => adcClkP,
          OB => adcClkM);
+
+   U_XadcSimpleCore_1 : entity work.XadcSimpleCore
+      generic map (
+         TPD_G                    => TPD_G,
+         SEQUENCER_MODE_G         => "DEFAULT",
+         SAMPLING_MODE_G          => "CONTINUOUS",
+         ADCCLK_RATIO_G           => 7,
+         SAMPLE_AVG_G             => "11",                     -- 256 samples
+         COEF_AVG_EN_G            => true,
+         OVERTEMP_AUTO_SHDN_G     => true,
+         OVERTEMP_ALM_EN_G        => false,
+         OVERTEMP_LIMIT_G         => 125.0,
+         OVERTEMP_RESET_G         => 50.0,
+         TEMP_ALM_EN_G            => false,
+         TEMP_UPPER_G             => 80.0,
+         TEMP_LOWER_G             => 70.0)
+      port map (
+         axilClk         => axilClk,                           -- [in]
+         axilRst         => axilRst,                           -- [in]
+         axilReadMaster  => locAxilReadMasters(XADC_AXIL_C),   -- [in]
+         axilReadSlave   => locAxilReadSlaves(XADC_AXIL_C),    -- [out]
+         axilWriteMaster => locAxilWriteMasters(XADC_AXIL_C),  -- [in]
+         axilWriteSlave  => locAxilWriteSlaves(XADC_AXIL_C));  -- [out]
+
 
 end top_level;
