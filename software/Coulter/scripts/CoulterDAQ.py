@@ -33,16 +33,19 @@ import yaml
 import time
 import sys
 import PyQt4.QtGui
+import PyQt4.QtCore
 
 
 
 # File writer
-#dataWriter = pyrogue.utilities.fileio.StreamWriter('dataWriter')
+dataWriter = pyrogue.utilities.fileio.StreamWriter('dataWriter')
 
-simVc0 = pyrogue.simulation.StreamSim('localhost', 0, ssi=True)
+simVc0 = pyrogue.simulation.StreamSim('localhost', 0, 1, ssi=True)
+simVcData = pyrogue.simulation.StreamSim('localhost', 1, 1, ssi=True)
+simTrigger = pyrogue.simulation.StreamSim('localhost', 4, 1, ssi=True)
 
 # Create the PGP interfaces
-pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,0) # Registers
+#pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,0) # Registers
 #pgpVc1 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,1) # Data
 
 #print("")
@@ -57,11 +60,15 @@ dbg.setDebug(10, "SRP")
 pyrogue.streamTap(srp, dbg)
 
 # Add data stream to file as channel 0
-#pyrogue.streamConnect(pgpVc1, dataWriter.getChannel(0x0))
+pyrogue.streamConnect(simVcData, dataWriter.getChannel(0x0))
+
+dbg2 = rogue.interfaces.stream.Slave()
+dbg2.setDebug(12, "DATA")
+pyrogue.streamTap(simVcData, dbg2)
 
 
 # Instantiate top and pass stream and srp configurations
-coulterDaq = coulter.CoulterRoot(srp0=srp, dataWriter=None)
+coulterDaq = coulter.CoulterRoot(srp0=srp, trig=simTrigger, dataWriter=dataWriter)
 coulterDaq.setTimeout(100000000)
 #coulterDaq = pyrogue.Root(name="CoulterDaq", description="Coulter Data Acquisition")
 #coulterDaq.add(coulter.CoulterRunControl(name="RunControl"))
@@ -83,6 +90,7 @@ coulterDaq.setTimeout(100000000)
 appTop = PyQt4.QtGui.QApplication(sys.argv)
 guiTop = pyrogue.gui.GuiTop('CoulterGui')
 guiTop.addTree(coulterDaq)
+guiTop.resize(1000,1000)
 
 # Run gui
 appTop.exec_()
