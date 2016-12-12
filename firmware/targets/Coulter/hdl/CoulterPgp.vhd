@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-06-03
--- Last update: 2016-12-06
+-- Last update: 2016-12-12
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -21,6 +21,8 @@
 -------------------------------------------------------------------------------
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.std_logic_unsigned.all;
+use ieee.std_logic_arith.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -37,9 +39,10 @@ use work.CoulterPkg.all;
 
 entity CoulterPgp is
    generic (
-      TPD_G           : time    := 1 ns;
-      SIMULATION_G    : boolean := false;
-      FIXED_LATENCY_G : boolean := true);
+      TPD_G            : time             := 1 ns;
+      SIMULATION_G     : boolean          := false;
+      FIXED_LATENCY_G  : boolean          := true;
+      AXIL_BASE_ADDR_G : slv(31 downto 0) := (others => '0'));
    port (
       -- GTX 7 Ports
       gtClkP           : in  sl;
@@ -112,11 +115,11 @@ architecture mapping of CoulterPgp is
 
    constant AXIL_XBAR_CFG_C : AxiLiteCrossbarMasterConfigArray(AXIL_MASTERS_C-1 downto 0) := (
       PGP_AXI_INDEX_C => (
-         baseAddr     => X"10000000",
+         baseAddr     => AXIL_BASE_ADDR_G,
          addrBits     => 8,
          connectivity => X"0001"),
       GTP_AXI_INDEX_C => (
-         baseAddr     => X"10010000",
+         baseAddr     => AXIL_BASE_ADDR_G + X"10000",
          addrBits     => 16,
          connectivity => X"0001"));
 
@@ -317,79 +320,35 @@ begin
       end generate VARIABLE_LATENCY_PGP;
    end generate NO_SIM;
 
-   AXI_STREAM_SIM : if (SIMULATION_G) generate
-      signal pgpClk       : sl                  := '0';
-      signal pgpRst       : sl                  := '0';
-      signal opCodeMaster : AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
-   begin
-
-      IBUFDS_GTE2_Inst : IBUFGDS
-         port map (
-            I  => gtClkP,
-            IB => gtClkN,
-            O  => pgpClk);
-
-      PwrUpRst_Inst : entity work.PwrUpRst
+   SIMULATION_PGP : if (SIMULATION_G) generate
+      U_RoguePgpSim_1 : entity work.RoguePgpSim
          generic map (
-            TPD_G          => TPD_G,
-            IN_POLARITY_G  => '1',
-            OUT_POLARITY_G => '1',
-            DURATION_G     => 50)
+            TPD_G       => TPD_G,
+            FIXED_LAT_G => true,
+            USER_ID_G   => 1,
+            NUM_VC_EN_G => 4)
          port map (
-            clk    => pgpClk,
-            rstOut => pgpRst);
-
-      pgpTxClk <= pgpClk;
-      pgpTxRst <= pgpRst;
-      pgpRxClk <= pgpClk;
-      pgpRxRst <= pgpRst;
-
-      GEN_AXIS_LANE : for i in 3 downto 0 generate
-         U_RogueStreamSimWrap_PGP_VC : entity work.RogueStreamSimWrap
-            generic map (
-               TPD_G         => TPD_G,
-               DEST_ID_G     => i,
-               AXIS_CONFIG_G => SSI_PGP2B_CONFIG_C)
-            port map (
-               clk         => pgpClk,           -- [in]
-               rst         => pgpRst,           -- [in]
-               sAxisClk    => pgpTxClk,         -- [in]
-               sAxisRst    => pgpRxRst,         -- [in]
-               sAxisMaster => pgpTxMasters(i),  -- [in]
-               sAxisSlave  => pgpTxSlaves(i),   -- [out]
-               mAxisClk    => pgpRxClk,         -- [in]
-               mAxisRst    => pgpRxRst,         -- [in]
-               mAxisMaster => pgpRxMasters(i),  -- [out]
-               mAxisSlave  => pgpRxSlaves(i));  -- [in]
-      end generate GEN_AXIS_LANE;
-
-      U_RogueStreamSimWrap_OPCODE : entity work.RogueStreamSimWrap
-         generic map (
-            TPD_G         => TPD_G,
-            DEST_ID_G     => 4,
-            AXIS_CONFIG_G => SSI_PGP2B_CONFIG_C)
-         port map (
-            clk         => pgpClk,                     -- [in]
-            rst         => pgpRst,                     -- [in]
-            sAxisClk    => pgpTxClk,                   -- [in]
-            sAxisRst    => pgpRxRst,                   -- [in]
-            sAxisMaster => AXI_STREAM_MASTER_INIT_C,   -- [in]
-            sAxisSlave  => open,                       -- [out]
-            mAxisClk    => pgpRxClk,                   -- [in]
-            mAxisRst    => pgpRxRst,                   -- [in]
-            mAxisMaster => opCodeMaster,               -- [out]
-            mAxisSlave  => AXI_STREAM_SLAVE_FORCE_C);  -- [in]
+            refClkP      => gtClkP,        -- [in]
+            refClkM      => gtClkN,        -- [in]
+            pgpTxClk     => pgpTxClk,      -- [out]
+            pgpTxRst     => pgpTxRst,      -- [out]
+            pgpTxIn      => pgpTxIn,       -- [in]
+            pgpTxOut     => pgpTxOut,      -- [out]
+            pgpTxMasters => pgpTxMasters,  -- [in]
+            pgpTxSlaves  => pgpTxSlaves,   -- [out]
+            pgpRxClk     => pgpRxClk,      -- [out]
+            pgpRxRst     => pgpRxRst,      -- [out]
+            pgpRxIn      => pgpRxIn,       -- [in]
+            pgpRxOut     => pgpRxOut,      -- [out]
+            pgpRxMasters => pgpRxMasters,  -- [out]
+            pgpRxSlaves  => pgpRxSlaves);  -- [in]
+   end generate SIMULATION_PGP;
 
 
-      pgpRxOut.opCodeEn <= opCodeMaster.tValid;
-      pgpRxOut.opCode   <= opCodeMaster.tData(7 downto 0);
 
-   end generate AXI_STREAM_SIM;
-
-
-   -------------------------------------------------------------------------------------------------
-   -- PGP monitor
-   -------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------
+-- PGP monitor
+-------------------------------------------------------------------------------------------------
    CntlPgp2bAxi : entity work.Pgp2bAxi
       generic map (
          TPD_G              => TPD_G,
@@ -416,7 +375,7 @@ begin
          axilWriteMaster => locAxilWriteMasters(PGP_AXI_INDEX_C),  -- [in]
          axilWriteSlave  => locAxilWriteSlaves(PGP_AXI_INDEX_C));  -- [out]
 
-   -- Lane 0, VC0 RX/TX, Register access control        
+-- Lane 0, VC0 RX/TX, Register access control        
    U_Vc0AxiMasterRegisters : entity work.SrpV0AxiLite
       generic map (
          TPD_G               => TPD_G,
@@ -449,7 +408,7 @@ begin
          mAxiLiteReadMaster  => mAxilReadMaster,
          mAxiLiteReadSlave   => mAxilReadSlave);
 
-   -- Lane 0, VC1 TX, streaming data out
+-- Lane 0, VC1 TX, streaming data out
    U_AxiStreamFifoV2_1 : entity work.AxiStreamFifoV2
       generic map (
          TPD_G                  => TPD_G,
@@ -508,7 +467,7 @@ begin
 --          mAxisMaster => pgpTxMasters(1),
 --          mAxisSlave  => pgpTxSlaves(1));
 
-   -- Lane 0, VC1 RX, Command processor
+-- Lane 0, VC1 RX, Command processor
    U_Vc1SsiCmdMaster : entity work.SsiCmdMaster
       generic map (
          TPD_G               => TPD_G,
@@ -532,7 +491,7 @@ begin
          cmdMaster   => ssiCmd);
 
 
-   -- Lane 0, VC2 Loopback
+-- Lane 0, VC2 Loopback
    U_Vc2SsiLoopbackFifo : entity work.AxiStreamFifo
       generic map (
          --EN_FRAME_FILTER_G   => true,
@@ -558,7 +517,7 @@ begin
          mAxisMaster => pgpTxMasters(2),
          mAxisSlave  => pgpTxSlaves(2));
 
-   -- Lane 0, VC3 TX/RX loopback (reserved for telemetry)
+-- Lane 0, VC3 TX/RX loopback (reserved for telemetry)
    U_Vc3SsiLoopbackFifo : entity work.AxiStreamFifo
       generic map (
          --EN_FRAME_FILTER_G   => true,
