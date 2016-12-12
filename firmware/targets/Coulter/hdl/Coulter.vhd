@@ -5,7 +5,7 @@
 -- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 09/30/2015
--- Last update: 2016-12-08
+-- Last update: 2016-12-12
 -- Platform   : Vivado 2014.4
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -22,7 +22,8 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use ieee.numeric_std.all;
+use ieee.std_logic_unsigned.all;
+use ieee.std_logic_arith.all;
 
 -- Surf Packages
 use work.StdRtlPkg.all;
@@ -123,12 +124,12 @@ architecture top_level of Coulter is
    constant PGP_AXIL_C           : integer      := 7;
    constant XADC_AXIL_C          : integer      := 8;
 
-   constant AXIL_CROSSBAR_CONFIG_C : AxiLiteCrossbarMasterConfigArray(AXIL_MASTERS_C-1 downto 0) :=
+   constant AXIL_XBAR_CONFIG_C : AxiLiteCrossbarMasterConfigArray(AXIL_MASTERS_C-1 downto 0) :=
       genAxiLiteConfig(AXIL_MASTERS_C, X"00000000", 20, 16);
 
    constant AXIL_CLK_PERIOD_C  : real := 6.4e-9;
-   constant ASIC_SCLK_PERIOD_C : real := 1.0e-6;
-   constant ADC_SCLK_PERIOD_C  : real := 1.0e-6;
+   constant ASIC_SCLK_PERIOD_C : real := ite(SIMULATION_G, 100.0e-9, 1.0e-6);
+   constant ADC_SCLK_PERIOD_C  : real := ite(SIMULATION_G, 100.0e-9, 1.0e-6);
 
    signal srpAxilWriteMaster : AxiLiteWriteMasterType;
    signal srpAxilWriteSlave  : AxiLiteWriteSlaveType;
@@ -228,7 +229,8 @@ begin
       generic map (
          TPD_G           => TPD_G,
          SIMULATION_G    => SIMULATION_G,
-         FIXED_LATENCY_G => FIXED_LATENCY_G)
+         FIXED_LATENCY_G => FIXED_LATENCY_G,
+         AXIL_BASE_ADDR_G => AXIL_XBAR_CONFIG_C(PGP_AXIL_C).baseAddr)
       port map (
          gtClkP           => gtRefClk0P,                       -- [in]
          gtClkN           => gtRefClk0N,                       -- [in]
@@ -296,7 +298,7 @@ begin
          NUM_SLAVE_SLOTS_G  => 1,
          NUM_MASTER_SLOTS_G => AXIL_MASTERS_C,
          DEC_ERROR_RESP_G   => AXI_RESP_DECERR_C,
-         MASTERS_CONFIG_G   => AXIL_CROSSBAR_CONFIG_C,
+         MASTERS_CONFIG_G   => AXIL_XBAR_CONFIG_C,
          DEBUG_G            => true)
       port map (
          axiClk              => axilClk,              -- [in]
@@ -404,9 +406,8 @@ begin
          generic map (
             TPD_G             => TPD_G,
             NUM_CHIPS_G       => 1,
-            SIMULATION_G      => SIMULATION_G,
-            SCLK_PERIOD_G     => 1.0e-6,
-            AXIL_CLK_PERIOD_G => 6.4e-9,
+            SCLK_PERIOD_G     => ADC_SCLK_PERIOD_C,
+            AXIL_CLK_PERIOD_G => AXIL_CLK_PERIOD_C,
             AXIL_ERR_RESP_G   => AXI_RESP_DECERR_C)
          port map (
             axilClk         => axilClk,                                 -- [in]
@@ -510,9 +511,9 @@ begin
          adcStreamClk   => clk250,          -- [in]
          adcStreamRst   => rst250,          -- [in]
          adcStreams     => adcStreams,      -- [in]
-         distClk        => distClk,
-         distRst        => distRst,
-         distTrigger    => distOpCodeEn,
+         distClk        => distClk,         -- [in]
+         distRst        => distRst,         -- [in]
+         distTrigger    => distOpCodeEn,    -- [in]
          clk            => axilClk,         -- [in]
          rst            => axilRst,         -- [in]
          acqStatus      => acqStatus,       -- [in]
@@ -545,19 +546,19 @@ begin
 
    U_XadcSimpleCore_1 : entity work.XadcSimpleCore
       generic map (
-         TPD_G                    => TPD_G,
-         SEQUENCER_MODE_G         => "DEFAULT",
-         SAMPLING_MODE_G          => "CONTINUOUS",
-         ADCCLK_RATIO_G           => 7,
-         SAMPLE_AVG_G             => "11",                     -- 256 samples
-         COEF_AVG_EN_G            => true,
-         OVERTEMP_AUTO_SHDN_G     => true,
-         OVERTEMP_ALM_EN_G        => false,
-         OVERTEMP_LIMIT_G         => 125.0,
-         OVERTEMP_RESET_G         => 50.0,
-         TEMP_ALM_EN_G            => false,
-         TEMP_UPPER_G             => 80.0,
-         TEMP_LOWER_G             => 70.0)
+         TPD_G                => TPD_G,
+         SEQUENCER_MODE_G     => "DEFAULT",
+         SAMPLING_MODE_G      => "CONTINUOUS",
+         ADCCLK_RATIO_G       => 7,
+         SAMPLE_AVG_G         => "11",                         -- 256 samples
+         COEF_AVG_EN_G        => true,
+         OVERTEMP_AUTO_SHDN_G => true,
+         OVERTEMP_ALM_EN_G    => false,
+         OVERTEMP_LIMIT_G     => 125.0,
+         OVERTEMP_RESET_G     => 50.0,
+         TEMP_ALM_EN_G        => false,
+         TEMP_UPPER_G         => 80.0,
+         TEMP_LOWER_G         => 70.0)
       port map (
          axilClk         => axilClk,                           -- [in]
          axilRst         => axilRst,                           -- [in]
