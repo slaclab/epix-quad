@@ -21,14 +21,22 @@
 
 import pyrogue as pr
 import surf.AxiVersion
+import surf
 
 class CoulterRoot(pr.Root):
-    def __init__(self, srp0=None, dataWriter=None):
+    def __init__(self, srp0=None, trig=None, dataWriter=None):
         super(self.__class__, self).__init__("CoulterDaq", "Coulter Data Acquisition")
 
+        self.trig = trig
         self.add(CoulterRunControl("RunControl"))
         if dataWriter is not None: self.add(dataWriter)
         self.add(Coulter(name="Coulter0", memBase=srp0, offset=0))
+
+        def trigFunc(dev, var, val):
+            self.trig.sendOpCode(0xAA)
+
+        self.add(pr.Command(name="Trigger", function=trigFunc))
+        
 
 # Custom run control
 class CoulterRunControl(pr.RunControl):
@@ -57,7 +65,8 @@ class CoulterRunControl(pr.RunControl):
          delay = 1.0 / ({value: key for key,value in self.runRate.enum.iteritems()}[self._runRate])
          time.sleep(delay)
          # Add command here
-         #ExampleCommand: self._root.ssiPrbsTx.oneShot()
+         self.root.Trigger()
+
 
          self._runCount += 1
          if self._last != int(time.time()):
@@ -66,37 +75,39 @@ class CoulterRunControl(pr.RunControl):
 
 
 class Coulter(pr.Device):
-    def __init__(self, name="", offset=0, memBase=None, hidden=False):
-
-        super(self.__class__, self).__init__(name=name, description="Coulter FPGA",
-                                             memBase=memBase, offset=offset, hidden=hidden)
+    def __init__(self, **kwargs):
+        if 'description' not in kwargs:
+            kwargs['description'] = "Coulter FPGA"
+            
+        super(self.__class__, self).__init__(**kwargs)
 
         self.add(surf.AxiVersion.create(offset=0x00000000))
-        self.add(ELine100Config(name='ASIC0', offset=0x00010000))
-        self.add(ELine100Config(name='ASIC1', offset=0x00020000))
-        self.add(surf.Ad9249Config(name = 'AdcConfig', offset=0x00030000))
+        self.add(ELine100Config(name='ASIC0', offset=0x00010000, enabled=True))
+        self.add(ELine100Config(name='ASIC1', offset=0x00020000, enabled=True))
+        self.add(surf.Ad9249Config(chips=1, name='AdcConfig', offset=0x00030000))
         self.add(surf.Ad9249ReadoutGroup(name = 'AdcReadoutBank0', offset=0x00040000, channels=6))
         self.add(surf.Ad9249ReadoutGroup(name = 'AdcReadoutBank1', offset=0x00050000, channels=6))                
         self.add(AcquisitionControl(name='AcquisitionControl', offset=0x00060000))        
-        #self.add(CoulterPgp(name='CoulterPgp', offset=0x00007000))
+        self.add(CoulterPgp(name='CoulterPgp', offset=0x00070000))
+        self.add(surf.Xadc(offset=0x00080000))
 
 
 class CoulterPgp(pr.Device):
-    def __init__(self, name="", offset=0, memBase=None, hidden=False):
+    def __init__(self, **kwargs):
         # Double check size param
-        super(self.__class__, self).__init__(name=name, Description="CoulterPgp",
-                                             memBase=memBase, offset=offset, hidden=hidden)
+        super(self.__class__, self).__init__(**kwargs)
 
-        self.add(surf.Pgp2bAxi())
+        self.add(surf.Pgp2bAxi(name='Pgp2bAxi', offset=0x0))
 #        self.add(surf.Gtp7Axi())
 
         
 class ELine100Config(pr.Device):
 
-    def __init__(self, name=None, offset=0, memBase=None, hidden=False):
+    def __init__(self, **kwargs):
+        if 'description' not in kwargs:
+            kwargs['description'] = "ELINE100 ASIC Configuration"
 
-        super(self.__class__, self).__init__(name=name, description="ELine 100 ASIC Configuration",
-                                             memBase=memBase, offset=offset, hidden=hidden)
+        super(self.__class__, self).__init__(**kwargs)
 
         self.add(pr.Variable(name = "EnaAnalogMonitor", offset = 0x80, bitSize=1, base='bool', description="Set the ENA_AMON pin on the ASIC"))
              
@@ -146,106 +157,90 @@ class ELine100Config(pr.Device):
                 v.beforeVerifyCmd = self.ReadAsic
                 v.afterWriteCmd = self.WriteAsic
 
-
-#     def _afterWrite(self):
-#         print self.path+'._afterWrite()'
-#         self.WriteAsic()
-
-#     def _beforeRead(self):
-#         print self.path+"._beforeRead()"
-#         self.ReadAsic()
-
-#     def _beforeVerify(self):
-#         print self.path+"._beforeVerify()"
-#         self.ReadAsic()
-
-
 class AcquisitionControl(pr.Device):
-    def __init__(self, name="", offset=0, memBase=None, hidden=False, clkFreq=156.25e6):
+    def __init__(self, clkFreq=156.25e6, **kwargs):
 
-        super(self.__class__, self).__init__(name, "Configure Coulter Acquisition Parameters",
-                                             memBase, offset, hidden)
+        super(self.__class__, self).__init__(description="Configure Coulter Acquisition Parameters", **kwargs)
 
         self.clkFreq = clkFreq
         self.clkPeriod = 1/clkFreq
 
         # SC Params
         self.add(pr.Variable('ScDelay', "Delay between trigger and SC rising edge",
-                             0x00, 16, 0, base='hex'))
+                             offset=0x00, bitSize=16, bitOffset=0, base='hex'))
         self.add(pr.Variable('ScDelayPeriod', "Delay between trigger and SC rising edge",
-                             mode='RO', base='string', getFunction=periodConverter, dependencies=[self.ScDelay]))
+                             mode='RO', base='string',
+                             getFunction=self.periodConverter(), dependencies=[self.ScDelay]))
 
         self.add(pr.Variable('ScPosWidth', "SC high time (baseline sampling)",
-                             0x04, 16, 0, base='hex'))
+                             offset=0x04, bitSize=16, bitOffset=0, base='hex'))
         self.add(pr.Variable('ScNegWidth', "SC low time",
-                             0x08, 16, 0, base='hex'))
+                             offset=0x08, bitSize=16, bitOffset=0, base='hex'))
         self.add(pr.Variable("ScPeriod", "Tslot. Time for each slot",
-                             mode = 'RO',  base='string', getFunction=periodConverter, dependencies=[self.ScPosWidth, self.ScNegWidth]))
+                             mode = 'RO',  base='string',
+                             getFunction=self.periodConverter(), dependencies=[self.ScPosWidth, self.ScNegWidth]))
 
         self.add(pr.Variable("ScCount", "Number of slots per acquisition",
-                             0x0C, 12, 0, base='hex'))
+                             offset=0x0C, bitSize=12, bitOffset=0, base='hex'))
 
         # MCK params
         self.add(pr.Variable('MckDelay', "Delay between trigger and SC rising edge",
-                             0x10, 16, 0, base='hex'))
+                             offset=0x10, bitSize=16, bitOffset=0, base='hex'))
         self.add(pr.Variable('MckDelayPeriod', "Delay between trigger and SC rising edge",
-                             mode='RO',  base='string', getFunction=periodConverter, dependencies=[self.MckDelay]))
+                             mode='RO',  base='string',
+                             getFunction=self.periodConverter(), dependencies=[self.MckDelay]))
 
         self.add(pr.Variable('MckPosWidth', "SC high time (baseline sampling)",
-                             0x14, 16, 0, base='hex'))
+                             offset=0x14, bitSize=16, bitOffset=0, base='hex'))
         self.add(pr.Variable('MckNegWidth', "SC low time",
-                             0x18, 16, 0, base='hex'))
+                             offset=0x18, bitSize=16, bitOffset=0, base='hex'))
         self.add(pr.Variable("MckPeriod", "Tslot. Time for each slot",
-                             mode = 'RO', base='string',  getFunction=periodConverter, dependencies=[self.MckPosWidth, self.MckNegWidth]))
+                             mode = 'RO', base='string',
+                             getFunction=self.periodConverter(), dependencies=[self.MckPosWidth, self.MckNegWidth]))
 
         self.add(pr.Variable("MckCount", "Number of MCK pulses per slot (should always be 16)",
-                             0x1C, 8, 0, base='hex'))
+                             offset=0x1C, bitSize=8, bitOffset=0, base='hex'))
 
         
         # ADC CLK params
         self.add(pr.Variable('AdcClkDelay', "Delay between trigger and new rising edge of ADC clk",
-                             0x28, 16, 0, base='hex'))
+                             offset=0x28, bitSize=16, bitOffset=0, base='hex'))
         self.add(pr.Variable('AdcClkDelayPeriod', "Delay between trigger and new rising edge of ADC clk",
-                             mode='RO',  base='string', getFunction=periodConverter, dependencies=[self.AdcClkDelay]))
+                             mode='RO',  base='string',
+                             getFunction=self.periodConverter(), dependencies=[self.AdcClkDelay]))
 
         self.add(pr.Variable('AdcClkPosWidth', "AdcClk high time",
-                             0x14, 16, 0, base='hex'))
+                             offset=0x20, bitSize=16, bitOffset=0, base='hex'))
         self.add(pr.Variable('AdcClkNegWidth', "AdcClk low time",
-                             0x18, 16, 0, base='hex'))
+                             offset=0x24, bitSize=16, bitOffset=0, base='hex'))
         self.add(pr.Variable("AdcClkPeriod", "Adc Clk period",
-                             mode = 'RO',  base='string', getFunction=periodConverter, dependencies=[self.AdcClkPosWidth, self.AdcClkNegWidth]))
+                             mode = 'RO',  base='string',
+                             getFunction=self.periodConverter(), dependencies=[self.AdcClkPosWidth, self.AdcClkNegWidth]))
 
         # ADC window
         self.add(pr.Variable("AdcWindowDelay", "Delay between first mck of slot at start of adc sample capture",
-                             0x2c, 0, 10, base = 'hex'))
+                             offset=0x2c, bitSize=10, bitOffset=0, base = 'hex'))
         self.add(pr.Variable("AdcWindowDelayTime", "AdcWindowDelay in readable units",
-                             mode = 'RO',  base='string', getFunction=periodConverter, dependencies=[self.AdcWindowDelay]))
+                             mode = 'RO',  base='string',
+                             getFunction=self.periodConverter(), dependencies=[self.AdcWindowDelay]))
 
         #There are probably useless
         self.add(pr.Variable("MckDisable", "Disables MCK generation",
-                             0x30, 0, 10, base = 'bool'))
+                             offset=0x30, bitSize=10, bitOffset=0, base = 'bool'))
         self.add(pr.Variable("ClkDisable", "Disable SC, MCK and AdcClk generation",
-                             0x34, 0, 1, base = 'bool'))
+                             offset=0x34, bitSize=1, bitOffset=0, base = 'bool'))
 
         self.add(pr.Command(name = "ResetAsic", description = "Reset the ELine100 ASICS",
-                            offset=0x38, bitOffset=0, bitSize=1, function=pr.Command.toggle))
+                            offset=0x38, bitSize=1, bitOffset=0, function=pr.Command.toggle))
+
         
 
-def makePeriodConverter(link):
-    def conv(dev, var):
-        counts = 0
-        if isinstance(link, list):
-            print "about to call get()"
-            counts = reduce(lambda x,y: x.get(read=False)+y.get(read=False), link)
+    def periodConverter(self):
+        def func(dev, var):
+            counts = reduce(lambda x,y: x.get(read=False)+1+y.get(read=False)+1, var.dependencies)
+            if isinstance(counts, pr.Variable):
+                counts = counts.get(read=False)
+            return '{:.3f} ns'.format(self.clkPeriod * counts * 1e9)
+        return func
 
-        elif isinstance(link, pr.Variable):
-            counts = link.get(read=False)
-
-        return '{:f} ns'.format(dev.clkPeriod * counts * 1e9)
-    return conv
-        
-def periodConverter(dev, var):
-    counts = reduce(lambda x,y: x.get(read=False)+y.get(read=False), var.dependencies)
-    if isinstance(counts, pr.Variable):
-        counts = counts.get(read=False)
-    return '{:f} ns'.format(dev.clkPeriod * counts * 1e9)
+    
