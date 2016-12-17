@@ -13,22 +13,32 @@
 
 create_clock -period  6.400 -name gtRefClk  [get_ports gtRefClk0P]
 
-#create_generated_clock -name stableClk \
-#    [get_pins U_CoulterPgp_1/U_Pgp2bGtp7FixedLatWrapper_1/BUFG_stableClkRef/O]
+create_generated_clock -name stableClk \
+    [get_pins U_CoulterPgp_1/U_Pgp2bGtp7FixedLatWrapper_1/BUFG_stableClkRef/O]
 
-create_clock -name axilClk -period 6.400 \
-    [get_pins U_CoulterPgp_1/NO_SIM.FIXED_LATENCY_PGP.U_Pgp2bGtp7FixedLatWrapper_1/TX_CM_GEN.ClockManager7_TX/MmcmGen.U_Mmcm/CLKOUT0]
+create_clock -period 8.0 -name gtTxOutClk \
+    [get_pins U_CoulterPgp_1/NO_SIM.FIXED_LATENCY_PGP.U_Pgp2bGtp7FixedLatWrapper_1/Pgp2bGtp7Fixedlat_Inst/Gtp7Core_1/gtpe2_i/TXOUTCLK]
 #    [get_pins U_CoulterPgp_1/NO_SIM.VARIABLE_LATENCY_PGP.U_Pgp2bGtp7VarLatWrapper_1/Pgp2bGtp7VarLat_Inst/MuliLane_Inst/GTP7_CORE_GEN[0].Gtp7Core_Inst/gtpe2_i/TXOUTCLK]
+
+
+create_generated_clock -name axilClk \
+    [get_pins U_CoulterPgp_1/NO_SIM.FIXED_LATENCY_PGP.U_Pgp2bGtp7FixedLatWrapper_1/TX_CM_GEN.ClockManager7_TX/MmcmGen.U_Mmcm/CLKOUT0]
 #    [get_pins U_CoulterPgp_1/VARIABLE_LATENCY_PGP.U_Pgp2bGtp7VarLatWrapper_1/U_BUFG_PGP/O]
 #    U_CoulterPgp_1/VARIABLE_LATENCY_PGP.U_Pgp2bGtp7VarLatWrapper_1/U_BUFG_PGP/O
 
+#    [get_pins U_CoulterPgp_1/NO_SIM.VARIABLE_LATENCY_PGP.U_Pgp2bGtp7VarLatWrapper_1/ClockManager7_Inst/MmcmGen.U_Mmcm/CLKOUT0]
+#    [get_pins U_CoulterPgp_1/NO_SIM.VARIABLE_LATENCY_PGP.U_Pgp2bGtp7VarLatWrapper_1/Pgp2bGtp7VarLat_Inst/MuliLane_Inst/GTP7_CORE_GEN[0].Gtp7Core_Inst/gtpe2_i/TXOUTCLK]
+
+
+
 #   
 
-create_clock -period 6.400 -name gtRecClk \
+# Fixed Latency Recovered Clock
+create_clock -period 8.0 -name gtRecClk \
     [get_pins U_CoulterPgp_1/NO_SIM.FIXED_LATENCY_PGP.U_Pgp2bGtp7FixedLatWrapper_1/Pgp2bGtp7Fixedlat_Inst/Gtp7Core_1/gtpe2_i/RXOUTCLK]
 
-#create_generated_clock -name pgpRxClk \
-#    [get_pins U_CoulterPgp_1/NO_SIM.FIXED_LATENCY_PGP.U_Pgp2bGtp7FixedLatWrapper_1/RxClkMmcmGen.ClockManager7_1/MmcmGen.U_Mmcm/CLKOUT0]
+create_generated_clock -name pgpRxClk \
+    [get_pins U_CoulterPgp_1/NO_SIM.FIXED_LATENCY_PGP.U_Pgp2bGtp7FixedLatWrapper_1/RxClkMmcmGen.ClockManager7_1/MmcmGen.U_Mmcm/CLKOUT0]
 
 create_generated_clock -name clk250 [get_pins -hier -filter {NAME =~ U_CtrlClockManager7/*/CLKOUT0}]
 create_generated_clock -name clk200 [get_pins -hier -filter {NAME =~ U_CtrlClockManager7/*/CLKOUT1}]
@@ -42,7 +52,7 @@ create_clock -period 14.285 -name adc1DoClkP  [get_ports {adcDoClkP[1]}]
 
 set_clock_groups -asynchronous \
     -group [get_clocks -include_generated_clocks {gtRefClk}] \
-    -group [get_clocks -include_generated_clocks {axilClk}] \
+    -group [get_clocks -include_generated_clocks {gtTxOutClk}] \    
     -group [get_clocks -include_generated_clocks {adc0DoClkP}] \
     -group [get_clocks -include_generated_clocks {adc1DoClkP}] \
     -group [get_clocks -include_generated_clocks {gtRecClk}] \    

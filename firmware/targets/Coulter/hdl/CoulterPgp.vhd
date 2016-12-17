@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-06-03
--- Last update: 2016-12-12
+-- Last update: 2016-12-16
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -85,7 +85,7 @@ end CoulterPgp;
 architecture mapping of CoulterPgp is
 
    constant REFCLK_FREQ_C : real            := 156.25e6;
-   constant LINE_RATE_C   : real            := 3.125e9;
+   constant LINE_RATE_C   : real            := 2.5e9;
    constant GTP_CFG_C     : Gtp7QPllCfgType := getGtp7QPllCfg(REFCLK_FREQ_C, LINE_RATE_C);
 
    signal stableClk : sl;
@@ -144,6 +144,8 @@ begin
    axilClk      <= pgpTxClk;
    axilRst      <= pgpTxRst;
 
+   debug(2) <= pgpRxOut.phyRxReady;
+   debug(3) <= pgpRxOut.linkDown;
 
    -------------------------------------------------------------------------------------------------
    -- AXI Lite crossbar
@@ -179,33 +181,35 @@ begin
             generic map (
                TPD_G                   => TPD_G,
                SIM_GTRESET_SPEEDUP_G   => SIMULATION_G,
---         SIM_VERSION_G           => SIM_VERSION_G,
+               SIM_VERSION_G           => "2.0",
                SIMULATION_G            => SIMULATION_G,
                VC_INTERLEAVE_G         => 0,
                PAYLOAD_CNT_TOP_G       => 7,
-               NUM_VC_EN_G             => 4,
+               NUM_VC_EN_G             => 2,
                AXIL_ERROR_RESP_G       => AXI_RESP_DECERR_C,
                AXIL_BASE_ADDR_G        => AXIL_XBAR_CFG_C(GTP_AXI_INDEX_C).baseAddr,
                TX_ENABLE_G             => true,
                RX_ENABLE_G             => true,
                TX_CM_EN_G              => true,
                TX_CM_TYPE_G            => "MMCM",
-               TX_CM_CLKIN_PERIOD_G    => 6.4,
+               TX_CM_CLKIN_PERIOD_G    => 8.0,
                TX_CM_DIVCLK_DIVIDE_G   => 1,
-               TX_CM_CLKFBOUT_MULT_F_G => 7.625,
-               TX_CM_CLKOUT_DIVIDE_F_G => 7.625,
+               TX_CM_CLKFBOUT_MULT_F_G => 8.0,                           --7.625,
+               TX_CM_CLKOUT_DIVIDE_F_G => 8.0,                           --7.625,
                RX_CM_EN_G              => false,
                RX_CM_TYPE_G            => "MMCM",
-               RX_CM_CLKIN_PERIOD_G    => 6.4,
+               RX_CM_CLKIN_PERIOD_G    => 8.0,
                RX_CM_DIVCLK_DIVIDE_G   => 1,
-               RX_CM_CLKFBOUT_MULT_F_G => 7.625,
-               RX_CM_CLKOUT_DIVIDE_F_G => 7.625,
---          PMA_RSV_G               => PMA_RSV_G,
+               RX_CM_CLKFBOUT_MULT_F_G => 12.75,
+               RX_CM_CLKOUT_DIVIDE_F_G => 12.75,
+          PMA_RSV_G               => X"00000333",
 --          RX_OS_CFG_G             => RX_OS_CFG_G,
---          RXCDR_CFG_G             => RXCDR_CFG_G,
+          RXCDR_CFG_G             => X"0000107FE206001041010",
+
 --          RXDFEXYDEN_G            => RXDFEXYDEN_G,
                STABLE_CLK_SRC_G        => "gtClk0",
                TX_REFCLK_SRC_G         => "gtClk0",
+               TX_USER_CLK_SRC_G       => "txOutClk",
                RX_REFCLK_SRC_G         => "gtClk0",
                TX_PLL_CFG_G            => GTP_CFG_C,
                RX_PLL_CFG_G            => GTP_CFG_C,
@@ -220,7 +224,7 @@ begin
                pgpTxRstOut     => pgpTxRst,  -- [out]
                pgpRxClkOut     => pgpRxClk,  -- [out] -- Fixed Latency recovered clock
                pgpRxRstOut     => pgpRxRst,  -- [out]
-               stableClkOut    => open,      --stableClkOut,      -- [out]
+               stableClkOut    => open,      -- [out]
                pgpRxIn         => pgpRxIn,   -- [in]
                pgpRxOut        => pgpRxOut,  -- [out]
                pgpTxIn         => pgpTxIn,   -- [in]
@@ -229,18 +233,12 @@ begin
                pgpTxSlaves     => pgpTxSlaves,                           -- [out]
                pgpRxMasters    => pgpRxMasters,                          -- [out]
                pgpRxCtrl       => pgpRxCtrl,                             -- [in]
---         gtgClk           => gtgClk,            -- [in]
                gtClk0P         => gtClkP,    -- [in]
                gtClk0N         => gtClkN,    -- [in]
---          gtClk1P          => gtClk1P,           -- [in]
---          gtClk1N          => gtClk1N,           -- [in]
                gtTxP           => gtTxP,     -- [out]
                gtTxN           => gtTxN,     -- [out]
                gtRxP           => gtRxP,     -- [in]
                gtRxN           => gtRxN,     -- [in]
---          txPreCursor      => txPreCursor,       -- [in]
---          txPostCursor     => txPostCursor,      -- [in]
---          txDiffCtrl       => txDiffCtrl,        -- [in]
                axilClk         => pgpTxClk,  -- [in]
                axilRst         => pgpTxRst,  -- [in]
                axilReadMaster  => locAxilReadMasters(GTP_AXI_INDEX_C),   -- [in]
@@ -267,18 +265,18 @@ begin
             generic map (
                TPD_G                => TPD_G,
                SIMULATION_G         => SIMULATION_G,
-               CLKIN_PERIOD_G       => 6.4,
+               CLKIN_PERIOD_G       => 8.0,
                DIVCLK_DIVIDE_G      => 1,
-               CLKFBOUT_MULT_F_G    => 6.375,
-               CLKOUT0_DIVIDE_F_G   => 6.375,
+               CLKFBOUT_MULT_F_G    => 8.0,
+               CLKOUT0_DIVIDE_F_G   => 8.0,
                QPLL_REFCLK_SEL_G    => "001",
-               QPLL_FBDIV_IN_G      => 4,  --GTP_CFG_C.QPLL_FBDIV_G,
-               QPLL_FBDIV_45_IN_G   => 5,  --GTP_CFG_C.QPLL_FBDIV_45_G,
-               QPLL_REFCLK_DIV_IN_G => 1,  --GTP_CFG_C.QPLL_REFCLK_DIV_G,
-               RXOUT_DIV_G          => 2,  --GTP_CFG_C.OUT_DIV_G,
-               TXOUT_DIV_G          => 2,  --GTP_CFG_C.OUT_DIV_G,
---             RX_CLK25_DIV_G        => 7, --GTP_CFG_C.CLK25_DIV_G,
---             TX_CLK25_DIV_G        => 7, --GTP_CFG_C.CLK25_DIV_G,
+               QPLL_FBDIV_IN_G      => GTP_CFG_C.QPLL_FBDIV_G,           --4
+               QPLL_FBDIV_45_IN_G   => GTP_CFG_C.QPLL_FBDIV_45_G,        --5
+               QPLL_REFCLK_DIV_IN_G => GTP_CFG_C.QPLL_REFCLK_DIV_G,      --1
+               RXOUT_DIV_G          => GTP_CFG_C.OUT_DIV_G,              --2
+               TXOUT_DIV_G          => GTP_CFG_C.OUT_DIV_G,              --2
+               RX_CLK25_DIV_G       => GTP_CFG_C.CLK25_DIV_G,
+               TX_CLK25_DIV_G       => GTP_CFG_C.CLK25_DIV_G,
 --            RX_OS_CFG_G => X"0000010000000",
 --            RXCDR_CFG_G => X"0000107FE206001041010",
 --          RXLPM_INCM_CFG_G     => RXLPM_INCM_CFG_G,
@@ -301,12 +299,12 @@ begin
                pgpTxSlaves     => pgpTxSlaves,                           -- [out]
                pgpRxMasters    => pgpRxMasters,                          -- [out]
                pgpRxCtrl       => pgpRxCtrl,                             -- [in]
-               gtClkP          => gtClkP,  -- [in]
-               gtClkN          => gtClkN,  -- [in]
-               gtTxP           => gtTxP,   -- [out]
-               gtTxN           => gtTxN,   -- [out]
-               gtRxP           => gtRxP,   -- [in]
-               gtRxN           => gtRxN,   -- [in]
+               gtClkP          => gtClkP,                                -- [in]
+               gtClkN          => gtClkN,                                -- [in]
+               gtTxP           => gtTxP,                                 -- [out]
+               gtTxN           => gtTxN,                                 -- [out]
+               gtRxP           => gtRxP,                                 -- [in]
+               gtRxN           => gtRxN,                                 -- [in]
                axilClk         => pgpTxClk,                              -- [in]
                axilRst         => pgpTxRst,                              -- [in]
                axilReadMaster  => locAxilReadMasters(GTP_AXI_INDEX_C),   -- [in]
@@ -318,7 +316,7 @@ begin
          pgpRxRst <= pgpTxRst;
 
       end generate VARIABLE_LATENCY_PGP;
-   end generate NO_SIM;
+    end generate NO_SIM;
 
    SIMULATION_PGP : if (SIMULATION_G) generate
       U_RoguePgpSim_1 : entity work.RoguePgpSim
@@ -355,7 +353,7 @@ begin
          COMMON_TX_CLK_G    => true,
          COMMON_RX_CLK_G    => false,
          WRITE_EN_G         => false,
-         AXI_CLK_FREQ_G     => 156.25E+6,
+         AXI_CLK_FREQ_G     => 125.0E+6,
          STATUS_CNT_WIDTH_G => 32,
          ERROR_CNT_WIDTH_G  => 16,
          AXI_ERROR_RESP_G   => AXI_RESP_DECERR_C)
@@ -422,9 +420,9 @@ begin
          GEN_SYNC_FIFO_G        => true,
          CASCADE_SIZE_G         => 2,
          CASCADE_PAUSE_SEL_G    => 1,
-         FIFO_ADDR_WIDTH_G      => 13,
+         FIFO_ADDR_WIDTH_G      => 9, --13,
          FIFO_FIXED_THRESH_G    => true,
-         FIFO_PAUSE_THRESH_G    => 2**13-6200,
+         FIFO_PAUSE_THRESH_G    => 2**9-1, --2**13-6200,
          INT_WIDTH_SELECT_G     => "WIDE",
 --         INT_DATA_WIDTH_G       => INT_DATA_WIDTH_G,
          LAST_FIFO_ADDR_WIDTH_G => 0,
@@ -492,56 +490,56 @@ begin
 
 
 -- Lane 0, VC2 Loopback
-   U_Vc2SsiLoopbackFifo : entity work.AxiStreamFifo
-      generic map (
-         --EN_FRAME_FILTER_G   => true,
-         CASCADE_SIZE_G      => 1,
-         BRAM_EN_G           => true,
-         USE_BUILT_IN_G      => false,
-         GEN_SYNC_FIFO_G     => false,
-         FIFO_ADDR_WIDTH_G   => 9,
-         FIFO_FIXED_THRESH_G => true,
-         FIFO_PAUSE_THRESH_G => 128,
-         SLAVE_AXI_CONFIG_G  => SSI_PGP2B_CONFIG_C,
-         MASTER_AXI_CONFIG_G => SSI_PGP2B_CONFIG_C)
-      port map (
-         -- Slave Port
-         sAxisClk    => pgpRxClk,
-         sAxisRst    => pgpRxRst,
-         sAxisMaster => pgpRxMasters(2),
-         sAxisSlave  => pgpRxSlaves(2),
-         sAxisCtrl   => pgpRxCtrl(2),
-         -- Master Port
-         mAxisClk    => pgpTxClk,
-         mAxisRst    => pgpTxRst,
-         mAxisMaster => pgpTxMasters(2),
-         mAxisSlave  => pgpTxSlaves(2));
+--    U_Vc2SsiLoopbackFifo : entity work.AxiStreamFifo
+--       generic map (
+--          --EN_FRAME_FILTER_G   => true,
+--          CASCADE_SIZE_G      => 1,
+--          BRAM_EN_G           => true,
+--          USE_BUILT_IN_G      => false,
+--          GEN_SYNC_FIFO_G     => false,
+--          FIFO_ADDR_WIDTH_G   => 9,
+--          FIFO_FIXED_THRESH_G => true,
+--          FIFO_PAUSE_THRESH_G => 128,
+--          SLAVE_AXI_CONFIG_G  => SSI_PGP2B_CONFIG_C,
+--          MASTER_AXI_CONFIG_G => SSI_PGP2B_CONFIG_C)
+--       port map (
+--          -- Slave Port
+--          sAxisClk    => pgpRxClk,
+--          sAxisRst    => pgpRxRst,
+--          sAxisMaster => pgpRxMasters(2),
+--          sAxisSlave  => pgpRxSlaves(2),
+--          sAxisCtrl   => pgpRxCtrl(2),
+--          -- Master Port
+--          mAxisClk    => pgpTxClk,
+--          mAxisRst    => pgpTxRst,
+--          mAxisMaster => pgpTxMasters(2),
+--          mAxisSlave  => pgpTxSlaves(2));
 
--- Lane 0, VC3 TX/RX loopback (reserved for telemetry)
-   U_Vc3SsiLoopbackFifo : entity work.AxiStreamFifo
-      generic map (
-         --EN_FRAME_FILTER_G   => true,
-         CASCADE_SIZE_G      => 1,
-         BRAM_EN_G           => true,
-         USE_BUILT_IN_G      => false,
-         GEN_SYNC_FIFO_G     => false,
-         FIFO_ADDR_WIDTH_G   => 9,
-         FIFO_FIXED_THRESH_G => true,
-         FIFO_PAUSE_THRESH_G => 128,
-         SLAVE_AXI_CONFIG_G  => SSI_PGP2B_CONFIG_C,
-         MASTER_AXI_CONFIG_G => SSI_PGP2B_CONFIG_C)
-      port map (
-         -- Slave Port
-         sAxisClk    => pgpRxClk,
-         sAxisRst    => pgpRxRst,
-         sAxisMaster => pgpRxMasters(3),
-         sAxisSlave  => pgpRxSlaves(3),
-         sAxisCtrl   => pgpRxCtrl(3),
-         -- Master Port
-         mAxisClk    => pgpTxClk,
-         mAxisRst    => pgpTxRst,
-         mAxisMaster => pgpTxMasters(3),
-         mAxisSlave  => pgpTxSlaves(3));
+-- -- Lane 0, VC3 TX/RX loopback (reserved for telemetry)
+--    U_Vc3SsiLoopbackFifo : entity work.AxiStreamFifo
+--       generic map (
+--          --EN_FRAME_FILTER_G   => true,
+--          CASCADE_SIZE_G      => 1,
+--          BRAM_EN_G           => true,
+--          USE_BUILT_IN_G      => false,
+--          GEN_SYNC_FIFO_G     => false,
+--          FIFO_ADDR_WIDTH_G   => 9,
+--          FIFO_FIXED_THRESH_G => true,
+--          FIFO_PAUSE_THRESH_G => 128,
+--          SLAVE_AXI_CONFIG_G  => SSI_PGP2B_CONFIG_C,
+--          MASTER_AXI_CONFIG_G => SSI_PGP2B_CONFIG_C)
+--       port map (
+--          -- Slave Port
+--          sAxisClk    => pgpRxClk,
+--          sAxisRst    => pgpRxRst,
+--          sAxisMaster => pgpRxMasters(3),
+--          sAxisSlave  => pgpRxSlaves(3),
+--          sAxisCtrl   => pgpRxCtrl(3),
+--          -- Master Port
+--          mAxisClk    => pgpTxClk,
+--          mAxisRst    => pgpTxRst,
+--          mAxisMaster => pgpTxMasters(3),
+--          mAxisSlave  => pgpTxSlaves(3)); 
 
 end mapping;
 

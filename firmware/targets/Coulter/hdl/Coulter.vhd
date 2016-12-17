@@ -5,7 +5,7 @@
 -- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 09/30/2015
--- Last update: 2016-12-12
+-- Last update: 2016-12-16
 -- Platform   : Vivado 2014.4
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -43,7 +43,7 @@ entity Coulter is
    generic (
       TPD_G                  : time    := 1 ns;
       SIMULATION_G           : boolean := false;
-      FIXED_LATENCY_G        : boolean := false;
+      FIXED_LATENCY_G        : boolean := true;
       ADC_CONFIG_NO_PULLUP_G : boolean := false);
    port (
       -- Debugging IOs
@@ -201,25 +201,25 @@ begin
    U_Heartbeat_1 : entity work.Heartbeat
       generic map (
          TPD_G        => TPD_G,
-         PERIOD_IN_G  => 6.4e-9,
-         PERIOD_OUT_G => 6.4e-3)
+         PERIOD_IN_G  => 8.0e-9,
+         PERIOD_OUT_G => 8.0e-3)
       port map (
          clk => axilClk,                -- [in]
          rst => axilRst,                -- [in]
          o   => led(0));                -- [out]
 
---    U_Heartbeat_2 : entity work.Heartbeat
---       generic map (
---          TPD_G        => TPD_G,
---          PERIOD_IN_G  => 6.4e-9,
---          PERIOD_OUT_G => 6.4e-3)
---       port map (
---          clk => distClk,                -- [in]
---          rst => distRst,                -- [in]
---          o   => tgOut);                 -- [out]
+   U_Heartbeat_2 : entity work.Heartbeat
+      generic map (
+         TPD_G        => TPD_G,
+         PERIOD_IN_G  => 8.0e-9,
+         PERIOD_OUT_G => 8.0e-6)
+      port map (
+         clk => distClk,                -- [in]
+         rst => '0',                -- [in]
+         o   => tgOut);                 -- [out]
 
-   mps   <= rxLinkReady;
-   tgOut <= txLinkReady;
+   mps   <= '0';--debug(2);
+--   tgOut <= debug(3);
 
 
    -------------------------------------------------------------------------------------------------
@@ -272,9 +272,9 @@ begin
          FB_BUFG_G          => true,
          NUM_CLOCKS_G       => 3,
          BANDWIDTH_G        => "OPTIMIZED",
-         CLKIN_PERIOD_G     => 6.4,
-         DIVCLK_DIVIDE_G    => 5,
-         CLKFBOUT_MULT_F_G  => 32.0,
+         CLKIN_PERIOD_G     => 8.0,
+         DIVCLK_DIVIDE_G    => 1,
+         CLKFBOUT_MULT_F_G  => 8.0,
          CLKOUT0_DIVIDE_F_G => 4.0,
          CLKOUT1_DIVIDE_G   => 5,
          CLKOUT2_DIVIDE_G   => 20)
