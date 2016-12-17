@@ -33,6 +33,7 @@ class CoulterRoot(pr.Root):
         self.add(Coulter(name="Coulter0", memBase=srp0, offset=0))
 
         def trigFunc(dev, var, val):
+            print "Sending trigger"
             self.trig.sendOpCode(0xAA)
 
         self.add(pr.Command(name="Trigger", function=trigFunc))
@@ -80,16 +81,19 @@ class Coulter(pr.Device):
             kwargs['description'] = "Coulter FPGA"
             
         super(self.__class__, self).__init__(**kwargs)
-
+        
+        self.add(surf.Xadc(offset=0x00080000))
+        self.Xadc.simpleView()
+        
         self.add(surf.AxiVersion.create(offset=0x00000000))
-        self.add(ELine100Config(name='ASIC0', offset=0x00010000, enabled=True))
-        self.add(ELine100Config(name='ASIC1', offset=0x00020000, enabled=True))
+        self.add(ELine100Config(name='ASIC0', offset=0x00010000, enabled=False))
+        self.add(ELine100Config(name='ASIC1', offset=0x00020000, enabled=False))
         self.add(surf.Ad9249Config(chips=1, name='AdcConfig', offset=0x00030000))
         self.add(surf.Ad9249ReadoutGroup(name = 'AdcReadoutBank0', offset=0x00040000, channels=6))
         self.add(surf.Ad9249ReadoutGroup(name = 'AdcReadoutBank1', offset=0x00050000, channels=6))                
-        self.add(AcquisitionControl(name='AcquisitionControl', offset=0x00060000))        
+        self.add(AcquisitionControl(name='AcquisitionControl', offset=0x00060000, clkFreq=125.0e6 ))        
         self.add(CoulterPgp(name='CoulterPgp', offset=0x00070000))
-        self.add(surf.Xadc(offset=0x00080000))
+
 
 
 class CoulterPgp(pr.Device):
@@ -226,7 +230,7 @@ class AcquisitionControl(pr.Device):
 
         #There are probably useless
         self.add(pr.Variable("MckDisable", "Disables MCK generation",
-                             offset=0x30, bitSize=10, bitOffset=0, base = 'bool'))
+                             offset=0x30, bitSize=1, bitOffset=0, base = 'bool'))
         self.add(pr.Variable("ClkDisable", "Disable SC, MCK and AdcClk generation",
                              offset=0x34, bitSize=1, bitOffset=0, base = 'bool'))
 

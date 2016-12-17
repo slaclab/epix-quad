@@ -40,36 +40,37 @@ import PyQt4.QtCore
 # File writer
 dataWriter = pyrogue.utilities.fileio.StreamWriter('dataWriter')
 
-simVc0 = pyrogue.simulation.StreamSim('localhost', 0, 1, ssi=True)
-simVcData = pyrogue.simulation.StreamSim('localhost', 1, 1, ssi=True)
-simTrigger = pyrogue.simulation.StreamSim('localhost', 4, 1, ssi=True)
+#vcReg = pyrogue.simulation.StreamSim('localhost', 0, 1, ssi=True)
+#vcData = pyrogue.simulation.StreamSim('localhost', 1, 1, ssi=True)
+#vcTrigger = pyrogue.simulation.StreamSim('localhost', 4, 1, ssi=True)
 
 # Create the PGP interfaces
-#pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,0) # Registers
-#pgpVc1 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,1) # Data
+vcReg = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,0) # Registers
+vcData = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,1) # Data
+vcTrigger = vcReg
 
 #print("")
-#print("PGP Card Version: %x" % (pgpVc0.getInfo().version))
+#print("PGP Card Version: %x" % (vcReg.getInfo().version))
 
 # Create and Connect SRPv0 to VC0 
 srp = rogue.protocols.srp.SrpV0()
 #srp = rogue.interfaces.memory.Slave()
-pyrogue.streamConnectBiDir(simVc0,srp)
+pyrogue.streamConnectBiDir(vcReg,srp)
 dbg = rogue.interfaces.stream.Slave()
 dbg.setDebug(10, "SRP")
 pyrogue.streamTap(srp, dbg)
 
 # Add data stream to file as channel 0
-pyrogue.streamConnect(simVcData, dataWriter.getChannel(0x0))
+pyrogue.streamConnect(vcData, dataWriter.getChannel(0x0))
 
 dbg2 = rogue.interfaces.stream.Slave()
 dbg2.setDebug(12, "DATA")
-pyrogue.streamTap(simVcData, dbg2)
+pyrogue.streamTap(vcData, dbg2)
 
 
 # Instantiate top and pass stream and srp configurations
-coulterDaq = coulter.CoulterRoot(srp0=srp, trig=simTrigger, dataWriter=dataWriter)
-coulterDaq.setTimeout(100000000)
+coulterDaq = coulter.CoulterRoot(srp0=srp, trig=vcTrigger, dataWriter=dataWriter)
+#coulterDaq.setTimeout(100000000)
 #coulterDaq = pyrogue.Root(name="CoulterDaq", description="Coulter Data Acquisition")
 #coulterDaq.add(coulter.CoulterRunControl(name="RunControl"))
 #coulterDaq.add(coulter.Coulter(name="Coulter0"))
