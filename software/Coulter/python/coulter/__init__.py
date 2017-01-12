@@ -1,3 +1,3 @@
 #!/usr/bin/env python
 
-from _coulter import *
+from coulter._coulter import *

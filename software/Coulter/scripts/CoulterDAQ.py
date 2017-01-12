@@ -20,7 +20,7 @@
 #-----------------------------------------------------------------------------
 #import rogue.hardware.pgp
 import rogue.interfaces.memory
-import pyrogue.simulation
+#import pyrogue.simulation
 import pyrogue.utilities.fileio
 import pyrogue.gui
 import pyrogue.mesh
@@ -45,31 +45,32 @@ dataWriter = pyrogue.utilities.fileio.StreamWriter('dataWriter')
 #vcTrigger = pyrogue.simulation.StreamSim('localhost', 4, 1, ssi=True)
 
 # Create the PGP interfaces
-vcReg = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,0) # Registers
-vcData = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,1) # Data
-vcTrigger = vcReg
+vcReg = [rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',i,0) for i in range(2)] # Registers
+vcData = [rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',i,1) for i in range(2)] # Data
+vcTrigger = vcReg[0]
 
 #print("")
 #print("PGP Card Version: %x" % (vcReg.getInfo().version))
 
 # Create and Connect SRPv0 to VC0 
-srp = rogue.protocols.srp.SrpV0()
-#srp = rogue.interfaces.memory.Slave()
-pyrogue.streamConnectBiDir(vcReg,srp)
-dbg = rogue.interfaces.stream.Slave()
-dbg.setDebug(10, "SRP")
-pyrogue.streamTap(srp, dbg)
+srp = [rogue.protocols.srp.SrpV0() for i in range(2)]
 
-# Add data stream to file as channel 0
-pyrogue.streamConnect(vcData, dataWriter.getChannel(0x0))
+for i in range(2):
+    pyrogue.streamConnectBiDir(vcReg[i] ,srp[i])
+    pyrogue.streamConnect(vcData[i], dataWriter.getChannel(i))
+    
+dbgSrp = rogue.interfaces.stream.Slave()
+dbgSrp.setDebug(10, "SRP")
+#pyrogue.streamTap(srp, dbg)
 
-dbg2 = rogue.interfaces.stream.Slave()
-dbg2.setDebug(12, "DATA")
-pyrogue.streamTap(vcData, dbg2)
+for i in range(2):
+    dbgData = rogue.interfaces.stream.Slave()
+    dbgData.setDebug(30, "DATA[{}]".format(i))
+    pyrogue.streamTap(vcData[i], dbgData)
 
 
 # Instantiate top and pass stream and srp configurations
-coulterDaq = coulter.CoulterRoot(srp0=srp, trig=vcTrigger, dataWriter=dataWriter)
+coulterDaq = coulter.CoulterRoot(srp=srp, trig=vcTrigger, dataWriter=dataWriter)
 #coulterDaq.setTimeout(100000000)
 #coulterDaq = pyrogue.Root(name="CoulterDaq", description="Coulter Data Acquisition")
 #coulterDaq.add(coulter.CoulterRunControl(name="RunControl"))
