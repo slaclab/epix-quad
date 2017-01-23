@@ -78,7 +78,7 @@ int main (int argc, char **argv) {
 #if USE_MULTLINK
       baseAddress = 0x00000000;
       addrSize = 4;
-      dest = new MultDestPgp("/dev/pgpcard0");
+      dest = new MultDestPgp("/dev/PgpCardG3_0");
       dest->addDataSource(0x00000000); // VC0 - acq data
       //dest->addDataSource(0x02000000); // VC2 - oscilloscope
       pgpLink = new MultLink();
