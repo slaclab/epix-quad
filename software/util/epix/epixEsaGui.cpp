@@ -20,6 +20,7 @@
 // 05/14/2013: created
 //----------------------------------------------------------------------------
 #include <PgpCardG3Link.h>
+#include <MultDestPgpG3.h>
 #include <MultLink.h>
 #include <EpixEsaControl.h>
 #include <ControlServer.h>
@@ -53,41 +54,68 @@ void sigTerm (int) {
 int main (int argc, char **argv) {
    ControlServer cntrlServer;
    string        defFile;
-   int           port;
+   string        pgpFile;
+   int           c, port;
+   int           pflag = 0;
+   int           fflag = 0;
    stringstream  cmd;
-
-   if ( argc > 1 ) defFile = argv[1];
-   else defFile = "xml/esa_1.xml";
+   
+   defFile = "xml/esa_1.xml";
+   pgpFile = "/dev/PgpCardG3_0";
+   
+   while ((c = getopt (argc, argv, "f:p:")) != -1) {
+      switch (c)
+      {
+         case 'f':
+            fflag = 1;
+            defFile = optarg;
+            break;
+         
+         case 'p':
+            pflag = 1;
+            pgpFile = optarg;
+            break;
+      }
+   }
+   
+   if (pflag == 0)
+      cout << "Using " << pgpFile << " as default PGP device file. Use -p option to change." << endl;
+   if (fflag == 0)
+      cout << "Using " << defFile << " as default configuration xml file. Use -f option to change." << endl;
 
    // Catch signals
    signal (SIGINT,&sigTerm);
 
    try {
-      PgpCardG3Link   pgpLink;
-      EpixEsaControl  epix(&pgpLink,defFile,EPIX100A, 0x01000000, 1);
-      //UdpLink       udpLink; 
-      //EpixControl   epix(&udpLink,defFile);
+      
+      
+      MultLink     *pgpLink;
+      MultDestPgpG3     *dest;  
+      
       int           pid;
-
-      // Setup top level device
-      epix.setDebug(true);
-
+      uint          baseAddress;
+      uint          addrSize;
+      
       // Create and setup PGP link
-      pgpLink.setMaxRxTx(550000);
-      pgpLink.setDebug(true);
-      pgpLink.open("/dev/PgpCardG3_0");
-      pgpLink.enableSharedMemory("epix",1);
-      pgpLink.setDataMask( (LANE0|VC0) | (LANE0|VC2) );
+      baseAddress = 0x00000000;
+      addrSize = 4;
+      dest = new MultDestPgpG3(pgpFile);
+      dest->addDataSource(0x00000000); // VC0 - acq data
+      dest->addDataSource(0x02000000); // VC2 - oscilloscope
+      dest->addDataSource(0x03000000); // VC3 - monitoring
+      pgpLink = new MultLink();
+      pgpLink->setDebug(true);
+      pgpLink->setMaxRxTx(0x800000);
+      pgpLink->open(1,dest);
+      pgpLink->enableSharedMemory("epix",1);   
+      pgpLink->setXmlStore(false);
+      
       usleep(100);
 
       cout << "Created PGP Link" << endl;
-
-      // Create and setup PGP link
-      //udpLink.setMaxRxTx(550000);
-      //udpLink.setDebug(true);
-      //udpLink.open(8090,1,"127.0.0.1");
-      //udpLink.enableSharedMemory("epix",1);
-      //usleep(100);
+      
+      EpixEsaControl  epix(pgpLink,defFile,EPIX100A, baseAddress, addrSize, dest);
+      epix.setDebug(true);
 
       // Setup control server
       //cntrlServer.setDebug(true);
@@ -97,9 +125,6 @@ int main (int argc, char **argv) {
       cout << "Control id = 1" << endl;
 
       cout << "Created control server" << endl;
-
-      //Write out only the event data, no XML
-      pgpLink.setXmlStore(false);
 
       // Fork and start gui
       stop = false;

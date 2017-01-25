@@ -123,40 +123,48 @@ int main (int argc, char **argv) {
       
       epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("PrepareMultiConfig", 0);
       
+      //// star test pattern
+      //for (int i = 0; i < 6; i++) {
+      //   epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("RowCounter", 3  + i*3);
+      //   epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("ColCounter", 3  + i*3);
+      //   epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("WritePixelData", 1);
+      //   
+      //   epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("RowCounter", 3  + i*3);
+      //   epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("ColCounter", 45 - i*3);
+      //   epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("WritePixelData", 1);
+      //   
+      //   epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("RowCounter", 45 - i*3);
+      //   epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("ColCounter", 3  + i*3);
+      //   epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("WritePixelData", 1);
+      //   
+      //   epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("RowCounter", 45 - i*3);
+      //   epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("ColCounter", 45 - i*3);
+      //   epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("WritePixelData", 1);
+      //   
+      //   epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("RowCounter", 45 - i*3);
+      //   epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("ColCounter", 23);
+      //   epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("WritePixelData", 1);
+      //   
+      //   epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("RowCounter", 3  + i*3);
+      //   epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("ColCounter", 23);
+      //   epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("WritePixelData", 1);
+      //   
+      //   epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("RowCounter", 23);
+      //   epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("ColCounter", 45 - i*3);
+      //   epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("WritePixelData", 1);
+      //   
+      //   epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("RowCounter", 23);
+      //   epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("ColCounter", 3  + i*3);
+      //   epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("WritePixelData", 1);
+      //}
       
-      for (int i = 0; i < 6; i++) {
-         epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("RowCounter", 3  + i*3);
-         epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("ColCounter", 3  + i*3);
+      // line test pattern
+      for (int i = 0; i < 32; i++) {
+         epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("RowCounter", 0  + i);
+         epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("ColCounter", 16);
          epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("WritePixelData", 1);
-         
-         epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("RowCounter", 3  + i*3);
-         epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("ColCounter", 45 - i*3);
-         epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("WritePixelData", 1);
-         
-         epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("RowCounter", 45 - i*3);
-         epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("ColCounter", 3  + i*3);
-         epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("WritePixelData", 1);
-         
-         epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("RowCounter", 45 - i*3);
-         epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("ColCounter", 45 - i*3);
-         epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("WritePixelData", 1);
-         
-         epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("RowCounter", 45 - i*3);
-         epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("ColCounter", 23);
-         epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("WritePixelData", 1);
-         
-         epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("RowCounter", 3  + i*3);
-         epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("ColCounter", 23);
-         epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("WritePixelData", 1);
-         
-         epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("RowCounter", 23);
-         epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("ColCounter", 45 - i*3);
-         epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("WritePixelData", 1);
-         
-         epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("RowCounter", 23);
-         epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("ColCounter", 3  + i*3);
-         epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("WritePixelData", 1);
-      }      
+      }
+      
       
       epix.device("digFpga",0)->device("epix10kpAsic",ASIC_NO)->writeSingle("CmdPrepForRead", 0);
       

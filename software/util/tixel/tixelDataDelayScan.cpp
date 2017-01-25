@@ -57,7 +57,7 @@ int main (int argc, char **argv) {
       
       MultLink     *pgpLink;
       MultDest     *dest;  
-      string        defFile = "xml/tixel_1.xml";
+      string        defFile = "xml/tixel_0.xml";
       uint          baseAddress;
       uint          addrSize;
       unsigned int  frames;
@@ -70,7 +70,7 @@ int main (int argc, char **argv) {
       
       baseAddress = 0x00000000;
       addrSize = 4;
-      dest = new MultDestPgp("/dev/pgpcard0");
+      dest = new MultDestPgp("/dev/PgpCardG3_0");
       dest->addDataSource(0x00000000); // VC0 - acq data
       dest->addDataSource(0x02000000); // VC2 - oscilloscope
       pgpLink = new MultLink();
@@ -90,25 +90,29 @@ int main (int argc, char **argv) {
       
       
       epix.device("digFpga",0)->writeSingle("AutoRunPeriod", 10000000);
+      //epix.device("digFpga",0)->writeSingle("AutoRunPeriod", 0xcb735);
       epix.device("digFpga",0)->writeSingle("AutoRunEnable", 1);
+      epix.device("digFpga",0)->writeSingle("AutoDaqEnable", 1);
+      epix.device("digFpga",0)->writeSingle("RunTrigEnable", 1);
+      epix.device("digFpga",0)->writeSingle("DaqTrigEnable", 1);
       
       
       for (delay=0; delay<=31; delay++) {
          
-         epix.device("digFpga",0)->device("DigFpgaTixel",0)->writeSingle("tixelAsic1DoutDelay", delay);
-         epix.device("digFpga",0)->device("DigFpgaTixel",0)->writeSingle("tixelAsic1DoutResync", 1);
+         epix.device("digFpga",0)->device("DigFpgaTixel",0)->writeSingle("tixelAsic0DoutDelay", delay);
+         epix.device("digFpga",0)->device("DigFpgaTixel",0)->writeSingle("tixelAsic0DoutResync", 1);
          epix.device("digFpga",0)->device("DigFpgaTixel",0)->writeSingle("tixelErrorRst", 1);
-         epix.device("digFpga",0)->device("DigFpgaTixel",0)->writeSingle("tixelAsic1DoutResync", 0);
+         epix.device("digFpga",0)->device("DigFpgaTixel",0)->writeSingle("tixelAsic0DoutResync", 0);
          epix.device("digFpga",0)->device("DigFpgaTixel",0)->writeSingle("tixelErrorRst", 0);
          
          frames = 0;
          
          while (frames<100) {
             
-            goodFrames = epix.device("digFpga",0)->device("DigFpgaTixel",0)->readSingle("tixelAsic1FramesGood");
-            badFrames = epix.device("digFpga",0)->device("DigFpgaTixel",0)->readSingle("tixelAsic1FrameErr");
-            timeoutFrames = epix.device("digFpga",0)->device("DigFpgaTixel",0)->readSingle("tixelAsic1TimeoutErr");
-            codeErrors[delay] = epix.device("digFpga",0)->device("DigFpgaTixel",0)->readSingle("tixelAsic1CodeErr");
+            goodFrames = epix.device("digFpga",0)->device("DigFpgaTixel",0)->readSingle("tixelAsic0FramesGood");
+            badFrames = epix.device("digFpga",0)->device("DigFpgaTixel",0)->readSingle("tixelAsic0FrameErr");
+            timeoutFrames = epix.device("digFpga",0)->device("DigFpgaTixel",0)->readSingle("tixelAsic0TimeoutErr");
+            codeErrors[delay] = epix.device("digFpga",0)->device("DigFpgaTixel",0)->readSingle("tixelAsic0CodeErr");
             
             frames = goodFrames + badFrames + timeoutFrames;
             
