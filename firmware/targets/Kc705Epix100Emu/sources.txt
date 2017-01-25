@@ -1,0 +1,4 @@
+vhdl work Version.vhd
+vhdl work hdl/Kc705Epix100Emu.vhd
+vhdl work hdl/PgpWrapper.vhd
+vhdl work hdl/EmuDataGen.vhd
