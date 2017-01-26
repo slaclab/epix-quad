@@ -31,8 +31,7 @@ use work.SsiPkg.all;
 
 entity EmuDataGen is
    generic (
-      TPD_G  : time    := 1 ns;
-      LANE_G : natural := 0);
+      TPD_G : time := 1 ns);
    port (
       -- Clock and Reset
       clk      : in  sl;
@@ -50,17 +49,25 @@ architecture rtl of EmuDataGen is
    constant MAX_CNT_C    : natural             := 272650;  -- (1090604/4)-1
    constant AXI_CONFIG_G : AxiStreamConfigType := ssiAxiStreamConfig(4, TKEEP_COMP_C);
 
+   -- Hard coded words in the data stream for now
+   constant LANE_C     : slv(1 downto 0)  := "00";
+   constant VC_C       : slv(1 downto 0)  := "00";
+   constant QUAD_C     : slv(1 downto 0)  := "00";
+   constant ZEROWORD_C : slv(31 downto 0) := x"00000000";
+
    type StateType is (
       IDLE_S,
       MOVE_S);
 
    type RegType is record
+      opCnt    : slv(31 downto 0);
       opCode   : slv(7 downto 0);
       cnt      : natural range 0 to (MAX_CNT_C+1);
       txMaster : AxiStreamMasterType;
       state    : StateType;
    end record RegType;
    constant REG_INIT_C : RegType := (
+      opCnt    => (others => '0'),
       opCode   => x"00",
       cnt      => 0,
       txMaster => AXI_STREAM_MASTER_INIT_C,
@@ -102,27 +109,33 @@ begin
             -- Check if ready to move data
             if (v.txMaster.tValid = '0') then
                -- Write the data 
-               v.txMaster.tValid := '1';
+               v.txMaster.tValid             := '1';
                -- Reset the data bus
-               v.txMaster.tData  := (others => '0');
+               v.txMaster.tData(31 downto 0) := ZEROWORD_C;
                -- Increment the counter
-               v.cnt             := r.cnt + 1;
+               v.cnt                         := r.cnt + 1;
                -- Check for first word
                if (r.cnt = 0) then
                   -- Set the SOF bit
                   ssiSetUserSof(AXI_CONFIG_G, v.txMaster, '1');
                   -- Insert the lane pointer
-                  v.txMaster.tData(7 downto 5) := toSlv(LANE_G, 3);
+                  v.txMaster.tData(31 downto 0) := x"000000" & "00" & LANE_C & "00" & VC_C;
                -- Check for second word
                elsif (r.cnt = 1) then
-                  -- Insert the op-code
-                  v.txMaster.tData(23 downto 16) := r.opCode;
+                  -- Insert the op-code & counter
+                  v.txMaster.tData(31 downto 0) := x"0" & "00" & QUAD_C & r.opCode & r.opCnt(15 downto 0);
+               -- Check for thridd word
+               elsif (r.cnt = 2) then
+                  -- Insert the counter
+                  v.txMaster.tData(31 downto 0) := r.opCnt(31 downto 0);
                -- Check for last word
                elsif (r.cnt = MAX_CNT_C) then
                   -- Reset the counter
                   v.cnt            := 0;
                   -- Set the EOF bit
                   v.txMaster.tLast := '1';
+                  -- Increment the counter
+                  v.opCnt          := r.opCnt + 1;
                   -- Next state
                   v.state          := IDLE_S;
                end if;

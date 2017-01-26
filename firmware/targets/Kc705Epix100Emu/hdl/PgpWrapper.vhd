@@ -57,22 +57,27 @@ end PgpWrapper;
 
 architecture mapping of PgpWrapper is
 
+   constant SIZE_C : positive := 1;
+   constant ADDR_C : Slv32Array(SIZE_C-1 downto 0) := (
+      0 => x"00000000");                -- real version number from the epix
+   constant DATA_C : Slv32Array(SIZE_C-1 downto 0) := (
+      0 => x"EA020004");                -- real version number from the epix
+
    signal pgpTxMasters : AxiStreamMasterArray(3 downto 0) := (others => AXI_STREAM_MASTER_INIT_C);
    signal pgpTxSlaves  : AxiStreamSlaveArray(3 downto 0)  := (others => AXI_STREAM_SLAVE_FORCE_C);
 
    signal pgpRxMasters : AxiStreamMasterArray(3 downto 0) := (others => AXI_STREAM_MASTER_INIT_C);
    signal pgpRxCtrl    : AxiStreamCtrlArray(3 downto 0)   := (others => AXI_STREAM_CTRL_UNUSED_C);
 
-   signal axilReadMaster  : AxiLiteReadMasterType;
-   signal axilReadSlave   : AxiLiteReadSlaveType;
-   signal axilWriteMaster : AxiLiteWriteMasterType;
-   signal axilWriteSlave  : AxiLiteWriteSlaveType;
+   signal sAxilReadMasters  : AxiLiteReadMasterArray(1 downto 0);
+   signal sAxilReadSlaves   : AxiLiteReadSlaveArray(1 downto 0);
+   signal sAxilWriteMasters : AxiLiteWriteMasterArray(1 downto 0);
+   signal sAxilWriteSlaves  : AxiLiteWriteSlaveArray(1 downto 0);
 
-   signal axilReadMasters  : AxiLiteReadMasterArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0);
-   signal axilReadSlaves   : AxiLiteReadSlaveArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0);
-   signal axilWriteMasters : AxiLiteWriteMasterArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0);
-   signal axilWriteSlaves  : AxiLiteWriteSlaveArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0);
-
+   signal mAxilReadMasters  : AxiLiteReadMasterArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0);
+   signal mAxilReadSlaves   : AxiLiteReadSlaveArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0);
+   signal mAxilWriteMasters : AxiLiteWriteMasterArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0);
+   signal mAxilWriteSlaves  : AxiLiteWriteSlaveArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0);
 
 begin
 
@@ -195,28 +200,28 @@ begin
          -- AXI Lite Bus (axiLiteClk domain)
          axiLiteClk          => clk,
          axiLiteRst          => rst,
-         mAxiLiteWriteMaster => axilWriteMaster,
-         mAxiLiteWriteSlave  => axilWriteSlave,
-         mAxiLiteReadMaster  => axilReadMaster,
-         mAxiLiteReadSlave   => axilReadSlave);
+         mAxiLiteWriteMaster => sAxilWriteMasters(0),
+         mAxiLiteWriteSlave  => sAxilWriteSlaves(0),
+         mAxiLiteReadMaster  => sAxilReadMasters(0),
+         mAxiLiteReadSlave   => sAxilReadSlaves(0));
 
    U_XBAR : entity work.AxiLiteCrossbar
       generic map (
          TPD_G              => TPD_G,
-         NUM_SLAVE_SLOTS_G  => 1,
+         NUM_SLAVE_SLOTS_G  => 2,
          NUM_MASTER_SLOTS_G => NUM_AXI_MASTER_SLOTS_C,
          MASTERS_CONFIG_G   => AXI_CROSSBAR_MASTERS_CONFIG_C)
       port map (
-         sAxiWriteMasters(0) => axilWriteMaster,
-         sAxiWriteSlaves(0)  => axilWriteSlave,
-         sAxiReadMasters(0)  => axilReadMaster,
-         sAxiReadSlaves(0)   => axilReadSlave,
-         mAxiWriteMasters    => axilWriteMasters,
-         mAxiWriteSlaves     => axilWriteSlaves,
-         mAxiReadMasters     => axilReadMasters,
-         mAxiReadSlaves      => axilReadSlaves,
-         axiClk              => clk,
-         axiClkRst           => rst);
+         sAxiWriteMasters => sAxilWriteMasters,
+         sAxiWriteSlaves  => sAxilWriteSlaves,
+         sAxiReadMasters  => sAxilReadMasters,
+         sAxiReadSlaves   => sAxilReadSlaves,
+         mAxiWriteMasters => mAxilWriteMasters,
+         mAxiWriteSlaves  => mAxilWriteSlaves,
+         mAxiReadMasters  => mAxilReadMasters,
+         mAxiReadSlaves   => mAxilReadSlaves,
+         axiClk           => clk,
+         axiClkRst        => rst);
 
    GEN_VEC :
    for i in (NUM_AXI_MASTER_SLOTS_C-1) downto 0 generate
@@ -230,10 +235,29 @@ begin
          port map (
             axiClk         => clk,
             axiRst         => rst,
-            axiReadMaster  => axilReadMasters(i),
-            axiReadSlave   => axilReadSlaves(i),
-            axiWriteMaster => axilWriteMasters(i),
-            axiWriteSlave  => axilWriteSlaves(i));
+            axiReadMaster  => mAxilReadMasters(i),
+            axiReadSlave   => mAxilReadSlaves(i),
+            axiWriteMaster => mAxilWriteMasters(i),
+            axiWriteSlave  => mAxilWriteSlaves(i));
    end generate GEN_VEC;
+
+   U_StartupInit : entity work.SlvArraytoAxiLite
+      generic map (
+         TPD_G        => TPD_G,
+         COMMON_CLK_G => true,
+         SIZE_G       => SIZE_C,
+         ADDR_G       => ADDR_C)
+      port map (
+         -- SLV Array Interface
+         clk             => clk,
+         rst             => rst,
+         input           => DATA_C,
+         -- AXI-Lite Master Interface
+         axilClk         => clk,
+         axilRst         => rst,
+         axilWriteMaster => sAxilWriteMasters(1),
+         axilWriteSlave  => sAxilWriteSlaves(1),
+         axilReadMaster  => sAxilReadMasters(1),
+         axilReadSlave   => sAxilReadSlaves(1));
 
 end mapping;

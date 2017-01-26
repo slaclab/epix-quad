@@ -167,8 +167,7 @@ begin
       ------------------------
       U_EmuDataGen : entity work.EmuDataGen
          generic map (
-            TPD_G  => TPD_G,
-            LANE_G => i)
+            TPD_G  => TPD_G)
          port map (
             -- Clock and Reset
             clk      => clk,
