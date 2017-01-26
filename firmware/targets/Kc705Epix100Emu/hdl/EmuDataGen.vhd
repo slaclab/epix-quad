@@ -102,7 +102,7 @@ begin
          ----------------------------------------------------------------------
          when IDLE_S =>
             -- Check for trigger
-            if (opCodeEn = '1') then
+            if (opCodeEn = '1') and (epixConfig.runTriggerEnable = '1') then
                -- Save the OP-code value
                v.opCode := opCode;
                -- Next state
@@ -152,12 +152,11 @@ begin
       if (epixConfig.acqCountReset = '1') then
          -- Reset the coutner
          v.epixStatus.acqCount := (others => '0');
-         v.epixStatus.seqCount := (others => '0');
-
       end if;
 
       -- Always ready
       v.epixStatus.iDelayCtrlRdy := '1';
+      v.epixStatus.startupAck    := '1';
 
       -- Reset
       if (rst = '1') then

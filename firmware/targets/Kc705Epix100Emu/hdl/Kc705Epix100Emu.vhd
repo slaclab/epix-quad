@@ -46,28 +46,28 @@ entity Kc705Epix100Emu is
       extRst          : in    sl;
       led             : out   slv(7 downto 0);
       -- 1-wire board ID interfaces
-      serialIdIo      : inout slv(7 downto 0);
+      serialIdIo      : inout slv(9 downto 0);
       -- GT Pins
       gtClkP          : in    sl;
       gtClkN          : in    sl;
-      gtRxP           : in    slv(3 downto 0);
-      gtRxN           : in    slv(3 downto 0);
-      gtTxP           : out   slv(3 downto 0);
-      gtTxN           : out   slv(3 downto 0));
+      gtRxP           : in    slv(4 downto 0);
+      gtRxN           : in    slv(4 downto 0);
+      gtTxP           : out   slv(4 downto 0);
+      gtTxN           : out   slv(4 downto 0));
 end Kc705Epix100Emu;
 
 architecture top_level of Kc705Epix100Emu is
 
-   signal txMasters : AxiStreamMasterArray(3 downto 0);
-   signal txSlaves  : AxiStreamSlaveArray(3 downto 0);
+   signal txMasters : AxiStreamMasterArray(4 downto 0);
+   signal txSlaves  : AxiStreamSlaveArray(4 downto 0);
 
-   signal pgpTxIn  : Pgp2bTxInArray(3 downto 0) := (others => PGP2B_TX_IN_INIT_C);
-   signal pgpRxIn  : Pgp2bRxInArray(3 downto 0) := (others => PGP2B_RX_IN_INIT_C);
-   signal pgpTxOut : Pgp2bTxOutArray(3 downto 0);
-   signal pgpRxOut : Pgp2bRxOutArray(3 downto 0);
+   signal pgpTxIn  : Pgp2bTxInArray(4 downto 0) := (others => PGP2B_TX_IN_INIT_C);
+   signal pgpRxIn  : Pgp2bRxInArray(4 downto 0) := (others => PGP2B_RX_IN_INIT_C);
+   signal pgpTxOut : Pgp2bTxOutArray(4 downto 0);
+   signal pgpRxOut : Pgp2bRxOutArray(4 downto 0);
 
-   signal epixStatus : EpixStatusArray(3 downto 0);
-   signal epixConfig : EpixConfigArray(3 downto 0);
+   signal epixStatus : EpixStatusArray(4 downto 0);
+   signal epixConfig : EpixConfigArray(4 downto 0);
 
    signal refClk     : sl;
    signal refClkDiv2 : sl;
@@ -140,7 +140,7 @@ begin
          rstOut(0) => rst);
 
    GEN_VEC :
-   for i in 3 downto 0 generate
+   for i in 4 downto 0 generate
 
       ------------------------
       -- PGP Core for KINTEX-7
