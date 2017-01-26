@@ -13,9 +13,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-constant FPGA_VERSION_C    : std_logic_vector(31 downto 0) := x"EA020005"; -- MAKE_VERSION
+constant FPGA_VERSION_C    : std_logic_vector(31 downto 0) := x"EA020006"; -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "Kc705Epix100Emu: Vivado v2016.2 (x86_64) Built Wed Jan 25 22:34:52 PST 2017 by ruckman";
+constant BUILD_STAMP_C : string := "Kc705Epix100Emu: Vivado v2016.2 (x86_64) Built Thu Jan 26 09:03:26 PST 2017 by ruckman";
 
 constant FPGA_BASE_CLOCK_C : std_logic_vector(31 downto 0) := x"00" & x"100000";  
 
@@ -24,6 +24,9 @@ end Version;
 -------------------------------------------------------------------------------
 -- Revision History:
 --
+-- 01/26/2017 (0xEA020006): Added this functionality:
+--                         "An acquisition counter and should clear it when I write to address 6.  
+--                          The counter is at address 5." 
 -- 01/25/2017 (0xEA020005): Reverted back to version 0x1 then added the following modules
 --                          Added RegControl.vhd, which maps to Address = 0x000FFFFF:0x00000000
 --                   

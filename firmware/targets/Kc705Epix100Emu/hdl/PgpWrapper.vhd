@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2017-01-25
--- Last update: 2017-01-25
+-- Last update: 2017-01-26
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -50,6 +50,9 @@ entity PgpWrapper is
       -- Streaming Interface
       txMaster   : in    AxiStreamMasterType;
       txSlave    : out   AxiStreamSlaveType;
+      -- Register Inputs/Outputs
+      epixStatus : in    EpixStatusType;
+      epixConfig : out   EpixConfigType;
       -- 1-wire board ID interfaces
       serialIdIo : inout slv(1 downto 0);
       -- GT Pins
@@ -244,8 +247,9 @@ begin
 
    U_RegControl : entity work.RegControl
       generic map (
-         TPD_G        => TPD_G,
-         CLK_PERIOD_G => 10.0e-9)
+         TPD_G           => TPD_G,
+         EN_DEVICE_DNA_G => false,
+         CLK_PERIOD_G    => 10.0e-9)
       port map (
          axiClk          => clk,
          axiRst          => open,
@@ -258,8 +262,8 @@ begin
          -- Monitoring enable command incoming stream
          monEnAxisMaster => AXI_STREAM_MASTER_INIT_C,
          -- Register Inputs/Outputs (axiClk domain)
-         epixStatus      => EPIX_STATUS_INIT_C,
-         epixConfig      => open,
+         epixStatus      => epixStatus,
+         epixConfig      => epixConfig,
          scopeConfig     => open,
          -- Guard ring DAC interfaces
          dacSclk         => open,

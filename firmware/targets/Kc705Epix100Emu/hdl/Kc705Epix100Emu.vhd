@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2017-01-25
--- Last update: 2017-01-25
+-- Last update: 2017-01-26
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -27,6 +27,7 @@ use work.StdRtlPkg.all;
 use work.AxiLitePkg.all;
 use work.AxiStreamPkg.all;
 use work.Pgp2bPkg.all;
+use work.EpixPkgGen2.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -36,23 +37,23 @@ entity Kc705Epix100Emu is
       TPD_G : time := 1 ns);
    port (
       -- LEDs and Reset button
-      fmcLed          : out slv(3 downto 0);
-      fmcSfpLossL     : in  slv(3 downto 0);
-      fmcTxFault      : in  slv(3 downto 0);
-      fmcSfpTxDisable : out slv(3 downto 0);
-      fmcSfpRateSel   : out slv(3 downto 0);
-      fmcSfpModDef0   : out slv(3 downto 0);
-      extRst          : in  sl;
-      led             : out slv(7 downto 0);
+      fmcLed          : out   slv(3 downto 0);
+      fmcSfpLossL     : in    slv(3 downto 0);
+      fmcTxFault      : in    slv(3 downto 0);
+      fmcSfpTxDisable : out   slv(3 downto 0);
+      fmcSfpRateSel   : out   slv(3 downto 0);
+      fmcSfpModDef0   : out   slv(3 downto 0);
+      extRst          : in    sl;
+      led             : out   slv(7 downto 0);
       -- 1-wire board ID interfaces
-      serialIdIo : inout slv(7 downto 0);
+      serialIdIo      : inout slv(7 downto 0);
       -- GT Pins
-      gtClkP          : in  sl;
-      gtClkN          : in  sl;
-      gtRxP           : in  slv(3 downto 0);
-      gtRxN           : in  slv(3 downto 0);
-      gtTxP           : out slv(3 downto 0);
-      gtTxN           : out slv(3 downto 0));
+      gtClkP          : in    sl;
+      gtClkN          : in    sl;
+      gtRxP           : in    slv(3 downto 0);
+      gtRxN           : in    slv(3 downto 0);
+      gtTxP           : out   slv(3 downto 0);
+      gtTxN           : out   slv(3 downto 0));
 end Kc705Epix100Emu;
 
 architecture top_level of Kc705Epix100Emu is
@@ -64,6 +65,9 @@ architecture top_level of Kc705Epix100Emu is
    signal pgpRxIn  : Pgp2bRxInArray(3 downto 0) := (others => PGP2B_RX_IN_INIT_C);
    signal pgpTxOut : Pgp2bTxOutArray(3 downto 0);
    signal pgpRxOut : Pgp2bRxOutArray(3 downto 0);
+
+   signal epixStatus : EpixStatusArray(3 downto 0);
+   signal epixConfig : EpixConfigArray(3 downto 0);
 
    signal refClk     : sl;
    signal refClkDiv2 : sl;
@@ -146,42 +150,48 @@ begin
             TPD_G => TPD_G)
          port map (
             -- Clock and Reset
-            refClk   => refClk,
-            clk      => clk,
-            rst      => rst,
+            refClk     => refClk,
+            clk        => clk,
+            rst        => rst,
             -- Non VC TX Signals
-            pgpTxIn  => pgpTxIn(i),
-            pgpTxOut => pgpTxOut(i),
+            pgpTxIn    => pgpTxIn(i),
+            pgpTxOut   => pgpTxOut(i),
             -- Non VC RX Signals
-            pgpRxIn  => pgpRxIn(i),
-            pgpRxOut => pgpRxOut(i),
+            pgpRxIn    => pgpRxIn(i),
+            pgpRxOut   => pgpRxOut(i),
             -- Streaming Interface
-            txMaster => txMasters(i),
-            txSlave  => txSlaves(i),
+            txMaster   => txMasters(i),
+            txSlave    => txSlaves(i),
+            -- Register Inputs/Outputs
+            epixStatus => epixStatus(i),
+            epixConfig => epixConfig(i),
             -- 1-wire board ID interfaces
             serialIdIo => serialIdIo((2*i)+1 downto (2*i)),
             -- GT Pins
-            gtTxP    => gtTxP(i),
-            gtTxN    => gtTxN(i),
-            gtRxP    => gtRxP(i),
-            gtRxN    => gtRxN(i));
+            gtTxP      => gtTxP(i),
+            gtTxN      => gtTxN(i),
+            gtRxP      => gtRxP(i),
+            gtRxN      => gtRxN(i));
 
       ------------------------
       -- Data Packet Generator
       ------------------------
       U_EmuDataGen : entity work.EmuDataGen
          generic map (
-            TPD_G  => TPD_G)
+            TPD_G => TPD_G)
          port map (
             -- Clock and Reset
-            clk      => clk,
-            rst      => rst,
+            clk        => clk,
+            rst        => rst,
             -- Trigger Interface
-            opCodeEn => pgpRxOut(i).opCodeEn,
-            opCode   => pgpRxOut(i).opCode,
+            opCodeEn   => pgpRxOut(i).opCodeEn,
+            opCode     => pgpRxOut(i).opCode,
             -- Streaming Interface
-            txMaster => txMasters(i),
-            txSlave  => txSlaves(i));
+            txMaster   => txMasters(i),
+            txSlave    => txSlaves(i),
+            -- Register Inputs/Outputs
+            epixStatus => epixStatus(i),
+            epixConfig => epixConfig(i));
 
    end generate GEN_VEC;
 

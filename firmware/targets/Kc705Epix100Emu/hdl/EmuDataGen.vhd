@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2017-01-25
--- Last update: 2017-01-25
+-- Last update: 2017-01-26
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -28,20 +28,24 @@ use ieee.std_logic_unsigned.all;
 use work.StdRtlPkg.all;
 use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
+use work.EpixPkgGen2.all;
 
 entity EmuDataGen is
    generic (
       TPD_G : time := 1 ns);
    port (
       -- Clock and Reset
-      clk      : in  sl;
-      rst      : in  sl;
+      clk        : in  sl;
+      rst        : in  sl;
       -- Trigger Interface
-      opCodeEn : in  sl;
-      opCode   : in  slv(7 downto 0);
+      opCodeEn   : in  sl;
+      opCode     : in  slv(7 downto 0);
       -- Streaming Interface
-      txMaster : out AxiStreamMasterType;
-      txSlave  : in  AxiStreamSlaveType);
+      txMaster   : out AxiStreamMasterType;
+      txSlave    : in  AxiStreamSlaveType;
+      -- Register Inputs/Outputs
+      epixStatus : out EpixStatusType;
+      epixConfig : in  EpixConfigType);
 end EmuDataGen;
 
 architecture rtl of EmuDataGen is
@@ -60,25 +64,25 @@ architecture rtl of EmuDataGen is
       MOVE_S);
 
    type RegType is record
-      opCnt    : slv(31 downto 0);
-      opCode   : slv(7 downto 0);
-      cnt      : natural range 0 to (MAX_CNT_C+1);
-      txMaster : AxiStreamMasterType;
-      state    : StateType;
+      opCode     : slv(7 downto 0);
+      cnt        : natural range 0 to (MAX_CNT_C+1);
+      epixStatus : EpixStatusType;
+      txMaster   : AxiStreamMasterType;
+      state      : StateType;
    end record RegType;
    constant REG_INIT_C : RegType := (
-      opCnt    => (others => '0'),
-      opCode   => x"00",
-      cnt      => 0,
-      txMaster => AXI_STREAM_MASTER_INIT_C,
-      state    => IDLE_S);
+      opCode     => x"00",
+      cnt        => 0,
+      epixStatus => EPIX_STATUS_INIT_C,
+      txMaster   => AXI_STREAM_MASTER_INIT_C,
+      state      => IDLE_S);
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
 begin
 
-   comb : process (opCode, opCodeEn, r, rst, txSlave) is
+   comb : process (epixConfig, opCode, opCodeEn, r, rst, txSlave) is
       variable v : RegType;
       variable i : natural;
    begin
@@ -123,25 +127,37 @@ begin
                -- Check for second word
                elsif (r.cnt = 1) then
                   -- Insert the op-code & counter
-                  v.txMaster.tData(31 downto 0) := x"0" & "00" & QUAD_C & r.opCode & r.opCnt(15 downto 0);
+                  v.txMaster.tData(31 downto 0) := x"0" & "00" & QUAD_C & r.opCode & r.epixStatus.acqCount(15 downto 0);
                -- Check for thridd word
                elsif (r.cnt = 2) then
                   -- Insert the counter
-                  v.txMaster.tData(31 downto 0) := r.opCnt(31 downto 0);
+                  v.txMaster.tData(31 downto 0) := r.epixStatus.seqCount;
                -- Check for last word
                elsif (r.cnt = MAX_CNT_C) then
                   -- Reset the counter
-                  v.cnt            := 0;
+                  v.cnt                 := 0;
                   -- Set the EOF bit
-                  v.txMaster.tLast := '1';
-                  -- Increment the counter
-                  v.opCnt          := r.opCnt + 1;
+                  v.txMaster.tLast      := '1';
+                  -- Increment the counters
+                  v.epixStatus.acqCount := r.epixStatus.acqCount + 1;
+                  v.epixStatus.seqCount := r.epixStatus.seqCount + 1;
                   -- Next state
-                  v.state          := IDLE_S;
+                  v.state               := IDLE_S;
                end if;
             end if;
       ----------------------------------------------------------------------
       end case;
+
+      -- Check for counter reset
+      if (epixConfig.acqCountReset = '1') then
+         -- Reset the coutner
+         v.epixStatus.acqCount := (others => '0');
+         v.epixStatus.seqCount := (others => '0');
+
+      end if;
+
+      -- Always ready
+      v.epixStatus.iDelayCtrlRdy := '1';
 
       -- Reset
       if (rst = '1') then
@@ -152,7 +168,8 @@ begin
       rin <= v;
 
       -- Outputs              
-      txMaster <= r.txMaster;
+      txMaster   <= r.txMaster;
+      epixStatus <= r.epixStatus;
 
    end process comb;
 
