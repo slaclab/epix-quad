@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-06-03
--- Last update: 2016-12-16
+-- Last update: 2017-01-25
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -51,8 +51,9 @@ entity CoulterPgp is
       gtRxN            : in  sl;
       gtTxP            : out sl;
       gtTxN            : out sl;
+      stableClkOut     : out sl;
       -- Input power on reset (Do we want this...?)
-      powerBad         : in  sl                  := '0';
+      powerGood        : in  sl                  := '1';
       -- Output status
       rxLinkReady      : out sl;
       txLinkReady      : out sl;
@@ -143,6 +144,7 @@ begin
    distOpCode   <= pgpRxOut.opCode;
    axilClk      <= pgpTxClk;
    axilRst      <= pgpTxRst;
+   stableClkOut <= stableClk;
 
    debug(2) <= pgpRxOut.phyRxReady;
    debug(3) <= pgpRxOut.linkDown;
@@ -188,6 +190,7 @@ begin
                NUM_VC_EN_G             => 2,
                AXIL_ERROR_RESP_G       => AXI_RESP_DECERR_C,
                AXIL_BASE_ADDR_G        => AXIL_XBAR_CFG_C(GTP_AXI_INDEX_C).baseAddr,
+               EXT_RST_POLARITY_G      => '1',
                TX_ENABLE_G             => true,
                RX_ENABLE_G             => true,
                TX_CM_EN_G              => true,
@@ -202,10 +205,9 @@ begin
                RX_CM_DIVCLK_DIVIDE_G   => 1,
                RX_CM_CLKFBOUT_MULT_F_G => 12.75,
                RX_CM_CLKOUT_DIVIDE_F_G => 12.75,
-          PMA_RSV_G               => X"00000333",
---          RX_OS_CFG_G             => RX_OS_CFG_G,
-          RXCDR_CFG_G             => X"0000107FE206001041010",
-
+               PMA_RSV_G               => X"00000333",
+--          RX_OS_CFG_G             => "0001111110000",
+               RXCDR_CFG_G             => X"0000107FE206001041010",
 --          RXDFEXYDEN_G            => RXDFEXYDEN_G,
                STABLE_CLK_SRC_G        => "gtClk0",
                TX_REFCLK_SRC_G         => "gtClk0",
@@ -216,15 +218,15 @@ begin
                TX_PLL_G                => "PLL0",
                RX_PLL_G                => "PLL1")
             port map (
-               stableClkIn     => '0',  --stableClkIn,       -- [in]
-               extRst          => '0',  --extRst,            -- [in]
-               txPllLock       => debug(0),  --txPllLock,         -- [out]
-               rxPllLock       => debug(1),  --rxPllLock,         -- [out]
+               stableClkIn     => '0',  -- [in]
+               extRst          => '0',                             -- [in]
+               txPllLock       => debug(0),  -- [out]
+               rxPllLock       => debug(1),  -- [out]
                pgpTxClkOut     => pgpTxClk,  -- [out]
                pgpTxRstOut     => pgpTxRst,  -- [out]
                pgpRxClkOut     => pgpRxClk,  -- [out] -- Fixed Latency recovered clock
                pgpRxRstOut     => pgpRxRst,  -- [out]
-               stableClkOut    => open,      -- [out]
+               stableClkOut    => stableClk,                             -- [out]
                pgpRxIn         => pgpRxIn,   -- [in]
                pgpRxOut        => pgpRxOut,  -- [out]
                pgpTxIn         => pgpTxIn,   -- [in]
@@ -316,7 +318,7 @@ begin
          pgpRxRst <= pgpTxRst;
 
       end generate VARIABLE_LATENCY_PGP;
-    end generate NO_SIM;
+   end generate NO_SIM;
 
    SIMULATION_PGP : if (SIMULATION_G) generate
       U_RoguePgpSim_1 : entity work.RoguePgpSim
@@ -420,24 +422,24 @@ begin
          GEN_SYNC_FIFO_G        => true,
          CASCADE_SIZE_G         => 2,
          CASCADE_PAUSE_SEL_G    => 1,
-         FIFO_ADDR_WIDTH_G      => 9, --13,
+         FIFO_ADDR_WIDTH_G      => 9,       --13,
          FIFO_FIXED_THRESH_G    => true,
-         FIFO_PAUSE_THRESH_G    => 2**9-1, --2**13-6200,
+         FIFO_PAUSE_THRESH_G    => 2**9-1,  --2**13-6200,
          INT_WIDTH_SELECT_G     => "WIDE",
 --         INT_DATA_WIDTH_G       => INT_DATA_WIDTH_G,
          LAST_FIFO_ADDR_WIDTH_G => 0,
          SLAVE_AXI_CONFIG_G     => COULTER_AXIS_CFG_C,
          MASTER_AXI_CONFIG_G    => SSI_PGP2B_CONFIG_C)
       port map (
-         sAxisClk    => pgpTxClk,         -- [in]
-         sAxisRst    => pgpTxRst,         -- [in]
-         sAxisMaster => userAxisMaster,   -- [in]
-         sAxisSlave  => userAxisSlave,    -- [out]
-         sAxisCtrl   => userAxisCtrl,     -- [out]
-         mAxisClk    => pgpTxClk,         -- [in]
-         mAxisRst    => pgpTxRst,         -- [in]
-         mAxisMaster => pgpTxMasters(1),  -- [out]
-         mAxisSlave  => pgpTxSlaves(1));  -- [in]
+         sAxisClk    => pgpTxClk,           -- [in]
+         sAxisRst    => pgpTxRst,           -- [in]
+         sAxisMaster => userAxisMaster,     -- [in]
+         sAxisSlave  => userAxisSlave,      -- [out]
+         sAxisCtrl   => userAxisCtrl,       -- [out]
+         mAxisClk    => pgpTxClk,           -- [in]
+         mAxisRst    => pgpTxRst,           -- [in]
+         mAxisMaster => pgpTxMasters(1),    -- [out]
+         mAxisSlave  => pgpTxSlaves(1));    -- [in]
 
 
 --    U_Vc1SsiTxFifo : entity work.AxiStreamFifo

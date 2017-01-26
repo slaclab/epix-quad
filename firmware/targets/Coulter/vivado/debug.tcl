@@ -14,13 +14,13 @@ open_run synth_1
 
 ## Configure the Core
 #set ilaName u_ila_0
-#set ilaName1 u_ila_1
+
 #CreateDebugCore ${ilaName}
 ##CreateDebugCore ${ilaName1}
 #
 ### Increase the record depth
 #set_property C_DATA_DEPTH 8192 [get_debug_cores ${ilaName}]
-##set_property C_DATA_DEPTH 16384 [get_debug_cores ${ilaName}]
+#set_property C_DATA_DEPTH 16384 [get_debug_cores ${ilaName}]
 ##set_property C_DATA_DEPTH 2048 [get_debug_cores ${ilaName}]
 #
 #############################################################################
@@ -28,14 +28,19 @@ open_run synth_1
 #############################################################################
 #
 ### Core debug signals
-#SetDebugCoreClk ${ilaName} {U_EpixCore/coreClk}
+#SetDebugCoreClk ${ilaName} {U_CoulterPgp_1/NO_SIM.FIXED_LATENCY_PGP.U_Pgp2bGtp7FixedLatWrapper_1/stableClkOut}
 #
 ###SACI Debug
-##ConfigProbe ${ilaName} {U_EpixCore/U_RegControl/U_Saci/saciClk}
-##ConfigProbe ${ilaName} {U_EpixCore/U_RegControl/U_Saci/saciSelL*}
-##ConfigProbe ${ilaName} {U_EpixCore/U_RegControl/U_Saci/saciCmd}
-##ConfigProbe ${ilaName} {U_EpixCore/U_RegControl/U_Saci/saciRsp}
-##ConfigProbe ${ilaName} {U_EpixCore/U_RegControl/U_Saci/saciMasterOut*}
+#ConfigProbe ${ilaName} {elineSdi_OBUF[0]}
+#ConfigProbe ${ilaName} {elineSen_OBUF[0]}
+#ConfigProbe ${ilaName} {elineSclk_OBUF[0]}
+#ConfigProbe ${ilaName} {elineRnW_OBUF[0]}
+#ConfigProbe ${ilaName} {p_0_in[0]}    
+#ConfigProbe ${ilaName} {elineSdi_OBUF[1]}
+#ConfigProbe ${ilaName} {elineSen_OBUF[1]}
+#ConfigProbe ${ilaName} {elineSclk_OBUF[1]}
+#ConfigProbe ${ilaName} {elineRnW_OBUF[1]}
+#ConfigProbe ${ilaName} {p_0_in[1]}    
 #
 ###ADC Alignment Program Debug
 ##ConfigProbe ${ilaName} {U_EpixCore/U_EpixStartup/U_StartupPicoBlaze/address*}

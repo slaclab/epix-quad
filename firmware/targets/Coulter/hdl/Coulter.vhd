@@ -5,7 +5,7 @@
 -- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 09/30/2015
--- Last update: 2016-12-16
+-- Last update: 2017-01-24
 -- Platform   : Vivado 2014.4
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -127,7 +127,7 @@ architecture top_level of Coulter is
    constant AXIL_XBAR_CONFIG_C : AxiLiteCrossbarMasterConfigArray(AXIL_MASTERS_C-1 downto 0) :=
       genAxiLiteConfig(AXIL_MASTERS_C, X"00000000", 20, 16);
 
-   constant AXIL_CLK_PERIOD_C  : real := 6.4e-9;
+   constant AXIL_CLK_PERIOD_C  : real := 8.0e-9;
    constant ASIC_SCLK_PERIOD_C : real := ite(SIMULATION_G, 100.0e-9, 1.0e-6);
    constant ADC_SCLK_PERIOD_C  : real := ite(SIMULATION_G, 100.0e-9, 1.0e-6);
 
@@ -196,7 +196,25 @@ architecture top_level of Coulter is
    signal txLinkReady : sl;
    signal rxLinkReady : sl;
 
+   signal trigger   : sl;
+   signal stableClk : sl;
+
+--    attribute mark_debug              : string;
+--    attribute mark_debug of elineSclk : signal is "TRUE";
+--    attribute mark_debug of elineRnW  : signal is "TRUE";
+--    attribute mark_debug of elineSen  : signal is "TRUE";
+--    attribute mark_debug of elineSdi  : signal is "TRUE";
+--    attribute mark_debug of elineSdo  : signal is "TRUE";
 begin
+
+   U_Heartbeat_stableClk : entity work.Heartbeat
+      generic map (
+         TPD_G        => TPD_G,
+         PERIOD_IN_G  => 6.4e-9,
+         PERIOD_OUT_G => 6.4e-3)
+      port map (
+         clk => stableClk,              -- [in]
+         o   => led(1));                -- [out]
 
    U_Heartbeat_1 : entity work.Heartbeat
       generic map (
@@ -215,21 +233,20 @@ begin
          PERIOD_OUT_G => 8.0e-6)
       port map (
          clk => distClk,                -- [in]
-         rst => '0',                -- [in]
+         rst => distOpCodeEn,           -- [in]
          o   => tgOut);                 -- [out]
 
-   mps   <= '0';--debug(2);
+   mps <= '0';                          --debug(2);
 --   tgOut <= debug(3);
-
 
    -------------------------------------------------------------------------------------------------
    -- PGP
    -------------------------------------------------------------------------------------------------
    U_CoulterPgp_1 : entity work.CoulterPgp
       generic map (
-         TPD_G           => TPD_G,
-         SIMULATION_G    => SIMULATION_G,
-         FIXED_LATENCY_G => FIXED_LATENCY_G,
+         TPD_G            => TPD_G,
+         SIMULATION_G     => SIMULATION_G,
+         FIXED_LATENCY_G  => FIXED_LATENCY_G,
          AXIL_BASE_ADDR_G => AXIL_XBAR_CONFIG_C(PGP_AXIL_C).baseAddr)
       port map (
          gtClkP           => gtRefClk0P,                       -- [in]
@@ -238,7 +255,8 @@ begin
          gtRxN            => gtDataRxN,                        -- [in]
          gtTxP            => gtDataTxP,                        -- [out]
          gtTxN            => gtDataTxN,                        -- [out]
-         powerBad         => '0',                              -- [in]
+         stableClkOut     => stableClk,                        -- [out]
+         powerGood        => powerGood,                        -- [in]
          rxLinkReady      => rxLinkReady,                      -- [out]
          txLinkReady      => txLinkReady,                      -- [out]
          distClk          => distClk,                          -- [out]
@@ -336,6 +354,23 @@ begin
          axiWriteSlave  => locAxilWriteSlaves(VERSION_AXIL_C),   -- [out]
          slowClk        => clk100,
          fdSerSdio      => snIoAdcCard);
+
+--    U_AxiLiteEmpty_1 : entity work.AxiLiteEmpty
+--       generic map (
+--          TPD_G            => TPD_G,
+--          AXI_ERROR_RESP_G => AXI_ERROR_RESP_G,
+--          NUM_WRITE_REG_G  => 1,
+--          NUM_READ_REG_G   => 1)
+--       port map (
+--          axiClk              => axilClk,                             -- [in]
+--          axiClkRst           => axilRst,                             -- [in]
+--          axiReadMaster       => locAxilReadMasters(CONFIG_AXIL_C),   -- [in]
+--          axiReadSlave        => locAxilReadSlaves(CONFIG_AXIL_C),    -- [out]
+--          axiWriteMaster      => locAxilWriteMasters(CONFIG_AXIL_C),  -- [in]
+--          axiWriteSlave       => locAxilWriteSlaves(CONFIG_AXIL_C),   -- [out]
+--          writeRegister(0)(0) => analogCardDigPwrEn,                  -- [out]
+--          writeRegister(0)(1) => analogCardAnaPwrEn);                 -- [out]         
+
 
    -------------------------------------------------------------------------------------------------
    -- ASIC config (8 bits each)
@@ -484,6 +519,7 @@ begin
    -------------------------------------------------------------------------------------------------
    -- Acquisition Control (8 bits)
    -------------------------------------------------------------------------------------------------
+   trigger <= toSl(distOpCodeEn = '1' and distOpCode = X"55");
    U_AcquisitionControl_1 : entity work.AcquisitionControl
       generic map (
          TPD_G => TPD_G)
@@ -496,7 +532,7 @@ begin
          axilWriteSlave  => locAxilWriteSlaves(ACQ_CTRL_AXIL_C),   -- [out]
          distClk         => distClk,                               -- [in]
          distRst         => distRst,                               -- [in]
-         trigger         => distOpCodeEn,                          -- [in]
+         trigger         => trigger,                               -- [in]
          elineRst        => elineRst,                              -- [out]
          elineSc         => elineSc,                               -- [out]
          elineMck        => elineMck,                              -- [out]
@@ -513,7 +549,7 @@ begin
          adcStreams     => adcStreams,      -- [in]
          distClk        => distClk,         -- [in]
          distRst        => distRst,         -- [in]
-         distTrigger    => distOpCodeEn,    -- [in]
+         distTrigger    => trigger,         -- [in]
          clk            => axilClk,         -- [in]
          rst            => axilRst,         -- [in]
          acqStatus      => acqStatus,       -- [in]
