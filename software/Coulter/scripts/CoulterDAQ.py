@@ -70,7 +70,7 @@ for i in range(2):
 
 
 # Instantiate top and pass stream and srp configurations
-coulterDaq = coulter.CoulterRoot(srp=srp, trig=vcTrigger, dataWriter=dataWriter)
+coulterDaq = coulter.CoulterRoot(pgp=vcReg, srp=srp, trig=vcTrigger, dataWriter=dataWriter)
 #coulterDaq.setTimeout(100000000)
 #coulterDaq = pyrogue.Root(name="CoulterDaq", description="Coulter Data Acquisition")
 #coulterDaq.add(coulter.CoulterRunControl(name="RunControl"))

@@ -20,6 +20,7 @@
 #-----------------------------------------------------------------------------
 
 import pyrogue as pr
+#from pyrogue.hardware.pgp._pgpcard import PgpCardDevice
 import surf.AxiVersion
 import surf
 import functools
@@ -27,15 +28,17 @@ import threading
 import time
 
 class CoulterRoot(pr.Root):
-    def __init__(self, srp=None, trig=None, dataWriter=None):
+    def __init__(self, pgp=None, srp=None, trig=None, dataWriter=None):
         super(self.__class__, self).__init__("CoulterDaq", "Coulter Data Acquisition")
 
         self.trig = trig
+
+#        self.add(PgpCardDevice(pgp[0]))
         self.add(CoulterRunControl("RunControl"))
         if dataWriter is not None: self.add(dataWriter)
         
-        self.add((Coulter(name="Coulter[0]", memBase=srp[0], offset=0),
-                  Coulter(name="Coulter[1]", memBase=srp[1], offset=0)))
+        self.add((Coulter(name="Coulter[0]", memBase=srp[0], offset=0, enabled=False),
+                  Coulter(name="Coulter[1]", memBase=srp[1], offset=0, enabled=False)))
 
 
         @self.command()
@@ -154,14 +157,18 @@ class ELine100Config(pr.Device):
                                  bitOffset=0,
                                  base='hex',
                                  mode='RW'))
+
+        def cmd(dev, var, val):
+            print('CMD: {}'.format(var))
+            pr.Command.touch(dev, var, val)
            
         self.add(pr.Command(name = "WriteAsic",
                             description = "Write the current configuration registers into the ASIC",
                             offset = 0x40, bitSize = 1, bitOffset = 0, hidden = False,
-                            function = pr.Command.touch))
+                            function = cmd))
         self.add(pr.Command(name = "ReadAsic", description = "Read the current configuration registers from the ASIC",
                             offset = 0x44, bitSize = 1, bitOffset = 0, hidden = False,
-                            function = pr.Command.touch))
+                            function = cmd))
 
         for n,v in self.variables.items():
             if n != "EnaAnalogMonitor":
