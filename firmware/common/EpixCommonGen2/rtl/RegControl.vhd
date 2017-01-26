@@ -38,9 +38,9 @@ use unisim.vcomponents.all;
 
 entity RegControl is
    generic (
-      TPD_G                : time                  := 1 ns;
-      CLK_PERIOD_G         : real := 10.0e-9
-   );
+      TPD_G           : time    := 1 ns;
+      EN_DEVICE_DNA_G : boolean := true;
+      CLK_PERIOD_G    : real    := 10.0e-9);
    port (
       -- Global Signals
       axiClk         : in  sl;
@@ -289,17 +289,22 @@ begin
       
    -----------------------------------------------
    -- Serial IDs: FPGA Device DNA + DS2411's
-   -----------------------------------------------      
-   G_DEVICE_DNA : entity work.DeviceDna
-   generic map (
-      TPD_G => TPD_G
-   )
-   port map (
-      clk      => axiClk,
-      rst      => axiReset,
-      dnaValue => idValues(0),
-      dnaValid => idValids(0)
-   );
+   -----------------------------------------------  
+   GEN_DEVICE_DNA : if (EN_DEVICE_DNA_G = true) generate
+      G_DEVICE_DNA : entity work.DeviceDna
+         generic map (
+            TPD_G => TPD_G)
+         port map (
+            clk      => axiClk,
+            rst      => axiReset,
+            dnaValue => idValues(0),
+            dnaValid => idValids(0));
+   end generate GEN_DEVICE_DNA;
+   
+   BYP_DEVICE_DNA : if (EN_DEVICE_DNA_G = false) generate
+      idValids(0) <= '1';
+      idValues(0) <= (others=>'0');
+   end generate BYP_DEVICE_DNA;   
       
    G_DS2411 : for i in 0 to 1 generate
       U_DS2411_N : entity work.DS2411Core

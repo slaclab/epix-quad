@@ -158,6 +158,7 @@ package EpixPkgGen2 is
       monitorEnable      : sl;
       requestConfDump    : sl;
    end record;
+   type EpixConfigArray is array (natural range <>) of EpixConfigType;
    constant EPIX_CONFIG_INIT_C : EpixConfigType := (
       runTriggerEnable   => '0',
       runTriggerDelay    => (others => '0'),
@@ -210,6 +211,7 @@ package EpixPkgGen2 is
       startupFail        : sl;
       envData            : Slv32Array(8 downto 0);
    end record;
+   type EpixStatusArray is array (natural range <>) of EpixStatusType;
    constant EPIX_STATUS_INIT_C : EpixStatusType := (
       acqCount           => (others => '0'),
       iDelayCtrlRdy      => '0',
