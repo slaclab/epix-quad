@@ -22,6 +22,8 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.std_logic_arith.all;
+use ieee.std_logic_unsigned.all;
 
 use work.StdRtlPkg.all;
 use work.Pgp2bPkg.all;
@@ -36,38 +38,49 @@ entity PgpWrapper is
       TPD_G : time := 1 ns);
    port (
       -- Clocks and Reset
-      refClk   : in  sl;
-      clk      : in  sl;
-      rst      : in  sl;
+      refClk     : in    sl;
+      clk        : in    sl;
+      rst        : in    sl;
       -- Non VC TX Signals
-      pgpTxIn  : in  Pgp2bTxInType;
-      pgpTxOut : out Pgp2bTxOutType;
+      pgpTxIn    : in    Pgp2bTxInType;
+      pgpTxOut   : out   Pgp2bTxOutType;
       -- Non VC RX Signals
-      pgpRxIn  : in  Pgp2bRxInType;
-      pgpRxOut : out Pgp2bRxOutType;
+      pgpRxIn    : in    Pgp2bRxInType;
+      pgpRxOut   : out   Pgp2bRxOutType;
       -- Streaming Interface
-      txMaster : in  AxiStreamMasterType;
-      txSlave  : out AxiStreamSlaveType;
+      txMaster   : in    AxiStreamMasterType;
+      txSlave    : out   AxiStreamSlaveType;
+      -- 1-wire board ID interfaces
+      serialIdIo : inout slv(1 downto 0);
       -- GT Pins
-      gtTxP    : out sl;
-      gtTxN    : out sl;
-      gtRxP    : in  sl;
-      gtRxN    : in  sl);
+      gtTxP      : out   sl;
+      gtTxN      : out   sl;
+      gtRxP      : in    sl;
+      gtRxN      : in    sl);
 end PgpWrapper;
 
 architecture mapping of PgpWrapper is
 
-   constant SIZE_C : positive := 1;
+   constant RAM_WIDTH_C : positive := 12;
+   constant SIZE_C      : positive := 1;
    constant ADDR_C : Slv32Array(SIZE_C-1 downto 0) := (
-      0 => x"00000000");                -- real version number from the epix
+      0 => (VERSION_AXI_BASE_ADDR_C+4)  -- AxiVersion.scratchpad
+      );
    constant DATA_C : Slv32Array(SIZE_C-1 downto 0) := (
-      0 => x"EA020004");                -- real version number from the epix
+      0 => x"BEEFCAFE"                  -- AxiVersion.scratchpad
+      );
 
    signal pgpTxMasters : AxiStreamMasterArray(3 downto 0) := (others => AXI_STREAM_MASTER_INIT_C);
    signal pgpTxSlaves  : AxiStreamSlaveArray(3 downto 0)  := (others => AXI_STREAM_SLAVE_FORCE_C);
 
    signal pgpRxMasters : AxiStreamMasterArray(3 downto 0) := (others => AXI_STREAM_MASTER_INIT_C);
    signal pgpRxCtrl    : AxiStreamCtrlArray(3 downto 0)   := (others => AXI_STREAM_CTRL_UNUSED_C);
+
+   signal txIn  : Pgp2bTxInType;
+   signal txOut : Pgp2bTxOutType;
+
+   signal rxIn  : Pgp2bRxInType;
+   signal rxOut : Pgp2bRxOutType;
 
    signal sAxilReadMasters  : AxiLiteReadMasterArray(1 downto 0);
    signal sAxilReadSlaves   : AxiLiteReadSlaveArray(1 downto 0);
@@ -80,6 +93,12 @@ architecture mapping of PgpWrapper is
    signal mAxilWriteSlaves  : AxiLiteWriteSlaveArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0);
 
 begin
+
+   txIn     <= pgpTxIn;
+   pgpTxOut <= txOut;
+
+   rxIn     <= pgpRxIn;
+   pgpRxOut <= rxOut;
 
    U_Pgp2bGtx7VarLat : entity work.Pgp2bGtx7VarLat
       generic map (
@@ -135,11 +154,11 @@ begin
          pgpRxMmcmReset   => open,
          pgpRxMmcmLocked  => '1',
          -- Non VC TX Signals
-         pgpTxIn          => pgpTxIn,
-         pgpTxOut         => pgpTxOut,
+         pgpTxIn          => txIn,
+         pgpTxOut         => txOut,
          -- Non VC RX Signals
-         pgpRxIn          => pgpRxIn,
-         pgpRxOut         => pgpRxOut,
+         pgpRxIn          => rxIn,
+         pgpRxOut         => rxOut,
          -- Frame TX Interface
          pgpTxMasters     => pgpTxMasters,
          pgpTxSlaves      => pgpTxSlaves,
@@ -223,23 +242,196 @@ begin
          axiClk           => clk,
          axiClkRst        => rst);
 
-   GEN_VEC :
-   for i in (NUM_AXI_MASTER_SLOTS_C-1) downto 0 generate
-      U_RAM : entity work.AxiDualPortRam
+   U_RegControl : entity work.RegControl
+      generic map (
+         TPD_G        => TPD_G,
+         CLK_PERIOD_G => 10.0e-9)
+      port map (
+         axiClk          => clk,
+         axiRst          => open,
+         sysRst          => rst,
+         -- AXI-Lite Register Interface (axiClk domain)
+         axiReadMaster   => mAxilReadMasters(EPIXREGS_AXI_INDEX_C),
+         axiReadSlave    => mAxilReadSlaves(EPIXREGS_AXI_INDEX_C),
+         axiWriteMaster  => mAxilWriteMasters(EPIXREGS_AXI_INDEX_C),
+         axiWriteSlave   => mAxilWriteSlaves(EPIXREGS_AXI_INDEX_C),
+         -- Monitoring enable command incoming stream
+         monEnAxisMaster => AXI_STREAM_MASTER_INIT_C,
+         -- Register Inputs/Outputs (axiClk domain)
+         epixStatus      => EPIX_STATUS_INIT_C,
+         epixConfig      => open,
+         scopeConfig     => open,
+         -- Guard ring DAC interfaces
+         dacSclk         => open,
+         dacDin          => open,
+         dacCsb          => open,
+         dacClrb         => open,
+         -- 1-wire board ID interfaces
+         serialIdIo      => serialIdIo);
+
+   U_SaciPrepRdout : entity work.AxiDualPortRam
+      generic map (
+         TPD_G        => TPD_G,
+         BRAM_EN_G    => true,
+         REG_EN_G     => true,
+         ADDR_WIDTH_G => RAM_WIDTH_C,
+         DATA_WIDTH_G => 32)
+      port map (
+         axiClk         => clk,
+         axiRst         => rst,
+         axiReadMaster  => mAxilReadMasters(PREPRDOUT_AXI_INDEX_C),
+         axiReadSlave   => mAxilReadSlaves(PREPRDOUT_AXI_INDEX_C),
+         axiWriteMaster => mAxilWriteMasters(PREPRDOUT_AXI_INDEX_C),
+         axiWriteSlave  => mAxilWriteSlaves(PREPRDOUT_AXI_INDEX_C));
+
+   U_SaciMultiPixel : entity work.AxiDualPortRam
+      generic map (
+         TPD_G        => TPD_G,
+         BRAM_EN_G    => true,
+         REG_EN_G     => true,
+         ADDR_WIDTH_G => RAM_WIDTH_C,
+         DATA_WIDTH_G => 32)
+      port map (
+         axiClk         => clk,
+         axiRst         => rst,
+         axiReadMaster  => mAxilReadMasters(MULTIPIX_AXI_INDEX_C),
+         axiReadSlave   => mAxilReadSlaves(MULTIPIX_AXI_INDEX_C),
+         axiWriteMaster => mAxilWriteMasters(MULTIPIX_AXI_INDEX_C),
+         axiWriteSlave  => mAxilWriteSlaves(MULTIPIX_AXI_INDEX_C));
+
+   U_Pgp2bAxi : entity work.Pgp2bAxi
+      generic map (
+         TPD_G          => TPD_G,
+         AXI_CLK_FREQ_G => 156.25E+6)
+      port map (
+         pgpTxClk        => clk,
+         pgpTxClkRst     => rst,
+         pgpTxIn         => txIn,
+         pgpTxOut        => txOut,
+         pgpRxClk        => clk,
+         pgpRxClkRst     => rst,
+         pgpRxIn         => rxIn,
+         pgpRxOut        => rxOut,
+         axilClk         => clk,
+         axilRst         => rst,
+         axilReadMaster  => mAxilReadMasters(PGPSTAT_AXI_INDEX_C),
+         axilReadSlave   => mAxilReadSlaves(PGPSTAT_AXI_INDEX_C),
+         axilWriteMaster => mAxilWriteMasters(PGPSTAT_AXI_INDEX_C),
+         axilWriteSlave  => mAxilWriteSlaves(PGPSTAT_AXI_INDEX_C));
+
+   U_AxiLiteSaciMaster : entity work.AxiDualPortRam
+      generic map (
+         TPD_G        => TPD_G,
+         BRAM_EN_G    => true,
+         REG_EN_G     => true,
+         ADDR_WIDTH_G => RAM_WIDTH_C,
+         DATA_WIDTH_G => 32)
+      port map (
+         axiClk         => clk,
+         axiRst         => rst,
+         axiReadMaster  => mAxilReadMasters(SACIREGS_AXI_INDEX_C),
+         axiReadSlave   => mAxilReadSlaves(SACIREGS_AXI_INDEX_C),
+         axiWriteMaster => mAxilWriteMasters(SACIREGS_AXI_INDEX_C),
+         axiWriteSlave  => mAxilWriteSlaves(SACIREGS_AXI_INDEX_C));
+
+   U_AxiVersion : entity work.AxiVersion
+      generic map (
+         TPD_G           => TPD_G,
+         EN_DEVICE_DNA_G => false)
+      port map (
+         -- AXI-Lite Register Interface
+         axiReadMaster  => mAxilReadMasters(VERSION_AXI_INDEX_C),
+         axiReadSlave   => mAxilReadSlaves(VERSION_AXI_INDEX_C),
+         axiWriteMaster => mAxilWriteMasters(VERSION_AXI_INDEX_C),
+         axiWriteSlave  => mAxilWriteSlaves(VERSION_AXI_INDEX_C),
+         -- Clocks and Resets
+         axiClk         => clk,
+         axiRst         => rst);
+
+   U_AxiMicronN25QCore : entity work.AxiMicronN25QCore
+      generic map (
+         TPD_G          => TPD_G,
+         PIPE_STAGES_G  => 1,
+         AXI_CLK_FREQ_G => 156.25E+6,   -- units of Hz
+         SPI_CLK_FREQ_G => 25.0E+6)     -- units of Hz
+      port map (
+         -- FLASH Memory Ports
+         csL            => open,
+         sck            => open,
+         mosi           => open,
+         miso           => '1',
+         -- AXI-Lite Register Interface
+         axiReadMaster  => mAxilReadMasters(BOOTMEM_AXI_INDEX_C),
+         axiReadSlave   => mAxilReadSlaves(BOOTMEM_AXI_INDEX_C),
+         axiWriteMaster => mAxilWriteMasters(BOOTMEM_AXI_INDEX_C),
+         axiWriteSlave  => mAxilWriteSlaves(BOOTMEM_AXI_INDEX_C),
+         -- Clocks and Resets
+         axiClk         => clk,
+         axiRst         => rst);
+
+   U_AdcTester : entity work.StreamPatternTester
+      generic map (
+         TPD_G          => TPD_G,
+         NUM_CHANNELS_G => 20)
+      port map (
+         -- Master system clock
+         clk             => clk,
+         rst             => rst,
+         -- ADC data stream inputs
+         adcStreams      => (others => AXI_STREAM_MASTER_INIT_C),
+         -- Axi Interface
+         axilReadMaster  => mAxilReadMasters(ADCTEST_AXI_INDEX_C),
+         axilReadSlave   => mAxilReadSlaves(ADCTEST_AXI_INDEX_C),
+         axilWriteMaster => mAxilWriteMasters(ADCTEST_AXI_INDEX_C),
+         axilWriteSlave  => mAxilWriteSlaves(ADCTEST_AXI_INDEX_C));
+
+   GEN_ADC :
+   for i in 2 downto 0 generate
+      U_ADC : entity work.AxiDualPortRam
          generic map (
             TPD_G        => TPD_G,
             BRAM_EN_G    => true,
             REG_EN_G     => true,
-            ADDR_WIDTH_G => 12,
+            ADDR_WIDTH_G => RAM_WIDTH_C,
             DATA_WIDTH_G => 32)
          port map (
             axiClk         => clk,
             axiRst         => rst,
-            axiReadMaster  => mAxilReadMasters(i),
-            axiReadSlave   => mAxilReadSlaves(i),
-            axiWriteMaster => mAxilWriteMasters(i),
-            axiWriteSlave  => mAxilWriteSlaves(i));
-   end generate GEN_VEC;
+            axiReadMaster  => mAxilReadMasters(ADC0_RD_AXI_INDEX_C+i),
+            axiReadSlave   => mAxilReadSlaves(ADC0_RD_AXI_INDEX_C+i),
+            axiWriteMaster => mAxilWriteMasters(ADC0_RD_AXI_INDEX_C+i),
+            axiWriteSlave  => mAxilWriteSlaves(ADC0_RD_AXI_INDEX_C+i));
+   end generate GEN_ADC;
+
+   U_AdcConf : entity work.AxiDualPortRam
+      generic map (
+         TPD_G        => TPD_G,
+         BRAM_EN_G    => true,
+         REG_EN_G     => true,
+         ADDR_WIDTH_G => RAM_WIDTH_C,
+         DATA_WIDTH_G => 32)
+      port map (
+         axiClk         => clk,
+         axiRst         => rst,
+         axiReadMaster  => mAxilReadMasters(ADC_CFG_AXI_INDEX_C),
+         axiReadSlave   => mAxilReadSlaves(ADC_CFG_AXI_INDEX_C),
+         axiWriteMaster => mAxilWriteMasters(ADC_CFG_AXI_INDEX_C),
+         axiWriteSlave  => mAxilWriteSlaves(ADC_CFG_AXI_INDEX_C));
+
+   U_LogMem : entity work.AxiDualPortRam
+      generic map (
+         TPD_G        => TPD_G,
+         BRAM_EN_G    => true,
+         REG_EN_G     => true,
+         ADDR_WIDTH_G => 10,            -- only 10-bits in orginal code
+         DATA_WIDTH_G => 32)
+      port map (
+         axiClk         => clk,
+         axiRst         => rst,
+         axiReadMaster  => mAxilReadMasters(MEM_LOG_AXI_INDEX_C),
+         axiReadSlave   => mAxilReadSlaves(MEM_LOG_AXI_INDEX_C),
+         axiWriteMaster => mAxilWriteMasters(MEM_LOG_AXI_INDEX_C),
+         axiWriteSlave  => mAxilWriteSlaves(MEM_LOG_AXI_INDEX_C));
 
    U_StartupInit : entity work.SlvArraytoAxiLite
       generic map (

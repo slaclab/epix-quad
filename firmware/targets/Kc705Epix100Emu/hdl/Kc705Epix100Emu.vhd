@@ -44,6 +44,8 @@ entity Kc705Epix100Emu is
       fmcSfpModDef0   : out slv(3 downto 0);
       extRst          : in  sl;
       led             : out slv(7 downto 0);
+      -- 1-wire board ID interfaces
+      serialIdIo : inout slv(7 downto 0);
       -- GT Pins
       gtClkP          : in  sl;
       gtClkN          : in  sl;
@@ -156,6 +158,8 @@ begin
             -- Streaming Interface
             txMaster => txMasters(i),
             txSlave  => txSlaves(i),
+            -- 1-wire board ID interfaces
+            serialIdIo => serialIdIo((2*i)+1 downto (2*i)),
             -- GT Pins
             gtTxP    => gtTxP(i),
             gtTxN    => gtTxN(i),
