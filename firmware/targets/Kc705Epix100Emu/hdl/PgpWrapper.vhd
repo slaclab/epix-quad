@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2017-01-25
--- Last update: 2017-01-26
+-- Last update: 2017-01-27
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -35,7 +35,8 @@ use work.EpixPkgGen2.all;
 
 entity PgpWrapper is
    generic (
-      TPD_G : time := 1 ns);
+      TPD_G            : time            := 1 ns;
+      AXI_ERROR_RESP_G : slv(1 downto 0) := AXI_RESP_OK_C);
    port (
       -- Clocks and Reset
       refClk     : in    sl;
@@ -126,7 +127,7 @@ begin
          VC_INTERLEAVE_G   => 0,
          PAYLOAD_CNT_TOP_G => 7,
          NUM_VC_EN_G       => 4,
-         AXI_ERROR_RESP_G  => AXI_RESP_DECERR_C,
+         AXI_ERROR_RESP_G  => AXI_ERROR_RESP_G,
          TX_ENABLE_G       => true,
          RX_ENABLE_G       => true)
       port map (
@@ -230,6 +231,7 @@ begin
    U_XBAR : entity work.AxiLiteCrossbar
       generic map (
          TPD_G              => TPD_G,
+         DEC_ERROR_RESP_G   => AXI_ERROR_RESP_G,
          NUM_SLAVE_SLOTS_G  => 2,
          NUM_MASTER_SLOTS_G => NUM_AXI_MASTER_SLOTS_C,
          MASTERS_CONFIG_G   => AXI_CROSSBAR_MASTERS_CONFIG_C)
@@ -247,9 +249,11 @@ begin
 
    U_RegControl : entity work.RegControl
       generic map (
-         TPD_G           => TPD_G,
-         EN_DEVICE_DNA_G => false,
-         CLK_PERIOD_G    => 10.0e-9)
+         TPD_G            => TPD_G,
+         AXI_ERROR_RESP_G => AXI_ERROR_RESP_G,
+         EN_DEVICE_DNA_G  => false,
+         HARD_RESET_G     => false,
+         CLK_PERIOD_G     => 10.0e-9)
       port map (
          axiClk          => clk,
          axiRst          => open,
@@ -275,11 +279,12 @@ begin
 
    U_SaciPrepRdout : entity work.AxiDualPortRam
       generic map (
-         TPD_G        => TPD_G,
-         BRAM_EN_G    => true,
-         REG_EN_G     => true,
-         ADDR_WIDTH_G => RAM_WIDTH_C,
-         DATA_WIDTH_G => 32)
+         TPD_G            => TPD_G,
+         AXI_ERROR_RESP_G => AXI_ERROR_RESP_G,
+         BRAM_EN_G        => true,
+         REG_EN_G         => true,
+         ADDR_WIDTH_G     => RAM_WIDTH_C,
+         DATA_WIDTH_G     => 32)
       port map (
          axiClk         => clk,
          axiRst         => rst,
@@ -290,11 +295,12 @@ begin
 
    U_SaciMultiPixel : entity work.AxiDualPortRam
       generic map (
-         TPD_G        => TPD_G,
-         BRAM_EN_G    => true,
-         REG_EN_G     => true,
-         ADDR_WIDTH_G => RAM_WIDTH_C,
-         DATA_WIDTH_G => 32)
+         TPD_G            => TPD_G,
+         AXI_ERROR_RESP_G => AXI_ERROR_RESP_G,
+         BRAM_EN_G        => true,
+         REG_EN_G         => true,
+         ADDR_WIDTH_G     => RAM_WIDTH_C,
+         DATA_WIDTH_G     => 32)
       port map (
          axiClk         => clk,
          axiRst         => rst,
@@ -305,8 +311,9 @@ begin
 
    U_Pgp2bAxi : entity work.Pgp2bAxi
       generic map (
-         TPD_G          => TPD_G,
-         AXI_CLK_FREQ_G => 156.25E+6)
+         TPD_G            => TPD_G,
+         AXI_ERROR_RESP_G => AXI_ERROR_RESP_G,
+         AXI_CLK_FREQ_G   => 156.25E+6)
       port map (
          pgpTxClk        => clk,
          pgpTxClkRst     => rst,
@@ -325,11 +332,12 @@ begin
 
    U_AxiLiteSaciMaster : entity work.AxiDualPortRam
       generic map (
-         TPD_G        => TPD_G,
-         BRAM_EN_G    => true,
-         REG_EN_G     => true,
-         ADDR_WIDTH_G => RAM_WIDTH_C,
-         DATA_WIDTH_G => 32)
+         TPD_G            => TPD_G,
+         AXI_ERROR_RESP_G => AXI_ERROR_RESP_G,
+         BRAM_EN_G        => true,
+         REG_EN_G         => true,
+         ADDR_WIDTH_G     => RAM_WIDTH_C,
+         DATA_WIDTH_G     => 32)
       port map (
          axiClk         => clk,
          axiRst         => rst,
@@ -340,8 +348,9 @@ begin
 
    U_AxiVersion : entity work.AxiVersion
       generic map (
-         TPD_G           => TPD_G,
-         EN_DEVICE_DNA_G => false)
+         TPD_G            => TPD_G,
+         AXI_ERROR_RESP_G => AXI_ERROR_RESP_G,
+         EN_DEVICE_DNA_G  => false)
       port map (
          -- AXI-Lite Register Interface
          axiReadMaster  => mAxilReadMasters(VERSION_AXI_INDEX_C),
@@ -354,10 +363,11 @@ begin
 
    U_AxiMicronN25QCore : entity work.AxiMicronN25QCore
       generic map (
-         TPD_G          => TPD_G,
-         PIPE_STAGES_G  => 1,
-         AXI_CLK_FREQ_G => 156.25E+6,   -- units of Hz
-         SPI_CLK_FREQ_G => 25.0E+6)     -- units of Hz
+         TPD_G            => TPD_G,
+         AXI_ERROR_RESP_G => AXI_ERROR_RESP_G,
+         PIPE_STAGES_G    => 1,
+         AXI_CLK_FREQ_G   => 156.25E+6,  -- units of Hz
+         SPI_CLK_FREQ_G   => 25.0E+6)    -- units of Hz
       port map (
          -- FLASH Memory Ports
          csL            => open,
@@ -375,8 +385,9 @@ begin
 
    U_AdcTester : entity work.StreamPatternTester
       generic map (
-         TPD_G          => TPD_G,
-         NUM_CHANNELS_G => 20)
+         TPD_G            => TPD_G,
+         AXI_ERROR_RESP_G => AXI_ERROR_RESP_G,
+         NUM_CHANNELS_G   => 20)
       port map (
          -- Master system clock
          clk             => clk,
@@ -393,11 +404,12 @@ begin
    for i in 2 downto 0 generate
       U_ADC : entity work.AxiDualPortRam
          generic map (
-            TPD_G        => TPD_G,
-            BRAM_EN_G    => true,
-            REG_EN_G     => true,
-            ADDR_WIDTH_G => RAM_WIDTH_C,
-            DATA_WIDTH_G => 32)
+            TPD_G            => TPD_G,
+            AXI_ERROR_RESP_G => AXI_ERROR_RESP_G,
+            BRAM_EN_G        => true,
+            REG_EN_G         => true,
+            ADDR_WIDTH_G     => RAM_WIDTH_C,
+            DATA_WIDTH_G     => 32)
          port map (
             axiClk         => clk,
             axiRst         => rst,
@@ -409,11 +421,12 @@ begin
 
    U_AdcConf : entity work.AxiDualPortRam
       generic map (
-         TPD_G        => TPD_G,
-         BRAM_EN_G    => true,
-         REG_EN_G     => true,
-         ADDR_WIDTH_G => RAM_WIDTH_C,
-         DATA_WIDTH_G => 32)
+         TPD_G            => TPD_G,
+         AXI_ERROR_RESP_G => AXI_ERROR_RESP_G,
+         BRAM_EN_G        => true,
+         REG_EN_G         => true,
+         ADDR_WIDTH_G     => RAM_WIDTH_C,
+         DATA_WIDTH_G     => 32)
       port map (
          axiClk         => clk,
          axiRst         => rst,
@@ -424,11 +437,12 @@ begin
 
    U_LogMem : entity work.AxiDualPortRam
       generic map (
-         TPD_G        => TPD_G,
-         BRAM_EN_G    => true,
-         REG_EN_G     => true,
-         ADDR_WIDTH_G => 10,            -- only 10-bits in orginal code
-         DATA_WIDTH_G => 32)
+         TPD_G            => TPD_G,
+         AXI_ERROR_RESP_G => AXI_ERROR_RESP_G,
+         BRAM_EN_G        => true,
+         REG_EN_G         => true,
+         ADDR_WIDTH_G     => 10,        -- only 10-bits in orginal code
+         DATA_WIDTH_G     => 32)
       port map (
          axiClk         => clk,
          axiRst         => rst,

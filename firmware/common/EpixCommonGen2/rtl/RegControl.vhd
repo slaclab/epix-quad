@@ -38,9 +38,11 @@ use unisim.vcomponents.all;
 
 entity RegControl is
    generic (
-      TPD_G           : time    := 1 ns;
-      EN_DEVICE_DNA_G : boolean := true;
-      CLK_PERIOD_G    : real    := 10.0e-9);
+      TPD_G            : time            := 1 ns;
+      EN_DEVICE_DNA_G  : boolean         := true;
+      HARD_RESET_G     : boolean         := true;
+      CLK_PERIOD_G     : real            := 10.0e-9;
+      AXI_ERROR_RESP_G : slv(1 downto 0) := AXI_RESP_OK_C);
    port (
       -- Global Signals
       axiClk         : in  sl;
@@ -104,7 +106,7 @@ architecture rtl of RegControl is
    
 begin
 
-   axiReset <= sysRst or r.usrRst;
+   axiReset <= (sysRst or r.usrRst) when(HARD_RESET_G) else sysRst;
    axiRst   <= axiReset;
 
    -------------------------------
@@ -123,6 +125,15 @@ begin
       v.epixRegOut.seqCountReset := '0';
       v.scopeRegOut.arm          := '0';
       v.scopeRegOut.trig         := '0';
+      
+      -- Check for hard reset
+      if (HARD_RESET_G = false) then
+         v.usrRst := '0';
+         if (r.usrRst = '1') then
+            -- Reset the register
+            v := REG_INIT_C;
+         end if;      
+      end if;      
       
       -- dedicated axi stream channel to set or clear monitorEnable register
       if monEnAxisMaster.tValid = '1' and monEnAxisMaster.tLast = '1' then
@@ -241,7 +252,7 @@ begin
       axiSlaveRegisterR(regCon, x"148" & "00",  0, epixStatus.envData(8));
       
       
-      axiSlaveDefault(regCon, v.axiWriteSlave, v.axiReadSlave, AXI_RESP_OK_C);
+      axiSlaveDefault(regCon, v.axiWriteSlave, v.axiReadSlave, AXI_ERROR_RESP_G);
 
       -- Synchronous Reset
       if axiReset = '1' then

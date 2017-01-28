@@ -38,9 +38,9 @@ use work.AxiStreamPkg.all;
 
 entity StreamPatternTester is 
    generic (
-      TPD_G             : time := 1 ns;
-      NUM_CHANNELS_G    : integer range 1 to 31 := 8
-   );
+      TPD_G            : time                  := 1 ns;
+      NUM_CHANNELS_G   : integer range 1 to 31 := 8;
+      AXI_ERROR_RESP_G : slv(1 downto 0)       := AXI_RESP_DECERR_C);
    port ( 
       -- Master system clock
       clk               : in  std_logic;
@@ -120,7 +120,7 @@ begin
       axiSlaveRegisterR(axilEp, X"06" & "00", 0, testPassed);
       axiSlaveRegisterR(axilEp, X"07" & "00", 0, testFailed);
 
-      axiSlaveDefault(axilEp, v.axilWriteSlave, v.axilReadSlave, AXI_RESP_DECERR_C);
+      axiSlaveDefault(axilEp, v.axilWriteSlave, v.axilReadSlave, AXI_ERROR_RESP_G);
 
       if (rst = '1') then
          v := AXIL_REG_INIT_C;

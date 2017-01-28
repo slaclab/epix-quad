@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2017-01-25
--- Last update: 2017-01-26
+-- Last update: 2017-01-27
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -34,7 +34,8 @@ use unisim.vcomponents.all;
 
 entity Kc705Epix100Emu is
    generic (
-      TPD_G : time := 1 ns);
+      TPD_G            : time            := 1 ns;
+      AXI_ERROR_RESP_G : slv(1 downto 0) := AXI_RESP_OK_C);
    port (
       -- LEDs and Reset button
       fmcLed          : out   slv(3 downto 0);
@@ -147,7 +148,8 @@ begin
       ------------------------
       U_PGP : entity work.PgpWrapper
          generic map (
-            TPD_G => TPD_G)
+            TPD_G            => TPD_G,
+            AXI_ERROR_RESP_G => AXI_ERROR_RESP_G)
          port map (
             -- Clock and Reset
             refClk     => refClk,
