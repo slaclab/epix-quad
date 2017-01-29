@@ -253,6 +253,7 @@ begin
          AXI_ERROR_RESP_G => AXI_ERROR_RESP_G,
          EN_DEVICE_DNA_G  => false,
          HARD_RESET_G     => false,
+         EN_MICROBLAZE_G  => false,
          CLK_PERIOD_G     => 10.0e-9)
       port map (
          axiClk          => clk,
