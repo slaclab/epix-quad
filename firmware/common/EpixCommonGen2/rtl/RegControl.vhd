@@ -41,6 +41,7 @@ entity RegControl is
       TPD_G            : time            := 1 ns;
       EN_DEVICE_DNA_G  : boolean         := true;
       HARD_RESET_G     : boolean         := true;
+      EN_MICROBLAZE_G  : boolean         := true;
       CLK_PERIOD_G     : real            := 10.0e-9;
       AXI_ERROR_RESP_G : slv(1 downto 0) := AXI_RESP_OK_C);
    port (
@@ -254,6 +255,13 @@ begin
       
       axiSlaveDefault(regCon, v.axiWriteSlave, v.axiReadSlave, AXI_ERROR_RESP_G);
 
+      -- Check if no microblaze attached
+      if (EN_MICROBLAZE_G = false) then
+         v.epixRegOut.requestStartupCal := '0';
+         v.epixRegOut.startupAck        := '1';
+         v.epixRegOut.startupFail       := '0';
+      end if;
+      
       -- Synchronous Reset
       if axiReset = '1' then
          v := REG_INIT_C;
