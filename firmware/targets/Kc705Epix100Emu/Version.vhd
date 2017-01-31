@@ -13,9 +13,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"EA02000A";
+   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"EA02000B";
 
-   constant BUILD_STAMP_C : string := "Kc705Epix100Emu: Vivado v2016.2 (x86_64) Built Sun Jan 29 11:02:27 PST 2017 by ruckman";
+   constant BUILD_STAMP_C : string := "Kc705Epix100Emu: Vivado v2016.2 (x86_64) Built Mon Jan 30 14:35:54 PST 2017 by ruckman";
 
    constant FPGA_BASE_CLOCK_C : std_logic_vector(31 downto 0) := x"00" & x"100000";
 
@@ -24,6 +24,7 @@ end Version;
 -------------------------------------------------------------------------------
 -- Revision History:
 --
+-- 01/30/2017 (0xEA02000B): Added 150us delay after receiving OP-code trigger before sending packet
 -- 01/29/2017 (0xEA02000A): EN_MICROBLAZE_G  = false
 -- 01/27/2017 (0xEA020009): AXI_ERROR_RESP_G = AXI_RESP_OK_C
 -- 01/26/2017 (0xEA020008): AND Gating the fiber trigger with epixConfig.runTriggerEnable

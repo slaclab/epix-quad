@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2017-01-25
--- Last update: 2017-01-26
+-- Last update: 2017-01-30
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -50,8 +50,9 @@ end EmuDataGen;
 
 architecture rtl of EmuDataGen is
 
-   constant MAX_CNT_C    : natural             := 272650;  -- (1090604/4)-1
-   constant AXI_CONFIG_G : AxiStreamConfigType := ssiAxiStreamConfig(4, TKEEP_COMP_C);
+   constant MAX_CNT_C      : natural             := 272650;  -- (1090604/4)-1
+   constant DLY_TIMEROUT_C : natural             := 23437;  -- (150us x 156.25MHz)-1
+   constant AXI_CONFIG_G   : AxiStreamConfigType := ssiAxiStreamConfig(4, TKEEP_COMP_C);
 
    -- Hard coded words in the data stream for now
    constant LANE_C     : slv(1 downto 0)  := "00";
@@ -61,6 +62,7 @@ architecture rtl of EmuDataGen is
 
    type StateType is (
       IDLE_S,
+      DLY_S,
       MOVE_S);
 
    type RegType is record
@@ -106,7 +108,18 @@ begin
                -- Save the OP-code value
                v.opCode := opCode;
                -- Next state
-               v.state  := MOVE_S;
+               v.state  := DLY_S;
+            end if;
+         ----------------------------------------------------------------------
+         when DLY_S =>
+            -- Increment the counter
+            v.cnt := r.cnt + 1;
+            -- Check for delay timeout
+            if (r.cnt = DLY_TIMEROUT_C) then
+               -- Reset the counter
+               v.cnt   := 0;
+               -- Next state
+               v.state := MOVE_S;
             end if;
          ----------------------------------------------------------------------
          when MOVE_S =>
