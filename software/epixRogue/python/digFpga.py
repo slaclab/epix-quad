@@ -22,7 +22,7 @@
 #-----------------------------------------------------------------------------
 import pyrogue
 import collections
-import Epix100aAsic
+import ePixAsics as epix
 
 def create(name='DigFpga', offset=0, memBase=None, hidden=False, enabled=True):
     """Create the axiVersion device"""
@@ -376,10 +376,10 @@ def create(name='DigFpga', offset=0, memBase=None, hidden=False, enabled=True):
     dev.setResetFunc(resetFunc)
 
     # Create subdevices
-    dev.add(Epix100aAsic.create(name='Epix100aAsic0', offset=0x00800000*addrSize, memBase=memBase, hidden=False, enabled=True))
-    dev.add(Epix100aAsic.create(name='Epix100aAsic1', offset=0x00900000*addrSize, memBase=memBase, hidden=False, enabled=True))
-    dev.add(Epix100aAsic.create(name='Epix100aAsic2', offset=0x00A00000*addrSize, memBase=memBase, hidden=False, enabled=True))
-    dev.add(Epix100aAsic.create(name='Epix100aAsic3', offset=0x00B00000*addrSize, memBase=memBase, hidden=False, enabled=True))
+    dev.add(epix.Epix100aAsic(name='Epix100aAsic0', offset=0x00800000*addrSize, memBase=memBase, hidden=False, enabled=True))
+    dev.add(epix.Epix100aAsic(name='Epix100aAsic1', offset=0x00900000*addrSize, memBase=memBase, hidden=False, enabled=True))
+    dev.add(epix.Epix100aAsic(name='Epix100aAsic2', offset=0x00A00000*addrSize, memBase=memBase, hidden=False, enabled=True))
+    dev.add(epix.Epix100aAsic(name='Epix100aAsic3', offset=0x00B00000*addrSize, memBase=memBase, hidden=False, enabled=True))
 
     # Return the created device
     return dev
