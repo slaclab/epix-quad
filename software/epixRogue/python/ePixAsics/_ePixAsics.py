@@ -50,7 +50,7 @@ class Epix100aAsic(pr.Device):
                 
         # CMD = 0, Addr = 0  : Prepare for readout
         self.add(pr.Command(name='CmdPrepForRead', description='ePix Prepare For Readout', 
-                             offset=0x00000000*addrSize, bitSize=1, bitOffset=0, function=pr.Command.touch))
+                             offset=0x00000000*addrSize, bitSize=1, bitOffset=0, function=pr.Command.set0, hidden=True))
         
         # CMD = 1, Addr = 1  : Bits 2:0 - Pulser monostable bits
         #                      Bit  7   - Pulser sync bit
@@ -243,7 +243,11 @@ class Epix100aAsic(pr.Device):
 
         # CMD = 4, Addr = X  : Write Matrix with data        
         self.add(    
-            pr.Command(name='WriteMatrixData', description='Write PixelTest and PixelMask to all pixels', offset=0x00004000*addrSize, bitSize=1, bitOffset=0, function=self.fnWriteMatrixData))
+            pr.Command(name='WriteMatrixData', description='Write PixelTest and PixelMask to all pixels', offset=0x00004000*addrSize, bitSize=1, bitOffset=0, function=self.fnWriteMatrixData),
+            pr.Variable(name='PixelTest', base='bool'),
+            pr.Variable(name='PixelMask', base='bool'))
+        
+        
 
         # CMD = 5, Addr = X  : Read/Write Pixel with data
         self.add((
@@ -257,7 +261,7 @@ class Epix100aAsic(pr.Device):
       
         # CMD = 8, Addr = X  : Prepare for row/column/matrix configuration
         self.add(
-            pr.Variable(name='PrepareMultiConfig', description='PrepareMultiConfig', offset=0x00008000*addrSize, bitSize=32, bitOffset=0, base='hex', mode='RW'))
+            pr.Command(name='PrepareMultiConfig', description='PrepareMultiConfig', offset=0x00008000*addrSize, bitSize=32, bitOffset=0, function=pr.Command.set0, hidden=True))
 
         # Pixel Configuration
         #                    : Bit 0 = Test
@@ -280,22 +284,21 @@ class Epix100aAsic(pr.Device):
 
        
 
-    def fnClearMatrix(dev,cmd,arg):
+    def fnClearMatrix(self, dev,cmd,arg):
         """ClearMatrix command function"""
-        reportCmd(dev,cmd,arg)
+        self.reportCmd(dev,cmd,arg)
         for i in range (0, 96):
-            self.PrepareMultiConfig.set(0)
+            self.PrepareMultiConfig()
             self.ColCounter.set(i)
-            self.WriteColData.set(0)
-        self.CmdPrepForRead.set(0)
+            self.WriteColData()
+        self.CmdPrepForRead()
 
-    def fnWriteMatrixData(dev,cmd,arg):
+    def fnWriteMatrixData(self, dev,cmd,arg):
         """WriteMatrixData command function"""
         reportCmd(dev,cmd,arg)
-        self.PrepareMultiConfig.set(self.PrepareMultiConfig.get())
-        self.PixelTest.set(self.PixelTest.get())
-        self.PixelMask.set(self.PixelMask.get())
-        self.CmdPrepForRead.set(self.CmdPrepForRead.get())
+        self.PrepareMultiConfig()
+        self.WriteMatrixData.set(self.PixelTest.get() << 1 | self.PixelMask.get())
+        self.CmdPrepForRead()
 
     def fnWriteRowCounter(dev,cmd,arg):
         """WriteRowCounter command function"""
@@ -329,7 +332,7 @@ class Epix100aAsic(pr.Device):
         self.PixelMask.set(self.PixelMask.get())
 
     # standard way to report a command has been executed
-    def reportCmd(dev,cmd,arg):
+    def reportCmd(self, dev,cmd,arg):
         """reportCmd command function"""
         "Enables to unify the console print out for all cmds"
         print("Command executed : ", cmd)
