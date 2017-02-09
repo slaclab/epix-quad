@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-05-31
--- Last update: 2016-12-12
+-- Last update: 2017-02-02
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -93,18 +93,18 @@ architecture rtl of AcquisitionControl is
    end record CfgRegType;
 
    constant CFG_REG_INIT_C : CfgRegType := (
-      scDelay        => X"8000",        -- ~200 us for adcs to relock to shifted clock
-      scPosWidth     => toSlv(50*16*2, 16),
-      scNegWidth     => toSlv(50*16*2, 16),
+      scDelay        => X"6200",        -- ~200 us for adcs to relock to shifted clock
+      scPosWidth     => X"0200", --X"0640", --toSlv(50*16*2, 16),
+      scNegWidth     => X"0100", --X"0640", --toSlv(50*16*2, 16),
       scCount        => toSlv(256, 12),
-      mckDelay       => toSlv(50*8, 16),
-      mckPosWidth    => toSlv(19, 16),  -- ~10 MHz
-      mckNegWidth    => toSlv(19, 16),
+      mckDelay       => X"0080", --toSlv(50*8, 16),
+      mckPosWidth    => X"000B", --toSlv(19, 16),  -- ~10 MHz
+      mckNegWidth    => X"000B", --toSlv(19, 16),
       mckCount       => toSlv(16, 8),   -- 16 pixels per slot, this should never change
-      adcClkPosWidth => toSlv(9, 16),   -- ~20 Mhz ADC clock
-      adcClkNegWidth => toSlv(9, 16),
+      adcClkPosWidth => X"0005", --toSlv(9, 16),   -- ~20 Mhz ADC clock
+      adcClkNegWidth => X"0005", --toSlv(9, 16),
       adcClkDelay    => toSlv(0, 16),
-      adcWindowDelay => toSlv(494, 10),
+      adcWindowDelay => toSlv(282, 10),
       mckDisable     => '0',
       clkDisable     => '0');
 
