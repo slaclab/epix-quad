@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-05-16
--- Last update: 2016-12-12
+-- Last update: 2017-01-27
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -62,7 +62,7 @@ architecture rtl of ELine100Config is
    constant SHIFT_SIZE_BITS_C : integer                           := log2(ELINE_100_CFG_SHIFT_SIZE_C);
    constant SHIFT_SIZE_SLV_C  : slv(SHIFT_SIZE_BITS_C-1 downto 0) := toSlv(ELINE_100_CFG_SHIFT_SIZE_C-1, SHIFT_SIZE_BITS_C);
 
-   type StateType is (WAIT_AXIL_S, ASIC_READ_S);
+   type StateType is (WAIT_AXIL_S, HOLD_SEN_S, ASIC_READ_S);
 
    type RegType is record
       state          : StateType;
@@ -73,6 +73,7 @@ architecture rtl of ELine100Config is
       spiWrEn        : sl;
       doneWr         : sl;
       dataSize       : slv(log2(ELINE_100_CFG_SHIFT_SIZE_C)-1 downto 0);
+      senCount       : slv(7 downto 0);
       axilReadSlave  : AxiLiteReadSlaveType;
       axilWriteSlave : AxiLiteWriteSlaveType;
    end record RegType;
@@ -85,6 +86,7 @@ architecture rtl of ELine100Config is
       asicRw         => '1',
       spiWrEn        => '0',
       doneWr         => '0',
+      senCount       => (others => '0'),
       dataSize       => SHIFT_SIZE_SLV_C,
       axilReadSlave  => AXI_LITE_READ_SLAVE_INIT_C,
       axilWriteSlave => AXI_LITE_WRITE_SLAVE_INIT_C);
@@ -106,8 +108,8 @@ begin
          TPD_G             => TPD_G,
          NUM_CHIPS_G       => 1,
          DATA_SIZE_G       => 342,
-         CPHA_G            => '1',      -- Shift out on rising edge and
-         CPOL_G            => '0',      -- sample on falling edge.
+         CPHA_G            => '1',      -- Shift out on falling edge and
+         CPOL_G            => '0',      -- sample on rising edge.
          CLK_PERIOD_G      => AXIL_CLK_PERIOD_G,
          SPI_SCLK_PERIOD_G => ASIC_SCLK_PERIOD_G)
       port map (
@@ -131,8 +133,6 @@ begin
    begin
       v := r;
 
-      v.asicSen := '1';
-
       chCfg := (others => (others => '0'));
 
       axiSlaveWaitTxn(axilEp, axilWriteMaster, axilReadMaster, v.axilWriteSlave, v.axilReadSlave);
@@ -150,20 +150,34 @@ begin
 --                axiSlaveRegister(axilEp, X"00", (i*4) + 2, v.cfg.chCfg(i).st, 'X', string("st("&str(i)&")"));
 --             end loop;
 
-            for i in 0 to 11 loop
-               for j in 0 to 7 loop
-                  chCfg(i)(j*4)   := r.cfg.chCfg(i*8+j).somi;
-                  chCfg(i)(j*4+1) := r.cfg.chCfg(i*8+j).sm;
-                  chCfg(i)(j*4+2) := r.cfg.chCfg(i*8+j).st;
-                  chCfg(i)(j*4+3) := '0';
-               end loop;
-               axiSlaveRegister(axilEp, toSlv(i*4, 8), 0, chCfg(i), "X", string("SomeSmSt("&str(i)&")"));
-               for j in 0 to 7 loop
-                  v.cfg.chCfg(i*8+j).somi := chCfg(i)(j*4);
-                  v.cfg.chCfg(i*8+j).sm   := chCfg(i)(j*4+1);
-                  v.cfg.chCfg(i*8+j).st   := chCfg(i)(j*4+2);
-               end loop;
-            end loop;
+--             for i in 0 to 11 loop
+--                for j in 0 to 7 loop
+--                   chCfg(i)(j*4)   := r.cfg.chCfg(i*8+j).somi;
+--                   chCfg(i)(j*4+1) := r.cfg.chCfg(i*8+j).sm;
+--                   chCfg(i)(j*4+2) := r.cfg.chCfg(i*8+j).st;
+--                   chCfg(i)(j*4+3) := '0';
+--                end loop;
+--                axiSlaveRegister(axilEp, toSlv(i*4, 8), 0, chCfg(i), "X", string("SomeSmSt("&str(i)&")"));
+--                for j in 0 to 7 loop
+--                   v.cfg.chCfg(i*8+j).somi := chCfg(i)(j*4);
+--                   v.cfg.chCfg(i*8+j).sm   := chCfg(i)(j*4+1);
+--                   v.cfg.chCfg(i*8+j).st   := chCfg(i)(j*4+2);
+--                end loop;
+--             end loop;
+
+            axiSlaveRegister(axilEp, X"00", 0, v.cfg.somi(31 downto 0));
+            axiSlaveRegister(axilEp, X"04", 0, v.cfg.somi(63 downto 32));
+            axiSlaveRegister(axilEp, X"08", 0, v.cfg.somi(95 downto 64));
+            
+            axiSlaveRegister(axilEp, X"10", 0, v.cfg.sm(31 downto 0));
+            axiSlaveRegister(axilEp, X"14", 0, v.cfg.sm(63 downto 32));
+            axiSlaveRegister(axilEp, X"18", 0, v.cfg.sm(95 downto 64));
+            
+            axiSlaveRegister(axilEp, X"20", 0, v.cfg.st(31 downto 0));
+            axiSlaveRegister(axilEp, X"24", 0, v.cfg.st(63 downto 32));
+            axiSlaveRegister(axilEp, X"28", 0, v.cfg.st(95 downto 64));
+
+
 
             axiSlaveRegister(axilEp, X"30", 0, v.cfg.pbitt);
             axiSlaveRegister(axilEp, X"30", 1, v.cfg.cs);
@@ -207,7 +221,7 @@ begin
                      v.doneWr  := '0';
                      v.spiWrEn := '0';
                      v.asicSen := '0';
-                     axiSlaveWriteResponse(axilEp.axiWriteSlave);
+                     v.state   := HOLD_SEN_S;
                   end if;
 
                elsif (axilEp.axiWriteMaster.awaddr(7 downto 0) = X"44") then
@@ -222,12 +236,22 @@ begin
                      v.spiWrEn := '0';
                   end if;
                   if (r.doneWr = '1' and spiRdEn = '1' and r.spiWrEn = '0') then
-                     v.doneWr := '0';
+                     v.doneWr  := '0';
                      v.spiWrEn := '0';
-                     v.asicRw := '1';
-                     v.state  := ASIC_READ_S;
+                     v.asicRw  := '1';
+--                     v.cfg     := E_LINE_100_CFG_INIT_C;
+                     v.state   := ASIC_READ_S;
                   end if;
                end if;
+            end if;
+
+         when HOLD_SEN_S =>
+            v.senCount := r.senCount + 1;
+            if (r.senCount = 100) then
+               v.senCount := (others => '0');
+               v.asicSen  := '1';
+               v.state    := WAIT_AXIL_S;
+               axiSlaveWriteResponse(axilEp.axiWriteSlave);
             end if;
 
          when ASIC_READ_S =>
@@ -241,17 +265,17 @@ begin
             end if;
             if (r.doneWr = '1' and spiRdEn = '1' and r.spiWrEn = '0') then
                -- Assign readback to r.readCfg registers
-               v.doneWr := '0';
+               v.doneWr  := '0';
                v.spiWrEn := '0';
-               v.state  := WAIT_AXIL_S;
-               v.cfg    := toELine100Cfg(bitReverse(spiRdData));
+               v.state   := WAIT_AXIL_S;
+               v.cfg     := toELine100Cfg(bitReverse(spiRdData));
                axiSlaveWriteResponse(axilEp.axiWriteSlave);
             end if;
 
       end case;
 
       axiSlaveDefault(axilEp, v.axilWriteSlave, v.axilReadSlave, AXIL_ERR_RESP_G,
-                      (v.doneWr or toSl(v.state=ASIC_READ_S)));
+                      (v.doneWr or toSl(v.state = ASIC_READ_S) or toSl(v.state = HOLD_SEN_S)));
 
       if (axilRst = '1') then
          v := REG_INIT_C;

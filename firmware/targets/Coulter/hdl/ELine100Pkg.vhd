@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-05-16
--- Last update: 2016-11-17
+-- Last update: 2017-01-27
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -44,29 +44,31 @@ package ELine100Pkg is
    type ELine100ChCfgArray is array (natural range <>) of ELine100ChCfgType;
 
    type ELine100CfgType is record
-      tres    : slv(2 downto 0);              -- Reset Tweak OP
-      clab    : slv(2 downto 0);              -- Pump Timeout
-      sabtest : sl;                           -- Select CDS test
-      dd      : sl;                           -- DAC Monitor Select (0-thr, 1-pulser)
-      t       : slv(2 downto 0);              -- Filter time to flat top
-      esm     : sl;                           -- Enable DAC Monitor
-      pa      : slv(9 downto 0);              -- Threshold DAC
-      disen   : sl;                           -- Disable Pump
-      sse     : sl;                           -- Disable Multiple Firings Inhibit (1-disabled)
-      tr      : slv(2 downto 0);              -- Baseline Adjust
-      pb      : slv(9 downto 0);              -- Manual Pulser DAC
-      claen   : sl;                           -- Pump timout disable
-      slrb    : slv(1 downto 0);              -- Reset Time
-      saux    : sl;                           -- Enable Auxilary Output
-      test    : sl;                           -- Test Pulser Enable
-      sb      : sl;                           -- Output Buffers Enable
-      sbm     : sl;                           -- Monitor Output Buffer Enable
-      hrtest  : sl;                           -- High Resolution Test Mode
-      vdacm   : sl;                           -- Enabled APS monitor AO2
-      atest   : sl;                           -- Automatic Test Mode Enable
-      cs      : sl;                           -- Disable Outputs
-      pbitt   : sl;                           -- Test Pulse Polarity (0=pos, 1=neg)
-      chCfg   : ELine100ChCfgArray(0 to 95);  -- Channel Configurations                        
+      tres    : slv(2 downto 0);        -- Reset Tweak OP
+      clab    : slv(2 downto 0);        -- Pump Timeout
+      sabtest : sl;                     -- Select CDS test
+      dd      : sl;                     -- DAC Monitor Select (0-thr, 1-pulser)
+      t       : slv(2 downto 0);        -- Filter time to flat top
+      esm     : sl;                     -- Enable DAC Monitor
+      pa      : slv(9 downto 0);        -- Threshold DAC
+      disen   : sl;                     -- Disable Pump
+      sse     : sl;                     -- Disable Multiple Firings Inhibit (1-disabled)
+      tr      : slv(2 downto 0);        -- Baseline Adjust
+      pb      : slv(9 downto 0);        -- Manual Pulser DAC
+      claen   : sl;                     -- Pump timout disable
+      slrb    : slv(1 downto 0);        -- Reset Time
+      saux    : sl;                     -- Enable Auxilary Output
+      test    : sl;                     -- Test Pulser Enable
+      sb      : sl;                     -- Output Buffers Enable
+      sbm     : sl;                     -- Monitor Output Buffer Enable
+      hrtest  : sl;                     -- High Resolution Test Mode
+      vdacm   : sl;                     -- Enabled APS monitor AO2
+      atest   : sl;                     -- Automatic Test Mode Enable
+      cs      : sl;                     -- Disable Outputs
+      pbitt   : sl;                     -- Test Pulse Polarity (0=pos, 1=neg)
+      somi    : slv(95 downto 0);
+      sm      : slv(95 downto 0);
+      st      : slv(95 downto 0);
    end record ELine100CfgType;
 
    constant E_LINE_100_CFG_INIT_C : ELine100CfgType := (
@@ -92,7 +94,9 @@ package ELine100Pkg is
       atest   => '0',
       cs      => '0',
       pbitt   => '0',
-      chCfg   => (others => E_LINE_100_CH_CFG_INIT_C));
+      somi    => (others => '0'),
+      sm      => (others => '0'),
+      st      => (others => '0'));
 
    function toSlv (cfg : ELine100CfgType) return slv;
 
@@ -110,9 +114,9 @@ package body ELine100Pkg is
       i   := 0;
 
       for j in 0 to 95 loop
-         assignSlv(i, ret, cfg.chCfg(j).st);
-         assignSlv(i, ret, cfg.chCfg(j).sm);
-         assignSlv(i, ret, cfg.chCfg(j).somi);
+         assignSlv(i, ret, cfg.st(j));
+         assignSlv(i, ret, cfg.sm(j));
+         assignSlv(i, ret, cfg.somi(j));
       end loop;
 
       assignSlv(i, ret, '0');           -- 288 null
@@ -180,9 +184,9 @@ package body ELine100Pkg is
       i   := 0;
 
       for j in 0 to 95 loop
-         assignRecord(i, vec, cfg.chCfg(j).st);
-         assignRecord(i, vec, cfg.chCfg(j).sm);
-         assignRecord(i, vec, cfg.chCfg(j).somi);
+         assignRecord(i, vec, cfg.st(j));
+         assignRecord(i, vec, cfg.sm(j));
+         assignRecord(i, vec, cfg.somi(j));
       end loop;
 
       i := i+1;                           -- 288 null
