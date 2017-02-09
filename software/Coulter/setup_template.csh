@@ -8,3 +8,5 @@ setenv ROGUE_DIR  ${PWD}/../rogue
 setenv BOOST_THREAD -lboost_thread-mt
 
 source ${ROGUE_DIR}/setup_template.csh
+
+setenv PYTHONPATH ${COULTER_DIR}/python:${SURF_DIR}/python:$PYTHONPATH
