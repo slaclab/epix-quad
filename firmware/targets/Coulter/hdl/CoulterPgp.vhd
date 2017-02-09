@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-06-03
--- Last update: 2017-01-25
+-- Last update: 2017-02-02
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -219,7 +219,7 @@ begin
                RX_PLL_G                => "PLL1")
             port map (
                stableClkIn     => '0',  -- [in]
-               extRst          => '0',                             -- [in]
+               extRst          => '0',  -- [in]
                txPllLock       => debug(0),  -- [out]
                rxPllLock       => debug(1),  -- [out]
                pgpTxClkOut     => pgpTxClk,  -- [out]
@@ -321,6 +321,37 @@ begin
    end generate NO_SIM;
 
    SIMULATION_PGP : if (SIMULATION_G) generate
+      signal txOutRst  : sl;
+      signal txOutClk  : sl;
+      signal txOutClkP : sl;
+      signal txOutClkN : sl;
+   begin
+      -- Clock manager to simulate GTP gtrefclk->txoutclk | 156.25->125
+      U_SIM_GTP_PLL : entity work.ClockManager7
+         generic map (
+            TPD_G              => TPD_G,
+            TYPE_G             => "MMCM",
+            INPUT_BUFG_G       => false,
+            FB_BUFG_G          => true,
+            NUM_CLOCKS_G       => 1,
+            BANDWIDTH_G        => "OPTIMIZED",
+            CLKIN_PERIOD_G     => 6.4,
+            DIVCLK_DIVIDE_G    => 5,
+            CLKFBOUT_MULT_F_G  => 32.0,
+            CLKOUT0_DIVIDE_F_G => 8.0)
+         port map (
+            clkIn     => gtClkP,
+            rstIn     => stableRst,
+            clkOut(0) => txOutClk,
+            rstOut(0) => txOutRst);
+
+      OBUFDS_1 : OBUFDS
+         port map (
+            i  => txOutClk,
+            o  => txOutClkP,
+            ob => txOutClkN);
+
+
       U_RoguePgpSim_1 : entity work.RoguePgpSim
          generic map (
             TPD_G       => TPD_G,
@@ -328,8 +359,8 @@ begin
             USER_ID_G   => 1,
             NUM_VC_EN_G => 4)
          port map (
-            refClkP      => gtClkP,        -- [in]
-            refClkM      => gtClkN,        -- [in]
+            refClkP      => txOutClkP,     -- [in]
+            refClkM      => txOutClkN,     -- [in]
             pgpTxClk     => pgpTxClk,      -- [out]
             pgpTxRst     => pgpTxRst,      -- [out]
             pgpTxIn      => pgpTxIn,       -- [in]
