@@ -5,7 +5,7 @@
 -- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 09/30/2015
--- Last update: 2017-01-24
+-- Last update: 2017-01-26
 -- Platform   : Vivado 2014.4
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -51,8 +51,8 @@ entity Coulter is
       -- Power good
       powerGood          : in    sl;
       -- Power Control
-      analogCardDigPwrEn : out   sl              := '0';
-      analogCardAnaPwrEn : out   sl              := '0';
+      analogCardDigPwrEn : out   sl              := '1';
+      analogCardAnaPwrEn : out   sl              := '1';
       -- GT CLK Pins
       gtRefClk0P         : in    sl;
       gtRefClk0N         : in    sl;
@@ -199,12 +199,12 @@ architecture top_level of Coulter is
    signal trigger   : sl;
    signal stableClk : sl;
 
---    attribute mark_debug              : string;
---    attribute mark_debug of elineSclk : signal is "TRUE";
---    attribute mark_debug of elineRnW  : signal is "TRUE";
---    attribute mark_debug of elineSen  : signal is "TRUE";
---    attribute mark_debug of elineSdi  : signal is "TRUE";
---    attribute mark_debug of elineSdo  : signal is "TRUE";
+   attribute mark_debug              : string;
+   attribute mark_debug of elineSclk : signal is "TRUE";
+   attribute mark_debug of elineRnW  : signal is "TRUE";
+   attribute mark_debug of elineSen  : signal is "TRUE";
+   attribute mark_debug of elineSdi  : signal is "TRUE";
+   attribute mark_debug of elineSdo  : signal is "TRUE";
 begin
 
    U_Heartbeat_stableClk : entity work.Heartbeat
