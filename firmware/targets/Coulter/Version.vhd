@@ -25,15 +25,22 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"0000000C";  -- MAKE_VERSION
+   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"00000013";  -- MAKE_VERSION
 
-   constant BUILD_STAMP_C : string := "Coulter: Vivado v2016.3 (x86_64) Built Wed Jan 25 14:56:53 PST 2017 by bareese";
+   constant BUILD_STAMP_C : string := "Coulter: Vivado v2016.3 (x86_64) Built Fri Jan 27 15:36:58 PST 2017 by bareese";
 
 end Version;
 
 -------------------------------------------------------------------------------
 -- Revision History:
 
+-- 00000013 - Don't clear r.cfg
+-- 00000012 - Re-arrange somi, sm, st AXI register map
+-- 00000011 - CPOL=0
+-- 00000010 - Bug fix in SEN hold. Change CPOL=1
+-- 0000000F - Hold SEN longer + debug core
+-- 0000000E - Debug core for asic config
+-- 0000000D - Enable analog board power
 -- 0000000C - It works again after not for a while!
 -- 00000009 - 2.5 Gbps fixed latency works!.
 -- 00000008 - Add MMCM on tx and use refclk. Still var lat. Doesn't work
