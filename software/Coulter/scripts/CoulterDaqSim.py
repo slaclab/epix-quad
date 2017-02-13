@@ -45,7 +45,7 @@ dataWriter = pyrogue.utilities.fileio.StreamWriter('dataWriter')
 
 
 vcReg = pyrogue.simulation.StreamSim('localhost', 0, 1, ssi=True)
-vcData = pyrogue.simulation.StreamSim('localhost', 1, 1, ssi=True)
+vcDataCmd = pyrogue.simulation.StreamSim('localhost', 1, 1, ssi=True)
 vcTrigger = pyrogue.simulation.StreamSim('localhost', 4, 1, ssi=True)
 
 
@@ -54,9 +54,11 @@ vcTrigger = pyrogue.simulation.StreamSim('localhost', 4, 1, ssi=True)
 
 # Create and Connect SRPv0 to VC0 
 srp = rogue.protocols.srp.SrpV0()
+cmd = rogue.protocols.srp.Cmd()
 
 pyrogue.streamConnectBiDir(vcReg ,srp)
-pyrogue.streamConnect(vcData, dataWriter.getChannel(0))
+pyrogue.streamConnect(vcDataCmd, dataWriter.getChannel(0))
+pyrogue.streamConnect(cmd, vcDataCmd)
     
 dbgSrp = rogue.interfaces.stream.Slave()
 dbgSrp.setDebug(10, "SRP")
@@ -64,11 +66,11 @@ pyrogue.streamTap(srp, dbgSrp)
 
 dbgData = rogue.interfaces.stream.Slave()
 dbgData.setDebug(30, "DATA[0]")
-pyrogue.streamTap(vcData, dbgData)
+pyrogue.streamTap(vcDataCmd, dbgData)
 
 
 # Instantiate top and pass stream and srp configurations
-coulterDaq = coulter.CoulterRoot(pgp=vcReg, srp=[srp], trig=vcTrigger, dataWriter=dataWriter)
+coulterDaq = coulter.CoulterRoot(pollEn=False, pgp=vcReg, srp=[srp], trig=vcTrigger, dataWriter=dataWriter, cmd=cmd)
 coulterDaq.setTimeout(100000000)
 #coulterDaq = pyrogue.Root(name="CoulterDaq", description="Coulter Data Acquisition")
 #coulterDaq.add(coulter.CoulterRunControl(name="RunControl"))
