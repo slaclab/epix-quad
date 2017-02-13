@@ -20,7 +20,7 @@
 #-----------------------------------------------------------------------------
 #import rogue.hardware.pgp
 import rogue.interfaces.memory
-#import pyrogue.simulation
+import pyrogue.simulation
 import pyrogue.utilities.fileio
 import pyrogue.gui
 import pyrogue.mesh
@@ -40,14 +40,13 @@ import PyQt4.QtCore
 # File writer
 dataWriter = pyrogue.utilities.fileio.StreamWriter('dataWriter')
 
-#vcReg = pyrogue.simulation.StreamSim('localhost', 0, 1, ssi=True)
-#vcData = pyrogue.simulation.StreamSim('localhost', 1, 1, ssi=True)
-#vcTrigger = pyrogue.simulation.StreamSim('localhost', 4, 1, ssi=True)
 
 # Create the PGP interfaces
+
 vcReg = [rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',i,0) for i in range(2)] # Registers
 vcData = [rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',i,1) for i in range(2)] # Data
 vcTrigger = vcReg[0]
+
 
 #print("")
 #print("PGP Card Version: %x" % (vcReg.getInfo().version))
@@ -61,7 +60,7 @@ for i in range(2):
     
 dbgSrp = rogue.interfaces.stream.Slave()
 dbgSrp.setDebug(10, "SRP")
-#pyrogue.streamTap(srp, dbg)
+#pyrogue.streamTap(srp, dbgSrp)
 
 for i in range(2):
     dbgData = rogue.interfaces.stream.Slave()
