@@ -42,6 +42,73 @@ import PyQt4.QtCore
 # Define if the GUI is started
 START_GUI = 1
 
+
+
+
+# Create the PGP interfaces
+#pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,1) # Registers for ePix board
+#pgpVc1 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,0) # Data originaly was set to 1 on eval board
+#pgpVc3 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,3) # Microblaze
+pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,0) # Data & cmds
+pgpVc1 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,1) # Registers for ePix board
+pgpVc3 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,3) # Microblaze
+
+print("")
+print("PGP Card Version: %x" % (pgpVc0.getInfo().version))
+
+# Create and Connect SRP to VC0 to read/write registers
+
+# Add data stream to file as channel 1
+# File writer
+dataWriter = pyrogue.utilities.fileio.StreamWriter('dataWriter')
+pyrogue.streamConnect(pgpVc0, dataWriter.getChannel(0x1))
+
+cmd = rogue.protocols.srp.Cmd()
+pyrogue.streamConnect(cmd, pgpVc0)
+
+# Create and Connect SRP to VC1 to send commands
+srp = rogue.protocols.srp.SrpV0()
+pyrogue.streamConnectBiDir(pgpVc1,srp)
+
+# Add configuration stream to file as channel 0
+# Removed to reduce amount of data going to file
+#pyrogue.streamConnect(ePixBoard,dataWriter.getChannel(0x0))
+
+
+
+## Add microblaze console stream to file as channel 2
+#pyrogue.streamConnect(pgpVc3,dataWriter.getChannel(0x2))
+
+# PRBS Receiver as secdonary receiver for VC1
+#prbsRx = pyrogue.utilities.prbs.PrbsRx('prbsRx')
+#pyrogue.streamTap(pgpVc1,prbsRx)
+#ePixBoard.add(prbsRx)
+
+# Microblaze console monitor add secondary tap
+#mbcon = MbDebug()
+#pyrogue.streamTap(pgpVc3,mbcon)
+
+#br = testBridge.Bridge()
+#br._setSlave(srp)
+
+
+
+##evalBoard.add(surf.AxiVersion.create(memBase=br,offset=0x0))
+#evalBoard.add(surf.AxiVersion.create(memBase=srp,offset=0x0))
+#evalBoard.add(surf.SsiPrbsTx.create(memBase=srp,offset=0x30000))
+
+#ePixBoard.add(surf.SsiPrbsTx.create(memBase=srp1,offset=0x00000000*4))
+
+# Create mesh node
+#mNode = pyrogue.mesh.MeshNode('rogueTest',iface='eth3',root=ePixBoard)
+#mNode.start()
+
+# Create epics node
+#epics = pyrogue.epics.EpicsCaServer('rogueTest',ePixBoard)
+#epics.start()
+
+
+
 # Microblaze console printout
 class MbDebug(rogue.interfaces.stream.Slave):
 
@@ -82,7 +149,7 @@ class MyRunControl(pyrogue.RunControl):
       while (self._runState == 'Running'):
          delay = 1.0 / ({value: key for key,value in self.runRate.enum.items()}[self._runRate])
          time.sleep(delay)
-         self._root.ssiPrbsTx.oneShot()
+         self._root.Trigger()
 
          self._runCount += 1
          if self._last != int(time.time()):
@@ -90,71 +157,21 @@ class MyRunControl(pyrogue.RunControl):
              self.runCount._updated()
 
 # Set base
-ePixBoard = pyrogue.Root('ePixBoard','ePix 100a Board')
+class EpixBoard(pyrogue.Root):
+    def __init__(cmd, dataWriter, srp, **kwargs):
+        super().__init('ePixBoard','ePix 100a Board', **kwargs)
+        self.add(MyRunControl('runControl'))
+        self.add(dataWriter)
 
-# Run control
-ePixBoard.add(MyRunControl('runControl'))
+        # Add Devices, defined at AxiVersionEpix100a file
+        self.add(digFpga.create(name='DigFpga', offset=0, memBase=srp, hidden=False, enabled=True))
 
-# File writer
-dataWriter = pyrogue.utilities.fileio.StreamWriter('dataWriter')
-ePixBoard.add(dataWriter)
+        @self.command()
+        def Trigger():
+            cmd.sendCmd(0, 0)
 
-# Create the PGP interfaces
-#pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,1) # Registers for ePix board
-#pgpVc1 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,0) # Data originaly was set to 1 on eval board
-#pgpVc3 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,3) # Microblaze
-pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,0) # Data & cmds
-pgpVc1 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,1) # Registers for ePix board
-pgpVc3 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,3) # Microblaze
 
-print("")
-print("PGP Card Version: %x" % (pgpVc0.getInfo().version))
-
-# Create and Connect SRP to VC0 to read/write registers
-srp = rogue.protocols.srp.SrpV0()
-pyrogue.streamConnectBiDir(pgpVc1,srp)
-
-# Create and Connect SRP to VC1 to send commands
-srp1 = rogue.protocols.srp.SrpV0()
-pyrogue.streamConnectBiDir(pgpVc0,srp1)
-
-# Add configuration stream to file as channel 0
-# Removed to reduce amount of data going to file
-#pyrogue.streamConnect(ePixBoard,dataWriter.getChannel(0x0))
-
-# Add data stream to file as channel 1
-pyrogue.streamConnect(pgpVc0,dataWriter.getChannel(0x1))
-
-## Add microblaze console stream to file as channel 2
-#pyrogue.streamConnect(pgpVc3,dataWriter.getChannel(0x2))
-
-# PRBS Receiver as secdonary receiver for VC1
-#prbsRx = pyrogue.utilities.prbs.PrbsRx('prbsRx')
-#pyrogue.streamTap(pgpVc1,prbsRx)
-#ePixBoard.add(prbsRx)
-
-# Microblaze console monitor add secondary tap
-mbcon = MbDebug()
-pyrogue.streamTap(pgpVc3,mbcon)
-
-#br = testBridge.Bridge()
-#br._setSlave(srp)
-
-# Add Devices, defined at AxiVersionEpix100a file
-ePixBoard.add(digFpga.create(name='DigFpga', offset=0, memBase=srp, hidden=False, enabled=True))
-
-##evalBoard.add(surf.AxiVersion.create(memBase=br,offset=0x0))
-#evalBoard.add(surf.AxiVersion.create(memBase=srp,offset=0x0))
-#evalBoard.add(surf.SsiPrbsTx.create(memBase=srp,offset=0x30000))
-ePixBoard.add(surf.SsiPrbsTx.create(memBase=srp1,offset=0x00000000*4))
-
-# Create mesh node
-#mNode = pyrogue.mesh.MeshNode('rogueTest',iface='eth3',root=ePixBoard)
-#mNode.start()
-
-# Create epics node
-#epics = pyrogue.epics.EpicsCaServer('rogueTest',ePixBoard)
-#epics.start()
+ePixBoard = EpixBoard(cmd, dataWriter, srp)
 
 # Create GUI
 appTop = PyQt4.QtGui.QApplication(sys.argv)
