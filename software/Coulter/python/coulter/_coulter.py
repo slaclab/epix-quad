@@ -28,18 +28,22 @@ import threading
 import time
 
 class CoulterRoot(pr.Root):
-    def __init__(self, pgp=None, srp=None, trig=None, dataWriter=None):
-        super(self.__class__, self).__init__("CoulterDaq", "Coulter Data Acquisition")
+    def __init__(self, pgp=None, srp=None, trig=None, dataWriter=None, cmd=None, **kwargs):
+        super(self.__class__, self).__init__("CoulterDaq", "Coulter Data Acquisition", **kwargs)
 
         self.trig = trig
+        self.cmd = cmd
 
 #        self.add(PgpCardDevice(pgp[0]))
         self.add(CoulterRunControl("RunControl"))
         if dataWriter is not None: self.add(dataWriter)
-        
-        self.add((Coulter(name="Coulter[0]", memBase=srp[0], offset=0, enabled=False),
-                  Coulter(name="Coulter[1]", memBase=srp[1], offset=0, enabled=False)))
 
+        for i in range(len(srp)):
+            self.add(Coulter(name="Coulter[{}]".format(i), memBase=srp[i], offset=0, enabled=True))
+
+        @self.command(base='hex')
+        def Cmd(opCode):
+            self.cmd.sendCmd(opCode, 0)
 
         @self.command()
         def Trigger():
@@ -97,8 +101,8 @@ class Coulter(pr.Device):
             surf.Xadc(offset=0x00080000),
             surf.AxiVersion.create(offset=0x00000000),
             AcquisitionControl(name='AcquisitionControl', offset=0x00060000, clkFreq=125.0e6),            
-            ELine100Config(name='ASIC[0]', offset=0x00010000, enabled=False),
-            ELine100Config(name='ASIC[1]', offset=0x00020000, enabled=False),
+            ELine100Config(name='ASIC[0]', offset=0x00010000, enabled=True),
+            ELine100Config(name='ASIC[1]', offset=0x00020000, enabled=True),
             surf.Ad9249Config(name='AdcConfig', offset=0x00030000, chips=1),
             surf.Ad9249ReadoutGroup(name = 'AdcReadoutBank[0]', offset=0x00040000, channels=6),
             surf.Ad9249ReadoutGroup(name = 'AdcReadoutBank[1]', offset=0x00050000, channels=6),
@@ -136,28 +140,39 @@ class ELine100Config(pr.Device):
             pr.Variable(name = "test",    offset = 0x30, bitOffset = 7 , bitSize = 1,  description = "Test Pulser Enable"),
             pr.Variable(name = "saux",    offset = 0x30, bitOffset = 8 , bitSize = 1,  description = "Enable Auxilary Output"),
             pr.Variable(name = "slrb",    offset = 0x30, bitOffset = 9 , bitSize = 2,  description = "Reset Time"),
+                       # enum={0: '450 ns', 1: '600 ns', 2: '825 ns', 3: '1100 ns'}, base='enum'),
             pr.Variable(name = "claen",   offset = 0x30, bitOffset = 11, bitSize = 1,  description = "Manual Pulser DAC"),
             pr.Variable(name = "pb",      offset = 0x30, bitOffset = 12, bitSize = 10, description = "Pump timout disable"),
             pr.Variable(name = "tr",      offset = 0x30, bitOffset = 22, bitSize = 3,  description = "Baseline Adjust"),
+                       # enum={0: '0m', 1: '75m', 2: '150m', 3: '225m', 4: '300m', 5: '375m', 6: '450m', 7: '525m'}, base='enum'),
             pr.Variable(name = "sse",     offset = 0x30, bitOffset = 25, bitSize = 1,  description = "Disable Multiple Firings Inhibit (1-disabled)"),
             pr.Variable(name = "disen",   offset = 0x30, bitOffset = 26, bitSize = 1,  description = "Disable Pump"),
-            pr.Variable(name = "pa",      offset = 0x34, bitOffset = 0 , bitSize = 10, description = "Threshold DAC"),
+            pr.Variable(name = "pa",      offset = 0x34, bitOffset = 0 , bitSize = 10, description = "Threshold DAC")))
+        self.add((
+#            pr.Variable(name = 'pa_Voltage', mode = 'RO', getFunction=self.voltage, dependencies=[self.pa]),
             pr.Variable(name = "esm",     offset = 0x34, bitOffset = 10, bitSize = 1,  description = "Enable DAC Monitor"),
             pr.Variable(name = "t",       offset = 0x34, bitOffset = 11, bitSize = 3,  description = "Filter time to flat top"),
+                       # enum = {x: '{} us'.format((x+2)*2) for x in range(8)}, base='enum'),
             pr.Variable(name = "dd",      offset = 0x34, bitOffset = 14, bitSize = 1,  description = "DAC Monitor Select (0-thr, 1-pulser)"),
             pr.Variable(name = "sabtest", offset = 0x34, bitOffset = 15, bitSize = 1,  description = "Select CDS test"),
             pr.Variable(name = "clab",    offset = 0x34, bitOffset = 16, bitSize = 3,  description = "Pump Timeout"),
+                       # enum = {0: '550 ns', 1: '1670 ns', 2: '2800 ns', 3: '4000 ns',
+                       #         4: '5200 ns', 5: '6400 ns', 6: '7500 ns', 7: '8700 ns'},
+                       # base= 'enum'),
             pr.Variable(name = "tres",    offset = 0x34, bitOffset = 19, bitSize = 3,  description = "Reset Tweak OP")))
+                       # enum = {0: '0', 1: '10m', 2: '20m', 3: '30m', 4: '-10m', 5: '-20m', 6: '-30m', 7: '-40m'}, base='enum')))
+                
+        self.add((
+            pr.Variable(name='somi', offset=0x0, bitSize=96, bitOffset=0, base='hex', description='Channel select'),
+                      #  enum={(n+1)**2: str(n) for n in range(-1, 96)}),
+            pr.Variable(name='sm[31:0]', offset=0x10, bitSize=32, bitOffset=0, base='hex',  description='Channel Mask[31:0]'),
+            pr.Variable(name='sm[63:32]', offset=0x14, bitSize=32, bitOffset=0, base='hex', description='Channel Mask[63:32]'),
+            pr.Variable(name='sm[95:64]', offset=0x18, bitSize=32, bitOffset=0, base='hex', description='Channel Mask[95:64]'),
+            pr.Variable(name='st[31:0]', offset=0x20, bitSize=32, bitOffset=0, base='hex',  description='Enable Test[31:0]'),
+            pr.Variable(name='st[63:32]', offset=0x24, bitSize=32, bitOffset=0, base='hex', description='Enable Test[63:32]'),
+            pr.Variable(name='st[95:64]', offset=0x28, bitSize=32, bitOffset=0, base='hex', description='Enable Test[95:64]')))
 
-        for i in range(12):
-            self.add(pr.Variable('SomiSmSt_{:02d}-{:02d}'.format(i*8+7, i*8),
-                                 description="Channel Selector Enable, Channel Mask, Enable Test",
-                                 offset=i*4,
-                                 bitSize=32,
-                                 bitOffset=0,
-                                 base='hex',
-                                 mode='RW'))
-
+        #self.somi.enum[0] = "None"
         def cmd(dev, var, val):
             print('CMD: {}'.format(var))
             pr.Command.touch(dev, var, val)
@@ -254,17 +269,23 @@ class AcquisitionControl(pr.Device):
                          offset=0x30, bitSize=1, bitOffset=0, base = 'bool')
         self.addVariable(name="ClkDisable", description="Disable SC, MCK and AdcClk generation",
                          offset=0x34, bitSize=1, bitOffset=0, base = 'bool')
+
+        def reset(dev, cmd, arg):
+            cmd.set(1)
+            time.sleep(1)
+            cmd.set(0)
         
         # Asic reset
         self.addCommand(name = "ResetAsic", description = "Reset the ELine100 ASICS",
-                        offset=0x38, bitSize=1, bitOffset=0, function=pr.Command.toggle)
+                        offset=0x38, bitSize=1, bitOffset=0, function=reset)
 
 
     @staticmethod
     def _count(vars):
         count = 2
         for v in vars:
-            count += v.get(read=False)+1
+            count += v.get(read=False)
+        #print('_count-> {}'.format(count))
         return count
 
     def periodConverter(self):
