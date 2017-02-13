@@ -80,7 +80,7 @@ class MyRunControl(pyrogue.RunControl):
       self._last = int(time.time())
 
       while (self._runState == 'Running'):
-         delay = 1.0 / ({value: key for key,value in self.runRate.enum.iteritems()}[self._runRate])
+         delay = 1.0 / ({value: key for key,value in self.runRate.enum.items()}[self._runRate])
          time.sleep(delay)
          self._root.ssiPrbsTx.oneShot()
 
@@ -100,30 +100,38 @@ dataWriter = pyrogue.utilities.fileio.StreamWriter('dataWriter')
 ePixBoard.add(dataWriter)
 
 # Create the PGP interfaces
-pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,1) # Registers for ePix board
-pgpVc1 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,2) # Data originaly was set to 1 on eval board
+#pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,1) # Registers for ePix board
+#pgpVc1 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,0) # Data originaly was set to 1 on eval board
+#pgpVc3 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,3) # Microblaze
+pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,0) # Data & cmds
+pgpVc1 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,1) # Registers for ePix board
 pgpVc3 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,3) # Microblaze
 
 print("")
 print("PGP Card Version: %x" % (pgpVc0.getInfo().version))
 
-# Create and Connect SRP to VC0
+# Create and Connect SRP to VC0 to read/write registers
 srp = rogue.protocols.srp.SrpV0()
-pyrogue.streamConnectBiDir(pgpVc0,srp)
+pyrogue.streamConnectBiDir(pgpVc1,srp)
+
+# Create and Connect SRP to VC1 to send commands
+srp1 = rogue.protocols.srp.SrpV0()
+pyrogue.streamConnectBiDir(pgpVc0,srp1)
 
 # Add configuration stream to file as channel 0
-pyrogue.streamConnect(ePixBoard,dataWriter.getChannel(0x0))
+# Removed to reduce amount of data going to file
+#pyrogue.streamConnect(ePixBoard,dataWriter.getChannel(0x0))
 
 # Add data stream to file as channel 1
-pyrogue.streamConnect(pgpVc1,dataWriter.getChannel(0x1))
+pyrogue.streamConnect(pgpVc0,dataWriter.getChannel(0x1))
 
 ## Add microblaze console stream to file as channel 2
-pyrogue.streamConnect(pgpVc3,dataWriter.getChannel(0x2))
+#pyrogue.streamConnect(pgpVc3,dataWriter.getChannel(0x2))
 
 # PRBS Receiver as secdonary receiver for VC1
-prbsRx = pyrogue.utilities.prbs.PrbsRx('prbsRx')
-pyrogue.streamTap(pgpVc1,prbsRx)
-ePixBoard.add(prbsRx)
+#prbsRx = pyrogue.utilities.prbs.PrbsRx('prbsRx')
+#pyrogue.streamTap(pgpVc1,prbsRx)
+#ePixBoard.add(prbsRx)
 
 # Microblaze console monitor add secondary tap
 mbcon = MbDebug()
@@ -138,7 +146,7 @@ ePixBoard.add(digFpga.create(name='DigFpga', offset=0, memBase=srp, hidden=False
 ##evalBoard.add(surf.AxiVersion.create(memBase=br,offset=0x0))
 #evalBoard.add(surf.AxiVersion.create(memBase=srp,offset=0x0))
 #evalBoard.add(surf.SsiPrbsTx.create(memBase=srp,offset=0x30000))
-
+ePixBoard.add(surf.SsiPrbsTx.create(memBase=srp1,offset=0x00000000*4))
 
 # Create mesh node
 #mNode = pyrogue.mesh.MeshNode('rogueTest',iface='eth3',root=ePixBoard)

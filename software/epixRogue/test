@@ -1,0 +1,20 @@
+ePixBoard:
+  enable: true
+  runControl:
+    enable: true
+    runState: Stopped
+    runRate: 1 Hz
+  dataWriter:
+    enable: true
+    dataFile: /u/re/ddoering/Desktop/test/ePixTestData.dat
+    open: true
+    bufferSize: 0
+    maxFileSize: 0
+  prbsRx:
+    enable: true
+    enMessages: false
+  axiVersionEpix100a:
+    enable: true
+    scratchPad: 1
+    fpgaReloadAddress: 7
+    fpgaReloadHalt: true

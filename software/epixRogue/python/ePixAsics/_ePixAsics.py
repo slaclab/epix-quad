@@ -31,7 +31,7 @@ class Epix100aAsic(pr.Device):
         super().__init__(description='Epix100a Asic Configuration', **kwargs)
 
 
-        #In order to easily compare GenDAQ address map with the ePrix rogue address map 
+        #In order to easily compare GenDAQ address map with the ePix rogue address map 
         #it is defined the addrSize variable
         addrSize = 4	
 
@@ -83,13 +83,16 @@ class Epix100aAsic(pr.Device):
 
         # CMD = 1, Addr = 4  : Bits 3:0 = DM1[3:0]
         #                    : Bits 7:4 = DM2[3:0]
-        self.add(pr.Variable(name='Config4', description='Config4',offset=0x00001004*addrSize, bitSize=32, bitOffset=0, base='hex', mode='RW'))
+        self.add(
+            pr.Variable(name='Config4', description='Config4',offset=0x00001004*addrSize, bitSize=32, bitOffset=0, base='hex', mode='RW'))
         
-        self.add(pr.Variable(name='DigMon1', base='enum', mode='RW', enum={0:'Clk', 1:'Exec', 2:'RoRst', 3:'Ack',
+        self.add(
+            pr.Variable(name='DigMon1', base='enum', mode='RW', enum={0:'Clk', 1:'Exec', 2:'RoRst', 3:'Ack',
             4:'IsEn', 5:'RoWClk', 6:'Addr0', 7:'Addr1', 8:'Addr2', 9:'Addr3', 10:'Addr4', 11:'Cmd0', 12:'Cmd1',
             13:'Cmd2', 14:'Cmd3', 15:'Config'}, description='Run rate of the system.'))         
 
-        self.add(pr.Variable(name='DigMon2', base='enum', mode='RW', enum={0:'Clk', 1:'Exec', 2:'RoRst', 3:'Ack',
+        self.add(
+            pr.Variable(name='DigMon2', base='enum', mode='RW', enum={0:'Clk', 1:'Exec', 2:'RoRst', 3:'Ack',
             4:'IsEn', 5:'RoWClk', 6:'Db0', 7:'Db1', 8:'Db2', 9:'Db3', 10:'Db4', 11:'Db5', 12:'Db6', 13:'Db7',
             14:'AddrMot', 15:'Config'}, description='Run rate of the system.'))         
  
@@ -125,7 +128,7 @@ class Epix100aAsic(pr.Device):
              13:'Unused13', 14:'Unused14', 15:'Unused15'}, description='Analog Test Point Multiplexer'))         
        
         self.add(
-            pr.Variable(name='RoMonost', description='', bitSize=8, bitOffset=0, base='hex',  mode='RW'))
+            pr.Variable(name='RoMonost', description='', bitSize=8, bitOffset=0, base='hex',  mode='RW', setFunction='dev._defaultValue = value', getFunction='value = dev._defaultValue'))
 
         # CMD = 1, Addr = 9  : Bit  3:0 = S2D0_GR[3:0]
         #                    : Bit  7:4 = S2D1_GR[3:0]
@@ -225,27 +228,27 @@ class Epix100aAsic(pr.Device):
 
         # CMD = 6, Addr = 17 : Row counter[8:0]
         self.add((
-            pr.Variable(name='RowCounter', description='RowCounter', bitSize=9, bitOffset=0, base='hex', mode='RW'),
-            pr.Command( name='WriteRowCounter', description='Special command to write row counter', offset=0x00006011*addrSize, bitSize=9, bitOffset=0, function=self.fnWriteRowCounter)))
+            pr.Variable(name='RowCounter', description='RowCounter', bitSize=9, bitOffset=0, base='hex', mode='RW', setFunction='dev._defaultValue = value', getFunction='value = dev._defaultValue'),
+            pr.Command( name='WriteRowCounter', description='Special command to write row counter', offset=0x00006011*addrSize, bitSize=9, bitOffset=0, function=self.fnWriteRowCounter, hidden=True)))
 
         # CMD = 6, Addr = 19 : Bank select [3:0] & Col counter[6:0]
         self.add((
-            pr.Variable(name='ColCounter', description='',                                offset=0x00006013*addrSize, bitSize=9, bitOffset=0, base='hex', mode='RW'),
-            pr.Variable(name='BankSelect', description='Active low bank select bit mask', offset=0x00006013*addrSize, bitSize=9, bitOffset=0, base='hex', mode='RW')))
+            pr.Variable(name='ColCounter', description='',                                offset=0x00006013*addrSize, bitSize=7, bitOffset=0, base='hex', mode='RW'),
+            pr.Variable(name='BankSelect', description='Active low bank select bit mask', offset=0x00006013*addrSize, bitSize=4, bitOffset=7, base='hex', mode='RW')))
 
         # CMD = 2, Addr = X  : Write Row with data
         self.add((
-            pr.Command(name='WriteRowData',    description='Write PixelTest and PixelMask to selected row', offset=0x00002000*addrSize, bitSize=1, bitOffset=0, function=self.fnWriteRowData)))
+            pr.Command(name='WriteRowData',    description='Write PixelTest and PixelMask to selected row', offset=0x00002000*addrSize, bitSize=1, bitOffset=0, function=self.fnWriteRowData, hidden=True)))
 
         # CMD = 3, Addr = X  : Write Column with data
         self.add(
-            pr.Variable(name='WriteColData',    description='', offset=0x00003000*addrSize, bitSize=32, bitOffset=0, base='hex', mode='RW'))
+            pr.Command(name='WriteColData',    description='', offset=0x00003000*addrSize, bitSize=32, bitOffset=0, function=pr.Command.touch, hidden=True))
 
         # CMD = 4, Addr = X  : Write Matrix with data        
-        self.add(    
+        self.add((    
             pr.Command(name='WriteMatrixData', description='Write PixelTest and PixelMask to all pixels', offset=0x00004000*addrSize, bitSize=1, bitOffset=0, function=self.fnWriteMatrixData),
-            pr.Variable(name='PixelTest', base='bool'),
-            pr.Variable(name='PixelMask', base='bool'))
+            pr.Variable(name='PixelTest', description='', bitSize=1, bitOffset=0, base='bool', mode='RW', value=1, setFunction='dev._defaultValue = value', getFunction='value = dev._defaultValue'),
+            pr.Variable(name='PixelMask', description='', bitSize=1, bitOffset=0, base='bool', mode='RW', value=1, setFunction='dev._defaultValue = value', getFunction='value = dev._defaultValue')))
         
         
 
@@ -293,22 +296,25 @@ class Epix100aAsic(pr.Device):
             self.WriteColData()
         self.CmdPrepForRead()
 
-    def fnWriteMatrixData(self, dev,cmd,arg):
+    def fnWriteMatrixData(self,dev,cmd,arg):
         """WriteMatrixData command function"""
-        reportCmd(dev,cmd,arg)
+        self.reportCmd(dev,cmd,arg)
         self.PrepareMultiConfig()
-        self.WriteMatrixData.set(self.PixelTest.get() << 1 | self.PixelMask.get())
+        self.WriteMatrixData.set((self.PixelTest.get() << 1) | (self.PixelMask.get()))
         self.CmdPrepForRead()
 
     def fnWriteRowCounter(dev,cmd,arg):
         """WriteRowCounter command function"""
-        self.CmdPrepForRead.set(self.CmdPrepForRead.get())
-        self.RowCounter.set(self.RowCounter.get())
+        self.reportCmd(self,dev,cmd,arg)
+        self.CmdPrepForRead()
+        self.WriteRowCounter.set(self.RowCounter.get())
+        
 
     def fnWritePixelData(dev,cmd,arg):
         """WritePixelData command function"""
-        self.PrepareMultiConfig.set(self.PrepareMultiConfig.get())
-        self.RowCounter.set(self.RowCounter.get())
+        self.reportCmd(self,dev,cmd,arg)
+        self.PrepareMultiConfig()
+        self.WriteRowCounter()
         self.ColCounter.set(self.ColCounter.get())
         self.BankSelect.set(self.BankSelect.get())
         self.PixelTest.set(self.PixelTest.get())
@@ -316,7 +322,8 @@ class Epix100aAsic(pr.Device):
 
     def fnReadPixelData(dev,cmd,arg):
         """ReadPixelData command function"""
-        self.PrepareMultiConfig.set(self.PrepareMultiConfig.get())
+        self.reportCmd(self,dev,cmd,arg)
+        self.PrepareMultiConfig()
         self.RowCounter.set(self.RowCounter.get())
         self.ColCounter.set(self.ColCounter.get())
         self.BankSelect.set(self.BankSelect.get())
@@ -325,8 +332,9 @@ class Epix100aAsic(pr.Device):
 
     def fnWriteRowData(dev,cmd,arg):
         """WriteRowData command function"""
-        self.CmdPrepForRead.set(self.CmdPrepForRead.get())
-        self.PrepareMultiConfig.set(self.PrepareMultiConfig.get())
+        self.reportCmd(self,dev,cmd,arg)
+        self.CmdPrepForRead()
+        self.PrepareMultiConfig()
         self.RowCounter.set(self.RowCounter.get())
         self.PixelTest.set(self.PixelTest.get())
         self.PixelMask.set(self.PixelMask.get())
@@ -336,5 +344,11 @@ class Epix100aAsic(pr.Device):
         """reportCmd command function"""
         "Enables to unify the console print out for all cmds"
         print("Command executed : ", cmd)
+
+    @staticmethod   
+    def frequencyConverter(self):
+        def func(dev, var):         
+            return '{:.3f} kHz'.format(1/(self.clkPeriod * self._count(var.dependencies)) * 1e-3)
+        return func
 
 
