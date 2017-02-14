@@ -107,16 +107,22 @@ class Window(QtGui.QMainWindow, QObject):
         #self.setStyleSheet("QWidget{background-color: #000000;}")
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         self.buildUi()
-#        self.showFullScreen()
+        #self.showFullScreen()
 
     #creates the main display elemento of the user interface
     def buildUi(self):
+        #label used to display image
         self.label = QtGui.QLabel()
         #self.label.setAlignment(QtCore.Qt.AlignCenter)
         self.label.move(50,0)
         self.setCentralWidget(self.label)
 
-    # if the image is png or other standard extensio it uses this function to display it.
+        #label used to display frame number
+        self.labelFrameNum = QtGui.QLabel('', self)
+        self.labelFrameNum.move(self.mainWdGeom[2]-100,self.mainWdGeom[3]-250)
+        #self.setCentralWidget(self.labelFrameNum)
+
+    # if the image is png or other standard extension it uses this function to display it.
     def displayImag(self, path):
         print('File name: ', path)
         if path:
@@ -149,8 +155,12 @@ class Window(QtGui.QMainWindow, QObject):
         arrayLen = len(self.eventReader.frameData)
         print('Image size: ', arrayLen)
 
-        imgWidth = 4*184
-        imgHeight = 4*184
+        imgWidth = 96 * 8   #4*184
+        imgHeight = 708 /2 #4*184
+        #removes header before displying the image
+        for j in range(0,32):
+            self.eventReader.frameData.pop(0)
+        # get the data into the image object
         self.image = QtGui.QImage(self.eventReader.frameData, imgWidth, imgHeight, QtGui.QImage.Format_RGB16)
 #        for y in range(0,imgHeight):
 #            for x in range(0,imgWidth):
@@ -165,7 +175,16 @@ class Window(QtGui.QMainWindow, QObject):
         pp = QtGui.QPixmap.fromImage(self.image)
         self.label.setPixmap(pp.scaled(self.label.size(),QtCore.Qt.KeepAspectRatio,QtCore.Qt.SmoothTransformation))
 
+        #updates the frame number
+        #this sleep is a weak way of waiting for the file to be readout completely... needs improvement
+        time.sleep(0.1)
+        thisString = 'Frame {} of {}'.format(self.eventReader.frameIndex, self.eventReader.numAcceptedFrames)
+        print(thisString)
+        self.labelFrameNum.setText(thisString)
+
+
     def file_open(self):
+        self.eventReader.frameIndex = 1
         self.filename = QtGui.QFileDialog.getOpenFileName(self, 'Open File', '', 'Rogue Images (*.dat);; GenDAQ Images (*.bin);;Any (*.*)')  
         if (os.path.splitext(self.filename)[1] == '.dat'): 
             self.displayImagDat(self.filename)
@@ -238,17 +257,17 @@ class EventReader(rogue.interfaces.stream.Slave):
             self.numAcceptedFrames += 1
             # Get the channel number
             chNum = (frame.getFlags() >> 24)
-            print('-------- Frame ',self.numAcceptedFrames,'Channel flags',frame.getFlags() , ' Accepeted --------' , chNum)
+            #print('-------- Frame ',self.numAcceptedFrames,'Channel flags',frame.getFlags() , ' Accepeted --------' , chNum)
             # Check if channel number is 0x1 (streaming data channel)
-            if (chNum == 0x0) :
+            if (chNum == 0x1) :
 #                print('-------- Event --------')
                 # Collect the data
                 p = bytearray(frame.getPayload())
                 print('Num. data readout: ', len(p))
                 frame.read(p,0)
                 cnt = 0
-                self.frameData = p
             if ((self.numAcceptedFrames == self.frameIndex) or (self.frameIndex == 0)):              
+                self.frameData = p
                 self.readDataDone = True
                 # Emit the signal.
                 self.parent.trigger.emit()
