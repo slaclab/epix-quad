@@ -50,7 +50,7 @@ class Epix100aAsic(pr.Device):
                 
         # CMD = 0, Addr = 0  : Prepare for readout
         self.add(pr.Command(name='CmdPrepForRead', description='ePix Prepare For Readout', 
-                             offset=0x00000000*addrSize, bitSize=1, bitOffset=0, function=pr.Command.set0, hidden=True))
+                             offset=0x00000000*addrSize, bitSize=1, bitOffset=0, function=pr.Command.touchZero, hidden=True))
         
         # CMD = 1, Addr = 1  : Bits 2:0 - Pulser monostable bits
         #                      Bit  7   - Pulser sync bit
@@ -264,7 +264,7 @@ class Epix100aAsic(pr.Device):
       
         # CMD = 8, Addr = X  : Prepare for row/column/matrix configuration
         self.add(
-            pr.Command(name='PrepareMultiConfig', description='PrepareMultiConfig', offset=0x00008000*addrSize, bitSize=32, bitOffset=0, function=pr.Command.set0, hidden=True))
+            pr.Command(name='PrepareMultiConfig', description='PrepareMultiConfig', offset=0x00008000*addrSize, bitSize=32, bitOffset=0, function=pr.Command.touchZero, hidden=True))
 
         # Pixel Configuration
         #                    : Bit 0 = Test

@@ -51,13 +51,13 @@ def create(name='DigFpga', offset=0, memBase=None, hidden=False, enabled=True):
     # Allowed modes are RO, WO, RW or SL. SL indicates registers can be written but only
     # when executing commands (not accessed during writeAll and writeStale calls
     #Setup registers & variables
-    dev.add(pr.Variable(name='Version',             description='FPGA firmware version number',                            offset=0x00000000*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='SL'))
-    dev.add(pr.Variable(name='RunTriggerEnable',    description='Enable external run trigger',                             offset=0x00000001*addrSize, bitSize=1,  bitOffset=0, base='bool', mode='WO'))
+    dev.add(pr.Variable(name='Version',             description='FPGA firmware version number',                            offset=0x00000000*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
+    dev.add(pr.Variable(name='RunTriggerEnable',    description='Enable external run trigger',                             offset=0x00000001*addrSize, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
     dev.add(pr.Variable(name='RunTriggerDelay',     description='Run trigger delay',                                       offset=0x00000002*addrSize, bitSize=31, bitOffset=0, base='hex',  mode='RW'))
     dev.add(pr.Variable(name='DaqTriggerEnable',    description='Enable external run trigger',                             offset=0x00000003*addrSize, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
     dev.add(pr.Variable(name='DaqTriggerDelay',     description='Run trigger delay',                                       offset=0x00000004*addrSize, bitSize=31, bitOffset=0, base='hex',  mode='RW'))
     dev.add(pr.Variable(name='AcqCount',            description='Acquisition counter',                                     offset=0x00000005*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
-    dev.add(pr.Command( name='AcqCountReset',       description='Reset acquisition counter',                               offset=0x00000006*addrSize, bitSize=32, bitOffset=0, function=pr.Command.set0))
+    dev.add(pr.Command( name='AcqCountReset',       description='Reset acquisition counter',                               offset=0x00000006*addrSize, bitSize=32, bitOffset=0, function=pr.Command.touchZero))
     dev.add(pr.Variable(name='DacData',             description='Sets analog DAC (MAX5443)',                               offset=0x00000007*addrSize, bitSize=16, bitOffset=0, base='hex',  mode='RW'))
     dev.add(pr.Variable(name='DigitalPowerEnable',  description='Digital power enable',                                    offset=0x00000008*addrSize, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
     dev.add(pr.Variable(name='AnalogPowerEnable',   description='Analog power enable',                                     offset=0x00000008*addrSize, bitSize=1,  bitOffset=1, base='bool', mode='RW'))
@@ -150,10 +150,10 @@ def create(name='DigFpga', offset=0, memBase=None, hidden=False, enabled=True):
     dev.setResetFunc(resetFunc)
 
     # Create subdevices
-    dev.add(epix.Epix100aAsic(name='Epix100aAsic0', offset=0x00800000*addrSize, memBase=memBase, hidden=False, enabled=True))
-    #dev.add(epix.Epix100aAsic(name='Epix100aAsic1', offset=0x00900000*addrSize, memBase=memBase, hidden=False, enabled=True))
-    #dev.add(epix.Epix100aAsic(name='Epix100aAsic2', offset=0x00A00000*addrSize, memBase=memBase, hidden=False, enabled=True))
-    #dev.add(epix.Epix100aAsic(name='Epix100aAsic3', offset=0x00B00000*addrSize, memBase=memBase, hidden=False, enabled=True))
+    dev.add(epix.Epix100aAsic(name='Epix100aAsic0', offset=0x00800000*addrSize, memBase=memBase, hidden=False, enabled=False))
+    dev.add(epix.Epix100aAsic(name='Epix100aAsic1', offset=0x00900000*addrSize, memBase=memBase, hidden=False, enabled=False))
+    dev.add(epix.Epix100aAsic(name='Epix100aAsic2', offset=0x00A00000*addrSize, memBase=memBase, hidden=False, enabled=False))
+    dev.add(epix.Epix100aAsic(name='Epix100aAsic3', offset=0x00B00000*addrSize, memBase=memBase, hidden=False, enabled=False))
 
     #addDevice(new Pgp2bAxi(destination, baseAddress_ + 0x000C0000*addrSize,  0, this, addrSize)); 
     #addDevice(new AxiVersion(destination, baseAddress_ + 0x02000000*addrSize,  0, this, addrSize)); 

@@ -39,16 +39,13 @@ import testBridge
 import PyQt4.QtGui
 import PyQt4.QtCore
 
-# Define if the GUI is started
-START_GUI = 1
+#############################################
+# Define if the GUI is started (1 starts it)
+START_GUI = True
+#############################################
 
 
-
-
-# Create the PGP interfaces
-#pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,1) # Registers for ePix board
-#pgpVc1 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,0) # Data originaly was set to 1 on eval board
-#pgpVc3 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,3) # Microblaze
+# Create the PGP interfaces for ePix camera
 pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,0) # Data & cmds
 pgpVc1 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,1) # Registers for ePix board
 pgpVc3 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,3) # Microblaze
@@ -56,7 +53,6 @@ pgpVc3 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,3) # Microblaze
 print("")
 print("PGP Card Version: %x" % (pgpVc0.getInfo().version))
 
-# Create and Connect SRP to VC0 to read/write registers
 
 # Add data stream to file as channel 1
 # File writer
@@ -74,8 +70,6 @@ pyrogue.streamConnectBiDir(pgpVc1,srp)
 # Removed to reduce amount of data going to file
 #pyrogue.streamConnect(ePixBoard,dataWriter.getChannel(0x0))
 
-
-
 ## Add microblaze console stream to file as channel 2
 #pyrogue.streamConnect(pgpVc3,dataWriter.getChannel(0x2))
 
@@ -90,8 +84,6 @@ pyrogue.streamConnectBiDir(pgpVc1,srp)
 
 #br = testBridge.Bridge()
 #br._setSlave(srp)
-
-
 
 ##evalBoard.add(surf.AxiVersion.create(memBase=br,offset=0x0))
 #evalBoard.add(surf.AxiVersion.create(memBase=srp,offset=0x0))
@@ -108,58 +100,63 @@ pyrogue.streamConnectBiDir(pgpVc1,srp)
 #epics.start()
 
 
-
+#############################################
 # Microblaze console printout
+#############################################
 class MbDebug(rogue.interfaces.stream.Slave):
 
-   def __init__(self):
-      rogue.interfaces.stream.Slave.__init__(self)
-      self.enable = False
+    def __init__(self):
+        rogue.interfaces.stream.Slave.__init__(self)
+        self.enable = False
 
-   def _acceptFrame(self,frame):
-      if self.enable:
-         p = bytearray(frame.getPayload())
-         frame.read(p,0)
-         print('-------- Microblaze Console --------')
-         print(p.decode('utf-8'))
+    def _acceptFrame(self,frame):
+        if self.enable:
+            p = bytearray(frame.getPayload())
+            frame.read(p,0)
+            print('-------- Microblaze Console --------')
+            print(p.decode('utf-8'))
 
+#######################################
 # Custom run control
+#######################################
 class MyRunControl(pyrogue.RunControl):
-   def __init__(self,name):
-      pyrogue.RunControl.__init__(self,name,'Run Controller ePix 100a')
-      self._thread = None
+    def __init__(self,name):
+        pyrogue.RunControl.__init__(self,name,'Run Controller ePix 100a')
+        self._thread = None
 
-      self.runRate.enum = {1:'1 Hz', 10:'10 Hz', 30:'30 Hz'}
+        self.runRate.enum = {1:'1 Hz', 10:'10 Hz', 30:'30 Hz'}
 
-   def _setRunState(self,dev,var,value):
-      if self._runState != value:
-         self._runState = value
+    def _setRunState(self,dev,var,value):
+        if self._runState != value:
+            self._runState = value
 
-         if self._runState == 'Running':
-            self._thread = threading.Thread(target=self._run)
-            self._thread.start()
-         else:
-            self._thread.join()
-            self._thread = None
+            if self._runState == 'Running':
+                self._thread = threading.Thread(target=self._run)
+                self._thread.start()
+            else:
+                self._thread.join()
+                self._thread = None
 
-   def _run(self):
-      self._runCount = 0
-      self._last = int(time.time())
+    def _run(self):
+        self._runCount = 0
+        self._last = int(time.time())
 
-      while (self._runState == 'Running'):
-         delay = 1.0 / ({value: key for key,value in self.runRate.enum.items()}[self._runRate])
-         time.sleep(delay)
-         self._root.Trigger()
+        while (self._runState == 'Running'):
+            delay = 1.0 / ({value: key for key,value in self.runRate.enum.items()}[self._runRate])
+            time.sleep(delay)
+            self._root.Trigger()
 
-         self._runCount += 1
-         if self._last != int(time.time()):
-             self._last = int(time.time())
-             self.runCount._updated()
-
+            self._runCount += 1
+            if self._last != int(time.time()):
+                self._last = int(time.time())
+                self.runCount._updated()
+            
+##############################
 # Set base
+##############################
 class EpixBoard(pyrogue.Root):
-    def __init__(cmd, dataWriter, srp, **kwargs):
-        super().__init('ePixBoard','ePix 100a Board', **kwargs)
+    def __init__(self, cmd, dataWriter, srp, **kwargs):
+        super().__init__('ePixBoard','ePix 100a Board', pollEn=True, **kwargs)
         self.add(MyRunControl('runControl'))
         self.add(dataWriter)
 
@@ -172,6 +169,21 @@ class EpixBoard(pyrogue.Root):
 
 
 ePixBoard = EpixBoard(cmd, dataWriter, srp)
+
+# debug
+#mbcon = MbDebug()
+#pyrogue.streamTap(pgpVc0,mbcon)
+
+#mbcon1 = MbDebug()
+#pyrogue.streamTap(pgpVc1,mbcon)
+
+#mbcon2 = MbDebug()
+#pyrogue.streamTap(pgpVc3,mbcon)
+
+dbgData = rogue.interfaces.stream.Slave()
+dbgData.setDebug(60, "DATA[{}]".format(0))
+pyrogue.streamTap(pgpVc0, dbgData)
+
 
 # Create GUI
 appTop = PyQt4.QtGui.QApplication(sys.argv)
