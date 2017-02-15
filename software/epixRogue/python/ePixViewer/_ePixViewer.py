@@ -108,7 +108,7 @@ class Window(QtGui.QMainWindow, QObject):
         # Center UI
         screen = QtGui.QDesktopWidget().screenGeometry(self)
         size = self.geometry()
-        self.move((screen.width()-size.width())/2, (screen.height()-size.height())/2)
+        #self.move((screen.width()-size.width())/2, (screen.height()-size.height())/2)
         #self.setStyleSheet("QWidget{background-color: #000000;}")
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         self.buildUi()
@@ -120,13 +120,62 @@ class Window(QtGui.QMainWindow, QObject):
         #label used to display image
         self.label = QtGui.QLabel()
         #self.label.setAlignment(QtCore.Qt.AlignCenter)
-        self.label.move(50,0)
-        self.setCentralWidget(self.label)
+        #self.label.setScaledContents(True)
 
         #label used to display frame number
-        self.labelFrameNum = QtGui.QLabel('', self)
-        self.labelFrameNum.move(self.mainWdGeom[2]-100,self.mainWdGeom[3]-50)
-        #self.setCentralWidget(self.labelFrameNum)
+        self.labelFrameNum = QtGui.QLabel('')
+
+        #button set dark
+        btn1 = QtGui.QPushButton("Set Dark")
+        btn1.setMaximumWidth(150)
+        btn1.clicked.connect(self.setDark)
+        btn1.resize(btn1.minimumSizeHint())
+
+        #button next
+        btn2 = QtGui.QPushButton("Prev")
+        btn2.setMaximumWidth(150)
+        btn2.clicked.connect(self.prevFrame)
+        btn2.resize(btn2.minimumSizeHint())
+
+        #button next
+        btn3 = QtGui.QPushButton("Next")
+        btn3.setMaximumWidth(150)
+        btn3.clicked.connect(self.nextFrame)
+        btn3.resize(btn3.minimumSizeHint())
+
+        #button quit
+        btn4 = QtGui.QPushButton("Quit")
+        btn4.setMaximumWidth(150)
+        btn4.clicked.connect(self.close_viewer)
+        btn4.resize(btn4.minimumSizeHint())
+
+        self.mainWidget = QtGui.QWidget(self)
+        vbox1 = QVBoxLayout()
+        vbox1.addWidget(self.label)
+
+#        grigVbox2 = QGridLayout()
+#        grigVbox2.setSpacing(2)
+#        grigVbox2.addWidget(btn1,1,0)
+#        grigVbox2.addWidget(btn2,3,1)
+#        grigVbox2.addWidget(btn3,3,0)
+#        grigVbox2.addWidget(btn4,4,0)
+#        grigVbox2.addWidget(self.labelFrameNum,5,0)
+        
+        vbox2 = QVBoxLayout()
+#        vbox2.addLayout(grigVbox2)
+        vbox2.addWidget(btn1)
+        vbox2.addWidget(btn2)
+        vbox2.addWidget(btn3)
+        vbox2.addWidget(btn4)
+        vbox2.addStretch(1)
+        vbox2.addWidget(self.labelFrameNum)
+        
+        hbox = QHBoxLayout(self.mainWidget)
+        hbox.addLayout(vbox1)
+        hbox.addLayout(vbox2)
+
+        self.mainWidget.setFocus()        
+        self.setCentralWidget(self.mainWidget)
 
 
     def file_open(self):
@@ -139,29 +188,8 @@ class Window(QtGui.QMainWindow, QObject):
 
 
     def def_bttns(self):
-        #button set dark
-        btn = QtGui.QPushButton("Set Dark", self)
-        btn.clicked.connect(self.setDark)
-        btn.resize(btn.minimumSizeHint())
-        btn.move(self.mainWdGeom[2]-100,self.mainWdGeom[3]-175)
-
-        #button next
-        btn = QtGui.QPushButton("Prev", self)
-        btn.clicked.connect(self.prevFrame)
-        btn.resize(btn.minimumSizeHint())
-        btn.move(self.mainWdGeom[2]-100,self.mainWdGeom[3]-150)
-
-        #button next
-        btn = QtGui.QPushButton("Next", self)
-        btn.clicked.connect(self.nextFrame)
-        btn.resize(btn.minimumSizeHint())
-        btn.move(self.mainWdGeom[2]-100,self.mainWdGeom[3]-125)
-
-        #button quit
-        btn = QtGui.QPushButton("Quit", self)
-        btn.clicked.connect(self.close_viewer)
-        btn.resize(btn.minimumSizeHint())
-        btn.move(self.mainWdGeom[2]-100,self.mainWdGeom[3]-100)
+        return self
+ 
 
     def setDark(self):
         self.imgTool.setDarkImg(self.imgDesc)
@@ -249,7 +277,7 @@ class Window(QtGui.QMainWindow, QObject):
 
         pp = QtGui.QPixmap.fromImage(self.image)
         self.label.setPixmap(pp.scaled(self.label.size(),QtCore.Qt.KeepAspectRatio,QtCore.Qt.SmoothTransformation))
-
+        self.label.adjustSize()
         #updates the frame number
         #this sleep is a weak way of waiting for the file to be readout completely... needs improvement
         time.sleep(0.1)
