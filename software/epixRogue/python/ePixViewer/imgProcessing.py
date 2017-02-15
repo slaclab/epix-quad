@@ -52,7 +52,8 @@ class ImageProcessing():
     superRowSizeInBytes = superRowSize * 4 # 4 bytes per asic word
     #
     # variables to perform some initial image processing
-    imgDark = np.array([0])
+    imgDark = np.array([],dtype='uint16')
+    imgDark_isSet = False
 
 
     def __init__(self, parent) :
@@ -86,6 +87,14 @@ class ImageProcessing():
         # returns final image
         return imgDesc
 
+    def setDarkImg(self, rawData):
+        """performs the ePix100A image descrambling"""
+
+        self.imgDark = np.array(rawData,dtype='uint16')
+        self.imgDark_isSet = True
+
+    def getDarkSubtractedImg(self, rawImg):
+        return rawImg - self.imgDark
 
 #        for y in range(0,imgHeight):
 #            for x in range(0,imgWidth):

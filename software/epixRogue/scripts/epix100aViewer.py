@@ -31,5 +31,5 @@ def run():
 
 
 app = QtGui.QApplication(sys.argv)
-GUI = vi.Window()
+gui = vi.Window()
 run()

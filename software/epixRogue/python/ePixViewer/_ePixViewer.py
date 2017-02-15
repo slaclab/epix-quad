@@ -96,7 +96,10 @@ class Window(QtGui.QMainWindow, QObject):
         # Connect the trigger signal to a slot.
         # the different threads send messages to synchronize their tasks
         self.trigger.connect(self.displayImageFromReader)
- 
+        
+        self.imgDesc = []
+        self.imgTool = imgPr.ImageProcessing(self)
+
         # display the window on the screen after all items have been added 
         self.show()
 
@@ -122,7 +125,7 @@ class Window(QtGui.QMainWindow, QObject):
 
         #label used to display frame number
         self.labelFrameNum = QtGui.QLabel('', self)
-        self.labelFrameNum.move(self.mainWdGeom[2]-100,self.mainWdGeom[3]-250)
+        self.labelFrameNum.move(self.mainWdGeom[2]-100,self.mainWdGeom[3]-50)
         #self.setCentralWidget(self.labelFrameNum)
 
 
@@ -136,17 +139,23 @@ class Window(QtGui.QMainWindow, QObject):
 
 
     def def_bttns(self):
+        #button set dark
+        btn = QtGui.QPushButton("Set Dark", self)
+        btn.clicked.connect(self.setDark)
+        btn.resize(btn.minimumSizeHint())
+        btn.move(self.mainWdGeom[2]-100,self.mainWdGeom[3]-175)
+
         #button next
         btn = QtGui.QPushButton("Prev", self)
         btn.clicked.connect(self.prevFrame)
         btn.resize(btn.minimumSizeHint())
-        btn.move(self.mainWdGeom[2]-100,self.mainWdGeom[3]-200)
+        btn.move(self.mainWdGeom[2]-100,self.mainWdGeom[3]-150)
 
         #button next
         btn = QtGui.QPushButton("Next", self)
         btn.clicked.connect(self.nextFrame)
         btn.resize(btn.minimumSizeHint())
-        btn.move(self.mainWdGeom[2]-100,self.mainWdGeom[3]-150)
+        btn.move(self.mainWdGeom[2]-100,self.mainWdGeom[3]-125)
 
         #button quit
         btn = QtGui.QPushButton("Quit", self)
@@ -154,7 +163,9 @@ class Window(QtGui.QMainWindow, QObject):
         btn.resize(btn.minimumSizeHint())
         btn.move(self.mainWdGeom[2]-100,self.mainWdGeom[3]-100)
 
-
+    def setDark(self):
+        self.imgTool.setDarkImg(self.imgDesc)
+        
     # display the previous frame from the current file
     def prevFrame(self):
         self.eventReader.frameIndex -= 1
@@ -220,17 +231,21 @@ class Window(QtGui.QMainWindow, QObject):
         imgWidth = int(96 * 8)   #4*184
         imgHeight = int(708) 
 
-        tool = imgPr.ImageProcessing(self)
-        tool.imgWidth = imgWidth
-        tool.imgHeight = imgHeight
+        
+        self.imgTool.imgWidth = imgWidth
+        self.imgTool.imgHeight = imgHeight
 
-        imgDesc = tool.descrambleEPix100AImage(self.eventReader.frameData)
+        self.imgDesc = self.imgTool.descrambleEPix100AImage(self.eventReader.frameData)
 
-        arrayLen = len(imgDesc)
+        arrayLen = len(self.imgDesc)
         print('Descrambled image size: ', arrayLen)
                
-        # get the data into the image object
-        self.image = QtGui.QImage(imgDesc, imgWidth, imgHeight, QtGui.QImage.Format_RGB16)
+        if (self.imgTool.imgDark_isSet):
+            ImgDarkSub = self.imgTool.getDarkSubtractedImg(self.imgDesc)
+            self.image = QtGui.QImage(ImgDarkSub, imgWidth, imgHeight, QtGui.QImage.Format_RGB16)
+        else:
+            # get the data into the image object
+            self.image = QtGui.QImage(self.imgDesc, imgWidth, imgHeight, QtGui.QImage.Format_RGB16)
 
         pp = QtGui.QPixmap.fromImage(self.image)
         self.label.setPixmap(pp.scaled(self.label.size(),QtCore.Qt.KeepAspectRatio,QtCore.Qt.SmoothTransformation))
