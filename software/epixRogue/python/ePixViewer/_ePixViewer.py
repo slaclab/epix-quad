@@ -31,18 +31,25 @@ import time
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import *
 from PyQt4.QtCore import QObject, pyqtSignal
+import ePixViewer.imgProcessing as imgPr
 
 
-
+################################################################################
+################################################################################
+#   Window class
+#   Implements the screen that display all images.
+#   Calls other classes defined in this file to properly read and process
+#   the images in a givel file
+################################################################################
 class Window(QtGui.QMainWindow, QObject):
     """Class that defines the main window for the viewer."""
     
     # Define a new signal called 'trigger' that has no arguments.
     trigger = pyqtSignal()
 
+
     def __init__(self):
-        super(Window, self).__init__()
-      
+        super(Window, self).__init__()    
         # window init
         self.mainWdGeom = [50, 50, 1000, 600] # x, y, width, height
         self.setGeometry(self.mainWdGeom[0], self.mainWdGeom[1], self.mainWdGeom[2],self.mainWdGeom[3])
@@ -53,7 +60,7 @@ class Window(QtGui.QMainWindow, QObject):
         extractAction.setShortcut("Ctrl+Q")
         extractAction.setStatusTip('Leave The App')
         extractAction.triggered.connect(self.close_viewer)
- 
+        # 
         openFile = QtGui.QAction("&Open File", self)
         openFile.setShortcut("Ctrl+O")
         openFile.setStatusTip('Open a new set of images')
@@ -71,36 +78,31 @@ class Window(QtGui.QMainWindow, QObject):
         fileMenu.addAction(extractAction)
 
         # Create widget
-        #screen = QtGui.QDesktopWidget().screenGeometry(self)
-        #self.label = QLabel(self)
-        #self.label.setGeometry(self.mainWdGeom[0]+100, self.mainWdGeom[1]+100, self.mainWdGeom[2]-200,self.mainWdGeom[3]-200)
-        #self.setCentralWidget(self.label)
-        #pixmap = QPixmap(os.getcwd() + '~ddoering/Desktop/genDAQScrenshots/GenDAQ10.png')
-        #self.label.setPixmap(pixmap)
         self.prepairWindow()
 
-        
         # add all buttons to the screen
         self.def_bttns()
 
-        # rogue interconection
- 
+        #########################     
+        # rogue interconection  #
+        #########################
         # Create the objects            
         self.fileReader  = rogue.utilities.fileio.StreamReader()
         self.eventReader = EventReader(self)
-
         # Connect the fileReader to our event processor
         pyrogue.streamConnect(self.fileReader,self.eventReader)
 
+ #       self.imgProc = imgPr.imageProcessing()
         # Connect the trigger signal to a slot.
+        # the different threads send messages to synchronize their tasks
         self.trigger.connect(self.displayImageFromReader)
  
-
         # display the window on the screen after all items have been added 
         self.show()
 
+
     def prepairWindow(self):
-        # Centre UI
+        # Center UI
         screen = QtGui.QDesktopWidget().screenGeometry(self)
         size = self.geometry()
         self.move((screen.width()-size.width())/2, (screen.height()-size.height())/2)
@@ -109,7 +111,8 @@ class Window(QtGui.QMainWindow, QObject):
         self.buildUi()
         #self.showFullScreen()
 
-    #creates the main display elemento of the user interface
+
+    #creates the main display element of the user interface
     def buildUi(self):
         #label used to display image
         self.label = QtGui.QLabel()
@@ -122,66 +125,6 @@ class Window(QtGui.QMainWindow, QObject):
         self.labelFrameNum.move(self.mainWdGeom[2]-100,self.mainWdGeom[3]-250)
         #self.setCentralWidget(self.labelFrameNum)
 
-    # if the image is png or other standard extension it uses this function to display it.
-    def displayImag(self, path):
-        print('File name: ', path)
-        if path:
-            image = QtGui.QImage(path)
-            pp = QtGui.QPixmap.fromImage(image)
-            self.label.setPixmap(pp.scaled(
-                    self.label.size(),
-                    QtCore.Qt.KeepAspectRatio,
-                    QtCore.Qt.SmoothTransformation))
-
-    # if the image is a rogue type, calls the file readr objetct to read all frames
-    def displayImagDat(self, filename):
-        print('File name: ', filename)
-        self.eventReader.readDataDone = False
-        self.eventReader.numAcceptedFrames = 0
-        self.fileReader.open(filename)
-        # waits until data is found
-        timeoutCnt = 0
-        while ((self.eventReader.readDataDone == False) and (timeoutCnt < 10)):
-             timeoutCnt += 1
-             print('Loading image...', self.eventReader.frameIndex, 'atempt',  timeoutCnt)
-             time.sleep(0.1)
-
-#        self.displayImageFromReader()
-
-#        self.fileReader.close()
-
-    def displayImageFromReader(self):
-        # core code for displaying the image
-        arrayLen = len(self.eventReader.frameData)
-        print('Image size: ', arrayLen)
-
-        imgWidth = 96 * 8   #4*184
-        imgHeight = 708 /2 #4*184
-        #removes header before displying the image
-        for j in range(0,32):
-            self.eventReader.frameData.pop(0)
-        # get the data into the image object
-        self.image = QtGui.QImage(self.eventReader.frameData, imgWidth, imgHeight, QtGui.QImage.Format_RGB16)
-#        for y in range(0,imgHeight):
-#            for x in range(0,imgWidth):
-#                arrayIndex = x+(y*imgWidth)
-#                if (arrayIndex < arrayLen):
-#                    data = self.eventReader.frameData[arrayIndex]
-#                else:
-#                    data = self.eventReader.frameData[0]
-                #value = QtGui.qRgb(data, data, data)
-                #image.setPixel(x,y,value)
-#                self.image.setPixel(x,y,data<<16|data<<8|data)
-        pp = QtGui.QPixmap.fromImage(self.image)
-        self.label.setPixmap(pp.scaled(self.label.size(),QtCore.Qt.KeepAspectRatio,QtCore.Qt.SmoothTransformation))
-
-        #updates the frame number
-        #this sleep is a weak way of waiting for the file to be readout completely... needs improvement
-        time.sleep(0.1)
-        thisString = 'Frame {} of {}'.format(self.eventReader.frameIndex, self.eventReader.numAcceptedFrames)
-        print(thisString)
-        self.labelFrameNum.setText(thisString)
-
 
     def file_open(self):
         self.eventReader.frameIndex = 1
@@ -191,8 +134,8 @@ class Window(QtGui.QMainWindow, QObject):
         else:
             self.displayImag(self.filename)
 
-    def def_bttns(self):
 
+    def def_bttns(self):
         #button next
         btn = QtGui.QPushButton("Prev", self)
         btn.clicked.connect(self.prevFrame)
@@ -220,6 +163,7 @@ class Window(QtGui.QMainWindow, QObject):
         print('Selected frame ', self.eventReader.frameIndex)
         self.displayImagDat(self.filename)
 
+
     # display the next frame from the current file
     def nextFrame(self):
         self.eventReader.frameIndex += 1
@@ -227,6 +171,7 @@ class Window(QtGui.QMainWindow, QObject):
         self.displayImagDat(self.filename)
 
 
+    # checks if the user really wants to exit
     def close_viewer(self):
         choice = QtGui.QMessageBox.question(self, 'Quit!',
                                             "Do you want to quit viewer?",
@@ -238,7 +183,74 @@ class Window(QtGui.QMainWindow, QObject):
             pass
 
 
+    # if the image is png or other standard extension it uses this function to display it.
+    def displayImag(self, path):
+        print('File name: ', path)
+        if path:
+            image = QtGui.QImage(path)
+            pp = QtGui.QPixmap.fromImage(image)
+            self.label.setPixmap(pp.scaled(
+                    self.label.size(),
+                    QtCore.Qt.KeepAspectRatio,
+                    QtCore.Qt.SmoothTransformation))
+
+
+    # if the image is a rogue type, calls the file reader object to read all frames
+    def displayImagDat(self, filename):
+
+        print('File name: ', filename)
+        self.eventReader.readDataDone = False
+        self.eventReader.numAcceptedFrames = 0
+        self.fileReader.open(filename)
+
+        # waits until data is found
+        timeoutCnt = 0
+        while ((self.eventReader.readDataDone == False) and (timeoutCnt < 10)):
+             timeoutCnt += 1
+             print('Loading image...', self.eventReader.frameIndex, 'atempt',  timeoutCnt)
+             time.sleep(0.1)
+
+
+    def displayImageFromReader(self):
+        # core code for displaying the image
+
+        arrayLen = len(self.eventReader.frameData)
+        print('Image size: ', arrayLen)
+
+        imgWidth = int(96 * 8)   #4*184
+        imgHeight = int(708) 
+
+        tool = imgPr.ImageProcessing(self)
+        tool.imgWidth = imgWidth
+        tool.imgHeight = imgHeight
+
+        imgDesc = tool.descrambleEPix100AImage(self.eventReader.frameData)
+
+        arrayLen = len(imgDesc)
+        print('Descrambled image size: ', arrayLen)
+               
+        # get the data into the image object
+        self.image = QtGui.QImage(imgDesc, imgWidth, imgHeight, QtGui.QImage.Format_RGB16)
+
+        pp = QtGui.QPixmap.fromImage(self.image)
+        self.label.setPixmap(pp.scaled(self.label.size(),QtCore.Qt.KeepAspectRatio,QtCore.Qt.SmoothTransformation))
+
+        #updates the frame number
+        #this sleep is a weak way of waiting for the file to be readout completely... needs improvement
+        time.sleep(0.1)
+        thisString = 'Frame {} of {}'.format(self.eventReader.frameIndex, self.eventReader.numAcceptedFrames)
+        print(thisString)
+        self.labelFrameNum.setText(thisString)
+
+
+################################################################################
+################################################################################
+#   Event reader class
+#   
+################################################################################
 class EventReader(rogue.interfaces.stream.Slave):
+    """retrieves data from a file using rogue utilities services"""
+
     def __init__(self, parent) :
         rogue.interfaces.stream.Slave.__init__(self)
         super(EventReader, self).__init__()
@@ -251,6 +263,11 @@ class EventReader(rogue.interfaces.stream.Slave):
         self.parent = parent
 
 
+    # checks all frames in the file to look for the one that needs to be displayed
+    # self.frameIndex defines which frame should be returned
+    # Once the frame is found, saves data and emits a signal do enable the class window
+    # to dislplay it. The emit signal is needed because only that class' thread can 
+    # access the screen.
     def _acceptFrame(self,frame):
         self.lastFrame = frame
         if self.enable:
@@ -260,7 +277,7 @@ class EventReader(rogue.interfaces.stream.Slave):
             #print('-------- Frame ',self.numAcceptedFrames,'Channel flags',frame.getFlags() , ' Accepeted --------' , chNum)
             # Check if channel number is 0x1 (streaming data channel)
             if (chNum == 0x1) :
-#                print('-------- Event --------')
+                #print('-------- Event --------')
                 # Collect the data
                 p = bytearray(frame.getPayload())
                 print('Num. data readout: ', len(p))
@@ -271,6 +288,8 @@ class EventReader(rogue.interfaces.stream.Slave):
                 self.readDataDone = True
                 # Emit the signal.
                 self.parent.trigger.emit()
+                # if displaying all images the sleep produces a frame rate that can be displayed without 
+                # freezing or crashing the program. It is also good for the person viewing the images.
                 time.sleep(0.1)
-#                    self.parent.displayImageFromReader()
+
 

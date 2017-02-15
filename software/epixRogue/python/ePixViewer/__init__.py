@@ -8,3 +8,6 @@
 # contained in the LICENSE.txt file.
 #-----------------------------------------------------------------------------
 from ePixViewer._ePixViewer import *
+from ePixViewer.imgProcessing import *
+
+
