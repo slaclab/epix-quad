@@ -90,7 +90,7 @@ class ImageProcessing():
     def setDarkImg(self, rawData):
         """performs the ePix100A image descrambling"""
 
-        self.imgDark = np.array(rawData,dtype='uint16')
+        self.imgDark = np.array(rawData,dtype='int16')
         self.imgDark_isSet = True
 
     def getDarkSubtractedImg(self, rawImg):

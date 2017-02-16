@@ -13,7 +13,7 @@
 # with stand alone systems
 #
 #-----------------------------------------------------------------------------
-# This file is part of the ATLAS CHESS2 DEV. It is subject to 
+# This file is part of the ePix project. It is subject to 
 # the license terms in the LICENSE.txt file found in the top-level directory 
 # of this distribution and at: 
 #    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
@@ -29,7 +29,7 @@ import ePixViewer as vi
 def run():
     sys.exit(app.exec_())
 
-
+# creates and runs a viewer gui
 app = QtGui.QApplication(sys.argv)
 gui = vi.Window()
 run()

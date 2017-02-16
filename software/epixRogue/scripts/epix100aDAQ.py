@@ -85,15 +85,7 @@ pyrogue.streamConnectBiDir(pgpVc1,srp)
 #br = testBridge.Bridge()
 #br._setSlave(srp)
 
-##evalBoard.add(surf.AxiVersion.create(memBase=br,offset=0x0))
-#evalBoard.add(surf.AxiVersion.create(memBase=srp,offset=0x0))
-#evalBoard.add(surf.SsiPrbsTx.create(memBase=srp,offset=0x30000))
-
 #ePixBoard.add(surf.SsiPrbsTx.create(memBase=srp1,offset=0x00000000*4))
-
-# Create mesh node
-#mNode = pyrogue.mesh.MeshNode('rogueTest',iface='eth3',root=ePixBoard)
-#mNode.start()
 
 # Create epics node
 #epics = pyrogue.epics.EpicsCaServer('rogueTest',ePixBoard)
@@ -191,13 +183,20 @@ guiTop = pyrogue.gui.GuiTop('ePix100aGui')
 guiTop.addTree(ePixBoard)
 guiTop.resize(1000,1000)
 
+# Create mesh node (this is for remote control only, no data is shared with this)
+#mNode = pyrogue.mesh.MeshNode('rogueTest',iface='eth0',root=ePixBoard)
+mNode = pyrogue.mesh.MeshNode('rogueEpix100a',iface='eth0',root=None)
+mNode.setNewTreeCb(guiTop.addTree)
+mNode.start()
+
+
 # Run gui
 if (START_GUI):
     appTop.exec_()
 
 # Close window and stop polling
 def stop():
-#    mNode.stop()
+    mNode.stop()
 #    epics.stop()
     ePixBoard.stop()
     exit()
