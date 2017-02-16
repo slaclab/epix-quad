@@ -25,15 +25,16 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"00000013";  -- MAKE_VERSION
+   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"00000014";  -- MAKE_VERSION
 
-   constant BUILD_STAMP_C : string := "Coulter: Vivado v2016.3 (x86_64) Built Fri Jan 27 15:36:58 PST 2017 by bareese";
+   constant BUILD_STAMP_C : string := "Coulter: Vivado v2016.3 (x86_64) Built Thu Feb 16 11:17:18 PST 2017 by bareese";
 
 end Version;
 
 -------------------------------------------------------------------------------
 -- Revision History:
 
+-- 00000014 - Updated AcquisitionControl defaults
 -- 00000013 - Don't clear r.cfg
 -- 00000012 - Re-arrange somi, sm, st AXI register map
 -- 00000011 - CPOL=0
