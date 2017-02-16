@@ -54,6 +54,7 @@ class Window(QtGui.QMainWindow, QObject):
         self.mainWdGeom = [50, 50, 1000, 600] # x, y, width, height
         self.setGeometry(self.mainWdGeom[0], self.mainWdGeom[1], self.mainWdGeom[2],self.mainWdGeom[3])
         self.setWindowTitle("ePix image viewer")
+        #QtGui.QApplication.setStyle(QtGui.QStyleFactory.create('Cleanlooks'))
 
         # add actions for menu item
         extractAction = QtGui.QAction("&Quit", self)
@@ -119,8 +120,18 @@ class Window(QtGui.QMainWindow, QObject):
     def buildUi(self):
         #label used to display image
         self.label = QtGui.QLabel()
-        #self.label.setAlignment(QtCore.Qt.AlignCenter)
-        #self.label.setScaledContents(True)
+        self.label.mousePressEvent = self.mouseClickedOnImage
+        self.label.setAlignment(QtCore.Qt.AlignTop)
+        self.label.setFixedSize(800,800)
+        #self.label.setFrameStyle(QtGui.QFrame.Raised)
+        self.label.setScaledContents(True)
+        
+        #frame for the image
+        btnFrame = QtGui.QFrame()
+        #btnFrame.setFrameShape(QtGui.QFrame.StyledPanel)
+        btnFrame.setFrameStyle(QtGui.QFrame.StyledPanel) 
+        btnFrame.setWindowTitle("dfasdf")
+        btnFrame.setLineWidth(4)
 
         #label used to display frame number
         self.labelFrameNum = QtGui.QLabel('')
@@ -149,30 +160,52 @@ class Window(QtGui.QMainWindow, QObject):
         btn4.clicked.connect(self.close_viewer)
         btn4.resize(btn4.minimumSizeHint())
 
+        mouseLabel = QtGui.QLabel("Pixel Information")
+        self.mouseXLine = QtGui.QLineEdit()
+        self.mouseXLine.setMaximumWidth(50)
+        self.mouseYLine = QtGui.QLineEdit()
+        self.mouseYLine.setMaximumWidth(50)
+        self.mouseValueLine = QtGui.QLineEdit()
+        self.mouseValueLine.setMaximumWidth(100)
+
         self.mainWidget = QtGui.QWidget(self)
         vbox1 = QVBoxLayout()
-        vbox1.addWidget(self.label)
+        #vbox1.addWidget(labelFrame)
+        vbox1.setAlignment(QtCore.Qt.AlignTop)
+        vbox1.addWidget(self.label,  QtCore.Qt.AlignTop)
+        #vbox1.addStretch(1)
 
-#        grigVbox2 = QGridLayout()
-#        grigVbox2.setSpacing(2)
-#        grigVbox2.addWidget(btn1,1,0)
-#        grigVbox2.addWidget(btn2,3,1)
-#        grigVbox2.addWidget(btn3,3,0)
-#        grigVbox2.addWidget(btn4,4,0)
-#        grigVbox2.addWidget(self.labelFrameNum,5,0)
+        gridVbox2 = QGridLayout()
+        gridVbox2.setSpacing(2)
+        gridVbox2.addWidget(btn1,1,0)
+        gridVbox2.addWidget(btn2,3,1)
+        gridVbox2.addWidget(btn3,3,0)
+        gridVbox2.addWidget(btn4,4,0)
+        gridVbox2.addWidget(mouseLabel,5,0)
+        gridVbox2.addWidget(self.mouseXLine,6,0)
+        gridVbox2.addWidget(self.mouseYLine,6,1)
+        gridVbox2.addWidget(self.mouseValueLine,6,2)
+        gridVbox2.addWidget(self.labelFrameNum,7,0)
         
-        vbox2 = QVBoxLayout()
-#        vbox2.addLayout(grigVbox2)
-        vbox2.addWidget(btn1)
-        vbox2.addWidget(btn2)
-        vbox2.addWidget(btn3)
-        vbox2.addWidget(btn4)
-        vbox2.addStretch(1)
-        vbox2.addWidget(self.labelFrameNum)
+
+
+        
+#        vbox2 = QVBoxLayout()
+#        #btnFrame.setLayout(vbox2)
+##        vbox2.addLayout(grigVbox2)
+#        vbox2.addWidget(btn1)
+#        vbox2.addWidget(btn2)
+#        vbox2.addWidget(btn3)
+#        vbox2.addWidget(btn4)
+#        vbox2.addStretch(1)
+#        vbox2.addWidget(self.labelFrameNum)
+        
         
         hbox = QHBoxLayout(self.mainWidget)
         hbox.addLayout(vbox1)
-        hbox.addLayout(vbox2)
+        hbox.addLayout(gridVbox2)
+
+        #QtGui.QApplication.setStyle(QtGui.QStyleFactory.create('Cleanlooks'))
 
         self.mainWidget.setFocus()        
         self.setCentralWidget(self.mainWidget)
@@ -269,8 +302,8 @@ class Window(QtGui.QMainWindow, QObject):
         print('Descrambled image size: ', arrayLen)
                
         if (self.imgTool.imgDark_isSet):
-            ImgDarkSub = self.imgTool.getDarkSubtractedImg(self.imgDesc)
-            self.image = QtGui.QImage(ImgDarkSub, imgWidth, imgHeight, QtGui.QImage.Format_RGB16)
+            self.ImgDarkSub = self.imgTool.getDarkSubtractedImg(self.imgDesc)
+            self.image = QtGui.QImage(self.ImgDarkSub, imgWidth, imgHeight, QtGui.QImage.Format_RGB16)
         else:
             # get the data into the image object
             self.image = QtGui.QImage(self.imgDesc, imgWidth, imgHeight, QtGui.QImage.Format_RGB16)
@@ -278,12 +311,37 @@ class Window(QtGui.QMainWindow, QObject):
         pp = QtGui.QPixmap.fromImage(self.image)
         self.label.setPixmap(pp.scaled(self.label.size(),QtCore.Qt.KeepAspectRatio,QtCore.Qt.SmoothTransformation))
         self.label.adjustSize()
-        #updates the frame number
-        #this sleep is a weak way of waiting for the file to be readout completely... needs improvement
+        # updates the frame number
+        # this sleep is a weak way of waiting for the file to be readout completely... needs improvement
         time.sleep(0.1)
         thisString = 'Frame {} of {}'.format(self.eventReader.frameIndex, self.eventReader.numAcceptedFrames)
         print(thisString)
         self.labelFrameNum.setText(thisString)
+
+    def mouseClickedOnImage(self, event):
+        mouseX = event.pos().x()
+        mouseY = event.pos().y()
+        pixmapH = self.label.pixmap().height()
+        pixmapW = self.label.pixmap().width()
+        imageH = self.image.width()
+        imageW = self.image.height()
+
+        self.mouseX = int(imageW*mouseX/pixmapW)
+        self.mouseY = int(imageH*mouseY/pixmapH)
+
+        #self.mousePixelValue = self.image.pixel(self.mouseX, self.mouseY)
+        if (self.imgTool.imgDark_isSet):
+            self.mousePixelValue = self.ImgDarkSub[self.mouseX + (self.mouseY*imageW)]
+        else:
+            self.mousePixelValue = self.imgDesc[self.mouseX + (self.mouseY*imageW)]
+
+        #print('Mouse coordinates: {},{}'.format(mouseX, mouseY))
+        #print('Pixel coordinates: {},{}'.format(pixmapW, pixmapH))
+        #print('Image coordinates: {},{}'.format(imageW, imageH))
+        #print('Pixel[{},{}] = {}'.format(self.mouseX, self.mouseY, self.mousePixelValue))
+        self.mouseXLine.setText(str(self.mouseX))
+        self.mouseYLine.setText(str(self.mouseY))
+        self.mouseValueLine.setText(str(self.mousePixelValue))
 
 
 ################################################################################
@@ -333,6 +391,6 @@ class EventReader(rogue.interfaces.stream.Slave):
                 self.parent.trigger.emit()
                 # if displaying all images the sleep produces a frame rate that can be displayed without 
                 # freezing or crashing the program. It is also good for the person viewing the images.
-                time.sleep(0.1)
+                time.sleep(0.01)
 
 
