@@ -38,9 +38,12 @@ use unisim.vcomponents.all;
 
 entity RegControl is
    generic (
-      TPD_G                : time                  := 1 ns;
-      CLK_PERIOD_G         : real := 10.0e-9
-   );
+      TPD_G            : time            := 1 ns;
+      EN_DEVICE_DNA_G  : boolean         := true;
+      HARD_RESET_G     : boolean         := true;
+      EN_MICROBLAZE_G  : boolean         := true;
+      CLK_PERIOD_G     : real            := 10.0e-9;
+      AXI_ERROR_RESP_G : slv(1 downto 0) := AXI_RESP_OK_C);
    port (
       -- Global Signals
       axiClk         : in  sl;
@@ -104,7 +107,7 @@ architecture rtl of RegControl is
    
 begin
 
-   axiReset <= sysRst or r.usrRst;
+   axiReset <= (sysRst or r.usrRst) when(HARD_RESET_G) else sysRst;
    axiRst   <= axiReset;
 
    -------------------------------
@@ -123,6 +126,15 @@ begin
       v.epixRegOut.seqCountReset := '0';
       v.scopeRegOut.arm          := '0';
       v.scopeRegOut.trig         := '0';
+      
+      -- Check for hard reset
+      if (HARD_RESET_G = false) then
+         v.usrRst := '0';
+         if (r.usrRst = '1') then
+            -- Reset the register
+            v := REG_INIT_C;
+         end if;      
+      end if;      
       
       -- dedicated axi stream channel to set or clear monitorEnable register
       if monEnAxisMaster.tValid = '1' and monEnAxisMaster.tLast = '1' then
@@ -241,8 +253,15 @@ begin
       axiSlaveRegisterR(regCon, x"148" & "00",  0, epixStatus.envData(8));
       
       
-      axiSlaveDefault(regCon, v.axiWriteSlave, v.axiReadSlave, AXI_RESP_OK_C);
+      axiSlaveDefault(regCon, v.axiWriteSlave, v.axiReadSlave, AXI_ERROR_RESP_G);
 
+      -- Check if no microblaze attached
+      if (EN_MICROBLAZE_G = false) then
+         v.epixRegOut.requestStartupCal := '0';
+         v.epixRegOut.startupAck        := '1';
+         v.epixRegOut.startupFail       := '0';
+      end if;
+      
       -- Synchronous Reset
       if axiReset = '1' then
          v := REG_INIT_C;
@@ -289,17 +308,22 @@ begin
       
    -----------------------------------------------
    -- Serial IDs: FPGA Device DNA + DS2411's
-   -----------------------------------------------      
-   G_DEVICE_DNA : entity work.DeviceDna
-   generic map (
-      TPD_G => TPD_G
-   )
-   port map (
-      clk      => axiClk,
-      rst      => axiReset,
-      dnaValue => idValues(0),
-      dnaValid => idValids(0)
-   );
+   -----------------------------------------------  
+   GEN_DEVICE_DNA : if (EN_DEVICE_DNA_G = true) generate
+      G_DEVICE_DNA : entity work.DeviceDna
+         generic map (
+            TPD_G => TPD_G)
+         port map (
+            clk      => axiClk,
+            rst      => axiReset,
+            dnaValue => idValues(0),
+            dnaValid => idValids(0));
+   end generate GEN_DEVICE_DNA;
+   
+   BYP_DEVICE_DNA : if (EN_DEVICE_DNA_G = false) generate
+      idValids(0) <= '1';
+      idValues(0) <= (others=>'0');
+   end generate BYP_DEVICE_DNA;   
       
    G_DS2411 : for i in 0 to 1 generate
       U_DS2411_N : entity work.DS2411Core
