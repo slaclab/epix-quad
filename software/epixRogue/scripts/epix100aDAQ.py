@@ -38,10 +38,12 @@ import sys
 import testBridge
 import PyQt4.QtGui
 import PyQt4.QtCore
+import ePixViewer as vi
 
 #############################################
 # Define if the GUI is started (1 starts it)
 START_GUI = True
+START_VIEWER = False
 #############################################
 
 
@@ -116,7 +118,7 @@ class MyRunControl(pyrogue.RunControl):
         pyrogue.RunControl.__init__(self,name,'Run Controller ePix 100a')
         self._thread = None
 
-        self.runRate.enum = {1:'1 Hz', 10:'10 Hz', 30:'30 Hz'}
+        self.runRate.enum = {1:'1 Hz', 10:'10 Hz', 30:'30 Hz', 60:'60 Hz', 120:'120 Hz'}
 
     def _setRunState(self,dev,var,value):
         if self._runState != value:
@@ -182,6 +184,13 @@ appTop = PyQt4.QtGui.QApplication(sys.argv)
 guiTop = pyrogue.gui.GuiTop('ePix100aGui')
 guiTop.addTree(ePixBoard)
 guiTop.resize(1000,1000)
+
+# Viewer gui
+gui = vi.Window()
+gui.eventReader.frameIndex = 0
+gui.eventReader.ViewDataChannel = 0
+gui.setReadDelay(0)
+pyrogue.streamTap(pgpVc0, gui.eventReader)
 
 # Create mesh node (this is for remote control only, no data is shared with this)
 #mNode = pyrogue.mesh.MeshNode('rogueTest',iface='eth0',root=ePixBoard)
