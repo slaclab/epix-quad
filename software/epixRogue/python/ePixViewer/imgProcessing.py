@@ -66,27 +66,6 @@ class ImageProcessing():
         self.imgWidth = self.imgNumAsicsPerSide * self.imgNumAdcChPerAsic * self.imgNumColPerAdcCh
         
 
-    def descrambleEPix100AImage(self, rawData):
-        """performs the ePix100A image descrambling"""
-        
-        #removes header before displying the image
-        for j in range(0,32):
-            rawData.pop(0)
-        
-        #get the first superline
-        imgBot = rawData[(0*self.superRowSizeInBytes):(1*self.superRowSizeInBytes)] 
-        imgTop = rawData[(1*self.superRowSizeInBytes):(2*self.superRowSizeInBytes)] 
-        for j in range(2,self.imgHeight):
-            if (j%2):
-                imgBot.extend(rawData[(j*self.superRowSizeInBytes):((j+1)*self.superRowSizeInBytes)])
-            else:
-                imgTop.extend(rawData[(j*self.superRowSizeInBytes):((j+1)*self.superRowSizeInBytes)]) 
-        imgDesc = imgBot
-        imgDesc.extend(imgTop)
-
-        # returns final image
-        return imgDesc
-
     def setDarkImg(self, rawData):
         """performs the ePix100A image descrambling"""
 

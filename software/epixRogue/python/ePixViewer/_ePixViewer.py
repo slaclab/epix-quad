@@ -32,6 +32,7 @@ from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import *
 from PyQt4.QtCore import QObject, pyqtSignal
 import ePixViewer.imgProcessing as imgPr
+import ePixViewer.Cameras as cameras
 
 
 ################################################################################
@@ -55,6 +56,9 @@ class Window(QtGui.QMainWindow, QObject):
         self.setGeometry(self.mainWdGeom[0], self.mainWdGeom[1], self.mainWdGeom[2],self.mainWdGeom[3])
         self.setWindowTitle("ePix image viewer")
         #QtGui.QApplication.setStyle(QtGui.QStyleFactory.create('Cleanlooks'))
+
+        # creates a camera object
+        self.currentCam = cameras.Camera(cameraType = 'ePix100a')
 
         # add actions for menu item
         extractAction = QtGui.QAction("&Quit", self)
@@ -97,6 +101,8 @@ class Window(QtGui.QMainWindow, QObject):
         # Connect the trigger signal to a slot.
         # the different threads send messages to synchronize their tasks
         self.trigger.connect(self.displayImageFromReader)
+
+        self.readFileDelay = 0.1
         
         self.imgDesc = []
         self.imgTool = imgPr.ImageProcessing(self)
@@ -210,9 +216,15 @@ class Window(QtGui.QMainWindow, QObject):
         self.mainWidget.setFocus()        
         self.setCentralWidget(self.mainWidget)
 
+    def setReadDelay(self, delay):
+        self.eventReader.readFileDelay = delay
+        self.readFileDelay = delay
+        
 
     def file_open(self):
         self.eventReader.frameIndex = 1
+        self.eventReader.ViewDataChannel = 1
+        self.setReadDelay(0.1)
         self.filename = QtGui.QFileDialog.getOpenFileName(self, 'Open File', '', 'Rogue Images (*.dat);; GenDAQ Images (*.bin);;Any (*.*)')  
         if (os.path.splitext(self.filename)[1] == '.dat'): 
             self.displayImagDat(self.filename)
@@ -283,40 +295,39 @@ class Window(QtGui.QMainWindow, QObject):
              time.sleep(0.1)
 
 
+
     def displayImageFromReader(self):
         # core code for displaying the image
 
         arrayLen = len(self.eventReader.frameData)
         print('Image size: ', arrayLen)
 
-        imgWidth = int(96 * 8)   #4*184
-        imgHeight = int(708) 
+          
+        self.imgTool.imgWidth = self.currentCam.sensorWidth
+        self.imgTool.imgHeight = self.currentCam.sensorHeight
 
-        
-        self.imgTool.imgWidth = imgWidth
-        self.imgTool.imgHeight = imgHeight
-
-        self.imgDesc = self.imgTool.descrambleEPix100AImage(self.eventReader.frameData)
+        self.imgDesc = self.currentCam.descrambleImage(self.eventReader.frameData)
 
         arrayLen = len(self.imgDesc)
         print('Descrambled image size: ', arrayLen)
                
         if (self.imgTool.imgDark_isSet):
             self.ImgDarkSub = self.imgTool.getDarkSubtractedImg(self.imgDesc)
-            self.image = QtGui.QImage(self.ImgDarkSub, imgWidth, imgHeight, QtGui.QImage.Format_RGB16)
+            self.image = QtGui.QImage(self.ImgDarkSub, self.imgTool.imgWidth, self.imgTool.imgHeight, QtGui.QImage.Format_RGB16)
         else:
             # get the data into the image object
-            self.image = QtGui.QImage(self.imgDesc, imgWidth, imgHeight, QtGui.QImage.Format_RGB16)
+            self.image = QtGui.QImage(self.imgDesc, self.imgTool.imgWidth, self.imgTool.imgHeight, QtGui.QImage.Format_RGB16)
 
         pp = QtGui.QPixmap.fromImage(self.image)
         self.label.setPixmap(pp.scaled(self.label.size(),QtCore.Qt.KeepAspectRatio,QtCore.Qt.SmoothTransformation))
         self.label.adjustSize()
         # updates the frame number
         # this sleep is a weak way of waiting for the file to be readout completely... needs improvement
-        time.sleep(0.1)
+        time.sleep(self.readFileDelay)
         thisString = 'Frame {} of {}'.format(self.eventReader.frameIndex, self.eventReader.numAcceptedFrames)
         print(thisString)
         self.labelFrameNum.setText(thisString)
+
 
     def mouseClickedOnImage(self, event):
         mouseX = event.pos().x()
@@ -362,6 +373,9 @@ class EventReader(rogue.interfaces.stream.Slave):
         self.frameData = bytearray()
         self.readDataDone = False
         self.parent = parent
+        self.ViewDataChannel = 0x1
+        self.readFileDelay = 0.1
+        self.busy = False
 
 
     # checks all frames in the file to look for the one that needs to be displayed
@@ -370,27 +384,30 @@ class EventReader(rogue.interfaces.stream.Slave):
     # to dislplay it. The emit signal is needed because only that class' thread can 
     # access the screen.
     def _acceptFrame(self,frame):
+
         self.lastFrame = frame
-        if self.enable:
+        if ((self.enable) and (not self.busy)):
+            self.busy = True
             self.numAcceptedFrames += 1
             # Get the channel number
             chNum = (frame.getFlags() >> 24)
             #print('-------- Frame ',self.numAcceptedFrames,'Channel flags',frame.getFlags() , ' Accepeted --------' , chNum)
             # Check if channel number is 0x1 (streaming data channel)
-            if (chNum == 0x1) :
+            if (chNum == self.ViewDataChannel) :
                 #print('-------- Event --------')
                 # Collect the data
                 p = bytearray(frame.getPayload())
                 print('Num. data readout: ', len(p))
                 frame.read(p,0)
                 cnt = 0
-            if ((self.numAcceptedFrames == self.frameIndex) or (self.frameIndex == 0)):              
-                self.frameData = p
-                self.readDataDone = True
-                # Emit the signal.
-                self.parent.trigger.emit()
-                # if displaying all images the sleep produces a frame rate that can be displayed without 
-                # freezing or crashing the program. It is also good for the person viewing the images.
-                time.sleep(0.01)
+                if ((self.numAcceptedFrames == self.frameIndex) or (self.frameIndex == 0)):              
+                    self.frameData = p
+                    self.readDataDone = True
+                    # Emit the signal.
+                    self.parent.trigger.emit()
+                    # if displaying all images the sleep produces a frame rate that can be displayed without 
+                    # freezing or crashing the program. It is also good for the person viewing the images.
+                    time.sleep(self.readFileDelay)
+            self.busy = False
 
 
