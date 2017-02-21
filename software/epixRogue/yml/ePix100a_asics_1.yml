@@ -1,0 +1,351 @@
+ePixBoard:
+  enable: true
+  runControl:
+    enable: true
+    runState: Stopped
+    runRate: 10 Hz
+  dataWriter:
+    enable: true
+    dataFile: ''
+    open: false
+    bufferSize: 0
+    maxFileSize: 0
+  DigFpga:
+    enable: true
+    RunTriggerEnable: true
+    RunTriggerDelay: 0
+    DaqTriggerEnable: true
+    DaqTriggerDelay: 0
+    DacData: 40000
+    DigitalPowerEnable: true
+    AnalogPowerEnable: true
+    FpgaOutputEnable: true
+    IDelayCtrlRdy: 1
+    AsicMask: 0
+    AutoRunEnable: false
+    AutoRunPeriod: 3200000
+    AutoDaqEnable: false
+    OutPipelineDelay: 48
+    AcqToAsicR0Delay: 14032
+    AsicR0ToAsicAcq: 5000
+    AsicAcqWidth: 5000
+    AsicAcqLToPPmatL: 200
+    AsicRoClkHalfT: 10
+    AdcReadsPerPixel: 1
+    AdcClkHalfT: 1
+    TotalPixelsToRead: 33984
+    AsicGR: false
+    AsicAcq: false
+    AsicRO: false
+    AsicPpmat: true
+    AsicPpbe: false
+    AsicRoClk: false
+    AsicPinGRControl: false
+    AsicPinAcqControl: false
+    AsicPinROControl: false
+    AsicPinPpmatControl: true
+    AsicPinPpbeControl: false
+    AsicPinROClkControl: false
+    AdcStreamMode: false
+    AdcPatternEnable: false
+    AsicR0Width: 30
+    DigitalCardId0: 1794135040
+    DigitalCardId1: 1953810443
+    AnalogCardId0: 2400648193
+    AnalogCardId1: 4261412888
+    AsicPPmatToReadout: 14000
+    PgpTrigEn: true
+    MonStreamEn: false
+    TpsTiming: 0
+    TpsEdge: false
+    SwArmBit: false
+    TriggerADCEn: false
+    TriggerADCTh: 0
+    TriggerADCMode: 0
+    TriggerADCChannel: 0
+    TriggerADCEdge: false
+    TriggerHoldOff: 0
+    TriggerTraceSkip: 0
+    TriggerTraceLength: 0
+    InputChannelB: 0
+    InputChannelA: 0
+    AdcPipelineDelayA0: 29
+    AdcPipelineDelayA1: 29
+    AdcPipelineDelayA2: 29
+    AdcPipelineDelayA3: 29
+    Epix100aAsic0:
+      enable: true
+      MonostPulser: 2
+      PixelDummy: 0                     #find this value
+      Pulser: 0
+      pbit: false
+      atest: false
+      test: false
+      sba_test: false                   #find this value
+      hrtest: false
+      PulserR: false
+      Config4: 0                        #find this value
+      DigMon1: Clk
+      DigMon2: Exec
+      PulserDac: 3
+      TpsGr: 3
+      Dm1En: false
+      Dm2En: false
+      SLVDSbit: true
+      VRef: 35
+      VRefLow: 0
+      TPS_tcomp: false
+      TPS_MUX: Unused13
+      TPS_Monost: 0                     #find this value
+      TpsMux: Unused13                  #find this value
+      RoMonost: 0
+      S2d0Gr: 3
+      S2d1Gr: 3
+      PpOcbS2d: true
+      Ocb: 3
+      Monost: 3
+      FastppEnable: false
+      Preamp: 4
+      PixelCb: 3
+      Vld1_b: 0
+      S2dTComp: true
+      FilterDac: 63
+      TC: 1
+      S2d: 3
+      S2dDacBias: 3
+      TpsTcDac: 1
+      TpsDac: 0                          #find this value
+      S2d0TcDac: 3
+      S2d0Dac: 23
+      TestBe: false
+      IsEn: false
+      DelExec: false
+      DelCckRef: false
+      ro_rst_exten: true
+      RowStartAddr: 0
+      RowStopAddr: 353
+      ColStartAddr: 0
+      ColStopAddr: 95
+      ChipId: 0                          #find this value
+      S2d2Gr: 3
+      S2d3Gr: 3
+      S2d1TcDac: 3
+      S2d1Dac: 23
+      S2d2TcDac: 3
+      S2d2Dac: 23
+      S2d3TcDac: 3
+      S2d3Dac: 23
+      RowCounter: 0
+      ColCounter: 0
+      BankSelect: 0
+      PixelTest: true
+      PixelMask: true
+      PrepareWriteChipIdA: 0            #find this value
+      PrepareWriteChipIdB: 0            #find this value
+    Epix100aAsic1:
+      enable: false
+      MonostPulser: 2
+      PixelDummy: 0                     #find this value
+      Pulser: 0
+      pbit: false
+      atest: false
+      test: false
+      sba_test: false                   #find this value
+      hrtest: false
+      PulserR: false
+      Config4: 0                        #find this value
+      DigMon1: Clk
+      DigMon2: Exec
+      PulserDac: 3
+      TpsGr: 3
+      Dm1En: false
+      Dm2En: false
+      SLVDSbit: true
+      VRef: 35
+      VRefLow: 0
+      TPS_tcomp: false
+      TPS_MUX: Unused13
+      TPS_Monost: 0                     #find this value
+      TpsMux: Unused13                  #find this value
+      RoMonost: 0
+      S2d0Gr: 3
+      S2d1Gr: 3
+      PpOcbS2d: true
+      Ocb: 3
+      Monost: 3
+      FastppEnable: false
+      Preamp: 4
+      PixelCb: 3
+      Vld1_b: 0
+      S2dTComp: true
+      FilterDac: 63
+      TC: 1
+      S2d: 3
+      S2dDacBias: 3
+      TpsTcDac: 1
+      TpsDac: 0                          #find this value
+      S2d0TcDac: 3
+      S2d0Dac: 23
+      TestBe: false
+      IsEn: false
+      DelExec: false
+      DelCckRef: false
+      ro_rst_exten: true
+      RowStartAddr: 0
+      RowStopAddr: 353
+      ColStartAddr: 0
+      ColStopAddr: 95
+      ChipId: 0                          #find this value
+      S2d2Gr: 3
+      S2d3Gr: 3
+      S2d1TcDac: 3
+      S2d1Dac: 23
+      S2d2TcDac: 3
+      S2d2Dac: 23
+      S2d3TcDac: 3
+      S2d3Dac: 23
+      RowCounter: 0
+      ColCounter: 0
+      BankSelect: 0
+      PixelTest: true
+      PixelMask: true
+      PrepareWriteChipIdA: 0            #find this value
+      PrepareWriteChipIdB: 0            #find this value
+    Epix100aAsic2:
+      enable: false
+      MonostPulser: 2
+      PixelDummy: 0                     #find this value
+      Pulser: 0
+      pbit: false
+      atest: false
+      test: false
+      sba_test: false                   #find this value
+      hrtest: false
+      PulserR: false
+      Config4: 0                        #find this value
+      DigMon1: Clk
+      DigMon2: Exec
+      PulserDac: 3
+      TpsGr: 3
+      Dm1En: false
+      Dm2En: false
+      SLVDSbit: true
+      VRef: 35
+      VRefLow: 0
+      TPS_tcomp: false
+      TPS_MUX: Unused13
+      TPS_Monost: 0                     #find this value
+      TpsMux: Unused13                  #find this value
+      RoMonost: 0
+      S2d0Gr: 3
+      S2d1Gr: 3
+      PpOcbS2d: true
+      Ocb: 3
+      Monost: 3
+      FastppEnable: false
+      Preamp: 4
+      PixelCb: 3
+      Vld1_b: 0
+      S2dTComp: true
+      FilterDac: 63
+      TC: 1
+      S2d: 3
+      S2dDacBias: 3
+      TpsTcDac: 1
+      TpsDac: 0                          #find this value
+      S2d0TcDac: 3
+      S2d0Dac: 23
+      TestBe: false
+      IsEn: false
+      DelExec: false
+      DelCckRef: false
+      ro_rst_exten: true
+      RowStartAddr: 0
+      RowStopAddr: 353
+      ColStartAddr: 0
+      ColStopAddr: 95
+      ChipId: 0                          #find this value
+      S2d2Gr: 3
+      S2d3Gr: 3
+      S2d1TcDac: 3
+      S2d1Dac: 23
+      S2d2TcDac: 3
+      S2d2Dac: 23
+      S2d3TcDac: 3
+      S2d3Dac: 23
+      RowCounter: 0
+      ColCounter: 0
+      BankSelect: 0
+      PixelTest: true
+      PixelMask: true
+      PrepareWriteChipIdA: 0            #find this value
+      PrepareWriteChipIdB: 0            #find this value
+    Epix100aAsic3:
+      enable: false
+      MonostPulser: 2
+      PixelDummy: 0                     #find this value
+      Pulser: 0
+      pbit: false
+      atest: false
+      test: false
+      sba_test: false                   #find this value
+      hrtest: false
+      PulserR: false
+      Config4: 0                        #find this value
+      DigMon1: Clk
+      DigMon2: Exec
+      PulserDac: 3
+      TpsGr: 3
+      Dm1En: false
+      Dm2En: false
+      SLVDSbit: true
+      VRef: 35
+      VRefLow: 0
+      TPS_tcomp: false
+      TPS_MUX: Unused13
+      TPS_Monost: 0                     #find this value
+      TpsMux: Unused13                  #find this value
+      RoMonost: 0
+      S2d0Gr: 3
+      S2d1Gr: 3
+      PpOcbS2d: true
+      Ocb: 3
+      Monost: 3
+      FastppEnable: false
+      Preamp: 4
+      PixelCb: 3
+      Vld1_b: 0
+      S2dTComp: true
+      FilterDac: 63
+      TC: 1
+      S2d: 3
+      S2dDacBias: 3
+      TpsTcDac: 1
+      TpsDac: 0                          #find this value
+      S2d0TcDac: 3
+      S2d0Dac: 23
+      TestBe: false
+      IsEn: false
+      DelExec: false
+      DelCckRef: false
+      ro_rst_exten: true
+      RowStartAddr: 0
+      RowStopAddr: 353
+      ColStartAddr: 0
+      ColStopAddr: 95
+      ChipId: 0                          #find this value
+      S2d2Gr: 3
+      S2d3Gr: 3
+      S2d1TcDac: 3
+      S2d1Dac: 23
+      S2d2TcDac: 3
+      S2d2Dac: 23
+      S2d3TcDac: 3
+      S2d3Dac: 23
+      RowCounter: 0
+      ColCounter: 0
+      BankSelect: 0
+      PixelTest: true
+      PixelMask: true
+      PrepareWriteChipIdA: 0            #find this value
+      PrepareWriteChipIdB: 0            #find this value
