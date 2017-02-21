@@ -148,7 +148,13 @@ class Window(QtGui.QMainWindow, QObject):
         btn1.clicked.connect(self.setDark)
         btn1.resize(btn1.minimumSizeHint())
 
-        #button next
+        #button set dark
+        btn1_1 = QtGui.QPushButton("Rem. Dark")
+        btn1_1.setMaximumWidth(150)
+        btn1_1.clicked.connect(self.unsetDark)
+        btn1_1.resize(btn1_1.minimumSizeHint())
+
+        #button prev
         btn2 = QtGui.QPushButton("Prev")
         btn2.setMaximumWidth(150)
         btn2.clicked.connect(self.prevFrame)
@@ -159,6 +165,11 @@ class Window(QtGui.QMainWindow, QObject):
         btn3.setMaximumWidth(150)
         btn3.clicked.connect(self.nextFrame)
         btn3.resize(btn3.minimumSizeHint())
+        
+        #frame number
+        self.frameNumberLine = QtGui.QLineEdit()
+        self.frameNumberLine.setMaximumWidth(50)
+        self.frameNumberLine.setText(str(1))
 
         #button quit
         btn4 = QtGui.QPushButton("Quit")
@@ -166,6 +177,7 @@ class Window(QtGui.QMainWindow, QObject):
         btn4.clicked.connect(self.close_viewer)
         btn4.resize(btn4.minimumSizeHint())
 
+        # mouse buttons
         mouseLabel = QtGui.QLabel("Pixel Information")
         self.mouseXLine = QtGui.QLineEdit()
         self.mouseXLine.setMaximumWidth(50)
@@ -173,6 +185,14 @@ class Window(QtGui.QMainWindow, QObject):
         self.mouseYLine.setMaximumWidth(50)
         self.mouseValueLine = QtGui.QLineEdit()
         self.mouseValueLine.setMaximumWidth(100)
+
+        imageScaleLabel = QtGui.QLabel("Set image dynamic range (max, min)")
+        self.imageScaleMaxLine = QtGui.QLineEdit()
+        self.imageScaleMaxLine.setMaximumWidth(50)
+        self.imageScaleMaxLine.setText(str(200))
+        self.imageScaleMinLine = QtGui.QLineEdit()
+        self.imageScaleMinLine.setMaximumWidth(50)
+        self.imageScaleMinLine.setText(str(-200))
 
         self.mainWidget = QtGui.QWidget(self)
         vbox1 = QVBoxLayout()
@@ -183,15 +203,24 @@ class Window(QtGui.QMainWindow, QObject):
 
         gridVbox2 = QGridLayout()
         gridVbox2.setSpacing(2)
+        #control buttons
         gridVbox2.addWidget(btn1,1,0)
-        gridVbox2.addWidget(btn2,3,1)
-        gridVbox2.addWidget(btn3,3,0)
-        gridVbox2.addWidget(btn4,4,0)
-        gridVbox2.addWidget(mouseLabel,5,0)
-        gridVbox2.addWidget(self.mouseXLine,6,0)
-        gridVbox2.addWidget(self.mouseYLine,6,1)
-        gridVbox2.addWidget(self.mouseValueLine,6,2)
-        gridVbox2.addWidget(self.labelFrameNum,7,0)
+        gridVbox2.addWidget(btn1_1,1,1)
+        gridVbox2.addWidget(btn2,2,1)
+        gridVbox2.addWidget(btn3,2,0)
+        gridVbox2.addWidget(self.frameNumberLine,2,2)
+        gridVbox2.addWidget(btn4,3,0)
+        # mouse functions
+        gridVbox2.addWidget(mouseLabel,4,0)
+        gridVbox2.addWidget(self.mouseXLine,4,1)
+        gridVbox2.addWidget(self.mouseYLine,4,2)
+        gridVbox2.addWidget(self.mouseValueLine,4,3)
+        #image scale
+        gridVbox2.addWidget(imageScaleLabel,5,0)
+        gridVbox2.addWidget(self.imageScaleMaxLine,5,1)
+        gridVbox2.addWidget(self.imageScaleMinLine,5,2)
+        # status
+        gridVbox2.addWidget(self.labelFrameNum,8,0)
         
 
 
@@ -222,7 +251,7 @@ class Window(QtGui.QMainWindow, QObject):
         
 
     def file_open(self):
-        self.eventReader.frameIndex = 1
+        self.eventReader.frameIndex = 45
         self.eventReader.ViewDataChannel = 1
         self.setReadDelay(0.1)
         self.filename = QtGui.QFileDialog.getOpenFileName(self, 'Open File', '', 'Rogue Images (*.dat);; GenDAQ Images (*.bin);;Any (*.*)')  
@@ -238,19 +267,24 @@ class Window(QtGui.QMainWindow, QObject):
 
     def setDark(self):
         self.imgTool.setDarkImg(self.imgDesc)
+
+    def unsetDark(self):
+        self.imgTool.unsetDarkImg()
         
     # display the previous frame from the current file
     def prevFrame(self):
-        self.eventReader.frameIndex -= 1
+        self.eventReader.frameIndex = int(self.frameNumberLine.text()) - 1
         if (self.eventReader.frameIndex<1):
             self.eventReader.frameIndex = 1
+        self.frameNumberLine.setText(str(self.eventReader.frameIndex))
         print('Selected frame ', self.eventReader.frameIndex)
         self.displayImagDat(self.filename)
 
 
     # display the next frame from the current file
     def nextFrame(self):
-        self.eventReader.frameIndex += 1
+        self.eventReader.frameIndex = int(self.frameNumberLine.text()) + 1
+        self.frameNumberLine.setText(str(self.eventReader.frameIndex))
         print('Selected frame ', self.eventReader.frameIndex)
         self.displayImagDat(self.filename)
 
@@ -294,7 +328,7 @@ class Window(QtGui.QMainWindow, QObject):
              print('Loading image...', self.eventReader.frameIndex, 'atempt',  timeoutCnt)
              time.sleep(0.1)
 
-
+    
 
     def displayImageFromReader(self):
         # core code for displaying the image
@@ -307,17 +341,27 @@ class Window(QtGui.QMainWindow, QObject):
         self.imgTool.imgHeight = self.currentCam.sensorHeight
 
         self.imgDesc = self.currentCam.descrambleImage(self.eventReader.frameData)
-
+                    
         arrayLen = len(self.imgDesc)
         print('Descrambled image size: ', arrayLen)
-               
+
         if (self.imgTool.imgDark_isSet):
             self.ImgDarkSub = self.imgTool.getDarkSubtractedImg(self.imgDesc)
-            self.image = QtGui.QImage(self.ImgDarkSub, self.imgTool.imgWidth, self.imgTool.imgHeight, QtGui.QImage.Format_RGB16)
+            _8bitImg = self.imgTool.reScaleImgTo8bit(self.ImgDarkSub, int(self.imageScaleMaxLine.text()), int(self.imageScaleMinLine.text()))
         else:
             # get the data into the image object
-            self.image = QtGui.QImage(self.imgDesc, self.imgTool.imgWidth, self.imgTool.imgHeight, QtGui.QImage.Format_RGB16)
+            _8bitImg = self.imgTool.reScaleImgTo8bit(self.imgDesc, int(self.imageScaleMaxLine.text()), int(self.imageScaleMinLine.text()))
 
+        self.image = QtGui.QImage(_8bitImg.repeat(4), self.imgTool.imgWidth, self.imgTool.imgHeight, QtGui.QImage.Format_RGB32)
+        
+##               
+##        if (self.imgTool.imgDark_isSet):
+##            self.ImgDarkSub = self.imgTool.getDarkSubtractedImg(self.imgDesc)
+##            self.image = QtGui.QImage(self.ImgDarkSub, self.imgTool.imgWidth, self.imgTool.imgHeight, QtGui.QImage.Format_RGB16)
+##        else:
+##            # get the data into the image object
+##            self.image = QtGui.QImage(self.imgDesc, self.imgTool.imgWidth, self.imgTool.imgHeight, QtGui.QImage.Format_RGB16)
+##
         pp = QtGui.QPixmap.fromImage(self.image)
         self.label.setPixmap(pp.scaled(self.label.size(),QtCore.Qt.KeepAspectRatio,QtCore.Qt.SmoothTransformation))
         self.label.adjustSize()
@@ -332,24 +376,24 @@ class Window(QtGui.QMainWindow, QObject):
     def mouseClickedOnImage(self, event):
         mouseX = event.pos().x()
         mouseY = event.pos().y()
-        pixmapH = self.label.pixmap().height()
-        pixmapW = self.label.pixmap().width()
-        imageH = self.image.width()
-        imageW = self.image.height()
+        pixmapH = self.label.height()
+        pixmapW = self.label.width()
+        imageH = self.image.height()
+        imageW = self.image.width()
 
         self.mouseX = int(imageW*mouseX/pixmapW)
         self.mouseY = int(imageH*mouseY/pixmapH)
 
         #self.mousePixelValue = self.image.pixel(self.mouseX, self.mouseY)
         if (self.imgTool.imgDark_isSet):
-            self.mousePixelValue = self.ImgDarkSub[self.mouseX + (self.mouseY*imageW)]
+            self.mousePixelValue = self.ImgDarkSub[self.mouseY, self.mouseX]
         else:
-            self.mousePixelValue = self.imgDesc[self.mouseX + (self.mouseY*imageW)]
+            self.mousePixelValue = self.imgDesc[self.mouseY, self.mouseX]
 
-        #print('Mouse coordinates: {},{}'.format(mouseX, mouseY))
-        #print('Pixel coordinates: {},{}'.format(pixmapW, pixmapH))
-        #print('Image coordinates: {},{}'.format(imageW, imageH))
-        #print('Pixel[{},{}] = {}'.format(self.mouseX, self.mouseY, self.mousePixelValue))
+        print('Raw mouse coordinates: {},{}'.format(mouseX, mouseY))
+        print('Pixel map dimensions: {},{}'.format(pixmapW, pixmapH))
+        print('Image dimensions: {},{}'.format(imageW, imageH))
+        print('Pixel[{},{}] = {}'.format(self.mouseX, self.mouseY, self.mousePixelValue))
         self.mouseXLine.setText(str(self.mouseX))
         self.mouseYLine.setText(str(self.mouseY))
         self.mouseValueLine.setText(str(self.mousePixelValue))
@@ -397,7 +441,7 @@ class EventReader(rogue.interfaces.stream.Slave):
                 #print('-------- Event --------')
                 # Collect the data
                 p = bytearray(frame.getPayload())
-                print('Num. data readout: ', len(p))
+                #print('Num. data readout: ', len(p))
                 frame.read(p,0)
                 cnt = 0
                 if ((self.numAcceptedFrames == self.frameIndex) or (self.frameIndex == 0)):              

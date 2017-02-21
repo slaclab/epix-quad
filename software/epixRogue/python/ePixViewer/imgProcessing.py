@@ -68,13 +68,35 @@ class ImageProcessing():
 
     def setDarkImg(self, rawData):
         """performs the ePix100A image descrambling"""
-
         self.imgDark = np.array(rawData,dtype='int16')
         self.imgDark_isSet = True
+
+    def unsetDarkImg(self):
+        """performs the ePix100A image descrambling"""
+        self.imgDark_isSet = False
 
     def getDarkSubtractedImg(self, rawImg):
         return rawImg - self.imgDark
 
+
+    def reScaleImgTo8bit(self, rawImage, scaleMax=20000, scaleMin=-200):
+        #init
+        print ("raw image" , rawImage.shape)
+        print ("raw image max {}, min {}".format(np.amax(rawImage), np.amin(rawImage)))
+        image = np.clip(rawImage, scaleMin, scaleMax)
+        print ("image" , image.shape)
+        print ("limits max {}, min {}".format(scaleMax, scaleMin))
+        print ("clipped image max {}, min {}".format(np.amax(image), np.amin(image)))
+        
+        #re-scale
+        imageRS = np.array(((image-scaleMin) * (255 / (scaleMax - scaleMin))))
+        print ("16 bit image max {}, min {}".format(np.amax(imageRS), np.amin(imageRS)))
+        
+        image8b = imageRS.astype('uint8')
+        print ("8 bit image max {}, min {}".format(np.amax(image8b), np.amin(image8b)))
+        print ("scaled image" , image8b.shape)
+        #return results
+        return image8b
 #        for y in range(0,imgHeight):
 #            for x in range(0,imgWidth):
 #                arrayIndex = x+(y*imgWidth)
