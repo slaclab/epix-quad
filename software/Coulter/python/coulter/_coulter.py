@@ -26,6 +26,9 @@ import surf
 import functools
 import threading
 import time
+from collections import defaultdict
+
+import rogue.interfaces.stream
 
 class CoulterRoot(pr.Root):
     def __init__(self, pgp=None, srp=None, trig=None, dataWriter=None, cmd=None, **kwargs):
@@ -40,6 +43,8 @@ class CoulterRoot(pr.Root):
 
         for i in range(len(srp)):
             self.add(Coulter(name="Coulter[{}]".format(i), memBase=srp[i], offset=0, enabled=True))
+
+        #self.Coulter[1].enable.set(False)
 
         @self.command(base='hex')
         def Cmd(opCode):
@@ -98,11 +103,12 @@ class Coulter(pr.Device):
         super(self.__class__, self).__init__(**kwargs)
 
         self.add((
+            surf.GenericMemory(name="AdcTap", elements=2**5-1, bitSize=32, offset=0x00080004),
             surf.Xadc(offset=0x00080000),
             surf.AxiVersion.create(offset=0x00000000),
             AcquisitionControl(name='AcquisitionControl', offset=0x00060000, clkFreq=125.0e6),            
-            ELine100Config(name='ASIC[0]', offset=0x00010000, enabled=True),
-            ELine100Config(name='ASIC[1]', offset=0x00020000, enabled=True),
+            ELine100Config(name='ASIC[0]', offset=0x00010000, enabled=False),
+            ELine100Config(name='ASIC[1]', offset=0x00020000, enabled=False),
             surf.Ad9249Config(name='AdcConfig', offset=0x00030000, chips=1),
             surf.Ad9249ReadoutGroup(name = 'AdcReadoutBank[0]', offset=0x00040000, channels=6),
             surf.Ad9249ReadoutGroup(name = 'AdcReadoutBank[1]', offset=0x00050000, channels=6),
@@ -298,3 +304,76 @@ class AcquisitionControl(pr.Device):
         def func(dev, var):         
             return '{:.3f} kHz'.format(1/(self.clkPeriod * self._count(var.dependencies)) * 1e-3)
         return func
+
+class CoulterFrameParser(rogue.interfaces.stream.Slave):
+
+    def __init__(self):
+        rogue.interfaces.stream.Slave.__init__(self)
+        nesteddict = lambda:defaultdict(nesteddict)
+        self.d = nesteddict()
+
+    def words(self, ba):
+        yield ('header', int.from_bytes(ba[0:16], 'little'))
+        cnt = 16
+        while cnt < len(ba)-16:
+            yield (cnt/16-1, int.from_bytes(ba[cnt:cnt+16], 'little'))
+            cnt = cnt + 16
+        yield('tail', int.from_bytes(ba[cnt:cnt+16], 'little'))
+            
+
+    def _acceptFrame(self, frame):
+        p = bytearray(frame.getPayload())
+        frame.read(p, 0)
+
+
+
+        def conv(i, highBit, lowBit):
+            o = i >> lowBit
+            o = o & (2**(highBit-lowBit+1)-1)
+            return int(o)
+
+        count = 0
+        
+        for word in self.words(p):
+        #print("-------------------------")
+        #print("New Frame")
+        #print("-------------------------")
+        #print("Header:")
+
+            if word[0] == 'header':
+                count = conv(word[1], 15, 0)
+                print('header', word[1], p[0:16], count)                
+            elif word[0] == 'tail':
+                pass
+            else:
+
+                last = conv(word[1], 7, 7)            
+                channel = conv(word[1], 6, 0)
+                slot = conv(word[1], 15, 8)
+                #data = {i+(8*last): conv(word[1], 16+(i*14)+13, 16+(i*14)) for i in range(8)}
+
+                print(word[1] >> 16)
+                for i, pixel in enumerate(range(last*8, last*8+8)):
+                    data = conv(word[1], 16+(i*14)+13, 16+(i*14))
+                    self.d[count][slot][channel][pixel] = data
+                    print(slot, channel, pixel, data)
+
+
+
+        #print("------Tail---------------")
+        #print(p[cnt:cnt+16])
+        #print("------End of Frame-------")
+
+    def printData(self):
+        for count in self.d.keys():
+            print("Frame {}".format(count))
+            for slot in self.d[count].keys():
+                print("  Slot {}".format(slot))
+                for channel in self.d[count][slot].keys():
+                    data = [hex(x) for x in list(self.d[count][slot][channel].values())]
+                    if len(data) != 0:
+                        print("    Channel {} Data {}".format(channel, data))
+
+
+                      
+            
