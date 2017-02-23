@@ -68,6 +68,10 @@ dbgData = rogue.interfaces.stream.Slave()
 dbgData.setDebug(30, "DATA[0]")
 pyrogue.streamTap(vcDataCmd, dbgData)
 
+parser = coulter.CoulterFrameParser()
+
+pyrogue.streamTap(vcDataCmd, parser)
+
 
 # Instantiate top and pass stream and srp configurations
 coulterDaq = coulter.CoulterRoot(pollEn=False, pgp=vcReg, srp=[srp], trig=vcTrigger, dataWriter=dataWriter, cmd=cmd)
