@@ -5,7 +5,7 @@
 -- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 09/30/2015
--- Last update: 2017-01-26
+-- Last update: 2017-02-17
 -- Platform   : Vivado 2014.4
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -114,7 +114,7 @@ architecture top_level of Coulter is
    -------------------------------------------------------------------------------------------------
    -- AXI-Lite config
    -------------------------------------------------------------------------------------------------
-   constant AXIL_MASTERS_C       : integer      := 9;
+   constant AXIL_MASTERS_C       : integer      := 10;
    constant VERSION_AXIL_C       : integer      := 0;
    constant ASIC_CONFIG_AXIL_C   : IntegerArray := (0 => 1, 1 => 2);
    constant ADC_CONFIG_AXIL_C    : integer      := 3;
@@ -123,6 +123,7 @@ architecture top_level of Coulter is
    constant ACQ_CTRL_AXIL_C      : integer      := 6;
    constant PGP_AXIL_C           : integer      := 7;
    constant XADC_AXIL_C          : integer      := 8;
+   constant RING_BUF_AXIL_C      : integer      := 9;
 
    constant AXIL_XBAR_CONFIG_C : AxiLiteCrossbarMasterConfigArray(AXIL_MASTERS_C-1 downto 0) :=
       genAxiLiteConfig(AXIL_MASTERS_C, X"00000000", 20, 16);
@@ -198,6 +199,8 @@ architecture top_level of Coulter is
 
    signal trigger   : sl;
    signal stableClk : sl;
+
+   signal bufDataValid : sl;
 
    attribute mark_debug              : string;
    attribute mark_debug of elineSclk : signal is "TRUE";
@@ -514,6 +517,28 @@ begin
          adcSerial              => adcSerial(1),                               -- [in]
          adcStreamClk           => clk250,                                     --[in]
          adcStreams(5 downto 0) => adcStreams(11 downto 6));                   -- [out]
+
+   bufDataValid <= adcStreams(0).tvalid and toSl(adcStreams(0).tdata(15 downto 0) /= X"2000");
+   U_AxiLiteRingBuffer_1 : entity work.AxiLiteRingBuffer
+      generic map (
+         TPD_G            => TPD_G,
+         BRAM_EN_G        => true,
+         REG_EN_G         => true,
+         DATA_WIDTH_G     => 16,
+         RAM_ADDR_WIDTH_G => 5)
+      port map (
+         dataClk         => clk250,                                -- [in]
+         dataRst         => rst250,                                -- [in]
+         dataValid       => bufDataValid,                          -- [in]
+         dataValue       => adcStreams(0).tdata(15 downto 0),      -- [in]
+         bufferEnable    => '1',                                   -- [in]
+         bufferClear     => '0',                                   -- [in]
+         axilClk         => axilClk,                               -- [in]
+         axilRst         => axilRst,                               -- [in]
+         axilReadMaster  => locAxilReadMasters(RING_BUF_AXIL_C),   -- [in]
+         axilReadSlave   => locAxilReadSlaves(RING_BUF_AXIL_C),    -- [out]
+         axilWriteMaster => locAxilWriteMasters(RING_BUF_AXIL_C),  -- [in]
+         axilWriteSlave  => locAxilWriteSlaves(RING_BUF_AXIL_C));  -- [out]
 
 
    -------------------------------------------------------------------------------------------------
