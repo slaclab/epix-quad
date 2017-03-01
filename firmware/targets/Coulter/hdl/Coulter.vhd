@@ -5,7 +5,7 @@
 -- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 09/30/2015
--- Last update: 2017-02-17
+-- Last update: 2017-03-01
 -- Platform   : Vivado 2014.4
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -42,6 +42,7 @@ use unisim.vcomponents.all;
 entity Coulter is
    generic (
       TPD_G                  : time    := 1 ns;
+      BUILD_INFO_G           : BuildInfoType;
       SIMULATION_G           : boolean := false;
       FIXED_LATENCY_G        : boolean := true;
       ADC_CONFIG_NO_PULLUP_G : boolean := false);
@@ -339,6 +340,7 @@ begin
    U_AxiVersion_1 : entity work.AxiVersion
       generic map (
          TPD_G            => TPD_G,
+         BUILD_INFO_G     => BUILD_INFO_G,
          AXI_ERROR_RESP_G => AXI_RESP_DECERR_C,
          CLK_PERIOD_G     => AXIL_CLK_PERIOD_C,
          XIL_DEVICE_G     => "7SERIES",
