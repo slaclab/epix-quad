@@ -44,7 +44,8 @@ class CoulterRoot(pr.Root):
         for i in range(len(srp)):
             self.add(Coulter(name="Coulter[{}]".format(i), memBase=srp[i], offset=0, enabled=True))
 
-        #self.Coulter[1].enable.set(False)
+        if len(srp) > 1:
+            self.Coulter[1].enable.set(False)
 
         @self.command(base='hex')
         def Cmd(opCode):
@@ -103,7 +104,7 @@ class Coulter(pr.Device):
         super(self.__class__, self).__init__(**kwargs)
 
         self.add((
-            surf.GenericMemory(name="AdcTap", elements=2**5-1, bitSize=32, offset=0x00080004),
+            #surf.GenericMemory(name="AdcTap", elements=2**5-1, bitSize=32, offset=0x00080004),
             surf.Xadc(offset=0x00080000),
             surf.AxiVersion.create(offset=0x00000000),
             AcquisitionControl(name='AcquisitionControl', offset=0x00060000, clkFreq=125.0e6),            
@@ -277,9 +278,11 @@ class AcquisitionControl(pr.Device):
                          offset=0x34, bitSize=1, bitOffset=0, base = 'bool')
 
         def reset(dev, cmd, arg):
+            print('Reseting ASICs')
             cmd.set(1)
             time.sleep(1)
             cmd.set(0)
+            print('Done')            
         
         # Asic reset
         self.addCommand(name = "ResetAsic", description = "Reset the ELine100 ASICS",
