@@ -9,7 +9,7 @@ export RUCKUS_DIR = $(abspath $(PWD)/../../modules/ruckus)
 
 #export KEEP_UNUSED_CODE = 1
 
-export PRJ_VERSION = 0x00000015
+export PRJ_VERSION = 0x00000016
 
 # Use top level makefile
 include $(RUCKUS_DIR)/system_vivado.mk
