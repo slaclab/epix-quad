@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-09-22
--- Last update: 2016-12-09
+-- Last update: 2017-03-02
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -55,38 +55,96 @@ end entity AdcStreamFilter;
 
 architecture rtl of AdcStreamFilter is
 
+   type StateType is (WAIT_SC_FALL_S, WAIT_NON_ZERO_S, ADC_CAPTURE_S);
+
    type RegType is record
+      state        : StateType;
+      count        : slv(31 downto 0);
+      mckCount     : slv(7 downto 0);
       capture      : sl;
       filteredAxis : AxiStreamMasterType;
    end record RegType;
 
    constant REG_INIT_C : RegType := (
+      state        => WAIT_SC_FALL_S,
+      count        => (others => '0'),
+      mckCount     => (others => '0'),
       capture      => '1',
       filteredAxis => AXI_STREAM_MASTER_INIT_C);
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
+   signal cfgMckCount : slv(7 downto 0);
+   signal scFall      : sl;
+
+
 begin
 
-   comb : process (acqStatus, adcStream, adcStreamRst, r) is
+   U_SynchronizerVector_1 : entity work.SynchronizerVector
+      generic map (
+         TPD_G    => TPD_G,
+         STAGES_G => 2,
+         WIDTH_G  => 8)
+      port map (
+         clk     => adcStreamClk,           -- [in]
+         rst     => adcStreamRst,           -- [in]
+         dataIn  => acqStatus.cfgMckCount,  -- [in]
+         dataOut => cfgMckCount);           -- [out]
+
+   U_Synchronizer_1 : entity work.Synchronizer
+      generic map (
+         TPD_G    => TPD_G,
+         STAGES_G => 3)
+      port map (
+         clk     => adcStreamClk,       -- [in]
+         rst     => adcStreamRst,       -- [in]
+         dataIn  => acqStatus.scFall,   -- [in]
+         dataOut => scFall);            -- [out]
+
+
+   comb : process (adcStream, adcStreamRst, cfgMckCount, r, scFall) is
       variable v : RegType;
    begin
       v := r;
 
+
       v.filteredAxis.tValid := '0';
       v.filteredAxis.tData  := adcStream.tData;
-      v.filteredAxis.tLast  := acqStatus.adcLast;
+      v.filteredAxis.tLast  := '0';
 
-      if (acqStatus.adcWindow = '0') then
-         v.capture := '1';
-      end if;
+      case r.state is
+         when WAIT_SC_FALL_S =>
+            v.mckCount := (others => '0');
+            v.count    := (others => '0');
+            if (scFall = '1') then
+               v.state := WAIT_NON_ZERO_S;
+            end if;
 
-      -- Filter every other sample when acqStatus.adcWindow = '1'
-      if (acqStatus.adcWindow = '1' and adcStream.tvalid = '1') then
-         v.filteredAxis.tValid := r.capture;
-         v.capture             := not r.capture;
-      end if;
+         when WAIT_NON_ZERO_S =>
+            v.mckCount := (others => '0');
+            v.count    := r.count + 1;
+            if (adcStream.tValid = '1' and adcStream.tData(15 downto 0) /= X"2000") then
+               v.state   := ADC_CAPTURE_S;
+               v.capture := '1';
+            end if;
+
+         when ADC_CAPTURE_S =>
+            if (adcStream.tValid = '1') then
+               v.filteredAxis.tValid := r.capture;
+               v.capture             := not r.capture;
+
+               if (r.capture = '1') then
+                  v.mckCount := r.mckCount + 1;
+               end if;
+
+               if (r.mckCount = cfgMckCount-1 and r.capture = '1') then
+                  v.filteredAxis.tLast := '1';
+                  v.state              := WAIT_SC_FALL_S;
+               end if;
+            end if;
+
+      end case;
 
       if (adcStreamRst = '1') then
          v := REG_INIT_C;
