@@ -36,6 +36,7 @@ package AcquisitionControlPkg is
       mckPulse       : sl;
       scFall         : sl;
       cfgMckCount    : slv(7 downto 0);
+      cfgScCount     : slv(11 downto 0);
    end record AcquisitionStatusType;
 
    constant ACQUISITION_STATUS_INIT_C : AcquisitionStatusType := (
@@ -46,6 +47,7 @@ package AcquisitionControlPkg is
       adcLast        => '0',
       mckPulse       => '0',
       scFall         => '0',
-      cfgMckCount    => (others => '0'));
+      cfgMckCount    => (others => '0'),
+      cfgScCount     => (others => '0'));
 
 end package AcquisitionControlPkg;

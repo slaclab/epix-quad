@@ -97,7 +97,7 @@ begin
       if (rstN = '0') then
          muxSel <= 0;
          aOut   <= (others => 0.0);
-      elsif (falling_edge(scP)) then
+      elsif (rising_edge(scP)) then
          muxSel <= 0;
          aOut   <= (others => 0.0);
       elsif (rising_edge(mckP)) then

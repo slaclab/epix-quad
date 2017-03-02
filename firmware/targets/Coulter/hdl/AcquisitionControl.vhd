@@ -258,6 +258,7 @@ begin
    acqStatus.trigger        <= r.acqStatus.trigger;
    acqStatus.scFall         <= scPreFall;
    acqStatus.cfgMckCount <= r.cfg.mckCount;
+   acqStatus.cfgScCount <= r.cfg.scCount;   
 
    -------------------------------------------------------------------------------------------------
    -- Main logic

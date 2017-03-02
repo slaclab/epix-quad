@@ -41,11 +41,11 @@ use unisim.vcomponents.all;
 
 entity Coulter is
    generic (
-      TPD_G                  : time    := 1 ns;
+      TPD_G                  : time          := 1 ns;
       BUILD_INFO_G           : BuildInfoType := BUILD_INFO_DEFAULT_SLV_C;
-      SIMULATION_G           : boolean := false;
-      FIXED_LATENCY_G        : boolean := true;
-      ADC_CONFIG_NO_PULLUP_G : boolean := false);
+      SIMULATION_G           : boolean       := false;
+      FIXED_LATENCY_G        : boolean       := true;
+      ADC_CONFIG_NO_PULLUP_G : boolean       := false);
    port (
       -- Debugging IOs
       led                : out   slv(3 downto 0) := (others => '0');
@@ -115,7 +115,7 @@ architecture top_level of Coulter is
    -------------------------------------------------------------------------------------------------
    -- AXI-Lite config
    -------------------------------------------------------------------------------------------------
-   constant AXIL_MASTERS_C       : integer      := 10;
+   constant AXIL_MASTERS_C       : integer      := 11;
    constant VERSION_AXIL_C       : integer      := 0;
    constant ASIC_CONFIG_AXIL_C   : IntegerArray := (0 => 1, 1 => 2);
    constant ADC_CONFIG_AXIL_C    : integer      := 3;
@@ -125,6 +125,7 @@ architecture top_level of Coulter is
    constant PGP_AXIL_C           : integer      := 7;
    constant XADC_AXIL_C          : integer      := 8;
    constant RING_BUF_AXIL_C      : integer      := 9;
+   constant READOUT_CTRL_AXIL_C  : integer      := 10;
 
    constant AXIL_XBAR_CONFIG_C : AxiLiteCrossbarMasterConfigArray(AXIL_MASTERS_C-1 downto 0) :=
       genAxiLiteConfig(AXIL_MASTERS_C, X"00000000", 20, 16);
@@ -571,18 +572,22 @@ begin
       generic map (
          TPD_G => TPD_G)
       port map (
-         adcStreamClk   => clk250,          -- [in]
-         adcStreamRst   => rst250,          -- [in]
-         adcStreams     => adcStreams,      -- [in]
-         distClk        => distClk,         -- [in]
-         distRst        => distRst,         -- [in]
-         distTrigger    => trigger,         -- [in]
-         clk            => axilClk,         -- [in]
-         rst            => axilRst,         -- [in]
-         acqStatus      => acqStatus,       -- [in]
-         dataAxisMaster => userAxisMaster,  -- [out]
-         dataAxisSlave  => userAxisSlave,   -- [in]
-         dataAxisCtrl   => userAxisCtrl);   -- [in]
+         adcStreamClk    => clk250,                                    -- [in]
+         adcStreamRst    => rst250,                                    -- [in]
+         adcStreams      => adcStreams,                                -- [in]
+         distClk         => distClk,                                   -- [in]
+         distRst         => distRst,                                   -- [in]
+         distTrigger     => trigger,                                   -- [in]
+         clk             => axilClk,                                   -- [in]
+         rst             => axilRst,                                   -- [in]
+         acqStatus       => acqStatus,                                 -- [in]
+         dataAxisMaster  => userAxisMaster,                            -- [out]
+         dataAxisSlave   => userAxisSlave,                             -- [in]
+         dataAxisCtrl    => userAxisCtrl,                              -- [in]
+         axilReadMaster  => locAxilReadMasters(READOUT_CTRL_AXIL_C),   -- [in]
+         axilReadSlave   => locAxilReadSlaves(READOUT_CTRL_AXIL_C),    -- [out]
+         axilWriteMaster => locAxilWriteMasters(READOUT_CTRL_AXIL_C),  -- [in]
+         axilWriteSlave  => locAxilWriteSlaves(READOUT_CTRL_AXIL_C));  -- [out]
 
    elineResetL <= not elineRst;
 

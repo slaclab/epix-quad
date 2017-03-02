@@ -43,6 +43,7 @@ entity AdcStreamFilter is
       adcStreamRst : in sl;
       adcStream    : in AxiStreamMasterType;
       acqStatus    : in AcquisitionStatusType;
+      delayCount : out slv(31 downto 0);
 
       -- Main clock and reset
       clk                : in  sl;
@@ -116,8 +117,8 @@ begin
       case r.state is
          when WAIT_SC_FALL_S =>
             v.mckCount := (others => '0');
-            v.count    := (others => '0');
             if (scFall = '1') then
+               v.count    := (others => '0');               
                v.state := WAIT_NON_ZERO_S;
             end if;
 
@@ -151,6 +152,8 @@ begin
       end if;
 
       rin <= v;
+
+      delayCount <= r.count;
 
    end process comb;
 

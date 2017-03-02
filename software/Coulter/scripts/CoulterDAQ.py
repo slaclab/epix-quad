@@ -66,6 +66,9 @@ for i in range(2):
     dbgData = rogue.interfaces.stream.Slave()
     dbgData.setDebug(30, "DATA[{}]".format(i))
     pyrogue.streamTap(vcData[i], dbgData)
+    parser = coulter.CoulterFrameParser()
+    pyrogue.streamTap(vcData[i], parser)
+    
 
 
 # Instantiate top and pass stream and srp configurations

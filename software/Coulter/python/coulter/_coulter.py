@@ -107,13 +107,15 @@ class Coulter(pr.Device):
             #surf.GenericMemory(name="AdcTap", elements=2**5-1, bitSize=32, offset=0x00080004),
             surf.Xadc(offset=0x00080000),
             surf.AxiVersion.create(offset=0x00000000),
-            AcquisitionControl(name='AcquisitionControl', offset=0x00060000, clkFreq=125.0e6),            
+            AcquisitionControl(name='AcquisitionControl', offset=0x00060000, clkFreq=125.0e6),
+            ReadoutControl(name='ReadoutControl', offset=0x000A0000),
             ELine100Config(name='ASIC[0]', offset=0x00010000, enabled=False),
             ELine100Config(name='ASIC[1]', offset=0x00020000, enabled=False),
             surf.Ad9249Config(name='AdcConfig', offset=0x00030000, chips=1),
             surf.Ad9249ReadoutGroup(name = 'AdcReadoutBank[0]', offset=0x00040000, channels=6),
             surf.Ad9249ReadoutGroup(name = 'AdcReadoutBank[1]', offset=0x00050000, channels=6),
             CoulterPgp(name='CoulterPgp', offset=0x00070000)))
+        
         
         self.Xadc.simpleView()
 
@@ -196,6 +198,15 @@ class ELine100Config(pr.Device):
             if n != "EnaAnalogMonitor":
                 v.beforeReadCmd = self.ReadAsic
                 v.afterWriteCmd = self.WriteAsic
+
+                
+class ReadoutControl(pr.Device):
+    def __init__(self, **kwargs):
+        super(self.__class__, self).__init__(**kwargs)
+
+        for i in range(11):
+            self.add(pr.Variable(name='DelayCount[{}]'.format(i), offset=i*4, bitSize=32, base='hex'))
+                     
 
 class AcquisitionControl(pr.Device):
     def __init__(self, clkFreq=156.25e6, **kwargs):

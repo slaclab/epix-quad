@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-09-22
--- Last update: 2016-12-09
+-- Last update: 2017-03-02
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -27,6 +27,7 @@ use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
 use work.StdRtlPkg.all;
+use work.AxiLitePkg.all;
 use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
 
@@ -52,7 +53,12 @@ entity ReadoutControl is
       acqStatus      : in  AcquisitionStatusType;
       dataAxisMaster : out AxiStreamMasterType;
       dataAxisSlave  : in  AxiStreamSlaveType;
-      dataAxisCtrl   : in  AxiStreamCtrlType);
+      dataAxisCtrl   : in  AxiStreamCtrlType;
+
+      axilReadMaster  : in  AxiLiteReadMasterType  := AXI_LITE_READ_MASTER_INIT_C;
+      axilReadSlave   : out AxiLiteReadSlaveType;
+      axilWriteMaster : in  AxiLiteWriteMasterType := AXI_LITE_WRITE_MASTER_INIT_C;
+      axilWriteSlave  : out AxiLiteWriteSlaveType);
 
 end entity ReadoutControl;
 
@@ -68,7 +74,8 @@ architecture rtl of ReadoutControl is
       slotCounts     : slv9Array(ADC_CHANNELS_C-1 downto 0);
       muxAxisSlave   : AxiStreamSlaveType;
       dataAxisMaster : AxiStreamMasterType;
-
+      axilWriteSlave : AxiLiteWriteSlaveType;
+      axilReadSlave  : AxiLiteReadSlaveType;
    end record RegType;
 
    constant REG_INIT_C : RegType := (
@@ -76,7 +83,9 @@ architecture rtl of ReadoutControl is
       acqCount       => (others => '0'),
       slotCounts     => (others => (others => '0')),
       muxAxisSlave   => AXI_STREAM_SLAVE_INIT_C,
-      dataAxisMaster => axiStreamMasterInit(COULTER_AXIS_CFG_C));
+      dataAxisMaster => axiStreamMasterInit(COULTER_AXIS_CFG_C),
+      axilWriteSlave => AXI_LITE_WRITE_SLAVE_INIT_C,
+      axilReadSlave  => AXI_LITE_READ_SLAVE_INIT_C);
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
@@ -86,6 +95,8 @@ architecture rtl of ReadoutControl is
    signal filteredAxisSlaves  : AxiStreamSlaveArray(11 downto 0);
    signal muxAxisMaster       : AxiStreamMasterType;
    signal triggerSync         : sl;
+
+   signal delayCount : Slv32Array(adcStreams'range);
 
 begin
 
@@ -119,7 +130,8 @@ begin
             adcStreamClk       => adcStreamClk,            -- [in]
             adcStreamRst       => adcStreamRst,            -- [in]
             adcStream          => adcStreams(i),           -- [in]
-            acqStatus          => acqStatus,               -- [in]                        
+            acqStatus          => acqStatus,               -- [in]
+            delayCount         => delayCount(i),           -- [out]
             clk                => clk,                     -- [in]
             rst                => rst,                     -- [in]
             filteredAxisMaster => filteredAxisMasters(i),  -- [out]
@@ -143,12 +155,14 @@ begin
          mAxisSlave   => r.muxAxisSlave);      -- [in]
 
    GEN_CHANNEL_DONE : for i in 0 to ADC_CHANNELS_C-1 generate
-      channelDone(i) <= r.slotCounts(i)(8);
+      channelDone(i) <= toSl(r.slotCounts(i) = acqStatus.cfgScCount);
    end generate;
 
 
-   comb : process (channelDone, dataAxisCtrl, muxAxisMaster, r, rst, triggerSync) is
+   comb : process (axilReadMaster, axilWriteMaster, channelDone, dataAxisCtrl, delayCount,
+                   muxAxisMaster, r, rst, triggerSync) is
       variable v : RegType;
+      variable axilEp : AxiLiteEndpointType;
    begin
       v := r;
 
@@ -161,11 +175,12 @@ begin
             v.slotCounts := (others => (others => '0'));
             if (triggerSync = '1') then
                if (dataAxisCtrl.pause = '0') then
-                  v.dataAxisMaster.tValid             := '1';
+                  v.dataAxisMaster.tValid              := '1';
                   ssiSetUserSof(COULTER_AXIS_CFG_C, v.dataAxisMaster, '1');
-                  v.dataAxisMaster.tData(15 downto 0) := r.acqCount;
-                  v.muxAxisSlave.tReady               := '1';
-                  v.state                             := DATA_S;
+                  v.dataAxisMaster.tData(15 downto 0)  := r.acqCount;
+                  v.dataAxisMaster.tData(63 downto 32) := X"deadbeef";
+                  v.muxAxisSlave.tReady                := '1';
+                  v.state                              := DATA_S;
                else
                -- Send special overflow error frame
                end if;
@@ -206,12 +221,21 @@ begin
             v.state                 := WAIT_TRIGGER_S;
       end case;
 
+      axiSlaveWaitTxn(axilEp, axilWriteMaster, axilReadMaster, v.axilWriteSlave, v.axilReadSlave);
+      for i in adcStreams'range loop
+         axiSlaveRegisterR(axilEp, toSlv(i*4, 12), 0, delayCount(i));
+      end loop;
+      axiSlaveDefault(axilEp, v.axilWriteSlave, v.axilReadSlave, AXI_RESP_DECERR_C);
+
+
       if (rst = '1') then
          v := REG_INIT_C;
       end if;
 
       rin            <= v;
       dataAxisMaster <= r.dataAxisMaster;
+      axilReadSlave <= r.axilReadSlave;
+      axilWriteSlave <= r.axilWriteSlave;
 
    end process comb;
 
