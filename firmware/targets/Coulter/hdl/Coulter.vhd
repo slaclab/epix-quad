@@ -5,7 +5,7 @@
 -- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 09/30/2015
--- Last update: 2017-03-01
+-- Last update: 2017-03-02
 -- Platform   : Vivado 2014.4
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -42,7 +42,7 @@ use unisim.vcomponents.all;
 entity Coulter is
    generic (
       TPD_G                  : time    := 1 ns;
-      BUILD_INFO_G           : BuildInfoType;
+      BUILD_INFO_G           : BuildInfoType := BUILD_INFO_DEFAULT_SLV_C;
       SIMULATION_G           : boolean := false;
       FIXED_LATENCY_G        : boolean := true;
       ADC_CONFIG_NO_PULLUP_G : boolean := false);
