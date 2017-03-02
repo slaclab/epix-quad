@@ -127,6 +127,7 @@ begin
             TPD_G               => TPD_G,
             FILTERED_AXIS_CFG_G => COULTER_AXIS_CFG_C)
          port map (
+            distClk            => distClk,
             adcStreamClk       => adcStreamClk,            -- [in]
             adcStreamRst       => adcStreamRst,            -- [in]
             adcStream          => adcStreams(i),           -- [in]
@@ -161,7 +162,7 @@ begin
 
    comb : process (axilReadMaster, axilWriteMaster, channelDone, dataAxisCtrl, delayCount,
                    muxAxisMaster, r, rst, triggerSync) is
-      variable v : RegType;
+      variable v      : RegType;
       variable axilEp : AxiLiteEndpointType;
    begin
       v := r;
@@ -234,7 +235,7 @@ begin
 
       rin            <= v;
       dataAxisMaster <= r.dataAxisMaster;
-      axilReadSlave <= r.axilReadSlave;
+      axilReadSlave  <= r.axilReadSlave;
       axilWriteSlave <= r.axilWriteSlave;
 
    end process comb;

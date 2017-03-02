@@ -38,12 +38,14 @@ entity AdcStreamFilter is
       TPD_G               : time                := 1 ns;
       FILTERED_AXIS_CFG_G : AxiStreamConfigType := AXI_STREAM_CONFIG_INIT_C);
    port (
+      distClk : in sl;
+      
       -- Input stream
-      adcStreamClk : in sl;
-      adcStreamRst : in sl;
-      adcStream    : in AxiStreamMasterType;
-      acqStatus    : in AcquisitionStatusType;
-      delayCount : out slv(31 downto 0);
+      adcStreamClk : in  sl;
+      adcStreamRst : in  sl;
+      adcStream    : in  AxiStreamMasterType;
+      acqStatus    : in  AcquisitionStatusType;
+      delayCount   : out slv(31 downto 0);
 
       -- Main clock and reset
       clk                : in  sl;
@@ -93,15 +95,21 @@ begin
          dataIn  => acqStatus.cfgMckCount,  -- [in]
          dataOut => cfgMckCount);           -- [out]
 
-   U_Synchronizer_1 : entity work.Synchronizer
+   U_SynchronizerFifo_1 : entity work.SynchronizerFifo
       generic map (
-         TPD_G    => TPD_G,
-         STAGES_G => 3)
+         TPD_G         => TPD_G,
+         COMMON_CLK_G  => false,
+         DATA_WIDTH_G  => 1,
+         ADDR_WIDTH_G  => 4)
       port map (
-         clk     => adcStreamClk,       -- [in]
-         rst     => adcStreamRst,       -- [in]
-         dataIn  => acqStatus.scFall,   -- [in]
-         dataOut => scFall);            -- [out]
+         rst    => adcStreamClk,        -- [in]
+         wr_clk => distClk,             -- [in]
+         wr_en  => acqStatus.scFall,    -- [in]
+         din(0)    => acqStatus.scFall,    -- [in]
+         rd_clk => adcStreamClk,        -- [in]
+         rd_en  => '1',                 -- [in]
+         valid  => scFall,              -- [out]
+         dout   => open);               -- [out]
 
 
    comb : process (adcStream, adcStreamRst, cfgMckCount, r, scFall) is
@@ -118,7 +126,7 @@ begin
          when WAIT_SC_FALL_S =>
             v.mckCount := (others => '0');
             if (scFall = '1') then
-               v.count    := (others => '0');               
+               v.count := (others => '0');
                v.state := WAIT_NON_ZERO_S;
             end if;
 
