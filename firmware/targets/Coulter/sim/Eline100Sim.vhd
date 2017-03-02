@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-05-16
--- Last update: 2016-12-05
+-- Last update: 2017-03-02
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -59,8 +59,8 @@ architecture rtl of ELine100Sim is
    signal shiftRegLatched : slv(ELINE_100_CFG_SHIFT_SIZE_C-1 downto 0) := (others => '0');
 
    -- Analog signals
-   type Real6x15Array is array (5 downto 0) of RealArray(15 downto 0);
-   signal pixels : Real6x15Array := (others => (others => 0.0));
+   type Real6x16Array is array (5 downto 0) of RealArray(15 downto 0);
+   signal pixels : Real6x16Array := (others => (others => 0.0));
    signal muxSel : integer       := 0;
 
 begin
@@ -92,9 +92,12 @@ begin
       end if;
    end process LATCH;
 
-   ANALOG_MUX : process (mckP) is
+   ANALOG_MUX : process (mckP, scP) is
    begin
       if (rstN = '0') then
+         muxSel <= 0;
+         aOut   <= (others => 0.0);
+      elsif (falling_edge(scP)) then
          muxSel <= 0;
          aOut   <= (others => 0.0);
       elsif (rising_edge(mckP)) then
@@ -109,9 +112,9 @@ begin
       end if;
    end process ANALOG_MUX;
 
-   PIXEL_VALS_I : for i in 5 downto 0 generate
-      PIXEL_VALS_J : for j in 15 downto 0 generate
-         pixels(i)(j) <= 1.0 + (i * 0.1) + (j * 0.01);
+   PIXEL_VALS_I : for i in 6 downto 1 generate
+      PIXEL_VALS_J : for j in 16 downto 1 generate
+         pixels(i-1)(j-1) <= (i * 0.1) + (j * 0.01);
       end generate PIXEL_VALS_J;
    end generate PIXEL_VALS_I;
 

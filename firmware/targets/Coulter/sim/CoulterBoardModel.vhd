@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-11-14
--- Last update: 2016-12-16
+-- Last update: 2017-03-02
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -169,7 +169,7 @@ begin
    -------------------------------------------------------------------------------------------------
    PREAMP_I : for i in 1 downto 0 generate
       PREAMP_J : for j in 5 downto 0 generate
-         aOutAmp(i)(j) <= eLineAOut(i)(j) * 0.8;
+         aOutAmp(i)(j) <= (eLineAOut(i)(j) * 0.8) + 1.0;
       end generate PREAMP_J;
    end generate PREAMP_I;
 
