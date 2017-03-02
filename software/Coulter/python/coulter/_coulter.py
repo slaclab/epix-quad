@@ -370,7 +370,7 @@ class CoulterFrameParser(rogue.interfaces.stream.Slave):
                 for i, pixel in enumerate(range(last*8, last*8+8)):
                     data = conv(word[1], 16+(i*14)+13, 16+(i*14))
                     self.d[count][slot][channel][pixel] = data
-                    print(slot, channel, pixel, data)
+                    print(slot, channel, pixel, [hex(i) for i in data])
 
 
 
