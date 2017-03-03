@@ -57,10 +57,11 @@ srp = [rogue.protocols.srp.SrpV0() for i in range(2)]
 for i in range(2):
     pyrogue.streamConnectBiDir(vcReg[i] ,srp[i])
     pyrogue.streamConnect(vcData[i], dataWriter.getChannel(i))
+    vcReg[i].setDebug(16, "VC[{}]".format(i))
     
 dbgSrp = rogue.interfaces.stream.Slave()
-dbgSrp.setDebug(10, "SRP")
-#pyrogue.streamTap(srp, dbgSrp)
+dbgSrp.setDebug(16, "SRP")
+pyrogue.streamTap(srp[0], dbgSrp)
 
 for i in range(2):
     dbgData = rogue.interfaces.stream.Slave()
@@ -72,7 +73,7 @@ for i in range(2):
 
 
 # Instantiate top and pass stream and srp configurations
-coulterDaq = coulter.CoulterRoot(pgp=vcReg, srp=srp, trig=vcTrigger, dataWriter=dataWriter)
+coulterDaq = coulter.CoulterRoot(pollEn=False, pgp=vcReg, srp=srp, trig=vcTrigger, dataWriter=dataWriter)
 #coulterDaq.setTimeout(100000000)
 #coulterDaq = pyrogue.Root(name="CoulterDaq", description="Coulter Data Acquisition")
 #coulterDaq.add(coulter.CoulterRunControl(name="RunControl"))
