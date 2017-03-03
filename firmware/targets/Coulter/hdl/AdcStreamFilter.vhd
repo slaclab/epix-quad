@@ -39,7 +39,7 @@ entity AdcStreamFilter is
       FILTERED_AXIS_CFG_G : AxiStreamConfigType := AXI_STREAM_CONFIG_INIT_C);
    port (
       distClk : in sl;
-      
+
       -- Input stream
       adcStreamClk : in  sl;
       adcStreamRst : in  sl;
@@ -97,15 +97,15 @@ begin
 
    U_SynchronizerFifo_1 : entity work.SynchronizerFifo
       generic map (
-         TPD_G         => TPD_G,
-         COMMON_CLK_G  => false,
-         DATA_WIDTH_G  => 1,
-         ADDR_WIDTH_G  => 4)
+         TPD_G        => TPD_G,
+         COMMON_CLK_G => false,
+         DATA_WIDTH_G => 1,
+         ADDR_WIDTH_G => 4)
       port map (
-         rst    => '0',        -- [in]
+         rst    => '0',                 -- [in]
          wr_clk => distClk,             -- [in]
          wr_en  => acqStatus.scFall,    -- [in]
-         din(0)    => acqStatus.scFall,    -- [in]
+         din(0) => acqStatus.scFall,    -- [in]
          rd_clk => adcStreamClk,        -- [in]
          rd_en  => '1',                 -- [in]
          valid  => scFall,              -- [out]
@@ -131,8 +131,10 @@ begin
             end if;
 
          when WAIT_NON_ZERO_S =>
-            v.mckCount := (others => '0');
-            v.count    := r.count + 1;
+            v.mckCount            := (others => '0');
+            v.count               := r.count + 1;
+            v.count(31 downto 24) := X"AA";
+
             if (adcStream.tValid = '1' and adcStream.tData(15 downto 0) /= X"2000") then
                v.state   := ADC_CAPTURE_S;
                v.capture := '1';
