@@ -102,7 +102,7 @@ begin
          DATA_WIDTH_G  => 1,
          ADDR_WIDTH_G  => 4)
       port map (
-         rst    => adcStreamRst,        -- [in]
+         rst    => '0',        -- [in]
          wr_clk => distClk,             -- [in]
          wr_en  => acqStatus.scFall,    -- [in]
          din(0)    => acqStatus.scFall,    -- [in]
