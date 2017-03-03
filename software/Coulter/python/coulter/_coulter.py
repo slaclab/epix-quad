@@ -205,7 +205,7 @@ class ReadoutControl(pr.Device):
         super(self.__class__, self).__init__(**kwargs)
 
         for i in range(11):
-            self.add(pr.Variable(name='DelayCount[{}]'.format(i), offset=i*4, bitSize=32, base='hex'))
+            self.add(pr.Variable(name='DelayCount[{}]'.format(i), offset=i*4, bitSize=32, base='hex', mode='RO'))
                      
 
 class AcquisitionControl(pr.Device):
@@ -370,7 +370,7 @@ class CoulterFrameParser(rogue.interfaces.stream.Slave):
                 for i, pixel in enumerate(range(last*8, last*8+8)):
                     data = conv(word[1], 16+(i*14)+13, 16+(i*14))
                     self.d[count][slot][channel][pixel] = data
-                    print(slot, channel, pixel, [hex(i) for i in data])
+                    print(slot, channel, pixel, hex(data))
 
 
 
