@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-09-22
--- Last update: 2017-03-02
+-- Last update: 2017-03-03
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -102,7 +102,7 @@ begin
          DATA_WIDTH_G  => 1,
          ADDR_WIDTH_G  => 4)
       port map (
-         rst    => adcStreamClk,        -- [in]
+         rst    => adcStreamRst,        -- [in]
          wr_clk => distClk,             -- [in]
          wr_en  => acqStatus.scFall,    -- [in]
          din(0)    => acqStatus.scFall,    -- [in]
