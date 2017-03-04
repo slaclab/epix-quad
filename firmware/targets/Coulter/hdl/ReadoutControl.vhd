@@ -218,8 +218,7 @@ begin
    end generate;
 
 
-   comb : process (axilReadMaster, axilWriteMaster, channelDone, dataAxisCtrl, delayCount,
-                   muxAxisMaster, r, rst, triggerSync) is
+   comb : process (channelDone, dataAxisCtrl, muxAxisMaster, r, rst, triggerSync) is
       variable v : RegType;
 
    begin

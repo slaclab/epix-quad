@@ -125,7 +125,7 @@ begin
          dout   => open);               -- [out]
 
 
-   comb : process (adcStream, adcStreamRst, cfgMckCount, r, scFall) is
+   comb : process (adcStream, adcStreamRst, axilReadMaster, axilWriteMaster, cfgMckCount, r, scFall) is
       variable v      : RegType;
       variable axilEp : AxiLiteEndpointType;
       variable state  : slv(2 downto 0);
