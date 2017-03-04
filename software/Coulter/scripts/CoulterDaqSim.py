@@ -34,11 +34,13 @@ import time
 import sys
 import PyQt4.QtGui
 import PyQt4.QtCore
-
+import logging
 
 
 # File writer
 dataWriter = pyrogue.utilities.fileio.StreamWriter('dataWriter')
+
+logging.getLogger("pyrogue.SRP").setLevel(logging.INFO)
 
 
 # Create the PGP interfaces
