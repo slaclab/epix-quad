@@ -5,7 +5,7 @@
 -- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 09/30/2015
--- Last update: 2017-03-02
+-- Last update: 2017-03-03
 -- Platform   : Vivado 2014.4
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -570,7 +570,8 @@ begin
 
    U_ReadoutControl_1 : entity work.ReadoutControl
       generic map (
-         TPD_G => TPD_G)
+         TPD_G => TPD_G,
+         AXIL_BASE_ADDR_G => AXIL_XBAR_CONFIG_C(READOUT_CTRL_AXIL_C).baseAddr)
       port map (
          adcStreamClk    => clk250,                                    -- [in]
          adcStreamRst    => rst250,                                    -- [in]

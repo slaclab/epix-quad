@@ -28,6 +28,7 @@ use ieee.std_logic_unsigned.all;
 
 use work.StdRtlPkg.all;
 use work.AxiStreamPkg.all;
+use work.AxiLitePkg.all;
 use work.Ad9249Pkg.all;
 
 use work.AcquisitionControlPkg.all;
@@ -41,16 +42,22 @@ entity AdcStreamFilter is
       distClk : in sl;
 
       -- Input stream
-      adcStreamClk : in  sl;
-      adcStreamRst : in  sl;
-      adcStream    : in  AxiStreamMasterType;
-      acqStatus    : in  AcquisitionStatusType;
-      delayCount   : out slv(31 downto 0);
+      adcStreamClk : in sl;
+      adcStreamRst : in sl;
+      adcStream    : in AxiStreamMasterType;
+      acqStatus    : in AcquisitionStatusType;
+
+      -- Axi bus synced to ADC stream clock
+      axilReadMaster  : in  AxiLiteReadMasterType  := AXI_LITE_READ_MASTER_INIT_C;
+      axilReadSlave   : out AxiLiteReadSlaveType;
+      axilWriteMaster : in  AxiLiteWriteMasterType := AXI_LITE_WRITE_MASTER_INIT_C;
+      axilWriteSlave  : out AxiLiteWriteSlaveType;
+
 
       -- Main clock and reset
       clk                : in  sl;
       rst                : in  sl;
-      -- Filtered (and buffered) output stream
+      -- Filtered (and buffered) output stream  
       filteredAxisMaster : out AxiStreamMasterType;
       filteredAxisSlave  : in  AxiStreamSlaveType);
 
@@ -61,19 +68,25 @@ architecture rtl of AdcStreamFilter is
    type StateType is (WAIT_SC_FALL_S, WAIT_NON_ZERO_S, ADC_CAPTURE_S);
 
    type RegType is record
-      state        : StateType;
-      count        : slv(31 downto 0);
-      mckCount     : slv(7 downto 0);
-      capture      : sl;
-      filteredAxis : AxiStreamMasterType;
+      state          : StateType;
+      count          : slv(31 downto 0);
+      scFallCount    : slv(31 downto 0);
+      mckCount       : slv(7 downto 0);
+      capture        : sl;
+      filteredAxis   : AxiStreamMasterType;
+      axilWriteSlave : AxiLiteWriteSlaveType;
+      axilReadSlave  : AxiLiteReadSlaveType;
    end record RegType;
 
    constant REG_INIT_C : RegType := (
-      state        => WAIT_SC_FALL_S,
-      count        => (others => '0'),
-      mckCount     => (others => '0'),
-      capture      => '1',
-      filteredAxis => AXI_STREAM_MASTER_INIT_C);
+      state          => WAIT_SC_FALL_S,
+      count          => (others => '0'),
+      scFallCount    => (others => '0'),
+      mckCount       => (others => '0'),
+      capture        => '1',
+      filteredAxis   => AXI_STREAM_MASTER_INIT_C,
+      axilWriteSlave => AXI_LITE_WRITE_SLAVE_INIT_C,
+      axilReadSlave  => AXI_LITE_READ_SLAVE_INIT_C);
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
@@ -113,10 +126,15 @@ begin
 
 
    comb : process (adcStream, adcStreamRst, cfgMckCount, r, scFall) is
-      variable v : RegType;
+      variable v      : RegType;
+      variable axilEp : AxiLiteEndpointType;
+      variable state  : slv(2 downto 0);
    begin
       v := r;
 
+      if (scFall = '1') then
+         v.scFallCount := r.scFallCount + 1;
+      end if;
 
       v.filteredAxis.tValid := '0';
       v.filteredAxis.tData  := adcStream.tData;
@@ -124,13 +142,16 @@ begin
 
       case r.state is
          when WAIT_SC_FALL_S =>
-            v.mckCount := (others => '0');
+            state                 := "001";
+            v.mckCount            := (others => '0');
+            v.count(31 downto 24) := X"55";
             if (scFall = '1') then
                v.count := (others => '0');
                v.state := WAIT_NON_ZERO_S;
             end if;
 
          when WAIT_NON_ZERO_S =>
+            state                 := "010";
             v.mckCount            := (others => '0');
             v.count               := r.count + 1;
             v.count(31 downto 24) := X"AA";
@@ -141,6 +162,7 @@ begin
             end if;
 
          when ADC_CAPTURE_S =>
+            state := "100";
             if (adcStream.tValid = '1') then
                v.filteredAxis.tValid := r.capture;
                v.capture             := not r.capture;
@@ -157,13 +179,21 @@ begin
 
       end case;
 
+      axiSlaveWaitTxn(axilEp, axilWriteMaster, axilReadMaster, v.axilWriteSlave, v.axilReadSlave);
+      axiSlaveRegisterR(axilEp, X"00", 0, r.count);
+      axiSlaveRegisterR(axilEp, X"04", 0, state);
+      axiSlaveRegisterR(axilEp, X"08", 0, r.scFallCount);
+      axiSlaveDefault(axilEp, v.axilWriteSlave, v.axilReadSlave, AXI_RESP_DECERR_C);
+
+
       if (adcStreamRst = '1') then
          v := REG_INIT_C;
       end if;
 
       rin <= v;
 
-      delayCount <= r.count;
+      axilWriteSlave <= r.axilWriteSlave;
+      axilReadSlave  <= r.axilReadSlave;
 
    end process comb;
 

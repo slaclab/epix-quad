@@ -198,6 +198,13 @@ class ELine100Config(pr.Device):
             if n != "EnaAnalogMonitor":
                 v.beforeReadCmd = self.ReadAsic
                 v.afterWriteCmd = self.WriteAsic
+class AdcStreamFilter(pr.Device):
+    def __init__(self, **kwargs):
+        super(self.__class__, self).__init__(**kwargs)
+
+        self.add(pr.Variable(name='DelayCount', offset=0, bitSize=32, mode='RO'))
+        self.add(pr.Variable(name='State', offset=4, bitSize=3, mode='RO'))
+        self.add(pr.Variable(name='ScFallCount', offset=8, bitSize=32, mode='RO'))        
 
                 
 class ReadoutControl(pr.Device):
@@ -205,7 +212,8 @@ class ReadoutControl(pr.Device):
         super(self.__class__, self).__init__(**kwargs)
 
         for i in range(11):
-            self.add(pr.Variable(name='DelayCount[{}]'.format(i), offset=i*4, bitSize=32, base='hex', mode='RO'))
+            self.add(AdcStreamFilter(name='AdcStreamFilter[{}]'.format(i), offset=i*2**12))
+
                      
 
 class AcquisitionControl(pr.Device):
