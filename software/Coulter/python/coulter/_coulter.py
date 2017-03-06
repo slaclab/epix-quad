@@ -298,6 +298,8 @@ class AcquisitionControl(pr.Device):
         self.addVariable(name="ClkDisable", description="Disable SC, MCK and AdcClk generation",
                          offset=0x34, bitSize=1, bitOffset=0, base = 'bool')
 
+        self.add(pr.Variable(name="ScFallCount", offset=0x40, base='hex', mode='RO'))
+
         def reset(dev, cmd, arg):
             print('Reseting ASICs')
             cmd.set(1)

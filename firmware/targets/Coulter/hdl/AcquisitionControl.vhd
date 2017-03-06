@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-05-31
--- Last update: 2017-03-02
+-- Last update: 2017-03-06
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -123,6 +123,7 @@ architecture rtl of AcquisitionControl is
       adcClkRst      : sl;
       acqStatus      : AcquisitionStatusType;
       elineRst       : sl;
+      scPreFallCount : slv(31 downto 0);
    end record RegType;
 
    constant REG_INIT_C : RegType := (
@@ -136,7 +137,8 @@ architecture rtl of AcquisitionControl is
       mckCounter     => (others => '0'),
       adcClkRst      => '0',
       acqStatus      => ACQUISITION_STATUS_INIT_C,
-      elineRst       => '0');
+      elineRst       => '0',
+      scPreFallCount => (others => '0'));
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
@@ -271,6 +273,10 @@ begin
       v           := r;
       v.adcClkRst := '0';
 
+      if (scPreFall = '1') then
+         v.scPreFallCount := r.scPreFallCount + 1;
+      end if;
+
       -- Declare configuration registers
       axiSlaveWaitTxn(axilEp, locAxilWriteMaster, locAxilReadMaster, v.axilWriteSlave, v.axilReadSlave);
       axiSlaveRegister(axilEp, X"00", 0, v.cfg.scDelay);
@@ -290,6 +296,7 @@ begin
       axiSlaveRegister(axilEp, X"30", 0, v.cfg.mckDisable);
       axiSlaveRegister(axilEp, X"34", 0, v.cfg.clkDisable);
       axiSlaveRegister(axilEp, X"38", 0, v.elineRst);
+      axiSlaveRegisterR(axilEp, X"3C", 0, r.scPreFallCount);
       axiSlaveDefault(axilEp, v.axilWriteSlave, v.axilReadSlave, AXI_ERROR_RESP_G);
 
       -- Default Register values
