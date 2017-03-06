@@ -12,3 +12,4 @@ loadSource -sim_only -dir "$::DIR_PATH/sim/"
 # Load Constraints
 loadConstraints -path "$::DIR_PATH/hdl/Coulter.xdc"
 
+set_property strategy Performance_Explore [get_runs impl_1]
