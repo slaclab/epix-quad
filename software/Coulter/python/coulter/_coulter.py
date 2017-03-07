@@ -108,7 +108,7 @@ class Coulter(pr.Device):
             surf.Xadc(offset=0x00080000),
             surf.AxiVersion.create(offset=0x00000000),
             AcquisitionControl(name='AcquisitionControl', offset=0x00060000, clkFreq=125.0e6),
-            ReadoutControl(name='ReadoutControl', offset=0x000A0000),
+            #ReadoutControl(name='ReadoutControl', offset=0x000A0000),
             ELine100Config(name='ASIC[0]', offset=0x00010000, enabled=False),
             ELine100Config(name='ASIC[1]', offset=0x00020000, enabled=False),
             surf.Ad9249Config(name='AdcConfig', offset=0x00030000, chips=1),
@@ -363,16 +363,16 @@ class CoulterFrameParser(rogue.interfaces.stream.Slave):
             return int(o)
 
         count = 0
-        
+        print("-------------------------")        
         for word in self.words(p):
-        #print("-------------------------")
+
         #print("New Frame")
         #print("-------------------------")
         #print("Header:")
 
             if word[0] == 'header':
                 count = conv(word[1], 15, 0)
-                print('header', word[1], p[0:16], count)                
+                #print('header', word[1], p[0:16], count)                
             elif word[0] == 'tail':
                 pass
             else:
@@ -382,11 +382,11 @@ class CoulterFrameParser(rogue.interfaces.stream.Slave):
                 slot = conv(word[1], 15, 8)
                 #data = {i+(8*last): conv(word[1], 16+(i*14)+13, 16+(i*14)) for i in range(8)}
 
-                print(word[1] >> 16)
+                #print(word[1] >> 16)
                 for i, pixel in enumerate(range(last*8, last*8+8)):
                     data = conv(word[1], 16+(i*14)+13, 16+(i*14))
                     self.d[count][slot][channel][pixel] = data
-                    print(slot, channel, pixel, hex(data))
+                    #print(slot, channel, pixel, hex(data))
 
                 self.lastCount = count
 

@@ -64,13 +64,13 @@ for i in range(2):
     
 dbgSrp = rogue.interfaces.stream.Slave()
 dbgSrp.setDebug(16, "SRP")
-pyrogue.streamTap(srp[0], dbgSrp)
+#pyrogue.streamTap(srp[0], dbgSrp)
 
 parsers = [coulter.CoulterFrameParser(), coulter.CoulterFrameParser()]
 
 for i in range(2):
     dbgData = rogue.interfaces.stream.Slave()
-    dbgData.setDebug(30, "DATA[{}]".format(i))
+    dbgData.setDebug(64, "DATA[{}]".format(i))
     pyrogue.streamTap(vcData[i], dbgData)
     pyrogue.streamTap(vcData[i], parsers[i])
     
@@ -96,7 +96,7 @@ coulterDaq = coulter.CoulterRoot(pollEn=False, pgp=vcReg, srp=srp, trig=vcTrigge
 #    exit()
 
 
-coulterDaq.readConfig('/afs/slac/re/bareese/projects/epix-git/software/Coulter/cfg/eline-config.yml')
+coulterDaq.readConfig('/afs/slac/u/re/bareese/projects/epix-git/software/Coulter/cfg/eline-config.yml')
 
 
 for delay in range(2**9):
@@ -104,14 +104,22 @@ for delay in range(2**9):
 
     coulterDaq.Trigger()
 
-    time.sleep(.1)
     
+#    adc = coulterDaq.Coulter[0].AdcReadoutBank[0].AdcChannel[0].get(read=True)
+#    print(hex(adc))
+    
+    time.sleep(.5)
+
     f = parsers[0].lastFrame()
-    
-    for slot in self.f.keys():
+    print(list(f.keys()))
+    for slot in f.keys():
         for channel in f[slot].keys():
             data = [f[slot][channel][pixel] for pixel in sorted(f[slot][channel].keys())]
-            if not all([d == 0x2000 for d in data]):
+            if all((d == 0 for d in data)):
+                print('Delay: {}, Slot: {}, Channel: {}, All Zero'.format(delay, slot, channel))
+            elif all([d == 0x2000 for d in data]):                
+                print('Delay: {}, Slot: {}, Channel: {}, All Gnd'.format(delay, slot, channel))
+            else:
                 print('Delay: {}, got non-zero data'.format(delay))
-                print('Slot: {}, Channel: {}, Data: {}'.format(slot, channel, [hex(d) for d in data]]))
+                print('Slot: {}, Channel: {}, Data: {}'.format(slot, channel, [hex(d) for d in data]))
                 
