@@ -66,12 +66,13 @@ dbgSrp = rogue.interfaces.stream.Slave()
 dbgSrp.setDebug(16, "SRP")
 pyrogue.streamTap(srp[0], dbgSrp)
 
+parsers = [coulter.CoulterFrameParser(), coulter.CoulterFrameParser()]
+
 for i in range(2):
     dbgData = rogue.interfaces.stream.Slave()
     dbgData.setDebug(30, "DATA[{}]".format(i))
     pyrogue.streamTap(vcData[i], dbgData)
-    parser = coulter.CoulterFrameParser()
-    pyrogue.streamTap(vcData[i], parser)
+    pyrogue.streamTap(vcData[i], parsers[i])
     
 
 
@@ -94,14 +95,22 @@ coulterDaq = coulter.CoulterRoot(pollEn=False, pgp=vcReg, srp=srp, trig=vcTrigge
 #    evalBoard.stop()
 #    exit()
 
-# Create GUI
-appTop = PyQt4.QtGui.QApplication(sys.argv)
-guiTop = pyrogue.gui.GuiTop('CoulterGui')
-guiTop.addTree(coulterDaq)
-guiTop.resize(1000,1000)
 
-# Run gui
-appTop.exec_()
+coulterDaq.readConfig('/afs/slac/re/bareese/projects/epix-git/software/Coulter/cfg/eline-config.yml')
 
-# Stop mesh after gui exits
-coulterDaq.stop()
+
+for delay in range(2**9):
+    coulterDaq.Coulter[0].AcquisitionControl.AdcWindowDelay.set(delay, True)
+
+    coulterDaq.Trigger()
+
+    time.sleep(.1)
+    
+    f = parsers[i].lastFrame()
+    
+    for slot in self.f.keys():
+        for channel in f[slot].keys():
+            data = [f[slot][channel][pixel] for pixel in sorted(f[slot][channel].keys())]
+            if not all([d == 0x2000 for d in data]):
+                print('Delay: {}, got non-zero data: {}'.format(delay, data))
+                

@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-09-22
--- Last update: 2017-03-03
+-- Last update: 2017-03-07
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -117,42 +117,53 @@ architecture rtl of ReadoutControl is
 begin
 
    -- Synchronize the Axi lite bus to adc stream clk
-   U_AxiLiteAsync_1 : entity work.AxiLiteAsync
-      generic map (
-         TPD_G => TPD_G)
-      port map (
-         sAxiClk         => clk,                 -- [in]
-         sAxiClkRst      => rst,                 -- [in]
-         sAxiReadMaster  => axilReadMaster,      -- [in]
-         sAxiReadSlave   => axilReadSlave,       -- [out]
-         sAxiWriteMaster => axilWriteMaster,     -- [in]
-         sAxiWriteSlave  => axilWriteSlave,      -- [out]
-         mAxiClk         => adcStreamClk,        -- [in]
-         mAxiClkRst      => adcStreamRst,        -- [in]
-         mAxiReadMaster  => syncAxilReadMaster,  -- [out]
-         mAxiReadSlave   => syncAxilReadSlave,   -- [in]
-         mAxiWriteMaster => syncAxilWriteMaster,  -- [out]
-         mAxiWriteSlave  => syncAxilWriteSlave);  -- [in]
+--    U_AxiLiteAsync_1 : entity work.AxiLiteAsync
+--       generic map (
+--          TPD_G => TPD_G)
+--       port map (
+--          sAxiClk         => clk,                 -- [in]
+--          sAxiClkRst      => rst,                 -- [in]
+--          sAxiReadMaster  => axilReadMaster,      -- [in]
+--          sAxiReadSlave   => axilReadSlave,       -- [out]
+--          sAxiWriteMaster => axilWriteMaster,     -- [in]
+--          sAxiWriteSlave  => axilWriteSlave,      -- [out]
+--          mAxiClk         => adcStreamClk,        -- [in]
+--          mAxiClkRst      => adcStreamRst,        -- [in]
+--          mAxiReadMaster  => syncAxilReadMaster,  -- [out]
+--          mAxiReadSlave   => syncAxilReadSlave,   -- [in]
+--          mAxiWriteMaster => syncAxilWriteMaster,  -- [out]
+--          mAxiWriteSlave  => syncAxilWriteSlave);  -- [in]
 
-   U_AxiLiteCrossbar_1 : entity work.AxiLiteCrossbar
+--    U_AxiLiteCrossbar_1 : entity work.AxiLiteCrossbar
+--       generic map (
+--          TPD_G              => TPD_G,
+--          NUM_SLAVE_SLOTS_G  => 1,
+--          NUM_MASTER_SLOTS_G => 12,
+--          DEC_ERROR_RESP_G   => AXI_RESP_DECERR_C,
+--          MASTERS_CONFIG_G   => AXIL_XBAR_CONFIG_C,
+--          DEBUG_G            => true)
+--       port map (
+--          axiClk              => adcStreamClk,         -- [in]
+--          axiClkRst           => adcStreamRst,         -- [in]
+--          sAxiWriteMasters(0) => syncAxilWriteMaster,  -- [in]
+--          sAxiWriteSlaves(0)  => syncAxilWriteSlave,   -- [out]
+--          sAxiReadMasters(0)  => syncAxilReadMaster,   -- [in]
+--          sAxiReadSlaves(0)   => syncAxilReadSlave,    -- [out]
+--          mAxiWriteMasters    => locAxilWriteMasters,  -- [out]
+--          mAxiWriteSlaves     => locAxilWriteSlaves,   -- [in]
+--          mAxiReadMasters     => locAxilReadMasters,   -- [out]
+--          mAxiReadSlaves      => locAxilReadSlaves);   -- [in]
+
+   U_AxiLiteEmpty_1 : entity work.AxiLiteEmpty
       generic map (
-         TPD_G              => TPD_G,
-         NUM_SLAVE_SLOTS_G  => 1,
-         NUM_MASTER_SLOTS_G => 12,
-         DEC_ERROR_RESP_G   => AXI_RESP_DECERR_C,
-         MASTERS_CONFIG_G   => AXIL_XBAR_CONFIG_C,
-         DEBUG_G            => true)
+         TPD_G            => TPD_G)
       port map (
-         axiClk              => adcStreamClk,         -- [in]
-         axiClkRst           => adcStreamRst,         -- [in]
-         sAxiWriteMasters(0) => syncAxilWriteMaster,  -- [in]
-         sAxiWriteSlaves(0)  => syncAxilWriteSlave,   -- [out]
-         sAxiReadMasters(0)  => syncAxilReadMaster,   -- [in]
-         sAxiReadSlaves(0)   => syncAxilReadSlave,    -- [out]
-         mAxiWriteMasters    => locAxilWriteMasters,  -- [out]
-         mAxiWriteSlaves     => locAxilWriteSlaves,   -- [in]
-         mAxiReadMasters     => locAxilReadMasters,   -- [out]
-         mAxiReadSlaves      => locAxilReadSlaves);   -- [in]
+         axiClk         => clk,              -- [in]
+         axiClkRst      => rst,              -- [in]
+         axiReadMaster  => axilReadMaster,   -- [in]
+         axiReadSlave   => axilReadSlave,    -- [out]
+         axiWriteMaster => axilWriteMaster,  -- [in]
+         axiWriteSlave  => axilWriteSlave);  -- [out]
 
 
    U_SynchronizerFifo_1 : entity work.SynchronizerFifo
@@ -187,10 +198,10 @@ begin
             adcStreamRst       => adcStreamRst,            -- [in]
             adcStream          => adcStreams(i),           -- [in]
             acqStatus          => acqStatus,               -- [in]
-            axilReadMaster     => locAxilReadMasters(i),   -- [in]
-            axilReadSlave      => locAxilReadSlaves(i),    -- [out]
-            axilWriteMaster    => locAxilWriteMasters(i),  -- [in]
-            axilWriteSlave     => locAxilWriteSlaves(i),   -- [out]
+--             axilReadMaster     => locAxilReadMasters(i),   -- [in]
+--             axilReadSlave      => locAxilReadSlaves(i),    -- [out]
+--             axilWriteMaster    => locAxilWriteMasters(i),  -- [in]
+--             axilWriteSlave     => locAxilWriteSlaves(i),   -- [out]
             clk                => clk,                     -- [in]
             rst                => rst,                     -- [in]
             filteredAxisMaster => filteredAxisMasters(i),  -- [out]

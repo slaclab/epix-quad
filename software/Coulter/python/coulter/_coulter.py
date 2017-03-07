@@ -298,7 +298,7 @@ class AcquisitionControl(pr.Device):
         self.addVariable(name="ClkDisable", description="Disable SC, MCK and AdcClk generation",
                          offset=0x34, bitSize=1, bitOffset=0, base = 'bool')
 
-        self.add(pr.Variable(name="ScFallCount", offset=0x40, base='hex', mode='RO'))
+        self.add(pr.Variable(name="ScFallCount", offset=0x3C, base='hex', mode='RO'))
 
         def reset(dev, cmd, arg):
             print('Reseting ASICs')
@@ -337,6 +337,7 @@ class CoulterFrameParser(rogue.interfaces.stream.Slave):
         rogue.interfaces.stream.Slave.__init__(self)
         nesteddict = lambda:defaultdict(nesteddict)
         self.d = nesteddict()
+        self.lastCount = 0
 
     def words(self, ba):
         yield ('header', int.from_bytes(ba[0:16], 'little'))
@@ -345,6 +346,9 @@ class CoulterFrameParser(rogue.interfaces.stream.Slave):
             yield (cnt/16-1, int.from_bytes(ba[cnt:cnt+16], 'little'))
             cnt = cnt + 16
         yield('tail', int.from_bytes(ba[cnt:cnt+16], 'little'))
+
+    def lastFrame(self):
+        return self.d[self.lastCount]
             
 
     def _acceptFrame(self, frame):
@@ -384,6 +388,7 @@ class CoulterFrameParser(rogue.interfaces.stream.Slave):
                     self.d[count][slot][channel][pixel] = data
                     print(slot, channel, pixel, hex(data))
 
+                self.lastCount = count
 
 
         #print("------Tail---------------")
