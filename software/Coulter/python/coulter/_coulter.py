@@ -338,6 +338,8 @@ class CoulterFrameParser(rogue.interfaces.stream.Slave):
         nesteddict = lambda:defaultdict(nesteddict)
         self.d = nesteddict()
         self.lastCount = 0
+        self.event = threading.Event()
+
 
     def words(self, ba):
         yield ('header', int.from_bytes(ba[0:16], 'little'))
@@ -348,13 +350,20 @@ class CoulterFrameParser(rogue.interfaces.stream.Slave):
         yield('tail', int.from_bytes(ba[cnt:cnt+16], 'little'))
 
     def lastFrame(self):
+        self.event.wait()
+        self.event.clear()
         return self.d[self.lastCount]
             
 
     def _acceptFrame(self, frame):
+
+        if frame.getError():
+            print("Frame Error!")
+            return
+        
         p = bytearray(frame.getPayload())
         frame.read(p, 0)
-
+        print('Got frame. Size: {}'.format(len(p)))
 
 
         def conv(i, highBit, lowBit):
@@ -372,7 +381,7 @@ class CoulterFrameParser(rogue.interfaces.stream.Slave):
 
             if word[0] == 'header':
                 count = conv(word[1], 15, 0)
-                print('header', word[1], p[0:16], count)                
+                #print('header', word[1], p[0:16], count)                
             elif word[0] == 'tail':
                 pass
             else:
@@ -386,9 +395,11 @@ class CoulterFrameParser(rogue.interfaces.stream.Slave):
                 for i, pixel in enumerate(range(last*8, last*8+8)):
                     data = conv(word[1], 16+(i*14)+13, 16+(i*14))
                     self.d[count][slot][channel][pixel] = data
-                    print(slot, channel, pixel, hex(data))
+                    #print(slot, channel, pixel, hex(data))
 
-                self.lastCount = count
+        self.lastCount = count
+        self.event.set()
+
 
 
         #print("------Tail---------------")

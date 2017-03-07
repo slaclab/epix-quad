@@ -70,7 +70,7 @@ parsers = [coulter.CoulterFrameParser(), coulter.CoulterFrameParser()]
 
 for i in range(2):
     dbgData = rogue.interfaces.stream.Slave()
-    dbgData.setDebug(64, "DATA[{}]".format(i))
+    dbgData.setDebug(1, "DATA[{}]".format(i))
     pyrogue.streamTap(vcData[i], dbgData)
     pyrogue.streamTap(vcData[i], parsers[i])
     
@@ -98,28 +98,25 @@ coulterDaq = coulter.CoulterRoot(pollEn=False, pgp=vcReg, srp=srp, trig=vcTrigge
 
 coulterDaq.readConfig('/afs/slac/u/re/bareese/projects/epix-git/software/Coulter/cfg/eline-config.yml')
 
+for phase in range(0, 65536, 32):
+    print('Phase: {}'.format(phase))
+    coulterDaq.Coulter[0].AcquisitionControl.AdcClkDelay.set(phase, True)
+    for delay in range(2**9):
+        coulterDaq.Coulter[0].AcquisitionControl.AdcWindowDelay.set(delay, True)
 
-for delay in range(2**9):
-    coulterDaq.Coulter[0].AcquisitionControl.AdcWindowDelay.set(delay, True)
+        coulterDaq.Trigger()
 
-    coulterDaq.Trigger()
+        #time.sleep(.1)
 
-    
-#    adc = coulterDaq.Coulter[0].AdcReadoutBank[0].AdcChannel[0].get(read=True)
-#    print(hex(adc))
-    
-    time.sleep(.5)
+        f = parsers[0].lastFrame()
+        print(list(f.keys()), delay)
+        for slot in f.keys():
+            for channel in f[slot].keys():
+                data = [f[slot][channel][pixel] for pixel in sorted(f[slot][channel].keys())]
+                if len(set(data)) == 1:
+                    pass
+                    #print('Delay: {}, Slot: {}, Channel: {}, All Gnd'.format(delay, slot, channel))
+                else:
+                    print('Delay: {}, got non-zero data'.format(delay))
+                    print('Slot: {}, Channel: {}, Data: {}'.format(slot, channel, [hex(d) for d in data]))
 
-    f = parsers[0].lastFrame()
-    print(list(f.keys()))
-    for slot in f.keys():
-        for channel in f[slot].keys():
-            data = [f[slot][channel][pixel] for pixel in sorted(f[slot][channel].keys())]
-            if all((d == 0 for d in data)):
-                print('Delay: {}, Slot: {}, Channel: {}, All Zero'.format(delay, slot, channel))
-            elif all([d == 0x2000 for d in data]):                
-                print('Delay: {}, Slot: {}, Channel: {}, All Gnd'.format(delay, slot, channel))
-            else:
-                print('Delay: {}, got non-zero data'.format(delay))
-                print('Slot: {}, Channel: {}, Data: {}'.format(slot, channel, [hex(d) for d in data]))
-                
