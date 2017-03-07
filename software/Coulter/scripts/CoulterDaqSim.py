@@ -41,6 +41,7 @@ import logging
 dataWriter = pyrogue.utilities.fileio.StreamWriter('dataWriter')
 
 logging.getLogger("pyrogue.SRP").setLevel(logging.INFO)
+logging.getLogger("pyrogue.DATA[0]").setLevel(logging.INFO)
 
 
 # Create the PGP interfaces
