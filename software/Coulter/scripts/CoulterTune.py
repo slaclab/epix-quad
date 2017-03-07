@@ -106,11 +106,12 @@ for delay in range(2**9):
 
     time.sleep(.1)
     
-    f = parsers[i].lastFrame()
+    f = parsers[0].lastFrame()
     
     for slot in self.f.keys():
         for channel in f[slot].keys():
             data = [f[slot][channel][pixel] for pixel in sorted(f[slot][channel].keys())]
             if not all([d == 0x2000 for d in data]):
-                print('Delay: {}, got non-zero data: {}'.format(delay, data))
+                print('Delay: {}, got non-zero data'.format(delay))
+                print('Slot: {}, Channel: {}, Data: {}'.format(slot, channel, [hex(d) for d in data]]))
                 
