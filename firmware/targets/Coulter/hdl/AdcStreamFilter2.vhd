@@ -1,11 +1,11 @@
 -------------------------------------------------------------------------------
--- Title      : AdcStreamFilter
+-- Title      : AdcStreamFilter2
 -------------------------------------------------------------------------------
--- File       : AdcStreamFilter.vhd
+-- File       : AdcStreamFilter2.vhd
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-09-22
--- Last update: 2017-03-03
+-- Last update: 2017-03-07
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -33,7 +33,7 @@ use work.Ad9249Pkg.all;
 
 use work.AcquisitionControlPkg.all;
 
-entity AdcStreamFilter is
+entity AdcStreamFilter2 is
 
    generic (
       TPD_G               : time                := 1 ns;
@@ -61,9 +61,9 @@ entity AdcStreamFilter is
       filteredAxisMaster : out AxiStreamMasterType;
       filteredAxisSlave  : in  AxiStreamSlaveType);
 
-end entity AdcStreamFilter;
+end entity AdcStreamFilter2;
 
-architecture rtl of AdcStreamFilter is
+architecture rtl of AdcStreamFilter2 is
 
    type StateType is (WAIT_SC_FALL_S, WAIT_NON_ZERO_S, ADC_CAPTURE_S);
 
