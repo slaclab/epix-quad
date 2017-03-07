@@ -193,7 +193,7 @@ begin
             TPD_G               => TPD_G,
             FILTERED_AXIS_CFG_G => COULTER_AXIS_CFG_C)
          port map (
-            distClk            => distClk,
+--            distClk            => distClk,
             adcStreamClk       => adcStreamClk,            -- [in]
             adcStreamRst       => adcStreamRst,            -- [in]
             adcStream          => adcStreams(i),           -- [in]
