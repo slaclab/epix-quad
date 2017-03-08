@@ -64,11 +64,11 @@ pyrogue.streamConnect(vcDataCmd, dataWriter.getChannel(0))
 pyrogue.streamConnect(cmd, vcDataCmd)
     
 dbgSrp = rogue.interfaces.stream.Slave()
-dbgSrp.setDebug(10, "SRP")
+dbgSrp.setDebug(16, "SRP")
 pyrogue.streamTap(srp, dbgSrp)
 
 dbgData = rogue.interfaces.stream.Slave()
-dbgData.setDebug(30, "DATA[0]")
+dbgData.setDebug(32, "DATA[0]")
 pyrogue.streamTap(vcDataCmd, dbgData)
 
 parser = coulter.CoulterFrameParser()

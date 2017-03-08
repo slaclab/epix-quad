@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-09-22
--- Last update: 2016-12-09
+-- Last update: 2017-03-08
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -58,34 +58,54 @@ architecture rtl of AdcStreamFilter is
    type RegType is record
       capture      : sl;
       filteredAxis : AxiStreamMasterType;
+      count        : slv(7 downto 0);
    end record RegType;
 
    constant REG_INIT_C : RegType := (
       capture      => '1',
-      filteredAxis => AXI_STREAM_MASTER_INIT_C);
+      filteredAxis => AXI_STREAM_MASTER_INIT_C,
+      count        => (others => '0'));
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
+   signal adcWindowSync : sl;
+
 begin
 
-   comb : process (acqStatus, adcStream, adcStreamRst, r) is
+   U_Synchronizer_1 : entity work.Synchronizer
+      generic map (
+         TPD_G => TPD_G)
+      port map (
+         clk     => adcStreamClk,         -- [in]
+         rst     => adcStreamRst,         -- [in]
+         dataIn  => acqStatus.adcWindow,  -- [in]
+         dataOut => adcWindowSync);       -- [out]
+
+   comb : process (acqStatus, adcStream, adcStreamRst, adcWindowSync, r) is
       variable v : RegType;
    begin
       v := r;
 
       v.filteredAxis.tValid := '0';
       v.filteredAxis.tData  := adcStream.tData;
-      v.filteredAxis.tLast  := acqStatus.adcLast;
+      v.filteredAxis.tLast  := toSl(r.count = acqStatus.cfgMckCount-1);
 
-      if (acqStatus.adcWindow = '0') then
+      if (adcWindowSync = '0') then
          v.capture := '1';
       end if;
 
       -- Filter every other sample when acqStatus.adcWindow = '1'
-      if (acqStatus.adcWindow = '1' and adcStream.tvalid = '1') then
+      if (adcWindowSync = '1' and adcStream.tvalid = '1') then
          v.filteredAxis.tValid := r.capture;
          v.capture             := not r.capture;
+
+         if (r.capture = '1') then
+            v.count := r.count + 1;
+            if (r.count = acqStatus.cfgMckCount-1) then
+               v.count := (others => '0');
+            end if;
+         end if;
       end if;
 
       if (adcStreamRst = '1') then

@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-05-31
--- Last update: 2017-03-06
+-- Last update: 2017-03-08
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -259,8 +259,8 @@ begin
    acqStatus.mckPulse       <= '0';
    acqStatus.trigger        <= r.acqStatus.trigger;
    acqStatus.scFall         <= scPreFall;
-   acqStatus.cfgMckCount <= r.cfg.mckCount;
-   acqStatus.cfgScCount <= r.cfg.scCount;   
+   acqStatus.cfgMckCount    <= r.cfg.mckCount;
+   acqStatus.cfgScCount     <= r.cfg.scCount;
 
    -------------------------------------------------------------------------------------------------
    -- Main logic

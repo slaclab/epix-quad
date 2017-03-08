@@ -96,27 +96,27 @@ coulterDaq = coulter.CoulterRoot(pollEn=False, pgp=vcReg, srp=srp, trig=vcTrigge
 #    exit()
 
 
-coulterDaq.readConfig('/afs/slac/u/re/bareese/projects/epix-git/software/Coulter/cfg/eline-config.yml')
+coulterDaq.readConfig('/afs/slac/u/re/bareese/projects/epix-git/software/Coulter/cfg/config2.yml')
 
-for phase in range(0, 65536, 32):
-    print('Phase: {}'.format(phase))
-    coulterDaq.Coulter[0].AcquisitionControl.AdcClkDelay.set(phase, True)
-    for delay in range(2**9):
-        coulterDaq.Coulter[0].AcquisitionControl.AdcWindowDelay.set(delay, True)
+#for phase in range(0, 65536, 32):
+#print('Phase: {}'.format(phase))
+#coulterDaq.Coulter[0].AcquisitionControl.AdcClkDelay.set(phase, True)
+for delay in range(2**9):
+    coulterDaq.Coulter[0].AcquisitionControl.AdcWindowDelay.set(delay, True)
 
-        coulterDaq.Trigger()
+    coulterDaq.Trigger()
 
-        #time.sleep(.1)
+    time.sleep(.1)
 
-        f = parsers[0].lastFrame()
-        print(list(f.keys()), delay)
-        for slot in f.keys():
-            for channel in f[slot].keys():
-                data = [f[slot][channel][pixel] for pixel in sorted(f[slot][channel].keys())]
-                if len(set(data)) == 1:
-                    pass
-                    #print('Delay: {}, Slot: {}, Channel: {}, All Gnd'.format(delay, slot, channel))
-                else:
-                    print('Delay: {}, got non-zero data'.format(delay))
-                    print('Slot: {}, Channel: {}, Data: {}'.format(slot, channel, [hex(d) for d in data]))
+    f = parsers[0].lastFrame()
+    print(list(f.keys()), delay)
+    for slot in f.keys():
+        for channel in f[slot].keys():
+            data = [f[slot][channel][pixel] for pixel in sorted(f[slot][channel].keys())]
+            if len(set(data)) == 1:
+                pass
+                #print('Delay: {}, Slot: {}, Channel: {}, All Gnd'.format(delay, slot, channel))
+            else:
+                print('Delay: {}, got non-zero data'.format(delay))
+                print('Slot: {}, Channel: {}, Data: {}'.format(slot, channel, [hex(d) for d in data]))
 

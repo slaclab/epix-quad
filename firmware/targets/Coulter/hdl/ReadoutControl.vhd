@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-09-22
--- Last update: 2017-03-07
+-- Last update: 2017-03-08
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -286,6 +286,8 @@ begin
             v.acqCount              := r.acqCount + 1;
             v.dataAxisMaster.tValid := '1';
             v.dataAxisMaster.tData  := (others => '0');
+            v.dataAxisMaster.tData(11 downto 0)  := channelDone;
+            v.dataAxisMaster.tData(127 downto 96) := X"A5A5A5A5";
             v.dataAxisMaster.tLast  := '1';
             v.state                 := WAIT_TRIGGER_S;
       end case;

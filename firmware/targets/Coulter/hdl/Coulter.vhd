@@ -241,8 +241,8 @@ begin
          rst => distOpCodeEn,           -- [in]
          o   => open);                  -- [out]
 
-   mps   <= elineMck;                   --debug(2);
-   tgOut <= elineSc;
+   mps   <= not elineMck;                   --debug(2);
+   tgOut <= not elineSc;
 
    -------------------------------------------------------------------------------------------------
    -- PGP
