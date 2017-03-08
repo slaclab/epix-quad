@@ -268,8 +268,8 @@ begin
    -------------------------------------------------------------------------------------------------
    -- Main logic
    -------------------------------------------------------------------------------------------------
-   comb : process (iAdcClk, iMck, iSc, locAxilReadMaster, locAxilWriteMaster, mckPreFall,
-                   mckPreRise, r, distRst, scPreFall, triggerRise) is
+   comb : process (distRst, elineOverflow, iAdcClk, iMck, iSc, locAxilReadMaster,
+                   locAxilWriteMaster, mckPreFall, mckPreRise, r, scPreFall, triggerRise) is
       variable v      : RegType;
       variable axilEp : AxiLiteEndpointType;
    begin
