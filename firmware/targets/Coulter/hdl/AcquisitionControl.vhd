@@ -55,9 +55,10 @@ entity AcquisitionControl is
       trigger : sl;
 
       -- ASIC Outputs
-      elineRst : out sl;
-      elineSc  : out sl;
-      elineMck : out sl;
+      elineRst      : out sl;
+      elineSc       : out sl;
+      elineMck      : out sl;
+      elineOverflow : in  slv(1 downto 0);
 
       -- ADC 
       adcClk    : out sl;
@@ -90,6 +91,7 @@ architecture rtl of AcquisitionControl is
       adcWindowDelay : slv(9 downto 0);   -- Delay between mck start and adc sample capture
       mckDisable     : sl;              -- Disable mck (is this necessary?)
       clkDisable     : sl;              -- Master clock disable (sc, mck, adcClk)
+      invertMck      : sl;
    end record CfgRegType;
 
    constant CFG_REG_INIT_C : CfgRegType := (
@@ -106,7 +108,8 @@ architecture rtl of AcquisitionControl is
       adcClkDelay    => toSlv(0, 16),
       adcWindowDelay => toSlv(282, 10),
       mckDisable     => '0',
-      clkDisable     => '0');
+      clkDisable     => '0',
+      invertMck      => '0');
 
    type RegType is record
       -- AXIL output buses
@@ -297,6 +300,8 @@ begin
       axiSlaveRegister(axilEp, X"34", 0, v.cfg.clkDisable);
       axiSlaveRegister(axilEp, X"38", 0, v.elineRst);
       axiSlaveRegisterR(axilEp, X"3C", 0, r.scPreFallCount);
+      axiSlaveRegisterR(axilEp, X"40", 0, elineOverflow);
+      axiSlaveRegister(axilEp, X"44", 0, v.cfg.invertMck);
       axiSlaveDefault(axilEp, v.axilWriteSlave, v.axilReadSlave, AXI_ERROR_RESP_G);
 
       -- Default Register values
@@ -388,7 +393,11 @@ begin
 
       -- Outputs
       elineSc   <= iSc;
-      elineMck  <= iMck;
+      if r.cfg.invertMck = '0' then
+         elineMck  <= iMck;
+      else
+         elineMck <= not iMck;
+      end if;
       adcClk    <= iAdcClk;
       adcClkRst <= r.adcClkRst;
       elineRst  <= r.elineRst;

@@ -5,7 +5,7 @@
 -- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 09/30/2015
--- Last update: 2017-03-07
+-- Last update: 2017-03-08
 -- Platform   : Vivado 2014.4
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -241,7 +241,7 @@ begin
          rst => distOpCodeEn,           -- [in]
          o   => open);                  -- [out]
 
-   mps   <= not elineMck;                   --debug(2);
+   mps   <= not elineMck;               --debug(2);
    tgOut <= not elineSc;
 
    -------------------------------------------------------------------------------------------------
@@ -564,6 +564,7 @@ begin
          elineRst        => elineRst,                              -- [out]
          elineSc         => elineSc,                               -- [out]
          elineMck        => elineMck,                              -- [out]
+         elineOverflow   => adcOverflow,                           -- [in]
          adcClk          => adcClk,                                -- [out]
          adcClkRst       => adcClkRst,                             -- [out]
          acqStatus       => acqStatus);                            -- [out]
