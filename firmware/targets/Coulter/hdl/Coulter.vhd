@@ -242,7 +242,7 @@ begin
          o   => open);                  -- [out]
 
    mps   <= not elineMck;               --debug(2);
-   tgOut <= not elineSc;
+   tgOut <= not adcOverflow(0); --not elineSc;
 
    -------------------------------------------------------------------------------------------------
    -- PGP
