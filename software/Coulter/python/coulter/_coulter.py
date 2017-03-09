@@ -300,6 +300,8 @@ class AcquisitionControl(pr.Device):
 
         self.add(pr.Variable(name="ScFallCount", offset=0x3C, base='hex', mode='RO'))
 
+        self.add(pr.Variable(name="InvertMck", offset=0x44, bitSize=1, base='bool', mode='RW'))
+
         def reset(dev, cmd, arg):
             print('Reseting ASICs')
             cmd.set(1)
