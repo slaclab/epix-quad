@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-05-16
--- Last update: 2017-01-27
+-- Last update: 2017-03-10
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -113,7 +113,7 @@ package body ELine100Pkg is
       ret := (others => '0');
       i   := 0;
 
-      for j in 0 to 95 loop
+      for j in 95 downto 0 loop
          assignSlv(i, ret, cfg.st(j));
          assignSlv(i, ret, cfg.sm(j));
          assignSlv(i, ret, cfg.somi(j));
@@ -183,7 +183,7 @@ package body ELine100Pkg is
       cfg := E_LINE_100_CFG_INIT_C;
       i   := 0;
 
-      for j in 0 to 95 loop
+      for j in 95 downto 0 loop
          assignRecord(i, vec, cfg.st(j));
          assignRecord(i, vec, cfg.sm(j));
          assignRecord(i, vec, cfg.somi(j));
