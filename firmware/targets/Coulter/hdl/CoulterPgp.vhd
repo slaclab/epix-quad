@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-06-03
--- Last update: 2017-02-02
+-- Last update: 2017-03-13
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -451,11 +451,11 @@ begin
          BRAM_EN_G              => true,
          USE_BUILT_IN_G         => false,
          GEN_SYNC_FIFO_G        => true,
-         CASCADE_SIZE_G         => 2,
+         CASCADE_SIZE_G         => 8,
          CASCADE_PAUSE_SEL_G    => 1,
-         FIFO_ADDR_WIDTH_G      => 9,       --13,
+         FIFO_ADDR_WIDTH_G      => 11,       --13,
          FIFO_FIXED_THRESH_G    => true,
-         FIFO_PAUSE_THRESH_G    => 2**9-1,  --2**13-6200,
+         FIFO_PAUSE_THRESH_G    => 2**11-1,  --2**13-6200,
          INT_WIDTH_SELECT_G     => "WIDE",
 --         INT_DATA_WIDTH_G       => INT_DATA_WIDTH_G,
          LAST_FIFO_ADDR_WIDTH_G => 0,
