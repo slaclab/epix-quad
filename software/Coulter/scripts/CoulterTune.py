@@ -119,6 +119,7 @@ while True:
     
     coulterDaq.Coulter[0].AcquisitionControl.AdcWindowDelay.set(210, True)
     coulterDaq.Coulter[0].AcquisitionControl.AdcClkDelay.set(delay, True)
+    coulterDaq.Coulter[0].AcquisitionControl.ScCount.set(2048, True)    
     coulterDaq.Coulter[0].ASIC[0].atest.set(1, True)
     coulterDaq.Coulter[0].ASIC[1].atest.set(1, True)         
 
@@ -132,8 +133,7 @@ while True:
     slot = 2
  
     for slot in sorted(f.keys()):
-        if slot%2 == 0:
-            for channel in [0,]:
-                data = [f[slot][channel][pixel] for pixel in sorted(f[slot][channel].keys())]
-                print('Slot: {}, Channel: {}, Data: {}'.format(slot, channel, ['{:.3f}'.format(voltage(d)) for d in data]))
+        for channel in [0,]:
+            data = [f[slot][channel][pixel] for pixel in sorted(f[slot][channel].keys())]
+            print('Slot: {}, Channel: {}, Data: {}'.format(slot, channel, ['{:.3f}'.format(voltage(d)) for d in data]))
 
