@@ -40,8 +40,8 @@ import logging
 # File writer
 dataWriter = pyrogue.utilities.fileio.StreamWriter('dataWriter')
 
-logging.getLogger("pyrogue.SRP").setLevel(logging.INFO)
-logging.getLogger("pyrogue.DATA[0]").setLevel(logging.INFO)
+#logging.getLogger("pyrogue.SRP").setLevel(logging.INFO)
+#logging.getLogger("pyrogue.DATA[0]").setLevel(logging.INFO)
 
 
 # Create the PGP interfaces
@@ -70,7 +70,7 @@ parsers = [coulter.CoulterFrameParser(), coulter.CoulterFrameParser()]
 
 for i in range(2):
     dbgData = rogue.interfaces.stream.Slave()
-    dbgData.setDebug(1, "DATA[{}]".format(i))
+    #dbgData.setDebug(1, "DATA[{}]".format(i))
     pyrogue.streamTap(vcData[i], dbgData)
     pyrogue.streamTap(vcData[i], parsers[i])
     
@@ -96,27 +96,24 @@ coulterDaq = coulter.CoulterRoot(pollEn=False, pgp=vcReg, srp=srp, trig=vcTrigge
 #    exit()
 
 
-coulterDaq.readConfig('/afs/slac/u/re/bareese/projects/epix-git/software/Coulter/cfg/config2.yml')
+coulterDaq.readConfig('/afs/slac/u/re/bareese/projects/epix-git/software/Coulter/cfg/config5.yml')
 
 #for phase in range(0, 65536, 32):
 #print('Phase: {}'.format(phase))
 #coulterDaq.Coulter[0].AcquisitionControl.AdcClkDelay.set(phase, True)
 for delay in range(2**9):
+
     coulterDaq.Coulter[0].AcquisitionControl.AdcWindowDelay.set(delay, True)
+
 
     coulterDaq.Trigger()
 
     time.sleep(.1)
 
     f = parsers[0].lastFrame()
-    print(list(f.keys()), delay)
-    for slot in f.keys():
-        for channel in f[slot].keys():
-            data = [f[slot][channel][pixel] for pixel in sorted(f[slot][channel].keys())]
-            if len(set(data)) == 1:
-                pass
-                #print('Delay: {}, Slot: {}, Channel: {}, All Gnd'.format(delay, slot, channel))
-            else:
-                print('Delay: {}, got non-zero data'.format(delay))
-                print('Slot: {}, Channel: {}, Data: {}'.format(slot, channel, [hex(d) for d in data]))
+    #print(list(f.keys()), delay)
+    slot = 2
+    channel = 0
+    data = [f[slot][channel][pixel] for pixel in sorted(f[slot][channel].keys())]
+    print('Slot: {}, Channel: {}, Data: {}'.format(slot, channel, [hex(d) for d in data]))
 
