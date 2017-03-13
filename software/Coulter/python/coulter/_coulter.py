@@ -390,9 +390,9 @@ class CoulterFrameParser(rogue.interfaces.stream.Slave):
                 pass
             else:
 
-                last = self.conv(word[1], 7, 7)            
-                channel = self.conv(word[1], 6, 0)
-                slot = self.conv(word[1], 15, 8)
+                last = self.conv(word[1], 4, 4)            
+                channel = self.conv(word[1], 3, 0)
+                slot = self.conv(word[1], 15, 5)
                 #data = {i+(8*last): self.conv(word[1], 16+(i*14)+13, 16+(i*14)) for i in range(8)}
 
                 #print(word[1] >> 16)
