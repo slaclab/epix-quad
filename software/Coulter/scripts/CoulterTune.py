@@ -101,9 +101,24 @@ coulterDaq.readConfig('/afs/slac/u/re/bareese/projects/epix-git/software/Coulter
 #for phase in range(0, 65536, 32):
 #print('Phase: {}'.format(phase))
 #coulterDaq.Coulter[0].AcquisitionControl.AdcClkDelay.set(phase, True)
-for delay in range(2**9):
+#for delay in range(2**9):
 
-    coulterDaq.Coulter[0].AcquisitionControl.AdcWindowDelay.set(delay, True)
+def sign_extend(value, bits=14):
+    sign_bit = 1 << (bits-1)
+    return (value & (sign_bit - 1)) - (value & sign_bit)
+
+def voltage(adc):
+    return (sign_extend(adc)/(2**14)) + 1.0
+
+delay = 0
+
+while True:
+    tmp = input("Delay: ({})".format(delay))
+    if tmp != '':
+        delay = int(tmp)
+    
+    coulterDaq.Coulter[0].AcquisitionControl.AdcWindowDelay.set(220, True)
+    coulterDaq.Coulter[0].AcquisitionControl.AdcClkDelay.set(delay, True)    
 
 
     coulterDaq.Trigger()
@@ -114,6 +129,8 @@ for delay in range(2**9):
     #print(list(f.keys()), delay)
     slot = 2
     channel = 0
-    data = [f[slot][channel][pixel] for pixel in sorted(f[slot][channel].keys())]
-    print('Slot: {}, Channel: {}, Data: {}'.format(slot, channel, [hex(d) for d in data]))
+    for slot in sorted(f.keys()):
+        if slot%2 == 0:
+            data = [f[slot][channel][pixel] for pixel in sorted(f[slot][channel].keys())]
+            print('Slot: {}, Channel: {}, Data: {}'.format(slot, channel, ['{:.3f}'.format(voltage(d)) for d in data]))
 
