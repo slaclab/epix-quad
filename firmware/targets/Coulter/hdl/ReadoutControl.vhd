@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-09-22
--- Last update: 2017-03-08
+-- Last update: 2017-03-13
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -72,7 +72,7 @@ architecture rtl of ReadoutControl is
    type RegType is record
       state          : StateType;
       acqCount       : slv(15 downto 0);
-      slotCounts     : slv9Array(ADC_CHANNELS_C-1 downto 0);
+      slotCounts     : slv16Array(ADC_CHANNELS_C-1 downto 0);
       muxAxisSlave   : AxiStreamSlaveType;
       dataAxisMaster : AxiStreamMasterType;
       axilWriteSlave : AxiLiteWriteSlaveType;

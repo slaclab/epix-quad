@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-05-31
--- Last update: 2017-03-08
+-- Last update: 2017-03-13
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -80,7 +80,7 @@ architecture rtl of AcquisitionControl is
       scDelay        : slv(15 downto 0);  -- delay between trigger and SC rise
       scPosWidth     : slv(15 downto 0);  -- sc high time (baseline sampling)
       scNegWidth     : slv(15 downto 0);  -- sc low time (Tslot=scPos+scNeg)
-      scCount        : slv(11 downto 0);  -- Number of slots in acquisition
+      scCount        : slv(15 downto 0);  -- Number of slots in acquisition
       mckDelay       : slv(15 downto 0);  -- delay between sc fall and mck start (signal sampling)
       mckPosWidth    : slv(15 downto 0);  -- mck high time
       mckNegWidth    : slv(15 downto 0);  -- mck low time
@@ -98,7 +98,7 @@ architecture rtl of AcquisitionControl is
       scDelay        => X"6200",        -- ~200 us for adcs to relock to shifted clock
       scPosWidth     => X"1000",        --X"0640", --toSlv(50*16*2, 16),
       scNegWidth     => X"1000",        --X"0640", --toSlv(50*16*2, 16),
-      scCount        => toSlv(256, 12),
+      scCount        => toSlv(256, 16),
       mckDelay       => X"0080",        --toSlv(50*8, 16),
       mckPosWidth    => X"000B",        --toSlv(19, 16),  -- ~10 MHz
       mckNegWidth    => X"000B",        --toSlv(19, 16),
@@ -120,7 +120,7 @@ architecture rtl of AcquisitionControl is
       -- Local registers
       state          : StateType;
       scRst          : sl;
-      scCounter      : slv(11 downto 0);
+      scCounter      : slv(15 downto 0);
       mckRst         : sl;
       mckCounter     : slv(7 downto 0);
       adcClkRst      : sl;

@@ -244,7 +244,7 @@ class AcquisitionControl(pr.Device):
                          dependencies=[self.ScPosWidth, self.ScNegWidth])
         
         self.addVariable(name="ScCount", description="Number of slots per acquisition",
-                         offset=0x0C, bitSize=12, bitOffset=0, base='hex')
+                         offset=0x0C, bitSize=16, bitOffset=0, base='hex')
         
         # MCK params
         self.addVariable(name='MckDelay', description="Delay between trigger and SC rising edge",

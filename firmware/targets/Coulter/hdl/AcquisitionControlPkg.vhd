@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-09-22
--- Last update: 2017-03-02
+-- Last update: 2017-03-13
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -36,7 +36,7 @@ package AcquisitionControlPkg is
       mckPulse       : sl;
       scFall         : sl;
       cfgMckCount    : slv(7 downto 0);
-      cfgScCount     : slv(11 downto 0);
+      cfgScCount     : slv(15 downto 0);
    end record AcquisitionStatusType;
 
    constant ACQUISITION_STATUS_INIT_C : AcquisitionStatusType := (
