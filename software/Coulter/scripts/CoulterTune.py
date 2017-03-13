@@ -117,8 +117,10 @@ while True:
     if tmp != '':
         delay = int(tmp)
     
-    coulterDaq.Coulter[0].AcquisitionControl.AdcWindowDelay.set(220, True)
-    coulterDaq.Coulter[0].AcquisitionControl.AdcClkDelay.set(delay, True)    
+    coulterDaq.Coulter[0].AcquisitionControl.AdcWindowDelay.set(210, True)
+    coulterDaq.Coulter[0].AcquisitionControl.AdcClkDelay.set(delay, True)
+    coulterDaq.Coulter[0].ASIC[0].atest.set(1, True)
+    coulterDaq.Coulter[0].ASIC[1].atest.set(1, True)         
 
 
     coulterDaq.Trigger()
@@ -128,9 +130,10 @@ while True:
     f = parsers[0].lastFrame()
     #print(list(f.keys()), delay)
     slot = 2
-    channel = 0
+ 
     for slot in sorted(f.keys()):
         if slot%2 == 0:
-            data = [f[slot][channel][pixel] for pixel in sorted(f[slot][channel].keys())]
-            print('Slot: {}, Channel: {}, Data: {}'.format(slot, channel, ['{:.3f}'.format(voltage(d)) for d in data]))
+            for channel in [0,]:
+                data = [f[slot][channel][pixel] for pixel in sorted(f[slot][channel].keys())]
+                print('Slot: {}, Channel: {}, Data: {}'.format(slot, channel, ['{:.3f}'.format(voltage(d)) for d in data]))
 
