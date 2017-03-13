@@ -62,7 +62,7 @@ architecture rtl of AdcStreamFilter is
    end record RegType;
 
    constant REG_INIT_C : RegType := (
-      capture      => '0',
+      capture      => '1',
       filteredAxis => AXI_STREAM_MASTER_INIT_C,
       count        => (others => '0'));
 
@@ -92,7 +92,7 @@ begin
       v.filteredAxis.tLast  := toSl(r.count = acqStatus.cfgMckCount-1);
 
       if (adcWindowSync = '0') then
-         v.capture := '0';
+         v.capture := '1';
       end if;
 
       -- Filter every other sample when acqStatus.adcWindow = '1'
