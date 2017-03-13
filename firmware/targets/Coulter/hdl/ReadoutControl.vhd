@@ -73,6 +73,7 @@ architecture rtl of ReadoutControl is
       state          : StateType;
       acqCount       : slv(15 downto 0);
       slotCounts     : slv16Array(ADC_CHANNELS_C-1 downto 0);
+      dump           : sl;
       muxAxisSlave   : AxiStreamSlaveType;
       dataAxisMaster : AxiStreamMasterType;
       axilWriteSlave : AxiLiteWriteSlaveType;
@@ -83,6 +84,7 @@ architecture rtl of ReadoutControl is
       state          => WAIT_TRIGGER_S,
       acqCount       => (others => '0'),
       slotCounts     => (others => (others => '0')),
+      dump           => '0',
       muxAxisSlave   => AXI_STREAM_SLAVE_INIT_C,
       dataAxisMaster => axiStreamMasterInit(COULTER_AXIS_CFG_C),
       axilWriteSlave => AXI_LITE_WRITE_SLAVE_INIT_C,
@@ -156,7 +158,7 @@ begin
 
    U_AxiLiteEmpty_1 : entity work.AxiLiteEmpty
       generic map (
-         TPD_G            => TPD_G)
+         TPD_G => TPD_G)
       port map (
          axiClk         => clk,              -- [in]
          axiClkRst      => rst,              -- [in]
@@ -238,30 +240,33 @@ begin
       v.dataAxisMaster      := axiStreamMasterInit(COULTER_AXIS_CFG_C);
       v.muxAxisSlave.tReady := '0';
 
+      -- Latch frame dump if pause seen. Will dump the rest of the frame then EOFE on tail.
+      if (dataAxisCtrl.pause = '1') then
+         v.dump := '1';
+      end if;
+
+
       case (r.state) is
          when WAIT_TRIGGER_S =>
             -- Trigger starts an acquisition, in which there are 256 (acqCfg.scCount) slots
+            v.dump := '0';
             v.slotCounts := (others => (others => '0'));
             if (triggerSync = '1') then
-               if (dataAxisCtrl.pause = '0') then
-                  v.dataAxisMaster.tValid              := '1';
-                  ssiSetUserSof(COULTER_AXIS_CFG_C, v.dataAxisMaster, '1');
-                  v.dataAxisMaster.tData(15 downto 0)  := r.acqCount;
-                  v.dataAxisMaster.tData(63 downto 32) := X"deadbeef";
-                  v.muxAxisSlave.tReady                := '1';
-                  v.state                              := DATA_S;
-               else
-               -- Send special overflow error frame
-               end if;
+               v.dataAxisMaster.tValid              := '1';
+               ssiSetUserSof(COULTER_AXIS_CFG_C, v.dataAxisMaster, '1');
+               v.dataAxisMaster.tData(15 downto 0)  := r.acqCount;
+               v.dataAxisMaster.tData(63 downto 32) := X"deadbeef";
+               v.muxAxisSlave.tReady                := '1';
+               v.state                              := DATA_S;
             end if;
 
          when DATA_S =>
             v.muxAxisSlave.tReady := '1';
             if (muxAxisMaster.tValid = '1') then
-               v.dataAxisMaster.tValid             := '1';
-               v.dataAxisMaster.tData(6 downto 0)  := muxAxisMaster.tDest(6 downto 0);
-               v.dataAxisMaster.tData(7)           := muxAxisMaster.tLast;
-               v.dataAxisMaster.tData(15 downto 8) := r.slotCounts(conv_integer(muxAxisMaster.tDest))(7 downto 0);
+               v.dataAxisMaster.tValid             := not r.dump;
+               v.dataAxisMaster.tData(3 downto 0)  := muxAxisMaster.tDest(3 downto 0);
+               v.dataAxisMaster.tData(4)           := muxAxisMaster.tLast;
+               v.dataAxisMaster.tData(15 downto 5) := r.slotCounts(conv_integer(muxAxisMaster.tDest))(10 downto 0);
 
                -- Pack 14 bit adc samples into a wide word
                -- vivado is going to shit the bed with this
@@ -283,13 +288,15 @@ begin
             end if;
 
          when TAIL_S =>
-            v.acqCount              := r.acqCount + 1;
-            v.dataAxisMaster.tValid := '1';
-            v.dataAxisMaster.tData  := (others => '0');
-            v.dataAxisMaster.tData(11 downto 0)  := channelDone;
+            v.acqCount                            := r.acqCount + 1;
+            v.dataAxisMaster.tValid               := '1';
+            v.dataAxisMaster.tData                := (others => '0');
+            v.dataAxisMaster.tData(11 downto 0)   := channelDone;
             v.dataAxisMaster.tData(127 downto 96) := X"A5A5A5A5";
-            v.dataAxisMaster.tLast  := '1';
-            v.state                 := WAIT_TRIGGER_S;
+            v.dataAxisMaster.tLast                := '1';
+            v.state                               := WAIT_TRIGGER_S;
+            ssiSetUserEofe(COULTER_AXIS_CFG_C, v.dataAxisMaster, r.dump);
+            v.dump                                := '0';
       end case;
 
 

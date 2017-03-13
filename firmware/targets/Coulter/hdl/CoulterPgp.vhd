@@ -455,7 +455,7 @@ begin
          CASCADE_PAUSE_SEL_G    => 1,
          FIFO_ADDR_WIDTH_G      => 11,       --13,
          FIFO_FIXED_THRESH_G    => true,
-         FIFO_PAUSE_THRESH_G    => 2**11-1,  --2**13-6200,
+         FIFO_PAUSE_THRESH_G    => 2**11-8,  --2**13-6200,
          INT_WIDTH_SELECT_G     => "WIDE",
 --         INT_DATA_WIDTH_G       => INT_DATA_WIDTH_G,
          LAST_FIFO_ADDR_WIDTH_G => 0,
