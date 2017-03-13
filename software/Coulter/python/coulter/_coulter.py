@@ -355,8 +355,13 @@ class CoulterFrameParser(rogue.interfaces.stream.Slave):
         self.event.wait()
         self.event.clear()
         return self.d[self.lastCount]
-            
 
+    @staticmethod
+    def conv(i, highBit, lowBit):
+        o = i >> lowBit
+        o = o & (2**(highBit-lowBit+1)-1)
+        return int(o)
+    
     def _acceptFrame(self, frame):
 
         if frame.getError():
@@ -368,10 +373,7 @@ class CoulterFrameParser(rogue.interfaces.stream.Slave):
         print('Got frame. Size: {}'.format(len(p)))
 
 
-        def conv(i, highBit, lowBit):
-            o = i >> lowBit
-            o = o & (2**(highBit-lowBit+1)-1)
-            return int(o)
+
 
         count = 0
         print("-------------------------")        
@@ -382,20 +384,20 @@ class CoulterFrameParser(rogue.interfaces.stream.Slave):
         #print("Header:")
 
             if word[0] == 'header':
-                count = conv(word[1], 15, 0)
+                count = self.conv(word[1], 15, 0)
                 #print('header', word[1], p[0:16], count)                
             elif word[0] == 'tail':
                 pass
             else:
 
-                last = conv(word[1], 7, 7)            
-                channel = conv(word[1], 6, 0)
-                slot = conv(word[1], 15, 8)
-                #data = {i+(8*last): conv(word[1], 16+(i*14)+13, 16+(i*14)) for i in range(8)}
+                last = self.conv(word[1], 7, 7)            
+                channel = self.conv(word[1], 6, 0)
+                slot = self.conv(word[1], 15, 8)
+                #data = {i+(8*last): self.conv(word[1], 16+(i*14)+13, 16+(i*14)) for i in range(8)}
 
                 #print(word[1] >> 16)
                 for i, pixel in enumerate(range(last*8, last*8+8)):
-                    data = conv(word[1], 16+(i*14)+13, 16+(i*14))
+                    data = self.conv(word[1], 16+(i*14)+13, 16+(i*14))
                     self.d[count][slot][channel][pixel] = data
                     #print(slot, channel, pixel, hex(data))
 
