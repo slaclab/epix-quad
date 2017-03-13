@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-09-22
--- Last update: 2017-03-08
+-- Last update: 2017-03-13
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -62,7 +62,7 @@ architecture rtl of AdcStreamFilter is
    end record RegType;
 
    constant REG_INIT_C : RegType := (
-      capture      => '1',
+      capture      => '0',
       filteredAxis => AXI_STREAM_MASTER_INIT_C,
       count        => (others => '0'));
 
@@ -92,7 +92,7 @@ begin
       v.filteredAxis.tLast  := toSl(r.count = acqStatus.cfgMckCount-1);
 
       if (adcWindowSync = '0') then
-         v.capture := '1';
+         v.capture := '0';
       end if;
 
       -- Filter every other sample when acqStatus.adcWindow = '1'
