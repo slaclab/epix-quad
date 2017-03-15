@@ -118,7 +118,7 @@ class Camera():
     ##########################################################
 
     def _descrambleEPix100pImage(self, rawData):
-        """performs the ePix100A image descrambling"""
+        """performs the ePix100p image descrambling"""
         
         #removes header before displying the image
         for j in range(0,32):
@@ -143,22 +143,22 @@ class Camera():
 
 
     def _descrambleEPix100aImageAsByteArray(self, rawData):
-        """performs the ePix100P image descrambling (this is a place holder only)"""
+        """performs the ePix100a image descrambling (this is a place holder only)"""
         
         #removes header before displying the image
         for j in range(0,32):
             rawData.pop(0)
         
         #get the first superline
-        imgBot = rawData[(0*self._superRowSizeInBytes):(1*self._superRowSizeInBytes)] 
-        imgTop = rawData[(1*self._superRowSizeInBytes):(2*self._superRowSizeInBytes)] 
-        for j in range(2,self.sensorHeight):
+        imgTop = rawData[(0*self._superRowSizeInBytes):(1*self._superRowSizeInBytes)] 
+        imgBot = rawData[(1*self._superRowSizeInBytes):(2*self._superRowSizeInBytes)] 
+        for j in range(2,self.sensorHeight+1):
             if (j%2):
-                imgBot.extend(rawData[(j*self._superRowSizeInBytes):((j+1)*self._superRowSizeInBytes)])
+                imgTop.extend(rawData[((self.sensorHeight-j-2)*self._superRowSizeInBytes):((self.sensorHeight-j-1)*self._superRowSizeInBytes)])
             else:
-                imgTop.extend(rawData[(j*self._superRowSizeInBytes):((j+1)*self._superRowSizeInBytes)]) 
-        imgDesc = imgBot
-        imgDesc.extend(imgTop)
+                imgBot.extend(rawData[(j*self._superRowSizeInBytes):((j+1)*self._superRowSizeInBytes)]) 
+        imgDesc = imgTop
+        imgDesc.extend(imgBot)
 
         # returns final image
         return imgDesc
