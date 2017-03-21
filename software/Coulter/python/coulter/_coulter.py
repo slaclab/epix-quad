@@ -346,43 +346,7 @@ class CoulterFrameParser(rogue.interfaces.stream.Slave):
         rogue.interfaces.stream.Slave.__init__(self)
         nesteddict = lambda:defaultdict(nesteddict)
         self.d = []#nesteddict()
-        self.frameCount = 0
 
-        
-    #@profile
-    def words(self, ba):
-        #yield ('header', int.from_bytes(ba[0:16], 'little'))
-        cnt = 16
-        #f = 0
-        y = numpy.arange(8, dtype=numpy.uint16)
-        meta =0
-        last = 0
-        channel = 0
-        slot = 0
-        low = 0
-        mid = 0
-        high = 0
-        
-        while cnt < len(ba)-16:
-            #print('-------------------')
-            #print([hex(x) for x in ba[cnt:cnt+16]])
-            meta = int.from_bytes(ba[cnt:cnt+2], 'little')
-            last = (meta >> 4) & 1
-            channel = (meta &0xf) 
-            slot = (meta >> 5) & 0x7ff
-            #print(hex(meta), last, channel, slot)
-            low = int.from_bytes(ba[cnt+2:cnt+9], 'little')
-            high = int.from_bytes(ba[cnt+9:cnt+16], 'little')
-            #print(hex(low), hex(mid), hex(high))
-            y[0:4] = numpy.fromiter(((low >> (i*14))&0x3FFF for i in range(4)), numpy.uint16)
-            y[4:8] = numpy.fromiter(((high >> (i*14))&0x3FFF for i in range(4)), numpy.uint16)
-            #print([hex(x) for x in y])
-            yield (last, channel, slot, y)                   
-            cnt = cnt + 16
-            #yield (f, int.from_bytes(ba[cnt:cnt+8], 'little'))
-            #f = (f+1)%2
-            #cnt = cnt + 8
-        #yield('tail', int.from_bytes(ba[cnt:cnt+16], 'little'))
 
     @staticmethod
     def conv(i, highBit, lowBit):
@@ -390,64 +354,49 @@ class CoulterFrameParser(rogue.interfaces.stream.Slave):
         o = o & (2**(highBit-lowBit+1)-1)
         return int(o)
 
-    #@profile
     def _acceptFrame(self, frame):
 
         if frame.getError():
             print("Frame Error!")
             return
 
-        #if len(self.d) > 200:
-        #    return
-
-        chNum = (frame.getFlags() >> 24)
-        if chNum != 0:
-            return
         
         p = bytearray(frame.getPayload())
         frame.read(p, 0)
-        #print('Got frame {}. Size: {}'.format(self.frameCount, len(p)))
-        self.frameCount = self.frameCount + 1
 
- 
+        chNum = (frame.getFlags() >> 24)
+        if chNum != 0:
+            print('CH = {}'.format(chNum))
+            print(p.decode('utf-8'))
+            return
+        
 
         self.d.append(numpy.zeros(shape=(256, 12, 16), dtype=numpy.uint16))
 
-        count = len(self.d)-1
+        lastByte = len(p)-16
+        frame = len(self.d)-1
+        byte = 16
+        meta =0
+        last = 0
+        channel = 0
+        slot = 0
+        low = 0
+        mid = 0
+        high = 0
+        print('Frame {}'.format(frame+1))
+        while byte < lastByte:
+            meta = int.from_bytes(p[byte:byte+2], 'little')
+            last = (meta >> 4) & 1
+            channel = (meta &0xf) 
+            slot = (meta >> 5) & 0x7ff
 
-   
-        
-        #print("-------------------------")        
-        for o in self.words(p):
-            self.d[count][o[2], o[1], o[0]*8:o[0]*8+8] = o[3]
-            #print(self.d[count][o[2], o[1], :])
-        #print("New Frame")
-        #print("-------------------------")
-        #print("Header:")
+            low = int.from_bytes(p[byte+2:byte+9], 'little')
+            high = int.from_bytes(p[byte+9:byte+16], 'little')
 
-            #if word[0] == 'header':
-            #    pass
-                #count = self.conv(word[1], 15, 0)
-                #print('header', word[1], p[0:16], count)                
-            #elif word[0] == 'tail':
-            #    pass
-            #else:
-
-                #last = self.conv(word[1], 4, 4)            
-                #channel = self.conv(word[1], 3, 0)
-                #slot = self.conv(word[1], 15, 5)
-                #data = {i+(8*last): self.conv(word[1], 16+(i*14)+13, 16+(i*14)) for i in range(8)}
-
-                #print(word[1] >> 16)
-                #self.d[count][slot][channel][last*8:last*8+8] = [self.conv(word[1], 16+(i*14)+13, 16+(i*14)) for i in range(8)]
-                #a = numpy.fromiter(((word[1] >> (16+(i*14)))&0xFFFF for i in range(8)), dtype=numpy.uint16)
-                #self.d[count][slot, channel, last*8:last*8+8] = a
-                
-                #for i, pixel in enumerate(range(last*8, last*8+8)):
-                    #data = self.conv(word[1], 16+(i*14)+13, 16+(i*14))
-                    #self.d[count][slot][channel][pixel] = data
-
-                    #print(slot, channel, pixel, hex(data))
+            self.d[frame][slot, channel, last*8:last*8+4] = numpy.fromiter(((low >> (i*14))&0x3FFF for i in range(4)), numpy.uint16)
+            self.d[frame][slot, channel, last*8+4:last*8+8] = numpy.fromiter(((high >> (i*14))&0x3FFF for i in range(4)), numpy.uint16)
+            
+            byte = byte + 16
 
 
     @staticmethod
@@ -459,39 +408,30 @@ class CoulterFrameParser(rogue.interfaces.stream.Slave):
     def voltage(adc):
         return (CoulterFrameParser.sign_extend(adc)/(2**14)) + 1.0
 
-        #print("------Tail---------------")
-        #print(p[cnt:cnt+16])
-        #print("------End of Frame-------")
-
-    def noise(self):
-        #pixelDict = {(channel,pixel):[frame[slot][channel][pixel]
-        #                             for slot in range(256)
-        #                              for frame in self.d]
-        #             for pixel in range(16) for channel in range(12)}
-
-        #self.pixelVariance = {k[0]*16+k[1]: [int(numpy.var(c)), int(numpy.mean(c))] for k,c in sorted(pixelDict.items())}
-        #print('Statistics')
-        #pprint.pprint(self.pixelVariance)
+    def noise(self, filename=None):
         d = numpy.array(self.d)
+        even = d[10:, 2::2, :, :]
+        odd =  d[10:, 3::2, :, :]
         print('{} samples'.format(len(d)))
         print("Pixels Noise")
-        print("Pixel, std, mean, min, max")
-        pprint.pprint(sorted(
-            [((i,j),
-             int(numpy.std(d[50:,:,i,j])),
-             int(numpy.mean(d[50:,:,i,j])),
-             numpy.amin(d[50:,:,i,j]),
-             numpy.amax(d[50:,:,i,j]))
-            for i in range(12) for j in range(16)], key=lambda x:x[1]))
-        print("Channel Noise")
-        print("ADC channel, std, mean, min, max")        
-        pprint.pprint(sorted(
-            [(i,
-              int(numpy.std(d[50:,:,i,:])),
-              int(numpy.mean(d[50:,:,i,:])),
-              numpy.amin(d[50:,:,i,:]),
-              numpy.amax(d[50:,:,i,:]))
-             for i in range(12)], key=lambda x:x[1]))
+
+        noise = [((i,j),
+                  numpy.rint(numpy.std(even[:,:,i,j])),
+                  numpy.rint(numpy.std(odd[:,:,i,j])))                  
+            for i in range(12) for j in range(16)]
+
+        print("Pixel, std, mean, min, max")        
+        pprint.pprint(sorted(noise, key=lambda x:x[0]))
+
+        print('Best 10')
+        s = sorted(noise, key=lambda x:max(x[1:2]))
+        pprint.pprint(s[0:10])
+        print('Worst 10')
+        pprint.pprint(list(reversed(s[-10:])))
+
+        if filename is not None:
+            numpy.save(filename, d)
+
 
 
     def pixelData(self, pixel):
@@ -501,17 +441,3 @@ class CoulterFrameParser(rogue.interfaces.stream.Slave):
     def adcData(self, adcCh):
         return [frame[:][adcCh][:] for slot in range(256) for frame in self.d for mck in range(16)]
 
-
-    def printData(self):
-        for count in self.d.keys():
-            print("Frame {}".format(count))
-            for slot in self.d[count].keys():
-                print("  Slot {}".format(slot))
-                for channel in self.d[count][slot].keys():
-                    data = [hex(x) for x in list(self.d[count][slot][channel].values())]
-                    if len(data) != 0:
-                        print("    Channel {} Data {}".format(channel, data))
-
-
-                      
-            
