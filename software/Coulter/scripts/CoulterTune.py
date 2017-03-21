@@ -103,25 +103,20 @@ coulterDaq.readConfig('/afs/slac/u/re/bareese/projects/epix-git/software/Coulter
 #coulterDaq.Coulter[0].AcquisitionControl.AdcClkDelay.set(phase, True)
 #for delay in range(2**9):
 
-def sign_extend(value, bits=14):
-    sign_bit = 1 << (bits-1)
-    return (value & (sign_bit - 1)) - (value & sign_bit)
 
-def voltage(adc):
-    return (sign_extend(adc)/(2**14)) + 1.0
 
-delay = 0
+delay = 210
 
 while True:
     tmp = input("Delay: ({})".format(delay))
     if tmp != '':
         delay = int(tmp)
     
-    coulterDaq.Coulter[0].AcquisitionControl.AdcWindowDelay.set(210, True)
-    coulterDaq.Coulter[0].AcquisitionControl.AdcClkDelay.set(delay, True)
-    coulterDaq.Coulter[0].AcquisitionControl.ScCount.set(2048, True)    
-    coulterDaq.Coulter[0].ASIC[0].atest.set(1, True)
-    coulterDaq.Coulter[0].ASIC[1].atest.set(1, True)         
+    coulterDaq.Coulter[0].AcquisitionControl.AdcWindowDelay.set(delay, True)
+    coulterDaq.Coulter[0].AcquisitionControl.AdcClkDelay.set(5, True)
+#    coulterDaq.Coulter[0].AcquisitionControl.ScCount.set(2048, True)    
+    coulterDaq.Coulter[0].ASIC[0].atest.set(0, True)
+    coulterDaq.Coulter[0].ASIC[1].atest.set(0, True)         
 
 
     coulterDaq.Trigger()
@@ -132,8 +127,8 @@ while True:
     #print(list(f.keys()), delay)
     slot = 2
  
-    for slot in sorted(f.keys()):
+    for slot in (a for a in sorted(f.keys()) if a%2==1):
         for channel in [0,]:
             data = [f[slot][channel][pixel] for pixel in sorted(f[slot][channel].keys())]
-            print('Slot: {}, Channel: {}, Data: {}'.format(slot, channel, ['{:.3f}'.format(voltage(d)) for d in data]))
+            print('Slot: {}, Channel: {}, Data: {}'.format(slot, channel, ['{:.3f}_{}'.format(voltage(d), hex(d)) for d in data]))
 
