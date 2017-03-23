@@ -23,7 +23,7 @@ import rogue.hardware.pgp
 import pyrogue.utilities.prbs
 import pyrogue.utilities.fileio
 import pyrogue.mesh
-import pyrogue.epics
+#import pyrogue.epics
 import pyrogue.gui
 import surf
 import surf.AxiVersion

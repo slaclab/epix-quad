@@ -12,11 +12,11 @@
 # ePix cameras. The initial intent is to use it with stand alone systems
 #
 #-----------------------------------------------------------------------------
-# This file is part of the ATLAS CHESS2 DEV. It is subject to 
+# This file is part of the ePix rogue. It is subject to 
 # the license terms in the LICENSE.txt file found in the top-level directory 
 # of this distribution and at: 
 #    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
-# No part of the ATLAS CHESS2 DEV, including this file, may be 
+# No part of the ePix rogue, including this file, may be 
 # copied, modified, propagated, or distributed except according to the terms 
 # contained in the LICENSE.txt file.
 #-----------------------------------------------------------------------------
