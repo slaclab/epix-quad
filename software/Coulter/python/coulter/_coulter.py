@@ -90,7 +90,7 @@ class CoulterRunControl(pr.RunControl):
       while (self._runState == 'Running'):
           self.root.Trigger()          
           if self._runRate == "Auto":
-              self.root.dataWriter._waitFrameCount(self._runCount+1)
+              self.root.dataWriter.getChannel(0).waitFrameCount(self._runCount+1)
           else:
               delay = 1.0 / (self._revRunRateEnum[self._runRate])
               time.sleep(delay)
