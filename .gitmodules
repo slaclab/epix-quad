@@ -1,7 +1,7 @@
 [submodule "firmware/modules/surf"]
 	path = firmware/modules/surf
 	url = git@github.com:slaclab/surf
-	branch = master
+	branch = rogue-base-block
 [submodule "firmware/modules/ruckus"]
 	path = firmware/modules/ruckus
 	url = git@github.com:slaclab/ruckus
