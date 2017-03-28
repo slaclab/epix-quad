@@ -9,4 +9,4 @@
 [submodule "software/rogue"]
 	path = software/rogue
 	url = git@github.com:slaclab/rogue.git
-	branch = master
+	branch = base-block
