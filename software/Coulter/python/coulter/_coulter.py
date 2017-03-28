@@ -73,10 +73,10 @@ class CoulterRunControl(pr.RunControl):
       self._revRunRateEnum = {v:k for k,v in self.runRate.enum.items()}
 
    def _setRunState(self,dev,var,value):
-      if self._runState != value:
-         self._runState = value
+      if self.runState.value != value:
+         self.runState.value = value
 
-         if self._runState == 'Running':
+         if self.runState.value == 'Running':
             self._thread = threading.Thread(target=self._run)
             self._thread.start()
          else:
@@ -84,23 +84,23 @@ class CoulterRunControl(pr.RunControl):
             self._thread = None
 
    def _run(self):
-      self._runCount = 0
+      self.runCount = 0
       self._last = int(time.time())
 
-      while (self._runState == 'Running'):
+      while (self.runState == 'Running'):
           self.root.Trigger()          
-          if self._runRate == "Auto":
-              self.root.dataWriter.getChannel(0).waitFrameCount(self._runCount+1)
+          if self.runRate == "Auto":
+              self.root.dataWriter.getChannel(0).waitFrameCount(self.runCount+1)
           else:
-              delay = 1.0 / (self._revRunRateEnum[self._runRate])
+              delay = 1.0 / self.runRate
               time.sleep(delay)
               # Add command here
 
 
-          self._runCount += 1
-          if self._last != int(time.time()):
-              self._last = int(time.time())
-              self.runCount._updated()
+          self.runCount += 1
+#           if self._last != int(time.time()):
+#               self._last = int(time.time())
+#               self.runCount._updated()
 
 
 class Coulter(pr.Device):
@@ -112,7 +112,7 @@ class Coulter(pr.Device):
 
         self.add((
             #surf.GenericMemory(name="AdcTap", elements=2**5-1, bitSize=32, offset=0x00080004),
-            surf.Xadc(offset=0x00080000),
+#            surf.Xadc(offset=0x00080000),
             surf.AxiVersion.create(offset=0x00000000),
             AcquisitionControl(name='AcquisitionControl', offset=0x00060000, clkFreq=125.0e6),
             #ReadoutControl(name='ReadoutControl', offset=0x000A0000),
@@ -124,7 +124,7 @@ class Coulter(pr.Device):
             CoulterPgp(name='CoulterPgp', offset=0x00070000)))
         
         
-        self.Xadc.simpleView()
+#        self.Xadc.simpleView()
 
 class CoulterPgp(pr.Device):
     def __init__(self, **kwargs):
@@ -294,7 +294,7 @@ class AcquisitionControl(pr.Device):
         
         # ADC window
         self.addVariable(name="AdcWindowDelay", description="Delay between first mck of slot at start of adc sample capture",
-                         offset=0x2c, bitSize=10, bitOffset=0, base = 'int')
+                         offset=0x2c, bitSize=10, bitOffset=0, base='uint')
         self.addVariable(name="AdcWindowDelayTime", description="AdcWindowDelay in readable units",
                          mode = 'RO',  base='string',
                          getFunction=self.periodConverter(), dependencies=[self.AdcWindowDelay])

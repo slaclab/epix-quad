@@ -18,8 +18,8 @@
 # copied, modified, propagated, or distributed except according to the terms 
 # contained in the LICENSE.txt file.
 #-----------------------------------------------------------------------------
-#import rogue.hardware.pgp
-import rogue.interfaces.memory
+import rogue.hardware.pgp
+#import rogue.interfaces.memory
 import pyrogue.simulation
 import pyrogue.utilities.fileio
 import pyrogue.gui
@@ -40,7 +40,7 @@ import logging
 # File writer
 dataWriter = pyrogue.utilities.fileio.StreamWriter('dataWriter')
 
-logging.getLogger("pyrogue.SRP").setLevel(logging.INFO)
+logging.getLogger("pyrogue.SRP").setLevel(logging.DEBUG)
 #logging.getLogger("pyrogue.DATA[0]").setLevel(logging.INFO)
 
 
