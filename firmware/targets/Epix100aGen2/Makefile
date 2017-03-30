@@ -18,7 +18,8 @@ export PRJ_PART = XC7A200TSBG484-3
 #                     $(PROJ_DIR)/../../common/MicroblazeBasicCore \
 #                     $(PROJ_DIR)
 
-export RUCKUS_DIR = $(abspath $(PWD)/../../submodules/ruckus)
+export RUCKUS_DIR = $(abspath $(PWD)/../../modules/ruckus)
+export MODULES = $(abspath $(PWD)/../../modules)
 
 export PRJ_VERSION = 0x00000001
 
