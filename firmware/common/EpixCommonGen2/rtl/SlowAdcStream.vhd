@@ -108,7 +108,7 @@ begin
    end process;
    
 
-   fsm_cmb_p: process ( state, trig, dwordCnt, mAxisSlave, dataIn) 
+   fsm_cmb_p: process ( state, trig, dwordCnt, mAxisSlave, dataIn, acqCount, seqCount) 
       variable mAxisMasterVar : AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
    begin
       next_state <= state;

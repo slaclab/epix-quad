@@ -46,6 +46,7 @@ entity EpixCoreGen2 is
       ADC0_INVERT_CH    : slv(7 downto 0) := "00000000";
       ADC1_INVERT_CH    : slv(7 downto 0) := "00000000";
       ADC2_INVERT_CH    : slv(7 downto 0) := "00000000";
+      BUILD_INFO_G      : BuildInfoType;
       IODELAY_GROUP_G   : string          := "DEFAULT_GROUP"
    );
    port (
@@ -737,6 +738,7 @@ begin
          adcSerial         => asicAdc(i),
 
          -- Deserialized ADC Data
+         adcStreamClk => coreClk,
          adcStreams        => adcStreams((i*8)+7 downto i*8)
       );
       
@@ -776,6 +778,7 @@ begin
       adcSerial         => monAdc,
 
       -- Deserialized ADC Data
+      adcStreamClk => coreClk,
       adcStreams        => adcStreams(19 downto 16)
    );
 
@@ -849,7 +852,7 @@ begin
       adcSDout          => adcSpiDataOut,
       adcSDEn           => adcSpiDataEn,
       adcCsb            => iAdcSpiCsb,
-      adcPdwn           => iAdcPdwn
+      adcPdwn           => iAdcPdwn(1 downto 0)
    );
    
    adcSpiCsb <= iAdcSpiCsb(2 downto 0);
@@ -997,6 +1000,7 @@ begin
    U_AxiVersion : entity work.AxiVersion
    generic map (
       TPD_G           => TPD_G,
+      BUILD_INFO_G     => BUILD_INFO_G,
       EN_DEVICE_DNA_G => false)   
    port map (
       fpgaReload     => fpgaReload,

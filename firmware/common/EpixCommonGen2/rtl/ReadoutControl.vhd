@@ -421,7 +421,7 @@ begin
    comb : process (r,epixConfig,acqCount,intSeqCount,adcFifoRdData,adcFifoRdValid,
                    channelOrder,fifoEmptyAll,acqBusy,adcMemOflowAny,fifoOflowAny,
                    monitorData,tpsAdcData,acqStartEdge,dataSendEdge,adcFifoEmpty,
-                   sysClkRst,mAxisSlave, iAdcData, channelValid) 
+                   sysClkRst,mAxisSlave, iAdcData, channelValid, opCode) 
       variable v : RegType;
    begin
       v := r;

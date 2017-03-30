@@ -118,7 +118,7 @@ def create(name='DigFpga', offset=0, memBase=None, hidden=False, enabled=True):
     dev.add(pr.Variable(name='TriggerTraceLength',  description='Number of samples to record',                             offset=0x00000054*addrSize, bitSize=13, bitOffset=0, base='hex',  mode='RW'))
     dev.add(pr.Variable(name='InputChannelB',       description='Select input channel B',                                  offset=0x00000055*addrSize, bitSize=5,  bitOffset=5, base='hex',  mode='RW'))
     dev.add(pr.Variable(name='InputChannelA',       description='Select input channel A',                                  offset=0x00000055*addrSize, bitSize=5,  bitOffset=0, base='hex',  mode='RW'))
-    dev.add(pr.Variable(name='RequestStartup',      description='Request startup sequence',                                offset=0x00000080*addrSize, bitSize=1,  bitOffset=0, base='bool', mode='WO'))
+    dev.add(pr.Variable(name='RequestStartup',      description='Request startup sequence',                                offset=0x00000080*addrSize, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
     dev.add(pr.Variable(name='StartupDone',         description='Startup sequence done',                                   offset=0x00000080*addrSize, bitSize=1,  bitOffset=1, base='bool', mode='RO'))
     dev.add(pr.Variable(name='StartupFail',         description='Startup sequence failed',                                 offset=0x00000080*addrSize, bitSize=1,  bitOffset=2, base='bool', mode='RO'))
     dev.add(pr.Variable(name='RequestConfDump',     description='Request Conf. Dump',                                      offset=0x00000081*addrSize, bitSize=1,  bitOffset=0, base='bool', mode='WO'))

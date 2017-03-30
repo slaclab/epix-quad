@@ -316,7 +316,8 @@ begin
          port map (
             clk      => axiClk,
             rst      => axiReset,
-            dnaValue => idValues(0),
+            dnaValue(127 downto 64) => open,
+            dnaValue( 63 downto  0) => idValues(0),
             dnaValid => idValids(0));
    end generate GEN_DEVICE_DNA;
    
@@ -335,7 +336,7 @@ begin
          clk       => axiClk,
          rst       => chipIdRst,
          fdSerSdio => serialIdIo(i),
-         fdSerial  => idValues(i+1),
+         fdValue   => idValues(i+1),
          fdValid   => idValids(i+1)
       );
    end generate;
