@@ -35,7 +35,9 @@ use work.EpixPkgGen2.all;
 
 entity PgpWrapper is
    generic (
-      TPD_G            : time            := 1 ns;
+      TPD_G : time := 1 ns;
+      FPGA_BASE_CLOCK_G : slv(31 downto 0);
+      BUILD_INFO_G  : BuildInfoType;
       AXI_ERROR_RESP_G : slv(1 downto 0) := AXI_RESP_OK_C);
    port (
       -- Clocks and Reset
@@ -250,6 +252,8 @@ begin
    U_RegControl : entity work.RegControl
       generic map (
          TPD_G            => TPD_G,
+         FPGA_BASE_CLOCK_G => FPGA_BASE_CLOCK_G,
+         BUILD_INFO_G => BUILD_INFO_G,         
          AXI_ERROR_RESP_G => AXI_ERROR_RESP_G,
          EN_DEVICE_DNA_G  => false,
          HARD_RESET_G     => false,
@@ -350,6 +354,7 @@ begin
    U_AxiVersion : entity work.AxiVersion
       generic map (
          TPD_G            => TPD_G,
+         BUILD_INFO_G     => BUILD_INFO_G,
          AXI_ERROR_RESP_G => AXI_ERROR_RESP_G,
          EN_DEVICE_DNA_G  => false)
       port map (
@@ -387,7 +392,7 @@ begin
    U_AdcTester : entity work.StreamPatternTester
       generic map (
          TPD_G            => TPD_G,
-         AXI_ERROR_RESP_G => AXI_ERROR_RESP_G,
+         -- AXI_ERROR_RESP_G => AXI_ERROR_RESP_G,
          NUM_CHANNELS_G   => 20)
       port map (
          -- Master system clock

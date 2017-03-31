@@ -31,13 +31,13 @@ use work.StdRtlPkg.all;
 use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
 use work.EpixPkgGen2.all;
-use work.Version.all;
 library UNISIM;
 use UNISIM.vcomponents.all;
 
 entity ReadoutControl is
    generic (
       TPD_G                      : time := 1 ns;
+      BUILD_INFO_G  : BuildInfoType;
       MASTER_AXI_STREAM_CONFIG_G : AxiStreamConfigType := ssiAxiStreamConfig(4, TKEEP_COMP_C)
    );
    port (
@@ -91,6 +91,10 @@ end ReadoutControl;
 
 -- Define architecture
 architecture ReadoutControl of ReadoutControl is
+
+   constant BUILD_INFO_C : BuildInfoRetType := toBuildInfo(BUILD_INFO_G);
+   constant NCOL_C       : integer          := getNumColumns(BUILD_INFO_C.fwVersion);
+   constant WORDS_PER_SUPER_ROW_C  : integer := getWordsPerSuperRow(BUILD_INFO_C.fwVersion);
 
    -- Timeout in clock cycles between acqStart and sendData
    constant DAQ_TIMEOUT_C   : slv(31 downto 0) := conv_std_logic_vector(12500,32); --100 us at 125 MHz
@@ -208,7 +212,7 @@ begin
    -- Indexing for the memory readout order is linked to the raw ADC channel
    -- (i.e., if the channel reads out an ASIC from upper half of carrier,
    --  read it backward, otherwise, read it forward)
-   G_EPIX100A_CARRIER_ADC_GEN2 : if (FPGA_VERSION_C(31 downto 16) = x"EA02") generate
+   G_EPIX100A_CARRIER_ADC_GEN2 : if (BUILD_INFO_C.fwVersion(31 downto 16) = x"EA02") generate
       iAdcValid(0) <= adcValid(8);
       iAdcValid(1) <= adcValid(3);
       iAdcValid(2) <= adcValid(4);
@@ -269,7 +273,7 @@ begin
       monitorData(7) <= envData(7);
       monitorData(8) <= envData(8);
    end generate;
-   G_EPIX100A_CARRIER_ADC_GEN1 : if (FPGA_VERSION_C(31 downto 16) = x"EA01") generate
+   G_EPIX100A_CARRIER_ADC_GEN1 : if (BUILD_INFO_C.fwVersion(31 downto 16) = x"EA01") generate
       iAdcValid    <= adcValid;
       iAdcData     <= adcData;
       channelOrder <= (0,3,1,2,8,11,9,10,6,4,5,7,14,12,13,15) when r.streamMode = '0' else
@@ -283,7 +287,7 @@ begin
       tpsData(3) <= r.adcData(16+0);
       monitorData <= (others=>(others=>'0'));
    end generate;
-   G_EPIX100P_CARRIER : if (FPGA_VERSION_C(31 downto 24) = x"E0") generate
+   G_EPIX100P_CARRIER : if (BUILD_INFO_C.fwVersion(31 downto 24) = x"E0") generate
       iAdcValid    <= adcValid;
       iAdcData     <= adcData;
       channelOrder <= (4,5,6,7,8,9,10,11,3,2,1,0,15,14,13,12) when r.streamMode = '0' else
@@ -297,7 +301,7 @@ begin
       tpsData(3) <= r.adcData(16+3);
       monitorData <= (others=>(others=>'0'));
    end generate;
-   G_EPIX10KP_CARRIER_ADC_GEN1 : if (FPGA_VERSION_C(31 downto 16) = x"E200") generate
+   G_EPIX10KP_CARRIER_ADC_GEN1 : if (BUILD_INFO_C.fwVersion(31 downto 16) = x"E200") generate
       iAdcValid    <= adcValid;
       iAdcData     <= adcData;
       channelOrder <= (4,5,6,7,8,9,10,11,3,2,1,0,15,14,13,12) when r.streamMode = '0' else
@@ -311,7 +315,7 @@ begin
       tpsData(3) <= r.adcData(16+3);
       monitorData <= (others=>(others=>'0'));
    end generate;
-   G_EPIX10KP_CARRIER_ADC_GEN2 : if (FPGA_VERSION_C(31 downto 16) = x"E202") generate
+   G_EPIX10KP_CARRIER_ADC_GEN2 : if (BUILD_INFO_C.fwVersion(31 downto 16) = x"E202") generate
       iAdcValid(0) <= adcValid(8);
       iAdcValid(1) <= adcValid(3);
       iAdcValid(2) <= adcValid(4);
@@ -371,7 +375,7 @@ begin
       monitorData(7) <= envData(7);
       monitorData(8) <= envData(8);
    end generate;
-   G_EPIXS_CARRIER : if (FPGA_VERSION_C(31 downto 24) = x"E3") generate
+   G_EPIXS_CARRIER : if (BUILD_INFO_C.fwVersion(31 downto 24) = x"E3") generate
       iAdcValid    <= adcValid;
       iAdcData     <= adcData;
       channelOrder <= (4,5,6,7,8,9,10,11,3,2,1,0,15,14,13,12) when r.streamMode = '0' else
@@ -711,6 +715,9 @@ begin
 
          --Instantiate memory
          U_RowBuffer : entity work.EpixRowBlockRam
+         generic map (
+            TPD_G        => TPD_G,
+            BUILD_INFO_G => BUILD_INFO_G)
          port map (
             sysClk      => sysClk,
             sysClkRst   => sysClkRst,
@@ -810,7 +817,7 @@ begin
 
          delay := conv_integer(epixConfig.doutPipelineDelay(6 downto 0));
          for n in 0 to 3 loop
-            if FPGA_VERSION_C(31 downto 24) = x"E2" then
+            if BUILD_INFO_C.fwVersion(31 downto 24) = x"E2" then
                asicDoutDelayed(n) <= asicDoutPipeline(n)( delay );
             else
                asicDoutDelayed(n) <= '0';

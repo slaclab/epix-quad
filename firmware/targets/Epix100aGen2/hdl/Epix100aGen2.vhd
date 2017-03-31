@@ -38,7 +38,8 @@ use unisim.vcomponents.all;
 entity Epix100aGen2 is
    generic (
       TPD_G : time := 1 ns;
-      BUILD_INFO_G      : BuildInfoType
+      FPGA_BASE_CLOCK_G : slv(31 downto 0) := x"00" & x"100000"; 
+      BUILD_INFO_G  : BuildInfoType
    );
    port (
       -- Debugging IOs
@@ -195,7 +196,8 @@ begin
    U_EpixCore : entity work.EpixCoreGen2
       generic map (
          TPD_G => TPD_G,
-         BUILD_INFO_G     => BUILD_INFO_G,
+         FPGA_BASE_CLOCK_G => FPGA_BASE_CLOCK_G,
+         BUILD_INFO_G => BUILD_INFO_G,
          -- Polarity of selected LVDS data lanes is swapped on gen2 ADC board
          ADC1_INVERT_CH    => "10000000",
          ADC2_INVERT_CH    => "00000010"

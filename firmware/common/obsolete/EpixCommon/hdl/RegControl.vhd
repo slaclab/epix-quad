@@ -30,12 +30,15 @@ use work.EpixTypes.all;
 use work.ScopeTypes.all;
 use work.VcPkg.all;
 use work.SaciMasterPkg.all;
-use work.Version.all;
 use work.StdRtlPkg.all;
 library UNISIM;
 use UNISIM.vcomponents.all;
 
 entity RegControl is
+   generic (
+      TPD_G : time := 1 ns;
+      BUILD_INFO_G  : BuildInfoType
+   );
    port ( 
 
       -- Master system clock, 125Mhz
@@ -108,6 +111,8 @@ end RegControl;
 
 -- Define architecture
 architecture RegControl of RegControl is
+
+   constant BUILD_INFO_C       : BuildInfoRetType    := toBuildInfo(BUILD_INFO_G);
 
    -- Local Signals
    signal intConfig         : EpixConfigType;
@@ -292,7 +297,7 @@ begin
 
          -- Version register, 0x000000
          if pgpRegOut.addr = x"000000" then
-            pgpRegIn.rdData <= FpgaVersion after tpd;
+            pgpRegIn.rdData <= BUILD_INFO_C.fwVersion after tpd;
             resetReq <= pgpRegOut.req and pgpRegOut.op after tpd; -- Reset request
 
          -- Run Trigger Enable, 0x000001
@@ -676,7 +681,7 @@ begin
          -- 0x080003 - Next pixel to the right
          -- 0x080004 - Next pixel to the right
          -- 0x080005 - Right most pixel in global space, initiate SACI transactions
-         elsif pgpRegOut.addr(19) = '1' and (FpgaVersion(31 downto 24) = x"EA" or FpgaVersion(31 downto 24) = x"E3") then
+         elsif pgpRegOut.addr(19) = '1' and (BUILD_INFO_C.fwVersion(31 downto 24) = x"EA" or BUILD_INFO_C.fwVersion(31 downto 24) = x"E3") then
             case conv_integer(pgpRegOut.addr(18 downto 0)) is 
                when 0 =>  -- Row in global row space
                   if pgpRegOut.req = '1' and pgpRegOut.op = '1' then
@@ -781,9 +786,9 @@ begin
             -- 4 banks are written
             elsif multiPixelReg.req = '1' then
                decodePixelReg <= PIXEL_WRITE_INIT_C;
-               if (FpgaVersion(31 downto 24) = x"EA") then
+               if (BUILD_INFO_C.fwVersion(31 downto 24) = x"EA") then
                   nxtState       <= EPIX100A_PIXEL_DECODE_S;
-               elsif (FpgaVersion(31 downto 24) = x"E3") then
+               elsif (BUILD_INFO_C.fwVersion(31 downto 24) = x"E3") then
                   nxtState       <= EPIXS_PIXEL_DECODE_S;
                end if;
             -- Otherwise, process the automatic prepare for
@@ -1349,17 +1354,17 @@ begin
    --  for both the SDD application, which uses 200 MHz base
    --  rate, and the ePix application, which uses 125 MHz base
    --  rate).
-   NCYCLES <= 820  when FpgaVersion(31 downto 24) = x"E0" else --ePix100p
-              410  when FpgaVersion(31 downto 24) = x"E1" else --SDD
-              820  when FpgaVersion(31 downto 24) = x"E2" else --ePix10kp
-              820  when FpgaVersion(31 downto 24) = x"EA" else --ePix100a
-              820  when FpgaVersion(31 downto 24) = x"E3" else --ePixS
+   NCYCLES <= 820  when BUILD_INFO_C.fwVersion(31 downto 24) = x"E0" else --ePix100p
+              410  when BUILD_INFO_C.fwVersion(31 downto 24) = x"E1" else --SDD
+              820  when BUILD_INFO_C.fwVersion(31 downto 24) = x"E2" else --ePix10kp
+              820  when BUILD_INFO_C.fwVersion(31 downto 24) = x"EA" else --ePix100a
+              820  when BUILD_INFO_C.fwVersion(31 downto 24) = x"E3" else --ePixS
               1000;
-   NCYCLES_SPI <= 10 when FpgaVersion(31 downto 24) = x"E0" else --ePix100p
-                  5  when FpgaVersion(31 downto 24) = x"E1" else --SDD
-                  10 when FpgaVersion(31 downto 24) = x"E2" else --ePix10kp
-                  10 when FpgaVersion(31 downto 24) = x"EA" else --ePix100a
-                  10 when FpgaVersion(31 downto 24) = x"E3" else --ePixS
+   NCYCLES_SPI <= 10 when BUILD_INFO_C.fwVersion(31 downto 24) = x"E0" else --ePix100p
+                  5  when BUILD_INFO_C.fwVersion(31 downto 24) = x"E1" else --SDD
+                  10 when BUILD_INFO_C.fwVersion(31 downto 24) = x"E2" else --ePix10kp
+                  10 when BUILD_INFO_C.fwVersion(31 downto 24) = x"EA" else --ePix100a
+                  10 when BUILD_INFO_C.fwVersion(31 downto 24) = x"E3" else --ePixS
                   20;
    process(sysClk,sysClkRst) 
       variable counter     : integer range 0 to 2047 := 0;

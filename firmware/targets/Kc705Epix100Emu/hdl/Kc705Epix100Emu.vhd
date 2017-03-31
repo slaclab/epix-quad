@@ -34,7 +34,9 @@ use unisim.vcomponents.all;
 
 entity Kc705Epix100Emu is
    generic (
-      TPD_G            : time            := 1 ns;
+      TPD_G : time := 1 ns;
+      BUILD_INFO_G  : BuildInfoType;
+      FPGA_BASE_CLOCK_G : slv(31 downto 0) := x"00" & x"100000"; 
       AXI_ERROR_RESP_G : slv(1 downto 0) := AXI_RESP_OK_C);
    port (
       -- LEDs and Reset button
@@ -149,6 +151,8 @@ begin
       U_PGP : entity work.PgpWrapper
          generic map (
             TPD_G            => TPD_G,
+            FPGA_BASE_CLOCK_G=> FPGA_BASE_CLOCK_G,
+            BUILD_INFO_G     => BUILD_INFO_G,
             AXI_ERROR_RESP_G => AXI_ERROR_RESP_G)
          port map (
             -- Clock and Reset
@@ -180,7 +184,9 @@ begin
       ------------------------
       U_EmuDataGen : entity work.EmuDataGen
          generic map (
-            TPD_G => TPD_G)
+            TPD_G => TPD_G,
+            FPGA_BASE_CLOCK_G => FPGA_BASE_CLOCK_G,
+            BUILD_INFO_G => BUILD_INFO_G)
          port map (
             -- Clock and Reset
             clk        => clk,

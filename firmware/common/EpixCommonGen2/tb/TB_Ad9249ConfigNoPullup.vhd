@@ -33,7 +33,6 @@ use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
 use work.SsiCmdMasterPkg.all;
 use work.Ad9249Pkg.all;
-use work.Version.all;
 use work.AxiPkg.all;
 
 entity TB_Ad9249ConfigNoPullup is 

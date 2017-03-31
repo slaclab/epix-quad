@@ -14,7 +14,6 @@ use ieee.std_logic_unsigned.all;
 
 use work.StdRtlPkg.all;
 use work.AxiLitePkg.all;
-use work.Version.all;
 
 package EpixPkgGen2 is
 
@@ -225,15 +224,37 @@ package EpixPkgGen2 is
    function getNumColumns ( version : slv ) return integer;
    function getWordsPerSuperRow ( version : slv ) return integer;
 
-   constant NCOL_C : integer := getNumColumns(FPGA_VERSION_C);
-   --Number of columns in ePix "super row"
-   -- (columns / ch) * (channels / asic) * (asics / row) / (adc values / word)
-   -- constant WORDS_PER_SUPER_ROW_C : integer := NCOL_C * 4 * 2 / 2; 
-   constant WORDS_PER_SUPER_ROW_C  : integer := getWordsPerSuperRow(FPGA_VERSION_C);
+   -- constant NCOL_C : integer := getNumColumns(FPGA_VERSION_C);
+   -- --Number of columns in ePix "super row"
+   -- -- (columns / ch) * (channels / asic) * (asics / row) / (adc values / word)
+   -- -- constant WORDS_PER_SUPER_ROW_C : integer := NCOL_C * 4 * 2 / 2; 
+   -- constant WORDS_PER_SUPER_ROW_C  : integer := getWordsPerSuperRow(FPGA_VERSION_C);
+   
    constant EPIX100_COLS_PER_ROW   : integer := 96;
    constant EPIX10K_COLS_PER_ROW   : integer := 48;
    constant EPIXS_COLS_PER_ROW     : integer := 10;
    constant EPIX100A_ROWS_PER_ASIC : integer := 352;
+   
+   procedure globalToLocalPixel( signal   version    : in slv; 
+                                 signal   globalRow  : in slv; 
+                                 signal   globalCol  : in slv; 
+                                 signal   calRowFlag : in sl; 
+                                 signal   calBotFlag : in sl;
+                                 signal   inputData  : in Slv16Array;
+                                 variable localAsic  : inout slv; 
+                                 variable localRow   : inout slv; 
+                                 variable localCol   : inout slv;
+                                 variable localData  : inout Slv16Array);
+   procedure globalToLocalPixelEpix100A( signal   version    : in slv; 
+                                         signal   globalRow  : in slv; 
+                                         signal   globalCol  : in slv; 
+                                         signal   calRowFlag : in sl; 
+                                         signal   calBotFlag : in sl;
+                                         signal   inputData  : in Slv16Array;
+                                         variable localAsic  : inout slv; 
+                                         variable localRow   : inout slv; 
+                                         variable localCol   : inout slv;
+                                         variable localData  : inout Slv16Array) ;   
    
 end EpixPkgGen2;
 
@@ -261,7 +282,9 @@ package body EpixPkgGen2 is
    end function;
 
    function getWordsPerSuperRow (version : slv ) return integer is
+      variable NCOL_C   : integer;
    begin
+      NCOL_C := getNumColumns(version);
       --EpixS reads only the active ASICs
       if (version(31 downto 24) = x"E3") then
          return EPIXS_COLS_PER_ROW * 2 / 2;
@@ -270,4 +293,95 @@ package body EpixPkgGen2 is
          return NCOL_C * 4 * 2 / 2;
       end if; 
    end function;
+   
+   procedure globalToLocalPixel (
+       signal   version    : in slv;
+       signal   globalRow  : in slv;
+       signal   globalCol  : in slv;
+       signal   calRowFlag : in sl;
+       signal   calBotFlag : in sl;
+       signal   inputData  : in Slv16Array;
+       variable localAsic  : inout slv;
+       variable localRow   : inout slv;
+       variable localCol   : inout slv;
+       variable localData  : inout Slv16Array)
+   is
+   begin 
+      assert (version(31 downto 24) = x"EA") report "Multi-pixel writes not supported for this ASIC!" severity warning;   
+      if version(31 downto 24) = x"EA" then
+         globalToLocalPixelEpix100A(version,globalRow,globalCol,calRowFlag,calBotFlag,inputData,localAsic,localRow,localCol,localData);
+      end if;
+   end procedure globalToLocalPixel;
+   
+   procedure globalToLocalPixelEpix100A (
+       signal   version    : in slv;
+       signal   globalRow  : in slv;
+       signal   globalCol  : in slv;
+       signal   calRowFlag : in sl;
+       signal   calBotFlag : in sl;
+       signal   inputData  : in Slv16Array;
+       variable localAsic  : inout slv;
+       variable localRow   : inout slv;
+       variable localCol   : inout slv;
+       variable localData  : inout Slv16Array)
+   is
+      variable asicCol  : slv(9 downto 0);
+      variable NCOL_C   : integer;
+   begin 
+      NCOL_C := getNumColumns(version);
+      -- Top 2 ASICs
+      if (globalRow < EPIX100A_ROWS_PER_ASIC and calRowFlag = '0') or (calRowFlag = '1' and calBotFlag = '0') then
+         -- ASIC 2 (upper left)
+         if globalCol < NCOL_C * 4 then
+            localAsic := "10";
+            asicCol   := NCOL_C * 4 - globalCol - 1;
+         -- ASIC 1 (upper right)
+         else
+            localAsic := "01";
+            asicCol   := NCOL_C * 4 * 2 - 1 - globalCol;
+         end if;
+         -- For both top ASICs, translate row to local space
+         if calRowFlag = '1' then
+            localRow := conv_std_logic_vector(EPIX100A_ROWS_PER_ASIC,localRow'length);
+         else
+            localRow := EPIX100A_ROWS_PER_ASIC - 1 - globalRow;
+         end if;
+         -- Readout order for top ASICs is 3->0
+         for i in 0 to 3 loop
+            localData(3-i) := inputData(i);
+         end loop;
+      -- Bottom two ASICs
+      else
+         -- ASIC 3 (lower left)
+         if (globalCol < NCOL_C * 4) then
+            localAsic := "11";
+            asicCol   := globalCol;
+         -- ASIC 0 (lower right)
+         else
+            localAsic := "00";
+            asicCol   := globalCol - NCOL_C * 4;
+         end if;
+         -- For both bottom ASICs, translate row to local space
+         if calRowFlag = '1' then
+            localRow := conv_std_logic_vector(EPIX100A_ROWS_PER_ASIC,localRow'length);
+         else
+            localRow := globalRow - EPIX100A_ROWS_PER_ASIC;
+         end if;
+         -- Readout order for bottom ASICs is 0->3
+         for i in 0 to 3 loop
+            localData(i) := inputData(i);
+         end loop;
+      end if;
+      -- Decode column to column within a bank   
+      if asicCol  < NCOL_C then
+         localCol := asicCol;
+      elsif asicCol < NCOL_C * 2 then
+         localCol := asicCol - NCOL_C;
+      elsif asicCol < NCOL_C * 3 then
+         localCol := asicCol - NCOL_C * 2;
+      else
+         localCol := asicCol - NCOL_C * 3;
+      end if;
+   end procedure globalToLocalPixelEpix100A;     
+   
 end package body EpixPkgGen2;

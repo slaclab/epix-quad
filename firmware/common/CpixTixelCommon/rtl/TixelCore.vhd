@@ -35,7 +35,6 @@ use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
 use work.SsiCmdMasterPkg.all;
 use work.Pgp2bPkg.all;
-use work.Version.all;
 use work.Ad9249Pkg.all;
 
 library unisim;
@@ -44,6 +43,8 @@ use unisim.vcomponents.all;
 entity TixelCore is
    generic (
       TPD_G             : time := 1 ns;
+      FPGA_BASE_CLOCK_G : slv(31 downto 0);
+      BUILD_INFO_G  : BuildInfoType;
       ADC0_INVERT_CH    : slv(7 downto 0) := "00000000";
       ADC1_INVERT_CH    : slv(7 downto 0) := "00000000";
       ADC2_INVERT_CH    : slv(7 downto 0) := "00000000";
@@ -388,6 +389,11 @@ begin
          mAxiLiteReadSlave   => sAxiReadSlave(0),
          mAxiLiteWriteMaster => sAxiWriteMaster(0),
          mAxiLiteWriteSlave  => sAxiWriteSlave(0),
+         -- Axi Slave Interface - PGP Status Registers (axiClk domain)
+         sAxiLiteReadMaster  => AXI_LITE_READ_MASTER_INIT_C,
+         sAxiLiteReadSlave   => open,
+         sAxiLiteWriteMaster => AXI_LITE_WRITE_MASTER_INIT_C,
+         sAxiLiteWriteSlave  => open,        
          -- Streaming data Links (axiClk domain)      
          dataAxisMaster    => userAxisMaster,
          dataAxisSlave     => userAxisSlave,
@@ -712,6 +718,30 @@ begin
          axiClk              => coreClk,
          axiClkRst           => axiRst);
    
+   U_AxiLiteEmpty0 : entity work.AxiLiteEmpty
+      generic map (
+         TPD_G            => TPD_G,
+         AXI_ERROR_RESP_G => AXI_RESP_DECERR_C)
+      port map (
+         axiClk         => coreClk,
+         axiClkRst      => axiRst,
+         axiReadMaster  => mAxiReadMasters(ADC0_RD_AXI_INDEX_C),
+         axiReadSlave   => mAxiReadSlaves(ADC0_RD_AXI_INDEX_C),
+         axiWriteMaster => mAxiWriteMasters(ADC0_RD_AXI_INDEX_C),
+         axiWriteSlave  => mAxiWriteSlaves(ADC0_RD_AXI_INDEX_C));   
+         
+   U_AxiLiteEmpty1 : entity work.AxiLiteEmpty
+      generic map (
+         TPD_G            => TPD_G,
+         AXI_ERROR_RESP_G => AXI_RESP_DECERR_C)
+      port map (
+         axiClk         => coreClk,
+         axiClkRst      => axiRst,
+         axiReadMaster  => mAxiReadMasters(ADC1_RD_AXI_INDEX_C),
+         axiReadSlave   => mAxiReadSlaves(ADC1_RD_AXI_INDEX_C),
+         axiWriteMaster => mAxiWriteMasters(ADC1_RD_AXI_INDEX_C),
+         axiWriteSlave  => mAxiWriteSlaves(ADC1_RD_AXI_INDEX_C));            
+   
    --------------------------------------------
    --     Master Register Controllers        --
    --------------------------------------------   
@@ -721,6 +751,8 @@ begin
    U_RegControl : entity work.RegControlGen2
    generic map (
       TPD_G                => TPD_G,
+      FPGA_BASE_CLOCK_G    => FPGA_BASE_CLOCK_G,
+      BUILD_INFO_G         => BUILD_INFO_G,
       NUM_ASICS_G          => NUM_ASICS_C,
       CLK_PERIOD_G         => 10.0e-9
    )
@@ -864,6 +896,7 @@ begin
       adcSerial         => monAdc,
 
       -- Deserialized ADC Data
+      adcStreamClk      => coreClk,
       adcStreams        => adcStreams(19 downto 16)
    );
    
@@ -1102,6 +1135,7 @@ begin
    U_AxiVersion : entity work.AxiVersion
    generic map (
       TPD_G           => TPD_G,
+      BUILD_INFO_G    => BUILD_INFO_G,
       EN_DEVICE_DNA_G => false)   
    port map (
       fpgaReload     => fpgaReload,

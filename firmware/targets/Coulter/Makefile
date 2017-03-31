@@ -1,3 +1,4 @@
+export GIT_BYPASS = 0
 
 # Define target output
 target: prom
@@ -5,13 +6,10 @@ target: prom
 # Define target part
 export PRJ_PART = XC7A200TSBG484-3
 
-export RUCKUS_DIR = $(abspath $(PWD)/../../modules/ruckus)
-
-#export KEEP_UNUSED_CODE = 1
-
+# Firmware Version
 export PRJ_VERSION = 0x00000019
 
 # Use top level makefile
-include $(RUCKUS_DIR)/system_vivado.mk
+include ../../submodules/ruckus/system_vivado.mk
 
 

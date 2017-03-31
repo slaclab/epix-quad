@@ -1,2 +1,0 @@
-hdl/Epix100aGen2.xdc
-#../../common/EpixCommonGen2/coregen/AxiDdrCtrl/AxiDdrCtrl/user_design/constraints/AxiDdrCtrl.xdc

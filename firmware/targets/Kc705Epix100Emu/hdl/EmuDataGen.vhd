@@ -32,7 +32,9 @@ use work.EpixPkgGen2.all;
 
 entity EmuDataGen is
    generic (
-      TPD_G : time := 1 ns);
+      TPD_G : time := 1 ns;
+      FPGA_BASE_CLOCK_G : slv(31 downto 0);
+      BUILD_INFO_G  : BuildInfoType);
    port (
       -- Clock and Reset
       clk        : in  sl;

@@ -30,13 +30,13 @@ use ieee.std_logic_arith.all;
 use work.EpixTypes.all;
 use work.VcPkg.all;
 use work.StdRtlPkg.all;
-use work.Version.all;
 library UNISIM;
 use UNISIM.vcomponents.all;
 
 entity ReadoutControl is
    generic (
-      TPD_G : time := 1 ns
+      TPD_G : time := 1 ns;
+      BUILD_INFO_G  : BuildInfoType
    );
    port (
 
@@ -83,6 +83,8 @@ end ReadoutControl;
 
 -- Define architecture
 architecture ReadoutControl of ReadoutControl is
+
+   constant BUILD_INFO_C       : BuildInfoRetType    := toBuildInfo(BUILD_INFO_G);
 
    -- Timeout in clock cycles between acqStart and sendData
    constant DAQ_TIMEOUT_C   : slv(31 downto 0) := conv_std_logic_vector(12500,32); --100 us at 125 MHz
@@ -187,7 +189,7 @@ begin
    -- Indexing for the memory readout order is linked to the raw ADC channel
    -- (i.e., if the channel reads out an ASIC from upper half of carrier,
    --  read it backward, otherwise, read it forward)
-   G_EPIX100A_CARRIER : if (FpgaVersion(31 downto 24) = x"EA") generate
+   G_EPIX100A_CARRIER : if (BUILD_INFO_C.fwVersion(31 downto 24) = x"EA") generate
       channelOrder <= (0,3,1,2,8,11,9,10,6,4,5,7,14,12,13,15) when r.streamMode = '0' else
                       (15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0); 
       channelValid  <= (others => '1');
@@ -198,7 +200,7 @@ begin
       tpsData(2) <= r.adcData(16+2);
       tpsData(3) <= r.adcData(16+0);
    end generate;
-   G_EPIX100P_CARRIER : if (FpgaVersion(31 downto 24) = x"E0") generate
+   G_EPIX100P_CARRIER : if (BUILD_INFO_C.fwVersion(31 downto 24) = x"E0") generate
       channelOrder <= (4,5,6,7,8,9,10,11,3,2,1,0,15,14,13,12) when r.streamMode = '0' else
                       (15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0); 
       channelValid  <= (others => '1');
@@ -209,7 +211,7 @@ begin
       tpsData(2) <= r.adcData(16+2);
       tpsData(3) <= r.adcData(16+3);
    end generate;
-   G_EPIX10KP_CARRIER : if (FpgaVersion(31 downto 24) = x"E2") generate
+   G_EPIX10KP_CARRIER : if (BUILD_INFO_C.fwVersion(31 downto 24) = x"E2") generate
       channelOrder <= (4,5,6,7,8,9,10,11,3,2,1,0,15,14,13,12) when r.streamMode = '0' else
                       (15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0); 
       channelValid  <= (others => '1');
@@ -220,7 +222,7 @@ begin
       tpsData(2) <= r.adcData(16+2);
       tpsData(3) <= r.adcData(16+3);
    end generate;
-   G_EPIXS_CARRIER : if (FpgaVersion(31 downto 24) = x"E3") generate
+   G_EPIXS_CARRIER : if (BUILD_INFO_C.fwVersion(31 downto 24) = x"E3") generate
       channelOrder <= (4,5,6,7,8,9,10,11,3,2,1,0,15,14,13,12) when r.streamMode = '0' else
                       (15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0); 
       channelValid  <= "1000100000010001";
@@ -629,7 +631,7 @@ begin
 
          delay := conv_integer(epixConfig.doutPipelineDelay(6 downto 0));
          for n in 0 to 3 loop
-            if FpgaVersion(31 downto 24) = x"E2" then
+            if BUILD_INFO_C.fwVersion(31 downto 24) = x"E2" then
                asicDoutDelayed(n) <= asicDoutPipeline(n)( delay );
             else
                asicDoutDelayed(n) <= '0';

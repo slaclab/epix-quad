@@ -250,7 +250,7 @@ begin
 
    fsm_cmb_p: process (
       state, acqStartSys, frameAckSync, headerAckSync, frameErrSync, delayCnt, rdoutCnt,
-      readouts, runToR0, r0ToStart, startToTpulse, tpulseToAcq, saciReadoutAck, epixConfig
+      readouts, runToR0, r0ToStart, startToTpulse, tpulseToAcq, saciReadoutAck, epixConfig, tixelConfig
    ) 
    begin
       next_state <= state;

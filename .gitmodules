@@ -1,9 +1,9 @@
 [submodule "firmware/modules/surf"]
-	path = firmware/modules/surf
+	path = firmware/submodules/surf
 	url = git@github.com:slaclab/surf
 	branch = master
 [submodule "firmware/modules/ruckus"]
-	path = firmware/modules/ruckus
+	path = firmware/submodules/ruckus
 	url = git@github.com:slaclab/ruckus
 	branch = master
 [submodule "software/rogue"]

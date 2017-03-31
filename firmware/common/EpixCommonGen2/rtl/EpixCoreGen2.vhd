@@ -35,7 +35,6 @@ use work.SsiPkg.all;
 use work.SsiCmdMasterPkg.all;
 use work.Pgp2bPkg.all;
 use work.Ad9249Pkg.all;
-use work.Version.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -43,10 +42,11 @@ use unisim.vcomponents.all;
 entity EpixCoreGen2 is
    generic (
       TPD_G       : time := 1 ns;
+      FPGA_BASE_CLOCK_G : slv(31 downto 0);
+      BUILD_INFO_G  : BuildInfoType;
       ADC0_INVERT_CH    : slv(7 downto 0) := "00000000";
       ADC1_INVERT_CH    : slv(7 downto 0) := "00000000";
       ADC2_INVERT_CH    : slv(7 downto 0) := "00000000";
-      BUILD_INFO_G      : BuildInfoType;
       IODELAY_GROUP_G   : string          := "DEFAULT_GROUP"
    );
    port (
@@ -541,6 +541,8 @@ begin
    U_RegControl : entity work.RegControl
    generic map (
       TPD_G                => TPD_G,
+      FPGA_BASE_CLOCK_G    => FPGA_BASE_CLOCK_G,
+      BUILD_INFO_G         => BUILD_INFO_G,
       CLK_PERIOD_G         => 10.0e-9
    )
    port map (
@@ -658,6 +660,7 @@ begin
    U_ReadoutControl : entity work.ReadoutControl
    generic map (
      TPD_G                      => TPD_G,
+     BUILD_INFO_G               => BUILD_INFO_G,
      MASTER_AXI_STREAM_CONFIG_G => ssiAxiStreamConfig(4, TKEEP_COMP_C)
    )
    port map (
@@ -1000,7 +1003,7 @@ begin
    U_AxiVersion : entity work.AxiVersion
    generic map (
       TPD_G           => TPD_G,
-      BUILD_INFO_G     => BUILD_INFO_G,
+      BUILD_INFO_G    => BUILD_INFO_G,
       EN_DEVICE_DNA_G => false)   
    port map (
       fpgaReload     => fpgaReload,

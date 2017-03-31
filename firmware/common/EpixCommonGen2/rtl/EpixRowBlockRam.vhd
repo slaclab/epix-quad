@@ -33,8 +33,11 @@ library UNISIM;
 use UNISIM.vcomponents.all;
 
 entity EpixRowBlockRam is
+   generic (
+      TPD_G : time := 1 ns;
+      BUILD_INFO_G  : BuildInfoType
+   );
    port (
-
       -- Clocks and reset
       sysClk              : in    std_logic;
       sysClkRst           : in    std_logic;
@@ -61,6 +64,9 @@ end EpixRowBlockRam;
 
 -- Define architecture
 architecture EpixRowBlockRam of EpixRowBlockRam is
+
+   constant BUILD_INFO_C : BuildInfoRetType := toBuildInfo(BUILD_INFO_G);
+   constant NCOL_C       : integer          := getNumColumns(BUILD_INFO_C.fwVersion);
 
    signal iRdEn    : std_logic;
    signal iRdInc   : std_logic;

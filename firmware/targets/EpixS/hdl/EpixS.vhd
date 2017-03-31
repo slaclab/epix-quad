@@ -36,7 +36,9 @@ use unisim.vcomponents.all;
 
 entity EpixS is
    generic (
-      TPD_G : time := 1 ns
+      TPD_G : time := 1 ns;
+      FPGA_BASE_CLOCK_G : slv(31 downto 0) := x"00" & x"100000"; 
+      BUILD_INFO_G  : BuildInfoType
    );
    port (
       -- Debugging IOs
@@ -178,7 +180,9 @@ begin
    ---------------------------
    U_EpixCore : entity work.EpixCoreGen2
       generic map (
-         TPD_G => TPD_G
+         TPD_G => TPD_G,
+         FPGA_BASE_CLOCK_G => FPGA_BASE_CLOCK_G,
+         BUILD_INFO_G => BUILD_INFO_G
       )
       port map (
          -- Debugging IOs

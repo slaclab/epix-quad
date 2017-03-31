@@ -31,7 +31,6 @@ use work.AxiStreamPkg.all;
 
 use work.EpixPkgGen2.all;
 use work.ScopeTypes.all;
-use work.Version.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -39,6 +38,8 @@ use unisim.vcomponents.all;
 entity RegControl is
    generic (
       TPD_G            : time            := 1 ns;
+      FPGA_BASE_CLOCK_G    : slv(31 downto 0);
+      BUILD_INFO_G  : BuildInfoType;
       EN_DEVICE_DNA_G  : boolean         := true;
       HARD_RESET_G     : boolean         := true;
       EN_MICROBLAZE_G  : boolean         := true;
@@ -71,6 +72,8 @@ entity RegControl is
 end RegControl;
 
 architecture rtl of RegControl is
+
+   constant BUILD_INFO_C       : BuildInfoRetType    := toBuildInfo(BUILD_INFO_G);
    
    type RegType is record
       usrRst         : sl;
@@ -167,7 +170,7 @@ begin
       end if;
 
       -- Map out standard registers    
-      axiSlaveRegisterR(regCon, x"000" & "00",  0, FPGA_VERSION_C); -- Need a reset strobe
+      axiSlaveRegisterR(regCon, x"000" & "00",  0, BUILD_INFO_C.fwVersion); -- Need a reset strobe
       axiSlaveRegister (regCon, x"001" & "00",  0, v.epixRegOut.runTriggerEnable);
       axiSlaveRegister (regCon, x"002" & "00",  0, v.epixRegOut.runTriggerDelay);
       axiSlaveRegister (regCon, x"003" & "00",  0, v.epixRegOut.daqTriggerEnable);
@@ -180,7 +183,7 @@ begin
       axiSlaveRegisterR(regCon, x"00B" & "00",  0, epixStatus.seqCount);
       axiSlaveRegister (regCon, x"00C" & "00",  0, v.epixRegOut.seqCountReset);
       axiSlaveRegister (regCon, x"00D" & "00",  0, v.epixRegOut.asicMask);
-      axiSlaveRegisterR(regCon, x"010" & "00",  0, FPGA_BASE_CLOCK_C);
+      axiSlaveRegisterR(regCon, x"010" & "00",  0, FPGA_BASE_CLOCK_G);
       axiSlaveRegister (regCon, x"011" & "00",  0, v.epixRegOut.autoRunEn);
       axiSlaveRegister (regCon, x"012" & "00",  0, v.epixRegOut.autoTrigPeriod);
       axiSlaveRegister (regCon, x"013" & "00",  0, v.epixRegOut.autoDaqEn);

@@ -42,7 +42,9 @@ use unisim.vcomponents.all;
 
 entity CpixP is
    generic (
-      TPD_G : time := 1 ns
+      TPD_G : time := 1 ns;
+      FPGA_BASE_CLOCK_G : slv(31 downto 0) := x"00" & x"100000"; 
+      BUILD_INFO_G  : BuildInfoType
    );
    port (
       -- Debugging IOs
@@ -131,6 +133,7 @@ architecture RTL of CpixP is
 
    signal iLed          : slv(3 downto 0);
    signal iFpgaOutputEn : sl;
+   signal iFpgaOutputEnL : sl;
    signal iLedEn        : sl;
    
    -- Internal versions of signals so that we don't
@@ -186,6 +189,8 @@ begin
    U_CpixCore : entity work.CpixCore
       generic map (
          TPD_G => TPD_G,
+         FPGA_BASE_CLOCK_G => FPGA_BASE_CLOCK_G,
+         BUILD_INFO_G => BUILD_INFO_G,
          -- Polarity of selected LVDS data lanes is swapped on gen2 ADC board
          ADC1_INVERT_CH    => "10000000",
          ADC2_INVERT_CH    => "00000010"
@@ -321,8 +326,9 @@ begin
    adcPdwnMon    <= iAdcPdwn(2)   when iFpgaOutputEn = '1' else '0';
    
    -- ASIC control signals (differential)
+   iFpgaOutputEnL <= not(iFpgaOutputEn);
    G_ROCLK : for i in 0 to 1 generate
-      U_ASIC_ROCLK_OBUFTDS : OBUFTDS port map ( I => iAsicRoClk(i), T => not(iFpgaOutputEn), O => asicRoClkP(i), OB => asicRoClkM(i) );
+      U_ASIC_ROCLK_OBUFTDS : OBUFTDS port map ( I => iAsicRoClk(i), T => iFpgaOutputEnL, O => asicRoClkP(i), OB => asicRoClkM(i) );
    end generate;
    -- ASIC control signals (single ended)
    asicR0         <= iAsicR0      when iFpgaOutputEn = '1' else 'Z';

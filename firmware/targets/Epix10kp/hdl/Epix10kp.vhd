@@ -36,7 +36,9 @@ use unisim.vcomponents.all;
 
 entity Epix10kp is
    generic (
-      TPD_G : time := 1 ns
+      TPD_G : time := 1 ns;
+      FPGA_BASE_CLOCK_G : slv(31 downto 0) := x"00" & x"100000"; 
+      BUILD_INFO_G  : BuildInfoType
    );
    port (
       -- Debugging IOs
@@ -145,7 +147,7 @@ architecture top_level of Epix10kp is
    signal iSaciClk  : sl;
    signal iSaciSelL : slv(3 downto 0);
    signal iSaciCmd  : sl;
-   signal iSaciRsp  : slv(3 downto 0);
+   signal iSaciRsp  : sl;
    
    signal iAdcSpiDataOut : sl;
    signal iAdcSpiDataIn   : sl;
@@ -186,6 +188,8 @@ begin
    U_EpixCore : entity work.EpixCoreGen2
       generic map (
          TPD_G => TPD_G,
+         FPGA_BASE_CLOCK_G => FPGA_BASE_CLOCK_G,
+         BUILD_INFO_G => BUILD_INFO_G,
          -- Polarity of selected LVDS data lanes is swapped on gen2 ADC board
          ADC1_INVERT_CH    => "10000000",
          ADC2_INVERT_CH    => "00000010"
@@ -300,8 +304,12 @@ begin
    asicSaciClk    <= iSaciClk when iFpgaOutputEn = '1' else 'Z';
    G_SACISEL : for i in 0 to 3 generate
       asicSaciSel(i) <= iSaciSelL(i) when iFpgaOutputEn = '1' else 'Z';
-      iSaciRsp(i)    <= asicSaciRsp(i);
    end generate;
+   iSaciRsp <= 
+      asicSaciRsp(0) when iSaciSelL = "1110" else
+      asicSaciRsp(1) when iSaciSelL = "1101" else
+      asicSaciRsp(2) when iSaciSelL = "1011" else
+      asicSaciRsp(3);   
 
    -- Fast ADC Configuration
    adcSpiClk     <= iAdcSpiClk when iFpgaOutputEn = '1' else 'Z';

@@ -40,7 +40,6 @@ use work.SaciMasterPkg.all;
 
 use work.EpixPkgGen2.all;
 use work.ScopeTypes.all;
-use work.Version.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -48,6 +47,8 @@ use unisim.vcomponents.all;
 entity RegControlGen2 is
    generic (
       TPD_G                : time                  := 1 ns;
+      FPGA_BASE_CLOCK_G    : slv(31 downto 0);
+      BUILD_INFO_G         : BuildInfoType;
       NUM_ASICS_G          : natural range 1 to 8  := 4;
       CLK_PERIOD_G         : real := 10.0e-9
    );
@@ -86,6 +87,10 @@ entity RegControlGen2 is
 end RegControlGen2;
 
 architecture rtl of RegControlGen2 is
+
+   constant BUILD_INFO_C : BuildInfoRetType := toBuildInfo(BUILD_INFO_G);
+   constant NCOL_C       : integer          := getNumColumns(BUILD_INFO_C.fwVersion);
+   constant WORDS_PER_SUPER_ROW_C  : integer := getWordsPerSuperRow(BUILD_INFO_C.fwVersion);
 
    type SaciState is (SACI_IDLE_S, SACI_REG_S, SACI_PAUSE_S, SACI_CMD_S, 
                       SACI_PIXEL_ROW_S, SACI_PIXEL_ROW_PAUSE_S, 
@@ -160,6 +165,7 @@ architecture rtl of RegControlGen2 is
    
    signal idValues : Slv64Array(2 downto 0);
    signal idValids : slv(2 downto 0);
+   signal dnaValue : slv(63 downto 0);
    
    signal iSaciSelL       : slv(NUM_ASICS_G-1 downto 0);
    signal iSaciRsp        : sl;
@@ -172,16 +178,19 @@ architecture rtl of RegControlGen2 is
    
    signal chipIdRst          : sl;
    
+   signal version : slv(31 downto 0);
+   
 begin
 
    axiReset <= sysRst or r.usrRst;
    axiRst   <= axiReset;
+   version  <= BUILD_INFO_C.fwVersion;
 
    -------------------------------
    -- Configuration Register
    -------------------------------  
    comb : process (axiReadMaster, axiReset, axiWriteMaster, r, saciReadoutReq, iSaciSelOut,
-                   ePixStatus, idValids, idValues, monEnAxisMaster) is
+                   ePixStatus, idValids, idValues, monEnAxisMaster, version) is
       variable v            : RegType;
       variable axiStatus    : AxiLiteStatusType;
 
@@ -215,7 +224,7 @@ begin
    begin
       -- Latch the current value
       v := r;
-
+      
       -- Reset strobe signals
       v.epixRegOut.acqCountReset := '0';
       v.epixRegOut.seqCountReset := '0';
@@ -249,7 +258,7 @@ begin
       axiSlaveWaitTxn(axiWriteMaster, axiReadMaster, v.axiWriteSlave, v.axiReadSlave, axiStatus);
 
       -- Map out standard registers
-      axiSlaveRegisterR(x"000000" & "00",  0, FPGA_VERSION_C); -- Need a reset strobe
+      axiSlaveRegisterR(x"000000" & "00",  0, BUILD_INFO_C.fwVersion); -- Need a reset strobe
       axiSlaveRegisterW(x"000001" & "00",  0, v.epixRegOut.runTriggerEnable);
       axiSlaveRegisterW(x"000002" & "00",  0, v.epixRegOut.runTriggerDelay);
       axiSlaveRegisterW(x"000003" & "00",  0, v.epixRegOut.daqTriggerEnable);
@@ -262,7 +271,7 @@ begin
       axiSlaveRegisterR(x"00000B" & "00",  0, epixStatus.seqCount);
       axiSlaveRegisterW(x"00000C" & "00",  0, v.epixRegOut.seqCountReset);
       axiSlaveRegisterW(x"00000D" & "00",  0, v.epixRegOut.asicMask);
-      axiSlaveRegisterR(x"000010" & "00",  0, FPGA_BASE_CLOCK_C);
+      axiSlaveRegisterR(x"000010" & "00",  0, FPGA_BASE_CLOCK_G);
       axiSlaveRegisterW(x"000011" & "00",  0, v.epixRegOut.autoRunEn);
       axiSlaveRegisterW(x"000012" & "00",  0, v.epixRegOut.autoTrigPeriod);
       axiSlaveRegisterW(x"000013" & "00",  0, v.epixRegOut.autoDaqEn);
@@ -422,7 +431,7 @@ begin
                   
                -- If we see a multi-pixel write request, handle it
                elsif (r.globalMultiPix.req = '1') then
-                  globalToLocalPixel(FPGA_VERSION_C(31 downto 24),
+                  globalToLocalPixel(version,
                                      r.globalMultiPix.row,
                                      r.globalMultiPix.col,
                                      r.globalMultiPix.calRowFlag,
@@ -680,9 +689,11 @@ begin
       port map (
          clk      => axiClk,
          rst      => axiReset,
-         dnaValue => idValues(0),
+         dnaValue => dnaValue,
          dnaValid => idValids(0)
       );
+      
+   idValues(0) <= dnaValue(63 downto 0);
       
    G_DS2411 : for i in 0 to 1 generate
       U_DS2411_N : entity work.DS2411Core
@@ -694,7 +705,7 @@ begin
             clk       => axiClk,
             rst       => chipIdRst,
             fdSerSdio => serialIdIo(i),
-            fdSerial  => idValues(i+1),
+            fdValue   => idValues(i+1),
             fdValid   => idValids(i+1)
          );
    end generate;

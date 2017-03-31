@@ -1,3 +1,0 @@
-vhdl work tb/TB_SlowAdcCntrl.vhd
-vhdl work tb/TB_RegControlGen2.vhd
-vhdl work tb/TB_Ad9249ConfigNoPullup.vhd
