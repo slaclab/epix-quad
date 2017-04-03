@@ -136,14 +136,14 @@ class Window(QtGui.QMainWindow, QObject):
         hSubbox1 = QHBoxLayout()
         hSubbox1.addWidget(self.gridVbox2)
         # line plot 1
-        self.lineCanvas1 = MplCanvas()        
+        self.lineCanvasHoriz = MplCanvas()        
         hSubbox2 = QHBoxLayout()
-        hSubbox2.addWidget(self.lineCanvas1)
+        hSubbox2.addWidget(self.lineCanvasHoriz)
         
         # line plot 2
-        self.lineCanvas2 = MplCanvas()        
+        self.lineCanvasVert = MplCanvas()        
         hSubbox3 = QHBoxLayout()
-        hSubbox3.addWidget(self.lineCanvas2)
+        hSubbox3.addWidget(self.lineCanvasVert)
 
         # right hand side layout
         vbox2 = QVBoxLayout()
@@ -277,8 +277,60 @@ class Window(QtGui.QMainWindow, QObject):
         time.sleep(self.readFileDelay)
         thisString = 'Frame {} of {}'.format(self.eventReader.frameIndex, self.eventReader.numAcceptedFrames)
         print(thisString)
+        self.postImageDisplayProcessing()
         #self.labelFrameNum.setText(thisString)
 
+    # Evaluates which post display algorithms are needed if any
+    def postImageDisplayProcessing(self):
+        print('Post image display processing')
+        #check horizontal line display
+        if (self.cbHorizontalLineEnabled.isChecked()):
+            self.updateHorizontalLinePlot()
+        #check vertical line display
+        if (self.cbVerticalLineEnabled.isChecked()):
+            self.updateVerticalLinePlot()
+    
+    def updateHorizontalLinePlot(self):
+        print('Horizontal plot processing')
+        size    = self.label.size()
+        imageH  = self.image.height()
+        imageW  = self.image.width()
+        pixmapH = self.label.height()
+        pixmapW = self.label.width()
+
+        #validate coordintes
+#        if ((self.mouseX > 0)and(self.mouseX<imageW)):
+#            if ((self.mouseY > 0)and(self.mouseY < imageH)):
+#                x = int(self.mouseX * pixmapW / imageW)
+#                y = int(self.mouseY * pixmapH / imageH)
+        #full line plot
+        if (self.imgTool.imgDark_isSet):
+            #self.ImgDarkSub        
+            self.lineCanvasHoriz.update_figure(self.ImgDarkSub[self.mouseY,:])
+        else:
+            #self.imgDesc
+            self.lineCanvasHoriz.update_figure(self.imgDesc[self.mouseY,:])
+
+    def updateVerticalLinePlot(self):
+        print('Horizontal plot processing')
+        size    = self.label.size()
+        imageH  = self.image.height()
+        imageW  = self.image.width()
+        pixmapH = self.label.height()
+        pixmapW = self.label.width()
+
+        #validate coordintes
+#        if ((self.mouseX > 0)and(self.mouseX<imageW)):
+#            if ((self.mouseY > 0)and(self.mouseY < imageH)):
+#                x = int(self.mouseX * pixmapW / imageW)
+#                y = int(self.mouseY * pixmapH / imageH)
+        #full line plot
+        if (self.imgTool.imgDark_isSet):
+            #self.ImgDarkSub        
+            self.lineCanvasVert.update_figure(self.ImgDarkSub[:,self.mouseX])
+        else:
+            #self.imgDesc
+            self.lineCanvasVert.update_figure(self.imgDesc[:,self.mouseX])
 
     def _paintEvent(self, e):
         qp = QtGui.QPainter()
@@ -422,9 +474,15 @@ class MplCanvas(FigureCanvas):
 
     def update_figure(self):
         # Build a list of 4 random integers between 0 and 10 (both inclusive)
-        l = [random.randint(0, 10) for i in range(4)]
+        l = [-1, -2, 10, 14] #[random.randint(0, 10) for i in range(4)]
         self.axes.cla()
         self.axes.plot([0, 1, 2, 3], l, 'r')
+        self.draw()
+    def update_figure(self, data):
+        # Build a list of 4 random integers between 0 and 10 (both inclusive)
+        l = data #[random.randint(0, 10) for i in range(4)]
+        self.axes.cla()
+        self.axes.plot(l, 'r')
         self.draw()
 
 ################################################################################
@@ -465,14 +523,14 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         # mouse buttons
         mouseLabel = QtGui.QLabel("Pixel Information")
         myParent.mouseXLine = QtGui.QLineEdit()
-        myParent.mouseXLine.setMaximumWidth(100)
-        myParent.mouseXLine.setMinimumWidth(50)
+        myParent.mouseXLine.setMaximumWidth(150)
+        myParent.mouseXLine.setMinimumWidth(100)
         myParent.mouseYLine = QtGui.QLineEdit()
-        myParent.mouseYLine.setMaximumWidth(100)
-        myParent.mouseYLine.setMinimumWidth(50)
+        myParent.mouseYLine.setMaximumWidth(150)
+        myParent.mouseYLine.setMinimumWidth(100)
         myParent.mouseValueLine = QtGui.QLineEdit()
-        myParent.mouseValueLine.setMaximumWidth(100)
-        myParent.mouseValueLine.setMinimumWidth(50)
+        myParent.mouseValueLine.setMaximumWidth(150)
+        myParent.mouseValueLine.setMinimumWidth(100)
         # label
         imageScaleLabel = QtGui.QLabel("Contrast (max, min)")
         myParent.imageScaleMaxLine = QtGui.QLineEdit()
@@ -483,6 +541,9 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         myParent.imageScaleMinLine.setMaximumWidth(100)
         myParent.imageScaleMinLine.setMinimumWidth(50)
         myParent.imageScaleMinLine.setText(str(-1))
+        # check boxes
+        myParent.cbHorizontalLineEnabled = QtGui.QCheckBox('Plot Horizontal Line')
+        myParent.cbVerticalLineEnabled = QtGui.QCheckBox('Plot Vertical Line')
 
         # set layout to tab 1
         tab1Frame = QtGui.QFrame()
@@ -491,7 +552,7 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         tab1Frame.setLineWidth(1);
         grid = QtGui.QGridLayout()
         grid.setSpacing(5)
-        grid.addWidget(tab1Frame,0,0,5,7)
+        grid.addWidget(tab1Frame,0,0,7,7)
 
         # add widgets to tab1
         grid.addWidget(btnSetDark, 1, 2)
@@ -504,6 +565,8 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         grid.addWidget(imageScaleLabel, 3, 1)
         grid.addWidget(myParent.imageScaleMaxLine, 3, 2)
         grid.addWidget(myParent.imageScaleMinLine,3, 3)
+        grid.addWidget(myParent.cbHorizontalLineEnabled,4, 1)
+        grid.addWidget(myParent.cbVerticalLineEnabled,5, 1)
 
         # complete tab1
         tab1.setLayout(grid)
@@ -548,7 +611,7 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
  
         # Add tabs
         self.addTab(tab1,"Main")
-        self.addTab(tab2,"Tab2")
+        self.addTab(tab2,"File controls")
 
         self.setGeometry(300, 300, 300, 150)
         self.setWindowTitle('')    
