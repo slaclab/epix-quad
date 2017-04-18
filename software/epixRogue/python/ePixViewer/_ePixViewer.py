@@ -136,14 +136,14 @@ class Window(QtGui.QMainWindow, QObject):
         hSubbox1 = QHBoxLayout()
         hSubbox1.addWidget(self.gridVbox2)
         # line plot 1
-        self.lineCanvasHoriz = MplCanvas()        
+        self.lineDisplay1 = MplCanvas(MyTitle = "Line Display 1")        
         hSubbox2 = QHBoxLayout()
-        hSubbox2.addWidget(self.lineCanvasHoriz)
+        hSubbox2.addWidget(self.lineDisplay1)
         
         # line plot 2
-        self.lineCanvasVert = MplCanvas()        
+        self.lineDisplay2 = MplCanvas(MyTitle = "Line Display 2")        
         hSubbox3 = QHBoxLayout()
-        hSubbox3.addWidget(self.lineCanvasVert)
+        hSubbox3.addWidget(self.lineDisplay2)
 
         # right hand side layout
         vbox2 = QVBoxLayout()
@@ -284,11 +284,11 @@ class Window(QtGui.QMainWindow, QObject):
     def postImageDisplayProcessing(self):
         print('Post image display processing')
         #check horizontal line display
-        if (self.cbHorizontalLineEnabled.isChecked()):
+        if ((self.cbHorizontalLineEnabled.isChecked()) or (self.cbVerticalLineEnabled.isChecked())):
             self.updateHorizontalLinePlot()
         #check vertical line display
-        if (self.cbVerticalLineEnabled.isChecked()):
-            self.updateVerticalLinePlot()
+        #if (self.cbVerticalLineEnabled.isChecked()):
+        #    self.updateVerticalLinePlot()
     
     def updateHorizontalLinePlot(self):
         print('Horizontal plot processing')
@@ -306,10 +306,12 @@ class Window(QtGui.QMainWindow, QObject):
         #full line plot
         if (self.imgTool.imgDark_isSet):
             #self.ImgDarkSub        
-            self.lineCanvasHoriz.update_figure(self.ImgDarkSub[self.mouseY,:])
+            self.lineDisplay1.update_figure(self.cbHorizontalLineEnabled.isChecked(), "Horizontal", 'r', self.ImgDarkSub[self.mouseY,:], 
+                                            self.cbVerticalLineEnabled.isChecked(),   "Vertical",   'b', self.ImgDarkSub[:,self.mouseX])
         else:
             #self.imgDesc
-            self.lineCanvasHoriz.update_figure(self.imgDesc[self.mouseY,:])
+            self.lineDisplay1.update_figure(self.cbHorizontalLineEnabled.isChecked(), "Horizontal", 'r', self.imgDesc[self.mouseY,:], 
+                                            self.cbVerticalLineEnabled.isChecked(),   "Vertical",   'b', self.imgDesc[:,self.mouseX])
 
     def updateVerticalLinePlot(self):
         print('Horizontal plot processing')
@@ -327,10 +329,10 @@ class Window(QtGui.QMainWindow, QObject):
         #full line plot
         if (self.imgTool.imgDark_isSet):
             #self.ImgDarkSub        
-            self.lineCanvasVert.update_figure(self.ImgDarkSub[:,self.mouseX])
+            self.lineDisplay2.update_figure("name", self.ImgDarkSub[:,self.mouseX])
         else:
             #self.imgDesc
-            self.lineCanvasVert.update_figure(self.imgDesc[:,self.mouseX])
+            self.lineDisplay2.update_figure("name", self.imgDesc[:,self.mouseX])
 
     def _paintEvent(self, e):
         qp = QtGui.QPainter()
@@ -456,7 +458,7 @@ class MplCanvas(FigureCanvas):
     """This is a QWidget derived from FigureCanvasAgg."""
 
 
-    def __init__(self, parent=None, width=5, height=4, dpi=100):
+    def __init__(self, parent=None, width=5, height=4, dpi=100, MyTitle=""):
 
         fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = fig.add_subplot(111)
@@ -467,6 +469,8 @@ class MplCanvas(FigureCanvas):
         self.setParent(parent)
         FigureCanvas.setSizePolicy(self, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
         FigureCanvas.updateGeometry(self)
+        self.MyTitle = MyTitle
+        self.axes.set_title(self.MyTitle)
         
 
     def compute_initial_figure(self):
@@ -475,14 +479,36 @@ class MplCanvas(FigureCanvas):
     def update_figure(self):
         # Build a list of 4 random integers between 0 and 10 (both inclusive)
         l = [-1, -2, 10, 14] #[random.randint(0, 10) for i in range(4)]
-        self.axes.cla()
+        #self.axes.cla()
         self.axes.plot([0, 1, 2, 3], l, 'r')
         self.draw()
-    def update_figure(self, data):
-        # Build a list of 4 random integers between 0 and 10 (both inclusive)
-        l = data #[random.randint(0, 10) for i in range(4)]
+#    def update_figure(self, data):
+#        # Build a list of 4 random integers between 0 and 10 (both inclusive)
+#        l = data #[random.randint(0, 10) for i in range(4)]
+#        self.axes.cla()
+#        self.axes.plot(l, 'r')
+#        self.draw()
+    # ther arguments are expected in the following seguence
+    #enabled, name, color, array of data
+    def update_figure(self, *args):
+        argIndex = 0
+        lineName = ""
         self.axes.cla()
-        self.axes.plot(l, 'r')
+        for arg in args:
+            if (argIndex == 0):
+                lineEnabled = arg
+            if (argIndex == 1):
+                lineName = arg
+            if (argIndex == 2):
+                lineColor = arg
+            if (argIndex == 3):
+                print(lineName)
+                if (lineEnabled):
+                    l = arg #[random.randint(0, 10) for i in range(4)]
+                    self.axes.plot(l, lineColor)
+                argIndex = -1
+            argIndex = argIndex + 1    
+        self.axes.set_title(self.MyTitle)        
         self.draw()
 
 ################################################################################
@@ -501,8 +527,12 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         # Create tabs
         tab1	= QtGui.QWidget()	
         tab2	= QtGui.QWidget()
+        tab3    = QtGui.QWidget()
+        tab4    = QtGui.QWidget()
 
+        ######################################################      
         # create widgets for tab 1
+        ######################################################
         # label used to display frame number
         self.labelFrameNum = QtGui.QLabel('')
         # button set dark
@@ -541,9 +571,7 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         myParent.imageScaleMinLine.setMaximumWidth(100)
         myParent.imageScaleMinLine.setMinimumWidth(50)
         myParent.imageScaleMinLine.setText(str(-1))
-        # check boxes
-        myParent.cbHorizontalLineEnabled = QtGui.QCheckBox('Plot Horizontal Line')
-        myParent.cbVerticalLineEnabled = QtGui.QCheckBox('Plot Vertical Line')
+        
 
         # set layout to tab 1
         tab1Frame = QtGui.QFrame()
@@ -565,13 +593,14 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         grid.addWidget(imageScaleLabel, 3, 1)
         grid.addWidget(myParent.imageScaleMaxLine, 3, 2)
         grid.addWidget(myParent.imageScaleMinLine,3, 3)
-        grid.addWidget(myParent.cbHorizontalLineEnabled,4, 1)
-        grid.addWidget(myParent.cbVerticalLineEnabled,5, 1)
+        
 
         # complete tab1
         tab1.setLayout(grid)
 
+        ######################################################      
         # create widgets for tab 2
+        ######################################################      
         # button prev
         btnPrevFrame = QtGui.QPushButton("Prev")
         btnPrevFrame.setMaximumWidth(150)
@@ -608,10 +637,102 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
 
         # complete tab2
         tab2.setLayout(grid2)
+
+        
+        ######################################################      
+        # create widgets for tab 3
+        ######################################################      
+
+        # check boxes
+        myParent.cbHorizontalLineEnabled = QtGui.QCheckBox('Plot Horizontal Line')
+        myParent.cbVerticalLineEnabled = QtGui.QCheckBox('Plot Vertical Line')
+
+        # set layout to tab 3
+        tab3Frame1 = QtGui.QFrame()
+        tab3Frame1.setFrameStyle(QtGui.QFrame.Panel);
+        tab3Frame1.setGeometry(100, 200, 0, 0)
+        tab3Frame1.setLineWidth(1);
+        
+        # add widgets into tab2
+        grid3 = QtGui.QGridLayout()
+        grid3.setSpacing(5)
+        grid3.setColumnMinimumWidth(0, 1)
+        grid3.setColumnMinimumWidth(2, 1)
+        grid3.setColumnMinimumWidth(3, 1)
+        grid3.setColumnMinimumWidth(5, 1)
+        grid3.addWidget(tab3Frame1,0,0,5,7)
+        grid3.addWidget(myParent.cbHorizontalLineEnabled,1, 1)
+        grid3.addWidget(myParent.cbVerticalLineEnabled,2, 1)
+
+        # complete tab3
+        tab3.setLayout(grid3)
  
+        ######################################################      
+        # create widgets for tab 4
+        ######################################################      
+
+        # radio buttons
+        # http://www.tutorialspoint.com/pyqt/pyqt_qradiobutton_widget.htm
+        myParent.LinePlot2_RB1 = QRadioButton("Scope")
+        myParent.LinePlot2_RB1.setChecked(True)
+        #myParent.LinePlot2_RB1.toggled.connect(lambda:myParent.btnstate(myParent.myParent.LinePlot2_RB1))
+        #
+        myParent.LinePlot2_RB2 = QRadioButton("Env. Monitoring")
+        #myParent.LinePlot2_RB2.toggled.connect(lambda:myParent.btnstate(myParent.myParent.LinePlot2_RB2))
+
+        # check boxes
+        myParent.cbScopeCh0 = QtGui.QCheckBox('Channel 0')
+        myParent.cbScopeCh1 = QtGui.QCheckBox('Channel 1')
+        #        
+        myParent.cbEnvMonCh0 = QtGui.QCheckBox('Channel 0')
+        myParent.cbEnvMonCh1 = QtGui.QCheckBox('Channel 1')
+        myParent.cbEnvMonCh2 = QtGui.QCheckBox('Channel 2')
+        myParent.cbEnvMonCh3 = QtGui.QCheckBox('Channel 3')
+        myParent.cbEnvMonCh4 = QtGui.QCheckBox('Channel 4')
+        myParent.cbEnvMonCh5 = QtGui.QCheckBox('Channel 5')
+        myParent.cbEnvMonCh6 = QtGui.QCheckBox('Channel 6')
+        myParent.cbEnvMonCh7 = QtGui.QCheckBox('Channel 7')
+
+
+        # set layout to tab 3
+        tab4Frame1 = QtGui.QFrame()
+        tab4Frame1.setFrameStyle(QtGui.QFrame.Panel);
+        tab4Frame1.setGeometry(100, 200, 0, 0)
+        tab4Frame1.setLineWidth(1);
+        
+        # add widgets into tab2
+        grid4 = QtGui.QGridLayout()
+        grid4.setSpacing(5)
+        grid4.setColumnMinimumWidth(0, 1)
+        grid4.setColumnMinimumWidth(2, 1)
+        grid4.setColumnMinimumWidth(3, 1)
+        grid4.setColumnMinimumWidth(5, 1)
+        grid4.addWidget(tab4Frame1,0,0,7,7)
+        grid4.addWidget(myParent.LinePlot2_RB1, 1, 1)
+        grid4.addWidget(myParent.cbScopeCh0, 2, 1)
+        grid4.addWidget(myParent.cbScopeCh1, 3, 1)  
+        grid4.addWidget(myParent.LinePlot2_RB2, 1, 3)
+        grid4.addWidget(myParent.cbEnvMonCh0, 2, 3)
+        grid4.addWidget(myParent.cbEnvMonCh1, 3, 3)  
+        grid4.addWidget(myParent.cbEnvMonCh2, 4, 3)  
+        grid4.addWidget(myParent.cbEnvMonCh3, 5, 3)  
+        grid4.addWidget(myParent.cbEnvMonCh4, 2, 4)  
+        grid4.addWidget(myParent.cbEnvMonCh5, 3, 4)  
+        grid4.addWidget(myParent.cbEnvMonCh6, 4, 4)  
+        grid4.addWidget(myParent.cbEnvMonCh7, 5, 4)  
+
+#        grid4.addWidget(btnPrevFrame, 1, 2)
+#        grid4.addWidget(myParent.frameNumberLine, 2, 1)
+
+        # complete tab4
+        tab4.setLayout(grid4)
+
+
         # Add tabs
         self.addTab(tab1,"Main")
         self.addTab(tab2,"File controls")
+        self.addTab(tab3,"Line Display 1")
+        self.addTab(tab4,"Line Display 2")
 
         self.setGeometry(300, 300, 300, 150)
         self.setWindowTitle('')    
