@@ -352,3 +352,212 @@ class Epix100aAsic(pr.Device):
         return func
 
 
+class TixelAsic(pr.Device):
+    def __init__(self, **kwargs):
+        """Create registers for Tixel ASIC"""
+        super().__init__(description='Tixel ASIC Configuration', **kwargs)
+        
+        addrSize = 4	
+        
+        # CMD = 0, Addr = 0  : Prepare for readout
+        self.add(pr.Command(name='CmdPrepForRead', description='ePix Prepare For Readout', 
+                             offset=0x00000000*addrSize, bitSize=1, bitOffset=0, function=pr.Command.touchZero, hidden=True))
+        
+        # CMD = 1, Addr = xxx - Register set
+        
+        self.add(pr.Variable(name='RowStart',      description='RowStart',       offset=0x00001001*addrSize, bitSize=8,  bitOffset=0,  base='uint',  mode='RW'))
+        self.add(pr.Variable(name='RowStop',       description='RowStop',        offset=0x00001002*addrSize, bitSize=8,  bitOffset=0,  base='uint',  mode='RW'))
+        self.add(pr.Variable(name='ColumnStart',   description='ColumnStart',    offset=0x00001003*addrSize, bitSize=8,  bitOffset=0,  base='uint',  mode='RW'))
+        self.add(pr.Variable(name='StartPixel',    description='StartPixel',     offset=0x00001004*addrSize, bitSize=16, bitOffset=0,  base='uint',  mode='RW'))
+        self.add((
+            pr.Variable(name='TpsDacGain',   description='Config5', offset=0x00001005*addrSize, bitSize=2, bitOffset=0,  base='uint', mode='RW'),
+            pr.Variable(name='TpsDac',       description='Config5', offset=0x00001005*addrSize, bitSize=6, bitOffset=2,  base='uint', mode='RW'),
+            pr.Variable(name='TpsGr',        description='Config5', offset=0x00001005*addrSize, bitSize=4, bitOffset=8,  base='uint', mode='RW'),
+            pr.Variable(name='TpsMux',       description='Config5', offset=0x00001005*addrSize, bitSize=4, bitOffset=12, base='uint', mode='RW')))
+        self.add((
+            pr.Variable(name='BiasTpsBuffer', description='Config6', offset=0x00001006*addrSize, bitSize=3, bitOffset=0,  base='uint', mode='RW'),
+            pr.Variable(name='BiasTps',       description='Config6', offset=0x00001006*addrSize, bitSize=3, bitOffset=3,  base='uint', mode='RW'),
+            pr.Variable(name='BiasTpsDac',    description='Config6', offset=0x00001006*addrSize, bitSize=3, bitOffset=6,  base='uint', mode='RW'),
+            pr.Variable(name='DacComparator', description='Config6', offset=0x00001006*addrSize, bitSize=6, bitOffset=10, base='uint', mode='RW')))
+        self.add((
+            pr.Variable(name='BiasComparator',     description='Config7', offset=0x00001007*addrSize, bitSize=3, bitOffset=0,  base='uint', mode='RW'),
+            pr.Variable(name='Preamp',             description='Config7', offset=0x00001007*addrSize, bitSize=3, bitOffset=3,  base='uint', mode='RW'),
+            pr.Variable(name='BiasDac',            description='Config7', offset=0x00001007*addrSize, bitSize=3, bitOffset=6,  base='uint', mode='RW'),
+            pr.Variable(name='BgrCtrlDacTps',      description='Config7', offset=0x00001007*addrSize, bitSize=2, bitOffset=9,  base='uint', mode='RW'),
+            pr.Variable(name='BgrCtrlDacComp',     description='Config7', offset=0x00001007*addrSize, bitSize=2, bitOffset=11, base='uint', mode='RW'),
+            pr.Variable(name='DacComparatorGain',  description='Config7', offset=0x00001007*addrSize, bitSize=2, bitOffset=13, base='uint', mode='RW')))
+        self.add((
+            pr.Variable(name='Ppbit',           description='Config8', offset=0x00001008*addrSize, bitSize=1, bitOffset=0,  base='bool', mode='RW'),
+            pr.Variable(name='TestBe',          description='Config8', offset=0x00001008*addrSize, bitSize=1, bitOffset=1,  base='bool', mode='RW'),
+            pr.Variable(name='DelExec',         description='Config8', offset=0x00001008*addrSize, bitSize=1, bitOffset=2,  base='bool', mode='RW'),
+            pr.Variable(name='DelCCKreg',       description='Config8', offset=0x00001008*addrSize, bitSize=1, bitOffset=3,  base='bool', mode='RW'),
+            pr.Variable(name='syncExten',       description='Config8', offset=0x00001008*addrSize, bitSize=1, bitOffset=4,  base='bool', mode='RW'),
+            pr.Variable(name='syncRoleSel',     description='Config8', offset=0x00001008*addrSize, bitSize=1, bitOffset=5,  base='bool', mode='RW'),
+            pr.Variable(name='hdrMode',         description='Config8', offset=0x00001008*addrSize, bitSize=1, bitOffset=6,  base='bool', mode='RW'),
+            pr.Variable(name='acqRowlastEn',    description='Config8', offset=0x00001008*addrSize, bitSize=1, bitOffset=7,  base='bool', mode='RW'),
+            pr.Variable(name='DM1en',           description='Config8', offset=0x00001008*addrSize, bitSize=1, bitOffset=8,  base='bool', mode='RW'),
+            pr.Variable(name='DM2en',           description='Config8', offset=0x00001008*addrSize, bitSize=1, bitOffset=9,  base='bool', mode='RW'),
+            pr.Variable(name='DigROdisable',    description='Config8', offset=0x00001008*addrSize, bitSize=1, bitOffset=10, base='bool', mode='RW')))
+        self.add((
+            pr.Variable(name='pllReset',        description='Config9', offset=0x00001009*addrSize, bitSize=1, bitOffset=0,  base='bool', mode='RW'),
+            pr.Variable(name='pllItune',        description='Config9', offset=0x00001009*addrSize, bitSize=3, bitOffset=1,  base='uint', mode='RW'),
+            pr.Variable(name='pllKvco',         description='Config9', offset=0x00001009*addrSize, bitSize=3, bitOffset=4,  base='uint', mode='RW'),
+            pr.Variable(name='pllFilter1',      description='Config9', offset=0x00001009*addrSize, bitSize=3, bitOffset=7,  base='uint', mode='RW'),
+            pr.Variable(name='pllFilter2',      description='Config9', offset=0x00001009*addrSize, bitSize=3, bitOffset=10, base='uint', mode='RW'),
+            pr.Variable(name='pllOutDivider',   description='Config9', offset=0x00001009*addrSize, bitSize=3, bitOffset=13, base='uint', mode='RW')))
+        self.add((
+            pr.Variable(name='pllROReset',      description='Config10', offset=0x0000100a*addrSize, bitSize=1, bitOffset=0,  base='bool', mode='RW'),
+            pr.Variable(name='pllROItune',      description='Config10', offset=0x0000100a*addrSize, bitSize=3, bitOffset=1,  base='uint', mode='RW'),
+            pr.Variable(name='pllROKvco',       description='Config10', offset=0x0000100a*addrSize, bitSize=3, bitOffset=4,  base='uint', mode='RW'),
+            pr.Variable(name='pllROFilter1',    description='Config10', offset=0x0000100a*addrSize, bitSize=3, bitOffset=7,  base='uint', mode='RW'),
+            pr.Variable(name='pllROFilter2',    description='Config10', offset=0x0000100a*addrSize, bitSize=3, bitOffset=10, base='uint', mode='RW'),
+            pr.Variable(name='pllROOutDivider', description='Config10', offset=0x0000100a*addrSize, bitSize=3, bitOffset=13, base='uint', mode='RW')))
+        self.add((
+            pr.Variable(name='dllGlobalCalib',     description='Config11', offset=0x0000100b*addrSize, bitSize=3, bitOffset=0,  base='uint', mode='RW'),
+            pr.Variable(name='dllCalibrationRang', description='Config11', offset=0x0000100b*addrSize, bitSize=3, bitOffset=3,  base='uint', mode='RW'),
+            pr.Variable(name='DllCpBias',          description='Config11', offset=0x0000100b*addrSize, bitSize=3, bitOffset=6,  base='uint', mode='RW'),
+            pr.Variable(name='DllAlockRen',        description='Config11', offset=0x0000100b*addrSize, bitSize=1, bitOffset=9,  base='bool', mode='RW'),
+            pr.Variable(name='DllReset',           description='Config11', offset=0x0000100b*addrSize, bitSize=1, bitOffset=10, base='bool', mode='RW'),
+            pr.Variable(name='DllDACvctrlEn',      description='Config11', offset=0x0000100b*addrSize, bitSize=1, bitOffset=11, base='bool', mode='RW'),
+            pr.Variable(name='DllBiasDisable',     description='Config11', offset=0x0000100b*addrSize, bitSize=1, bitOffset=12, base='bool', mode='RW'),
+            pr.Variable(name='delayCellTestCalib', description='Config11', offset=0x0000100b*addrSize, bitSize=3, bitOffset=13, base='uint', mode='RW')))
+        self.add((
+            pr.Variable(name='BiasVthCalibStepSize',  description='Config12', offset=0x0000100c*addrSize, bitSize=2, bitOffset=0,  base='uint', mode='RW'),
+            pr.Variable(name='BiasVthCalibStepGlob',  description='Config12', offset=0x0000100c*addrSize, bitSize=3, bitOffset=2,  base='uint', mode='RW'),
+            pr.Variable(name='BiasVthCalibTail',      description='Config12', offset=0x0000100c*addrSize, bitSize=3, bitOffset=5,  base='uint', mode='RW'),
+            pr.Variable(name='GlobalCounterStart',    description='Config12', offset=0x0000100c*addrSize, bitSize=8, bitOffset=8,  base='uint', mode='RW')))
+        self.add((
+            pr.Variable(name='ROslvdsBit',   description='Config13', offset=0x0000100d*addrSize, bitSize=1, bitOffset=0,  base='bool', mode='RW'),
+            pr.Variable(name='REFslvdsBit',  description='Config13', offset=0x0000100d*addrSize, bitSize=1, bitOffset=1,  base='bool', mode='RW'),
+            pr.Variable(name='emphBc',       description='Config13', offset=0x0000100d*addrSize, bitSize=3, bitOffset=2,  base='uint', mode='RW'),
+            pr.Variable(name='emphBd',       description='Config13', offset=0x0000100d*addrSize, bitSize=3, bitOffset=5,  base='uint', mode='RW'),
+            pr.Variable(name='DM1Sel',       description='Config13', offset=0x0000100d*addrSize, bitSize=4, bitOffset=8,  base='uint', mode='RW'),
+            pr.Variable(name='DM2Sel',       description='Config13', offset=0x0000100d*addrSize, bitSize=4, bitOffset=12, base='uint', mode='RW')))
+        self.add((
+            pr.Variable(name='DacDllGain',      description='Config14', offset=0x0000100e*addrSize, bitSize=2, bitOffset=0,  base='uint', mode='RW'),
+            pr.Variable(name='DacDll',          description='Config14', offset=0x0000100e*addrSize, bitSize=6, bitOffset=2,  base='uint', mode='RW'),
+            pr.Variable(name='DacTestlineGain', description='Config14', offset=0x0000100e*addrSize, bitSize=2, bitOffset=8,  base='uint', mode='RW'),
+            pr.Variable(name='DacTestline',     description='Config14', offset=0x0000100e*addrSize, bitSize=6, bitOffset=10, base='uint', mode='RW')))
+        self.add((
+            pr.Variable(name='DacpfaCompGain',  description='Config15', offset=0x0000100f*addrSize, bitSize=2, bitOffset=0,  base='uint', mode='RW'),
+            pr.Variable(name='DacpfaComp',      description='Config15', offset=0x0000100f*addrSize, bitSize=6, bitOffset=2,  base='uint', mode='RW')))
+        self.add((
+            pr.Variable(name='LinearDecay',        description='Config16', offset=0x00001010*addrSize, bitSize=3, bitOffset=0,  base='uint', mode='RW'),
+            pr.Variable(name='BGRctrlDACdll',      description='Config16', offset=0x00001010*addrSize, bitSize=2, bitOffset=3,  base='uint', mode='RW'),
+            pr.Variable(name='BGRctrlDACtestine',  description='Config16', offset=0x00001010*addrSize, bitSize=2, bitOffset=5,  base='uint', mode='RW'),
+            pr.Variable(name='BGRctrlDACpfaComp',  description='Config16', offset=0x00001010*addrSize, bitSize=2, bitOffset=7,  base='uint', mode='RW')))
+            
+        # CMD = 2, Addr = X  : Write Row with data
+        self.add((
+            pr.Command(name='WriteRowData',    description='Write PixelTest and PixelMask to selected row', offset=0x00002000*addrSize, bitSize=1, bitOffset=0, function=self.fnWriteRowData, hidden=True)))
+
+        # CMD = 3, Addr = X  : Write Column with data
+        self.add(
+            pr.Command(name='WriteColData',    description='', offset=0x00003000*addrSize, bitSize=32, bitOffset=0, function=pr.Command.touch, hidden=True))
+
+        # CMD = 4, Addr = X  : Write Matrix with data        
+        self.add((    
+            pr.Command(name='WriteMatrixData', description='Write PixelTest and PixelMask to all pixels', offset=0x00004000*addrSize, bitSize=1, bitOffset=0, function=self.fnWriteMatrixData),
+            pr.Variable(name='PixelTest', description='', bitSize=1, bitOffset=0, base='bool', mode='RW', value=1, setFunction='dev._defaultValue = value', getFunction='value = dev._defaultValue'),
+            pr.Variable(name='PixelMask', description='', bitSize=1, bitOffset=0, base='bool', mode='RW', value=1, setFunction='dev._defaultValue = value', getFunction='value = dev._defaultValue')))
+        
+        
+
+        # CMD = 5, Addr = X  : Read/Write Pixel with data
+        self.add((
+            pr.Command(name='WritePixelData', description='Write PixelTest and PixelMask to current pixel only',  offset=0x00005000*addrSize, bitSize=32, bitOffset=0, function=self.fnWritePixelData),
+            pr.Command(name='ReadPixelData',  description='Read PixelTest and PixelMask from current pixel only', offset=0x00005000*addrSize, bitSize=32, bitOffset=0, function=self.fnReadPixelData)))
+
+        # CMD = 7, Addr = X  : Prepare to write chip ID
+        self.add((
+            pr.Variable(name='PrepareWriteChipIdA', description='PrepareWriteChipIdA', offset=0x00007000*addrSize, bitSize=32, bitOffset=0, base='hex', mode='RW'),
+            pr.Variable(name='PrepareWriteChipIdB', description='PrepareWriteChipIdB', offset=0x00007015*addrSize, bitSize=32, bitOffset=0, base='hex', mode='RW')))
+      
+        # CMD = 8, Addr = X  : Prepare for row/column/matrix configuration
+        self.add(
+            pr.Command(name='PrepareMultiConfig', description='PrepareMultiConfig', offset=0x00008000*addrSize, bitSize=32, bitOffset=0, function=pr.Command.touchZero, hidden=True))
+
+        # Pixel Configuration
+        #                    : Bit 0 = Test
+        #                    : Bit 1 = Test
+
+
+
+        #####################################
+        # Create commands
+        #####################################
+
+        # A command has an associated function. The function can be a series of
+        # python commands in a string. Function calls are executed in the command scope
+        # the passed arg is available as 'arg'. Use 'dev' to get to device scope.
+        # A command can also be a call to a local function with local scope.
+        # The command object and the arg are passed
+
+        self.add(
+            pr.Command(name='ClearMatrix',description='Clear configuration bits of all pixels', function=self.fnClearMatrix))
+
+       
+
+    def fnClearMatrix(self, dev,cmd,arg):
+        """ClearMatrix command function"""
+        self.reportCmd(dev,cmd,arg)
+        for i in range (0, 48):
+            self.PrepareMultiConfig()
+            self.ColCounter.set(i)
+            self.WriteColData()
+        self.CmdPrepForRead()
+
+    def fnWriteMatrixData(self,dev,cmd,arg):
+        """WriteMatrixData command function"""
+        self.reportCmd(dev,cmd,arg)
+        self.PrepareMultiConfig()
+        self.WriteMatrixData.set((self.PixelTest.get() << 1) | (self.PixelMask.get()))
+        self.CmdPrepForRead()
+
+    def fnWriteRowCounter(dev,cmd,arg):
+        """WriteRowCounter command function"""
+        self.reportCmd(self,dev,cmd,arg)
+        self.CmdPrepForRead()
+        self.WriteRowCounter.set(self.RowCounter.get())
+        
+
+    def fnWritePixelData(dev,cmd,arg):
+        """WritePixelData command function"""
+        self.reportCmd(self,dev,cmd,arg)
+        self.PrepareMultiConfig()
+        self.WriteRowCounter()
+        self.ColCounter.set(self.ColCounter.get())
+        self.BankSelect.set(self.BankSelect.get())
+        self.PixelTest.set(self.PixelTest.get())
+        self.PixelMask.set(self.PixelMask.get())
+
+    def fnReadPixelData(dev,cmd,arg):
+        """ReadPixelData command function"""
+        self.reportCmd(self,dev,cmd,arg)
+        self.PrepareMultiConfig()
+        self.RowCounter.set(self.RowCounter.get())
+        self.ColCounter.set(self.ColCounter.get())
+        self.BankSelect.set(self.BankSelect.get())
+        self.PixelTest.get()
+        self.PixelMask.get()
+
+    def fnWriteRowData(dev,cmd,arg):
+        """WriteRowData command function"""
+        self.reportCmd(self,dev,cmd,arg)
+        self.CmdPrepForRead()
+        self.PrepareMultiConfig()
+        self.RowCounter.set(self.RowCounter.get())
+        self.PixelTest.set(self.PixelTest.get())
+        self.PixelMask.set(self.PixelMask.get())
+
+    # standard way to report a command has been executed
+    def reportCmd(self, dev,cmd,arg):
+        """reportCmd command function"""
+        "Enables to unify the console print out for all cmds"
+        print("Command executed : ", cmd)
+        
+    @staticmethod   
+    def frequencyConverter(self):
+        def func(dev, var):         
+            return '{:.3f} kHz'.format(1/(self.clkPeriod * self._count(var.dependencies)) * 1e-3)
+        return func

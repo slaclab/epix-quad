@@ -13,7 +13,7 @@ source /afs/slac.stanford.edu/g/reseng/epics/base-R3-16-0/settings.csh
 # Package directories
 setenv 	EPIXROGUE_DIR    ${PWD}
 #setenv SURF_DIR   ${PWD}/../surf
-setenv SURF_DIR   ${PWD}/../../firmware/modules/surf
+setenv SURF_DIR   ${PWD}/../../firmware/submodules/surf
 setenv ROGUE_DIR  ${PWD}/../rogue
 
 # Setup python path

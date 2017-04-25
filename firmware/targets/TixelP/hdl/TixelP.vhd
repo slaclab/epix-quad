@@ -134,9 +134,7 @@ end TixelP;
 
 architecture RTL of TixelP is
 
-   signal iLed          : slv(3 downto 0);
    signal iFpgaOutputEn : sl;
-   signal iLedEn        : sl;
    
    -- Internal versions of signals so that we don't
    -- drive anything unpowered until the components
@@ -154,13 +152,10 @@ architecture RTL of TixelP is
    signal iSerialIdIo : slv(1 downto 0);
    
    signal iSaciClk  : sl;
-   signal iSaciSelL : slv(3 downto 0);
+   signal iSaciSelL : slv(1 downto 0);
    signal iSaciCmd  : sl;
-   signal iSaciRsp  : slv(3 downto 0);
+   signal iSaciRsp  : sl;
    
-   signal iAdcSpiDataOut : sl;
-   signal iAdcSpiDataIn   : sl;
-   signal iAdcSpiDataEn  : sl;
    signal iAdcPdwn       : slv(2 downto 0);
    signal iAdcSpiCsb     : slv(2 downto 0);
    signal iAdcSpiClk     : sl;   
@@ -198,12 +193,11 @@ begin
       )
       port map (
          -- Debugging IOs
-         led                 => iLed,
+         led                 => led,
          -- Power enables
          digitalPowerEn      => analogCardDigPwrEn,
          analogPowerEn       => analogCardAnaPwrEn,
          fpgaOutputEn        => iFpgaOutputEn,
-         ledEn               => iLedEn,
          -- Clocks and reset
          powerGood           => powerGood,
          gtRefClk0P          => gtRefClk0P,
@@ -242,9 +236,7 @@ begin
          saciRsp             => iSaciRsp,
          -- Fast ADC Control
          adcSpiClk           => iAdcSpiClk,
-         adcSpiDataOut       => iAdcSpiDataOut,
-         adcSpiDataIn        => iAdcSpiDataIn,
-         adcSpiDataEn        => iAdcSpiDataEn,
+         adcSpiData          => adcSpiData,
          adcSpiCsb           => iAdcSpiCsb,
          adcPdwn             => iAdcPdwn,
          -- Fast ADC readout
@@ -283,7 +275,6 @@ begin
    ----------------------------
    -- Map ports/signals/etc. --
    ----------------------------
-   led <= iLed when iLedEn = '1' else (others => '0');
    
    -- Boot Memory Ports
    bootCsL  <= iBootCsL    when iFpgaOutputEn = '1' else 'Z';
@@ -306,16 +297,11 @@ begin
    asicSaciClk    <= iSaciClk when iFpgaOutputEn = '1' else 'Z';
    G_SACISEL : for i in 0 to 1 generate
       asicSaciSel(i) <= iSaciSelL(i) when iFpgaOutputEn = '1' else 'Z';
-      iSaciRsp(i)    <= asicSaciRsp;
    end generate;
-   iSaciRsp(2)    <= '0';
-   iSaciRsp(3)    <= '0';
+   iSaciRsp <= asicSaciRsp;
 
    -- Fast ADC Configuration
    adcSpiClk     <= iAdcSpiClk when iFpgaOutputEn = '1' else 'Z';
-   --adcSpiData    <= '0' when iAdcSpiDataOut = '0' and iAdcSpiDataEn = '1' and iFpgaOutputEn = '1' else 'Z';
-   adcSpiData    <= iAdcSpiDataOut when  iAdcSpiDataEn = '1' and iFpgaOutputEn = '1' else 'Z';
-   iAdcSpiDataIn <= adcSpiData;
    adcSpiCsb(0)  <= iAdcSpiCsb(0) when iFpgaOutputEn = '1' else 'Z';
    adcSpiCsb(1)  <= iAdcSpiCsb(1) when iFpgaOutputEn = '1' else 'Z';
    adcSpiCsb(2)  <= iAdcSpiCsb(2) when iFpgaOutputEn = '1' else 'Z';
