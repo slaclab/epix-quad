@@ -67,7 +67,7 @@ entity FramerExtended is
       cntCodeError   : out slv(31 downto 0);
       cntToutError   : out slv(31 downto 0);
       cntReset       : in  sl;
-      epixConfig     : in  EpixConfigType;
+      asicMask       : in  slv(1 downto 0);
       
       -- decoded data input stream (byteClk)
       sAxisMaster    : in  AxiStreamMasterType;
@@ -233,7 +233,7 @@ begin
    end process;
    
    -- apply ASIC mask
-   frameReqMask <= frameReq and epixConfig.asicMask(to_integer(unsigned(ASIC_NUMBER_G)));
+   frameReqMask <= frameReq and asicMask(to_integer(unsigned(ASIC_NUMBER_G)));
    
    cntFrameDone   <= std_logic_vector(frameCnt);
    cntFrameError  <= std_logic_vector(frameErrCnt);

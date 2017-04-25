@@ -27,7 +27,6 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 use work.StdRtlPkg.all;
-use work.EpixPkgGen2.all;
 use work.TixelPkg.all;
 
 
@@ -57,7 +56,6 @@ entity TixelAcquisition is
       frameErr        : in  std_logic_vector(NUMBER_OF_ASICS-1 downto 0);
       headerAck       : in  std_logic_vector(NUMBER_OF_ASICS-1 downto 0);
       timeoutReq      : out std_logic;
-      epixConfig      : in  EpixConfigType;
       tixelConfig     : in  TixelConfigType;
       saciReadoutReq  : out std_logic;
       saciReadoutAck  : in  std_logic;
@@ -172,9 +170,9 @@ begin
    
    -- apply ASIC mask to handshake signals
    Mask_gen: for i in NUMBER_OF_ASICS-1 downto 0 generate
-      frameAckMask(i) <= frameAck(i) or not epixConfig.asicMask(i);
-      headerAckMask(i) <= headerAck(i) or not epixConfig.asicMask(i);
-      frameErrMask(i) <= frameErr(i) and epixConfig.asicMask(i);
+      frameAckMask(i) <= frameAck(i) or not tixelConfig.asicMask(i);
+      headerAckMask(i) <= headerAck(i) or not tixelConfig.asicMask(i);
+      frameErrMask(i) <= frameErr(i) and tixelConfig.asicMask(i);
    end generate;
    
    
@@ -204,7 +202,7 @@ begin
       
       -- acquisition counter
       if rising_edge(sysClk) then
-         if epixConfig.acqCountReset = '1' or sysClkRst = '1' then
+         if sysClkRst = '1' then
             acqCnt <= (others=>'0')          after TPD_G;
          elsif acqCntEn = '1' then
             acqCnt <= acqCnt + 1             after TPD_G;
@@ -213,7 +211,7 @@ begin
       
       -- sequence counter
       if rising_edge(sysClk) then
-         if epixConfig.seqCountReset = '1' or sysClkRst = '1' then
+         if sysClkRst = '1' then
             seqCnt <= (others=>'0')          after TPD_G;
          elsif seqCntEn = '1' then
             seqCnt <= seqCnt + 1             after TPD_G;
@@ -250,7 +248,7 @@ begin
 
    fsm_cmb_p: process (
       state, acqStartSys, frameAckSync, headerAckSync, frameErrSync, delayCnt, rdoutCnt,
-      readouts, runToR0, r0ToStart, startToTpulse, tpulseToAcq, saciReadoutAck, epixConfig, tixelConfig
+      readouts, runToR0, r0ToStart, startToTpulse, tpulseToAcq, saciReadoutAck, tixelConfig
    ) 
    begin
       next_state <= state;
@@ -325,7 +323,7 @@ begin
          when SYNC_S =>
             iAsicSync <= '1';
             if delayCnt >= 1000 then
-               if epixConfig.daqTriggerEnable = '1' then
+               if tixelConfig.asicDataEnable = '1' then
                   delayCntRst <= '1';
                   next_state <= WAIT_ACQ_S;
                else
@@ -337,7 +335,7 @@ begin
             saciReadoutReq <= '1';
             if saciReadoutAck = '1' then
                saciReadoutReq <= '0';
-               if epixConfig.daqTriggerEnable = '1' then
+               if tixelConfig.asicDataEnable = '1' then
                   delayCntRst <= '1';
                   next_state <= WAIT_ACQ_S;
                else
