@@ -33,6 +33,7 @@ from PyQt4.QtGui import *
 from PyQt4.QtCore import QObject, pyqtSignal
 import ePixViewer.imgProcessing as imgPr
 import ePixViewer.Cameras as cameras
+import numpy as np
 #matplotlib
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -48,7 +49,9 @@ class Window(QtGui.QMainWindow, QObject):
     """Class that defines the main window for the viewer."""
     
     # Define a new signal called 'trigger' that has no arguments.
-    trigger = pyqtSignal()
+    imageTrigger = pyqtSignal()
+    pseudoScopeTrigger = pyqtSignal()
+    monitoringDataTrigger = pyqtSignal()
 
 
     def __init__(self):
@@ -92,17 +95,25 @@ class Window(QtGui.QMainWindow, QObject):
         # Create the objects            
         self.fileReader  = rogue.utilities.fileio.StreamReader()
         self.eventReader = EventReader(self)
+
         # Connect the fileReader to our event processor
         pyrogue.streamConnect(self.fileReader,self.eventReader)
 
         # Connect the trigger signal to a slot.
         # the different threads send messages to synchronize their tasks
-        self.trigger.connect(self.displayImageFromReader)
+        self.imageTrigger.connect(self.displayImageFromReader)
+        self.pseudoScopeTrigger.connect(self.displayPseudoScopeFromReader)
+        self.monitoringDataTrigger.connect(self.displayMonitoringDataFromReader) 
         # weak way to sync frame reader and display
         self.readFileDelay = 0.1
         # initialize image processing objects
         self.imgDesc = []
         self.imgTool = imgPr.ImageProcessing(self)
+
+        #initialize data monitoring
+        self.monitoringDataTraces = np.zeros((8,1), dtype='int32')
+        self.monitoringDataIndex = 0
+        self.monitoringDataLength = 100
 
         # display the window on the screen after all items have been added 
         self.show()
@@ -166,7 +177,7 @@ class Window(QtGui.QMainWindow, QObject):
 
     def file_open(self):
         self.eventReader.frameIndex = 1
-        self.eventReader.ViewDataChannel = 1
+        self.eventReader.VIEW_DATA_CHANNEL_ID = 1
         self.setReadDelay(0.1)
         self.filename = QtGui.QFileDialog.getOpenFileName(self, 'Open File', '', 'Rogue Images (*.dat);; GenDAQ Images (*.bin);;Any (*.*)')  
         if (os.path.splitext(self.filename)[1] == '.dat'): 
@@ -279,6 +290,88 @@ class Window(QtGui.QMainWindow, QObject):
         print(thisString)
         self.postImageDisplayProcessing()
         #self.labelFrameNum.setText(thisString)
+
+    def displayPseudoScopeFromReader(self):
+        print("Received pseudo scope data")
+        rawData = self.eventReader.frameData
+        rawDataLen = int(len(rawData)/4)
+        if (rawDataLen>1000):
+            rawDataLen=1000
+        print(rawData)
+        #data = np.fromstring(self.eventReader.frameData, dtype=np.uint32)  
+    
+        data = np.zeros((rawDataLen-1,1), dtype='int32')
+        #convert data into words
+        for j in range(0,rawDataLen-1):
+            data[j] = int.from_bytes(rawData[j*4:(j+1)*4], byteorder='little')
+
+        oscWords = len(data)
+        print(data)
+        print("oscWords", oscWords)
+
+        chAdata = []
+        chBdata = []
+               
+        #for val in data[8:8+oscWords/2-1]:
+        for j in range(8,8+int(oscWords/2-1)):
+            convHi = -1.0 + ((data[j]>>16) & 0x3FFF) * (2.0/2**14)
+            convLo = -1.0 + ((data[j]) & 0x3FFF) * (2.0/2**14)
+            chAdata.append(convHi)
+            chAdata.append(convHi)
+
+        #for val in data[8+oscWords/2:8+oscWords-1]:
+        for j in range(8+int(oscWords/2),oscWords-1):
+            convHi = -1.0 + ((data[j]>>16) & 0x3FFF) * (2.0/2**14)
+            convLo = -1.0 + ((data[j]) & 0x3FFF) * (2.0/2**14)
+            chBdata.append(convHi)
+            chBdata.append(convHi)
+    
+        if (self.LinePlot2_RB1.isChecked()):
+            self.lineDisplay2.update_figure(self.cbScopeCh0.isChecked(), "Scope Trace A", 'r',  chAdata, 
+                                            self.cbScopeCh1.isChecked(), "Scope Trace B", 'b',  chBdata)
+
+
+    def displayMonitoringDataFromReader(self):
+        print("Received slow monitoring data")
+        #print(self.eventReader.frameData)
+        rawData = self.eventReader.frameData
+        envData = np.zeros((8,1), dtype='int32')
+                
+        #removes header before displying the image
+        for j in range(0,32):
+            rawData.pop(0)
+        print(rawData)
+        for j in range(0,8):
+            envData[j] = int.from_bytes(rawData[j*4:(j+1)*4], byteorder='little')
+        #convert temperature and humidity by spliting for 100
+        envData[0] = envData[0]  / 100 
+        envData[1] = envData[1]  / 100 
+        envData[2] = envData[2]  / 100 
+
+        #print variables
+#        for j in range(0,8):
+#            #print(hex(envData[j]))
+#            print(envData[j])
+        if (self.monitoringDataIndex == 0):
+            self.monitoringDataTraces = envData
+        else:
+            self.monitoringDataTraces = np.append(self.monitoringDataTraces, envData, 1)
+        
+        if (self.LinePlot2_RB2.isChecked()):
+            self.lineDisplay2.update_figure(self.cbEnvMonCh0.isChecked(), "Env. Data 0", 'r',  self.monitoringDataTraces[0,:], 
+                                            self.cbEnvMonCh1.isChecked(), "Env. Data 1", 'b',  self.monitoringDataTraces[1,:],
+                                            self.cbEnvMonCh2.isChecked(), "Env. Data 2", 'g',  self.monitoringDataTraces[2,:],
+                                            self.cbEnvMonCh3.isChecked(), "Env. Data 3", 'y',  self.monitoringDataTraces[3,:],
+                                            self.cbEnvMonCh4.isChecked(), "Env. Data 4", 'r+-', self.monitoringDataTraces[4,:], 
+                                            self.cbEnvMonCh5.isChecked(), "Env. Data 5", 'b+-', self.monitoringDataTraces[5,:],
+                                            self.cbEnvMonCh6.isChecked(), "Env. Data 6", 'g+-', self.monitoringDataTraces[6,:],
+                                            self.cbEnvMonCh7.isChecked(), "Env. Data 7", 'y+-', self.monitoringDataTraces[7,:])
+
+        #increments position
+        self.monitoringDataIndex = self.monitoringDataIndex + 1  
+        if (self.monitoringDataIndex > self.monitoringDataLength):
+        #    self.monitoringDataIndex = 0
+            self.monitoringDataTraces = np.delete(self.monitoringDataTraces, 0, 1)
 
     # Evaluates which post display algorithms are needed if any
     def postImageDisplayProcessing(self):
@@ -412,7 +505,10 @@ class EventReader(rogue.interfaces.stream.Slave):
         self.frameData = bytearray()
         self.readDataDone = False
         self.parent = parent
-        self.ViewDataChannel = 0x1
+        # define the data type IDs
+        self.VIEW_DATA_CHANNEL_ID    = 0x1
+        self.VIEW_PSEUDOSCOPE_ID     = 0x2
+        self.VIEW_MONITORING_DATA_ID = 0x3
         self.readFileDelay = 0.1
         self.busy = False
 
@@ -430,24 +526,51 @@ class EventReader(rogue.interfaces.stream.Slave):
             self.numAcceptedFrames += 1
             # Get the channel number
             chNum = (frame.getFlags() >> 24)
-            #print('-------- Frame ',self.numAcceptedFrames,'Channel flags',frame.getFlags() , ' Accepeted --------' , chNum)
+            # reads payload only
+            p = bytearray(frame.getPayload())
+            #print('Frame header: ', p[0])
+            # reads entire frame
+            frame.read(p,0)
+            VcNum =  p[0]
+            print('-------- Frame ',self.numAcceptedFrames,'Channel flags',frame.getFlags() , ' Channel Num:' , chNum, ' Vc Num:' , VcNum)
+            self.frameData = p
             # Check if channel number is 0x1 (streaming data channel)
-            if (chNum == self.ViewDataChannel) :
+            if (chNum == self.VIEW_DATA_CHANNEL_ID or VcNum == 0) :
                 #print('-------- Event --------')
                 # Collect the data
-                p = bytearray(frame.getPayload())
-                #print('Num. data readout: ', len(p))
-                frame.read(p,0)
+#                p = bytearray(frame.getPayload())
+                print('Num. image data readout: ', len(p))
+#                frame.read(p,0)
                 cnt = 0
                 if ((self.numAcceptedFrames == self.frameIndex) or (self.frameIndex == 0)):              
-                    self.frameData = p
                     self.readDataDone = True
                     # Emit the signal.
-                    self.parent.trigger.emit()
+                    self.parent.imageTrigger.emit()
                     # if displaying all images the sleep produces a frame rate that can be displayed without 
-                    # freezing or crashing the program. It is also good for the person viewing the images.
+                    # freezing or crashing the program. 
                     time.sleep(self.readFileDelay)
             self.busy = False
+            #during stream chNumId is not assigned so these ifs cannot be used to distiguish the frames
+            #during stream VIEW_PSEUDOSCOPE_ID is set to zero
+            if (chNum == self.VIEW_PSEUDOSCOPE_ID or VcNum == self.VIEW_PSEUDOSCOPE_ID) :
+                #view Pseudo Scope Data
+                p = bytearray(frame.getPayload())
+                print('Num. pseudo scope data readout: ', len(p))
+                # Emit the signal.
+                self.parent.pseudoScopeTrigger.emit()
+                # if displaying all images the sleep produces a frame rate that can be displayed without 
+                # freezing or crashing the program. 
+                time.sleep(self.readFileDelay)
+
+            if (chNum == self.VIEW_MONITORING_DATA_ID or VcNum == self.VIEW_MONITORING_DATA_ID) :
+                #view Pseudo Scope Data
+                p = bytearray(frame.getPayload())
+                print('Num. slow monitoring data readout: ', len(p))
+                # Emit the signal.
+                self.parent.monitoringDataTrigger.emit()
+                # if displaying all images the sleep produces a frame rate that can be displayed without 
+                # freezing or crashing the program. 
+                time.sleep(self.readFileDelay)
 
 ################################################################################
 ################################################################################
@@ -684,14 +807,14 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         myParent.cbScopeCh0 = QtGui.QCheckBox('Channel 0')
         myParent.cbScopeCh1 = QtGui.QCheckBox('Channel 1')
         #        
-        myParent.cbEnvMonCh0 = QtGui.QCheckBox('Channel 0')
-        myParent.cbEnvMonCh1 = QtGui.QCheckBox('Channel 1')
-        myParent.cbEnvMonCh2 = QtGui.QCheckBox('Channel 2')
-        myParent.cbEnvMonCh3 = QtGui.QCheckBox('Channel 3')
-        myParent.cbEnvMonCh4 = QtGui.QCheckBox('Channel 4')
-        myParent.cbEnvMonCh5 = QtGui.QCheckBox('Channel 5')
-        myParent.cbEnvMonCh6 = QtGui.QCheckBox('Channel 6')
-        myParent.cbEnvMonCh7 = QtGui.QCheckBox('Channel 7')
+        myParent.cbEnvMonCh0 = QtGui.QCheckBox('Strong back temp.')
+        myParent.cbEnvMonCh1 = QtGui.QCheckBox('Ambient temp.')
+        myParent.cbEnvMonCh2 = QtGui.QCheckBox('Relative Hum.')
+        myParent.cbEnvMonCh3 = QtGui.QCheckBox('ASIC (A.) current (mA)')
+        myParent.cbEnvMonCh4 = QtGui.QCheckBox('ASIC (D.) current (mA)')
+        myParent.cbEnvMonCh5 = QtGui.QCheckBox('Guard ring current (uA)')
+        myParent.cbEnvMonCh6 = QtGui.QCheckBox('Vcc_a (mV)')
+        myParent.cbEnvMonCh7 = QtGui.QCheckBox('Vcc_d (mV)')
 
 
         # set layout to tab 3

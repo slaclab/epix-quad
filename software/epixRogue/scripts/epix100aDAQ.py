@@ -51,7 +51,7 @@ START_VIEWER = False
 pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,0) # Data & cmds
 pgpVc1 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,1) # Registers for ePix board
 pgpVc2 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,2) # PseudoScope
-pgpVc3 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,3) # Microblaze
+pgpVc3 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,3) # Monitoring (Slow ADC)
 
 print("")
 print("PGP Card Version: %x" % (pgpVc0.getInfo().version))
@@ -63,6 +63,7 @@ dataWriter = pyrogue.utilities.fileio.StreamWriter('dataWriter')
 pyrogue.streamConnect(pgpVc0, dataWriter.getChannel(0x1))
 # Add pseudoscope to file writer
 pyrogue.streamConnect(pgpVc2, dataWriter.getChannel(0x2))
+pyrogue.streamConnect(pgpVc3, dataWriter.getChannel(0x3))
 
 cmd = rogue.protocols.srp.Cmd()
 pyrogue.streamConnect(cmd, pgpVc0)
@@ -191,9 +192,11 @@ guiTop.resize(1000,1000)
 # Viewer gui
 gui = vi.Window()
 gui.eventReader.frameIndex = 0
-gui.eventReader.ViewDataChannel = 0
+#gui.eventReaderImage.VIEW_DATA_CHANNEL_ID = 0
 gui.setReadDelay(0)
-pyrogue.streamTap(pgpVc0, gui.eventReader)
+pyrogue.streamTap(pgpVc0, gui.eventReader) 
+pyrogue.streamTap(pgpVc2, gui.eventReader)
+pyrogue.streamTap(pgpVc3, gui.eventReader)
 
 # Create mesh node (this is for remote control only, no data is shared with this)
 #mNode = pyrogue.mesh.MeshNode('rogueTest',iface='eth0',root=ePixBoard)

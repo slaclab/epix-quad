@@ -149,6 +149,7 @@ def create(name='DigFpga', offset=0, memBase=None, hidden=False, enabled=True):
     dev.setResetFunc(resetFunc)
 
     # Create subdevices
+    dev.add(OscopeRegisters(  name='Oscilloscope',  offset=0x00000050*addrSize, memBase=memBase, hidden=False, enabled=True))
     dev.add(epix.Epix100aAsic(name='Epix100aAsic0', offset=0x00800000*addrSize, memBase=memBase, hidden=False, enabled=False))
     dev.add(epix.Epix100aAsic(name='Epix100aAsic1', offset=0x00900000*addrSize, memBase=memBase, hidden=False, enabled=False))
     dev.add(epix.Epix100aAsic(name='Epix100aAsic2', offset=0x00A00000*addrSize, memBase=memBase, hidden=False, enabled=False))
@@ -186,4 +187,61 @@ def resetFunc(dev,rstType):
     elif rstType == 'count':
         print('AxiVersion countReset')
 #        dev.counter.set(0)
+
+
+
+class OscopeRegisters(pr.Device):
+   def __init__(self, **kwargs):
+      super().__init__(description='Virtual Oscilloscope Registers', **kwargs)
+      
+      # Creation. memBase is either the register bus server (srp, rce mapped memory, etc) or the device which
+      # contains this object. In most cases the parent and memBase are the same but they can be 
+      # different in more complex bus structures. They will also be different for the top most node.
+      # The setMemBase call can be used to update the memBase for this Device. All sub-devices and local
+      # blocks will be updated.
+      
+      #############################################
+      # Create block / variable combinations
+      #############################################
+      
+      
+      #Setup registers & variables
+      
+      self.add(pr.Variable(name='Arm',             description='Arm',               offset=0x00000000, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
+      self.add(pr.Variable(name='Trig',            description='Trig',              offset=0x00000004, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
+      self.add((
+         pr.Variable(name='ScopeEnable',     description='Setting1', offset=0x00000008, bitSize=1,  bitOffset=0,  base='bool', mode='RW'),
+         pr.Variable(name='TriggerEdge',     description='Setting1', offset=0x00000008, bitSize=1,  bitOffset=1,  base='bool', mode='RW'),
+         pr.Variable(name='TriggerChannel',  description='Setting1', offset=0x00000008, bitSize=4,  bitOffset=2,  base='uint', mode='RW'),
+         pr.Variable(name='TriggerMode',     description='Setting1', offset=0x00000008, bitSize=2,  bitOffset=6,  base='uint', mode='RW'),
+         pr.Variable(name='TriggerAdcThresh',description='Setting1', offset=0x00000008, bitSize=16, bitOffset=16, base='uint', mode='RW')))
+      self.add((
+         pr.Variable(name='TriggerHoldoff',  description='Setting2', offset=0x0000000C, bitSize=13, bitOffset=0,  base='uint', mode='RW'),
+         pr.Variable(name='TriggerOffset',   description='Setting2', offset=0x0000000C, bitSize=13, bitOffset=13, base='uint', mode='RW')))
+      self.add((
+         pr.Variable(name='TraceLength',     description='Setting3', offset=0x00000010, bitSize=13, bitOffset=0,  base='uint', mode='RW'),
+         pr.Variable(name='SkipSamples',     description='Setting3', offset=0x00000010, bitSize=13, bitOffset=13, base='uint', mode='RW')))
+      self.add((
+         pr.Variable(name='InputChannelA',   description='Setting4', offset=0x00000014, bitSize=5,  bitOffset=0,  base='uint', mode='RW'),
+         pr.Variable(name='InputChannelB',   description='Setting4', offset=0x00000014, bitSize=5,  bitOffset=5,  base='uint', mode='RW')))
+      self.add(pr.Variable(name='TriggerDelay',    description='TriggerDelay',      offset=0x00000018, bitSize=13, bitOffset=0, base='uint', mode='RW'))
+      
+      
+      
+      #####################################
+      # Create commands
+      #####################################
+      
+      # A command has an associated function. The function can be a series of
+      # python commands in a string. Function calls are executed in the command scope
+      # the passed arg is available as 'arg'. Use 'dev' to get to device scope.
+      # A command can also be a call to a local function with local scope.
+      # The command object and the arg are passed
+   
+   @staticmethod   
+   def frequencyConverter(self):
+      def func(dev, var):         
+         return '{:.3f} kHz'.format(1/(self.clkPeriod * self._count(var.dependencies)) * 1e-3)
+      return func
+
 
