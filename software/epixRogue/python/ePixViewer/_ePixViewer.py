@@ -38,6 +38,8 @@ import numpy as np
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
+PRINT_VERBOSE = 0
+
 ################################################################################
 ################################################################################
 #   Window class
@@ -95,6 +97,7 @@ class Window(QtGui.QMainWindow, QObject):
         # Create the objects            
         self.fileReader  = rogue.utilities.fileio.StreamReader()
         self.eventReader = EventReader(self)
+        self.eventReaderScope = EventReader(self)
 
         # Connect the fileReader to our event processor
         pyrogue.streamConnect(self.fileReader,self.eventReader)
@@ -260,7 +263,7 @@ class Window(QtGui.QMainWindow, QObject):
     def displayImageFromReader(self):
 
         arrayLen = len(self.eventReader.frameData)
-        print('Image size: ', arrayLen)
+        if (PRINT_VERBOSE): print('Image size: ', arrayLen)
 
           
         self.imgTool.imgWidth = self.currentCam.sensorWidth
@@ -269,7 +272,7 @@ class Window(QtGui.QMainWindow, QObject):
         self.imgDesc = self.currentCam.descrambleImage(self.eventReader.frameData)
                     
         arrayLen = len(self.imgDesc)
-        print('Descrambled image size: ', arrayLen)
+        if (PRINT_VERBOSE): print('Descrambled image size: ', arrayLen)
 
         if (self.imgTool.imgDark_isSet):
             self.ImgDarkSub = self.imgTool.getDarkSubtractedImg(self.imgDesc)
@@ -287,27 +290,27 @@ class Window(QtGui.QMainWindow, QObject):
         # this sleep is a weak way of waiting for the file to be readout completely... needs improvement
         time.sleep(self.readFileDelay)
         thisString = 'Frame {} of {}'.format(self.eventReader.frameIndex, self.eventReader.numAcceptedFrames)
-        print(thisString)
+        if (PRINT_VERBOSE): print(thisString)
         self.postImageDisplayProcessing()
         #self.labelFrameNum.setText(thisString)
 
     def displayPseudoScopeFromReader(self):
-        print("Received pseudo scope data")
-        rawData = self.eventReader.frameData
+        if (PRINT_VERBOSE): print("Received pseudo scope data")
+        rawData = self.eventReaderScope.frameDataScope
         rawDataLen = int(len(rawData)/4)
         if (rawDataLen>1000):
             rawDataLen=1000
-        print(rawData)
+        if (PRINT_VERBOSE): print(rawData)
         #data = np.fromstring(self.eventReader.frameData, dtype=np.uint32)  
     
-        data = np.zeros((rawDataLen-1,1), dtype='int32')
+        data = np.zeros((rawDataLen,1), dtype='int32')
         #convert data into words
         for j in range(0,rawDataLen-1):
             data[j] = int.from_bytes(rawData[j*4:(j+1)*4], byteorder='little')
 
         oscWords = len(data)
-        print(data)
-        print("oscWords", oscWords)
+        #print(data)
+        if (PRINT_VERBOSE): print("oscWords", oscWords)
 
         chAdata = []
         chBdata = []
@@ -332,15 +335,15 @@ class Window(QtGui.QMainWindow, QObject):
 
 
     def displayMonitoringDataFromReader(self):
-        print("Received slow monitoring data")
-        #print(self.eventReader.frameData)
-        rawData = self.eventReader.frameData
+        if (PRINT_VERBOSE): print("Received slow monitoring data")
+        if (PRINT_VERBOSE): print(self.eventReader.frameDataMonitoring)
+        rawData = self.eventReader.frameDataMonitoring
         envData = np.zeros((8,1), dtype='int32')
                 
         #removes header before displying the image
         for j in range(0,32):
             rawData.pop(0)
-        print(rawData)
+        if (PRINT_VERBOSE): print(rawData)
         for j in range(0,8):
             envData[j] = int.from_bytes(rawData[j*4:(j+1)*4], byteorder='little')
         #convert temperature and humidity by spliting for 100
@@ -375,7 +378,7 @@ class Window(QtGui.QMainWindow, QObject):
 
     # Evaluates which post display algorithms are needed if any
     def postImageDisplayProcessing(self):
-        print('Post image display processing')
+        if (PRINT_VERBOSE): print('Post image display processing')
         #check horizontal line display
         if ((self.cbHorizontalLineEnabled.isChecked()) or (self.cbVerticalLineEnabled.isChecked())):
             self.updateHorizontalLinePlot()
@@ -384,7 +387,7 @@ class Window(QtGui.QMainWindow, QObject):
         #    self.updateVerticalLinePlot()
     
     def updateHorizontalLinePlot(self):
-        print('Horizontal plot processing')
+        if (PRINT_VERBOSE): print('Horizontal plot processing')
         size    = self.label.size()
         imageH  = self.image.height()
         imageW  = self.image.width()
@@ -407,7 +410,7 @@ class Window(QtGui.QMainWindow, QObject):
                                             self.cbVerticalLineEnabled.isChecked(),   "Vertical",   'b', self.imgDesc[:,self.mouseX])
 
     def updateVerticalLinePlot(self):
-        print('Horizontal plot processing')
+        if (PRINT_VERBOSE): print('Horizontal plot processing')
         size    = self.label.size()
         imageH  = self.image.height()
         imageW  = self.image.width()
@@ -503,6 +506,8 @@ class EventReader(rogue.interfaces.stream.Slave):
         self.lastFrame = rogue.interfaces.stream.Frame
         self.frameIndex = 1
         self.frameData = bytearray()
+        self.frameDataScope = bytearray()
+        self.frameDataMonitoring = bytearray()
         self.readDataDone = False
         self.parent = parent
         # define the data type IDs
@@ -532,15 +537,15 @@ class EventReader(rogue.interfaces.stream.Slave):
             # reads entire frame
             frame.read(p,0)
             VcNum =  p[0]
-            print('-------- Frame ',self.numAcceptedFrames,'Channel flags',frame.getFlags() , ' Channel Num:' , chNum, ' Vc Num:' , VcNum)
-            self.frameData = p
+            if (PRINT_VERBOSE): print('-------- Frame ',self.numAcceptedFrames,'Channel flags',frame.getFlags() , ' Channel Num:' , chNum, ' Vc Num:' , VcNum)
             # Check if channel number is 0x1 (streaming data channel)
             if (chNum == self.VIEW_DATA_CHANNEL_ID or VcNum == 0) :
                 #print('-------- Event --------')
                 # Collect the data
 #                p = bytearray(frame.getPayload())
-                print('Num. image data readout: ', len(p))
+                if (PRINT_VERBOSE): print('Num. image data readout: ', len(p))
 #                frame.read(p,0)
+                self.frameData = p
                 cnt = 0
                 if ((self.numAcceptedFrames == self.frameIndex) or (self.frameIndex == 0)):              
                     self.readDataDone = True
@@ -549,13 +554,14 @@ class EventReader(rogue.interfaces.stream.Slave):
                     # if displaying all images the sleep produces a frame rate that can be displayed without 
                     # freezing or crashing the program. 
                     time.sleep(self.readFileDelay)
-            self.busy = False
+            
             #during stream chNumId is not assigned so these ifs cannot be used to distiguish the frames
             #during stream VIEW_PSEUDOSCOPE_ID is set to zero
             if (chNum == self.VIEW_PSEUDOSCOPE_ID or VcNum == self.VIEW_PSEUDOSCOPE_ID) :
                 #view Pseudo Scope Data
-                p = bytearray(frame.getPayload())
-                print('Num. pseudo scope data readout: ', len(p))
+                #p = bytearray(frame.getPayload())
+                if (PRINT_VERBOSE): print('Num. pseudo scope data readout: ', len(p))
+                self.frameDataScope = p
                 # Emit the signal.
                 self.parent.pseudoScopeTrigger.emit()
                 # if displaying all images the sleep produces a frame rate that can be displayed without 
@@ -564,13 +570,17 @@ class EventReader(rogue.interfaces.stream.Slave):
 
             if (chNum == self.VIEW_MONITORING_DATA_ID or VcNum == self.VIEW_MONITORING_DATA_ID) :
                 #view Pseudo Scope Data
-                p = bytearray(frame.getPayload())
-                print('Num. slow monitoring data readout: ', len(p))
+                #p = bytearray(frame.getPayload())
+                if (PRINT_VERBOSE): print('Num. slow monitoring data readout: ', len(p))
+                self.frameDataMonitoring = p
                 # Emit the signal.
                 self.parent.monitoringDataTrigger.emit()
                 # if displaying all images the sleep produces a frame rate that can be displayed without 
                 # freezing or crashing the program. 
                 time.sleep(self.readFileDelay)
+            #sets busy flag at the end
+            self.busy = False
+
 
 ################################################################################
 ################################################################################
@@ -625,7 +635,7 @@ class MplCanvas(FigureCanvas):
             if (argIndex == 2):
                 lineColor = arg
             if (argIndex == 3):
-                print(lineName)
+                if (PRINT_VERBOSE): print(lineName)
                 if (lineEnabled):
                     l = arg #[random.randint(0, 10) for i in range(4)]
                     self.axes.plot(l, lineColor)
