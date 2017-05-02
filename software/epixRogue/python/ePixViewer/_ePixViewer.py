@@ -56,7 +56,7 @@ class Window(QtGui.QMainWindow, QObject):
     monitoringDataTrigger = pyqtSignal()
 
 
-    def __init__(self):
+    def __init__(self, cameraType = 'ePix100a'):
         super(Window, self).__init__()    
         # window init
         self.mainWdGeom = [50, 50, 1100, 600] # x, y, width, height
@@ -64,7 +64,7 @@ class Window(QtGui.QMainWindow, QObject):
         self.setWindowTitle("ePix image viewer")
 
         # creates a camera object
-        self.currentCam = cameras.Camera(cameraType = 'ePix100a')
+        self.currentCam = cameras.Camera(cameraType = cameraType)
 
         # add actions for menu item
         extractAction = QtGui.QAction("&Quit", self)
@@ -98,18 +98,21 @@ class Window(QtGui.QMainWindow, QObject):
         self.fileReader  = rogue.utilities.fileio.StreamReader()
         self.eventReader = EventReader(self)
         self.eventReaderScope = EventReader(self)
+        self.eventReaderMonitoring = EventReader(self)
 
         # Connect the fileReader to our event processor
         pyrogue.streamConnect(self.fileReader,self.eventReader)
 
         # Connect the trigger signal to a slot.
         # the different threads send messages to synchronize their tasks
-        self.imageTrigger.connect(self.displayImageFromReader)
+        #self.imageTrigger.connect(self.displayImageFromReader)
+        self.imageTrigger.connect(self.buildImageFrame)
         self.pseudoScopeTrigger.connect(self.displayPseudoScopeFromReader)
         self.monitoringDataTrigger.connect(self.displayMonitoringDataFromReader) 
         # weak way to sync frame reader and display
         self.readFileDelay = 0.1
         # initialize image processing objects
+        self.rawImgFrame = []
         self.imgDesc = []
         self.imgTool = imgPr.ImageProcessing(self)
 
@@ -175,6 +178,8 @@ class Window(QtGui.QMainWindow, QObject):
 
     def setReadDelay(self, delay):
         self.eventReader.readFileDelay = delay
+        self.eventReaderScope.readFileDelay = delay
+        self.eventReaderMonitoring.readFileDelay = delay
         self.readFileDelay = delay
         
 
@@ -257,19 +262,39 @@ class Window(QtGui.QMainWindow, QObject):
              timeoutCnt += 1
              print('Loading image...', self.eventReader.frameIndex, 'atempt',  timeoutCnt)
              time.sleep(0.1)
+    
+    # build image frame. 
+    # If image frame is completed calls displayImageFromReader
+    # If image is incomplete stores the partial image
+    def buildImageFrame(self):
+        
+        [frameComplete, readyForDisplay, self.rawImgFrame] = self.currentCam.buildImageFrame(currentRawData = self.rawImgFrame, newRawData = self.eventReader.frameData)
 
+        if (readyForDisplay):
+            self.displayImageFromReader(imageData = self.rawImgFrame)
+        if (frameComplete == 0 and readyForDisplay == 1):
+        # in this condition we have data about two different images
+        # since a new image has been sent and the old one is incomplete
+        # the next line preserves the new data to be used with the next frame
+            self.rawImgFrame = self.eventReader.frameData
+        if (frameComplete == 1):
+        # frees the memory since it has been used alreay enabling a new frame logic to start fresh
+            self.rawImgFrame = []
+
+                
+        
 
     # core code for displaying the image
-    def displayImageFromReader(self):
+    def displayImageFromReader(self, imageData):
 
-        arrayLen = len(self.eventReader.frameData)
+        arrayLen = len(imageData) 
         if (PRINT_VERBOSE): print('Image size: ', arrayLen)
 
           
         self.imgTool.imgWidth = self.currentCam.sensorWidth
         self.imgTool.imgHeight = self.currentCam.sensorHeight
 
-        self.imgDesc = self.currentCam.descrambleImage(self.eventReader.frameData)
+        self.imgDesc = self.currentCam.descrambleImage(imageData)
                     
         arrayLen = len(self.imgDesc)
         if (PRINT_VERBOSE): print('Descrambled image size: ', arrayLen)
@@ -307,7 +332,8 @@ class Window(QtGui.QMainWindow, QObject):
         #convert data into words
         for j in range(0,rawDataLen-1):
             data[j] = int.from_bytes(rawData[j*4:(j+1)*4], byteorder='little')
-
+        
+        if (PRINT_VERBOSE): print("Pseudo scope data converted")
         oscWords = len(data)
         #print(data)
         if (PRINT_VERBOSE): print("oscWords", oscWords)
@@ -322,6 +348,8 @@ class Window(QtGui.QMainWindow, QObject):
             chAdata.append(convHi)
             chAdata.append(convHi)
 
+        if (PRINT_VERBOSE): print("Channel A data retreived")
+
         #for val in data[8+oscWords/2:8+oscWords-1]:
         for j in range(8+int(oscWords/2),oscWords-1):
             convHi = -1.0 + ((data[j]>>16) & 0x3FFF) * (2.0/2**14)
@@ -329,15 +357,17 @@ class Window(QtGui.QMainWindow, QObject):
             chBdata.append(convHi)
             chBdata.append(convHi)
     
+        if (PRINT_VERBOSE): print("Channel B data retreived")
         if (self.LinePlot2_RB1.isChecked()):
             self.lineDisplay2.update_figure(self.cbScopeCh0.isChecked(), "Scope Trace A", 'r',  chAdata, 
                                             self.cbScopeCh1.isChecked(), "Scope Trace B", 'b',  chBdata)
+        if (PRINT_VERBOSE): print("Pseudo scope data displayed")
 
 
     def displayMonitoringDataFromReader(self):
         if (PRINT_VERBOSE): print("Received slow monitoring data")
-        if (PRINT_VERBOSE): print(self.eventReader.frameDataMonitoring)
-        rawData = self.eventReader.frameDataMonitoring
+        if (PRINT_VERBOSE): print(self.eventReaderMonitoring.frameDataMonitoring)
+        rawData = self.eventReaderMonitoring.frameDataMonitoring
         envData = np.zeros((8,1), dtype='int32')
                 
         #removes header before displying the image
@@ -530,21 +560,21 @@ class EventReader(rogue.interfaces.stream.Slave):
             self.busy = True
             self.numAcceptedFrames += 1
             # Get the channel number
-            chNum = (frame.getFlags() >> 24)
+            chNum = (self.lastFrame.getFlags() >> 24)
             # reads payload only
-            p = bytearray(frame.getPayload())
+            p = bytearray(self.lastFrame.getPayload())
             #print('Frame header: ', p[0])
             # reads entire frame
-            frame.read(p,0)
+            self.lastFrame.read(p,0)
             VcNum =  p[0]
-            if (PRINT_VERBOSE): print('-------- Frame ',self.numAcceptedFrames,'Channel flags',frame.getFlags() , ' Channel Num:' , chNum, ' Vc Num:' , VcNum)
+            if (PRINT_VERBOSE): print('-------- Frame ',self.numAcceptedFrames,'Channel flags',self.lastFrame.getFlags() , ' Channel Num:' , chNum, ' Vc Num:' , VcNum)
             # Check if channel number is 0x1 (streaming data channel)
             if (chNum == self.VIEW_DATA_CHANNEL_ID or VcNum == 0) :
                 #print('-------- Event --------')
                 # Collect the data
 #                p = bytearray(frame.getPayload())
                 if (PRINT_VERBOSE): print('Num. image data readout: ', len(p))
-#                frame.read(p,0)
+#                self.lastFrame.read(p,0)
                 self.frameData = p
                 cnt = 0
                 if ((self.numAcceptedFrames == self.frameIndex) or (self.frameIndex == 0)):              

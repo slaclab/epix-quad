@@ -190,13 +190,13 @@ guiTop.addTree(ePixBoard)
 guiTop.resize(1000,1000)
 
 # Viewer gui
-gui = vi.Window()
+gui = vi.Window(cameraType = 'ePix100a')
 gui.eventReader.frameIndex = 0
 #gui.eventReaderImage.VIEW_DATA_CHANNEL_ID = 0
 gui.setReadDelay(0)
 pyrogue.streamTap(pgpVc0, gui.eventReader) 
 pyrogue.streamTap(pgpVc2, gui.eventReaderScope)# PseudoScope
-pyrogue.streamTap(pgpVc3, gui.eventReader)
+pyrogue.streamTap(pgpVc3, gui.eventReaderMonitoring) # Slow Monitoring
 
 # Create mesh node (this is for remote control only, no data is shared with this)
 #mNode = pyrogue.mesh.MeshNode('rogueTest',iface='eth0',root=ePixBoard)
