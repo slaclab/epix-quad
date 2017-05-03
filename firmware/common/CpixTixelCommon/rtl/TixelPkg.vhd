@@ -19,7 +19,7 @@ package TixelPkg is
 
    constant NUMBER_OF_ASICS_C : natural := 2;   
    
-   constant TIXEL_NUM_AXI_MASTER_SLOTS_C : natural := 16;
+   constant TIXEL_NUM_AXI_MASTER_SLOTS_C : natural := 18;
    constant TIXEL_NUM_AXI_SLAVE_SLOTS_C : natural := 3;
    
    constant VERSION_AXI_INDEX_C     : natural := 0;
@@ -38,6 +38,8 @@ package TixelPkg is
    constant PLLREGS_AXI_INDEX_C     : natural := 13;
    constant DESER0_AXI_INDEX_C      : natural := 14;
    constant DESER1_AXI_INDEX_C      : natural := 15;
+   constant ASICS0_AXI_INDEX_C      : natural := 16;
+   constant ASICS1_AXI_INDEX_C      : natural := 17;
    
    constant VERSION_AXI_BASE_ADDR_C    : slv(31 downto 0) := X"00000000";
    constant TIXEL_REG_AXI_BASE_ADDR_C  : slv(31 downto 0) := X"01000000";
@@ -55,6 +57,8 @@ package TixelPkg is
    constant PLLREGS_AXI_BASE_ADDR_C    : slv(31 downto 0) := X"0D000000";
    constant DESER0_AXI_BASE_ADDR_C     : slv(31 downto 0) := X"0E000000";
    constant DESER1_AXI_BASE_ADDR_C     : slv(31 downto 0) := X"0F000000";
+   constant ASICS0_AXI_BASE_ADDR_C     : slv(31 downto 0) := X"10000000";
+   constant ASICS1_AXI_BASE_ADDR_C     : slv(31 downto 0) := X"11000000";
    
    constant TIXEL_AXI_CROSSBAR_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(TIXEL_NUM_AXI_MASTER_SLOTS_C-1 downto 0) := (
       VERSION_AXI_INDEX_C      => (
@@ -119,6 +123,14 @@ package TixelPkg is
          connectivity         => x"FFFF"),
       DESER1_AXI_INDEX_C      => ( 
          baseAddr             => DESER1_AXI_BASE_ADDR_C,
+         addrBits             => 24,
+         connectivity         => x"FFFF"),
+      ASICS0_AXI_INDEX_C      => ( 
+         baseAddr             => ASICS0_AXI_BASE_ADDR_C,
+         addrBits             => 24,
+         connectivity         => x"FFFF"),
+      ASICS1_AXI_INDEX_C      => ( 
+         baseAddr             => ASICS1_AXI_BASE_ADDR_C,
          addrBits             => 24,
          connectivity         => x"FFFF")
    );

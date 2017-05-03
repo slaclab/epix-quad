@@ -365,10 +365,10 @@ class TixelAsic(pr.Device):
         
         # CMD = 1, Addr = xxx - Register set
         
-        self.add(pr.Variable(name='RowStart',      description='RowStart',       offset=0x00001001*addrSize, bitSize=8,  bitOffset=0,  base='uint',  mode='RW'))
+        self.add(pr.Variable(name='RowStart',      description='RowStart',       offset=0x00001001*addrSize, bitSize=8,  bitOffset=0,  base='uint',  mode='WO'))
         self.add(pr.Variable(name='RowStop',       description='RowStop',        offset=0x00001002*addrSize, bitSize=8,  bitOffset=0,  base='uint',  mode='RW'))
-        self.add(pr.Variable(name='ColumnStart',   description='ColumnStart',    offset=0x00001003*addrSize, bitSize=8,  bitOffset=0,  base='uint',  mode='RW'))
-        self.add(pr.Variable(name='StartPixel',    description='StartPixel',     offset=0x00001004*addrSize, bitSize=16, bitOffset=0,  base='uint',  mode='RW'))
+        self.add(pr.Variable(name='ColumnStart',   description='ColumnStart',    offset=0x00001003*addrSize, bitSize=8,  bitOffset=0,  base='uint',  mode='WO'))
+        self.add(pr.Variable(name='StartPixel',    description='StartPixel',     offset=0x00001004*addrSize, bitSize=16, bitOffset=0,  base='uint',  mode='WO'))
         self.add((
             pr.Variable(name='TpsDacGain',   description='Config5', offset=0x00001005*addrSize, bitSize=2, bitOffset=0,  base='uint', mode='RW'),
             pr.Variable(name='TpsDac',       description='Config5', offset=0x00001005*addrSize, bitSize=6, bitOffset=2,  base='uint', mode='RW'),

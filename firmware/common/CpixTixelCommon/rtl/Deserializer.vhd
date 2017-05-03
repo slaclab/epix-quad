@@ -62,7 +62,7 @@ entity Deserializer is
       
       -- Deserialized output (byteClk domain)
       rxData            : out slv(19 downto 0);
-      rxReady           : out sl;   -- every 2nd rxData is valid
+      rxValid           : out sl;   -- every 2nd rxData is valid
       
       -- optional feedback from decoder
       validWord         : in  sl := '1'
@@ -95,7 +95,7 @@ architecture RTL of Deserializer is
       twoWords       : slv(19 downto 0);
       valid          : sl;
       rxData         : slv(19 downto 0);
-      rxReady        : sl;
+      rxValid        : sl;
    end record;
 
    constant SER_INIT_C : SerType := (
@@ -117,7 +117,7 @@ architecture RTL of Deserializer is
       twoWords       => (others=>'0'),
       valid          => '0',
       rxData         => (others=>'0'),
-      rxReady        => '0'
+      rxValid        => '0'
    );
    
    type RegType is record
@@ -294,7 +294,7 @@ begin
    
    -- look for idle data word
    idleWord <= '1' when
-      serdR.twoWords = "1010101010" & "0101111100" or serdR.twoWords = "1010101010" & "1010000011"
+      serdR.twoWords = "0101111100" & "1010101010" or serdR.twoWords = "1010000011" & "1010101010"
       else '0';
    
    axilComb : process (serdR, axilR, axilReadMaster, byteRst, axilRst, axilWriteMaster, delayCurr, iserdeseOut, idleWord, validWord) is
@@ -436,11 +436,11 @@ begin
       --v.iserdeseOutD3 := serdR.iserdeseOutD2;
       
       -- output register
-      v.rxData    := serdR.twoWords;
+      v.rxData    := serdR.twoWords(9 downto 0) & serdR.twoWords(19 downto 10);
       if serdR.locked = '1' then
-         v.rxReady := serdR.valid;
+         v.rxValid := serdR.valid;
       else
-         v.rxReady := '0';
+         v.rxValid := '0';
       end if;
       
       
@@ -458,7 +458,7 @@ begin
       axilWriteSlave <= axilR.axilWriteSlave;
       axilReadSlave  <= axilR.axilReadSlave;
       rxData         <= serdR.rxData;
-      rxReady        <= serdR.rxReady;
+      rxValid        <= serdR.rxValid;
       
    end process;
 

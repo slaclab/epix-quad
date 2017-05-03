@@ -195,7 +195,6 @@ architecture top_level of TixelCore is
    signal userAxisSlave       : AxiStreamSlaveType;
    signal scopeAxisMaster     : AxiStreamMasterType;
    signal scopeAxisSlave      : AxiStreamSlaveType;
-   signal deserAxisMaster     : AxiStreamMasterArray(NUMBER_OF_ASICS_C-1 downto 0);
    signal monitorAxisMaster   : AxiStreamMasterType;
    signal monitorAxisSlave    : AxiStreamSlaveType;
    
@@ -217,24 +216,6 @@ architecture top_level of TixelCore is
    signal iRunTrigger      : sl;
    signal opCode           : slv(7 downto 0);
    signal pgpOpCodeOneShot : sl;
-   
-   -- Interfaces between blocks
-   signal cntAcquisition  : std_logic_vector(31 downto 0);
-   signal cntSequence     : std_logic_vector(31 downto 0);
-   signal cntReadout      : std_logic_vector( 3 downto 0);
-   signal frameReq        : std_logic;
-   signal frameAck        : std_logic_vector(NUMBER_OF_ASICS_C-1 downto 0);
-   signal frameErr        : std_logic_vector(NUMBER_OF_ASICS_C-1 downto 0);
-   signal headerAck       : std_logic_vector(NUMBER_OF_ASICS_C-1 downto 0);
-   signal timeoutReq      : std_logic;
-   
-   signal codeErr       : slv(NUMBER_OF_ASICS_C-1 downto 0);
-   signal dispErr       : slv(NUMBER_OF_ASICS_C-1 downto 0);
-   signal wordErr       : slv(NUMBER_OF_ASICS_C-1 downto 0);
-   signal asicReady     : slv(NUMBER_OF_ASICS_C-1 downto 0);
-   signal asicData      : Slv20Array(NUMBER_OF_ASICS_C-1 downto 0);
-   signal framedData    : Slv16Array(NUMBER_OF_ASICS_C-1 downto 0);
-   signal framedDataK   : Slv2Array(NUMBER_OF_ASICS_C-1 downto 0);
    
    signal acqStart           : sl;
    signal dataSend           : sl;
@@ -264,6 +245,9 @@ architecture top_level of TixelCore is
    
    signal adcClk     : sl;
    
+   signal asicValid     : slv(NUMBER_OF_ASICS_C-1 downto 0);
+   signal asicData      : Slv20Array(NUMBER_OF_ASICS_C-1 downto 0);
+   
    attribute IODELAY_GROUP : string;
    attribute IODELAY_GROUP of U_IDelayCtrl : label is IODELAY_GROUP_G;
    
@@ -277,9 +261,6 @@ architecture top_level of TixelCore is
    attribute keep of adcValid : signal is "true";
    attribute keep of saciPrepReadoutReq : signal is "true";
    attribute keep of saciPrepReadoutAck : signal is "true";
-   attribute keep of cntReadout : signal is "true";
-   attribute keep of frameErr : signal is "true";
-   attribute keep of timeoutReq : signal is "true";
    
    
 begin
@@ -296,8 +277,8 @@ begin
    -- Triggers out
    --triggerOut     <= iAsicAcq;
    --mpsOut         <= pgpOpCodeOneShot;
-   triggerOut     <= not tgOutMux;
-   mpsOut         <= not iAsic01DM2;
+   triggerOut     <= tgOutMux;
+   mpsOut         <= iAsic01DM2;
    -- SACI signals
    saciSelL       <= iSaciSelL;
    saciClk        <= iSaciClk;
@@ -495,51 +476,33 @@ begin
       rstOut   => byteClkRst
    );
    
-   roClk0Ddr_i : ODDR 
-   port map ( 
-      Q  => asicRoClk(0),
-      C  => asicRdClk,
-      CE => '1',
-      D1 => '1',
-      D2 => '0',
-      R  => '0',
-      S  => '0'
-   );
-   
-   roClk1Ddr_i : ODDR 
-   port map ( 
-      Q  => asicRoClk(1),
-      C  => asicRdClk,
-      CE => '1',
-      D1 => '1',
-      D2 => '0',
-      R  => '0',
-      S  => '0'
-   );
-   
-   refClk0Ddr_i : ODDR 
-   port map ( 
-      Q  => asicRefClk(0),
-      C  => asicRfClk,
-      CE => '1',
-      D1 => '1',
-      D2 => '0',
-      R  => '0',
-      S  => '0'
-   );
-   
-   refClk1Ddr_i : ODDR 
-   port map ( 
-      Q  => asicRefClk(1),
-      C  => asicRfClk,
-      CE => '1',
-      D1 => '1',
-      D2 => '0',
-      R  => '0',
-      S  => '0'
-   );
    
    G_ASIC : for i in 0 to NUMBER_OF_ASICS_C-1 generate 
+   
+      -------------------------------------------------------
+      -- ASIC clock outputs
+      -------------------------------------------------------      
+      roClkDdr_i : ODDR 
+      port map ( 
+         Q  => asicRoClk(i),
+         C  => asicRdClk,
+         CE => '1',
+         D1 => '1',
+         D2 => '0',
+         R  => '0',
+         S  => '0'
+      );
+      
+      refClkDdr_i : ODDR 
+      port map ( 
+         Q  => asicRefClk(i),
+         C  => asicRfClk,
+         CE => '1',
+         D1 => '1',
+         D2 => '0',
+         R  => '0',
+         S  => '0'
+      );
    
       -------------------------------------------------------
       -- ASIC deserializers
@@ -561,72 +524,34 @@ begin
          axilWriteMaster   => mAxiWriteMasters(DESER0_AXI_INDEX_C+i),
          axilWriteSlave    => mAxiWriteSlaves(DESER0_AXI_INDEX_C+i),
          rxData            => asicData(i),
-         rxReady           => asicReady(i),
-         validWord         => wordErr(i)
+         rxValid           => asicValid(i)
       );
-      
-      U_Decode8b10b: entity work.Decoder8b10b
-      generic map (
-         NUM_BYTES_G => 2,
-         RST_POLARITY_G => '0'
-      )
-      port map (
-         clk         => byteClk,
-         clkEn       => asicReady(i),
-         rst         => byteClkRst,
-         dataIn      => asicData(i),
-         dataOut     => framedData(i),
-         dataKOut    => framedDataK(i),
-         codeErr     => codeErr(i),
-         dispErr     => dispErr(i)
-      );
-      
-      wordErr(i) <= codeErr(i) or dispErr(i);
-      
-      deserAxisMaster(i).tData(15 downto 0) <= framedData(i);
-      deserAxisMaster(i).tUser(1 downto 0) <= framedDataK(i);
       
       -------------------------------------------------------
       -- ASIC AXI stream framers
       -------------------------------------------------------
       
-      -- replace with standard framer when the 8b10b 
-      -- error information is not needed in the stream
-      
-      U_ASIC_Framer : entity work.FramerExtended
-      generic map(
-         ASIC_NUMBER_G  => std_logic_vector(to_unsigned(i, 4))
+      U_AXI_Framer : entity work.AsicStreamAxi
+      generic map (
+         ASIC_NO_G   => std_logic_vector(to_unsigned(i, 3))
       )
-      port map(
-         -- global signals
-         sysClk         => coreClk,
-         sysRst         => axiRst,
-         byteClk        => byteClk,
-         byteClkRst     => byteClkRst,
-         
-         -- control/status signals (byteClk)
-         forceFrameRead => '0',
-         cntAcquisition => (others=>'0'),
-         cntSequence    => (others=>'0'),
-         cntReadout     => (others=>'0'),
-         frameReq       => '0',
-         frameAck       => open,
-         frameErr       => open,
-         headerAck      => open,
-         timeoutReq     => '0',
-         cntFrameDone   => open,
-         cntFrameError  => open,
-         cntCodeError   => open,
-         cntToutError   => open,
-         cntReset       => '0',
-         asicMask       => tixelConfig.asicMask,
-         
-         -- decoded data input stream (byteClk)
-         sAxisMaster    => deserAxisMaster(i),
-         
-         -- AXI Stream Master Port (sysClk)
-         mAxisMaster    => framerAxisMaster(i),
-         mAxisSlave     => framerAxisSlave(i)
+      port map (
+         rxClk             => byteClk,
+         rxRst             => byteClkRst,
+         rxData            => asicData(i),
+         rxValid           => asicValid(i),
+         axilClk           => coreClk,
+         axilRst           => axiRst,
+         sAxilWriteMaster  => mAxiWriteMasters(ASICS0_AXI_INDEX_C+i),
+         sAxilWriteSlave   => mAxiWriteSlaves(ASICS0_AXI_INDEX_C+i),
+         sAxilReadMaster   => mAxiReadMasters(ASICS0_AXI_INDEX_C+i),
+         sAxilReadSlave    => mAxiReadSlaves(ASICS0_AXI_INDEX_C+i),
+         axisClk           => coreClk,
+         axisRst           => axiRst,
+         mAxisMaster       => framerAxisMaster(i),
+         mAxisSlave        => framerAxisSlave(i),
+         acqNo             => tixelConfig.acqCnt,
+         asicAcq           => iAsicAcq
       );
    
    end generate;
@@ -660,22 +585,23 @@ begin
    -- Master 2 : SaciPrepRdout controller    --
    --------------------------------------------
    U_AxiLiteCrossbar : entity work.AxiLiteCrossbar
-      generic map (
-         NUM_SLAVE_SLOTS_G  => TIXEL_NUM_AXI_SLAVE_SLOTS_C,
-         NUM_MASTER_SLOTS_G => TIXEL_NUM_AXI_MASTER_SLOTS_C,
-         MASTERS_CONFIG_G   => TIXEL_AXI_CROSSBAR_MASTERS_CONFIG_C)
-      port map (
-         sAxiWriteMasters    => sAxiWriteMaster,
-         sAxiWriteSlaves     => sAxiWriteSlave,
-         sAxiReadMasters     => sAxiReadMaster,
-         sAxiReadSlaves      => sAxiReadSlave,
-         mAxiWriteMasters    => mAxiWriteMasters,
-         mAxiWriteSlaves     => mAxiWriteSlaves,
-         mAxiReadMasters     => mAxiReadMasters,
-         mAxiReadSlaves      => mAxiReadSlaves,
-         axiClk              => coreClk,
-         axiClkRst           => axiRst
-      );
+   generic map (
+      NUM_SLAVE_SLOTS_G  => TIXEL_NUM_AXI_SLAVE_SLOTS_C,
+      NUM_MASTER_SLOTS_G => TIXEL_NUM_AXI_MASTER_SLOTS_C,
+      MASTERS_CONFIG_G   => TIXEL_AXI_CROSSBAR_MASTERS_CONFIG_C
+   )
+   port map (
+      sAxiWriteMasters    => sAxiWriteMaster,
+      sAxiWriteSlaves     => sAxiWriteSlave,
+      sAxiReadMasters     => sAxiReadMaster,
+      sAxiReadSlaves      => sAxiReadSlave,
+      mAxiWriteMasters    => mAxiWriteMasters,
+      mAxiWriteSlaves     => mAxiWriteSlaves,
+      mAxiReadMasters     => mAxiReadMasters,
+      mAxiReadSlaves      => mAxiReadSlaves,
+      axiClk              => coreClk,
+      axiClkRst           => axiRst
+   );
    
    ---------------------------------------------
    -- SACI prepare for readout command Master --
