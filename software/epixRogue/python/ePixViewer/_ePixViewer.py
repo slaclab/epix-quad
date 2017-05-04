@@ -38,7 +38,7 @@ import numpy as np
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
-PRINT_VERBOSE = 0
+PRINT_VERBOSE = 1
 
 ################################################################################
 ################################################################################
@@ -65,6 +65,7 @@ class Window(QtGui.QMainWindow, QObject):
 
         # creates a camera object
         self.currentCam = cameras.Camera(cameraType = cameraType)
+        if (PRINT_VERBOSE): print(cameraType)
 
         # add actions for menu item
         extractAction = QtGui.QAction("&Quit", self)
@@ -566,7 +567,7 @@ class EventReader(rogue.interfaces.stream.Slave):
             #print('Frame header: ', p[0])
             # reads entire frame
             self.lastFrame.read(p,0)
-            VcNum =  p[0]
+            VcNum =  p[0] & 0xF
             if (PRINT_VERBOSE): print('-------- Frame ',self.numAcceptedFrames,'Channel flags',self.lastFrame.getFlags() , ' Channel Num:' , chNum, ' Vc Num:' , VcNum)
             # Check if channel number is 0x1 (streaming data channel)
             if (chNum == self.VIEW_DATA_CHANNEL_ID or VcNum == 0) :

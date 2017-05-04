@@ -33,6 +33,8 @@ from PyQt4.QtGui import *
 from PyQt4.QtCore import QObject, pyqtSignal
 import numpy as np
 
+PRINT_VERBOSE = 1
+
 # define global constants
 NOCAMERA   = 0
 EPIX100A   = 1
@@ -166,6 +168,7 @@ class Camera():
         acqNum_newRawData  = newRawData[0]
         isTOA_newRawData   = newRawData[1] & 0x8
         asicNum_newRawData = newRawData[1] & 0x7
+        if (PRINT_VERBOSE): print('acqNum_newRawData: ', acqNum_newRawData, 'isTOA_newRawData:', isTOA_newRawData, 'asicNum_newRawData:', asicNum_newRawData)
 
         #interpret headers
         #case 1: new image (which means currentRawData is empty)
@@ -185,6 +188,7 @@ class Camera():
                     acqNum_currentRawData  = currentRawData[j,1]
                     isTOA_currentRawData   = currentRawData[j,2] & 0x8
                     asicNum_currentRawData = currentRawData[j,2] & 0x7
+            if (PRINT_VERBOSE): print('acqNum_currentRawData: ', acqNum_currentRawData, 'isTOA_currentRawData: ', isTOA_currentRawData, 'aasicNum_currentRawData: ', asicNum_currentRawData)
 
         #case 2: acqNumber are different
         if(acqNum_newRawData != acqNum_currentRawData):
@@ -214,7 +218,7 @@ class Camera():
             frameComplete = 0
             readyForDisplay = 0
 
-
+        if (PRINT_VERBOSE): print('frameComplete: ', frameComplete, 'readyForDisplay: ', readyForDisplay)
         #return parameters
         return [frameComplete, readyForDisplay, returnedRawData]
 
