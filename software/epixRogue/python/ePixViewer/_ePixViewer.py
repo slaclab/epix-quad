@@ -41,7 +41,7 @@ from matplotlib.figure import Figure
 import pdb
 
 
-PRINT_VERBOSE = 1
+PRINT_VERBOSE = 0
 
 ################################################################################
 ################################################################################
@@ -336,8 +336,10 @@ class Window(QtGui.QMainWindow, QObject):
         data  = np.frombuffer(rawData,dtype='uint32')
         # limits trace length for fast display (may be removed in the future)
         if (PRINT_VERBOSE): print(data)
-        for i in range (0,8):
-            data.pop(0)
+        #header are 8 32 bit words
+        #footer are 5 32 bit words
+
+        data  = data[8:-5]
         oscWords = len(data)
         #print(data)
         if (PRINT_VERBOSE): print("oscWords", oscWords)
