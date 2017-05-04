@@ -38,7 +38,10 @@ import numpy as np
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
-PRINT_VERBOSE = 1
+import pdb
+
+
+PRINT_VERBOSE = 0
 
 ################################################################################
 ################################################################################
@@ -111,7 +114,7 @@ class Window(QtGui.QMainWindow, QObject):
         self.pseudoScopeTrigger.connect(self.displayPseudoScopeFromReader)
         self.monitoringDataTrigger.connect(self.displayMonitoringDataFromReader) 
         # weak way to sync frame reader and display
-        self.readFileDelay = 0.1
+        self.readFileDelay = 2.1
         # initialize image processing objects
         self.rawImgFrame = []
         self.imgDesc = []
@@ -268,16 +271,21 @@ class Window(QtGui.QMainWindow, QObject):
     # If image frame is completed calls displayImageFromReader
     # If image is incomplete stores the partial image
     def buildImageFrame(self):
-        
-        [frameComplete, readyForDisplay, self.rawImgFrame] = self.currentCam.buildImageFrame(currentRawData = self.rawImgFrame, newRawData = self.eventReader.frameData)
+        ## enter debug mode
+        #print("\n---------------------------------\n-\n- Entering DEBUG mode \n-\n-\n--------------------------------- ")
+        #pdb.set_trace()
+        newRawData = self.eventReader.frameData
 
+        [frameComplete, readyForDisplay, self.rawImgFrame] = self.currentCam.buildImageFrame(currentRawData = self.rawImgFrame, newRawData = newRawData)
+
+        print('frameComplete: ', frameComplete, 'readyForDisplay: ', readyForDisplay)
         if (readyForDisplay):
             self.displayImageFromReader(imageData = self.rawImgFrame)
         if (frameComplete == 0 and readyForDisplay == 1):
         # in this condition we have data about two different images
         # since a new image has been sent and the old one is incomplete
         # the next line preserves the new data to be used with the next frame
-            self.rawImgFrame = self.eventReader.frameData
+            self.rawImgFrame = newRawData
         if (frameComplete == 1):
         # frees the memory since it has been used alreay enabling a new frame logic to start fresh
             self.rawImgFrame = []
@@ -555,6 +563,10 @@ class EventReader(rogue.interfaces.stream.Slave):
     # to dislplay it. The emit signal is needed because only that class' thread can 
     # access the screen.
     def _acceptFrame(self,frame):
+        ## enter debug mode
+        #print("\n---------------------------------\n-\n- Entering DEBUG mode _acceptFrame \n-\n-\n--------------------------------- ")
+        #pdb.set_trace()
+
 
         self.lastFrame = frame
         if ((self.enable) and (not self.busy)):
