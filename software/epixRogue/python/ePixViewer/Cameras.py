@@ -33,7 +33,7 @@ from PyQt4.QtGui import *
 from PyQt4.QtCore import QObject, pyqtSignal
 import numpy as np
 
-PRINT_VERBOSE = 1
+PRINT_VERBOSE = 0
 
 # define global constants
 NOCAMERA   = 0
@@ -150,8 +150,8 @@ class Camera():
         #self._NumAdcChPerAsic = 4
         #self._NumColPerAdcCh = 96
         #self._superRowSizeInBytes = self._superRowSize * 4
-        self.sensorWidth = 96#48 
-        self.sensorHeight = 96#48
+        self.sensorWidth  = 96 # The sensor size in this dimension is doubled because each pixel has two information (ToT and ToA) 
+        self.sensorHeight = 96 # The sensor size in this dimension is doubled because each pixel has two information (ToT and ToA) 
         self.pixelDepth = 16
 
     ##########################################################
@@ -200,9 +200,9 @@ class Camera():
             #
             currentRawData_DW = np.frombuffer(currentRawData,dtype='uint32')
                                                                              # header dword 0 (VC info)
-            acqNum_currentRawData  =  currentRawData_DW[1]                    # header dword 1
-            isTOA_currentRawData   = (currentRawData_DW[2] & 0x8) >> 3        # header dword 2  
-            asicNum_currentRawData =  currentRawData_DW[2] & 0x7                  # header dword 2
+            acqNum_currentRawData  =  currentRawData_DW[1]                   # header dword 1
+            isTOA_currentRawData   = (currentRawData_DW[2] & 0x8) >> 3       # header dword 2  
+            asicNum_currentRawData =  currentRawData_DW[2] & 0x7             # header dword 2
 
             currentRawData = self.fill_memory(returnedRawData, asicNum_currentRawData, isTOA_currentRawData, currentRawData_DW)
             returnedRawData = currentRawData
@@ -234,19 +234,6 @@ class Camera():
         if (PRINT_VERBOSE): print('Return data 1:', returnedRawData[1,0:10])
         if (PRINT_VERBOSE): print('Return data 2:', returnedRawData[2,0:10])
         if (PRINT_VERBOSE): print('Return data 3:', returnedRawData[3,0:10])
-
-        #if(asicNum_currentRawData==0 and isTOA_currentRawData==0):
-        #    returnedRawData[0,0]  = 1
-        #    returnedRawData[0,1:] = newRawData_DW
-        #if(asicNum_currentRawData==1 and isTOA_currentRawData==0):
-        #    returnedRawData[1,0]  = 1
-        #    returnedRawData[1,1:] = newRawData_DW
-        #if(asicNum_currentRawData==0 and isTOA_currentRawData==1):
-        #    returnedRawData[2,0]  = 1
-        #    returnedRawData[2,1:] = newRawData_DW
-        #if(asicNum_currentRawData==1 and isTOA_currentRawData==1):
-        #    returnedRawData[3,0]  = 1
-        #    returnedRawData[3,1:] = newRawData_DW
 
         #checks if the image is complete
         isValidTrace0 =  returnedRawData[0,0]
@@ -289,6 +276,8 @@ class Camera():
         if (PRINT_VERBOSE): print('Return data 2:', returnedRawData[2,0:10])
         if (PRINT_VERBOSE): print('Return data 3:', returnedRawData[3,0:10])
         return returnedRawData
+
+
     ##########################################################
     # define all camera specific descrabler functions
     ##########################################################
@@ -350,6 +339,31 @@ class Camera():
         return imgDesc
 
     def _descrambleTixel48x48Image(self, rawData):
+        """performs the Tixel image descrambling """
+
+        if (PRINT_VERBOSE): print('raw data 0:', rawData[0,0:10])
+        if (PRINT_VERBOSE): print('raw data 1:', rawData[1,0:10])
+        if (PRINT_VERBOSE): print('raw data 2:', rawData[2,0:10])
+        if (PRINT_VERBOSE): print('raw data 3:', rawData[3,0:10])
+        
+        quadrant0 = np.frombuffer(rawData[0,4:],dtype='uint16')
+        quadrant0sq = quadrant0.reshape(48,48)
+        quadrant1 = np.frombuffer(rawData[1,4:],dtype='uint16')
+        quadrant1sq = quadrant1.reshape(48,48)
+        quadrant2 = np.frombuffer(rawData[2,4:],dtype='uint16')
+        quadrant2sq = quadrant2.reshape(48,48)
+        quadrant3 = np.frombuffer(rawData[3,4:],dtype='uint16')
+        quadrant3sq = quadrant3.reshape(48,48)
+        
+        imgTop = np.concatenate((quadrant0sq, quadrant1sq),1)
+        imgBot = np.concatenate((quadrant2sq, quadrant3sq),1)
+
+        imgDesc = np.concatenate((imgTop, imgBot),0)
+        # returns final image
+        return imgDesc
+
+
+    def _descrambleTixel48x48ImageByLine(self, rawData):
         """performs the Tixel image descrambling """
 
         if (PRINT_VERBOSE): print('raw data 0:', rawData[0,0:10])

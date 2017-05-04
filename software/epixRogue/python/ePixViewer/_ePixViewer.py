@@ -41,7 +41,7 @@ from matplotlib.figure import Figure
 import pdb
 
 
-PRINT_VERBOSE = 0
+PRINT_VERBOSE = 1
 
 ################################################################################
 ################################################################################
@@ -114,7 +114,7 @@ class Window(QtGui.QMainWindow, QObject):
         self.pseudoScopeTrigger.connect(self.displayPseudoScopeFromReader)
         self.monitoringDataTrigger.connect(self.displayMonitoringDataFromReader) 
         # weak way to sync frame reader and display
-        self.readFileDelay = 2.1
+        self.readFileDelay = 0.1
         # initialize image processing objects
         self.rawImgFrame = []
         self.imgDesc = []
@@ -204,10 +204,12 @@ class Window(QtGui.QMainWindow, QObject):
 
     def setDark(self):
         self.imgTool.setDarkImg(self.imgDesc)
+        print("Dark image set.")
 
 
     def unsetDark(self):
         self.imgTool.unsetDarkImg()
+        print("Dark image unset.")
         
 
     # display the previous frame from the current file
@@ -288,9 +290,7 @@ class Window(QtGui.QMainWindow, QObject):
             self.rawImgFrame = newRawData
         if (frameComplete == 1):
         # frees the memory since it has been used alreay enabling a new frame logic to start fresh
-            self.rawImgFrame = []
-
-                
+            self.rawImgFrame = []              
         
 
     # core code for displaying the image
@@ -330,19 +330,14 @@ class Window(QtGui.QMainWindow, QObject):
 
     def displayPseudoScopeFromReader(self):
         if (PRINT_VERBOSE): print("Received pseudo scope data")
+        # saves data locally
         rawData = self.eventReaderScope.frameDataScope
-        rawDataLen = int(len(rawData)/4)
-        if (rawDataLen>1000):
-            rawDataLen=1000
-        if (PRINT_VERBOSE): print(rawData)
-        #data = np.fromstring(self.eventReader.frameData, dtype=np.uint32)  
-    
-        data = np.zeros((rawDataLen,1), dtype='int32')
-        #convert data into words
-        for j in range(0,rawDataLen-1):
-            data[j] = int.from_bytes(rawData[j*4:(j+1)*4], byteorder='little')
-        
-        if (PRINT_VERBOSE): print("Pseudo scope data converted")
+        # converts bytes to array of dwords
+        data  = np.frombuffer(rawData,dtype='uint32')
+        # limits trace length for fast display (may be removed in the future)
+        if (PRINT_VERBOSE): print(data)
+        for i in range (0,8):
+            data.pop(0)
         oscWords = len(data)
         #print(data)
         if (PRINT_VERBOSE): print("oscWords", oscWords)
@@ -351,7 +346,7 @@ class Window(QtGui.QMainWindow, QObject):
         chBdata = []
                
         #for val in data[8:8+oscWords/2-1]:
-        for j in range(8,8+int(oscWords/2-1)):
+        for j in range(0,int(oscWords/2)):
             convHi = -1.0 + ((data[j]>>16) & 0x3FFF) * (2.0/2**14)
             convLo = -1.0 + ((data[j]) & 0x3FFF) * (2.0/2**14)
             chAdata.append(convHi)
@@ -359,8 +354,7 @@ class Window(QtGui.QMainWindow, QObject):
 
         if (PRINT_VERBOSE): print("Channel A data retreived")
 
-        #for val in data[8+oscWords/2:8+oscWords-1]:
-        for j in range(8+int(oscWords/2),oscWords-1):
+        for j in range(int(oscWords/2),oscWords):
             convHi = -1.0 + ((data[j]>>16) & 0x3FFF) * (2.0/2**14)
             convLo = -1.0 + ((data[j]) & 0x3FFF) * (2.0/2**14)
             chBdata.append(convHi)
