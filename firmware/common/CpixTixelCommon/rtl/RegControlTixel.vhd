@@ -279,7 +279,8 @@ begin
       axiSlaveRegister(regCon,  x"00020C",  0, v.tixelRegOut.powerEnable);
       axiSlaveRegister(regCon,  x"000210",  0, v.tixelRegOut.asicMask);
       axiSlaveRegister(regCon,  x"000214",  0, v.vguardDacSetting);
-      axiSlaveRegister(regCon,  x"000218",  0, v.tixelRegOut.tixelDebug);
+      axiSlaveRegister(regCon,  x"000218",  0, v.tixelRegOut.tixelDbgSel1);
+      axiSlaveRegister(regCon,  x"00021C",  0, v.tixelRegOut.tixelDbgSel2);
       
       axiSlaveRegister(regCon,  x"000300",  0, v.adcClkHalfT);
       axiSlaveRegister(regCon,  x"000304",  0, v.tixelRegOut.requestStartupCal);

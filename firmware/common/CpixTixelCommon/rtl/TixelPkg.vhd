@@ -142,7 +142,8 @@ package TixelPkg is
       requestStartupCal    : sl;
       startupAck           : sl;
       startupFail          : sl;
-      tixelDebug           : slv(4 downto 0);
+      tixelDbgSel1         : slv(4 downto 0);
+      tixelDbgSel2         : slv(4 downto 0);
    end record;
    constant TIXEL_CONFIG_INIT_C : TixelConfigType := (
       powerEnable          => (others => '0'),
@@ -151,7 +152,8 @@ package TixelPkg is
       requestStartupCal    => '1',
       startupAck           => '0',
       startupFail          => '0',
-      tixelDebug           => (others => '0')
+      tixelDbgSel1         => (others => '0'),
+      tixelDbgSel2         => (others => '0')
    );
    
 

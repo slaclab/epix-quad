@@ -236,6 +236,7 @@ architecture top_level of TixelCore is
    signal iAdcPdwn   : slv(3 downto 0);
    
    signal tgOutMux         : sl;
+   signal mpsOutMux        : sl;
    
    signal inSync           : slv(NUMBER_OF_ASICS_C-1 downto 0);
    
@@ -280,7 +281,7 @@ begin
    --triggerOut     <= iAsicAcq;
    --mpsOut         <= pgpOpCodeOneShot;
    triggerOut     <= tgOutMux;
-   mpsOut         <= iAsic01DM2;
+   mpsOut         <= mpsOutMux;
    -- SACI signals
    saciSelL       <= iSaciSelL;
    saciClk        <= iSaciClk;
@@ -288,26 +289,38 @@ begin
    
    
    tgOutMux <= 
-      iAsic01DM1                       when tixelConfig.tixelDebug = "00000" else
-      iAsic01DM1 and not iAsicSync     when tixelConfig.tixelDebug = "00001" else
-      iAsic01DM1 and not iAsicStart    when tixelConfig.tixelDebug = "00010" else
-      iAsic01DM1 and not iAsicAcq      when tixelConfig.tixelDebug = "00011" else
-      iAsic01DM1 and not iAsicTpulse   when tixelConfig.tixelDebug = "00100" else
-      iAsic01DM1 and iAsicR0           when tixelConfig.tixelDebug = "00101" else
-      iAsicSync                        when tixelConfig.tixelDebug = "00110" else
-      iAsicStart                       when tixelConfig.tixelDebug = "00111" else
-      iAsicAcq                         when tixelConfig.tixelDebug = "01000" else
-      iAsicTpulse                      when tixelConfig.tixelDebug = "01001" else
-      iAsicR0                          when tixelConfig.tixelDebug = "01010" else
-      iSaciClk                         when tixelConfig.tixelDebug = "01011" else
-      iSaciCmd                         when tixelConfig.tixelDebug = "01100" else
-      saciRsp                          when tixelConfig.tixelDebug = "01101" else
-      iSaciSelL(0)                     when tixelConfig.tixelDebug = "01110" else
-      iSaciSelL(1)                     when tixelConfig.tixelDebug = "01111" else
-      asicRdClk                        when tixelConfig.tixelDebug = "10000" else
-      bitClk                           when tixelConfig.tixelDebug = "10001" else
-      byteClk                          when tixelConfig.tixelDebug = "10010" else
+      iAsic01DM1        when tixelConfig.tixelDbgSel1 = "00000" else
+      iAsicSync         when tixelConfig.tixelDbgSel1 = "00001" else
+      iAsicStart        when tixelConfig.tixelDbgSel1 = "00010" else
+      iAsicAcq          when tixelConfig.tixelDbgSel1 = "00011" else
+      iAsicTpulse       when tixelConfig.tixelDbgSel1 = "00100" else
+      iAsicR0           when tixelConfig.tixelDbgSel1 = "00101" else
+      iSaciClk          when tixelConfig.tixelDbgSel1 = "00110" else
+      iSaciCmd          when tixelConfig.tixelDbgSel1 = "00111" else
+      saciRsp           when tixelConfig.tixelDbgSel1 = "01000" else
+      iSaciSelL(0)      when tixelConfig.tixelDbgSel1 = "01001" else
+      iSaciSelL(1)      when tixelConfig.tixelDbgSel1 = "01010" else
+      asicRdClk         when tixelConfig.tixelDbgSel1 = "01011" else
+      bitClk            when tixelConfig.tixelDbgSel1 = "01100" else
+      byteClk           when tixelConfig.tixelDbgSel1 = "01101" else
       '0';   
+   
+   mpsOutMux <=
+      iAsic01DM2        when tixelConfig.tixelDbgSel2 = "00000" else
+      iAsicSync         when tixelConfig.tixelDbgSel2 = "00001" else
+      iAsicStart        when tixelConfig.tixelDbgSel2 = "00010" else
+      iAsicAcq          when tixelConfig.tixelDbgSel2 = "00011" else
+      iAsicTpulse       when tixelConfig.tixelDbgSel2 = "00100" else
+      iAsicR0           when tixelConfig.tixelDbgSel2 = "00101" else
+      iSaciClk          when tixelConfig.tixelDbgSel2 = "00110" else
+      iSaciCmd          when tixelConfig.tixelDbgSel2 = "00111" else
+      saciRsp           when tixelConfig.tixelDbgSel2 = "01000" else
+      iSaciSelL(0)      when tixelConfig.tixelDbgSel2 = "01001" else
+      iSaciSelL(1)      when tixelConfig.tixelDbgSel2 = "01010" else
+      asicRdClk         when tixelConfig.tixelDbgSel2 = "01011" else
+      bitClk            when tixelConfig.tixelDbgSel2 = "01100" else
+      byteClk           when tixelConfig.tixelDbgSel2 = "01101" else
+      '0';
    
    -- Temporary one-shot for grabbing PGP op code
    U_OpCodeEnOneShot : entity work.SynchronizerOneShot
