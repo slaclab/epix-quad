@@ -278,7 +278,7 @@ ePixBoard:
       InputChannelB: 0
       TriggerDelay: 0
     MMCM7Registers:
-      enable: true
+      enable: false
       CLKOUT0PhaseMux: 0
       CLKOUT0HighTime: 3
       CLKOUT0LowTime: 3

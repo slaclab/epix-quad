@@ -50,7 +50,7 @@ class Tixel(pr.Device):
             #surf.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]', offset=0x0A000800),    # not used in tixel, disabled by microblaze
             surf.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]', offset=0x0A001000),
             OscopeRegisters(name='Oscilloscope', offset=0x0C000000),
-            MMCM7Registers(name='MMCM7Registers', offset=0x0D000000)))
+            MMCM7Registers(name='MMCM7Registers', offset=0x0D000000, enabled=False)))
       
 
 class TixelFpgaRegisters(pr.Device):
@@ -112,12 +112,13 @@ class TixelFpgaRegisters(pr.Device):
       self.add(pr.Variable(name='SaciPrepRdoutCnt',description='SaciPrepRdoutCnt',  offset=0x00000204, bitSize=32, bitOffset=0, base='uint', mode='RO'))
       self.add(pr.Variable(name='ResetCounters',   description='ResetCounters',     offset=0x00000208, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
       self.add((
-         pr.Variable(name='PwrDigitalEn', description='PowerEnable', offset=0x0000020C, bitSize=1, bitOffset=0, base='bool', mode='RW'),
-         pr.Variable(name='PwrAnalogEn',  description='PowerEnable', offset=0x0000020C, bitSize=1, bitOffset=1, base='bool', mode='RW'),
-         pr.Variable(name='FpgaOutEn',    description='PowerEnable', offset=0x0000020C, bitSize=1, bitOffset=2, base='bool', mode='RW')))
-      self.add(pr.Variable(name='AsicMask',        description='AsicMask',          offset=0x00000210, bitSize=32, bitOffset=0, base='hex',  mode='RW'))
-      self.add(pr.Variable(name='VguardDacSetting',description='VguardDacSetting',  offset=0x00000214, bitSize=16, bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='TixelDebug',      description='TixelDebug',        offset=0x00000218, bitSize=5,  bitOffset=0, base='hex',  mode='RW'))
+         pr.Variable(name='PwrDigitalEn',             description='PowerEnable',       offset=0x0000020C, bitSize=1,  bitOffset=0, base='bool', mode='RW'),
+         pr.Variable(name='PwrAnalogEn',              description='PowerEnable',       offset=0x0000020C, bitSize=1,  bitOffset=1, base='bool', mode='RW'),
+         pr.Variable(name='FpgaOutEn',                description='PowerEnable',       offset=0x0000020C, bitSize=1,  bitOffset=2, base='bool', mode='RW')))
+      self.add(pr.Variable(name='AsicMask',           description='AsicMask',          offset=0x00000210, bitSize=32, bitOffset=0, base='hex',  mode='RW'))
+      self.add(pr.Variable(name='VguardDacSetting',   description='VguardDacSetting',  offset=0x00000214, bitSize=16, bitOffset=0, base='uint', mode='RW'))
+      self.add(pr.Variable(name='TixelDebugSel1',     description='TixelDebugSel1',    offset=0x00000218, bitSize=5,  bitOffset=0, base='hex',  mode='RW'))
+      self.add(pr.Variable(name='TixelDebugSel2',     description='TixelDebugSel2',    offset=0x0000021C, bitSize=5,  bitOffset=0, base='hex',  mode='RW'))
       
       self.add(pr.Variable(name='AdcClkHalfT',     description='AdcClkHalfT',       offset=0x00000300, bitSize=32, bitOffset=0, base='uint', mode='RW'))
       self.add((

@@ -22,6 +22,11 @@
 #-----------------------------------------------------------------------------
 import pyrogue as pr
 import collections
+import os
+from PyQt4 import QtGui, QtCore
+from PyQt4.QtGui import *
+from numpy import genfromtxt
+
 
 #import epix.Epix100aAsic
 
@@ -449,7 +454,7 @@ class TixelAsic(pr.Device):
          
         # CMD = 6, Addr = 17 : Row counter[8:0]
         self.add((
-            pr.Variable(name='RowCounter', description='RowCounter', bitSize=9, bitOffset=0, base='hex', mode='WO', setFunction='dev._defaultValue = value', getFunction='value = dev._defaultValue'),
+            pr.Variable(name='RowCounter', description='RowCounter', bitSize=9, bitOffset=0, base='hex', mode='RW', setFunction='dev._defaultValue = value', getFunction='value = dev._defaultValue'),
             pr.Command( name='WriteRowCounter', description='Special command to write row counter', offset=0x00006011*addrSize, bitSize=9, bitOffset=0, function=self.fnWriteRowCounter, hidden=True)))
 
         # CMD = 6, Addr = 19 : Bank select [3:0] & Col counter[6:0]
@@ -474,9 +479,10 @@ class TixelAsic(pr.Device):
         
 
         # CMD = 5, Addr = X  : Read/Write Pixel with data
-        self.add((
-            pr.Command(name='WritePixelData', description='Write PixelTest and PixelMask to current pixel only',  offset=0x00005000*addrSize, bitSize=32, bitOffset=0, function=self.fnWritePixelData),
-            pr.Command(name='ReadPixelData',  description='Read PixelTest and PixelMask from current pixel only', offset=0x00005000*addrSize, bitSize=32, bitOffset=0, function=self.fnReadPixelData)))
+        self.add(pr.Variable(name='WritePixelData',  description='WritePixelData',  offset=0x00005000*addrSize, bitSize=32, bitOffset=0,  base='uint',  mode='WO'))
+        #self.add((
+        #    pr.Command(name='WritePixelData', description='Write PixelTest and PixelMask to current pixel only',  offset=0x00005000*addrSize, bitSize=32, bitOffset=0, function=self.fnWritePixelData),
+        #    pr.Command(name='ReadPixelData',  description='Read PixelTest and PixelMask from current pixel only', offset=0x00005000*addrSize, bitSize=32, bitOffset=0, function=self.fnReadPixelData)))
 
         # CMD = 7, Addr = X  : Prepare to write chip ID
         self.add((
@@ -512,11 +518,18 @@ class TixelAsic(pr.Device):
     def fnSetTestBitmap(self, dev,cmd,arg):
         """SetTestBitmap command function"""
         self.reportCmd(dev,cmd,arg)
-        for i in range (0, 48):
-            self.PrepareMultiConfig()
-            self.ColCounter.set(i)
-            self.WriteColData()
-        self.CmdPrepForRead()
+        self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+        if os.path.splitext(self.filename)[1] == '.csv':
+            tixelCfg = genfromtxt(self.filename, delimiter=',')
+            if tixelCfg.shape == (48, 48):
+                for x in range (0, 48):
+                    self.RowCounter.set(x)
+                    for y in range (0, 48):
+                        self.ColCounter.set(y)
+                        self.WritePixelData.set(tixelCfg[x][y])
+                self.CmdPrepForRead()
+            else:
+                print('csv file must be 48x48 pixels')
 
     def fnClearMatrix(self, dev,cmd,arg):
         """ClearMatrix command function"""
