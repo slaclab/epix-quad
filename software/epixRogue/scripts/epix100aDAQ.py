@@ -122,7 +122,7 @@ class MyRunControl(pyrogue.RunControl):
         pyrogue.RunControl.__init__(self,name,'Run Controller ePix 100a')
         self._thread = None
 
-        self.runRate.enum = {1:'1 Hz', 10:'10 Hz', 30:'30 Hz', 60:'60 Hz', 120:'120 Hz'}
+        self.runRate.enum = {1:'1 Hz', 2:'2 Hz', 4:'4 Hz', 8:'8 Hz', 10:'10 Hz', 30:'30 Hz', 60:'60 Hz', 120:'120 Hz'}
 
     def _setRunState(self,dev,var,value):
         if self._runState != value:
@@ -148,6 +148,7 @@ class MyRunControl(pyrogue.RunControl):
             if self._last != int(time.time()):
                 self._last = int(time.time())
                 self.runCount._updated()
+
             
 ##############################
 # Set base

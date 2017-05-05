@@ -280,7 +280,7 @@ class Window(QtGui.QMainWindow, QObject):
 
         [frameComplete, readyForDisplay, self.rawImgFrame] = self.currentCam.buildImageFrame(currentRawData = self.rawImgFrame, newRawData = newRawData)
 
-        print('frameComplete: ', frameComplete, 'readyForDisplay: ', readyForDisplay)
+        if (PRINT_VERBOSE): print('frameComplete: ', frameComplete, 'readyForDisplay: ', readyForDisplay)
         if (readyForDisplay):
             self.displayImageFromReader(imageData = self.rawImgFrame)
         if (frameComplete == 0 and readyForDisplay == 1):
@@ -333,6 +333,33 @@ class Window(QtGui.QMainWindow, QObject):
         # saves data locally
         rawData = self.eventReaderScope.frameDataScope
         # converts bytes to array of dwords
+        data  = np.frombuffer(rawData,dtype='uint16')
+        # limits trace length for fast display (may be removed in the future)
+        if (PRINT_VERBOSE): print(data)
+        #header are 8 32 bit words
+        #footer are 5 32 bit words
+
+        data  = data[16:-10]
+        oscWords = len(data)
+        #print(data)
+        if (PRINT_VERBOSE): print("oscWords", oscWords)
+
+        chAdata = -1.0 + data[0:int(oscWords/2)] * (2.0/2**14)
+        chBdata = -1.0 + data[int(oscWords/2): oscWords] * (2.0/2**14)
+        
+        if (PRINT_VERBOSE): print("Channel B data retreived")
+        if (self.LinePlot2_RB1.isChecked()):
+            self.lineDisplay2.update_figure(self.cbScopeCh0.isChecked(), "Scope Trace A", 'r',  chAdata, 
+                                            self.cbScopeCh1.isChecked(), "Scope Trace B", 'b',  chBdata)
+        if (PRINT_VERBOSE): print("Pseudo scope data displayed")
+       
+
+
+    def displayPseudoScopeFromReader_deprecated(self):
+        if (PRINT_VERBOSE): print("Received pseudo scope data")
+        # saves data locally
+        rawData = self.eventReaderScope.frameDataScope
+        # converts bytes to array of dwords
         data  = np.frombuffer(rawData,dtype='uint32')
         # limits trace length for fast display (may be removed in the future)
         if (PRINT_VERBOSE): print(data)
@@ -361,6 +388,7 @@ class Window(QtGui.QMainWindow, QObject):
             convLo = -1.0 + ((data[j]) & 0x3FFF) * (2.0/2**14)
             chBdata.append(convHi)
             chBdata.append(convHi)
+
     
         if (PRINT_VERBOSE): print("Channel B data retreived")
         if (self.LinePlot2_RB1.isChecked()):
@@ -545,7 +573,9 @@ class EventReader(rogue.interfaces.stream.Slave):
         self.frameDataMonitoring = bytearray()
         self.readDataDone = False
         self.parent = parent
+        #############################
         # define the data type IDs
+        #############################
         self.VIEW_DATA_CHANNEL_ID    = 0x1
         self.VIEW_PSEUDOSCOPE_ID     = 0x2
         self.VIEW_MONITORING_DATA_ID = 0x3
@@ -553,8 +583,8 @@ class EventReader(rogue.interfaces.stream.Slave):
         self.busy = False
 
 
-    # checks all frames in the file to look for the one that needs to be displayed
-    # self.frameIndex defines which frame should be returned
+    # Checks all frames in the file to look for the one that needs to be displayed
+    # self.frameIndex defines which frame should be returned.
     # Once the frame is found, saves data and emits a signal do enable the class window
     # to dislplay it. The emit signal is needed because only that class' thread can 
     # access the screen.
@@ -572,7 +602,7 @@ class EventReader(rogue.interfaces.stream.Slave):
             chNum = (self.lastFrame.getFlags() >> 24)
             # reads payload only
             p = bytearray(self.lastFrame.getPayload())
-            #print('Frame header: ', p[0])
+            if (PRINT_VERBOSE): print('Frame header: ', p[0])
             # reads entire frame
             self.lastFrame.read(p,0)
             VcNum =  p[0] & 0xF
@@ -581,9 +611,7 @@ class EventReader(rogue.interfaces.stream.Slave):
             if (chNum == self.VIEW_DATA_CHANNEL_ID or VcNum == 0) :
                 #print('-------- Event --------')
                 # Collect the data
-#                p = bytearray(frame.getPayload())
                 if (PRINT_VERBOSE): print('Num. image data readout: ', len(p))
-#                self.lastFrame.read(p,0)
                 self.frameData = p
                 cnt = 0
                 if ((self.numAcceptedFrames == self.frameIndex) or (self.frameIndex == 0)):              
@@ -598,7 +626,6 @@ class EventReader(rogue.interfaces.stream.Slave):
             #during stream VIEW_PSEUDOSCOPE_ID is set to zero
             if (chNum == self.VIEW_PSEUDOSCOPE_ID or VcNum == self.VIEW_PSEUDOSCOPE_ID) :
                 #view Pseudo Scope Data
-                #p = bytearray(frame.getPayload())
                 if (PRINT_VERBOSE): print('Num. pseudo scope data readout: ', len(p))
                 self.frameDataScope = p
                 # Emit the signal.
@@ -609,7 +636,6 @@ class EventReader(rogue.interfaces.stream.Slave):
 
             if (chNum == self.VIEW_MONITORING_DATA_ID or VcNum == self.VIEW_MONITORING_DATA_ID) :
                 #view Pseudo Scope Data
-                #p = bytearray(frame.getPayload())
                 if (PRINT_VERBOSE): print('Num. slow monitoring data readout: ', len(p))
                 self.frameDataMonitoring = p
                 # Emit the signal.
@@ -646,7 +672,9 @@ class MplCanvas(FigureCanvas):
         
 
     def compute_initial_figure(self):
-        self.axes.plot([0, 1, 2, 3], [1, 2, 0, 4], 'b')
+        #if one wants to plot something at the begining of the application fill this function.
+        #self.axes.plot([0, 1, 2, 3], [1, 2, 0, 4], 'b')
+        self.axes.plot([], [], 'b')
 
     def update_figure(self):
         # Build a list of 4 random integers between 0 and 10 (both inclusive)
@@ -654,14 +682,9 @@ class MplCanvas(FigureCanvas):
         #self.axes.cla()
         self.axes.plot([0, 1, 2, 3], l, 'r')
         self.draw()
-#    def update_figure(self, data):
-#        # Build a list of 4 random integers between 0 and 10 (both inclusive)
-#        l = data #[random.randint(0, 10) for i in range(4)]
-#        self.axes.cla()
-#        self.axes.plot(l, 'r')
-#        self.draw()
-    # ther arguments are expected in the following seguence
-    #enabled, name, color, array of data
+
+    #the arguments are expected in the following sequence
+    # (display enabled, line name, line color, data array)
     def update_figure(self, *args):
         argIndex = 0
         lineName = ""

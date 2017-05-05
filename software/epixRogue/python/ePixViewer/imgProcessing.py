@@ -34,7 +34,7 @@ from PyQt4.QtGui import *
 from PyQt4.QtCore import QObject, pyqtSignal
 import numpy as np
 
-
+PRINT_VERBOSE = 0
 
 ################################################################################
 ################################################################################
@@ -82,32 +82,20 @@ class ImageProcessing():
 
     def reScaleImgTo8bit(self, rawImage, scaleMax=20000, scaleMin=-200):
         #init
-        print ("raw image" , rawImage.shape)
-        print ("raw image max {}, min {}".format(np.amax(rawImage), np.amin(rawImage)))
+        if (PRINT_VERBOSE): print ("raw image" , rawImage.shape)
+        if (PRINT_VERBOSE): print ("raw image max {}, min {}".format(np.amax(rawImage), np.amin(rawImage)))
         image = np.clip(rawImage, scaleMin, scaleMax)
-        print ("image" , image.shape)
-        print ("limits max {}, min {}".format(scaleMax, scaleMin))
-        print ("clipped image max {}, min {}".format(np.amax(image), np.amin(image)))
+        if (PRINT_VERBOSE): print ("image" , image.shape)
+        if (PRINT_VERBOSE): print ("limits max {}, min {}".format(scaleMax, scaleMin))
+        if (PRINT_VERBOSE): print ("clipped image max {}, min {}".format(np.amax(image), np.amin(image)))
         
         #re-scale
         imageRS = np.array(((image-scaleMin) * (255 / (scaleMax - scaleMin))))
-        print ("16 bit image max {}, min {}".format(np.amax(imageRS), np.amin(imageRS)))
+        if (PRINT_VERBOSE): print ("16 bit image max {}, min {}".format(np.amax(imageRS), np.amin(imageRS)))
         
         image8b = imageRS.astype('uint8')
-        print ("8 bit image max {}, min {}".format(np.amax(image8b), np.amin(image8b)))
-        print ("scaled image" , image8b.shape)
+        if (PRINT_VERBOSE): print ("8 bit image max {}, min {}".format(np.amax(image8b), np.amin(image8b)))
+        if (PRINT_VERBOSE): print ("scaled image" , image8b.shape)
         #return results
         return image8b
-#        for y in range(0,imgHeight):
-#            for x in range(0,imgWidth):
-#                arrayIndex = x+(y*imgWidth)
-#                if (arrayIndex < arrayLen):
-#                    data = self.eventReader.frameData[arrayIndex]
-#                else:
-#                    data = self.eventReader.frameData[0]
-#                #value = QtGui.qRgb(data, data, data)
-#                #image.setPixel(x,y,value)
-#                self.image.setPixel(x,y,data<<16|data<<8|data)
-
-
 
