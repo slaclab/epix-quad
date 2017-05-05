@@ -446,6 +446,16 @@ class TixelAsic(pr.Device):
             pr.Variable(name='BGRctrlDACdll',      description='Config16', offset=0x00001010*addrSize, bitSize=2, bitOffset=3,  base='uint', mode='RW'),
             pr.Variable(name='BGRctrlDACtestine',  description='Config16', offset=0x00001010*addrSize, bitSize=2, bitOffset=5,  base='uint', mode='RW'),
             pr.Variable(name='BGRctrlDACpfaComp',  description='Config16', offset=0x00001010*addrSize, bitSize=2, bitOffset=7,  base='uint', mode='RW')))
+         
+        # CMD = 6, Addr = 17 : Row counter[8:0]
+        self.add((
+            pr.Variable(name='RowCounter', description='RowCounter', bitSize=9, bitOffset=0, base='hex', mode='WO', setFunction='dev._defaultValue = value', getFunction='value = dev._defaultValue'),
+            pr.Command( name='WriteRowCounter', description='Special command to write row counter', offset=0x00006011*addrSize, bitSize=9, bitOffset=0, function=self.fnWriteRowCounter, hidden=True)))
+
+        # CMD = 6, Addr = 19 : Bank select [3:0] & Col counter[6:0]
+        self.add((
+            pr.Variable(name='ColCounter', description='',                                offset=0x00006013*addrSize, bitSize=7, bitOffset=0, base='hex', mode='WO'),
+            pr.Variable(name='BankSelect', description='Active low bank select bit mask', offset=0x00006013*addrSize, bitSize=4, bitOffset=7, base='hex', mode='WO')))
             
         # CMD = 2, Addr = X  : Write Row with data
         self.add((
@@ -495,8 +505,18 @@ class TixelAsic(pr.Device):
 
         self.add(
             pr.Command(name='ClearMatrix',description='Clear configuration bits of all pixels', function=self.fnClearMatrix))
+            
+        self.add(
+            pr.Command(name='SetTestBitmap',description='Set test pattern bitmap of the matrix', function=self.fnSetTestBitmap))
 
-       
+    def fnSetTestBitmap(self, dev,cmd,arg):
+        """SetTestBitmap command function"""
+        self.reportCmd(dev,cmd,arg)
+        for i in range (0, 48):
+            self.PrepareMultiConfig()
+            self.ColCounter.set(i)
+            self.WriteColData()
+        self.CmdPrepForRead()
 
     def fnClearMatrix(self, dev,cmd,arg):
         """ClearMatrix command function"""

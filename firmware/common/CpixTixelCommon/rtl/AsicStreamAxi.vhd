@@ -63,10 +63,12 @@ entity AsicStreamAxi is
       -- acquisition number input to the header
       acqNo             : in  slv(31 downto 0);
       
-      -- ASIC readout strobe for test mode
-      asicAcq           : in  sl
-      -- ASIC R0 to inhibit corrupted link
-      --asicR0            : in  sl
+      -- optional readout trigger for test mode
+      testTrig          : in  sl := '0';
+      -- optional inhibit counting errors 
+      -- workaround to tixel bug dropping link after R0
+      -- affects only SOF error counter
+      errInhibit        : in  sl := '0'
       
    );
 end AsicStreamAxi;
@@ -84,7 +86,9 @@ architecture RTL of AsicStreamAxi is
    type StrType is record
       state          : StateType;
       stCnt          : natural;
-      asicAcq        : slv(2 downto 0);
+      testColCnt     : natural;
+      testRowCnt     : natural;
+      testTrig       : slv(2 downto 0);
       testMode       : sl;
       testBitFlip    : sl;
       frmSize        : slv(15 downto 0);
@@ -95,6 +99,8 @@ architecture RTL of AsicStreamAxi is
       sofError       : slv(15 downto 0);
       eofError       : slv(15 downto 0);
       ovError        : slv(15 downto 0);
+      rstCnt         : sl;
+      errInhibit     : sl;
       dFifoRd        : sl;
       tReady         : sl;
       axisMaster     : AxiStreamMasterType;
@@ -103,7 +109,9 @@ architecture RTL of AsicStreamAxi is
    constant STR_INIT_C : StrType := (
       state          => IDLE_S,
       stCnt          => 0,
-      asicAcq        => "000",
+      testColCnt     => 0,
+      testRowCnt     => 0,
+      testTrig       => "000",
       testMode       => '0',
       testBitFlip    => '0',
       frmSize        => (others=>'0'),
@@ -114,6 +122,8 @@ architecture RTL of AsicStreamAxi is
       sofError       => (others=>'0'),
       eofError       => (others=>'0'),
       ovError        => (others=>'0'),
+      rstCnt         => '0',
+      errInhibit     => '0',
       dFifoRd        => '0',
       tReady         => '0',
       axisMaster     => AXI_STREAM_MASTER_INIT_C
@@ -128,6 +138,7 @@ architecture RTL of AsicStreamAxi is
       sofError          : slv(15 downto 0);
       eofError          : slv(15 downto 0);
       ovError           : slv(15 downto 0);
+      rstCnt            : slv(2 downto 0);
       sAxilWriteSlave   : AxiLiteWriteSlaveType;
       sAxilReadSlave    : AxiLiteReadSlaveType;
    end record RegType;
@@ -141,6 +152,7 @@ architecture RTL of AsicStreamAxi is
       sofError          => (others=>'0'),
       eofError          => (others=>'0'),
       ovError           => (others=>'0'),
+      rstCnt            => (others=>'0'),
       sAxilWriteSlave   => AXI_LITE_WRITE_SLAVE_INIT_C,
       sAxilReadSlave    => AXI_LITE_READ_SLAVE_INIT_C
    );
@@ -266,20 +278,21 @@ begin
    
    
    comb : process (axilRst, axisRst, sAxilReadMaster, sAxilWriteMaster, sAxisSlave, r, s, 
-      acqNo, dFifoOut, dFifoValid, dFifoSof, dFifoEof, dFifoEofe, asicAcq) is
+      acqNo, dFifoOut, dFifoValid, dFifoSof, dFifoEof, dFifoEofe, testTrig, errInhibit) is
       variable sv       : StrType;
       variable rv       : RegType;
       variable regCon   : AxiLiteEndPointType;
    begin
-      rv := r;
-      sv := s;
+      rv := r;    -- r is in AXI lite clock domain
+      sv := s;    -- s is in AXI stream clock domain
       sv.dFifoRd := '0';
       sv.axisMaster := AXI_STREAM_MASTER_INIT_C;
-      sv.asicAcq(0) := asicAcq;
-      sv.asicAcq(1) := s.asicAcq(0);
-      sv.asicAcq(2) := s.asicAcq(1);
+      sv.testTrig(0) := testTrig;
+      sv.testTrig(1) := s.testTrig(0);
+      sv.testTrig(2) := s.testTrig(1);
+      sv.errInhibit := errInhibit;
       
-      -- axi lite logic 
+      -- cross clock sync
       
       rv.frmSize := s.frmSize;
       rv.frmMax  := s.frmMax;
@@ -289,7 +302,14 @@ begin
       rv.eofError := s.eofError;
       rv.ovError  := s.ovError;
       sv.testMode := r.testMode;
+      if r.rstCnt /= "000" then
+         sv.rstCnt := '1';
+      else
+         sv.rstCnt := '0';
+      end if;
       
+      -- axi lite logic 
+      rv.rstCnt := r.rstCnt(1 downto 0) & '0';
       rv.sAxilReadSlave.rdata := (others => '0');
       axiSlaveWaitTxn(regCon, sAxilWriteMaster, sAxilReadMaster, rv.sAxilWriteSlave, rv.sAxilReadSlave);
       
@@ -301,6 +321,7 @@ begin
       axiSlaveRegisterR(regCon, x"14", 0, r.eofError);
       axiSlaveRegisterR(regCon, x"18", 0, r.ovError);
       axiSlaveRegister (regCon, x"1C", 0, rv.testMode);
+      axiSlaveRegister (regCon, x"20", 0, rv.rstCnt);
       
       axiSlaveDefault(regCon, rv.sAxilWriteSlave, rv.sAxilReadSlave, AXIL_ERR_RESP_G);
       
@@ -317,16 +338,20 @@ begin
       
       case s.state is
          when IDLE_S =>
-            if (dFifoValid = '1' and dFifoSof = '1') or (s.testMode = '1' and s.asicAcq(1) = '1' and s.asicAcq(2) = '0') then
+            if (dFifoValid = '1' and dFifoSof = '1') or (s.testMode = '1' and s.testTrig(1) = '1' and s.testTrig(2) = '0') then
                -- start sending the header
                -- do not read the fifo yet
                sv.acqNo(1) := s.acqNo(0);
                sv.state := HDR_S;
-               sv.testBitFlip := not s.testBitFlip;
+               sv.testBitFlip := '0';
+               sv.testColCnt := 0;
+               sv.testRowCnt := 0;
             elsif dFifoValid = '1' then
                -- should not happen
                -- dump data and report an error
-               sv.sofError := s.sofError + 1;
+               if s.errInhibit = '0' then
+                  sv.sofError := s.sofError + 1;
+               end if;
                sv.dFifoRd := '1';
             end if;
          
@@ -360,11 +385,27 @@ begin
          
          when DATA_S =>
             if dFifoValid = '1' or s.testMode = '1' then
+               
+               -- test mode row and col counters
+               if s.testColCnt < 47 then
+                  sv.testColCnt := s.testColCnt + 1;
+               else
+                  sv.testColCnt := 0;
+                  sv.testRowCnt := s.testRowCnt + 1;
+               end if;
+               
+               -- test or real data readout
                sv.axisMaster.tValid := '1';
                if s.testMode = '0' then
                   sv.axisMaster.tData(15 downto 0) := dFifoOut;
                else
-                  sv.axisMaster.tData(15 downto 0) := x"ff3" & "11" & s.testBitFlip & '1';
+                  if s.testColCnt = 23 then
+                     sv.axisMaster.tData(15 downto 0) := "00000" & ASIC_NO_G(1 downto 0) & s.testBitFlip  & "00" & toSlv(s.testRowCnt, 6);
+                  elsif s.testRowCnt = 23 then
+                     sv.axisMaster.tData(15 downto 0) := "00000" & ASIC_NO_G(1 downto 0) & s.testBitFlip  & "00" & toSlv(s.testColCnt, 6);
+                  else
+                     sv.axisMaster.tData(15 downto 0) := "00000" & ASIC_NO_G(1 downto 0) & s.testBitFlip  & x"ff";
+                  end if;
                end if;
                sv.dFifoRd := '1';
                sv.stCnt := s.stCnt + 1;
@@ -385,12 +426,36 @@ begin
                      sv.frmCnt := s.frmCnt + 1;
                   end if;
                   sv.axisMaster.tLast := '1';
-                  sv.state := IDLE_S;
-               end if;
+                  if s.testMode = '0' then
+                     sv.state := IDLE_S;
+                  else
+                     -- if test mode is enabled 
+                     -- emulate second data set (toa and tot)
+                     if s.testBitFlip = '0' then
+                        sv.testBitFlip := '1';
+                        sv.testColCnt := 0;
+                        sv.testRowCnt := 0;
+                        sv.state := HDR_S;
+                     else
+                        sv.state := IDLE_S;
+                     end if;
+                  end if;
+               end if;               
             end if;
          
          when others =>
       end case;
+      
+      -- reset counters
+      if s.rstCnt = '1' then
+         sv.frmCnt   := (others=>'0');
+         sv.frmSize  := (others=>'0');
+         sv.frmMax   := (others=>'0');
+         sv.frmMin   := (others=>'1');
+         sv.eofError := (others=>'0');
+         sv.sofError := (others=>'0');
+         sv.ovError  := (others=>'0');
+      end if;
       
       -- reset logic
       

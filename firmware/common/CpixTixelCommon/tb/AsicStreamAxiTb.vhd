@@ -214,7 +214,7 @@ begin
       mAxisMaster       => mAxisMaster,
       mAxisSlave        => mAxisSlave,
       acqNo             => acqNo,
-      asicAcq           => asicAcq
+      testTrig          => asicAcq
    );
 
    -- clock generation

@@ -337,8 +337,8 @@ begin
       daqTrigOut    => iDaqTrigOut
    );
    
-   autoRunEn <= trigSync.autoRunEn and trigSync.runTriggerEnable;
-   autoDaqEn <= trigSync.autoDaqEn and trigSync.daqTriggerEnable;
+   autoRunEn <= '1' when trigSync.autoRunEn = '1' and trigSync.runTriggerEnable = '1' and trigSync.autoTrigPeriod /= 0 else '0';
+   autoDaqEn <= '1' when trigSync.autoDaqEn = '1' and trigSync.daqTriggerEnable = '1' and trigSync.autoTrigPeriod /= 0 else '0';
 
    --------------------------------
    -- Acquisition Counter And Outputs

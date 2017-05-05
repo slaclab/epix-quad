@@ -174,6 +174,7 @@ architecture top_level of TixelCore is
    signal iDelayCtrlClk : sl;
    signal iDelayCtrlRst : sl;
    signal powerBad      : sl;
+   signal errInhibit    : sl;
    
    signal pgpRxOut      : Pgp2bRxOutType;
    
@@ -261,6 +262,7 @@ architecture top_level of TixelCore is
    attribute keep of adcValid : signal is "true";
    attribute keep of saciPrepReadoutReq : signal is "true";
    attribute keep of saciPrepReadoutAck : signal is "true";
+   attribute keep of errInhibit : signal is "true";
    
    
 begin
@@ -551,7 +553,8 @@ begin
          mAxisMaster       => framerAxisMaster(i),
          mAxisSlave        => framerAxisSlave(i),
          acqNo             => tixelConfig.acqCnt,
-         asicAcq           => iAsicAcq
+         testTrig          => iAsicAcq,
+         errInhibit        => errInhibit
       );
    
    end generate;
@@ -675,7 +678,8 @@ begin
       asicR0         => iAsicR0,
       asicGlblRst    => iAsicGrst,
       asicSync       => iAsicSync,
-      asicAcq        => iAsicAcq
+      asicAcq        => iAsicAcq,
+      errInhibit     => errInhibit
    );
    
    asicAcq        <= iAsicAcq;

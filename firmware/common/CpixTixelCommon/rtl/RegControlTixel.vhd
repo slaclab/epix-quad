@@ -74,7 +74,8 @@ entity RegControlTixel is
       asicR0         : out sl;
       asicGlblRst    : out sl;
       asicSync       : out sl;
-      asicAcq        : out sl
+      asicAcq        : out sl;
+      errInhibit     : out sl
    );
 end RegControlTixel;
 
@@ -173,6 +174,7 @@ architecture rtl of RegControlTixel is
       asicAcqReg        : AsicAcqType;
       vguardDacSetting  : slv(15 downto 0);
       asicAcqTimeCnt    : slv(31 downto 0);
+      errInhibitCnt     : slv(31 downto 0);
       axiReadSlave      : AxiLiteReadSlaveType;
       axiWriteSlave     : AxiLiteWriteSlaveType;
    end record RegType;
@@ -188,6 +190,7 @@ architecture rtl of RegControlTixel is
       asicAcqReg        => ASICACQ_TYPE_INIT_C,
       asicAcqTimeCnt    => (others=>'0'),
       vguardDacSetting  => (others=>'0'),
+      errInhibitCnt     => (others=>'0'),
       axiReadSlave      => AXI_LITE_READ_SLAVE_INIT_C,
       axiWriteSlave     => AXI_LITE_WRITE_SLAVE_INIT_C
    );
@@ -407,6 +410,18 @@ begin
          v.saciPrepRdoutCnt   := (others=>'0');
       end if;
       
+      -- tixel bug workaround
+      -- for a number of clock cycles
+      -- data link is dropped after R0 
+      if r.asicAcqReg.R0 = not r.asicAcqReg.R0Polarity then
+         v.errInhibitCnt := (others=>'0');
+         errInhibit <= '1';
+      elsif r.errInhibitCnt <= 5000 then    -- inhibit for 50 us
+         v.errInhibitCnt := r.errInhibitCnt + 1;
+         errInhibit <= '1';
+      else
+         errInhibit <= '0';
+      end if;
       
       -- Synchronous Reset
       if axiReset = '1' then
