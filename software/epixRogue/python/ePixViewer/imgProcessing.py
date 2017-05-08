@@ -90,7 +90,10 @@ class ImageProcessing():
         if (PRINT_VERBOSE): print ("clipped image max {}, min {}".format(np.amax(image), np.amin(image)))
         
         #re-scale
-        imageRS = np.array(((image-scaleMin) * (255 / (scaleMax - scaleMin))))
+        deltaScale = abs(scaleMax - scaleMin)
+        if (deltaScale == 0):
+            deltaScale = 1
+        imageRS = np.array(((image-scaleMin) * (255 / (deltaScale))))
         if (PRINT_VERBOSE): print ("16 bit image max {}, min {}".format(np.amax(imageRS), np.amin(imageRS)))
         
         image8b = imageRS.astype('uint8')
