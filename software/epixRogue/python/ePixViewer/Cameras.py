@@ -211,6 +211,7 @@ class Camera():
             #recovers currentRawData header info
             #loop traverses the four traces to find the info
             for j in range(0,4):
+                j = int(j)
                 if(currentRawData[j,0]==1):
                                                                                 # extended header dword 0 (valid trace)
                                                                                 # extended header dword 1 (VC info)
