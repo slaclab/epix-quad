@@ -41,7 +41,7 @@ from matplotlib.figure import Figure
 import pdb
 
 
-PRINT_VERBOSE = 1
+PRINT_VERBOSE = 0
 
 ################################################################################
 ################################################################################
@@ -617,6 +617,7 @@ class EventReader(rogue.interfaces.stream.Slave):
                 while(self.busy): 
                     # wait for frame process to finish
                     pass
+                #if (len(self._processFrame(i))==1155*4):
                 self._processFrame(i)
 
     def _processFrame(self, index):

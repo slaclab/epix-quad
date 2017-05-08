@@ -33,7 +33,7 @@ from PyQt4.QtGui import *
 from PyQt4.QtCore import QObject, pyqtSignal
 import numpy as np
 
-PRINT_VERBOSE = 1
+PRINT_VERBOSE = 0
 
 # define global constants
 NOCAMERA   = 0
@@ -351,25 +351,27 @@ class Camera():
 
     def _descrambleTixel48x48Image(self, rawData):
         """performs the Tixel image descrambling """
-
-        if (PRINT_VERBOSE): print('raw data 0:', rawData[0,0:10])
-        if (PRINT_VERBOSE): print('raw data 1:', rawData[1,0:10])
-        if (PRINT_VERBOSE): print('raw data 2:', rawData[2,0:10])
-        if (PRINT_VERBOSE): print('raw data 3:', rawData[3,0:10])
+        if (len(rawData)==4):
+            if (PRINT_VERBOSE): print('raw data 0:', rawData[0,0:10])
+            if (PRINT_VERBOSE): print('raw data 1:', rawData[1,0:10])
+            if (PRINT_VERBOSE): print('raw data 2:', rawData[2,0:10])
+            if (PRINT_VERBOSE): print('raw data 3:', rawData[3,0:10])
+            
+            quadrant0 = np.frombuffer(rawData[0,4:],dtype='uint16')
+            quadrant0sq = quadrant0.reshape(48,48)
+            quadrant1 = np.frombuffer(rawData[1,4:],dtype='uint16')
+            quadrant1sq = quadrant1.reshape(48,48)
+            quadrant2 = np.frombuffer(rawData[2,4:],dtype='uint16')
+            quadrant2sq = quadrant2.reshape(48,48)
+            quadrant3 = np.frombuffer(rawData[3,4:],dtype='uint16')
+            quadrant3sq = quadrant3.reshape(48,48)
         
-        quadrant0 = np.frombuffer(rawData[0,4:],dtype='uint16')
-        quadrant0sq = quadrant0.reshape(48,48)
-        quadrant1 = np.frombuffer(rawData[1,4:],dtype='uint16')
-        quadrant1sq = quadrant1.reshape(48,48)
-        quadrant2 = np.frombuffer(rawData[2,4:],dtype='uint16')
-        quadrant2sq = quadrant2.reshape(48,48)
-        quadrant3 = np.frombuffer(rawData[3,4:],dtype='uint16')
-        quadrant3sq = quadrant3.reshape(48,48)
-        
-        imgTop = np.concatenate((quadrant0sq, quadrant1sq),1)
-        imgBot = np.concatenate((quadrant2sq, quadrant3sq),1)
+            imgTop = np.concatenate((quadrant0sq, quadrant1sq),1)
+            imgBot = np.concatenate((quadrant2sq, quadrant3sq),1)
 
-        imgDesc = np.concatenate((imgTop, imgBot),0)
+            imgDesc = np.concatenate((imgTop, imgBot),0)
+        else:
+            imgDesc = np.zeros((48*2,48*2), dtype='uint16')
         # returns final image
         return imgDesc
 
