@@ -479,7 +479,7 @@ class TixelAsic(pr.Device):
         
 
         # CMD = 5, Addr = X  : Read/Write Pixel with data
-        self.add(pr.Variable(name='WritePixelData',  description='WritePixelData',  offset=0x00005000*addrSize, bitSize=32, bitOffset=0,  base='uint',  mode='WO'))
+        self.add(pr.Variable(name='WritePixelData',  description='WritePixelData',  offset=0x00005000*addrSize, bitSize=32, bitOffset=0,  base='uint',  mode='RW', verify=False))
         #self.add((
         #    pr.Command(name='WritePixelData', description='Write PixelTest and PixelMask to current pixel only',  offset=0x00005000*addrSize, bitSize=32, bitOffset=0, function=self.fnWritePixelData),
         #    pr.Command(name='ReadPixelData',  description='Read PixelTest and PixelMask from current pixel only', offset=0x00005000*addrSize, bitSize=32, bitOffset=0, function=self.fnReadPixelData)))
