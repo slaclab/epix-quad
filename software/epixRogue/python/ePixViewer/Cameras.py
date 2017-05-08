@@ -33,7 +33,7 @@ from PyQt4.QtGui import *
 from PyQt4.QtCore import QObject, pyqtSignal
 import numpy as np
 
-PRINT_VERBOSE = 0
+PRINT_VERBOSE = 1
 
 # define global constants
 NOCAMERA   = 0

@@ -50,7 +50,8 @@ START_VIEWER = False
 # Create the PGP interfaces for ePix camera
 pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,0) # Data & cmds
 pgpVc1 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,1) # Registers for ePix board
-pgpVc3 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,3) # Microblaze
+pgpVc2 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,2) # PseudoScope
+pgpVc3 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,3) # Monitoring (Slow ADC)
 
 print("")
 print("PGP Card Version: %x" % (pgpVc0.getInfo().version))
@@ -60,6 +61,9 @@ print("PGP Card Version: %x" % (pgpVc0.getInfo().version))
 # File writer
 dataWriter = pyrogue.utilities.fileio.StreamWriter('dataWriter')
 pyrogue.streamConnect(pgpVc0, dataWriter.getChannel(0x1))
+# Add pseudoscope to file writer
+pyrogue.streamConnect(pgpVc2, dataWriter.getChannel(0x2))
+pyrogue.streamConnect(pgpVc3, dataWriter.getChannel(0x3))
 
 cmd = rogue.protocols.srp.Cmd()
 pyrogue.streamConnect(cmd, pgpVc0)
@@ -118,7 +122,7 @@ class MyRunControl(pyrogue.RunControl):
         pyrogue.RunControl.__init__(self,name,'Run Controller ePix 100a')
         self._thread = None
 
-        self.runRate.enum = {1:'1 Hz', 10:'10 Hz', 30:'30 Hz', 60:'60 Hz', 120:'120 Hz'}
+        self.runRate.enum = {1:'1 Hz', 2:'2 Hz', 4:'4 Hz', 8:'8 Hz', 10:'10 Hz', 30:'30 Hz', 60:'60 Hz', 120:'120 Hz'}
 
     def _setRunState(self,dev,var,value):
         if self._runState != value:
@@ -149,10 +153,11 @@ class MyRunControl(pyrogue.RunControl):
 # Set base
 ##############################
 class EpixBoard(pyrogue.Root):
-    def __init__(self, cmd, dataWriter, srp, **kwargs):
+    def __init__(self, guiTop, cmd, dataWriter, srp, **kwargs):
         super().__init__('ePixBoard','Tixel Board', pollEn=True, **kwargs)
         self.add(MyRunControl('runControl'))
         self.add(dataWriter)
+        self.guiTop = guiTop
 
         # Add Devices
         self.add(fpga.Tixel(name='Tixel', offset=0, memBase=srp, hidden=False, enabled=True))
@@ -161,8 +166,6 @@ class EpixBoard(pyrogue.Root):
         def Trigger():
             cmd.sendCmd(0, 0)
 
-
-ePixBoard = EpixBoard(cmd, dataWriter, srp)
 
 # debug
 #mbcon = MbDebug()
@@ -182,15 +185,19 @@ pyrogue.streamTap(pgpVc0, dbgData)
 # Create GUI
 appTop = PyQt4.QtGui.QApplication(sys.argv)
 guiTop = pyrogue.gui.GuiTop('tixelGui')
+ePixBoard = EpixBoard(guiTop, cmd, dataWriter, srp)
 guiTop.addTree(ePixBoard)
 #guiTop.resize(1000,1000)
 
 # Viewer gui
-#gui = vi.Window()
-#gui.eventReader.frameIndex = 0
+gui = vi.Window(cameraType = 'Tixel48x48')
+gui.eventReader.frameIndex = 0
 #gui.eventReader.ViewDataChannel = 0
-#gui.setReadDelay(0)
-#pyrogue.streamTap(pgpVc0, gui.eventReader)
+gui.setReadDelay(0)
+pyrogue.streamTap(pgpVc0, gui.eventReader)
+pyrogue.streamTap(pgpVc2, gui.eventReaderScope)# PseudoScope
+pyrogue.streamTap(pgpVc3, gui.eventReaderMonitoring) # Slow Monitoring
+
 
 # Create mesh node (this is for remote control only, no data is shared with this)
 #mNode = pyrogue.mesh.MeshNode('rogueTest',iface='eth0',root=ePixBoard)

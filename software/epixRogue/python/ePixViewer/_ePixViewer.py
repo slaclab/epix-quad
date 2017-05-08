@@ -41,7 +41,7 @@ from matplotlib.figure import Figure
 import pdb
 
 
-PRINT_VERBOSE = 0
+PRINT_VERBOSE = 1
 
 ################################################################################
 ################################################################################
@@ -291,7 +291,7 @@ class Window(QtGui.QMainWindow, QObject):
         if (frameComplete == 1):
         # frees the memory since it has been used alreay enabling a new frame logic to start fresh
             self.rawImgFrame = []              
-        
+        self.eventReader.busy = False
 
     # core code for displaying the image
     def displayImageFromReader(self, imageData):
@@ -569,6 +569,7 @@ class EventReader(rogue.interfaces.stream.Slave):
         self.lastFrame = rogue.interfaces.stream.Frame
         self.frameIndex = 1
         self.frameData = bytearray()
+        self.frameDataArray = [bytearray(),bytearray(),bytearray(),bytearray()] # bytearray()
         self.frameDataScope = bytearray()
         self.frameDataMonitoring = bytearray()
         self.readDataDone = False
@@ -592,19 +593,37 @@ class EventReader(rogue.interfaces.stream.Slave):
         ## enter debug mode
         #print("\n---------------------------------\n-\n- Entering DEBUG mode _acceptFrame \n-\n-\n--------------------------------- ")
         #pdb.set_trace()
-
-
+        
         self.lastFrame = frame
+        # reads entire frame
+        p = bytearray(self.lastFrame.getPayload())
+        self.lastFrame.read(p,0)
+        if (PRINT_VERBOSE): print('_accepted p[',self.numAcceptedFrames%4, ']: ', p[0:40])
+        if (PRINT_VERBOSE): print('_accepted type' , type(p)) 
+        self.frameDataArray[self.numAcceptedFrames%4][:] = p#bytearray(self.lastFrame.getPayload())
+        self.numAcceptedFrames += 1
+
+        if (self.numAcceptedFrames%4 == 0):
+            for i in range (0,4):
+                if (PRINT_VERBOSE): print('\n************\nSent to _processFrame frameDataArray[',i,']: ',self.frameDataArray[i][0:40])
+                while(self.busy): 
+                    # wait for frame process to finish
+                    pass
+                self._processFrame(i)
+
+    def _processFrame(self, index):
+
+
         if ((self.enable) and (not self.busy)):
             self.busy = True
-            self.numAcceptedFrames += 1
+            
             # Get the channel number
             chNum = (self.lastFrame.getFlags() >> 24)
             # reads payload only
-            p = bytearray(self.lastFrame.getPayload())
+            p = self.frameDataArray[index] #bytearray(self.lastFrame.getPayload())
             if (PRINT_VERBOSE): print('Frame header: ', p[0])
             # reads entire frame
-            self.lastFrame.read(p,0)
+#            self.lastFrame.read(p,0)
             VcNum =  p[0] & 0xF
             if (PRINT_VERBOSE): print('-------- Frame ',self.numAcceptedFrames,'Channel flags',self.lastFrame.getFlags() , ' Channel Num:' , chNum, ' Vc Num:' , VcNum)
             # Check if channel number is 0x1 (streaming data channel)
@@ -644,7 +663,7 @@ class EventReader(rogue.interfaces.stream.Slave):
                 # freezing or crashing the program. 
                 time.sleep(self.readFileDelay)
             #sets busy flag at the end
-            self.busy = False
+            #self.busy = False
 
 
 ################################################################################

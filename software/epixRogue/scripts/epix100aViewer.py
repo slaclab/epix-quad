@@ -31,6 +31,6 @@ def run():
 
 # creates and runs a viewer gui
 app = QtGui.QApplication(sys.argv)
-#gui = vi.Window(cameraType = 'ePix100a')
-gui = vi.Window(cameraType = 'Tixel48x48')
+gui = vi.Window(cameraType = 'ePix100a')
+
 run()
