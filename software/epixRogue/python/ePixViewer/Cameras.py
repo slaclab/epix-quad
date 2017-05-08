@@ -260,22 +260,23 @@ class Camera():
     #fill the memory with the new data (when acqNums matches)
     def fill_memory(self, returnedRawData, asicNum_currentRawData, isTOA_currentRawData, newRawData_DW):
         if (PRINT_VERBOSE): print('New data:', newRawData_DW[0:10])
-        if(asicNum_currentRawData==0 and isTOA_currentRawData==0):
-            returnedRawData[0,0]  = 1
-            returnedRawData[0,1:] = newRawData_DW
-        if(asicNum_currentRawData==1 and isTOA_currentRawData==0):
-            returnedRawData[1,0]  = 1
-            returnedRawData[1,1:] = newRawData_DW
-        if(asicNum_currentRawData==0 and isTOA_currentRawData==1):
-            returnedRawData[2,0]  = 1
-            returnedRawData[2,1:] = newRawData_DW
-        if(asicNum_currentRawData==1 and isTOA_currentRawData==1):
-            returnedRawData[3,0]  = 1
-            returnedRawData[3,1:] = newRawData_DW
-        if (PRINT_VERBOSE): print('Return data 0:', returnedRawData[0,0:10])
-        if (PRINT_VERBOSE): print('Return data 1:', returnedRawData[1,0:10])
-        if (PRINT_VERBOSE): print('Return data 2:', returnedRawData[2,0:10])
-        if (PRINT_VERBOSE): print('Return data 3:', returnedRawData[3,0:10])
+        if (len(newRawData_DW)==1155):
+            if(asicNum_currentRawData==0 and isTOA_currentRawData==0):
+                returnedRawData[0,0]  = 1
+                returnedRawData[0,1:] = newRawData_DW
+            if(asicNum_currentRawData==1 and isTOA_currentRawData==0):
+                returnedRawData[1,0]  = 1
+                returnedRawData[1,1:] = newRawData_DW
+            if(asicNum_currentRawData==0 and isTOA_currentRawData==1):
+                returnedRawData[2,0]  = 1
+                returnedRawData[2,1:] = newRawData_DW
+            if(asicNum_currentRawData==1 and isTOA_currentRawData==1):
+                returnedRawData[3,0]  = 1
+                returnedRawData[3,1:] = newRawData_DW
+            if (PRINT_VERBOSE): print('Return data 0:', returnedRawData[0,0:10])
+            if (PRINT_VERBOSE): print('Return data 1:', returnedRawData[1,0:10])
+            if (PRINT_VERBOSE): print('Return data 2:', returnedRawData[2,0:10])
+            if (PRINT_VERBOSE): print('Return data 3:', returnedRawData[3,0:10])
         return returnedRawData
 
 

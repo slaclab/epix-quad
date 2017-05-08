@@ -104,6 +104,7 @@ class Window(QtGui.QMainWindow, QObject):
         self.eventReaderScope = EventReader(self)
         self.eventReaderMonitoring = EventReader(self)
 
+
         # Connect the fileReader to our event processor
         pyrogue.streamConnect(self.fileReader,self.eventReader)
 
@@ -120,10 +121,16 @@ class Window(QtGui.QMainWindow, QObject):
         self.imgDesc = []
         self.imgTool = imgPr.ImageProcessing(self)
 
+        #init mouse variables
+        self.mouseX = 0
+        self.mouseY = 0
+        self.image = QtGui.QImage()
+
         #initialize data monitoring
         self.monitoringDataTraces = np.zeros((8,1), dtype='int32')
         self.monitoringDataIndex = 0
         self.monitoringDataLength = 100
+
 
         # display the window on the screen after all items have been added 
         self.show()
@@ -529,28 +536,29 @@ class Window(QtGui.QMainWindow, QObject):
                 qp.drawLine(x-2 , y+2, x+2 , y-2)
 
     def mouseClickedOnImage(self, event):
-        mouseX = event.pos().x()
-        mouseY = event.pos().y()
-        pixmapH = self.label.height()
-        pixmapW = self.label.width()
-        imageH = self.image.height()
-        imageW = self.image.width()
-
-        self.mouseX = int(imageW*mouseX/pixmapW)
-        self.mouseY = int(imageH*mouseY/pixmapH)
-
-        if (self.imgTool.imgDark_isSet):
-            self.mousePixelValue = self.ImgDarkSub[self.mouseY, self.mouseX]
-        else:
-            self.mousePixelValue = self.imgDesc[self.mouseY, self.mouseX]
-
-        print('Raw mouse coordinates: {},{}'.format(mouseX, mouseY))
-        print('Pixel map dimensions: {},{}'.format(pixmapW, pixmapH))
-        print('Image dimensions: {},{}'.format(imageW, imageH))
-        print('Pixel[{},{}] = {}'.format(self.mouseX, self.mouseY, self.mousePixelValue))
-        self.mouseXLine.setText(str(self.mouseX))
-        self.mouseYLine.setText(str(self.mouseY))
-        self.mouseValueLine.setText(str(self.mousePixelValue))
+        if (self.imgDesc != []):
+            mouseX = event.pos().x()
+            mouseY = event.pos().y()
+            pixmapH = self.label.height()
+            pixmapW = self.label.width()
+            imageH = self.image.height()
+            imageW = self.image.width()
+    
+            self.mouseX = int(imageW*mouseX/pixmapW)
+            self.mouseY = int(imageH*mouseY/pixmapH)
+            
+            if (self.imgTool.imgDark_isSet):
+                self.mousePixelValue = self.ImgDarkSub[self.mouseY, self.mouseX]
+            elif (self.imgDesc != []):
+                self.mousePixelValue = self.imgDesc[self.mouseY, self.mouseX]
+    
+            print('Raw mouse coordinates: {},{}'.format(mouseX, mouseY))
+            print('Pixel map dimensions: {},{}'.format(pixmapW, pixmapH))
+            print('Image dimensions: {},{}'.format(imageW, imageH))
+            print('Pixel[{},{}] = {}'.format(self.mouseX, self.mouseY, self.mousePixelValue))
+            self.mouseXLine.setText(str(self.mouseX))
+            self.mouseYLine.setText(str(self.mouseY))
+            self.mouseValueLine.setText(str(self.mousePixelValue))
 
 
 ################################################################################
