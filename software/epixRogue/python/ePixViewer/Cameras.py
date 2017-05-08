@@ -165,6 +165,12 @@ class Camera():
         frameComplete = 0
         readyForDisplay = 0
         returnedRawData = []
+        acqNum_currentRawData  = 0
+        isTOA_currentRawData   = 0
+        asicNum_currentRawData = 0
+        acqNum_newRawData  = 0
+        isTOA_newRawData   = 0
+        asicNum_newRawData = 0
 
         
         if (PRINT_VERBOSE): print('\nlen current Raw data', len(currentRawData), 'len new raw data', len(newRawData))
@@ -207,23 +213,25 @@ class Camera():
             currentRawData = self.fill_memory(returnedRawData, asicNum_currentRawData, isTOA_currentRawData, currentRawData_DW)
             returnedRawData = currentRawData
         
-        else:
+        elif(len(currentRawData)==4):
             #recovers currentRawData header info
             #loop traverses the four traces to find the info
             for j in range(0,4):
                 #print(len(currentRawData))
-                if(len(currentRawData)==4):
-                    if(currentRawData[j,0]==1):
-                                                                                    # extended header dword 0 (valid trace)
-                                                                                    # extended header dword 1 (VC info)
-                        acqNum_currentRawData  =  currentRawData[j,2]               # extended header dword 2 (acq num)
-                        isTOA_currentRawData   = (currentRawData[j,3] & 0x8) >> 3   # extended header dword 3 
-                        asicNum_currentRawData =  currentRawData[j,3] & 0x7         # extended header dword 1 (VC info)
+                if(currentRawData[j,0]==1):
+                                                                                # extended header dword 0 (valid trace)
+                                                                                # extended header dword 1 (VC info)
+                    acqNum_currentRawData  =  currentRawData[j,2]               # extended header dword 2 (acq num)
+                    isTOA_currentRawData   = (currentRawData[j,3] & 0x8) >> 3   # extended header dword 3 
+                    asicNum_currentRawData =  currentRawData[j,3] & 0x7         # extended header dword 1 (VC info)
             #saves current data on returned data before adding new data
             returnedRawData = currentRawData
-        if(len(currentRawData)==4):
-            if (PRINT_VERBOSE): print('\nacqNum_currentRawData: ', acqNum_currentRawData, '\nisTOA_currentRawData: ', isTOA_currentRawData, '\nasicNum_currentRawData: ', asicNum_currentRawData)
-            if (PRINT_VERBOSE): print('\nacqNum_newRawData: ',     acqNum_newRawData,     '\nisTOA_newRawData: ',     isTOA_newRawData, '\nasicNum_newRawData: ', asicNum_newRawData)
+        else:
+            #packet size error
+            if (PRINT_VERBOSE): print('\n packet size error, packet len: ', len(currentRawData))
+
+        if (PRINT_VERBOSE): print('\nacqNum_currentRawData: ', acqNum_currentRawData, '\nisTOA_currentRawData: ', isTOA_currentRawData, '\nasicNum_currentRawData: ', asicNum_currentRawData)
+        if (PRINT_VERBOSE): print('\nacqNum_newRawData: ',     acqNum_newRawData,     '\nisTOA_newRawData: ',     isTOA_newRawData, '\nasicNum_newRawData: ', asicNum_newRawData)
         #case 2: acqNumber are different
         if(acqNum_newRawData != acqNum_currentRawData):
             frameComplete = 0
