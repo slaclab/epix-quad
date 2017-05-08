@@ -400,11 +400,11 @@ begin
                   sv.axisMaster.tData(15 downto 0) := dFifoOut;
                else
                   if s.testColCnt = 23 then
-                     sv.axisMaster.tData(15 downto 0) := "00000" & ASIC_NO_G(1 downto 0) & s.testBitFlip  & "00" & toSlv(s.testRowCnt, 6);
+                     sv.axisMaster.tData(15 downto 0) := ASIC_NO_G(1 downto 0) & s.testBitFlip & s.acqNo(1)(4 downto 0) & "00" & toSlv(s.testRowCnt, 6);
                   elsif s.testRowCnt = 23 then
-                     sv.axisMaster.tData(15 downto 0) := "00000" & ASIC_NO_G(1 downto 0) & s.testBitFlip  & "00" & toSlv(s.testColCnt, 6);
+                     sv.axisMaster.tData(15 downto 0) := ASIC_NO_G(1 downto 0) & s.testBitFlip & s.acqNo(1)(4 downto 0) & "00" & toSlv(s.testColCnt, 6);
                   else
-                     sv.axisMaster.tData(15 downto 0) := "00000" & ASIC_NO_G(1 downto 0) & s.testBitFlip  & x"ff";
+                     sv.axisMaster.tData(15 downto 0) := ASIC_NO_G(1 downto 0) & s.testBitFlip & s.acqNo(1)(4 downto 0) & x"ff";
                   end if;
                end if;
                sv.dFifoRd := '1';
