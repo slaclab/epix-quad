@@ -211,18 +211,19 @@ class Camera():
             #recovers currentRawData header info
             #loop traverses the four traces to find the info
             for j in range(0,4):
-                j = int(j)
-                if(currentRawData[j,0]==1):
-                                                                                # extended header dword 0 (valid trace)
-                                                                                # extended header dword 1 (VC info)
-                    acqNum_currentRawData  =  currentRawData[j,2]               # extended header dword 2 (acq num)
-                    isTOA_currentRawData   = (currentRawData[j,3] & 0x8) >> 3   # extended header dword 3 
-                    asicNum_currentRawData =  currentRawData[j,3] & 0x7         # extended header dword 1 (VC info)
+                #print(len(currentRawData))
+                if(len(currentRawData)==4):
+                    if(currentRawData[j,0]==1):
+                                                                                    # extended header dword 0 (valid trace)
+                                                                                    # extended header dword 1 (VC info)
+                        acqNum_currentRawData  =  currentRawData[j,2]               # extended header dword 2 (acq num)
+                        isTOA_currentRawData   = (currentRawData[j,3] & 0x8) >> 3   # extended header dword 3 
+                        asicNum_currentRawData =  currentRawData[j,3] & 0x7         # extended header dword 1 (VC info)
             #saves current data on returned data before adding new data
             returnedRawData = currentRawData
-
-        if (PRINT_VERBOSE): print('\nacqNum_currentRawData: ', acqNum_currentRawData, '\nisTOA_currentRawData: ', isTOA_currentRawData, '\nasicNum_currentRawData: ', asicNum_currentRawData)
-        if (PRINT_VERBOSE): print('\nacqNum_newRawData: ',     acqNum_newRawData,     '\nisTOA_newRawData: ',     isTOA_newRawData, '\nasicNum_newRawData: ', asicNum_newRawData)
+        if(len(currentRawData)==4):
+            if (PRINT_VERBOSE): print('\nacqNum_currentRawData: ', acqNum_currentRawData, '\nisTOA_currentRawData: ', isTOA_currentRawData, '\nasicNum_currentRawData: ', asicNum_currentRawData)
+            if (PRINT_VERBOSE): print('\nacqNum_newRawData: ',     acqNum_newRawData,     '\nisTOA_newRawData: ',     isTOA_newRawData, '\nasicNum_newRawData: ', asicNum_newRawData)
         #case 2: acqNumber are different
         if(acqNum_newRawData != acqNum_currentRawData):
             frameComplete = 0
