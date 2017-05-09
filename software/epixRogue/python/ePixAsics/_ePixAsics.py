@@ -25,7 +25,6 @@ import collections
 import os
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import *
-from numpy import genfromtxt
 import numpy as np
 
 
@@ -525,7 +524,7 @@ class TixelAsic(pr.Device):
         self.reportCmd(dev,cmd,arg)
         self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
         if os.path.splitext(self.filename)[1] == '.csv':
-            tixelCfg = genfromtxt(self.filename, delimiter=',')
+            tixelCfg = np.genfromtxt(self.filename, delimiter=',')
             if tixelCfg.shape == (48, 48):
                 for x in range (0, 48):
                     self.RowCounter.set(x)
@@ -538,14 +537,15 @@ class TixelAsic(pr.Device):
 
     def fnGetTestBitmap(self, dev,cmd,arg):
         """GetTestBitmap command function"""
-        readBack = np.zeros((48,48),dtype='uint16')
-        for x in range (0, 48):
-           self.RowCounter.set(x)
-           for y in range (0, 48):
-              self.ColCounter.set(y)
-              readBack[x, y] = self.WritePixelData.get()
-        
-        print(readBack)
+        self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+        if os.path.splitext(self.filename)[1] == '.csv':
+            readBack = np.zeros((48,48),dtype='uint16')
+            for x in range (0, 48):
+               self.RowCounter.set(x)
+               for y in range (0, 48):
+                  self.ColCounter.set(y)
+                  readBack[x, y] = self.WritePixelData.get()
+            np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
 
 
     def fnClearMatrix(self, dev,cmd,arg):

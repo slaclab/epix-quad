@@ -7,7 +7,7 @@ target: prom
 export PRJ_PART = XC7A200TSBG484-3
 
 # Define Firmware Version Number
-export PRJ_VERSION = 0xEB010002
+export PRJ_VERSION = 0xEB010003
 
 # Define the Microblaze source path                     
 export SDK_SRC_PATH = $(PROJ_DIR)/../../common/CpixTixelCommon/src/tixel

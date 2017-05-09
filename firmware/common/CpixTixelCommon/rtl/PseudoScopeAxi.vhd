@@ -194,7 +194,7 @@ begin
       'X';
    
    -- Trigger enable
-   trigger <= trigger_sel and scopeSync.triggerEnable;
+   trigger <= trigger_sel and scopeSync.scopeEnable;
 
    -- Generate edges of the possible trigger signals
    U_RunEdge : entity work.SynchronizerEdge 
