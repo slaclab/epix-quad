@@ -49,7 +49,7 @@ class Tixel(pr.Device):
             #surf.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]', offset=0x0A000000),    # not used in tixel, disabled by microblaze
             #surf.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]', offset=0x0A000800),    # not used in tixel, disabled by microblaze
             surf.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]', offset=0x0A001000),
-            OscopeRegisters(name='Oscilloscope', offset=0x0C000000),
+            TixelScopeRegisters(name='Oscilloscope', offset=0x0C000000),
             MMCM7Registers(name='MMCM7Registers', offset=0x0D000000, enabled=False)))
       
 
@@ -192,7 +192,7 @@ class TriggerRegisters(pr.Device):
          return '{:.3f} kHz'.format(1/(self.clkPeriod * self._count(var.dependencies)) * 1e-3)
       return func
       
-class OscopeRegisters(pr.Device):
+class TixelScopeRegisters(pr.Device):
    def __init__(self, **kwargs):
       super().__init__(description='Virtual Oscilloscope Registers', **kwargs)
       
@@ -209,13 +209,14 @@ class OscopeRegisters(pr.Device):
       
       #Setup registers & variables
       
-      self.add(pr.Variable(name='Arm',             description='Arm',               offset=0x00000000, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
-      self.add(pr.Variable(name='Trig',            description='Trig',              offset=0x00000004, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
+      self.add(pr.Variable(name='ArmReg',          description='Arm',               offset=0x00000000, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
+      self.add(pr.Variable(name='TrigReg',         description='Trig',              offset=0x00000004, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
       self.add((
          pr.Variable(name='ScopeEnable',     description='Setting1', offset=0x00000008, bitSize=1,  bitOffset=0,  base='bool', mode='RW'),
-         pr.Variable(name='TriggerEdge',     description='Setting1', offset=0x00000008, bitSize=1,  bitOffset=1,  base='bool', mode='RW'),
-         pr.Variable(name='TriggerChannel',  description='Setting1', offset=0x00000008, bitSize=4,  bitOffset=2,  base='uint', mode='RW'),
-         pr.Variable(name='TriggerMode',     description='Setting1', offset=0x00000008, bitSize=2,  bitOffset=6,  base='uint', mode='RW'),
+         pr.Variable(name='TriggerEdge',     description='Setting1', offset=0x00000008, bitSize=1,  bitOffset=1,  base='enum', mode='RW', enum={0:'Falling', 1:'Rising'}),
+         pr.Variable(name='TriggerChannel',  description='Setting1', offset=0x00000008, bitSize=4,  bitOffset=2,  base='enum', mode='RW', 
+         enum={0:'TrigReg', 1:'ThresholdChA', 2:'ThresholdChB', 3:'AcqStart', 4:'AsicAcq', 5:'AsicR0', 6:'AsicRoClk', 7:'AsicPpmat', 8:'AsicPpbe', 9:'AsicSync', 10:'AsicGr', 11:'AsicSaciSel0', 12:'AsicSaciSel1'}),
+         pr.Variable(name='TriggerMode',     description='Setting1', offset=0x00000008, bitSize=2,  bitOffset=6,  base='enum', mode='RW', enum={0:'Never', 1:'ArmReg', 2:'AcqStart', 3:'Always'}),
          pr.Variable(name='TriggerAdcThresh',description='Setting1', offset=0x00000008, bitSize=16, bitOffset=16, base='uint', mode='RW')))
       self.add((
          pr.Variable(name='TriggerHoldoff',  description='Setting2', offset=0x0000000C, bitSize=13, bitOffset=0,  base='uint', mode='RW'),
@@ -224,8 +225,8 @@ class OscopeRegisters(pr.Device):
          pr.Variable(name='TraceLength',     description='Setting3', offset=0x00000010, bitSize=13, bitOffset=0,  base='uint', mode='RW'),
          pr.Variable(name='SkipSamples',     description='Setting3', offset=0x00000010, bitSize=13, bitOffset=13, base='uint', mode='RW')))
       self.add((
-         pr.Variable(name='InputChannelA',   description='Setting4', offset=0x00000014, bitSize=5,  bitOffset=0,  base='uint', mode='RW'),
-         pr.Variable(name='InputChannelB',   description='Setting4', offset=0x00000014, bitSize=5,  bitOffset=5,  base='uint', mode='RW')))
+         pr.Variable(name='InputChannelA',   description='Setting4', offset=0x00000014, bitSize=5,  bitOffset=0,  base='enum', mode='RW', enum={0:'Off', 16:'Asic0TpsMux', 17:'Asic1TpsMux'}),
+         pr.Variable(name='InputChannelB',   description='Setting4', offset=0x00000014, bitSize=5,  bitOffset=5,  base='enum', mode='RW', enum={0:'Off', 16:'Asic0TpsMux', 17:'Asic1TpsMux'})))
       self.add(pr.Variable(name='TriggerDelay',    description='TriggerDelay',      offset=0x00000018, bitSize=13, bitOffset=0, base='uint', mode='RW'))
       
       
