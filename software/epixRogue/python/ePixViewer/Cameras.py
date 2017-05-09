@@ -98,7 +98,7 @@ class Camera():
     def buildImageFrame(self, currentRawData, newRawData):
         camID = self.availableCameras.get(self.cameraType, NOCAMERA)
 
-        if (PRINT_VERBOSE): print('buildImageFrame - camID: ', camID)
+        ##if (PRINT_VERBOSE): print('buildImageFrame - camID: ', camID)
 
         frameComplete = 0
         readyForDisplay = 0
@@ -173,17 +173,17 @@ class Camera():
         asicNum_newRawData = 0
 
         
-        if (PRINT_VERBOSE): print('\nlen current Raw data', len(currentRawData), 'len new raw data', len(newRawData))
+        ##if (PRINT_VERBOSE): print('\nlen current Raw data', len(currentRawData), 'len new raw data', len(newRawData))
         #converts data to 32 bit 
         newRawData_DW = np.frombuffer(newRawData,dtype='uint32')
-        if (PRINT_VERBOSE): print('\nlen current Raw data', len(currentRawData), 'len new raw data DW', len(newRawData_DW))
+        ##if (PRINT_VERBOSE): print('\nlen current Raw data', len(currentRawData), 'len new raw data DW', len(newRawData_DW))
 
         #retrieves header info
                                                                   # header dword 0 (VC info)
         acqNum_newRawData  =  newRawData_DW[1]                    # header dword 1
         isTOA_newRawData   = (newRawData_DW[2] & 0x8) >> 3        # header dword 2  
         asicNum_newRawData =  newRawData_DW[2] & 0x7              # header dword 2
-        if (PRINT_VERBOSE): print('\nacqNum_newRawData: ', acqNum_newRawData, '\nisTOA_newRawData:', isTOA_newRawData, '\nasicNum_newRawData:', asicNum_newRawData)
+        ##if (PRINT_VERBOSE): print('\nacqNum_newRawData: ', acqNum_newRawData, '\nisTOA_newRawData:', isTOA_newRawData, '\nasicNum_newRawData:', asicNum_newRawData)
 
 
         #interpret headers
@@ -230,8 +230,8 @@ class Camera():
             #packet size error
             if (PRINT_VERBOSE): print('\n packet size error, packet len: ', len(currentRawData))
 
-        if (PRINT_VERBOSE): print('\nacqNum_currentRawData: ', acqNum_currentRawData, '\nisTOA_currentRawData: ', isTOA_currentRawData, '\nasicNum_currentRawData: ', asicNum_currentRawData)
-        if (PRINT_VERBOSE): print('\nacqNum_newRawData: ',     acqNum_newRawData,     '\nisTOA_newRawData: ',     isTOA_newRawData, '\nasicNum_newRawData: ', asicNum_newRawData)
+        ##if (PRINT_VERBOSE): print('\nacqNum_currentRawData: ', acqNum_currentRawData, '\nisTOA_currentRawData: ', isTOA_currentRawData, '\nasicNum_currentRawData: ', asicNum_currentRawData)
+        ##if (PRINT_VERBOSE): print('\nacqNum_newRawData: ',     acqNum_newRawData,     '\nisTOA_newRawData: ',     isTOA_newRawData, '\nasicNum_newRawData: ', asicNum_newRawData)
         #case 2: acqNumber are different
         if(acqNum_newRawData != acqNum_currentRawData):
             frameComplete = 0
@@ -240,20 +240,20 @@ class Camera():
 
         #fill the memory with the new data (when acqNums matches)
         returnedRawData = self.fill_memory(returnedRawData, asicNum_newRawData, isTOA_newRawData, newRawData_DW)
-        if (PRINT_VERBOSE): print('Return data 0:', returnedRawData[0,0:10])
-        if (PRINT_VERBOSE): print('Return data 1:', returnedRawData[1,0:10])
-        if (PRINT_VERBOSE): print('Return data 2:', returnedRawData[2,0:10])
-        if (PRINT_VERBOSE): print('Return data 3:', returnedRawData[3,0:10])
+        ##if (PRINT_VERBOSE): print('Return data 0:', returnedRawData[0,0:10])
+        ##if (PRINT_VERBOSE): print('Return data 1:', returnedRawData[1,0:10])
+        ##if (PRINT_VERBOSE): print('Return data 2:', returnedRawData[2,0:10])
+        ##if (PRINT_VERBOSE): print('Return data 3:', returnedRawData[3,0:10])
 
         #checks if the image is complete
         isValidTrace0 =  returnedRawData[0,0]
-        if (PRINT_VERBOSE): print('\nisValidTrace0', isValidTrace0)
+        ##if (PRINT_VERBOSE): print('\nisValidTrace0', isValidTrace0)
         isValidTrace1 =  returnedRawData[1,0]
-        if (PRINT_VERBOSE): print('\nisValidTrace1', isValidTrace1)
+        ##if (PRINT_VERBOSE): print('\nisValidTrace1', isValidTrace1)
         isValidTrace2 =  returnedRawData[2,0]
-        if (PRINT_VERBOSE): print('\nisValidTrace2', isValidTrace2)
+        ##if (PRINT_VERBOSE): print('\nisValidTrace2', isValidTrace2)
         isValidTrace3 =  returnedRawData[3,0]
-        if (PRINT_VERBOSE): print('\nisValidTrace3', isValidTrace3)
+        ##if (PRINT_VERBOSE): print('\nisValidTrace3', isValidTrace3)
 
         if((isValidTrace0 == 1) and (isValidTrace1 == 1) and (isValidTrace2 == 1) and (isValidTrace3 == 1)):
             frameComplete = 1
@@ -262,13 +262,13 @@ class Camera():
             frameComplete = 0
             readyForDisplay = 0
 
-        if (PRINT_VERBOSE): print('frameComplete: ', frameComplete, 'readyForDisplay: ', readyForDisplay, 'returned raw data len', len(returnedRawData))
+        ##if (PRINT_VERBOSE): print('frameComplete: ', frameComplete, 'readyForDisplay: ', readyForDisplay, 'returned raw data len', len(returnedRawData))
         #return parameters
         return [frameComplete, readyForDisplay, returnedRawData]
 
     #fill the memory with the new data (when acqNums matches)
     def fill_memory(self, returnedRawData, asicNum_currentRawData, isTOA_currentRawData, newRawData_DW):
-        if (PRINT_VERBOSE): print('New data:', newRawData_DW[0:10])
+        ##if (PRINT_VERBOSE): print('New data:', newRawData_DW[0:10])
         if (len(newRawData_DW)==1155):
             if(asicNum_currentRawData==0 and isTOA_currentRawData==0):
                 returnedRawData[0,0]  = 1
@@ -282,10 +282,10 @@ class Camera():
             if(asicNum_currentRawData==1 and isTOA_currentRawData==1):
                 returnedRawData[3,0]  = 1
                 returnedRawData[3,1:] = newRawData_DW
-            if (PRINT_VERBOSE): print('Return data 0:', returnedRawData[0,0:10])
-            if (PRINT_VERBOSE): print('Return data 1:', returnedRawData[1,0:10])
-            if (PRINT_VERBOSE): print('Return data 2:', returnedRawData[2,0:10])
-            if (PRINT_VERBOSE): print('Return data 3:', returnedRawData[3,0:10])
+            ##if (PRINT_VERBOSE): print('Return data 0:', returnedRawData[0,0:10])
+            ##if (PRINT_VERBOSE): print('Return data 1:', returnedRawData[1,0:10])
+            ##if (PRINT_VERBOSE): print('Return data 2:', returnedRawData[2,0:10])
+            ##if (PRINT_VERBOSE): print('Return data 3:', returnedRawData[3,0:10])
         return returnedRawData
 
 
@@ -352,10 +352,10 @@ class Camera():
     def _descrambleTixel48x48Image(self, rawData):
         """performs the Tixel image descrambling """
         if (len(rawData)==4):
-            if (PRINT_VERBOSE): print('raw data 0:', rawData[0,0:10])
-            if (PRINT_VERBOSE): print('raw data 1:', rawData[1,0:10])
-            if (PRINT_VERBOSE): print('raw data 2:', rawData[2,0:10])
-            if (PRINT_VERBOSE): print('raw data 3:', rawData[3,0:10])
+            ##if (PRINT_VERBOSE): print('raw data 0:', rawData[0,0:10])
+            ##if (PRINT_VERBOSE): print('raw data 1:', rawData[1,0:10])
+            ##if (PRINT_VERBOSE): print('raw data 2:', rawData[2,0:10])
+            ##if (PRINT_VERBOSE): print('raw data 3:', rawData[3,0:10])
             
             quadrant0 = np.frombuffer(rawData[0,4:],dtype='uint16')
             quadrant0sq = quadrant0.reshape(48,48)
@@ -373,35 +373,35 @@ class Camera():
         else:
             imgDesc = np.zeros((48*2,48*2), dtype='uint16')
         # returns final image
-        #np.where(imgDesc == 65282, 0, imgDesc)
+        imgDesc = np.where((imgDesc & 0x1) == 1 , imgDesc, 0)
         return imgDesc
 
 
     def _descrambleTixel48x48ImageByLine(self, rawData):
         """performs the Tixel image descrambling """
 
-        if (PRINT_VERBOSE): print('raw data 0:', rawData[0,0:10])
-        if (PRINT_VERBOSE): print('raw data 1:', rawData[1,0:10])
-        if (PRINT_VERBOSE): print('raw data 2:', rawData[2,0:10])
-        if (PRINT_VERBOSE): print('raw data 3:', rawData[3,0:10])
+        ##if (PRINT_VERBOSE): print('raw data 0:', rawData[0,0:10])
+        ##if (PRINT_VERBOSE): print('raw data 1:', rawData[1,0:10])
+        ##if (PRINT_VERBOSE): print('raw data 2:', rawData[2,0:10])
+        ##if (PRINT_VERBOSE): print('raw data 3:', rawData[3,0:10])
         
         imgTop = rawData[0,4:]
-        if (PRINT_VERBOSE): print('len imgTop 1: ', len(imgTop), 'data', imgTop[0:10])
+        ##if (PRINT_VERBOSE): print('len imgTop 1: ', len(imgTop), 'data', imgTop[0:10])
         imgTop = np.append(imgTop, rawData[1,4:])
-        if (PRINT_VERBOSE): print('len imgTop 2: ', len(imgTop), 'data', imgTop[0+1152:10+1152])
+        ##if (PRINT_VERBOSE): print('len imgTop 2: ', len(imgTop), 'data', imgTop[0+1152:10+1152])
         imgBot = rawData[2,4:]
-        if (PRINT_VERBOSE): print('len imgBot 1: ', len(imgBot), 'data', imgBot[0:10])
+        ##if (PRINT_VERBOSE): print('len imgBot 1: ', len(imgBot), 'data', imgBot[0:10])
         imgBot = np.append(imgBot, rawData[3,4:])
-        if (PRINT_VERBOSE): print('len imgBot 2: ', len(imgBot), 'data', imgBot[0+1152:10+1152])
+        ##if (PRINT_VERBOSE): print('len imgBot 2: ', len(imgBot), 'data', imgBot[0+1152:10+1152])
         imgDescBA = np.append(imgBot, imgTop)
-        if (PRINT_VERBOSE): print('len imgDesc BA: ', len(imgDescBA))
+        ##if (PRINT_VERBOSE): print('len imgDesc BA: ', len(imgDescBA))
 
-        if (PRINT_VERBOSE): print('imgDescBA 32 bit:', imgDescBA[0:10])
+        ##if (PRINT_VERBOSE): print('imgDescBA 32 bit:', imgDescBA[0:10])
         imgDesc = np.frombuffer(imgDescBA,dtype='uint16')
-        if (PRINT_VERBOSE): print('imgDesc 16 bit:', imgDesc[0:10])
+        ##if (PRINT_VERBOSE): print('imgDesc 16 bit:', imgDesc[0:10])
 
 
-        if (PRINT_VERBOSE): print('len imgDesc : ', len(imgDesc))
+        ##if (PRINT_VERBOSE): print('len imgDesc : ', len(imgDesc))
         imgDesc = imgDesc.reshape(self.sensorHeight, self.sensorWidth)
         # returns final image
         return imgDesc
