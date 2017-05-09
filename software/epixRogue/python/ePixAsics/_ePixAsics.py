@@ -26,6 +26,7 @@ import os
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import *
 from numpy import genfromtxt
+import numpy as np
 
 
 #import epix.Epix100aAsic
@@ -454,13 +455,14 @@ class TixelAsic(pr.Device):
          
         # CMD = 6, Addr = 17 : Row counter[8:0]
         self.add((
-            pr.Variable(name='RowCounter', description='RowCounter', bitSize=9, bitOffset=0, base='hex', mode='RW', setFunction='dev._defaultValue = value', getFunction='value = dev._defaultValue'),
-            pr.Command( name='WriteRowCounter', description='Special command to write row counter', offset=0x00006011*addrSize, bitSize=9, bitOffset=0, function=self.fnWriteRowCounter, hidden=True)))
+            pr.Variable(name='RowCounter', description='',                                offset=0x00006001*addrSize, bitSize=8, bitOffset=0, base='hex', mode='WO')))
+        #self.add((
+        #    pr.Variable(name='RowCounter', description='RowCounter', bitSize=9, bitOffset=0, base='hex', mode='RW', setFunction='dev._defaultValue = value', getFunction='value = dev._defaultValue'),
+        #    pr.Command( name='WriteRowCounter', description='Special command to write row counter', offset=0x00006001*addrSize, bitSize=8, bitOffset=0, function=self.fnWriteRowCounter, hidden=True)))
 
         # CMD = 6, Addr = 19 : Bank select [3:0] & Col counter[6:0]
         self.add((
-            pr.Variable(name='ColCounter', description='',                                offset=0x00006013*addrSize, bitSize=7, bitOffset=0, base='hex', mode='WO'),
-            pr.Variable(name='BankSelect', description='Active low bank select bit mask', offset=0x00006013*addrSize, bitSize=4, bitOffset=7, base='hex', mode='WO')))
+            pr.Variable(name='ColCounter', description='',                                offset=0x00006003*addrSize, bitSize=8, bitOffset=0, base='hex', mode='WO')))
             
         # CMD = 2, Addr = X  : Write Row with data
         self.add((
@@ -514,6 +516,9 @@ class TixelAsic(pr.Device):
             
         self.add(
             pr.Command(name='SetTestBitmap',description='Set test pattern bitmap of the matrix', function=self.fnSetTestBitmap))
+        
+        self.add(
+            pr.Command(name='GetTestBitmap',description='Get test pattern bitmap of the matrix', function=self.fnGetTestBitmap))
 
     def fnSetTestBitmap(self, dev,cmd,arg):
         """SetTestBitmap command function"""
@@ -530,6 +535,18 @@ class TixelAsic(pr.Device):
                 self.CmdPrepForRead()
             else:
                 print('csv file must be 48x48 pixels')
+
+    def fnGetTestBitmap(self, dev,cmd,arg):
+        """GetTestBitmap command function"""
+        readBack = np.zeros((48,48),dtype='uint16')
+        for x in range (0, 48):
+           self.RowCounter.set(x)
+           for y in range (0, 48):
+              self.ColCounter.set(y)
+              readBack[x, y] = self.WritePixelData.get()
+        
+        print(readBack)
+
 
     def fnClearMatrix(self, dev,cmd,arg):
         """ClearMatrix command function"""

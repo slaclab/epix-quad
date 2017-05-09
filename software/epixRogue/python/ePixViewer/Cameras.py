@@ -373,6 +373,7 @@ class Camera():
         else:
             imgDesc = np.zeros((48*2,48*2), dtype='uint16')
         # returns final image
+        #np.where(imgDesc == 65282, 0, imgDesc)
         return imgDesc
 
 
