@@ -41,7 +41,7 @@ from matplotlib.figure import Figure
 import pdb
 
 
-PRINT_VERBOSE = 0
+PRINT_VERBOSE = 1
 
 ################################################################################
 ################################################################################
@@ -58,6 +58,8 @@ class Window(QtGui.QMainWindow, QObject):
     pseudoScopeTrigger = pyqtSignal()
     monitoringDataTrigger = pyqtSignal()
     processFrameTrigger = pyqtSignal()
+    processPseudoScopeFrameTrigger = pyqtSignal()
+    processMonitoringFrameTrigger = pyqtSignal()
 
 
     def __init__(self, cameraType = 'ePix100a'):
@@ -116,6 +118,8 @@ class Window(QtGui.QMainWindow, QObject):
         self.pseudoScopeTrigger.connect(self.displayPseudoScopeFromReader)
         self.monitoringDataTrigger.connect(self.displayMonitoringDataFromReader) 
         self.processFrameTrigger.connect(self.eventReader._processFrame)
+        self.processPseudoScopeFrameTrigger.connect(self.eventReaderScope._processFrame)
+        self.processMonitoringFrameTrigger.connect(self.eventReaderMonitoring._processFrame)
         
         # weak way to sync frame reader and display
         self.readFileDelay = 0.1
@@ -362,50 +366,8 @@ class Window(QtGui.QMainWindow, QObject):
             self.lineDisplay2.update_figure(self.cbScopeCh0.isChecked(), "Scope Trace A", 'r',  chAdata, 
                                             self.cbScopeCh1.isChecked(), "Scope Trace B", 'b',  chBdata)
         ##if (PRINT_VERBOSE): print("Pseudo scope data displayed")
+        self.eventReaderScope.busy = False
        
-
-
-    def displayPseudoScopeFromReader_deprecated(self):
-        ##if (PRINT_VERBOSE): print("Received pseudo scope data")
-        # saves data locally
-        rawData = self.eventReaderScope.frameDataScope
-        # converts bytes to array of dwords
-        data  = np.frombuffer(rawData,dtype='uint32')
-        # limits trace length for fast display (may be removed in the future)
-        ##if (PRINT_VERBOSE): print(data)
-        #header are 8 32 bit words
-        #footer are 5 32 bit words
-
-        data  = data[8:-5]
-        oscWords = len(data)
-        #print(data)
-        ##if (PRINT_VERBOSE): print("oscWords", oscWords)
-
-        chAdata = []
-        chBdata = []
-               
-        #for val in data[8:8+oscWords/2-1]:
-        for j in range(0,int(oscWords/2)):
-            convHi = -1.0 + ((data[j]>>16) & 0x3FFF) * (2.0/2**14)
-            convLo = -1.0 + ((data[j]) & 0x3FFF) * (2.0/2**14)
-            chAdata.append(convHi)
-            chAdata.append(convHi)
-
-        ##if (PRINT_VERBOSE): print("Channel A data retreived")
-
-        for j in range(int(oscWords/2),oscWords):
-            convHi = -1.0 + ((data[j]>>16) & 0x3FFF) * (2.0/2**14)
-            convLo = -1.0 + ((data[j]) & 0x3FFF) * (2.0/2**14)
-            chBdata.append(convHi)
-            chBdata.append(convHi)
-
-    
-        ##if (PRINT_VERBOSE): print("Channel B data retreived")
-        if (self.LinePlot2_RB1.isChecked()):
-            self.lineDisplay2.update_figure(self.cbScopeCh0.isChecked(), "Scope Trace A", 'r',  chAdata, 
-                                            self.cbScopeCh1.isChecked(), "Scope Trace B", 'b',  chBdata)
-        ##if (PRINT_VERBOSE): print("Pseudo scope data displayed")
-
 
     def displayMonitoringDataFromReader(self):
         ##if (PRINT_VERBOSE): print("Received slow monitoring data")
@@ -448,6 +410,8 @@ class Window(QtGui.QMainWindow, QObject):
         if (self.monitoringDataIndex > self.monitoringDataLength):
         #    self.monitoringDataIndex = 0
             self.monitoringDataTraces = np.delete(self.monitoringDataTraces, 0, 1)
+
+        self.eventReaderMonitoring.busy = False
 
     # Evaluates which post display algorithms are needed if any
     def postImageDisplayProcessing(self):
@@ -615,7 +579,16 @@ class EventReader(rogue.interfaces.stream.Slave):
         ##if (PRINT_VERBOSE): print('_accepted type' , type(p)) 
         self.frameDataArray[self.numAcceptedFrames%4][:] = p#bytearray(self.lastFrame.getPayload())
         self.numAcceptedFrames += 1
-        self.parent.processFrameTrigger.emit()
+
+        VcNum =  p[0] & 0xF
+        if (VcNum == self.VIEW_PSEUDOSCOPE_ID):
+            self.parent.processPseudoScopeFrameTrigger.emit()
+        elif (VcNum == self.VIEW_MONITORING_DATA_ID):
+            self.parent.processMonitoringFrameTrigger.emit()
+        elif (VcNum == 0):
+            self.parent.processFrameTrigger.emit()
+
+
 
         #if (self.numAcceptedFrames%4 == 0):
         #    for i in range (0,4):
@@ -641,12 +614,12 @@ class EventReader(rogue.interfaces.stream.Slave):
             # reads entire frame
 #            self.lastFrame.read(p,0)
             VcNum =  p[0] & 0xF
-            ##if (PRINT_VERBOSE): print('-------- Frame ',self.numAcceptedFrames,'Channel flags',self.lastFrame.getFlags() , ' Channel Num:' , chNum, ' Vc Num:' , VcNum)
+            if (PRINT_VERBOSE): print('-------- Frame ',self.numAcceptedFrames,'Channel flags',self.lastFrame.getFlags() , ' Channel Num:' , chNum, ' Vc Num:' , VcNum)
             # Check if channel number is 0x1 (streaming data channel)
             if (chNum == self.VIEW_DATA_CHANNEL_ID or VcNum == 0) :
                 #print('-------- Event --------')
                 # Collect the data
-                ##if (PRINT_VERBOSE): print('Num. image data readout: ', len(p))
+                if (PRINT_VERBOSE): print('Num. image data readout: ', len(p))
                 self.frameData = p
                 cnt = 0
                 if ((self.numAcceptedFrames == self.frameIndex) or (self.frameIndex == 0)):              
@@ -661,8 +634,8 @@ class EventReader(rogue.interfaces.stream.Slave):
             #during stream VIEW_PSEUDOSCOPE_ID is set to zero
             if (chNum == self.VIEW_PSEUDOSCOPE_ID or VcNum == self.VIEW_PSEUDOSCOPE_ID) :
                 #view Pseudo Scope Data
-                ##if (PRINT_VERBOSE): print('Num. pseudo scope data readout: ', len(p))
-                self.frameDataScope = p
+                if (PRINT_VERBOSE): print('Num. pseudo scope data readout: ', len(p))
+                self.frameDataScope[:] = p
                 # Emit the signal.
                 self.parent.pseudoScopeTrigger.emit()
                 # if displaying all images the sleep produces a frame rate that can be displayed without 
@@ -671,8 +644,8 @@ class EventReader(rogue.interfaces.stream.Slave):
 
             if (chNum == self.VIEW_MONITORING_DATA_ID or VcNum == self.VIEW_MONITORING_DATA_ID) :
                 #view Pseudo Scope Data
-                ##if (PRINT_VERBOSE): print('Num. slow monitoring data readout: ', len(p))
-                self.frameDataMonitoring = p
+                if (PRINT_VERBOSE): print('Num. slow monitoring data readout: ', len(p))
+                self.frameDataMonitoring[:] = p
                 # Emit the signal.
                 self.parent.monitoringDataTrigger.emit()
                 # if displaying all images the sleep produces a frame rate that can be displayed without 
