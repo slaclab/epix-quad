@@ -377,36 +377,6 @@ class Camera():
         return imgDesc
 
 
-    def _descrambleTixel48x48ImageByLine(self, rawData):
-        """performs the Tixel image descrambling """
-
-        ##if (PRINT_VERBOSE): print('raw data 0:', rawData[0,0:10])
-        ##if (PRINT_VERBOSE): print('raw data 1:', rawData[1,0:10])
-        ##if (PRINT_VERBOSE): print('raw data 2:', rawData[2,0:10])
-        ##if (PRINT_VERBOSE): print('raw data 3:', rawData[3,0:10])
-        
-        imgTop = rawData[0,4:]
-        ##if (PRINT_VERBOSE): print('len imgTop 1: ', len(imgTop), 'data', imgTop[0:10])
-        imgTop = np.append(imgTop, rawData[1,4:])
-        ##if (PRINT_VERBOSE): print('len imgTop 2: ', len(imgTop), 'data', imgTop[0+1152:10+1152])
-        imgBot = rawData[2,4:]
-        ##if (PRINT_VERBOSE): print('len imgBot 1: ', len(imgBot), 'data', imgBot[0:10])
-        imgBot = np.append(imgBot, rawData[3,4:])
-        ##if (PRINT_VERBOSE): print('len imgBot 2: ', len(imgBot), 'data', imgBot[0+1152:10+1152])
-        imgDescBA = np.append(imgBot, imgTop)
-        ##if (PRINT_VERBOSE): print('len imgDesc BA: ', len(imgDescBA))
-
-        ##if (PRINT_VERBOSE): print('imgDescBA 32 bit:', imgDescBA[0:10])
-        imgDesc = np.frombuffer(imgDescBA,dtype='uint16')
-        ##if (PRINT_VERBOSE): print('imgDesc 16 bit:', imgDesc[0:10])
-
-
-        ##if (PRINT_VERBOSE): print('len imgDesc : ', len(imgDesc))
-        imgDesc = imgDesc.reshape(self.sensorHeight, self.sensorWidth)
-        # returns final image
-        return imgDesc
-
-
     # helper functions
     def _calcImgWidth(self):
         return self._NumAsicsPerSide * self._NumAdcChPerAsic * self._NumColPerAdcCh

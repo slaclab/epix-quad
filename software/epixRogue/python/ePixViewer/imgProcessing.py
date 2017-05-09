@@ -51,11 +51,10 @@ class ImageProcessing():
     imgNumColPerAdcCh = 96
     superRowSize = 384
     superRowSizeInBytes = superRowSize * 4 # 4 bytes per asic word
-    #
+
     # variables to perform some initial image processing
     imgDark = np.array([],dtype='uint16')
     imgDark_isSet = False
-
 
     def __init__(self, parent) :
         # pointer to the parent class        
@@ -64,8 +63,7 @@ class ImageProcessing():
         self.calcImgWidth()
 
     def calcImgWidth(self):
-        self.imgWidth = self.imgNumAsicsPerSide * self.imgNumAdcChPerAsic * self.imgNumColPerAdcCh
-        
+        self.imgWidth = self.imgNumAsicsPerSide * self.imgNumAdcChPerAsic * self.imgNumColPerAdcCh      
 
     def setDarkImg(self, rawData):
         """performs the ePix100A image descrambling"""
@@ -79,26 +77,17 @@ class ImageProcessing():
     def getDarkSubtractedImg(self, rawImg):
         return rawImg - self.imgDark
 
-
     def reScaleImgTo8bit(self, rawImage, scaleMax=20000, scaleMin=-200):
         #init
-        ##if (PRINT_VERBOSE): print ("raw image" , rawImage.shape)
-        ##if (PRINT_VERBOSE): print ("raw image max {}, min {}".format(np.amax(rawImage), np.amin(rawImage)))
         image = np.clip(rawImage, scaleMin, scaleMax)
-        ##if (PRINT_VERBOSE): print ("image" , image.shape)
-        ##if (PRINT_VERBOSE): print ("limits max {}, min {}".format(scaleMax, scaleMin))
-        ##if (PRINT_VERBOSE): print ("clipped image max {}, min {}".format(np.amax(image), np.amin(image)))
         
         #re-scale
         deltaScale = abs(scaleMax - scaleMin)
         if (deltaScale == 0):
             deltaScale = 1
-        imageRS = np.array(((image-scaleMin) * (255 / (deltaScale))))
-        ##if (PRINT_VERBOSE): print ("16 bit image max {}, min {}".format(np.amax(imageRS), np.amin(imageRS)))
-        
+        imageRS = np.array(((image-scaleMin) * (255 / (deltaScale))))     
         image8b = imageRS.astype('uint8')
-        ##if (PRINT_VERBOSE): print ("8 bit image max {}, min {}".format(np.amax(image8b), np.amin(image8b)))
-        ##if (PRINT_VERBOSE): print ("scaled image" , image8b.shape)
+
         #return results
         return image8b
 

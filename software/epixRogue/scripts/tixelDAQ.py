@@ -23,7 +23,6 @@ import rogue.hardware.pgp
 import pyrogue.utilities.prbs
 import pyrogue.utilities.fileio
 import pyrogue.mesh
-#import pyrogue.epics
 import pyrogue.gui
 import surf
 import surf.AxiVersion
@@ -45,7 +44,6 @@ import ePixFpga as fpga
 START_GUI = True
 START_VIEWER = False
 #############################################
-
 
 # Create the PGP interfaces for ePix camera
 pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,0) # Data & cmds
@@ -71,32 +69,6 @@ pyrogue.streamConnect(cmd, pgpVc0)
 # Create and Connect SRP to VC1 to send commands
 srp = rogue.protocols.srp.SrpV0()
 pyrogue.streamConnectBiDir(pgpVc1,srp)
-
-# Add configuration stream to file as channel 0
-# Removed to reduce amount of data going to file
-#pyrogue.streamConnect(ePixBoard,dataWriter.getChannel(0x0))
-
-## Add microblaze console stream to file as channel 2
-#pyrogue.streamConnect(pgpVc3,dataWriter.getChannel(0x2))
-
-# PRBS Receiver as secdonary receiver for VC1
-#prbsRx = pyrogue.utilities.prbs.PrbsRx('prbsRx')
-#pyrogue.streamTap(pgpVc1,prbsRx)
-#ePixBoard.add(prbsRx)
-
-# Microblaze console monitor add secondary tap
-#mbcon = MbDebug()
-#pyrogue.streamTap(pgpVc3,mbcon)
-
-#br = testBridge.Bridge()
-#br._setSlave(srp)
-
-#ePixBoard.add(surf.SsiPrbsTx.create(memBase=srp1,offset=0x00000000*4))
-
-# Create epics node
-#epics = pyrogue.epics.EpicsCaServer('rogueTest',ePixBoard)
-#epics.start()
-
 
 #############################################
 # Microblaze console printout
@@ -167,44 +139,24 @@ class EpixBoard(pyrogue.Root):
             cmd.sendCmd(0, 0)
 
 
-# debug
-#mbcon = MbDebug()
-#pyrogue.streamTap(pgpVc0,mbcon)
-
-#mbcon1 = MbDebug()
-#pyrogue.streamTap(pgpVc1,mbcon)
-
-#mbcon2 = MbDebug()
-#pyrogue.streamTap(pgpVc3,mbcon)
-
-dbgData = rogue.interfaces.stream.Slave()
-dbgData.setDebug(60, "DATA[{}]".format(0))
-pyrogue.streamTap(pgpVc0, dbgData)
-
-
 # Create GUI
 appTop = PyQt4.QtGui.QApplication(sys.argv)
 guiTop = pyrogue.gui.GuiTop('tixelGui')
 ePixBoard = EpixBoard(guiTop, cmd, dataWriter, srp)
 guiTop.addTree(ePixBoard)
-#guiTop.resize(1000,1000)
 
 # Viewer gui
 gui = vi.Window(cameraType = 'Tixel48x48')
 gui.eventReader.frameIndex = 0
-#gui.eventReader.ViewDataChannel = 0
 gui.setReadDelay(0)
 pyrogue.streamTap(pgpVc0, gui.eventReader)
 pyrogue.streamTap(pgpVc2, gui.eventReaderScope)# PseudoScope
 pyrogue.streamTap(pgpVc3, gui.eventReaderMonitoring) # Slow Monitoring
 
-
 # Create mesh node (this is for remote control only, no data is shared with this)
-#mNode = pyrogue.mesh.MeshNode('rogueTest',iface='eth0',root=ePixBoard)
 mNode = pyrogue.mesh.MeshNode('rogueEpix100a',iface='eth0',root=None)
 mNode.setNewTreeCb(guiTop.addTree)
 mNode.start()
-
 
 # Run gui
 if (START_GUI):
@@ -213,10 +165,8 @@ if (START_GUI):
 # Close window and stop polling
 def stop():
     mNode.stop()
-#    epics.stop()
     ePixBoard.stop()
     exit()
 
-# Start with: ipython -i scripts/epix100aDAQ.py for interactive approach
 print("Started rogue mesh and epics V3 server. To exit type stop()")
 

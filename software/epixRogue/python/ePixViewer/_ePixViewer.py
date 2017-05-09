@@ -34,14 +34,13 @@ from PyQt4.QtCore import QObject, pyqtSignal
 import ePixViewer.imgProcessing as imgPr
 import ePixViewer.Cameras as cameras
 import numpy as np
-#matplotlib
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 import pdb
 
 
-PRINT_VERBOSE = 1
+PRINT_VERBOSE = 0
 
 ################################################################################
 ################################################################################
@@ -71,7 +70,6 @@ class Window(QtGui.QMainWindow, QObject):
 
         # creates a camera object
         self.currentCam = cameras.Camera(cameraType = cameraType)
-        ##if (PRINT_VERBOSE): print(cameraType)
 
         # add actions for menu item
         extractAction = QtGui.QAction("&Quit", self)
@@ -113,7 +111,6 @@ class Window(QtGui.QMainWindow, QObject):
 
         # Connect the trigger signal to a slot.
         # the different threads send messages to synchronize their tasks
-        #self.imageTrigger.connect(self.displayImageFromReader)
         self.imageTrigger.connect(self.buildImageFrame)
         self.pseudoScopeTrigger.connect(self.displayPseudoScopeFromReader)
         self.monitoringDataTrigger.connect(self.displayMonitoringDataFromReader) 
@@ -123,6 +120,7 @@ class Window(QtGui.QMainWindow, QObject):
         
         # weak way to sync frame reader and display
         self.readFileDelay = 0.1
+
         # initialize image processing objects
         self.rawImgFrame = []
         self.imgDesc = []
@@ -155,7 +153,6 @@ class Window(QtGui.QMainWindow, QObject):
         #label used to display image
         self.label = QtGui.QLabel()
         self.label.mousePressEvent = self.mouseClickedOnImage
-        #self.label.paintEvent = self._paintEvent
         self.label.setAlignment(QtCore.Qt.AlignTop)
         self.label.setFixedSize(800,800)
         self.label.setScaledContents(True)
@@ -170,6 +167,7 @@ class Window(QtGui.QMainWindow, QObject):
         self.gridVbox2 = TabbedCtrlCanvas(self)
         hSubbox1 = QHBoxLayout()
         hSubbox1.addWidget(self.gridVbox2)
+
         # line plot 1
         self.lineDisplay1 = MplCanvas(MyTitle = "Line Display 1")        
         hSubbox2 = QHBoxLayout()
@@ -287,14 +285,9 @@ class Window(QtGui.QMainWindow, QObject):
     # If image frame is completed calls displayImageFromReader
     # If image is incomplete stores the partial image
     def buildImageFrame(self):
-        ## enter debug mode
-        #print("\n---------------------------------\n-\n- Entering DEBUG mode \n-\n-\n--------------------------------- ")
-        #pdb.set_trace()
         newRawData = self.eventReader.frameData
-
         [frameComplete, readyForDisplay, self.rawImgFrame] = self.currentCam.buildImageFrame(currentRawData = self.rawImgFrame, newRawData = newRawData)
 
-        ##if (PRINT_VERBOSE): print('frameComplete: ', frameComplete, 'readyForDisplay: ', readyForDisplay)
         if (readyForDisplay):
             self.displayImageFromReader(imageData = self.rawImgFrame)
         if (frameComplete == 0 and readyForDisplay == 1):
@@ -309,18 +302,13 @@ class Window(QtGui.QMainWindow, QObject):
 
     # core code for displaying the image
     def displayImageFromReader(self, imageData):
-
-        arrayLen = len(imageData) 
-        ##if (PRINT_VERBOSE): print('Image size: ', arrayLen)
-
-          
+        #init variables
         self.imgTool.imgWidth = self.currentCam.sensorWidth
         self.imgTool.imgHeight = self.currentCam.sensorHeight
-
+        #get descrambled image com camera
         self.imgDesc = self.currentCam.descrambleImage(imageData)
                     
         arrayLen = len(self.imgDesc)
-        ##if (PRINT_VERBOSE): print('Descrambled image size: ', arrayLen)
 
         if (self.imgTool.imgDark_isSet):
             self.ImgDarkSub = self.imgTool.getDarkSubtractedImg(self.imgDesc)
@@ -338,47 +326,37 @@ class Window(QtGui.QMainWindow, QObject):
         # this sleep is a weak way of waiting for the file to be readout completely... needs improvement
         time.sleep(self.readFileDelay)
         thisString = 'Frame {} of {}'.format(self.eventReader.frameIndex, self.eventReader.numAcceptedFrames)
-        ##if (PRINT_VERBOSE): print(thisString)
         self.postImageDisplayProcessing()
-        #self.labelFrameNum.setText(thisString)
+
 
     def displayPseudoScopeFromReader(self):
-        ##if (PRINT_VERBOSE): print("Received pseudo scope data")
         # saves data locally
         rawData = self.eventReaderScope.frameDataScope
         # converts bytes to array of dwords
         data  = np.frombuffer(rawData,dtype='uint16')
         # limits trace length for fast display (may be removed in the future)
-        ##if (PRINT_VERBOSE): print(data)
+
         #header are 8 32 bit words
         #footer are 5 32 bit words
-
         data  = data[16:-10]
         oscWords = len(data)
-        #print(data)
-        ##if (PRINT_VERBOSE): print("oscWords", oscWords)
 
         chAdata = -1.0 + data[0:int(oscWords/2)] * (2.0/2**14)
         chBdata = -1.0 + data[int(oscWords/2): oscWords] * (2.0/2**14)
         
-        ##if (PRINT_VERBOSE): print("Channel B data retreived")
         if (self.LinePlot2_RB1.isChecked()):
             self.lineDisplay2.update_figure(self.cbScopeCh0.isChecked(), "Scope Trace A", 'r',  chAdata, 
                                             self.cbScopeCh1.isChecked(), "Scope Trace B", 'b',  chBdata)
-        ##if (PRINT_VERBOSE): print("Pseudo scope data displayed")
         self.eventReaderScope.busy = False
        
 
     def displayMonitoringDataFromReader(self):
-        ##if (PRINT_VERBOSE): print("Received slow monitoring data")
-        ##if (PRINT_VERBOSE): print(self.eventReaderMonitoring.frameDataMonitoring)
         rawData = self.eventReaderMonitoring.frameDataMonitoring
         envData = np.zeros((8,1), dtype='int32')
                 
         #removes header before displying the image
         for j in range(0,32):
             rawData.pop(0)
-        ##if (PRINT_VERBOSE): print(rawData)
         for j in range(0,8):
             envData[j] = int.from_bytes(rawData[j*4:(j+1)*4], byteorder='little')
         #convert temperature and humidity by spliting for 100
@@ -386,10 +364,6 @@ class Window(QtGui.QMainWindow, QObject):
         envData[1] = envData[1]  / 100 
         envData[2] = envData[2]  / 100 
 
-        #print variables
-#        for j in range(0,8):
-#            #print(hex(envData[j]))
-#            print(envData[j])
         if (self.monitoringDataIndex == 0):
             self.monitoringDataTraces = envData
         else:
@@ -408,20 +382,15 @@ class Window(QtGui.QMainWindow, QObject):
         #increments position
         self.monitoringDataIndex = self.monitoringDataIndex + 1  
         if (self.monitoringDataIndex > self.monitoringDataLength):
-        #    self.monitoringDataIndex = 0
             self.monitoringDataTraces = np.delete(self.monitoringDataTraces, 0, 1)
 
         self.eventReaderMonitoring.busy = False
 
     # Evaluates which post display algorithms are needed if any
     def postImageDisplayProcessing(self):
-        ##if (PRINT_VERBOSE): print('Post image display processing')
         #check horizontal line display
         if ((self.cbHorizontalLineEnabled.isChecked()) or (self.cbVerticalLineEnabled.isChecked())):
             self.updateHorizontalLinePlot()
-        #check vertical line display
-        #if (self.cbVerticalLineEnabled.isChecked()):
-        #    self.updateVerticalLinePlot()
     
     def updateHorizontalLinePlot(self):
         ##if (PRINT_VERBOSE): print('Horizontal plot processing')
@@ -431,11 +400,6 @@ class Window(QtGui.QMainWindow, QObject):
         pixmapH = self.label.height()
         pixmapW = self.label.width()
 
-        #validate coordintes
-#        if ((self.mouseX > 0)and(self.mouseX<imageW)):
-#            if ((self.mouseY > 0)and(self.mouseY < imageH)):
-#                x = int(self.mouseX * pixmapW / imageW)
-#                y = int(self.mouseY * pixmapH / imageH)
         #full line plot
         if (self.imgTool.imgDark_isSet):
             #self.ImgDarkSub        
@@ -454,11 +418,6 @@ class Window(QtGui.QMainWindow, QObject):
         pixmapH = self.label.height()
         pixmapW = self.label.width()
 
-        #validate coordintes
-#        if ((self.mouseX > 0)and(self.mouseX<imageW)):
-#            if ((self.mouseY > 0)and(self.mouseY < imageH)):
-#                x = int(self.mouseX * pixmapW / imageW)
-#                y = int(self.mouseY * pixmapH / imageH)
         #full line plot
         if (self.imgTool.imgDark_isSet):
             #self.ImgDarkSub        
@@ -589,16 +548,6 @@ class EventReader(rogue.interfaces.stream.Slave):
             self.parent.processFrameTrigger.emit()
 
 
-
-        #if (self.numAcceptedFrames%4 == 0):
-        #    for i in range (0,4):
-        #        ##if (PRINT_VERBOSE): print('\n************\nSent to _processFrame frameDataArray[',i,']: ',self.frameDataArray[i][0:40])
-        #        while(self.busy): 
-        #            # wait for frame process to finish
-        #            pass
-        #        #if (len(self._processFrame(i))==1155*4):
-        #        self._processFrame(i)
-
     def _processFrame(self):
 
         index = self.numProcessFrames%4
@@ -609,15 +558,12 @@ class EventReader(rogue.interfaces.stream.Slave):
             # Get the channel number
             chNum = (self.lastFrame.getFlags() >> 24)
             # reads payload only
-            p = self.frameDataArray[index] #bytearray(self.lastFrame.getPayload())
-            ##if (PRINT_VERBOSE): print('Frame header: ', p[0])
+            p = self.frameDataArray[index] 
             # reads entire frame
-#            self.lastFrame.read(p,0)
             VcNum =  p[0] & 0xF
             if (PRINT_VERBOSE): print('-------- Frame ',self.numAcceptedFrames,'Channel flags',self.lastFrame.getFlags() , ' Channel Num:' , chNum, ' Vc Num:' , VcNum)
             # Check if channel number is 0x1 (streaming data channel)
             if (chNum == self.VIEW_DATA_CHANNEL_ID or VcNum == 0) :
-                #print('-------- Event --------')
                 # Collect the data
                 if (PRINT_VERBOSE): print('Num. image data readout: ', len(p))
                 self.frameData = p
@@ -775,7 +721,6 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         myParent.imageScaleMinLine.setMinimumWidth(50)
         myParent.imageScaleMinLine.setText(str(-1))
         
-
         # set layout to tab 1
         tab1Frame = QtGui.QFrame()
         tab1Frame.setFrameStyle(QtGui.QFrame.Panel);
@@ -788,15 +733,13 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         # add widgets to tab1
         grid.addWidget(btnSetDark, 1, 2)
         grid.addWidget(btnUnSetDark, 1, 3)
-        #grid.addWidget(btnQuit, , )
         grid.addWidget(mouseLabel, 2, 1)
         grid.addWidget(myParent.mouseXLine, 2, 2)
         grid.addWidget(myParent.mouseYLine, 2, 3)
         grid.addWidget(myParent.mouseValueLine, 2, 4)
         grid.addWidget(imageScaleLabel, 3, 1)
         grid.addWidget(myParent.imageScaleMaxLine, 3, 2)
-        grid.addWidget(myParent.imageScaleMinLine,3, 3)
-        
+        grid.addWidget(myParent.imageScaleMinLine,3, 3)     
 
         # complete tab1
         tab1.setLayout(grid)
@@ -809,11 +752,13 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         btnPrevFrame.setMaximumWidth(150)
         btnPrevFrame.clicked.connect(myParent.prevFrame)
         btnPrevFrame.resize(btnPrevFrame.minimumSizeHint())
+
         # button next
         btnNextFrame = QtGui.QPushButton("Next")
         btnNextFrame.setMaximumWidth(150)
         btnNextFrame.clicked.connect(myParent.nextFrame)
         btnNextFrame.resize(btnNextFrame.minimumSizeHint())    
+
         # frame number
         myParent.frameNumberLine = QtGui.QLineEdit()
         myParent.frameNumberLine.setMaximumWidth(100)
@@ -878,10 +823,7 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         # http://www.tutorialspoint.com/pyqt/pyqt_qradiobutton_widget.htm
         myParent.LinePlot2_RB1 = QRadioButton("Scope")
         myParent.LinePlot2_RB1.setChecked(True)
-        #myParent.LinePlot2_RB1.toggled.connect(lambda:myParent.btnstate(myParent.myParent.LinePlot2_RB1))
-        #
         myParent.LinePlot2_RB2 = QRadioButton("Env. Monitoring")
-        #myParent.LinePlot2_RB2.toggled.connect(lambda:myParent.btnstate(myParent.myParent.LinePlot2_RB2))
 
         # check boxes
         myParent.cbScopeCh0 = QtGui.QCheckBox('Channel 0')
@@ -923,9 +865,6 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         grid4.addWidget(myParent.cbEnvMonCh5, 3, 4)  
         grid4.addWidget(myParent.cbEnvMonCh6, 4, 4)  
         grid4.addWidget(myParent.cbEnvMonCh7, 5, 4)  
-
-#        grid4.addWidget(btnPrevFrame, 1, 2)
-#        grid4.addWidget(myParent.frameNumberLine, 2, 1)
 
         # complete tab4
         tab4.setLayout(grid4)
