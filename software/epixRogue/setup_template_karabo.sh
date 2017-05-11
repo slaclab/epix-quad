@@ -13,9 +13,9 @@ source /usr/local/boost/1.62.0_p3/settings.sh
 # Package directories
 export EPIXROGUE_DIR=${PWD}
 #setenv SURF_DIR   ${PWD}/../surf
-export  SURF_DIR=${PWD}/../../firmware/modules/surf
+export  SURF_DIR=${PWD}/../../firmware/submodules/surf
 #export  ROGUE_DIR=${PWD}/../rogue
-export  ROGUE_DIR=/usr/rogue/rogue
+export  ROGUE_DIR=/usr/local/rogue/rogue
 
 # Setup python path
 export PYTHONPATH=${PWD}/python:${SURF_DIR}/python:${ROGUE_DIR}/python:${PYTHONPATH}
