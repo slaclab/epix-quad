@@ -54,6 +54,7 @@ entity TixelP is
       -- Power Control
       analogCardDigPwrEn  : out sl;
       analogCardAnaPwrEn  : out sl;
+      analogCardIoPwrEn   : out sl;
       -- GT CLK Pins
       gtRefClk0P          : in  sl;
       gtRefClk0N          : in  sl;
@@ -197,6 +198,7 @@ begin
          -- Power enables
          digitalPowerEn      => analogCardDigPwrEn,
          analogPowerEn       => analogCardAnaPwrEn,
+         ioPowerEn           => analogCardIoPwrEn,
          fpgaOutputEn        => iFpgaOutputEn,
          -- Clocks and reset
          powerGood           => powerGood,

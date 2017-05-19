@@ -136,7 +136,12 @@ package TixelPkg is
    );
    
    type TixelConfigType is record
-      powerEnable          : slv(2 downto 0);
+      pwrEnableReq         : sl;
+      pwrManual            : sl;
+      pwrManualDig         : sl;
+      pwrManualAna         : sl;
+      pwrManualIo          : sl;
+      pwrManualFpga        : sl;
       asicMask             : slv(NUMBER_OF_ASICS_C-1 downto 0);
       acqCnt               : slv(31 downto 0);
       requestStartupCal    : sl;
@@ -146,7 +151,12 @@ package TixelPkg is
       tixelDbgSel2         : slv(4 downto 0);
    end record;
    constant TIXEL_CONFIG_INIT_C : TixelConfigType := (
-      powerEnable          => (others => '0'),
+      pwrEnableReq         => '0',
+      pwrManual            => '0',
+      pwrManualDig         => '0',
+      pwrManualAna         => '0',
+      pwrManualIo          => '0',
+      pwrManualFpga        => '0',
       asicMask             => (others => '0'),
       acqCnt               => (others => '0'),
       requestStartupCal    => '1',

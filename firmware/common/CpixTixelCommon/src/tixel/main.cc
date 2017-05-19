@@ -77,14 +77,11 @@ void epixInit() {
    //set ADC clock to 50 MHz
    Xil_Out32( EPIX_ADCCLK_REG, 0x1);
    // disable the power supply
-   Xil_Out32( EPIX_PWR_REG, 0x0);
+   //Xil_Out32( EPIX_PWR_REG, 0x0);
    // enable the power supply
-   Xil_Out32( EPIX_PWR_REG, 0x3);
+   Xil_Out32( EPIX_PWR_REG, 0x1);
    // let the power settle
-   MB_Sleep(500);
-   
-   // enable the FPGA outputs
-   Xil_Out32( EPIX_PWR_REG, 0x7);
+   MB_Sleep(2000);
    
    // Perform ADC soft reset
    Xil_Out32( ADC2_PWRMOD_REG, 3);

@@ -36,21 +36,22 @@ class Tixel(pr.Device):
       self.add((
             surf.AxiVersion.create(offset=0x00000000),
             TixelFpgaRegisters(name="TixelFpgaRegisters", offset=0x01000000),
-            TriggerRegisters(name="TriggerRegisters", offset=0x02000000),
-            SlowAdcRegisters(name="SlowAdcRegisters", offset=0x03000000),
-            epix.TixelAsic(name='TixelAsic0', offset=0x04000000),
-            epix.TixelAsic(name='TixelAsic1', offset=0x04400000),
-            AsicDeserRegisters(name='Asic0Deserializer', offset=0x0E000000),
-            AsicDeserRegisters(name='Asic1Deserializer', offset=0x0F000000),
-            AsicPktRegisters(name='Asic0PktRegisters', offset=0x10000000),
-            AsicPktRegisters(name='Asic1PktRegisters', offset=0x11000000),
-            surf.Pgp2bAxi(name='Pgp2bAxi', offset=0x06000000),
-            surf.Ad9249ReadoutGroup(name = 'Ad9249Rdout[1].Adc[0]', offset=0x09000000, channels=4),
+            TriggerRegisters(name="TriggerRegisters", offset=0x02000000, expand=False),
+            SlowAdcRegisters(name="SlowAdcRegisters", offset=0x03000000, expand=False),
+            epix.TixelAsic(name='TixelAsic0', offset=0x04000000, enabled=False, expand=False),
+            epix.TixelAsic(name='TixelAsic1', offset=0x04400000, enabled=False, expand=False),
+            AsicDeserRegisters(name='Asic0Deserializer', offset=0x0E000000, expand=False),
+            AsicDeserRegisters(name='Asic1Deserializer', offset=0x0F000000, expand=False),
+            AsicPktRegisters(name='Asic0PktRegisters', offset=0x10000000, expand=False),
+            AsicPktRegisters(name='Asic1PktRegisters', offset=0x11000000, expand=False),
+            surf.Pgp2bAxi(name='Pgp2bAxi', offset=0x06000000, expand=False),
+            surf.Ad9249ReadoutGroup(name = 'Ad9249Rdout[1].Adc[0]', offset=0x09000000, channels=4, enabled=False, expand=False),
             #surf.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]', offset=0x0A000000),    # not used in tixel, disabled by microblaze
             #surf.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]', offset=0x0A000800),    # not used in tixel, disabled by microblaze
-            surf.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]', offset=0x0A001000),
-            TixelScopeRegisters(name='Oscilloscope', offset=0x0C000000),
-            MMCM7Registers(name='MMCM7Registers', offset=0x0D000000, enabled=False)))
+            surf.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]', offset=0x0A001000, enabled=False, expand=False),
+            TixelScopeRegisters(name='Oscilloscope', offset=0x0C000000, expand=False),
+            MicroblazeLog(name='MicroblazeLog', offset=0x0B000000, expand=False),
+            MMCM7Registers(name='MMCM7Registers', offset=0x0D000000, enabled=False, expand=False)))
       
 
 class TixelFpgaRegisters(pr.Device):
@@ -111,14 +112,18 @@ class TixelFpgaRegisters(pr.Device):
       self.add(pr.Variable(name='AcqCnt',          description='AcqCnt',            offset=0x00000200, bitSize=32, bitOffset=0, base='uint', mode='RO'))
       self.add(pr.Variable(name='SaciPrepRdoutCnt',description='SaciPrepRdoutCnt',  offset=0x00000204, bitSize=32, bitOffset=0, base='uint', mode='RO'))
       self.add(pr.Variable(name='ResetCounters',   description='ResetCounters',     offset=0x00000208, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
+      #self.add(pr.Variable(name='AsicPowerEnable', description='AsicPowerEnable',   offset=0x0000020C, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
       self.add((
-         pr.Variable(name='PwrDigitalEn',             description='PowerEnable',       offset=0x0000020C, bitSize=1,  bitOffset=0, base='bool', mode='RW'),
-         pr.Variable(name='PwrAnalogEn',              description='PowerEnable',       offset=0x0000020C, bitSize=1,  bitOffset=1, base='bool', mode='RW'),
-         pr.Variable(name='FpgaOutEn',                description='PowerEnable',       offset=0x0000020C, bitSize=1,  bitOffset=2, base='bool', mode='RW')))
-      self.add(pr.Variable(name='AsicMask',           description='AsicMask',          offset=0x00000210, bitSize=32, bitOffset=0, base='hex',  mode='RW'))
-      self.add(pr.Variable(name='VguardDacSetting',   description='VguardDacSetting',  offset=0x00000214, bitSize=16, bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='TixelDebugSel1',     description='TixelDebugSel1',    offset=0x00000218, bitSize=5,  bitOffset=0, base='hex',  mode='RW'))
-      self.add(pr.Variable(name='TixelDebugSel2',     description='TixelDebugSel2',    offset=0x0000021C, bitSize=5,  bitOffset=0, base='hex',  mode='RW'))
+         pr.Variable(name='AsicPwrEnable',      description='AsicPower', offset=0x0000020C, bitSize=1, bitOffset=0,  base='bool', mode='RW'),
+         pr.Variable(name='AsicPwrManual',      description='AsicPower', offset=0x0000020C, bitSize=1, bitOffset=16, base='bool', mode='RW'),
+         pr.Variable(name='AsicPwrManualDig',   description='AsicPower', offset=0x0000020C, bitSize=1, bitOffset=20, base='bool', mode='RW'),
+         pr.Variable(name='AsicPwrManualAna',   description='AsicPower', offset=0x0000020C, bitSize=1, bitOffset=21, base='bool', mode='RW'),
+         pr.Variable(name='AsicPwrManualIo',    description='AsicPower', offset=0x0000020C, bitSize=1, bitOffset=22, base='bool', mode='RW'),
+         pr.Variable(name='AsicPwrManualFpga',  description='AsicPower', offset=0x0000020C, bitSize=1, bitOffset=23, base='bool', mode='RW')))
+      self.add(pr.Variable(name='AsicMask',        description='AsicMask',          offset=0x00000210, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
+      self.add(pr.Variable(name='VguardDacSetting',description='VguardDacSetting',  offset=0x00000214, bitSize=16, bitOffset=0, base='uint', mode='RW'))
+      self.add(pr.Variable(name='TixelDebugSel1',  description='TixelDebugSel1',    offset=0x00000218, bitSize=5,  bitOffset=0, base='hex',  mode='RW'))
+      self.add(pr.Variable(name='TixelDebugSel2',  description='TixelDebugSel2',    offset=0x0000021C, bitSize=5,  bitOffset=0, base='hex',  mode='RW'))
       
       self.add(pr.Variable(name='AdcClkHalfT',     description='AdcClkHalfT',       offset=0x00000300, bitSize=32, bitOffset=0, base='uint', mode='RW'))
       self.add((
@@ -484,3 +489,45 @@ class AsicPktRegisters(pr.Device):
       def func(dev, var):         
          return '{:.3f} kHz'.format(1/(self.clkPeriod * self._count(var.dependencies)) * 1e-3)
       return func
+
+
+class MicroblazeLog(pr.Device):
+   def __init__(self, **kwargs):
+      super().__init__(description='Microblaze log buffer', **kwargs)
+      
+      # Creation. memBase is either the register bus server (srp, rce mapped memory, etc) or the device which
+      # contains this object. In most cases the parent and memBase are the same but they can be 
+      # different in more complex bus structures. They will also be different for the top most node.
+      # The setMemBase call can be used to update the memBase for this Device. All sub-devices and local
+      # blocks will be updated.
+      
+      #############################################
+      # Create block / variable combinations
+      #############################################
+      
+      
+      #Setup registers & variables
+      
+      self.add((
+         pr.Variable(name='MemPointer',   description='MemInfo', offset=0x00000000, bitSize=16,  bitOffset=0,  base='hex', mode='RO'),
+         pr.Variable(name='MemLength',    description='MemInfo', offset=0x00000000, bitSize=16,  bitOffset=16, base='hex', mode='RO')))
+      
+      self.add(pr.Variable(name='MemLow',    description='MemLow',   offset=0x01*4,    bitSize=2048*8, bitOffset=0, base='string', mode='RO'))
+      self.add(pr.Variable(name='MemHigh',   description='MemHigh',  offset=0x201*4,   bitSize=2044*8, bitOffset=0, base='string', mode='RO'))
+      
+      #####################################
+      # Create commands
+      #####################################
+      
+      # A command has an associated function. The function can be a series of
+      # python commands in a string. Function calls are executed in the command scope
+      # the passed arg is available as 'arg'. Use 'dev' to get to device scope.
+      # A command can also be a call to a local function with local scope.
+      # The command object and the arg are passed
+   
+   @staticmethod   
+   def frequencyConverter(self):
+      def func(dev, var):         
+         return '{:.3f} kHz'.format(1/(self.clkPeriod * self._count(var.dependencies)) * 1e-3)
+      return func
+

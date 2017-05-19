@@ -55,6 +55,7 @@ entity TixelCore is
       -- Power enables
       digitalPowerEn      : out sl;
       analogPowerEn       : out sl;
+      ioPowerEn           : out sl;
       fpgaOutputEn        : out sl;
       -- Clocks and reset
       powerGood           : in  sl;
@@ -250,6 +251,11 @@ architecture top_level of TixelCore is
    signal asicValid     : slv(NUMBER_OF_ASICS_C-1 downto 0);
    signal asicData      : Slv20Array(NUMBER_OF_ASICS_C-1 downto 0);
    
+   signal pwrEnableAck     : sl;
+   signal iDigitalPowerEn  : sl;
+   signal iAnalogPowerEn   : sl;
+   signal iIoPowerEn       : sl;
+   
    attribute IODELAY_GROUP : string;
    attribute IODELAY_GROUP of U_IDelayCtrl : label is IODELAY_GROUP_G;
    
@@ -268,10 +274,6 @@ architecture top_level of TixelCore is
    
 begin
 
-   -- Map out power enables
-   digitalPowerEn <= tixelConfig.powerEnable(0);
-   analogPowerEn  <= tixelConfig.powerEnable(1);
-   fpgaOutputEn   <= tixelConfig.powerEnable(2);
    -- Fixed state logic signals
    sfpDisable     <= '0';
    -- Triggers in
@@ -342,7 +344,7 @@ begin
    ---------------------
    -- Diagnostic LEDs --
    ---------------------
-   led(3) <= tixelConfig.powerEnable(0) and tixelConfig.powerEnable(1) and tixelConfig.powerEnable(2);
+   led(3) <= pwrEnableAck;
    led(2) <= rxReady;
    led(1) <= txReady;
    led(0) <= heartBeat;
@@ -706,6 +708,32 @@ begin
    iAsic01DM2     <= asic01DM2;
    
    --------------------------------------------
+   --     Tixel power seqence controller     --
+   --------------------------------------------   
+   U_TixelPwrCtrl: entity work.TixelPwrCtrl
+   generic map (
+      ON_DIG_ANA_G   => 1000000, -- 10 ms @ 100MHz
+      ON_ANA_IO_G    => 1000000,
+      OFF_IO_ANA_G   => 1000000,
+      OFF_ANA_DIG_G  => 1000000
+   )
+   port map ( 
+      clk         => coreClk,
+      rst         => axiRst,
+      enableReq   => tixelConfig.pwrEnableReq,
+      enableAck   => pwrEnableAck,
+      digPwr      => iDigitalPowerEn,
+      anaPwr      => iAnalogPowerEn,
+      ioPwr       => iIoPowerEn
+   );
+   
+   -- Map out power enables
+   digitalPowerEn <= iDigitalPowerEn   when tixelConfig.pwrManual = '0' else tixelConfig.pwrManualDig;
+   analogPowerEn  <= iAnalogPowerEn    when tixelConfig.pwrManual = '0' else tixelConfig.pwrManualAna;
+   ioPowerEn      <= iIoPowerEn        when tixelConfig.pwrManual = '0' else tixelConfig.pwrManualIo;
+   fpgaOutputEn   <= iIoPowerEn        when tixelConfig.pwrManual = '0' else tixelConfig.pwrManualFpga;
+   
+   --------------------------------------------
    -- SACI interface controller              --
    -------------------------------------------- 
    U_AxiLiteSaciMaster : entity work.AxiLiteSaciMaster
@@ -821,7 +849,7 @@ begin
    
    -- Give a special reset to the SERDES blocks when power
    -- is turned on to ADC card.
-   adcCardPowerUp <= tixelConfig.powerEnable(0) and tixelConfig.powerEnable(1) and tixelConfig.powerEnable(2);
+   adcCardPowerUp <= iDigitalPowerEn and iAnalogPowerEn and iIoPowerEn;
    U_AdcCardPowerUpRisingEdge : entity work.SynchronizerEdge
    generic map (
       TPD_G       => TPD_G)

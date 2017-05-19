@@ -276,7 +276,12 @@ begin
       axiSlaveRegisterR(regCon, x"000200",  0, r.tixelRegOut.acqCnt);
       axiSlaveRegisterR(regCon, x"000204",  0, r.saciPrepRdoutCnt);
       axiSlaveRegister(regCon,  x"000208",  0, v.resetCounters);
-      axiSlaveRegister(regCon,  x"00020C",  0, v.tixelRegOut.powerEnable);
+      axiSlaveRegister(regCon,  x"00020C",  0, v.tixelRegOut.pwrEnableReq);
+      axiSlaveRegister(regCon,  x"00020C", 16, v.tixelRegOut.pwrManual);
+      axiSlaveRegister(regCon,  x"00020C", 20, v.tixelRegOut.pwrManualDig);
+      axiSlaveRegister(regCon,  x"00020C", 21, v.tixelRegOut.pwrManualAna);
+      axiSlaveRegister(regCon,  x"00020C", 22, v.tixelRegOut.pwrManualIo);
+      axiSlaveRegister(regCon,  x"00020C", 23, v.tixelRegOut.pwrManualFpga);
       axiSlaveRegister(regCon,  x"000210",  0, v.tixelRegOut.asicMask);
       axiSlaveRegister(regCon,  x"000214",  0, v.vguardDacSetting);
       axiSlaveRegister(regCon,  x"000218",  0, v.tixelRegOut.tixelDbgSel1);
