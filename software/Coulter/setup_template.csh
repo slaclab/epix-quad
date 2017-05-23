@@ -1,7 +1,7 @@
 
 # Package directories
 setenv COULTER_DIR    ${PWD}
-setenv SURF_DIR   ${PWD}/../../firmware/modules/surf
+setenv SURF_DIR   ${PWD}/../../firmware/submodules/surf
 setenv ROGUE_DIR  ${PWD}/../rogue
 
 # Boot thread library names differ from system to system, not all have -mt

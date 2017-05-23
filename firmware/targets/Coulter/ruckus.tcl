@@ -2,7 +2,7 @@
 source -quiet $::env(RUCKUS_DIR)/vivado_proc.tcl
 
 # Load library modules
-loadRuckusTcl $::env(PROJ_DIR)/../../modules/surf
+loadRuckusTcl $::env(PROJ_DIR)/../../submodules/surf
 
 # Load Source Code
 loadSource -path "$::DIR_PATH/Version.vhd"
