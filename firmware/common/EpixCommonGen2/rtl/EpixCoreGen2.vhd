@@ -41,9 +41,10 @@ use unisim.vcomponents.all;
 
 entity EpixCoreGen2 is
    generic (
-      TPD_G       : time := 1 ns;
+      TPD_G             : time := 1 ns;
+      ASIC_TYPE_G       : AsicType;
       FPGA_BASE_CLOCK_G : slv(31 downto 0);
-      BUILD_INFO_G  : BuildInfoType;
+      BUILD_INFO_G      : BuildInfoType;
       ADC0_INVERT_CH    : slv(7 downto 0) := "00000000";
       ADC1_INVERT_CH    : slv(7 downto 0) := "00000000";
       ADC2_INVERT_CH    : slv(7 downto 0) := "00000000";
@@ -660,7 +661,7 @@ begin
    U_ReadoutControl : entity work.ReadoutControl
    generic map (
      TPD_G                      => TPD_G,
-     BUILD_INFO_G               => BUILD_INFO_G,
+     ASIC_TYPE_G                => ASIC_TYPE_G,
      MASTER_AXI_STREAM_CONFIG_G => ssiAxiStreamConfig(4, TKEEP_COMP_C)
    )
    port map (

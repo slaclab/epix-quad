@@ -181,6 +181,7 @@ begin
    U_EpixCore : entity work.EpixCoreGen2
       generic map (
          TPD_G => TPD_G,
+         ASIC_TYPE_G => EPIXS_C,
          FPGA_BASE_CLOCK_G => FPGA_BASE_CLOCK_G,
          BUILD_INFO_G => BUILD_INFO_G
       )

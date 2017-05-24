@@ -16,6 +16,8 @@ use work.StdRtlPkg.all;
 use work.AxiLitePkg.all;
 
 package EpixPkgGen2 is
+   
+   type AsicType is (EPIX100A_C, EPIX10KA_C, EPIX10KP_C, EPIXS_C);
 
    -- AXI-Lite Constants
    constant NUM_AXI_MASTER_SLOTS_C : natural := 13;
@@ -221,8 +223,8 @@ package EpixPkgGen2 is
    );
 
    --Functions to allow use of EPIX100 or 10k
-   function getNumColumns ( version : slv ) return integer;
-   function getWordsPerSuperRow ( version : slv ) return integer;
+   function getNumColumns ( version : AsicType ) return integer;
+   function getWordsPerSuperRow ( version : AsicType ) return integer;
 
    -- constant NCOL_C : integer := getNumColumns(FPGA_VERSION_C);
    -- --Number of columns in ePix "super row"
@@ -235,7 +237,7 @@ package EpixPkgGen2 is
    constant EPIXS_COLS_PER_ROW     : integer := 10;
    constant EPIX100A_ROWS_PER_ASIC : integer := 352;
    
-   procedure globalToLocalPixel( signal   version    : in slv; 
+   procedure globalToLocalPixel( signal   version    : in AsicType; 
                                  signal   globalRow  : in slv; 
                                  signal   globalCol  : in slv; 
                                  signal   calRowFlag : in sl; 
@@ -245,7 +247,7 @@ package EpixPkgGen2 is
                                  variable localRow   : inout slv; 
                                  variable localCol   : inout slv;
                                  variable localData  : inout Slv16Array);
-   procedure globalToLocalPixelEpix100A( signal   version    : in slv; 
+   procedure globalToLocalPixelEpix100A( signal   version    : in AsicType; 
                                          signal   globalRow  : in slv; 
                                          signal   globalCol  : in slv; 
                                          signal   calRowFlag : in sl; 
@@ -260,20 +262,16 @@ end EpixPkgGen2;
 
 package body EpixPkgGen2 is
 
-   function getNumColumns (version : slv ) return integer is
+   function getNumColumns (version : AsicType ) return integer is
    begin
-      assert (version(31 downto 24) = x"E0" or 
-              version(31 downto 24) = x"EA" or
-              version(31 downto 24) = x"E2" or
-              version(31 downto 24) = x"E3") report "Unable to determine ASIC type from version string!" severity failure;
-      --Epix 100p and Epix100a
-      if (version(31 downto 24) = x"E0" or version(31 downto 24) = x"EA") then
+      --Epix100a
+      if (version = EPIX100A_C) then
          return EPIX100_COLS_PER_ROW;
       --Epix 10k
-      elsif (version(31 downto 24) = x"E2") then
+      elsif (version = EPIX10KP_C) then
          return EPIX10K_COLS_PER_ROW;
       --Epix S
-      elsif (version(31 downto 24) = x"E3") then
+      elsif (version = EPIXS_C) then
          return EPIXS_COLS_PER_ROW;
       --Other (default to Epix 100)
       else
@@ -281,12 +279,12 @@ package body EpixPkgGen2 is
       end if; 
    end function;
 
-   function getWordsPerSuperRow (version : slv ) return integer is
+   function getWordsPerSuperRow (version : AsicType ) return integer is
       variable NCOL_C   : integer;
    begin
       NCOL_C := getNumColumns(version);
       --EpixS reads only the active ASICs
-      if (version(31 downto 24) = x"E3") then
+      if (version = EPIXS_C) then
          return EPIXS_COLS_PER_ROW * 2 / 2;
       --Other
       else
@@ -295,7 +293,7 @@ package body EpixPkgGen2 is
    end function;
    
    procedure globalToLocalPixel (
-       signal   version    : in slv;
+       signal   version    : in AsicType;
        signal   globalRow  : in slv;
        signal   globalCol  : in slv;
        signal   calRowFlag : in sl;
@@ -307,14 +305,14 @@ package body EpixPkgGen2 is
        variable localData  : inout Slv16Array)
    is
    begin 
-      assert (version(31 downto 24) = x"EA") report "Multi-pixel writes not supported for this ASIC!" severity warning;   
-      if version(31 downto 24) = x"EA" then
+      assert (version = EPIX100A_C) report "Multi-pixel writes not supported for this ASIC!" severity warning;   
+      if version = EPIX100A_C then
          globalToLocalPixelEpix100A(version,globalRow,globalCol,calRowFlag,calBotFlag,inputData,localAsic,localRow,localCol,localData);
       end if;
    end procedure globalToLocalPixel;
    
    procedure globalToLocalPixelEpix100A (
-       signal   version    : in slv;
+       signal   version    : in AsicType;
        signal   globalRow  : in slv;
        signal   globalCol  : in slv;
        signal   calRowFlag : in sl;
