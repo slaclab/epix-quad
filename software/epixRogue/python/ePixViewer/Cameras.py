@@ -40,6 +40,7 @@ NOCAMERA   = 0
 EPIX100A   = 1
 EPIX100P   = 2
 TIXEL48X48 = 3
+EPIX10KA   = 4
 
 ################################################################################
 ################################################################################
@@ -57,7 +58,7 @@ class Camera():
     sensorWidth = 0
     sensorHeight = 0
     pixelDepth = 0
-    availableCameras = {  'ePix100a':  EPIX100A, 'ePix100p' : EPIX100P, 'Tixel48x48' : TIXEL48X48 }
+    availableCameras = {  'ePix100a':  EPIX100A, 'ePix100p' : EPIX100P, 'Tixel48x48' : TIXEL48X48, 'ePix10ka' : EPIX10KA }
     
 
     def __init__(self, cameraType = 'ePix100a') :
@@ -77,6 +78,8 @@ class Camera():
             self._initEPix100p()
         if (camID == TIXEL48X48):
             self._initTixel48x48()
+        if (camID == TIXEL48X48):
+            self._initEpix10ka()
         
     # return a dict with all available cameras    
     def getAvailableCameras():
@@ -90,7 +93,9 @@ class Camera():
         if (camID == EPIX100P):
             return self._descrambleEPix100aImage(rawData)        
         if (camID == TIXEL48X48):
-            return self._descrambleTixel48x48Image(rawData)        
+            return self._descrambleTixel48x48Image(rawData) 
+        if (camID == EPIX10KA):
+            return  self._descrambleEPix100aImage(rawData)
         if (camID == NOCAMERA):
             return Null
 
@@ -116,6 +121,11 @@ class Camera():
             #Needs to check the two frames and make a decision on the flags
             [frameComplete, readyForDisplay, newRawData]  = self._buildFrameTixel48x48Image(currentRawData, newRawData)
             return [frameComplete, readyForDisplay, newRawData]
+        if (camID == EPIX10KA):
+            # The flags are always true since each frame holds an entire image
+            frameComplete = 1
+            readyForDisplay = 1
+            return [frameComplete, readyForDisplay, newRawData]
         if (camID == NOCAMERA):
             return Null
 
@@ -132,7 +142,6 @@ class Camera():
         self.sensorHeight = 706
         self.pixelDepth = 16
         self.cameraModule = "Standard ePix100a"
-
 
     def _initEPix100p(self):
         self._superRowSize = 384
@@ -153,6 +162,17 @@ class Camera():
         self.sensorWidth  = 96 # The sensor size in this dimension is doubled because each pixel has two information (ToT and ToA) 
         self.sensorHeight = 96 # The sensor size in this dimension is doubled because each pixel has two information (ToT and ToA) 
         self.pixelDepth = 16
+
+    def _initEpix10ka(self):
+        self._superRowSize = 384/2
+        self._NumAsicsPerSide = 2
+        self._NumAdcChPerAsic = 4
+        self._NumColPerAdcCh = 96/2
+        self._superRowSizeInBytes = self._superRowSize * 4
+        self.sensorWidth = self._calcImgWidth()
+        self.sensorHeight = 356#706
+        self.pixelDepth = 16
+        self.cameraModule = "Standard ePix10ka"
 
     ##########################################################
     # define all camera specific build frame functions

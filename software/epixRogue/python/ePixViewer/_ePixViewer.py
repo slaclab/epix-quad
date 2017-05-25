@@ -40,7 +40,7 @@ from matplotlib.figure import Figure
 import pdb
 
 
-PRINT_VERBOSE = 0
+PRINT_VERBOSE = 1
 
 ################################################################################
 ################################################################################
@@ -534,7 +534,7 @@ class EventReader(rogue.interfaces.stream.Slave):
         # reads entire frame
         p = bytearray(self.lastFrame.getPayload())
         self.lastFrame.read(p,0)
-        ##if (PRINT_VERBOSE): print('_accepted p[',self.numAcceptedFrames%4, ']: ', p[0:40])
+        if (PRINT_VERBOSE): print('_accepted p[',self.numAcceptedFrames, ']: ', p[0:10])
         ##if (PRINT_VERBOSE): print('_accepted type' , type(p)) 
         self.frameDataArray[self.numAcceptedFrames%4][:] = p#bytearray(self.lastFrame.getPayload())
         self.numAcceptedFrames += 1
@@ -545,7 +545,8 @@ class EventReader(rogue.interfaces.stream.Slave):
         elif (VcNum == self.VIEW_MONITORING_DATA_ID):
             self.parent.processMonitoringFrameTrigger.emit()
         elif (VcNum == 0):
-            self.parent.processFrameTrigger.emit()
+            if ((self.numAcceptedFrames == self.frameIndex) or (self.frameIndex == 0)):              
+                self.parent.processFrameTrigger.emit()
 
 
     def _processFrame(self):
@@ -568,13 +569,13 @@ class EventReader(rogue.interfaces.stream.Slave):
                 if (PRINT_VERBOSE): print('Num. image data readout: ', len(p))
                 self.frameData = p
                 cnt = 0
-                if ((self.numAcceptedFrames == self.frameIndex) or (self.frameIndex == 0)):              
-                    self.readDataDone = True
-                    # Emit the signal.
-                    self.parent.imageTrigger.emit()
-                    # if displaying all images the sleep produces a frame rate that can be displayed without 
-                    # freezing or crashing the program. 
-                    time.sleep(self.readFileDelay)
+#                if ((self.numAcceptedFrames == self.frameIndex) or (self.frameIndex == 0)):              
+                self.readDataDone = True
+                # Emit the signal.
+                self.parent.imageTrigger.emit()
+                # if displaying all images the sleep produces a frame rate that can be displayed without 
+                # freezing or crashing the program. 
+#                time.sleep(self.readFileDelay)
             
             #during stream chNumId is not assigned so these ifs cannot be used to distiguish the frames
             #during stream VIEW_PSEUDOSCOPE_ID is set to zero
@@ -586,7 +587,7 @@ class EventReader(rogue.interfaces.stream.Slave):
                 self.parent.pseudoScopeTrigger.emit()
                 # if displaying all images the sleep produces a frame rate that can be displayed without 
                 # freezing or crashing the program. 
-                time.sleep(self.readFileDelay)
+#                time.sleep(self.readFileDelay)
 
             if (chNum == self.VIEW_MONITORING_DATA_ID or VcNum == self.VIEW_MONITORING_DATA_ID) :
                 #view Pseudo Scope Data
@@ -596,7 +597,7 @@ class EventReader(rogue.interfaces.stream.Slave):
                 self.parent.monitoringDataTrigger.emit()
                 # if displaying all images the sleep produces a frame rate that can be displayed without 
                 # freezing or crashing the program. 
-                time.sleep(self.readFileDelay)
+#                time.sleep(self.readFileDelay)
             #sets busy flag at the end
             #self.busy = False
 
