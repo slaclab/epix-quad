@@ -33,7 +33,7 @@ from PyQt4.QtGui import *
 from PyQt4.QtCore import QObject, pyqtSignal
 import numpy as np
 
-PRINT_VERBOSE = 0
+PRINT_VERBOSE = 1
 
 # define global constants
 NOCAMERA   = 0
@@ -66,6 +66,7 @@ class Camera():
         camID = self.availableCameras.get(cameraType, NOCAMERA)
 
         # check if the camera exists
+        print("Camera ", cameraType, " selected.")
         if (camID == NOCAMERA):
             print("Camera ", cameraType ," not supported")
             
@@ -78,7 +79,7 @@ class Camera():
             self._initEPix100p()
         if (camID == TIXEL48X48):
             self._initTixel48x48()
-        if (camID == TIXEL48X48):
+        if (camID == EPIX10KA):
             self._initEpix10ka()
         
     # return a dict with all available cameras    
@@ -164,10 +165,10 @@ class Camera():
         self.pixelDepth = 16
 
     def _initEpix10ka(self):
-        self._superRowSize = 384/2
+        self._superRowSize = int(384/2)
         self._NumAsicsPerSide = 2
         self._NumAdcChPerAsic = 4
-        self._NumColPerAdcCh = 96/2
+        self._NumColPerAdcCh = int(96/2)
         self._superRowSizeInBytes = self._superRowSize * 4
         self.sensorWidth = self._calcImgWidth()
         self.sensorHeight = 356#706
