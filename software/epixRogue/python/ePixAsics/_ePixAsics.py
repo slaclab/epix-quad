@@ -387,7 +387,7 @@ class Epix10kaAsic(pr.Device):
         # CMD = 1, Addr = 1 
         # TODO: fix CompEn so it is one uint register
         self.add((
-            pr.Variable(name='CompTH_DAC',   description='Config1',  offset=0x00001001*addrSize, bitSize=6, bitOffset=0, base='hex', mode='RW'),
+            pr.Variable(name='CompTH_DAC',   description='Config1',  offset=0x00001001*addrSize, bitSize=6, bitOffset=0, base='hex',  mode='RW'),
             pr.Variable(name='CompEn0',      description='Config1',  offset=0x00001001*addrSize, bitSize=1, bitOffset=6, base='bool', mode='RW'),
             pr.Variable(name='CompEn1',      description='Config5',  offset=0x00001005*addrSize, bitSize=1, bitOffset=6, base='bool', mode='RW'),
             pr.Variable(name='CompEn2',      description='Config5',  offset=0x00001005*addrSize, bitSize=1, bitOffset=7, base='bool', mode='RW'),
@@ -414,12 +414,9 @@ class Epix10kaAsic(pr.Device):
         # CMD = 1, Addr = 5 
         self.add((
             pr.Variable(name='PulserDac',    description='Config5',  offset=0x00001005*addrSize, bitSize=3, bitOffset=0, base='hex', mode='RW'),
-            pr.Variable(name='MonostPulser', description='Config5',  offset=0x00001005*addrSize, bitSize=3, bitOffset=3, base='hex', mode='RW'),
-            pr.Variable(name='CompEn',       description='Config5',  offset=0x00001005*addrSize, bitSize=2, bitOffset=6, base='hex', mode='RW')))
+            pr.Variable(name='MonostPulser', description='Config5',  offset=0x00001005*addrSize, bitSize=3, bitOffset=3, base='hex', mode='RW')))
 
-        # CMD = 1, Addr = 6  : Bit  0   = DM1en
-        #                    : Bit  1   = DM2en
-        #                    : Bit  4   = SLVDSbit
+        # CMD = 1, Addr = 6 
         self.add((
             pr.Variable(name='Dm1En',     description='Config6', offset=0x00001006*addrSize, bitSize=1, bitOffset=0, base='bool', mode='RW'),
             pr.Variable(name='Dm2En',     description='Config6', offset=0x00001006*addrSize, bitSize=1, bitOffset=1, base='bool', mode='RW'),
@@ -440,11 +437,10 @@ class Epix10kaAsic(pr.Device):
             pr.Variable(name='TpsMux',    description='Config8', offset=0x00001008*addrSize, bitSize=4, bitOffset=1, base='hex',  mode='RW'),
             pr.Variable(name='RoMonost',  description='Config8', offset=0x00001008*addrSize, bitSize=3, bitOffset=5, base='hex',  mode='RW')))     
 
-        # CMD = 1, Addr = 9  : Bit  3:0 = S2D0_GR[3:0]
-        #                    : Bit  7:4 = S2D1_GR[3:0]
+        # CMD = 1, Addr = 9 
         self.add((
-            pr.Variable(name='TpsGr', description='Config9', offset=0x00001009*addrSize, bitSize=4, bitOffset=0, base='hex', mode='RW'),
-            pr.Variable(name='S2dGr', description='Config9', offset=0x00001009*addrSize, bitSize=4, bitOffset=4, base='hex', mode='RW')))
+            pr.Variable(name='TpsGr',  description='Config9', offset=0x00001009*addrSize, bitSize=4, bitOffset=0, base='hex', mode='RW'),
+            pr.Variable(name='S2d0Gr', description='Config9', offset=0x00001009*addrSize, bitSize=4, bitOffset=4, base='hex', mode='RW')))
   
         # CMD = 1, Addr = 10 : Bit  0   = PP_OCB_S2D
         #                    : Bit  3:1 = OCB[2:0]
@@ -488,8 +484,8 @@ class Epix10kaAsic(pr.Device):
         # CMD = 1, Addr = 15 : Bit  1:0 = S2D0_tcDAC[1:0]
         #                    : Bit  7:2 = S2D0_DAC[5:0]
         self.add((
-            pr.Variable(name='S2dTcDac', description='Config15', offset=0x0000100F*addrSize, bitSize=2, bitOffset=0, base='hex', mode='RW'),
-            pr.Variable(name='S2dDac',   description='Config15', offset=0x0000100F*addrSize, bitSize=6, bitOffset=2, base='hex', mode='RW')))
+            pr.Variable(name='S2d0TcDac', description='Config15', offset=0x0000100F*addrSize, bitSize=2, bitOffset=0, base='hex', mode='RW'),
+            pr.Variable(name='S2d0Dac',   description='Config15', offset=0x0000100F*addrSize, bitSize=6, bitOffset=2, base='hex', mode='RW')))
 
         # CMD = 1, Addr = 16 : Bit  0   = test_BE
         #                    : Bit  1   = is_en
@@ -578,8 +574,8 @@ class Epix10kaAsic(pr.Device):
 
         # CMD = 7, Addr = X  : Prepare to write chip ID
         self.add((
-            pr.Variable(name='PrepareWriteChipIdA', description='PrepareWriteChipIdA', offset=0x00007000*addrSize, bitSize=32, bitOffset=0, base='hex', mode='RW'),
-            pr.Variable(name='PrepareWriteChipIdB', description='PrepareWriteChipIdB', offset=0x00007015*addrSize, bitSize=32, bitOffset=0, base='hex', mode='RW')))
+            pr.Variable(name='PrepareWriteChipIdA', description='PrepareWriteChipIdA', offset=0x00007000*addrSize, bitSize=32, bitOffset=0, base='hex', mode='RO'),
+            pr.Variable(name='PrepareWriteChipIdB', description='PrepareWriteChipIdB', offset=0x00007015*addrSize, bitSize=32, bitOffset=0, base='hex', mode='RO')))
       
         # CMD = 8, Addr = X  : Prepare for row/column/matrix configuration
         self.add(
