@@ -40,7 +40,7 @@ from matplotlib.figure import Figure
 import pdb
 
 
-PRINT_VERBOSE = 1
+PRINT_VERBOSE = 0
 
 ################################################################################
 ################################################################################
@@ -143,6 +143,8 @@ class Window(QtGui.QMainWindow, QObject):
 
     def prepairWindow(self):
         # Center UI
+        self.imageScaleMax = int(10000)
+        self.imageScaleMin = int(-10000)
         screen = QtGui.QDesktopWidget().screenGeometry(self)
         size = self.geometry()
         self.buildUi()
@@ -310,12 +312,14 @@ class Window(QtGui.QMainWindow, QObject):
                     
         arrayLen = len(self.imgDesc)
 
+        self._updateImageScales()
+
         if (self.imgTool.imgDark_isSet):
             self.ImgDarkSub = self.imgTool.getDarkSubtractedImg(self.imgDesc)
-            _8bitImg = self.imgTool.reScaleImgTo8bit(self.ImgDarkSub, int(self.imageScaleMaxLine.text()), int(self.imageScaleMinLine.text()))
+            _8bitImg = self.imgTool.reScaleImgTo8bit(self.ImgDarkSub, self.imageScaleMax, self.imageScaleMin)
         else:
             # get the data into the image object
-            _8bitImg = self.imgTool.reScaleImgTo8bit(self.imgDesc, int(self.imageScaleMaxLine.text()), int(self.imageScaleMinLine.text()))
+            _8bitImg = self.imgTool.reScaleImgTo8bit(self.imgDesc, self.imageScaleMax, self.imageScaleMin)
 
         self.image = QtGui.QImage(_8bitImg.repeat(4), self.imgTool.imgWidth, self.imgTool.imgHeight, QtGui.QImage.Format_RGB32)
         
@@ -329,6 +333,19 @@ class Window(QtGui.QMainWindow, QObject):
         self.postImageDisplayProcessing()
 
 
+    """Checks the value on the user interface, if valid update them"""
+    def _updateImageScales(self):
+        #saves current values locally
+        imageScaleMax = self.imageScaleMax
+        imageScaleMin = self.imageScaleMin
+        try:
+            self.imageScaleMax = int(self.imageScaleMaxLine.text())
+            self.imageScaleMin = int(self.imageScaleMinLine.text())
+        except ValueError:
+            self.imageScaleMax = imageScaleMax
+            self.imageScaleMin = imageScaleMin
+            
+        
     def displayPseudoScopeFromReader(self):
         # saves data locally
         rawData = self.eventReaderScope.frameDataScope
@@ -691,7 +708,7 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         btnSetDark.clicked.connect(myParent.setDark)
         btnSetDark.resize(btnSetDark.minimumSizeHint())
         # button set dark
-        btnUnSetDark = QtGui.QPushButton("Rem. Dark")
+        btnUnSetDark = QtGui.QPushButton("Unset Dark")
         btnUnSetDark.setMaximumWidth(150)
         btnUnSetDark.clicked.connect(myParent.unsetDark)
         btnUnSetDark.resize(btnUnSetDark.minimumSizeHint())    
@@ -716,11 +733,11 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         myParent.imageScaleMaxLine = QtGui.QLineEdit()
         myParent.imageScaleMaxLine.setMaximumWidth(100)
         myParent.imageScaleMaxLine.setMinimumWidth(50)
-        myParent.imageScaleMaxLine.setText(str(10000))
+        myParent.imageScaleMaxLine.setText(str(myParent.imageScaleMax))
         myParent.imageScaleMinLine = QtGui.QLineEdit()
         myParent.imageScaleMinLine.setMaximumWidth(100)
         myParent.imageScaleMinLine.setMinimumWidth(50)
-        myParent.imageScaleMinLine.setText(str(-1))
+        myParent.imageScaleMinLine.setText(str(myParent.imageScaleMin))
         
         # set layout to tab 1
         tab1Frame = QtGui.QFrame()

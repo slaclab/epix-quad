@@ -91,3 +91,7 @@ class ImageProcessing():
         #return results
         return image8b
 
+    """Uses the bitwise and function to apply a bit mask into the descrabled image"""
+    def applyBitMask(self, image, mask = 0xFFFF):
+        return np.bitwise_and(image, mask)
+

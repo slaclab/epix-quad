@@ -32,8 +32,9 @@ from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import *
 from PyQt4.QtCore import QObject, pyqtSignal
 import numpy as np
+import ePixViewer.imgProcessing as imgPr
 
-PRINT_VERBOSE = 1
+PRINT_VERBOSE = 0
 
 # define global constants
 NOCAMERA   = 0
@@ -81,6 +82,9 @@ class Camera():
             self._initTixel48x48()
         if (camID == EPIX10KA):
             self._initEpix10ka()
+
+        #creates a image processing tool for local use
+        self.imgTool = imgPr.ImageProcessing(self)
         
     # return a dict with all available cameras    
     def getAvailableCameras():
@@ -96,7 +100,8 @@ class Camera():
         if (camID == TIXEL48X48):
             return self._descrambleTixel48x48Image(rawData) 
         if (camID == EPIX10KA):
-            return  self._descrambleEPix100aImage(rawData)
+            descImg = self._descrambleEPix100aImage(rawData)
+            return self.imgTool.applyBitMask(descImg, mask = 0x3FFF)
         if (camID == NOCAMERA):
             return Null
 

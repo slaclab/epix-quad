@@ -45,7 +45,9 @@ import ePixFpga as fpga
 START_GUI = True
 START_VIEWER = False
 #############################################
-
+#print debug info
+PRINT_VERBOSE = False
+#############################################
 
 # Create the PGP interfaces for ePix camera
 pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,0) # Data & cmds
@@ -179,9 +181,9 @@ ePixBoard = EpixBoard(cmd, dataWriter, srp)
 #mbcon2 = MbDebug()
 #pyrogue.streamTap(pgpVc3,mbcon)
 
-dbgData = rogue.interfaces.stream.Slave()
-dbgData.setDebug(60, "DATA[{}]".format(0))
-pyrogue.streamTap(pgpVc0, dbgData)
+if (PRINT_VERBOSE): dbgData = rogue.interfaces.stream.Slave()
+if (PRINT_VERBOSE): dbgData.setDebug(60, "DATA[{}]".format(0))
+if (PRINT_VERBOSE): pyrogue.streamTap(pgpVc0, dbgData)
 
 
 # Create GUI
