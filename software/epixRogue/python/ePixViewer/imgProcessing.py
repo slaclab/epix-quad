@@ -53,22 +53,44 @@ class ImageProcessing():
     superRowSizeInBytes = superRowSize * 4 # 4 bytes per asic word
 
     # variables to perform some initial image processing
+    numDarkImages = 10
+    numSavedDarkImg = 0
     imgDark = np.array([],dtype='uint16')
+    _imgDarkSet = np.array([],dtype='uint16')
     imgDark_isSet = False
+    imgDark_isRequested = False
+
 
     def __init__(self, parent) :
         # pointer to the parent class        
         self.parent = parent
         # init compound variables
         self.calcImgWidth()
+        # creates the placehold for the dark images to be stored
+        self.createDarkImageSet()
 
     def calcImgWidth(self):
         self.imgWidth = self.imgNumAsicsPerSide * self.imgNumAdcChPerAsic * self.imgNumColPerAdcCh      
 
+    def createDarkImageSet(self):
+        self._imgDarkSet = np.zeros([self.numDarkImages,self.imgHeight,self.imgWidth],dtype='uint16')
+
     def setDarkImg(self, rawData):
         """performs the ePix100A image descrambling"""
-        self.imgDark = np.array(rawData,dtype='uint16')
-        self.imgDark_isSet = True
+        #init variable that tells dark image was requested
+        if (self.numSavedDarkImg == 0):
+            self.createDarkImageSet()
+            self.imgDark_isRequested = True
+        # save the set
+        self._imgDarkSet[self.numSavedDarkImg,:,:] = np.array(rawData,dtype='uint16')
+        self.numSavedDarkImg = self.numSavedDarkImg + 1
+        #checks for end condition
+        if (self.numSavedDarkImg == self.numDarkImages):
+            self.imgDark = np.average(self._imgDarkSet,axis=0)
+            self.imgDark_isSet = True
+            self.imgDark_isRequested = False
+            self.numSavedDarkImg = 0
+            print("Dark image set.")
 
     def unsetDarkImg(self):
         """performs the ePix100A image descrambling"""

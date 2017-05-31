@@ -217,8 +217,16 @@ class Window(QtGui.QMainWindow, QObject):
  
 
     def setDark(self):
+        #updates the number of images used to calculate the dark image
+        try:
+            numDarkImg = int(self.numDarkImg.text())
+        except ValueError:
+            numDarkImg = self.imgTool.numDarkImages
+        if (numDarkImg>0):
+            self.imgTool.numDarkImages = numDarkImg
+        #starts capturing the images for the dark image generation
         self.imgTool.setDarkImg(self.imgDesc)
-        print("Dark image set.")
+        print("Dark image requested.")
 
 
     def unsetDark(self):
@@ -370,7 +378,10 @@ class Window(QtGui.QMainWindow, QObject):
     def displayMonitoringDataFromReader(self):
         rawData = self.eventReaderMonitoring.frameDataMonitoring
         envData = np.zeros((8,1), dtype='int32')
-                
+        
+        #exits if there is no 
+        if (rawData.isempty()) :        
+            return false
         #removes header before displying the image
         for j in range(0,32):
             rawData.pop(0)
@@ -405,6 +416,13 @@ class Window(QtGui.QMainWindow, QObject):
 
     # Evaluates which post display algorithms are needed if any
     def postImageDisplayProcessing(self):
+        #saves dark image set, if requested
+        if (self.imgTool.imgDark_isRequested):
+            self.imgTool.setDarkImg(self.imgDesc)
+        #if the image gets done, saves it for other processes
+        if (self.imgTool.imgDark_isSet):
+            self.ImgDarkSub = self.imgTool.getDarkSubtractedImg(self.imgDesc)
+            
         #check horizontal line display
         if ((self.cbHorizontalLineEnabled.isChecked()) or (self.cbVerticalLineEnabled.isChecked())):
             self.updateHorizontalLinePlot()
@@ -707,11 +725,16 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         btnSetDark.setMaximumWidth(150)
         btnSetDark.clicked.connect(myParent.setDark)
         btnSetDark.resize(btnSetDark.minimumSizeHint())
-        # button set dark
+        # button unset dark
         btnUnSetDark = QtGui.QPushButton("Unset Dark")
         btnUnSetDark.setMaximumWidth(150)
         btnUnSetDark.clicked.connect(myParent.unsetDark)
         btnUnSetDark.resize(btnUnSetDark.minimumSizeHint())    
+        numDarkImgLabel = QtGui.QLabel("Number of Dark images")
+        myParent.numDarkImg = QtGui.QLineEdit()
+        myParent.numDarkImg.setMaximumWidth(150)
+        myParent.numDarkImg.setMinimumWidth(100)
+        myParent.numDarkImg.setText(str(10))
         # button quit
         btnQuit = QtGui.QPushButton("Quit")
         btnQuit.setMaximumWidth(150)
@@ -749,8 +772,10 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         grid.addWidget(tab1Frame,0,0,7,7)
 
         # add widgets to tab1
-        grid.addWidget(btnSetDark, 1, 2)
-        grid.addWidget(btnUnSetDark, 1, 3)
+        grid.addWidget(numDarkImgLabel, 1, 1)
+        grid.addWidget(myParent.numDarkImg, 1, 2)
+        grid.addWidget(btnSetDark, 1, 3)
+        grid.addWidget(btnUnSetDark, 1, 4)
         grid.addWidget(mouseLabel, 2, 1)
         grid.addWidget(myParent.mouseXLine, 2, 2)
         grid.addWidget(myParent.mouseYLine, 2, 3)
