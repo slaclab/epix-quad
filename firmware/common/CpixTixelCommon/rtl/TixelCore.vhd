@@ -703,6 +703,8 @@ begin
    asicPPbe       <= iAsicPpbe;
    asicSync       <= iAsicSync;
    asicGlblRst    <= iAsicGrst;
+   asicTpulse     <= iAsicTpulse;
+   asicStart      <= iAsicStart;
    
    iAsic01DM1     <= asic01DM1;
    iAsic01DM2     <= asic01DM2;
