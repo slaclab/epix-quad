@@ -85,7 +85,9 @@ entity ReadoutControl is
       mpsOut              : out   sl;
 
       -- ASIC digital outputs
-      asicDout            : in    slv(3 downto 0) 
+      asicDout            : in    slv(3 downto 0);
+      -- ASIC digital output number (for 10ka)
+      asicDoutNo          : in    slv(1 downto 0) := "00"
    );
 end ReadoutControl;
 
@@ -176,8 +178,8 @@ architecture ReadoutControl of ReadoutControl is
    signal fifoEmptyAll   : sl := '0';
    signal intSeqCount    : slv(31 downto 0) := (others => '0');
 
-   signal asicDoutPipeline : Slv128Array(3 downto 0);
-   signal asicDoutDelayed  : slv(3 downto 0);
+   signal asicDoutPipeline : Slv128Array(15 downto 0);
+   signal asicDoutDelayed  : slv(15 downto 0);
 
    signal adcDataToReorder : Slv16Array(19 downto 0);
    signal tpsData          : Slv16Array(3 downto 0);
@@ -211,7 +213,7 @@ begin
    -- Indexing for the memory readout order is linked to the raw ADC channel
    -- (i.e., if the channel reads out an ASIC from upper half of carrier,
    --  read it backward, otherwise, read it forward)
-   G_EPIX100A_CARRIER_ADC_GEN2 : if (ASIC_TYPE_G = EPIX100A_C) generate
+   G_EPIX100A_CARRIER_ADC_GEN2 : if (ASIC_TYPE_G = EPIX100A_C or ASIC_TYPE_G = EPIX10KA_C) generate
       iAdcValid(0) <= adcValid(8);
       iAdcValid(1) <= adcValid(3);
       iAdcValid(2) <= adcValid(4);
@@ -643,7 +645,7 @@ begin
       process(sysClk) begin
          if rising_edge(sysClk) then
             if (iAdcValid(i) = '1') then
-               adcDataToReorder(i) <= '0' & asicDoutDelayed(i/4) & r.adcData(i)(13 downto 0);
+               adcDataToReorder(i) <= '0' & asicDoutDelayed(i) & r.adcData(i)(13 downto 0);
             end if;
          end if;
       end process;
@@ -759,32 +761,39 @@ begin
       variable delay : integer range 0 to 127; 
    begin
       if rising_edge(sysClk) then
+         
          if sysClkRst = '1' then
-            for n in 0 to 3 loop
+            for n in 0 to 15 loop
                asicDoutPipeline(n) <= (others => '0');
             end loop;
          else
             for n in 0 to 3 loop
-               for i in 1 to 127 loop
-                  asicDoutPipeline(n)(i) <= asicDoutPipeline(n)(i-1);
-               end loop;
-               asicDoutPipeline(n)(0) <= asicDout(n);
+               if asicDoutNo = n then
+                  for i in 1 to 127 loop
+                     asicDoutPipeline(n)(i)     <= asicDoutPipeline(n)(i-1);
+                     asicDoutPipeline(n+4)(i)   <= asicDoutPipeline(n+4)(i-1);
+                     asicDoutPipeline(n+8)(i)   <= asicDoutPipeline(n+8)(i-1);
+                     asicDoutPipeline(n+12)(i)  <= asicDoutPipeline(n+12)(i-1);
+                  end loop;
+                  asicDoutPipeline(n)(0)     <= asicDout(0);
+                  asicDoutPipeline(n+4)(0)   <= asicDout(1);
+                  asicDoutPipeline(n+8)(0)   <= asicDout(2);
+                  asicDoutPipeline(n+12)(0)  <= asicDout(3);
+               end if;
             end loop;
          end if;
-
+         
          delay := conv_integer(epixConfig.doutPipelineDelay(6 downto 0));
-         for n in 0 to 3 loop
+         for n in 0 to 15 loop
             if ASIC_TYPE_G = EPIX10KP_C or ASIC_TYPE_G = EPIX10KA_C then
                asicDoutDelayed(n) <= asicDoutPipeline(n)( delay );
             else
                asicDoutDelayed(n) <= '0';
             end if;
          end loop;
-
+         
       end if;
    end process;
-
-         
 
 end ReadoutControl;
 

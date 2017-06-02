@@ -224,6 +224,7 @@ architecture top_level of EpixCoreGen2 is
    signal readTps            : sl;
    signal saciPrepReadoutReq : sl;
    signal saciPrepReadoutAck : sl;
+   signal iAsicDoutNo        : slv(1 downto 0);
    
    -- Power up reset to SERDES block
    signal adcCardPowerUp     : sl;
@@ -629,6 +630,9 @@ begin
    -- Acq control     --
    ---------------------      
    U_AcqControl : entity work.AcqControl
+   generic map (
+      ASIC_TYPE_G     => ASIC_TYPE_G
+   )
    port map (
       sysClk          => coreClk,
       sysClkRst       => axiRst,
@@ -652,7 +656,8 @@ begin
       asicGlblRst     => iAsicGrst,
       asicAcq         => iAsicAcq,
       asicSync        => iAsicSync,
-      asicRoClk       => iAsicRoClk
+      asicRoClk       => iAsicRoClk,
+      asicDoutNo      => iAsicDoutNo
    );
  
    ---------------------
@@ -687,7 +692,8 @@ begin
       mAxisMaster    => dataAxisMaster,
       mAxisSlave     => dataAxisSlave,
       mpsOut         => open,
-      asicDout       => asicDout
+      asicDout       => asicDout,
+      asicDoutNo     => iAsicDoutNo
    );
    
    GenAdcStr : for i in 0 to 19 generate 

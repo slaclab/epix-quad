@@ -29,10 +29,15 @@ use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 use work.EpixPkgGen2.all;
 use work.StdRtlPkg.all;
+use work.EpixPkgGen2.all;
+
 library UNISIM;
 use UNISIM.vcomponents.all;
 
 entity AcqControl is
+   generic (
+      ASIC_TYPE_G       : AsicType := EPIX100A_C
+   );
    port (
 
       -- Clocks and reset
@@ -68,7 +73,10 @@ entity AcqControl is
       asicGlblRst         : out   std_logic;
       asicAcq             : out   std_logic;
       asicSync            : out   std_logic;
-      asicRoClk           : out   std_logic
+      asicRoClk           : out   std_logic;
+      
+      -- ASIC digital output number (for 10ka)
+      asicDoutNo          : out   std_logic_vector(1 downto 0)
 
    );
 end AcqControl;
@@ -155,6 +163,8 @@ architecture AcqControl of AcqControl is
    
 
 begin
+   
+   asicDoutNo <= std_logic_vector(pixelCnt(1 downto 0));
 
    -- ADC Clock outputs
    U_AdcClk0 : OBUFDS port map ( I => adcClk, O => adcClkP(0), OB => adcClkM(0) );
@@ -502,13 +512,20 @@ begin
       end if;
    end process;
    --Give a flag saying whether the samples are valid to read
-   process(adcSampCnt,epixConfig,firstPixel,sysClkRst) begin
+   process(adcSampCnt,epixConfig,firstPixel,sysClkRst, pixelCnt) begin
       if sysClkRst = '1' then
          iReadValid <= (others => '0');
       else
          iReadValid <= (others => '0');
-         if adcSampCnt < ePixConfig.adcReadsPerPixel+1 and adcSampCnt > 0 and firstPixel = '0' then
-            iReadValid(conv_integer(adcSampCnt)-1) <= '1' after tpd;
+         if ASIC_TYPE_G = EPIX10KA_C then
+            -- in epix10ka analog output is valid after 4 readout clocks
+            if adcSampCnt < ePixConfig.adcReadsPerPixel+1 and adcSampCnt > 0 and firstPixel = '0' and pixelCnt(1 downto 0) = 3 then
+               iReadValid(conv_integer(adcSampCnt)-1) <= '1' after tpd;
+            end if;
+         else
+            if adcSampCnt < ePixConfig.adcReadsPerPixel+1 and adcSampCnt > 0 and firstPixel = '0' then
+               iReadValid(conv_integer(adcSampCnt)-1) <= '1' after tpd;
+            end if;
          end if;
       end if;
    end process;
