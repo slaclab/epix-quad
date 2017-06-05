@@ -38,7 +38,7 @@ set_property C_DATA_DEPTH 2048 [get_debug_cores ${ilaName}]
 #################################
 ## Set the clock for the ILA core
 #################################
-SetDebugCoreClk ${ilaName} {U_EpixHR}
+SetDebugCoreClk ${ilaName} {U_EpixHR/coreClk}
 
 #######################
 ## Set the debug Probes

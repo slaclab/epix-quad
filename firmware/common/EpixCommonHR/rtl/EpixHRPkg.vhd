@@ -19,7 +19,7 @@ package EpixHRPkg is
 
    constant NUMBER_OF_ASICS_C : natural := 2;   
    
-   constant EPIXHR_NUM_AXI_MASTER_SLOTS_C : natural := 18;
+   constant EPIXHR_NUM_AXI_MASTER_SLOTS_C : natural := 19;
    constant EPIXHR_NUM_AXI_SLAVE_SLOTS_C : natural := 3;
    
    constant VERSION_AXI_INDEX_C     : natural := 0;
@@ -116,7 +116,7 @@ package EpixHRPkg is
          addrBits             => 24,
          connectivity         => x"FFFF"),
       DAC8812_REG_AXI_INDEX_C      => ( 
-         baseAddr             => SCOPE_AXI_BASE_ADDR_C,
+         baseAddr             => DAC8812_AXI_BASE_ADDR_C,
          addrBits             => 24,
          connectivity         => x"FFFF"),
       PLLREGS_AXI_INDEX_C      => ( 

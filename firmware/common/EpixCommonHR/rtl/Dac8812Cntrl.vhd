@@ -53,6 +53,9 @@ end Dac8812Cntrl;
 -- Define architecture
 architecture Dac8812Cntrl of Dac8812Cntrl is
 
+
+   attribute keep : string;
+
    -- Local Signals
    signal intData     : std_logic_vector(17 downto 0); -- appends the dacData and dacCh
    signal intCnt      : std_logic_vector(2  downto 0);
@@ -74,6 +77,9 @@ architecture Dac8812Cntrl of Dac8812Cntrl is
    constant ST_LOAD      : std_logic_vector(2 downto 0) := "101";
    signal   curState     : std_logic_vector(2 downto 0);
    signal   nxtState     : std_logic_vector(2 downto 0);
+
+   attribute keep of curState : signal is "true";
+   attribute keep of dacStrobe : signal is "true";
 
 begin
 
