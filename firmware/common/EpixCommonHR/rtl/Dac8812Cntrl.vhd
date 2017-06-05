@@ -20,12 +20,11 @@
 -- 05/19/2017: modifed to Dac8812Cntrl.vhd by Dionisio
 -------------------------------------------------------------------------------
 
-LIBRARY ieee;
-use work.all;
-use work.EpixPkgGen2.all;
+library ieee;
 use ieee.std_logic_1164.all;
-use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
+--use work.EpixPkgGen2.all;
+use work.EpixHRPkg.all;
 
 entity Dac8812Cntrl is
    generic (
@@ -55,23 +54,26 @@ end Dac8812Cntrl;
 architecture Dac8812Cntrl of Dac8812Cntrl is
 
    -- Local Signals
-   signal intData   : std_logic_vector(17 downto 0); -- appends the dacData and dacCh
-   signal intCnt    : std_logic_vector(2  downto 0);
-   signal intClk    : std_logic;
-   signal intClkEn  : std_logic;
-   signal intBitRst : std_logic;
-   signal intBitEn  : std_logic;
-   signal intBit    : std_logic_vector(4 downto 0);
-   signal nxtDin    : std_logic;
-   signal nxtCsL    : std_logic;
-   signal dacStrobe : std_logic;
+   signal intData     : std_logic_vector(17 downto 0); -- appends the dacData and dacCh
+   signal intCnt      : std_logic_vector(2  downto 0);
+   signal intClk      : std_logic;
+   signal intClkEn    : std_logic;
+   signal intBitRst   : std_logic;
+   signal intBitEn    : std_logic;
+   signal intBit      : std_logic_vector(4 downto 0);
+   signal nxtDin      : std_logic;
+   signal nxtCsL      : std_logic;
+   signal dacStrobe   : std_logic;
+   signal intdacLdacL : std_logic;
 
    -- State Machine
-   constant ST_IDLE      : std_logic_vector(1 downto 0) := "01";
-   constant ST_WAIT      : std_logic_vector(1 downto 0) := "10";
-   constant ST_SHIFT     : std_logic_vector(1 downto 0) := "11";
-   signal   curState     : std_logic_vector(1 downto 0);
-   signal   nxtState     : std_logic_vector(1 downto 0);
+   constant ST_IDLE      : std_logic_vector(2 downto 0) := "001";
+   constant ST_WAIT      : std_logic_vector(2 downto 0) := "010";
+   constant ST_SHIFT     : std_logic_vector(2 downto 0) := "011";
+   constant ST_WAIT_LD   : std_logic_vector(2 downto 0) := "100";
+   constant ST_LOAD      : std_logic_vector(2 downto 0) := "101";
+   signal   curState     : std_logic_vector(2 downto 0);
+   signal   nxtState     : std_logic_vector(2 downto 0);
 
 begin
 
@@ -82,9 +84,9 @@ begin
    process ( sysClk ) begin
       if rising_edge(sysClk) then
          if (sysClkRst = '1') then
-            intData   <= (others => '0') after TPD_G;
+            intData   <= (dacCh & dacData) after TPD_G;
             dacStrobe <= '0' after TPD_G;
-         elsif (intData /= dacData) then
+         elsif (intData /= (dacCh & dacData)) then
             dacStrobe <= '1' after TPD_G;
             intData   <= dacCh & dacData after TPD_G;
          else
@@ -112,7 +114,16 @@ begin
    end process;
 
    -- Output clock
-   dacSclk <= '0' when curState = ST_IDLE else intClk;  
+   dacSclk <= '0' when curState = ST_IDLE else intClk;
+   
+   -- async load dac value
+   process ( sysClk, sysClkRst ) begin
+      if sysClkRst = '1' then
+         dacLdacL <= '1';
+      elsif rising_edge(sysClk) then
+         dacLdacL <= intdacLdacL after TPD_G;  
+      end if;
+   end process;
 
    -- State machine
    process ( sysClk, sysClkRst ) begin
@@ -143,10 +154,11 @@ begin
 
          -- IDLE
          when ST_IDLE =>
-            intBitRst <= '1';
-            intBitEn  <= '0';
-            nxtDin    <= '0';
-            nxtCsL    <= '1';
+            intBitRst   <= '1';
+            intBitEn    <= '0';
+            nxtDin      <= '0';
+            nxtCsL      <= '1';
+            intdacLdacL <= '1';
 
             if dacStrobe = '1' then
                nxtState <= ST_WAIT;
@@ -156,10 +168,11 @@ begin
 
          -- Wait for neg edge
          when ST_WAIT =>
-            intBitRst <= '1';
-            intBitEn  <= '0';
-            nxtDin    <= '0';
-            nxtCsL    <= '1';
+            intBitRst   <= '1';
+            intBitEn    <= '0';
+            nxtDin      <= '0';
+            nxtCsL      <= '1';
+            intdacLdacL <= '1';
 
             if intClkEn = '1' then
                nxtState <= ST_SHIFT;
@@ -169,22 +182,44 @@ begin
 
          -- Shift data
          when ST_SHIFT =>
-            intBitRst <= '0';
-            intBitEn  <= intClkEn;
-            nxtDin    <= intData(conv_integer(intBit));
-            nxtCsL    <= '0';
+            intBitRst   <= '0';
+            intBitEn    <= intClkEn;
+            nxtDin      <= intData(conv_integer(intBit));
+            nxtCsL      <= '0';
+            intdacLdacL <= '1';
 
             if intClkEn = '1' and intBit = 0 then
-               nxtState <= ST_IDLE;
+               nxtState <= ST_WAIT_LD;
             else 
                nxtState <= curState;
             end if;
+            
+         -- Async load data
+         when ST_WAIT_LD =>
+               intBitRst   <= '1';
+               intBitEn    <= '0';
+               nxtDin      <= '0';
+               nxtCsL      <= '1';
+               intdacLdacL <= '1';
+   
+               nxtState <= ST_LOAD;
+                        
+         -- Async load data
+         when ST_LOAD =>
+            intBitRst   <= '1';
+            intBitEn    <= '0';
+            nxtDin      <= '0';
+            nxtCsL      <= '1';
+            intdacLdacL <= '0';
 
+            nxtState <= ST_IDLE;
+            
          when others =>
-            intBitRst <= '0';
-            intBitEn  <= '0';
-            nxtDin    <= '0';
-            nxtCsL    <= '0';
+            intBitRst   <= '0';
+            intBitEn    <= '0';
+            nxtDin      <= '0';
+            nxtCsL      <= '0';
+            intdacLdacL <= '1';
             nxtState  <= ST_IDLE;
       end case;
    end process;

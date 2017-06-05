@@ -221,6 +221,13 @@ architecture top_level of EpixHRCore is
    signal dataSend           : sl;
    signal saciPrepReadoutReq : sl;
    signal saciPrepReadoutAck : sl;
+
+   -- High speed DAC (DAC8812)
+   signal dacDin    : sl;
+   signal dacSclk   : sl;
+   signal dacCsL    : sl;
+   signal dacLdacL  : sl;
+   signal dacClrL   : sl;
    
    -- Power up reset to SERDES block
    signal adcCardPowerUp     : sl;
@@ -263,7 +270,12 @@ architecture top_level of EpixHRCore is
    attribute keep of saciPrepReadoutReq : signal is "true";
    attribute keep of saciPrepReadoutAck : signal is "true";
    attribute keep of errInhibit : signal is "true";
-   
+   -- hs dac
+   attribute keep of  dacDin    : signal is "true";
+   attribute keep of  dacSclk   : signal is "true";
+   attribute keep of  dacCsL    : signal is "true";
+   attribute keep of  dacLdacL  : signal is "true";
+   attribute keep of  dacClrL   : signal is "true";
    
 begin
 
@@ -1022,6 +1034,28 @@ begin
       adcValid(i) <= adcStreams(i).tValid;
    end generate;
    
+   --------------------------------------------
+   -- High speed DAC (DAC8812)               --
+   --------------------------------------------
+  U_HSDAC: entity work.Dac8812Axi
+    generic map (
+      TPD_G => TPD_G)
+    port map (
+      sysClk    => coreClk,
+      sysClkRst => axiRst,
+      dacDin    => dacDin,
+      dacSclk   => dacSclk,
+      dacCsL    => dacCsL,
+      dacLdacL  => dacLdacL,
+      dacClrL   => dacClrL,
+      axilClk           => coreClk,
+      axilRst           => axiRst,
+      sAxilWriteMaster  => mAxiWriteMasters(DAC8812_REG_AXI_INDEX_C),
+      sAxilWriteSlave   => mAxiWriteSlaves(DAC8812_REG_AXI_INDEX_C),
+      sAxilReadMaster   => mAxiReadMasters(DAC8812_REG_AXI_INDEX_C),
+      sAxilReadSlave    => mAxiReadSlaves(DAC8812_REG_AXI_INDEX_C));
+
+
    --------------------------
    -- AXI-Lite Version Module
    --------------------------          

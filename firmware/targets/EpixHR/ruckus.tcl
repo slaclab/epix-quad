@@ -4,7 +4,7 @@ source -quiet $::env(RUCKUS_DIR)/vivado_proc.tcl
 # Load library modules
 loadRuckusTcl $::env(PROJ_DIR)/../../submodules/surf
 loadRuckusTcl $::env(PROJ_DIR)/../../common/EpixCommonGen2
-loadRuckusTcl $::env(PROJ_DIR)/../../common/CpixTixelCommon
+loadRuckusTcl $::env(PROJ_DIR)/../../common/EpixCommonHR
 
 # Load local source Code and constraints
 loadSource      -dir "$::DIR_PATH/hdl/"

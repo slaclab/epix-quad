@@ -10,7 +10,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
-use ieee.std_logic_unsigned.all;
+--use ieee.std_logic_unsigned.all;
 
 use work.StdRtlPkg.all;
 use work.AxiLitePkg.all;
@@ -23,7 +23,7 @@ package EpixHRPkg is
    constant EPIXHR_NUM_AXI_SLAVE_SLOTS_C : natural := 3;
    
    constant VERSION_AXI_INDEX_C     : natural := 0;
-   constant EPIXHR_REG_AXI_INDEX_C   : natural := 1;
+   constant EPIXHR_REG_AXI_INDEX_C  : natural := 1;
    constant TRIG_REG_AXI_INDEX_C    : natural := 2;
    constant MONADC_REG_AXI_INDEX_C  : natural := 3;
    constant SACIREGS_AXI_INDEX_C    : natural := 4;
@@ -35,14 +35,15 @@ package EpixHRPkg is
    constant ADC_CFG_AXI_INDEX_C     : natural := 10;
    constant MEM_LOG_AXI_INDEX_C     : natural := 11;
    constant SCOPE_REG_AXI_INDEX_C   : natural := 12;
-   constant PLLREGS_AXI_INDEX_C     : natural := 13;
-   constant DESER0_AXI_INDEX_C      : natural := 14;
-   constant DESER1_AXI_INDEX_C      : natural := 15;
-   constant ASICS0_AXI_INDEX_C      : natural := 16;
-   constant ASICS1_AXI_INDEX_C      : natural := 17;
+   constant DAC8812_REG_AXI_INDEX_C : natural := 13;
+   constant PLLREGS_AXI_INDEX_C     : natural := 14;
+   constant DESER0_AXI_INDEX_C      : natural := 15;
+   constant DESER1_AXI_INDEX_C      : natural := 16;
+   constant ASICS0_AXI_INDEX_C      : natural := 17;
+   constant ASICS1_AXI_INDEX_C      : natural := 18;
    
    constant VERSION_AXI_BASE_ADDR_C    : slv(31 downto 0) := X"00000000";
-   constant EPIXHR_REG_AXI_BASE_ADDR_C  : slv(31 downto 0) := X"01000000";
+   constant EPIXHR_REG_AXI_BASE_ADDR_C : slv(31 downto 0) := X"01000000";
    constant TRIG_REG_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"02000000";
    constant MONADC_REG_AXI_BASE_ADDR_C : slv(31 downto 0) := X"03000000";
    constant SACIREGS_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"04000000";
@@ -54,11 +55,12 @@ package EpixHRPkg is
    constant ADC_CFG_AXI_BASE_ADDR_C    : slv(31 downto 0) := X"0A000000";
    constant MEM_LOG_AXI_BASE_ADDR_C    : slv(31 downto 0) := X"0B000000";
    constant SCOPE_AXI_BASE_ADDR_C      : slv(31 downto 0) := X"0C000000";
-   constant PLLREGS_AXI_BASE_ADDR_C    : slv(31 downto 0) := X"0D000000";
-   constant DESER0_AXI_BASE_ADDR_C     : slv(31 downto 0) := X"0E000000";
-   constant DESER1_AXI_BASE_ADDR_C     : slv(31 downto 0) := X"0F000000";
-   constant ASICS0_AXI_BASE_ADDR_C     : slv(31 downto 0) := X"10000000";
-   constant ASICS1_AXI_BASE_ADDR_C     : slv(31 downto 0) := X"11000000";
+   constant DAC8812_AXI_BASE_ADDR_C    : slv(31 downto 0) := X"0D000000";
+   constant PLLREGS_AXI_BASE_ADDR_C    : slv(31 downto 0) := X"0E000000";
+   constant DESER0_AXI_BASE_ADDR_C     : slv(31 downto 0) := X"0F000000";
+   constant DESER1_AXI_BASE_ADDR_C     : slv(31 downto 0) := X"10000000";
+   constant ASICS0_AXI_BASE_ADDR_C     : slv(31 downto 0) := X"11000000";
+   constant ASICS1_AXI_BASE_ADDR_C     : slv(31 downto 0) := X"12000000";
    
    constant EPIXHR_AXI_CROSSBAR_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(EPIXHR_NUM_AXI_MASTER_SLOTS_C-1 downto 0) := (
       VERSION_AXI_INDEX_C      => (
@@ -110,6 +112,10 @@ package EpixHRPkg is
          addrBits             => 24,
          connectivity         => x"FFFF"),
       SCOPE_REG_AXI_INDEX_C      => ( 
+         baseAddr             => SCOPE_AXI_BASE_ADDR_C,
+         addrBits             => 24,
+         connectivity         => x"FFFF"),
+      DAC8812_REG_AXI_INDEX_C      => ( 
          baseAddr             => SCOPE_AXI_BASE_ADDR_C,
          addrBits             => 24,
          connectivity         => x"FFFF"),

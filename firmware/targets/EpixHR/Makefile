@@ -7,7 +7,7 @@ target: prom
 export PRJ_PART = XC7A200TSBG484-3
 
 # Define Firmware Version Number
-export PRJ_VERSION = 0xAA010001
+export PRJ_VERSION = 0x00010001
 
 # Define the Microblaze source path                     
 export SDK_SRC_PATH = $(PROJ_DIR)/../../common/EpixCommonHR/src/hr

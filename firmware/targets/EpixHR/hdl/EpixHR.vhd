@@ -30,6 +30,7 @@ use ieee.numeric_std.all;
 
 use work.StdRtlPkg.all;
 use work.EpixPkgGen2.all;
+use work.EpixHRPkg.all;
 use work.AxiLitePkg.all;
 use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
