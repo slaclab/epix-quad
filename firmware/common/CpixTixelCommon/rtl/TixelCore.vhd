@@ -306,6 +306,7 @@ begin
       asicRdClk         when tixelConfig.tixelDbgSel1 = "01011" else
       bitClk            when tixelConfig.tixelDbgSel1 = "01100" else
       byteClk           when tixelConfig.tixelDbgSel1 = "01101" else
+      asicRfClkDiv2     when tixelConfig.tixelDbgSel1 = "01110" else
       '0';   
    
    mpsOutMux <=
@@ -323,6 +324,7 @@ begin
       asicRdClk         when tixelConfig.tixelDbgSel2 = "01011" else
       bitClk            when tixelConfig.tixelDbgSel2 = "01100" else
       byteClk           when tixelConfig.tixelDbgSel2 = "01101" else
+      asicRfClkDiv2     when tixelConfig.tixelDbgSel2 = "01110" else
       '0';
    
    -- Temporary one-shot for grabbing PGP op code
