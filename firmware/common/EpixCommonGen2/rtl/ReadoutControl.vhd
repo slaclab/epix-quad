@@ -719,7 +719,6 @@ begin
             ADDR_WIDTH_G    => CH_FIFO_ADDR_WIDTH_C,
             FWFT_EN_G       => true,
             USE_BUILT_IN_G  => false,
-            XIL_DEVICE_G    => "VIRTEX5",
             EMPTY_THRES_G   => 1,
             LITTLE_ENDIAN_G => true
          )
