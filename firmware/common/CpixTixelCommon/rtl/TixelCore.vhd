@@ -164,6 +164,7 @@ architecture top_level of TixelCore is
    signal txLinkReady : sl;
    signal rxLinkReady : sl;
    
+   signal asicRfClkDiv2 : sl;
    signal asicRfClk     : sl;
    signal asicRfClkRst  : sl;
    signal asicRdClk     : sl;
@@ -471,6 +472,18 @@ begin
       axilWriteMaster   => mAxiWriteMasters(PLLREGS_AXI_INDEX_C),
       axilWriteSlave    => mAxiWriteSlaves(PLLREGS_AXI_INDEX_C)
    );
+   
+   U_BUFR1 : BUFR
+   generic map (
+      SIM_DEVICE  => "7SERIES",
+      BUFR_DIVIDE => "2"
+   )
+   port map (
+      I   => asicRfClk,
+      O   => asicRfClkDiv2,
+      CE  => '1',
+      CLR => '0'
+   );
 
    U_BUFR : BUFR
    generic map (
@@ -684,6 +697,7 @@ begin
       adcClk         => adcClk,
       -- ASICs acquisition signals
       acqStart       => acqStart,
+      asicRefClkDiv2 => asicRfClkDiv2,
       saciReadoutReq => saciPrepReadoutReq,
       saciReadoutAck => saciPrepReadoutAck,
       asicPPbe       => iAsicPpbe,

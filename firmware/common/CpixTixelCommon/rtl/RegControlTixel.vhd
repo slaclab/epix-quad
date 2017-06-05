@@ -65,6 +65,7 @@ entity RegControlTixel is
       adcClk         : out sl;
       -- ASICs acquisition signals
       acqStart       : in  sl;
+      asicRefClkDiv2 : in  sl;
       saciReadoutReq : out sl;
       saciReadoutAck : in  sl;
       asicPPbe       : out sl;
@@ -82,6 +83,7 @@ end RegControlTixel;
 architecture rtl of RegControlTixel is
    
    type AsicAcqType is record
+      asicRefSync       : sl;
       R0                : sl;
       R0Polarity        : sl;
       R0Delay           : slv(31 downto 0);
@@ -123,6 +125,7 @@ architecture rtl of RegControlTixel is
    end record AsicAcqType;
    
    constant ASICACQ_TYPE_INIT_C : AsicAcqType := (
+      asicRefSync       => '0',
       R0                => '0',
       R0Polarity        => '0',
       R0Delay           => (others=>'0'),
@@ -208,9 +211,19 @@ architecture rtl of RegControlTixel is
    
    signal axiReset : sl;
    
+   signal asicRefClkEdge : sl;
+   
    constant BUILD_INFO_C       : BuildInfoRetType    := toBuildInfo(BUILD_INFO_G);
    
 begin
+   
+   U_RoClkEdge : entity work.SynchronizerEdge
+   port map (
+      clk        => axiClk,
+      rst        => axiReset,
+      dataIn     => asicRefClkDiv2,
+      risingEdge => asicRefClkEdge
+   );
 
    axiReset <= sysRst or r.usrRst;
    axiRst   <= axiReset;
@@ -218,7 +231,7 @@ begin
    -------------------------------
    -- Configuration Register
    -------------------------------  
-   comb : process (axiReadMaster, axiReset, axiWriteMaster, r, idValids, idValues, acqStart, saciReadoutAck) is
+   comb : process (axiReadMaster, axiReset, axiWriteMaster, r, idValids, idValues, acqStart, asicRefClkEdge, saciReadoutAck) is
       variable v           : RegType;
       variable regCon      : AxiLiteEndPointType;
       
@@ -311,6 +324,7 @@ begin
       if acqStart = '1' then
          v.tixelRegOut.acqCnt    := r.tixelRegOut.acqCnt + 1;
          v.asicAcqTimeCnt        := (others=>'0');
+         v.asicAcqReg.asicRefSync := '1';
          v.asicAcqReg.R0         := r.asicAcqReg.R0Polarity;
          v.asicAcqReg.GlblRst    := r.asicAcqReg.GlblRstPolarity;
          v.asicAcqReg.Acq        := r.asicAcqReg.AcqPolarity;
@@ -320,6 +334,12 @@ begin
          v.asicAcqReg.Ppmat      := r.asicAcqReg.PpmatPolarity;
          v.asicAcqReg.Sync       := r.asicAcqReg.SyncPolarity;
          v.asicAcqReg.saciSync   := r.asicAcqReg.saciSyncPolarity;
+      elsif r.asicAcqReg.asicRefSync = '1' then
+         -- start pulse must be synchronous to the asic reference clock div by 2
+         -- wait for the asic ref clock div by 2 edge
+         if asicRefClkEdge = '1' then
+            v.asicAcqReg.asicRefSync := '0';
+         end if;
       else
          if r.asicAcqTimeCnt /= x"FFFFFFFF" then
             v.asicAcqTimeCnt := r.asicAcqTimeCnt + 1;
