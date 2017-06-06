@@ -10,7 +10,7 @@
 ### User Debug Script
 #
 ### Open the run
-#open_run synth_1
+open_run synth_1
 #
 ### Configure the Core
 set ilaName u_ila_0
