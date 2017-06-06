@@ -371,7 +371,11 @@ class Camera():
         imgDescBA = self._descrambleEPix100aImageAsByteArray(rawData)
 
         imgDesc = np.frombuffer(imgDescBA,dtype='int16')
-        imgDesc = imgDesc.reshape(self.sensorHeight, self.sensorWidth)
+        if self.sensorHeight*self.sensorWidth != len(imgDesc):
+           print("Got wrong size ", len(imgDesc))
+        else:
+           print("Got size ", len(imgDesc))
+           imgDesc = imgDesc.reshape(self.sensorHeight, self.sensorWidth)
         # returns final image
         return imgDesc
 
