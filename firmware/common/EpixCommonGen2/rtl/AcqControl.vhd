@@ -160,6 +160,7 @@ architecture AcqControl of AcqControl is
    attribute keep : string;
    attribute keep of pixelCnt : signal is "true";
    attribute keep of curState : signal is "true";
+   attribute keep of iReadValid : signal is "true";
    
 
 begin
