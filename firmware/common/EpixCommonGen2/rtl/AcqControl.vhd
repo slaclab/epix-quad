@@ -36,7 +36,8 @@ use UNISIM.vcomponents.all;
 
 entity AcqControl is
    generic (
-      ASIC_TYPE_G       : AsicType := EPIX100A_C
+      ASIC_TYPE_G       : AsicType := EPIX100A_C;
+      SACI_TIMEOUT_G    : natural := 100000
    );
    port (
 
@@ -349,6 +350,11 @@ begin
             saciReadoutReq <= '1' after tpd;
             iAcqBusy       <= '0' after tpd;
             iAsicR0Alt     <= '0' after tpd;
+            if stateCnt < SACI_TIMEOUT_G then
+               stateCntEn      <= '1' after tpd;
+            else
+               stateCntRst     <= '1' after tpd;
+            end if;
          --Done
          when DONE_S =>
             iAcqBusy       <= '0' after tpd;
@@ -465,7 +471,7 @@ begin
             end if;
          --Use SACI prepare for readout
          when SACI_RESET_S =>
-            if (saciReadoutAck = '1') then
+            if (saciReadoutAck = '1') or stateCnt >= SACI_TIMEOUT_G then
                nxtState <= DONE_S after tpd;
             else
                nxtState <= curState after tpd;
