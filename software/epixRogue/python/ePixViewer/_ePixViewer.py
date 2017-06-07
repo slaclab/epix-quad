@@ -575,12 +575,12 @@ class EventReader(rogue.interfaces.stream.Slave):
         self.numAcceptedFrames += 1
 
         VcNum =  p[0] & 0xF
-        if (VcNum == self.VIEW_PSEUDOSCOPE_ID):
+        if ((VcNum == self.VIEW_PSEUDOSCOPE_ID) and (not self.busy)):
             self.parent.processPseudoScopeFrameTrigger.emit()
-        elif (VcNum == self.VIEW_MONITORING_DATA_ID):
+        elif (VcNum == self.VIEW_MONITORING_DATA_ID and (not self.busy)):
             self.parent.processMonitoringFrameTrigger.emit()
         elif (VcNum == 0):
-            if ((self.numAcceptedFrames == self.frameIndex) or (self.frameIndex == 0)):              
+            if (((self.numAcceptedFrames == self.frameIndex) or (self.frameIndex == 0)) and (self.numAcceptedFrames%10==0)): 
                 self.parent.processFrameTrigger.emit()
 
 

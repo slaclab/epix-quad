@@ -38,6 +38,7 @@ import sys
 import testBridge
 import PyQt4.QtGui
 import PyQt4.QtCore
+import ePixFpga as fpga
 import ePixViewer as vi
 
 #############################################
@@ -160,7 +161,8 @@ class EpixBoard(pyrogue.Root):
         self.add(dataWriter)
 
         # Add Devices, defined at AxiVersionEpix100a file
-        self.add(digFpga.create(name='DigFpga', offset=0, memBase=srp, hidden=False, enabled=True))
+        #self.add(digFpga.create(name='DigFpga', offset=0, memBase=srp, hidden=False, enabled=True))
+        self.add(fpga.Epix100a(name='ePix 100a FPGA', offset=0, memBase=srp, hidden=False, enabled=True))
 
         @self.command()
         def Trigger():
@@ -179,9 +181,9 @@ ePixBoard = EpixBoard(cmd, dataWriter, srp)
 #mbcon2 = MbDebug()
 #pyrogue.streamTap(pgpVc3,mbcon)
 
-dbgData = rogue.interfaces.stream.Slave()
-dbgData.setDebug(60, "DATA[{}]".format(0))
-pyrogue.streamTap(pgpVc0, dbgData)
+#dbgData = rogue.interfaces.stream.Slave()
+#dbgData.setDebug(60, "DATA[{}]".format(0))
+#pyrogue.streamTap(pgpVc0, dbgData)
 
 
 # Create GUI
