@@ -234,6 +234,7 @@ package EpixPkgGen2 is
    
    constant EPIX100_COLS_PER_ROW   : integer := 96;
    constant EPIX10K_COLS_PER_ROW   : integer := 48;
+   constant EPIX10KA_COLS_PER_ROW  : integer := 48;
    constant EPIXS_COLS_PER_ROW     : integer := 10;
    constant EPIX100A_ROWS_PER_ASIC : integer := 352;
    
@@ -267,9 +268,12 @@ package body EpixPkgGen2 is
       --Epix100a
       if (version = EPIX100A_C) then
          return EPIX100_COLS_PER_ROW;
-      --Epix 10k
+      --Epix 10kp
       elsif (version = EPIX10KP_C) then
          return EPIX10K_COLS_PER_ROW;
+      --Epix 10ka
+      elsif (version = EPIX10KA_C) then
+         return EPIX10KA_COLS_PER_ROW;
       --Epix S
       elsif (version = EPIXS_C) then
          return EPIXS_COLS_PER_ROW;

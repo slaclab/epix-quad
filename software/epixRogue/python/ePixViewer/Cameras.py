@@ -372,9 +372,9 @@ class Camera():
 
         imgDesc = np.frombuffer(imgDescBA,dtype='int16')
         if self.sensorHeight*self.sensorWidth != len(imgDesc):
-           print("Got wrong size ", len(imgDesc))
+           print("Got wrong pixel number ", len(imgDesc))
         else:
-           print("Got size ", len(imgDesc))
+           if (PRINT_VERBOSE): print("Got pixel number ", len(imgDesc))
            imgDesc = imgDesc.reshape(self.sensorHeight, self.sensorWidth)
         # returns final image
         return imgDesc
