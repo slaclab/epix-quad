@@ -543,8 +543,10 @@ class Epix10kaAsic(pr.Device):
 
         # CMD = 6, Addr = 17 : Row counter[8:0]
         self.add((
-            pr.Variable(name='RowCounter', description='RowCounter', bitSize=9, bitOffset=0, base='hex', mode='RW', setFunction='dev._defaultValue = value', getFunction='value = dev._defaultValue'),
-            pr.Command( name='WriteRowCounter', description='Special command to write row counter', offset=0x00006011*addrSize, bitSize=9, bitOffset=0, function=self.fnWriteRowCounter, hidden=True)))
+            pr.Variable(name='RowCounter', description='',                                offset=0x00006011*addrSize, bitSize=9, bitOffset=0, base='hex', mode='WO')))
+        #self.add((
+        #    pr.Variable(name='RowCounter', description='RowCounter', bitSize=9, bitOffset=0, base='hex', mode='RW', setFunction='dev._defaultValue = value', getFunction='value = dev._defaultValue'),
+        #    pr.Command( name='WriteRowCounter', description='Special command to write row counter', offset=0x00006011*addrSize, bitSize=9, bitOffset=0, function=self.fnWriteRowCounter, hidden=True)))
 
         # CMD = 6, Addr = 19 : Bank select [3:0] & Col counter[6:0]
         self.add((
@@ -568,9 +570,10 @@ class Epix10kaAsic(pr.Device):
         
 
         # CMD = 5, Addr = X  : Read/Write Pixel with data
-        self.add((
-            pr.Command(name='WritePixelData', description='Write PixelTest and PixelMask to current pixel only',  offset=0x00005000*addrSize, bitSize=32, bitOffset=0, function=self.fnWritePixelData),
-            pr.Command(name='ReadPixelData',  description='Read PixelTest and PixelMask from current pixel only', offset=0x00005000*addrSize, bitSize=32, bitOffset=0, function=self.fnReadPixelData)))
+        self.add(pr.Variable(name='WritePixelData',  description='WritePixelData',  offset=0x00005000*addrSize, bitSize=32, bitOffset=0,  base='uint',  mode='RW', verify=False))
+        #self.add((
+        #    pr.Command(name='WritePixelData', description='Write PixelTest and PixelMask to current pixel only',  offset=0x00005000*addrSize, bitSize=32, bitOffset=0, function=self.fnWritePixelData),
+        #    pr.Command(name='ReadPixelData',  description='Read PixelTest and PixelMask from current pixel only', offset=0x00005000*addrSize, bitSize=32, bitOffset=0, function=self.fnReadPixelData)))
 
         # CMD = 7, Addr = X  : Prepare to write chip ID
         self.add((
@@ -600,6 +603,61 @@ class Epix10kaAsic(pr.Device):
         self.add(
             pr.Command(name='ClearMatrix',description='Clear configuration bits of all pixels', function=self.fnClearMatrix))
 
+        self.add(
+            pr.Command(name='SetPixelBitmap',description='Set pixel bitmap of the matrix', function=self.fnSetPixelBitmap))
+        
+        self.add(
+            pr.Command(name='GetPixelBitmap',description='Get pixel bitmap of the matrix', function=self.fnGetPixelBitmap))
+
+    def fnSetPixelBitmap(self, dev,cmd,arg):
+        """SetPixelBitmap command function"""
+        self.reportCmd(dev,cmd,arg)
+        self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+        if os.path.splitext(self.filename)[1] == '.csv':
+            tixelCfg = np.genfromtxt(self.filename, delimiter=',')
+            if tixelCfg.shape == (192, 178):
+                for x in range (0, 192):
+                    bankToWrite = int(x/48);
+                    if (bankToWrite == 0):
+                       colToWrite = 0x700 + x%48;
+                    elif (bankToWrite == 1):
+                       colToWrite = 0x680 + x%48;
+                    elif (bankToWrite == 2):
+                       colToWrite = 0x580 + x%48;
+                    elif (bankToWrite == 3):
+                       colToWrite = 0x380 + x%48;
+                    else:
+                       print('unexpected bank number')
+                    self.ColCounter.set(colToWrite)
+                    for y in range (0, 178):
+                        self.RowCounter.set(y)
+                        self.WritePixelData.set(tixelCfg[x][y])
+                self.CmdPrepForRead()
+            else:
+                print('csv file must be 192x178 pixels')
+
+    def fnGetPixelBitmap(self, dev,cmd,arg):
+        """GetPixelBitmap command function"""
+        self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+        if os.path.splitext(self.filename)[1] == '.csv':
+            readBack = np.zeros((192, 178),dtype='uint16')
+            for x in range (0, 192):
+               bankToWrite = int(x/48);
+               if (bankToWrite == 0):
+                  colToWrite = 0x700 + x%48;
+               elif (bankToWrite == 1):
+                  colToWrite = 0x680 + x%48;
+               elif (bankToWrite == 2):
+                  colToWrite = 0x580 + x%48;
+               elif (bankToWrite == 3):
+                  colToWrite = 0x380 + x%48;
+               else:
+                  print('unexpected bank number')
+               self.ColCounter.set(colToWrite)
+               for y in range (0, 178):
+                  self.RowCounter.set(y)
+                  readBack[x, y] = self.WritePixelData.get()
+            np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
        
 
     def fnClearMatrix(self, dev,cmd,arg):
@@ -824,13 +882,13 @@ class TixelAsic(pr.Device):
             pr.Command(name='ClearMatrix',description='Clear configuration bits of all pixels', function=self.fnClearMatrix))
             
         self.add(
-            pr.Command(name='SetTestBitmap',description='Set test pattern bitmap of the matrix', function=self.fnSetTestBitmap))
+            pr.Command(name='SetPixelBitmap',description='Set pixel bitmap of the matrix', function=self.fnSetPixelBitmap))
         
         self.add(
-            pr.Command(name='GetTestBitmap',description='Get test pattern bitmap of the matrix', function=self.fnGetTestBitmap))
+            pr.Command(name='GetPixelBitmap',description='Get pixel bitmap of the matrix', function=self.fnGetPixelBitmap))
 
-    def fnSetTestBitmap(self, dev,cmd,arg):
-        """SetTestBitmap command function"""
+    def fnSetPixelBitmap(self, dev,cmd,arg):
+        """SetPixelBitmap command function"""
         self.reportCmd(dev,cmd,arg)
         self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
         if os.path.splitext(self.filename)[1] == '.csv':
@@ -845,8 +903,8 @@ class TixelAsic(pr.Device):
             else:
                 print('csv file must be 48x48 pixels')
 
-    def fnGetTestBitmap(self, dev,cmd,arg):
-        """GetTestBitmap command function"""
+    def fnGetPixelBitmap(self, dev,cmd,arg):
+        """GetPixelBitmap command function"""
         self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
         if os.path.splitext(self.filename)[1] == '.csv':
             readBack = np.zeros((48,48),dtype='uint16')

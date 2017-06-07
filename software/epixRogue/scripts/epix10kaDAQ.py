@@ -156,10 +156,11 @@ class MyRunControl(pyrogue.RunControl):
 # Set base
 ##############################
 class EpixBoard(pyrogue.Root):
-    def __init__(self, cmd, dataWriter, srp, **kwargs):
+    def __init__(self, guiTop, cmd, dataWriter, srp, **kwargs):
         super().__init__('ePixBoard','ePix 10ka Board', pollEn=True, **kwargs)
         self.add(MyRunControl('runControl'))
         self.add(dataWriter)
+        self.guiTop = guiTop
 
         # Add Devices
         self.add(fpga.Epix10ka(name='Epix10ka', offset=0, memBase=srp, hidden=False, enabled=True))
@@ -168,8 +169,6 @@ class EpixBoard(pyrogue.Root):
         def Trigger():
             cmd.sendCmd(0, 0)
 
-
-ePixBoard = EpixBoard(cmd, dataWriter, srp)
 
 # debug
 #mbcon = MbDebug()
@@ -189,6 +188,7 @@ if (PRINT_VERBOSE): pyrogue.streamTap(pgpVc0, dbgData)
 # Create GUI
 appTop = PyQt4.QtGui.QApplication(sys.argv)
 guiTop = pyrogue.gui.GuiTop('ePix10kaGui')
+ePixBoard = EpixBoard(guiTop, cmd, dataWriter, srp)
 guiTop.addTree(ePixBoard)
 guiTop.resize(1000,1000)
 
