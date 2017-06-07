@@ -94,14 +94,17 @@ class Camera():
     def descrambleImage(self, rawData):
         camID = self.availableCameras.get(self.cameraType, NOCAMERA)
         if (camID == EPIX100A):
-            return  self._descrambleEPix100aImage(rawData)
+            descImg = self._descrambleEPix100aImage(rawData)
+            return self.imgTool.applyBitMask(descImg, mask = self.bitMask)
         if (camID == EPIX100P):
-            return self._descrambleEPix100aImage(rawData)        
+            descImg = self._descrambleEPix100aImage(rawData)        
+            return self.imgTool.applyBitMask(descImg, mask = self.bitMask)
         if (camID == TIXEL48X48):
-            return self._descrambleTixel48x48Image(rawData) 
+            descImg = self._descrambleTixel48x48Image(rawData) 
+            return self.imgTool.applyBitMask(descImg, mask = self.bitMask)
         if (camID == EPIX10KA):
             descImg = self._descrambleEPix100aImage(rawData)
-            return self.imgTool.applyBitMask(descImg, mask = 0x3FFF)
+            return self.imgTool.applyBitMask(descImg, mask = self.bitMask)
         if (camID == NOCAMERA):
             return Null
 
@@ -148,6 +151,7 @@ class Camera():
         self.sensorHeight = 706
         self.pixelDepth = 16
         self.cameraModule = "Standard ePix100a"
+        self.bitMask = np.uint16(0xFFFF)
 
     def _initEPix100p(self):
         self._superRowSize = 384
@@ -158,6 +162,7 @@ class Camera():
         self.sensorWidth = self._calcImgWidth()
         self.sensorHeight = 706
         self.pixelDepth = 16
+        self.bitMask = np.uint16(0xFFFF)
 
     def _initTixel48x48(self):
         #self._superRowSize = 384
@@ -168,6 +173,7 @@ class Camera():
         self.sensorWidth  = 96 # The sensor size in this dimension is doubled because each pixel has two information (ToT and ToA) 
         self.sensorHeight = 96 # The sensor size in this dimension is doubled because each pixel has two information (ToT and ToA) 
         self.pixelDepth = 16
+        self.bitMask = np.uint16(0xFFFF)
 
     def _initEpix10ka(self):
         self._superRowSize = int(384/2)
@@ -179,6 +185,7 @@ class Camera():
         self.sensorHeight = 356#706
         self.pixelDepth = 16
         self.cameraModule = "Standard ePix10ka"
+        self.bitMask = np.uint16(0x3FFF)
 
     ##########################################################
     # define all camera specific build frame functions

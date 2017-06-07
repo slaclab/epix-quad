@@ -28,7 +28,6 @@ import pyrogue.gui
 import surf
 import surf.AxiVersion
 import surf.SsiPrbsTx
-import digFpga
 import threading
 import signal
 import atexit

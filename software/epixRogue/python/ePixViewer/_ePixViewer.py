@@ -136,6 +136,9 @@ class Window(QtGui.QMainWindow, QObject):
         self.monitoringDataIndex = 0
         self.monitoringDataLength = 100
 
+        #init bit mask
+        self.pixelBitMask.setText(str(hex(np.uint16(self.currentCam.bitMask))))
+
 
         # display the window on the screen after all items have been added 
         self.show()
@@ -215,6 +218,19 @@ class Window(QtGui.QMainWindow, QObject):
     def def_bttns(self):
         return self
  
+
+    def setPixelBitMask(self):
+        #updates the number of images used to calculate the dark image
+        try:
+            textInput = self.pixelBitMask.text()
+            pixelBitMask = int(textInput,16)
+            if (pixelBitMask>0):
+                self.currentCam.bitMask = pixelBitMask
+                print("Pixel Bit Mask Set.")
+        except ValueError:
+            pixelBitMask = self.currentCam.bitMask
+            print("Error: Pixel Bit Mask Not Set. Got: ",self.pixelBitMask.text())        
+
 
     def setDark(self):
         #updates the number of images used to calculate the dark image
@@ -536,6 +552,7 @@ class EventReader(rogue.interfaces.stream.Slave):
         self.enable = True
         self.numAcceptedFrames = 0
         self.numProcessFrames  = 0
+        self.numSkipFrames = 1 # 1 accpts all frames, 2 accepts every other frame, 3 every thrid frame and so on
         self.lastFrame = rogue.interfaces.stream.Frame
         self.frameIndex = 1
         self.frameData = bytearray()
@@ -580,7 +597,7 @@ class EventReader(rogue.interfaces.stream.Slave):
         elif (VcNum == self.VIEW_MONITORING_DATA_ID and (not self.busy)):
             self.parent.processMonitoringFrameTrigger.emit()
         elif (VcNum == 0):
-            if (((self.numAcceptedFrames == self.frameIndex) or (self.frameIndex == 0)) and (self.numAcceptedFrames%10==0)): 
+            if (((self.numAcceptedFrames == self.frameIndex) or (self.frameIndex == 0)) and (self.numAcceptedFrames%self.numSkipFrames==0)): 
                 self.parent.processFrameTrigger.emit()
 
 
@@ -716,7 +733,7 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         tab4    = QtGui.QWidget()
 
         ######################################################      
-        # create widgets for tab 1
+        # create widgets for tab 1 (Main)
         ######################################################
         # label used to display frame number
         self.labelFrameNum = QtGui.QLabel('')
@@ -751,7 +768,17 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         myParent.mouseValueLine = QtGui.QLineEdit()
         myParent.mouseValueLine.setMaximumWidth(150)
         myParent.mouseValueLine.setMinimumWidth(100)
-        # label
+        # set bitmask
+        btnSetPixelBitMask = QtGui.QPushButton("Set")
+        btnSetPixelBitMask.setMaximumWidth(150)
+        btnSetPixelBitMask.clicked.connect(myParent.setPixelBitMask)
+        btnSetPixelBitMask.resize(btnSetPixelBitMask.minimumSizeHint())    
+        pixelBitMaskLabel = QtGui.QLabel("Pixel Bit Mask")
+        myParent.pixelBitMask = QtGui.QLineEdit()
+        myParent.pixelBitMask.setMaximumWidth(150)
+        myParent.pixelBitMask.setMinimumWidth(100)
+        myParent.pixelBitMask.setInputMask("0xHHHH")
+        # label contrast
         imageScaleLabel = QtGui.QLabel("Contrast (max, min)")
         myParent.imageScaleMaxLine = QtGui.QLineEdit()
         myParent.imageScaleMaxLine.setMaximumWidth(100)
@@ -780,15 +807,18 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         grid.addWidget(myParent.mouseXLine, 2, 2)
         grid.addWidget(myParent.mouseYLine, 2, 3)
         grid.addWidget(myParent.mouseValueLine, 2, 4)
-        grid.addWidget(imageScaleLabel, 3, 1)
-        grid.addWidget(myParent.imageScaleMaxLine, 3, 2)
-        grid.addWidget(myParent.imageScaleMinLine,3, 3)     
+        grid.addWidget(pixelBitMaskLabel, 3, 1)
+        grid.addWidget(myParent.pixelBitMask, 3, 2)
+        grid.addWidget(btnSetPixelBitMask, 3, 3)
+        grid.addWidget(imageScaleLabel, 4, 1)
+        grid.addWidget(myParent.imageScaleMaxLine, 4, 2)
+        grid.addWidget(myParent.imageScaleMinLine,4, 3)     
 
         # complete tab1
         tab1.setLayout(grid)
 
         ######################################################      
-        # create widgets for tab 2
+        # create widgets for tab 2 (File controls)
         ######################################################      
         # button prev
         btnPrevFrame = QtGui.QPushButton("Prev")
@@ -831,7 +861,7 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
 
         
         ######################################################      
-        # create widgets for tab 3
+        # create widgets for tab 3 (Line Display 1)
         ######################################################      
 
         # check boxes
@@ -859,7 +889,7 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         tab3.setLayout(grid3)
  
         ######################################################      
-        # create widgets for tab 4
+        # create widgets for tab 4 (Line display 2)
         ######################################################      
 
         # radio buttons
