@@ -120,6 +120,7 @@ class Window(QtGui.QMainWindow, QObject):
         
         # weak way to sync frame reader and display
         self.readFileDelay = 0.1
+        self.displayBusy = False
 
         # initialize image processing objects
         self.rawImgFrame = []
@@ -130,6 +131,7 @@ class Window(QtGui.QMainWindow, QObject):
         self.mouseX = 0
         self.mouseY = 0
         self.image = QtGui.QImage()
+        self.pixelTimeSeries = np.array([])
 
         #initialize data monitoring
         self.monitoringDataTraces = np.zeros((8,1), dtype='int32')
@@ -315,7 +317,9 @@ class Window(QtGui.QMainWindow, QObject):
         [frameComplete, readyForDisplay, self.rawImgFrame] = self.currentCam.buildImageFrame(currentRawData = self.rawImgFrame, newRawData = newRawData)
 
         if (readyForDisplay):
-            self.displayImageFromReader(imageData = self.rawImgFrame)
+            if (not self.displayBusy): 
+                self.displayImageFromReader(imageData = self.rawImgFrame)
+            else: print("Display busy")
         if (frameComplete == 0 and readyForDisplay == 1):
         # in this condition we have data about two different images
         # since a new image has been sent and the old one is incomplete
@@ -329,6 +333,7 @@ class Window(QtGui.QMainWindow, QObject):
     # core code for displaying the image
     def displayImageFromReader(self, imageData):
         #init variables
+        self.displayBusy = True
         self.imgTool.imgWidth = self.currentCam.sensorWidth
         self.imgTool.imgHeight = self.currentCam.sensorHeight
         #get descrambled image com camera
@@ -354,7 +359,10 @@ class Window(QtGui.QMainWindow, QObject):
         # this sleep is a weak way of waiting for the file to be readout completely... needs improvement
         time.sleep(self.readFileDelay)
         thisString = 'Frame {} of {}'.format(self.eventReader.frameIndex, self.eventReader.numAcceptedFrames)
-        self.postImageDisplayProcessing()
+
+        self.displayBusy = False    
+
+        self.postImageDisplayProcessing()        
 
 
     """Checks the value on the user interface, if valid update them"""
@@ -440,10 +448,11 @@ class Window(QtGui.QMainWindow, QObject):
             self.ImgDarkSub = self.imgTool.getDarkSubtractedImg(self.imgDesc)
             
         #check horizontal line display
-        if ((self.cbHorizontalLineEnabled.isChecked()) or (self.cbVerticalLineEnabled.isChecked())):
-            self.updateHorizontalLinePlot()
+        if ((self.cbHorizontalLineEnabled.isChecked()) or (self.cbVerticalLineEnabled.isChecked()) or (self.cbpixelTimeSeriesEnabled.isChecked())):
+            self.updatePixelTimeSeriesLinePlot()
+            self.updateLinePlots()
     
-    def updateHorizontalLinePlot(self):
+    def updateLinePlots(self):
         ##if (PRINT_VERBOSE): print('Horizontal plot processing')
         size    = self.label.size()
         imageH  = self.image.height()
@@ -454,14 +463,22 @@ class Window(QtGui.QMainWindow, QObject):
         #full line plot
         if (self.imgTool.imgDark_isSet):
             #self.ImgDarkSub        
-            self.lineDisplay1.update_figure(self.cbHorizontalLineEnabled.isChecked(), "Horizontal", 'r', self.ImgDarkSub[self.mouseY,:], 
-                                            self.cbVerticalLineEnabled.isChecked(),   "Vertical",   'b', self.ImgDarkSub[:,self.mouseX])
+            self.lineDisplay1.update_figure(self.cbHorizontalLineEnabled.isChecked(),  "Horizontal", 'r', self.ImgDarkSub[self.mouseY,:], 
+                                            self.cbVerticalLineEnabled.isChecked(),    "Vertical",   'b', self.ImgDarkSub[:,self.mouseX],
+                                            self.cbpixelTimeSeriesEnabled.isChecked(), "Pixel TS",   'k', self.pixelTimeSeries)
         else:
             #self.imgDesc
-            self.lineDisplay1.update_figure(self.cbHorizontalLineEnabled.isChecked(), "Horizontal", 'r', self.imgDesc[self.mouseY,:], 
-                                            self.cbVerticalLineEnabled.isChecked(),   "Vertical",   'b', self.imgDesc[:,self.mouseX])
+            self.lineDisplay1.update_figure(self.cbHorizontalLineEnabled.isChecked(),  "Horizontal", 'r', self.imgDesc[self.mouseY,:], 
+                                            self.cbVerticalLineEnabled.isChecked(),    "Vertical",   'b', self.imgDesc[:,self.mouseX],
+                                            self.cbpixelTimeSeriesEnabled.isChecked(), "Pixel TS",   'k', self.pixelTimeSeries)
 
-    def updateVerticalLinePlot(self):
+
+    """ Plot pixel values for multiple images """
+    def clearPixelTimeSeriesLinePlot(self):
+        self.pixelTimeSeries = np.array([])
+
+
+    def updatePixelTimeSeriesLinePlot(self):
         ##if (PRINT_VERBOSE): print('Horizontal plot processing')
         size    = self.label.size()
         imageH  = self.image.height()
@@ -471,11 +488,13 @@ class Window(QtGui.QMainWindow, QObject):
 
         #full line plot
         if (self.imgTool.imgDark_isSet):
-            #self.ImgDarkSub        
-            self.lineDisplay2.update_figure("name", self.ImgDarkSub[:,self.mouseX])
+            self.pixelTimeSeries = np.append(self.pixelTimeSeries, self.ImgDarkSub[self.mouseY,self.mouseY])
         else:
-            #self.imgDesc
-            self.lineDisplay2.update_figure("name", self.imgDesc[:,self.mouseX])
+            self.pixelTimeSeries = np.append(self.pixelTimeSeries, self.imgDesc[self.mouseY,self.mouseY])
+
+        if(not self.cbpixelTimeSeriesEnabled.isChecked()):
+            self. clearPixelTimeSeriesLinePlot()
+
 
     def _paintEvent(self, e):
         qp = QtGui.QPainter()
@@ -528,6 +547,9 @@ class Window(QtGui.QMainWindow, QObject):
                 self.mousePixelValue = self.ImgDarkSub[self.mouseY, self.mouseX]
             elif (self.imgDesc != []):
                 self.mousePixelValue = self.imgDesc[self.mouseY, self.mouseX]
+
+            # clear the pixel time sereis every time the pixel of interest is changed
+            self.clearPixelTimeSeriesLinePlot()
     
             print('Raw mouse coordinates: {},{}'.format(mouseX, mouseY))
             print('Pixel map dimensions: {},{}'.format(pixmapW, pixmapH))
@@ -592,6 +614,8 @@ class EventReader(rogue.interfaces.stream.Slave):
         self.numAcceptedFrames += 1
 
         VcNum =  p[0] & 0xF
+        if (self.busy): print("Event Reader Busy")
+
         if ((VcNum == self.VIEW_PSEUDOSCOPE_ID) and (not self.busy)):
             self.parent.processPseudoScopeFrameTrigger.emit()
         elif (VcNum == self.VIEW_MONITORING_DATA_ID and (not self.busy)):
@@ -867,6 +891,8 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         # check boxes
         myParent.cbHorizontalLineEnabled = QtGui.QCheckBox('Plot Horizontal Line')
         myParent.cbVerticalLineEnabled = QtGui.QCheckBox('Plot Vertical Line')
+        myParent.cbpixelTimeSeriesEnabled = QtGui.QCheckBox('Pixel Time Series Line')
+
 
         # set layout to tab 3
         tab3Frame1 = QtGui.QFrame()
@@ -884,6 +910,8 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         grid3.addWidget(tab3Frame1,0,0,5,7)
         grid3.addWidget(myParent.cbHorizontalLineEnabled,1, 1)
         grid3.addWidget(myParent.cbVerticalLineEnabled,2, 1)
+        grid3.addWidget(myParent.cbpixelTimeSeriesEnabled,3, 1)
+
 
         # complete tab3
         tab3.setLayout(grid3)
