@@ -621,11 +621,11 @@ class Epix10kaAsic(pr.Device):
         if os.path.splitext(self.filename)[1] == '.csv':
             tixelCfg = np.genfromtxt(self.filename, delimiter=',')
             if tixelCfg.shape == (178, 192):
-                #for x in range (0, 178):
-                for x in range (0, 30):
+                for x in range (0, 178):
+                #for x in range (0, 30):
                     self.RowCounter.set(x)
-                    #for y in range (0, 192):
-                    for y in range (0, 30):
+                    for y in range (0, 192):
+                    #for y in range (0, 30):
                         bankToWrite = int(y/48);
                         if (bankToWrite == 0):
                            colToWrite = 0x700 + y%48;
@@ -648,11 +648,11 @@ class Epix10kaAsic(pr.Device):
         self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
         if os.path.splitext(self.filename)[1] == '.csv':
             readBack = np.zeros((178, 192),dtype='uint16')
-            #for x in range (0, 178):
-            for x in range (0, 30):
+            for x in range (0, 178):
+            #for x in range (0, 30):
                self.RowCounter.set(x)
-               #for y in range (0, 192):
-               for y in range (0, 30):
+               for y in range (0, 192):
+               #for y in range (0, 30):
                   bankToWrite = int(y/48);
                   if (bankToWrite == 0):
                      colToWrite = 0x700 + y%48;

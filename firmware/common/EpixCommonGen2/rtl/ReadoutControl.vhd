@@ -774,8 +774,8 @@ begin
                      asicDoutPipeline(n+8)(i)   <= asicDoutPipeline(n+8)(i-1);
                      asicDoutPipeline(n+12)(i)  <= asicDoutPipeline(n+12)(i-1);
                   end loop;
-                  asicDoutPipeline(n)(0)     <= asicDout(0);
-                  asicDoutPipeline(n+4)(0)   <= asicDout(1);
+                  asicDoutPipeline(n)(0)     <= asicDout(1);
+                  asicDoutPipeline(n+4)(0)   <= asicDout(0);
                   asicDoutPipeline(n+8)(0)   <= asicDout(2);
                   asicDoutPipeline(n+12)(0)  <= asicDout(3);
                end if;

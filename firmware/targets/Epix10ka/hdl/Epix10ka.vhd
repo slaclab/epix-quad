@@ -183,10 +183,11 @@ architecture top_level of Epix10ka is
    signal iAsicDout     : slv(3 downto 0);
    
    -- Keep douts from getting trimmed even if they're not used in this design
-   attribute dont_touch : string;
-   attribute dont_touch of iAsicDout : signal is "true";
-   attribute dont_touch of iAsicDm1  : signal is "true";
-   attribute dont_touch of iAsicDm2  : signal is "true";
+   attribute keep : string;
+   attribute keep of iAsicDout : signal is "true";
+   attribute keep of iAsicRoClk : signal is "true";
+   attribute keep of iAsicDm1  : signal is "true";
+   attribute keep of iAsicDm2  : signal is "true";
    
 begin
 
