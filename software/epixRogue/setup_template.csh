@@ -15,6 +15,7 @@ setenv 	EPIXROGUE_DIR    ${PWD}
 #setenv SURF_DIR   ${PWD}/../surf
 setenv SURF_DIR   ${PWD}/../../firmware/submodules/surf
 setenv ROGUE_DIR  ${PWD}/../rogue
+#setenv ROGUE_DIR  /afs/slac/g/reseng/rogue/v1.2.3
 
 # Setup python path
 setenv PYTHONPATH ${PWD}/python:${SURF_DIR}/python:${ROGUE_DIR}/python:${PYTHONPATH}

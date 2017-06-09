@@ -155,7 +155,7 @@ class MyRunControl(pyrogue.RunControl):
 ##############################
 class EpixBoard(pyrogue.Root):
     def __init__(self, cmd, dataWriter, srp, **kwargs):
-        super().__init__('ePixBoard','ePix 100a Board', pollEn=True, **kwargs)
+        super().__init__('ePixBoard','ePix 100a Board', pollEn=False, **kwargs)
         self.add(MyRunControl('runControl'))
         self.add(dataWriter)
 

@@ -173,17 +173,16 @@ class Epix100a(pr.Device):
       #In order to easely compare GedDAQ address map with the eprix rogue address map 
       #it is defined the addrSize variable
       addrSize = 4	
-      memBase = 0
       
       super(self.__class__, self).__init__(**kwargs)
       self.add((
             Epix100aFpgaRegisters(name="EpixFpgaRegisters", offset=0x00000000, expand=False),
             OscilloscopeRegisters(name='Oscilloscope', offset=0x00000140, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum),
             surf.Pgp2bAxi(name='Pgp2bAxi', offset=0x00300000, expand=False),
-            epix.Epix100aAsic(name='Epix100aAsic0', offset=0x00800000*addrSize, memBase=memBase, hidden=False, enabled=False, expand=False),
-            epix.Epix100aAsic(name='Epix100aAsic1', offset=0x00900000*addrSize, memBase=memBase, hidden=False, enabled=False, expand=False),
-            epix.Epix100aAsic(name='Epix100aAsic2', offset=0x00A00000*addrSize, memBase=memBase, hidden=False, enabled=False, expand=False),
-            epix.Epix100aAsic(name='Epix100aAsic3', offset=0x00B00000*addrSize, memBase=memBase, hidden=False, enabled=False, expand=False),
+            epix.Epix100aAsic(name='Epix100aAsic0', offset=0x00800000*addrSize, hidden=False, enabled=False, expand=False),
+            epix.Epix100aAsic(name='Epix100aAsic1', offset=0x00900000*addrSize, hidden=False, enabled=False, expand=False),
+            epix.Epix100aAsic(name='Epix100aAsic2', offset=0x00A00000*addrSize, hidden=False, enabled=False, expand=False),
+            epix.Epix100aAsic(name='Epix100aAsic3', offset=0x00B00000*addrSize, hidden=False, enabled=False, expand=False),
             surf.AxiVersion.create(offset=0x08000000, expand=False),
             surf.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[0]', offset=0x14000000, channels=8, enabled=False, expand=False),
             surf.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[1]', offset=0x18000000, channels=8, enabled=False, expand=False),
@@ -254,6 +253,7 @@ class Epix100aFpgaRegisters(pr.Device):
       self.add(pr.Variable(name='AsicPinROClkControl', description='Manual ASIC RO Clock Enabled',                            offset=0x0000002A*addrSize, bitSize=1,  bitOffset=5, base='bool', mode='RW'))
       self.add(pr.Variable(name='AdcStreamMode',       description='Enables manual test of ADC',                              offset=0x0000002A*addrSize, bitSize=1,  bitOffset=7, base='bool', mode='RW'))
       self.add(pr.Variable(name='AdcPatternEnable',    description='Enables test pattern on data out',                        offset=0x0000002A*addrSize, bitSize=1,  bitOffset=8, base='bool', mode='RW'))
+      self.add(pr.Variable(name='AsicR0Mode',          description='AsicR0Mode',                                              offset=0x0000002A*addrSize, bitSize=1,  bitOffset=11,base='bool', mode='RW'))
       self.add(pr.Variable(name='AsicR0Width',         description='Width of R0 low pulse',                                   offset=0x0000002B*addrSize, bitSize=31, bitOffset=0, base='hex',  mode='RW'))
       self.add(pr.Variable(name='DigitalCardId0',      description='Digital Card Serial Number (low 32 bits)',                offset=0x00000030*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RW'))
       self.add(pr.Variable(name='DigitalCardId1',      description='Digital Card Serial Number (high 32 bits)',               offset=0x00000031*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RW'))
@@ -417,6 +417,7 @@ class Epix10kaFpgaRegisters(pr.Device):
       self.add(pr.Variable(name='AsicPinROClkControl', description='Manual ASIC RO Clock Enabled',                            offset=0x0000002A*addrSize, bitSize=1,  bitOffset=5, base='bool', mode='RW'))
       self.add(pr.Variable(name='AdcStreamMode',       description='Enables manual test of ADC',                              offset=0x0000002A*addrSize, bitSize=1,  bitOffset=7, base='bool', mode='RW'))
       self.add(pr.Variable(name='AdcPatternEnable',    description='Enables test pattern on data out',                        offset=0x0000002A*addrSize, bitSize=1,  bitOffset=8, base='bool', mode='RW'))
+      self.add(pr.Variable(name='AsicR0Mode',          description='AsicR0Mode',                                              offset=0x0000002A*addrSize, bitSize=1,  bitOffset=11,base='bool', mode='RW'))
       self.add(pr.Variable(name='AsicR0Width',         description='Width of R0 low pulse',                                   offset=0x0000002B*addrSize, bitSize=31, bitOffset=0, base='hex',  mode='RW'))
       self.add(pr.Variable(name='DigitalCardId0',      description='Digital Card Serial Number (low 32 bits)',                offset=0x00000030*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RW'))
       self.add(pr.Variable(name='DigitalCardId1',      description='Digital Card Serial Number (high 32 bits)',               offset=0x00000031*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RW'))
