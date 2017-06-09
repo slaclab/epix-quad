@@ -244,6 +244,9 @@ architecture top_level of EpixCoreGen2 is
    signal bootSck    : sl;
    
    signal iSaciSelL  : slv(3 downto 0);
+   signal iSaciClk   : sl;
+   signal iSaciCmd   : sl;
+   signal iSaciRsp   : sl;
    
    signal slowAdcData : Slv24Array(8 downto 0);
    
@@ -279,6 +282,10 @@ architecture top_level of EpixCoreGen2 is
    attribute keep of acqBusy : signal is true;
    attribute keep of acqStart : signal is true;
    attribute keep of dataSend : signal is true;
+   attribute keep of iSaciClk : signal is true;
+   attribute keep of iSaciCmd : signal is true;
+   attribute keep of iSaciSelL : signal is true;
+   attribute keep of iSaciRsp : signal is true;
    
    attribute IODELAY_GROUP : string;
    attribute IODELAY_GROUP of U_IDelayCtrl : label is IODELAY_GROUP_G;
@@ -308,6 +315,9 @@ begin
    asicSync       <= iAsicSync;
    -- SACI signals
    saciSelL       <= iSaciSelL;
+   saciClk        <= iSaciClk;
+   saciCmd        <= iSaciCmd;
+   iSaciRsp       <= saciRsp;
   
 
    -- Temporary one-shot for grabbing PGP op code
@@ -584,10 +594,10 @@ begin
       SACI_NUM_CHIPS_G   => 4)
    port map (
       -- SACI interface
-      saciClk           => saciClk,
-      saciCmd           => saciCmd,
+      saciClk           => iSaciClk,
+      saciCmd           => iSaciCmd,
       saciSelL          => iSaciSelL,
-      saciRsp(0)        => saciRsp,
+      saciRsp(0)        => iSaciRsp,
       -- AXI-Lite Register Interface
       axilClk           => coreClk,
       axilRst           => axiRst,
