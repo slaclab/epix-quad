@@ -47,11 +47,10 @@
 ##
 ##
 #####SACI Debug
-####ConfigProbe ${ilaName} {U_EpixCore/U_RegControl/U_Saci/saciClk}
-####ConfigProbe ${ilaName} {U_EpixCore/U_RegControl/U_Saci/saciSelL*}
-####ConfigProbe ${ilaName} {U_EpixCore/U_RegControl/U_Saci/saciCmd}
-####ConfigProbe ${ilaName} {U_EpixCore/U_RegControl/U_Saci/saciRsp}
-####ConfigProbe ${ilaName} {U_EpixCore/U_RegControl/U_Saci/saciMasterOut*}
+#ConfigProbe ${ilaName} {U_EpixCore/iSaciSelL[*]}
+#ConfigProbe ${ilaName} {U_EpixCore/iSaciClk}
+#ConfigProbe ${ilaName} {U_EpixCore/iSaciCmd}
+#ConfigProbe ${ilaName} {U_EpixCore/iSaciRsp}
 ###
 #####ADC Alignment Program Debug
 ####ConfigProbe ${ilaName} {U_EpixCore/U_EpixStartup/U_StartupPicoBlaze/address*}
@@ -65,14 +64,14 @@
 ####ConfigProbe ${ilaName} {U_EpixCore/U_EpixStartup/adcMatchCountReg*}
 ###
 ####Bad frame debug
-#ConfigProbe ${ilaName} {U_EpixCore/U_ReadoutControl/r[state][*]}
-#ConfigProbe ${ilaName} {U_EpixCore/U_ReadoutControl/r[timeoutCnt][*]}
-#ConfigProbe ${ilaName} {U_EpixCore/U_ReadoutControl/fifoEmptyAll}
-#ConfigProbe ${ilaName} {U_EpixCore/acqBusy}
-#ConfigProbe ${ilaName} {U_EpixCore/acqStart}
-#ConfigProbe ${ilaName} {U_EpixCore/U_AcqControl/iReadValid}
-#ConfigProbe ${ilaName} {U_EpixCore/U_AcqControl/pixelCnt[*]}
-#ConfigProbe ${ilaName} {U_EpixCore/U_AcqControl/curState[*]}
+##ConfigProbe ${ilaName} {U_EpixCore/U_ReadoutControl/r[state][*]}
+##ConfigProbe ${ilaName} {U_EpixCore/U_ReadoutControl/r[timeoutCnt][*]}
+##ConfigProbe ${ilaName} {U_EpixCore/U_ReadoutControl/fifoEmptyAll}
+##ConfigProbe ${ilaName} {U_EpixCore/acqBusy}
+##ConfigProbe ${ilaName} {U_EpixCore/acqStart}
+##ConfigProbe ${ilaName} {U_EpixCore/U_AcqControl/iReadValid}
+##ConfigProbe ${ilaName} {U_EpixCore/U_AcqControl/pixelCnt[*]}
+##ConfigProbe ${ilaName} {U_EpixCore/U_AcqControl/curState[*]}
 ###
 ###
 #####Slow ADC debug
@@ -92,4 +91,4 @@
 ####delete_debug_port [get_debug_ports [GetCurrentProbe ${ilaName1}]]
 ###
 ##### Write the port map file
-##
+#
