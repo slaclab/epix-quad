@@ -183,7 +183,8 @@ begin
    asicAcq     <= iAsicAcq               when ePixConfig.manualPinControl(1) = '0' else
                   ePixConfig.asicPins(1) when ePixConfig.manualPinControl(1) = '1' else
                   'X';
-   asicR0      <= iAsicR0                when ePixConfig.manualPinControl(2) = '0' and ePixConfig.asicR0Mode = '0' else
+   -- removed asicR0Mode = '0' option. R0 must be low in IDLE otherwise the matrix configuration does not work.
+   asicR0      <= iAsicR0Alt             when ePixConfig.manualPinControl(2) = '0' and ePixConfig.asicR0Mode = '0' else
                   iAsicR0Alt             when ePixConfig.manualPinControl(2) = '0' and ePixConfig.asicR0Mode = '1' else
                   ePixConfig.asicPins(2) when ePixConfig.manualPinControl(2) = '1' else
                   'X';
