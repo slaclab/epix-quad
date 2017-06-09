@@ -299,7 +299,7 @@ class Epix100aAsic(pr.Device):
         self.reportCmd(dev,cmd,arg)
         for i in range (0, 96):
             self.PrepareMultiConfig()
-            self.ColCounter.set(i)
+            self.ColCounter.post(i)
             self.WriteColData()
         self.CmdPrepForRead()
 
@@ -307,44 +307,44 @@ class Epix100aAsic(pr.Device):
         """WriteMatrixData command function"""
         self.reportCmd(dev,cmd,arg)
         self.PrepareMultiConfig()
-        self.WriteMatrixData.set((self.PixelTest.get() << 1) | (self.PixelMask.get()))
+        self.WriteMatrixData.post((self.PixelTest.get() << 1) | (self.PixelMask.get()))
         self.CmdPrepForRead()
 
-    def fnWriteRowCounter(dev,cmd,arg):
+    def fnWriteRowCounter(self,dev,cmd,arg):
         """WriteRowCounter command function"""
         self.reportCmd(self,dev,cmd,arg)
         self.CmdPrepForRead()
-        self.WriteRowCounter.set(self.RowCounter.get())
+        self.WriteRowCounter.post(self.RowCounter.get())
         
 
-    def fnWritePixelData(dev,cmd,arg):
+    def fnWritePixelData(self,dev,cmd,arg):
         """WritePixelData command function"""
         self.reportCmd(self,dev,cmd,arg)
         self.PrepareMultiConfig()
         self.WriteRowCounter()
-        self.ColCounter.set(self.ColCounter.get())
-        self.BankSelect.set(self.BankSelect.get())
-        self.PixelTest.set(self.PixelTest.get())
-        self.PixelMask.set(self.PixelMask.get())
+        self.ColCounter.post(self.ColCounter.get())
+        self.BankSelect.post(self.BankSelect.get())
+        self.PixelTest.post(self.PixelTest.get())
+        self.PixelMask.post(self.PixelMask.get())
 
-    def fnReadPixelData(dev,cmd,arg):
+    def fnReadPixelData(self, dev,cmd,arg):
         """ReadPixelData command function"""
         self.reportCmd(self,dev,cmd,arg)
         self.PrepareMultiConfig()
-        self.RowCounter.set(self.RowCounter.get())
-        self.ColCounter.set(self.ColCounter.get())
-        self.BankSelect.set(self.BankSelect.get())
+        self.RowCounter.post(self.RowCounter.get())
+        self.ColCounter.post(self.ColCounter.get())
+        self.BankSelect.post(self.BankSelect.get())
         self.PixelTest.get()
         self.PixelMask.get()
 
-    def fnWriteRowData(dev,cmd,arg):
+    def fnWriteRowData(self, dev,cmd,arg):
         """WriteRowData command function"""
         self.reportCmd(self,dev,cmd,arg)
         self.CmdPrepForRead()
         self.PrepareMultiConfig()
-        self.RowCounter.set(self.RowCounter.get())
-        self.PixelTest.set(self.PixelTest.get())
-        self.PixelMask.set(self.PixelMask.get())
+        self.RowCounter.post(self.RowCounter.get())
+        self.PixelTest.post(self.PixelTest.get())
+        self.PixelMask.post(self.PixelMask.get())
 
     # standard way to report a command has been executed
     def reportCmd(self, dev,cmd,arg):
