@@ -22,6 +22,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
+use ieee.numeric_std.all;
 
 use work.StdRtlPkg.all;
 use work.EpixHRPkg.all;
@@ -114,7 +115,7 @@ begin  -- arch
     sAxilWriteMaster.awaddr  <= x"00001000";
     sAxilWriteMaster.awprot  <= "111";
     sAxilWriteMaster.awvalid <= '1';
-    sAxilWriteMaster.wdata   <= x"0003A0F5";
+    sAxilWriteMaster.wdata   <= x"00000001";
     sAxilWriteMaster.wstrb   <= x"F";
     sAxilWriteMaster.wvalid  <= '1';
     sAxilWriteMaster.bready  <= '1';
@@ -127,6 +128,8 @@ begin  -- arch
     sAxilWriteMaster.wstrb   <= x"0";
     sAxilWriteMaster.wvalid  <= '0';
     sAxilWriteMaster.bready  <= '1';
+
+
 
 
     stimloop : for i in 0 to 255 loop 
@@ -153,6 +156,45 @@ begin  -- arch
     end loop stimloop;
        
     wait for 1 us;
+
+    wait until sysClk = '1';
+    sAxilWriteMaster.awaddr  <= x"00001000";
+    sAxilWriteMaster.awprot  <= "111";
+    sAxilWriteMaster.awvalid <= '1';
+    sAxilWriteMaster.wdata   <= x"00000003";
+    sAxilWriteMaster.wstrb   <= x"F";
+    sAxilWriteMaster.wvalid  <= '1';
+    sAxilWriteMaster.bready  <= '1';
+
+    wait until sysClk = '1';
+    sAxilWriteMaster.awaddr  <= x"00001000";
+    sAxilWriteMaster.awprot  <= "000";
+    sAxilWriteMaster.awvalid <= '0';
+    sAxilWriteMaster.wdata   <= x"00000000";
+    sAxilWriteMaster.wstrb   <= x"0";
+    sAxilWriteMaster.wvalid  <= '0';
+    sAxilWriteMaster.bready  <= '1';
+
+    wait for 3000 us;
+
+    wait until sysClk = '1';
+    sAxilWriteMaster.awaddr  <= x"00001004";
+    sAxilWriteMaster.awprot  <= "111";
+    sAxilWriteMaster.awvalid <= '1';
+    sAxilWriteMaster.wdata   <= x"00000040";
+    sAxilWriteMaster.wstrb   <= x"F";
+    sAxilWriteMaster.wvalid  <= '1';
+    sAxilWriteMaster.bready  <= '1';
+
+    wait until sysClk = '1';
+    sAxilWriteMaster.awaddr  <= x"00001004";
+    sAxilWriteMaster.awprot  <= "000";
+    sAxilWriteMaster.awvalid <= '0';
+    sAxilWriteMaster.wdata   <= x"00000000";
+    sAxilWriteMaster.wstrb   <= x"0";
+    sAxilWriteMaster.wvalid  <= '0';
+    sAxilWriteMaster.bready  <= '1';
+
 
     wait;
   end process WaveGen_Proc;

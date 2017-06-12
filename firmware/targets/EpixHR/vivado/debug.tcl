@@ -51,8 +51,11 @@ ConfigProbe ${ilaName} {U_EpixHR/dacLdacL}
 ConfigProbe ${ilaName} {U_EpixHR/dacClrL}
 ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/dacData[*]}
 ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/dacCh[*]}
-ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/DAC8812_0/curState[*]}
-ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/DAC8812_0/dacStrobe}
+ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/waveform_addr[*]}
+ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/waveform_dout[*]}
+#ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/DAC8812_0/curState[*]}
+#ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/DAC8812_0/dacStrobe}
+
 
 
 ##########################

@@ -1037,7 +1037,8 @@ begin
    --------------------------------------------
    -- High speed DAC (DAC8812)               --
    --------------------------------------------
-  U_HSDAC: entity work.Dac8812Axi
+  --U_HSDAC: entity work.Dac8812Axi
+  U_HSDAC: entity work.DacWaveformGenAxi
     generic map (
       TPD_G => TPD_G)
     port map (

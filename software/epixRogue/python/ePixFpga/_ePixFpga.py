@@ -733,8 +733,11 @@ class HighSpeedDacRegisters(pr.Device):
       #Setup registers & variables
       
       self.add((
-         pr.Variable(name='DAC value',   description='Set a fixed value for the DAC',   offset=0x00000000, bitSize=16,  bitOffset=0,   base='hex', mode='RW'),
-         pr.Variable(name='DAC channel',   description='Select the DAC channel to use', offset=0x00000000, bitSize=2,   bitOffset=16,  base='enum', mode='RW', enum=HsDacEnum)))
+         pr.Variable(name='enabled',         description='Enable waveform generation',                  offset=0x00001000, bitSize=1,   bitOffset=0,   base='bool', mode='RW'),
+         pr.Variable(name='run',             description='Generates waveform when true',                offset=0x00001000, bitSize=1,   bitOffset=1,   base='bool', mode='RW'),
+         pr.Variable(name='samplingCounter', description='Sampling period (times 1/clock ref. 156MHz)', offset=0x00001004, bitSize=8,   bitOffset=0,   base='hex', mode='RW'),
+         pr.Variable(name='DacValue',        description='Set a fixed value for the DAC',               offset=0x00001008, bitSize=16,  bitOffset=0,   base='hex', mode='RW'),
+         pr.Variable(name='DacChannel',      description='Select the DAC channel to use',               offset=0x00001008, bitSize=2,   bitOffset=16,  base='enum', mode='RW', enum=HsDacEnum)))
       
       
       

@@ -86,10 +86,12 @@ architecture DacWaveformGenAxi_arch of DacWaveformGenAxi is
     signal axiWrData          : slv(DATA_WIDTH_G-1 downto 0);
     signal dacSync            : Dac8812ConfigType;
     signal WaveformSync       : DacWaveformConfigType;
+    signal counter, nextCounter : std_logic_vector(ADDR_WIDTH_G-1 downto 0);
+    signal samplingCounter, nextSamplingCounter : std_logic_vector(7 downto 0);
 
     type RegType is record
         dac               : Dac8812ConfigType;
-        waveform          : DacWaveformConfigType
+        waveform          : DacWaveformConfigType;
         sAxilWriteSlave   : AxiLiteWriteSlaveType;
         sAxilReadSlave    : AxiLiteReadSlaveType;
     end record RegType;
@@ -106,6 +108,8 @@ architecture DacWaveformGenAxi_arch of DacWaveformGenAxi is
 
     attribute keep of dacData : signal is "true";
     attribute keep of dacCh : signal is "true";
+    attribute keep of waveform_addr : signal is "true";
+    attribute keep of waveform_dout : signal is "true";
    
 
 begin
@@ -119,7 +123,7 @@ begin
     waveform_din    <= (others => '0'); --only axi writes to the memory
     waveform_addr   <= counter;
 
-    comb_mux : process (axiRst, dacSync) is
+    comb_mux : process (dacSync, r, waveform_dout) is
         variable v          : RegType;
         variable axiStatus  : AxiLiteStatusType;
         variable decAddrInt : integer;
@@ -136,13 +140,13 @@ begin
     end process comb_mux;
 
 
-    comb_waveformCounters : process (axiRst, dacSync) is
+    comb_waveformCounters : process (r, counter, samplingCounter) is
         variable v          : RegType;
         variable axiStatus  : AxiLiteStatusType;
         variable decAddrInt : integer;
     begin
         -- counter only run when the waveform generation run value is true        
-        if (r.waveform.run) then 
+        if (r.waveform.run = '1') then 
 
             -- creates the sampling rate
             if (samplingCounter = r.waveform.samplingCounter) then
@@ -152,11 +156,14 @@ begin
             end if;
 
             -- updates a pointer to output a new element from the waveform memory
-            if (samplingCounter = (others => '0')) then 
+            if (samplingCounter = x"00") then 
                 nextCounter <= counter + 1;
             end if;
+        else
+            nextSamplingCounter <= (others => '0');
+            nextCounter <= (others => '0');
         end if;
-    end process comb_mux;
+    end process comb_waveformCounters;
 
 
     seq_waveformCounters : process(sysClk, sysClkRst) begin
@@ -165,7 +172,7 @@ begin
          if sysClkRst = '1' then
             samplingCounter <= (others => '0') after TPD_G;
          else
-            counter <= nextCounter after TPD_G;
+            samplingCounter <= nextSamplingCounter after TPD_G;
          end if;
          -- counter used for memory address
          if sysClkRst = '1' then
@@ -248,9 +255,9 @@ begin
       
       axiSlaveRegister (regCon, x"1000",  0, v.waveform.enabled);
       axiSlaveRegister (regCon, x"1000",  1, v.waveform.run);
-      axiSlaveRegister (regCon, x"1001",  0, v.waveform.samplingCounter);
-      axiSlaveRegister (regCon, x"1002",  0, v.dac.dacData);
-      axiSlaveRegister (regCon, x"1002", 16, v.dac.dacCh);
+      axiSlaveRegister (regCon, x"1004",  0, v.waveform.samplingCounter);
+      axiSlaveRegister (regCon, x"1008",  0, v.dac.dacData);
+      axiSlaveRegister (regCon, x"1008", 16, v.dac.dacCh);
       
       axiSlaveDefault(regCon, v.sAxilWriteSlave, v.sAxilReadSlave, AXIL_ERR_RESP_G);
       
