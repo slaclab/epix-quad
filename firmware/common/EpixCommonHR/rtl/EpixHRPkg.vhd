@@ -19,28 +19,29 @@ package EpixHRPkg is
 
    constant NUMBER_OF_ASICS_C : natural := 2;   
    
-   constant EPIXHR_NUM_AXI_MASTER_SLOTS_C : natural := 19;
+   constant EPIXHR_NUM_AXI_MASTER_SLOTS_C : natural := 20;
    constant EPIXHR_NUM_AXI_SLAVE_SLOTS_C : natural := 3;
    
-   constant VERSION_AXI_INDEX_C     : natural := 0;
-   constant EPIXHR_REG_AXI_INDEX_C  : natural := 1;
-   constant TRIG_REG_AXI_INDEX_C    : natural := 2;
-   constant MONADC_REG_AXI_INDEX_C  : natural := 3;
-   constant SACIREGS_AXI_INDEX_C    : natural := 4;
-   constant PREPRDOUT_AXI_INDEX_C   : natural := 5;
-   constant PGPSTAT_AXI_INDEX_C     : natural := 6;
-   constant BOOTMEM_AXI_INDEX_C     : natural := 7;
-   constant ADCTEST_AXI_INDEX_C     : natural := 8;
-   constant ADC_RD_AXI_INDEX_C      : natural := 9;
-   constant ADC_CFG_AXI_INDEX_C     : natural := 10;
-   constant MEM_LOG_AXI_INDEX_C     : natural := 11;
-   constant SCOPE_REG_AXI_INDEX_C   : natural := 12;
-   constant DAC8812_REG_AXI_INDEX_C : natural := 13;
-   constant PLLREGS_AXI_INDEX_C     : natural := 14;
-   constant DESER0_AXI_INDEX_C      : natural := 15;
-   constant DESER1_AXI_INDEX_C      : natural := 16;
-   constant ASICS0_AXI_INDEX_C      : natural := 17;
-   constant ASICS1_AXI_INDEX_C      : natural := 18;
+   constant VERSION_AXI_INDEX_C      : natural := 0;
+   constant EPIXHR_REG_AXI_INDEX_C   : natural := 1;
+   constant TRIG_REG_AXI_INDEX_C     : natural := 2;
+   constant MONADC_REG_AXI_INDEX_C   : natural := 3;
+   constant SACIREGS_AXI_INDEX_C     : natural := 4;
+   constant PREPRDOUT_AXI_INDEX_C    : natural := 5;
+   constant PGPSTAT_AXI_INDEX_C      : natural := 6;
+   constant BOOTMEM_AXI_INDEX_C      : natural := 7;
+   constant ADCTEST_AXI_INDEX_C      : natural := 8;
+   constant ADC_RD_AXI_INDEX_C       : natural := 9;
+   constant ADC_CFG_AXI_INDEX_C      : natural := 10;
+   constant MEM_LOG_AXI_INDEX_C      : natural := 11;
+   constant SCOPE_REG_AXI_INDEX_C    : natural := 12;
+   constant DAC8812_REG_AXI_INDEX_C  : natural := 13;
+   constant DACWFMEM_REG_AXI_INDEX_C : natural := 14;
+   constant PLLREGS_AXI_INDEX_C      : natural := 15;
+   constant DESER0_AXI_INDEX_C       : natural := 16;
+   constant DESER1_AXI_INDEX_C       : natural := 17;
+   constant ASICS0_AXI_INDEX_C       : natural := 18;
+   constant ASICS1_AXI_INDEX_C       : natural := 19;
    
    constant VERSION_AXI_BASE_ADDR_C    : slv(31 downto 0) := X"00000000";
    constant EPIXHR_REG_AXI_BASE_ADDR_C : slv(31 downto 0) := X"01000000";
@@ -56,11 +57,12 @@ package EpixHRPkg is
    constant MEM_LOG_AXI_BASE_ADDR_C    : slv(31 downto 0) := X"0B000000";
    constant SCOPE_AXI_BASE_ADDR_C      : slv(31 downto 0) := X"0C000000";
    constant DAC8812_AXI_BASE_ADDR_C    : slv(31 downto 0) := X"0D000000";
-   constant PLLREGS_AXI_BASE_ADDR_C    : slv(31 downto 0) := X"0E000000";
-   constant DESER0_AXI_BASE_ADDR_C     : slv(31 downto 0) := X"0F000000";
-   constant DESER1_AXI_BASE_ADDR_C     : slv(31 downto 0) := X"10000000";
-   constant ASICS0_AXI_BASE_ADDR_C     : slv(31 downto 0) := X"11000000";
-   constant ASICS1_AXI_BASE_ADDR_C     : slv(31 downto 0) := X"12000000";
+   constant DACWFMEM_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"0E000000";
+   constant PLLREGS_AXI_BASE_ADDR_C    : slv(31 downto 0) := X"0F000000";
+   constant DESER0_AXI_BASE_ADDR_C     : slv(31 downto 0) := X"10000000";
+   constant DESER1_AXI_BASE_ADDR_C     : slv(31 downto 0) := X"11000000";
+   constant ASICS0_AXI_BASE_ADDR_C     : slv(31 downto 0) := X"12000000";
+   constant ASICS1_AXI_BASE_ADDR_C     : slv(31 downto 0) := X"13000000";
    
    constant EPIXHR_AXI_CROSSBAR_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(EPIXHR_NUM_AXI_MASTER_SLOTS_C-1 downto 0) := (
       VERSION_AXI_INDEX_C      => (
@@ -117,6 +119,10 @@ package EpixHRPkg is
          connectivity         => x"FFFF"),
       DAC8812_REG_AXI_INDEX_C      => ( 
          baseAddr             => DAC8812_AXI_BASE_ADDR_C,
+         addrBits             => 24,
+         connectivity         => x"FFFF"),
+      DACWFMEM_REG_AXI_INDEX_C      => ( 
+         baseAddr             => DACWFMEM_AXI_BASE_ADDR_C,
          addrBits             => 24,
          connectivity         => x"FFFF"),
       PLLREGS_AXI_INDEX_C      => ( 

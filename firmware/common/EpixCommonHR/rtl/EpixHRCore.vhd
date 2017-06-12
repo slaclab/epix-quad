@@ -1054,7 +1054,11 @@ begin
       sAxilWriteMaster  => mAxiWriteMasters(DAC8812_REG_AXI_INDEX_C),
       sAxilWriteSlave   => mAxiWriteSlaves(DAC8812_REG_AXI_INDEX_C),
       sAxilReadMaster   => mAxiReadMasters(DAC8812_REG_AXI_INDEX_C),
-      sAxilReadSlave    => mAxiReadSlaves(DAC8812_REG_AXI_INDEX_C));
+      sAxilReadSlave    => mAxiReadSlaves(DAC8812_REG_AXI_INDEX_C),
+      sAxilWriteMasterWF=> mAxiWriteMasters(DACWFMEM_REG_AXI_INDEX_C),
+      sAxilWriteSlaveWF => mAxiWriteSlaves(DACWFMEM_REG_AXI_INDEX_C),
+      sAxilReadMasterWF => mAxiReadMasters(DACWFMEM_REG_AXI_INDEX_C),
+      sAxilReadSlaveWF  => mAxiReadSlaves(DACWFMEM_REG_AXI_INDEX_C));
 
 
    --------------------------

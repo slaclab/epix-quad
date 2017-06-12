@@ -57,7 +57,12 @@ entity DacWaveformGenAxi is
       sAxilWriteMaster  : in  AxiLiteWriteMasterType;
       sAxilWriteSlave   : out AxiLiteWriteSlaveType;
       sAxilReadMaster   : in  AxiLiteReadMasterType;
-      sAxilReadSlave    : out AxiLiteReadSlaveType
+      sAxilReadSlave    : out AxiLiteReadSlaveType;
+      sAxilWriteMasterWF: in  AxiLiteWriteMasterType;
+      sAxilWriteSlaveWF : out AxiLiteWriteSlaveType;
+      sAxilReadMasterWF : in  AxiLiteReadMasterType;
+      sAxilReadSlaveWF  : out AxiLiteReadSlaveType
+
 
    );
 end DacWaveformGenAxi;
@@ -156,9 +161,8 @@ begin
             end if;
 
             -- updates a pointer to output a new element from the waveform memory
-            if (samplingCounter = x"00") then 
-                nextCounter <= counter + 1;
-            end if;
+            nextCounter <= counter + 1;
+                        
         else
             nextSamplingCounter <= (others => '0');
             nextCounter <= (others => '0');
@@ -178,7 +182,9 @@ begin
          if sysClkRst = '1' then
             counter <= (others => '0') after TPD_G;
          else
-            counter <= nextCounter after TPD_G;
+            if (samplingCounter = x"00") then
+                counter <= nextCounter after TPD_G;
+            end if;
          end if;
       end if;
    end process;
@@ -221,10 +227,10 @@ begin
             -- Axi Port
             axiClk         => sysClk,
             axiRst         => sysClkRst,
-            axiReadMaster  => sAxilReadMaster,
-            axiReadSlave   => sAxilReadSlave,
-            axiWriteMaster => sAxilWriteMaster,
-            axiWriteSlave  => sAxilWriteSlave,
+            axiReadMaster  => sAxilReadMasterWF,
+            axiReadSlave   => sAxilReadSlaveWF,
+            axiWriteMaster => sAxilWriteMasterWF,
+            axiWriteSlave  => sAxilWriteSlaveWF,
             -- Standard Port
             clk           => sysClk,
             en            => waveform_en,
@@ -253,11 +259,11 @@ begin
       v.sAxilReadSlave.rdata := (others => '0');
       axiSlaveWaitTxn(regCon, sAxilWriteMaster, sAxilReadMaster, v.sAxilWriteSlave, v.sAxilReadSlave);
       
-      axiSlaveRegister (regCon, x"1000",  0, v.waveform.enabled);
-      axiSlaveRegister (regCon, x"1000",  1, v.waveform.run);
-      axiSlaveRegister (regCon, x"1004",  0, v.waveform.samplingCounter);
-      axiSlaveRegister (regCon, x"1008",  0, v.dac.dacData);
-      axiSlaveRegister (regCon, x"1008", 16, v.dac.dacCh);
+      axiSlaveRegister (regCon, x"0000",  0, v.waveform.enabled);
+      axiSlaveRegister (regCon, x"0000",  1, v.waveform.run);
+      axiSlaveRegister (regCon, x"0004",  0, v.waveform.samplingCounter);
+      axiSlaveRegister (regCon, x"0008",  0, v.dac.dacData);
+      axiSlaveRegister (regCon, x"0008", 16, v.dac.dacCh);
       
       axiSlaveDefault(regCon, v.sAxilWriteSlave, v.sAxilReadSlave, AXIL_ERR_RESP_G);
       

@@ -57,6 +57,10 @@ architecture arch of DacWaveformAxi_tb is
   signal sAxilWriteSlave   : AxiLiteWriteSlaveType;
   signal sAxilReadMaster   : AxiLiteReadMasterType;
   signal sAxilReadSlave    : AxiLiteReadSlaveType;
+  signal sAxilWriteMasterWF: AxiLiteWriteMasterType;
+  signal sAxilWriteSlaveWF : AxiLiteWriteSlaveType;
+  signal sAxilReadMasterWF : AxiLiteReadMasterType;
+  signal sAxilReadSlaveWF  : AxiLiteReadSlaveType;
 
   -- clock
   signal sysClk    : std_logic := '1';
@@ -83,7 +87,11 @@ begin  -- arch
       sAxilWriteMaster  => sAxilWriteMaster,
       sAxilWriteSlave   => sAxilWriteSlave,
       sAxilReadMaster   => sAxilReadMaster,
-      sAxilReadSlave    => sAxilReadSlave);
+      sAxilReadSlave    => sAxilReadSlave,
+      sAxilWriteMasterWF=> sAxilWriteMasterWF,
+      sAxilWriteSlaveWF => sAxilWriteSlaveWF,
+      sAxilReadMasterWF => sAxilReadMasterWF,
+      sAxilReadSlaveWF  => sAxilReadSlaveWF);
 
   -- clock generation
   sysClk <= not sysClk after 6.4 ns;
@@ -107,27 +115,35 @@ begin  -- arch
     sAxilWriteMaster.wvalid  <= '0';
     sAxilWriteMaster.bready  <= '1';    
 
+    sAxilWriteMasterWF.awaddr  <= x"00000000";
+    sAxilWriteMasterWF.awprot  <= "000";
+    sAxilWriteMasterWF.awvalid <= '0';
+    sAxilWriteMasterWF.wdata   <= x"00000000";
+    sAxilWriteMasterWF.wstrb   <= x"0";
+    sAxilWriteMasterWF.wvalid  <= '0';
+    sAxilWriteMasterWF.bready  <= '1';    
+
     wait for 1 us;
     sysClkRst <= '0';
     
     wait for 4 us;
     wait until sysClk = '1';
-    sAxilWriteMaster.awaddr  <= x"00001000";
-    sAxilWriteMaster.awprot  <= "111";
-    sAxilWriteMaster.awvalid <= '1';
-    sAxilWriteMaster.wdata   <= x"00000001";
-    sAxilWriteMaster.wstrb   <= x"F";
-    sAxilWriteMaster.wvalid  <= '1';
-    sAxilWriteMaster.bready  <= '1';
+    sAxilWriteMasterWF.awaddr  <= x"00001000";
+    sAxilWriteMasterWF.awprot  <= "111";
+    sAxilWriteMasterWF.awvalid <= '1';
+    sAxilWriteMasterWF.wdata   <= x"00000001";
+    sAxilWriteMasterWF.wstrb   <= x"F";
+    sAxilWriteMasterWF.wvalid  <= '1';
+    sAxilWriteMasterWF.bready  <= '1';
 
     wait until sysClk = '1';
-    sAxilWriteMaster.awaddr  <= x"00001000";
-    sAxilWriteMaster.awprot  <= "000";
-    sAxilWriteMaster.awvalid <= '0';
-    sAxilWriteMaster.wdata   <= x"00000000";
-    sAxilWriteMaster.wstrb   <= x"0";
-    sAxilWriteMaster.wvalid  <= '0';
-    sAxilWriteMaster.bready  <= '1';
+    sAxilWriteMasterWF.awaddr  <= x"00001000";
+    sAxilWriteMasterWF.awprot  <= "000";
+    sAxilWriteMasterWF.awvalid <= '0';
+    sAxilWriteMasterWF.wdata   <= x"00000000";
+    sAxilWriteMasterWF.wstrb   <= x"0";
+    sAxilWriteMasterWF.wvalid  <= '0';
+    sAxilWriteMasterWF.bready  <= '1';
 
 
 
@@ -158,22 +174,22 @@ begin  -- arch
     wait for 1 us;
 
     wait until sysClk = '1';
-    sAxilWriteMaster.awaddr  <= x"00001000";
-    sAxilWriteMaster.awprot  <= "111";
-    sAxilWriteMaster.awvalid <= '1';
-    sAxilWriteMaster.wdata   <= x"00000003";
-    sAxilWriteMaster.wstrb   <= x"F";
-    sAxilWriteMaster.wvalid  <= '1';
-    sAxilWriteMaster.bready  <= '1';
+    sAxilWriteMasterWF.awaddr  <= x"00001000";
+    sAxilWriteMasterWF.awprot  <= "111";
+    sAxilWriteMasterWF.awvalid <= '1';
+    sAxilWriteMasterWF.wdata   <= x"00000003";
+    sAxilWriteMasterWF.wstrb   <= x"F";
+    sAxilWriteMasterWF.wvalid  <= '1';
+    sAxilWriteMasterWF.bready  <= '1';
 
     wait until sysClk = '1';
-    sAxilWriteMaster.awaddr  <= x"00001000";
-    sAxilWriteMaster.awprot  <= "000";
-    sAxilWriteMaster.awvalid <= '0';
-    sAxilWriteMaster.wdata   <= x"00000000";
-    sAxilWriteMaster.wstrb   <= x"0";
-    sAxilWriteMaster.wvalid  <= '0';
-    sAxilWriteMaster.bready  <= '1';
+    sAxilWriteMasterWF.awaddr  <= x"00001000";
+    sAxilWriteMasterWF.awprot  <= "000";
+    sAxilWriteMasterWF.awvalid <= '0';
+    sAxilWriteMasterWF.wdata   <= x"00000000";
+    sAxilWriteMasterWF.wstrb   <= x"0";
+    sAxilWriteMasterWF.wvalid  <= '0';
+    sAxilWriteMasterWF.bready  <= '1';
 
     wait for 3000 us;
 
