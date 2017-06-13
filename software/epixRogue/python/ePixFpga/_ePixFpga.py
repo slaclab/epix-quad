@@ -61,7 +61,7 @@ class HrPrototype(pr.Device):
             surf.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]', offset=0x0A001000, enabled=False, expand=False),
             OscilloscopeRegisters(name='Oscilloscope', offset=0x0C000000, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum),
             HighSpeedDacRegisters(name='High Speed DAC', offset=0x0D000000, enabled=True, expand=False, HsDacEnum = HsDacEnum),
-            surf.GenericMemoryy(name='waveformMem', offset=0x0E000000,elements=1024),
+            surf.GenericMemory(name='waveformMem', offset=0x0E000000,elements=1024),
             MicroblazeLog(name='MicroblazeLog', offset=0x0B000000, expand=False),
             MMCM7Registers(name='MMCM7Registers', offset=0x0F000000, enabled=False, expand=False)))
 
