@@ -1040,7 +1040,11 @@ begin
   --U_HSDAC: entity work.Dac8812Axi
   U_HSDAC: entity work.DacWaveformGenAxi
     generic map (
-      TPD_G => TPD_G)
+      TPD_G => TPD_G,
+      NUM_SLAVE_SLOTS_G  => EPIXHR_NUM_AXI_SLAVE_SLOTS_C,
+      NUM_MASTER_SLOTS_G => EPIXHR_NUM_AXI_MASTER_SLOTS_C,
+      MASTERS_CONFIG_G   => ssiAxiStreamConfig(4, TKEEP_COMP_C)
+   )
     port map (
       sysClk    => coreClk,
       sysClkRst => axiRst,
@@ -1051,15 +1055,10 @@ begin
       dacClrL   => dacClrL,
       axilClk           => coreClk,
       axilRst           => axiRst,
-      sAxilWriteMaster  => mAxiWriteMasters(DAC8812_REG_AXI_INDEX_C),
-      sAxilWriteSlave   => mAxiWriteSlaves(DAC8812_REG_AXI_INDEX_C),
-      sAxilReadMaster   => mAxiReadMasters(DAC8812_REG_AXI_INDEX_C),
-      sAxilReadSlave    => mAxiReadSlaves(DAC8812_REG_AXI_INDEX_C),
-      sAxilWriteMasterWF=> mAxiWriteMasters(DACWFMEM_REG_AXI_INDEX_C),
-      sAxilWriteSlaveWF => mAxiWriteSlaves(DACWFMEM_REG_AXI_INDEX_C),
-      sAxilReadMasterWF => mAxiReadMasters(DACWFMEM_REG_AXI_INDEX_C),
-      sAxilReadSlaveWF  => mAxiReadSlaves(DACWFMEM_REG_AXI_INDEX_C));
-
+      sAxilWriteMaster  => mAxiWriteMasters,
+      sAxilWriteSlave   => mAxiWriteSlaves,
+      sAxilReadMaster   => mAxiReadMasters,
+      sAxilReadSlave    => mAxiReadSlaves);
 
    --------------------------
    -- AXI-Lite Version Module

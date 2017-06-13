@@ -134,13 +134,13 @@ begin
    -- State machine
    process ( sysClk, sysClkRst ) begin
       if sysClkRst = '1' then
-         intBit   <= "10001" after TPD_G; -- init counter with 17 to point to the MSB
+         intBit   <= "01001" after TPD_G; -- init counter with 17 to point to the MSB
          curState <= ST_IDLE       after TPD_G;
       elsif rising_edge(sysClk) then
 
          -- Bit counter
          if intBitRst = '1' then
-            intBit <= "10001" after TPD_G;
+            intBit <= "01001" after TPD_G;
          elsif intBitEn = '1' then
             intBit <= intBit - 1 after TPD_G;
          end if;

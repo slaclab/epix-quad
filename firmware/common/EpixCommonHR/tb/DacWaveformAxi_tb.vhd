@@ -53,14 +53,11 @@ architecture arch of DacWaveformAxi_tb is
   signal dacLdacL  : std_logic;
   signal dacClrL   : std_logic;
   signal axilRst           : std_logic;
-  signal sAxilWriteMaster  : AxiLiteWriteMasterType;
-  signal sAxilWriteSlave   : AxiLiteWriteSlaveType;
-  signal sAxilReadMaster   : AxiLiteReadMasterType;
-  signal sAxilReadSlave    : AxiLiteReadSlaveType;
-  signal sAxilWriteMasterWF: AxiLiteWriteMasterType;
-  signal sAxilWriteSlaveWF : AxiLiteWriteSlaveType;
-  signal sAxilReadMasterWF : AxiLiteReadMasterType;
-  signal sAxilReadSlaveWF  : AxiLiteReadSlaveType;
+  signal sAxilWriteMaster  : AxiLiteWriteMasterArray(EPIXHR_NUM_AXI_MASTER_SLOTS_C-1 downto 0);
+  signal sAxilWriteSlave   : AxiLiteWriteSlaveArray(EPIXHR_NUM_AXI_MASTER_SLOTS_C-1 downto 0);
+  signal sAxilReadMaster   : AxiLiteReadMasterArray(EPIXHR_NUM_AXI_MASTER_SLOTS_C-1 downto 0);
+  signal sAxilReadSlave    : AxiLiteReadSlaveArray(EPIXHR_NUM_AXI_MASTER_SLOTS_C-1 downto 0);
+
 
   -- clock
   signal sysClk    : std_logic := '1';
@@ -72,8 +69,10 @@ begin  -- arch
   DUT: entity work.DacWaveformGenAxi
     generic map (
       TPD_G => TPD_G,
-      MASTER_AXI_STREAM_CONFIG_G => MASTER_AXI_STREAM_CONFIG_G,
-      AXIL_ERR_RESP_G => AXIL_ERR_RESP_G)
+      NUM_SLAVE_SLOTS_G  => EPIXHR_NUM_AXI_SLAVE_SLOTS_C,
+      NUM_MASTER_SLOTS_G => EPIXHR_NUM_AXI_MASTER_SLOTS_C,
+      MASTERS_CONFIG_G   => ssiAxiStreamConfig(4, TKEEP_COMP_C)
+    )
     port map (
       sysClk    => sysClk,
       sysClkRst => sysClkRst,
@@ -87,11 +86,7 @@ begin  -- arch
       sAxilWriteMaster  => sAxilWriteMaster,
       sAxilWriteSlave   => sAxilWriteSlave,
       sAxilReadMaster   => sAxilReadMaster,
-      sAxilReadSlave    => sAxilReadSlave,
-      sAxilWriteMasterWF=> sAxilWriteMasterWF,
-      sAxilWriteSlaveWF => sAxilWriteSlaveWF,
-      sAxilReadMasterWF => sAxilReadMasterWF,
-      sAxilReadSlaveWF  => sAxilReadSlaveWF);
+      sAxilReadSlave    => sAxilReadSlave);
 
   -- clock generation
   sysClk <= not sysClk after 6.4 ns;
@@ -107,43 +102,43 @@ begin  -- arch
 
     wait until sysClk = '1';
     sysClkRst <= '1';
-    sAxilWriteMaster.awaddr  <= x"00000000";
-    sAxilWriteMaster.awprot  <= "000";
-    sAxilWriteMaster.awvalid <= '0';
-    sAxilWriteMaster.wdata   <= x"00000000";
-    sAxilWriteMaster.wstrb   <= x"0";
-    sAxilWriteMaster.wvalid  <= '0';
-    sAxilWriteMaster.bready  <= '1';    
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).awaddr  <= x"00000000";
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).awprot  <= "000";
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).awvalid <= '0';
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).wdata   <= x"00000000";
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).wstrb   <= x"0";
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).wvalid  <= '0';
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).bready  <= '1';    
 
-    sAxilWriteMasterWF.awaddr  <= x"00000000";
-    sAxilWriteMasterWF.awprot  <= "000";
-    sAxilWriteMasterWF.awvalid <= '0';
-    sAxilWriteMasterWF.wdata   <= x"00000000";
-    sAxilWriteMasterWF.wstrb   <= x"0";
-    sAxilWriteMasterWF.wvalid  <= '0';
-    sAxilWriteMasterWF.bready  <= '1';    
+    sAxilWriteMaster(DACWFMEM_REG_AXI_INDEX_C).awaddr  <= x"00000000";
+    sAxilWriteMaster(DACWFMEM_REG_AXI_INDEX_C).awprot  <= "000";
+    sAxilWriteMaster(DACWFMEM_REG_AXI_INDEX_C).awvalid <= '0';
+    sAxilWriteMaster(DACWFMEM_REG_AXI_INDEX_C).wdata   <= x"00000000";
+    sAxilWriteMaster(DACWFMEM_REG_AXI_INDEX_C).wstrb   <= x"0";
+    sAxilWriteMaster(DACWFMEM_REG_AXI_INDEX_C).wvalid  <= '0';
+    sAxilWriteMaster(DACWFMEM_REG_AXI_INDEX_C).bready  <= '1';    
 
     wait for 1 us;
     sysClkRst <= '0';
     
     wait for 4 us;
     wait until sysClk = '1';
-    sAxilWriteMasterWF.awaddr  <= x"00001000";
-    sAxilWriteMasterWF.awprot  <= "111";
-    sAxilWriteMasterWF.awvalid <= '1';
-    sAxilWriteMasterWF.wdata   <= x"00000001";
-    sAxilWriteMasterWF.wstrb   <= x"F";
-    sAxilWriteMasterWF.wvalid  <= '1';
-    sAxilWriteMasterWF.bready  <= '1';
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).awaddr  <= x"00000000";
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).awprot  <= "111";
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).awvalid <= '1';
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).wdata   <= x"00000001";
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).wstrb   <= x"F";
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).wvalid  <= '1';
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).bready  <= '1';
 
     wait until sysClk = '1';
-    sAxilWriteMasterWF.awaddr  <= x"00001000";
-    sAxilWriteMasterWF.awprot  <= "000";
-    sAxilWriteMasterWF.awvalid <= '0';
-    sAxilWriteMasterWF.wdata   <= x"00000000";
-    sAxilWriteMasterWF.wstrb   <= x"0";
-    sAxilWriteMasterWF.wvalid  <= '0';
-    sAxilWriteMasterWF.bready  <= '1';
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).awaddr  <= x"00000000";
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).awprot  <= "000";
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).awvalid <= '0';
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).wdata   <= x"00000000";
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).wstrb   <= x"0";
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).wvalid  <= '0';
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).bready  <= '1';
 
 
 
@@ -151,65 +146,65 @@ begin  -- arch
     stimloop : for i in 0 to 255 loop 
         wait for 4 us;
         wait until sysClk = '1';
-        sAxilWriteMaster.awaddr  <= std_logic_vector(to_unsigned(i*4, sAxilWriteMaster.awaddr'length)); --x"00000000";
-        sAxilWriteMaster.awprot  <= "111";
-        sAxilWriteMaster.awvalid <= '1';
-        sAxilWriteMaster.wdata   <= std_logic_vector(to_unsigned(i, sAxilWriteMaster.awaddr'length)); --x"0003A0F5";
-        sAxilWriteMaster.wstrb   <= x"F";
-        sAxilWriteMaster.wvalid  <= '1';
-        sAxilWriteMaster.bready  <= '1';
+        sAxilWriteMaster(DACWFMEM_REG_AXI_INDEX_C).awaddr  <= std_logic_vector(to_unsigned(i*4, sAxilWriteMaster(DACWFMEM_REG_AXI_INDEX_C).awaddr'length)); --x"00000000";
+        sAxilWriteMaster(DACWFMEM_REG_AXI_INDEX_C).awprot  <= "111";
+        sAxilWriteMaster(DACWFMEM_REG_AXI_INDEX_C).awvalid <= '1';
+        sAxilWriteMaster(DACWFMEM_REG_AXI_INDEX_C).wdata   <= std_logic_vector(to_unsigned(i, sAxilWriteMaster(DACWFMEM_REG_AXI_INDEX_C).awaddr'length)); --x"0003A0F5";
+        sAxilWriteMaster(DACWFMEM_REG_AXI_INDEX_C).wstrb   <= x"F";
+        sAxilWriteMaster(DACWFMEM_REG_AXI_INDEX_C).wvalid  <= '1';
+        sAxilWriteMaster(DACWFMEM_REG_AXI_INDEX_C).bready  <= '1';
 
         --wait for 1 us;
         wait until sysClk = '1';    
-        --sAxilWriteMaster.awaddr  <= x"00000000";
-        sAxilWriteMaster.awprot  <= "000";
-        sAxilWriteMaster.awvalid <= '0';
-        --sAxilWriteMaster.wdata   <= x"00000000";
-        sAxilWriteMaster.wstrb   <= x"0";
-        sAxilWriteMaster.wvalid  <= '0';
-        sAxilWriteMaster.bready  <= '1';
+        --sAxilWriteMaster(DACWFMEM_REG_AXI_INDEX_C).awaddr  <= x"00000000";
+        sAxilWriteMaster(DACWFMEM_REG_AXI_INDEX_C).awprot  <= "000";
+        sAxilWriteMaster(DACWFMEM_REG_AXI_INDEX_C).awvalid <= '0';
+        --sAxilWriteMaster(DACWFMEM_REG_AXI_INDEX_C).wdata   <= x"00000000";
+        sAxilWriteMaster(DACWFMEM_REG_AXI_INDEX_C).wstrb   <= x"0";
+        sAxilWriteMaster(DACWFMEM_REG_AXI_INDEX_C).wvalid  <= '0';
+        sAxilWriteMaster(DACWFMEM_REG_AXI_INDEX_C).bready  <= '1';
         
     end loop stimloop;
        
     wait for 1 us;
 
     wait until sysClk = '1';
-    sAxilWriteMasterWF.awaddr  <= x"00001000";
-    sAxilWriteMasterWF.awprot  <= "111";
-    sAxilWriteMasterWF.awvalid <= '1';
-    sAxilWriteMasterWF.wdata   <= x"00000003";
-    sAxilWriteMasterWF.wstrb   <= x"F";
-    sAxilWriteMasterWF.wvalid  <= '1';
-    sAxilWriteMasterWF.bready  <= '1';
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).awaddr  <= x"00000000";
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).awprot  <= "111";
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).awvalid <= '1';
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).wdata   <= x"00000003";
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).wstrb   <= x"F";
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).wvalid  <= '1';
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).bready  <= '1';
 
     wait until sysClk = '1';
-    sAxilWriteMasterWF.awaddr  <= x"00001000";
-    sAxilWriteMasterWF.awprot  <= "000";
-    sAxilWriteMasterWF.awvalid <= '0';
-    sAxilWriteMasterWF.wdata   <= x"00000000";
-    sAxilWriteMasterWF.wstrb   <= x"0";
-    sAxilWriteMasterWF.wvalid  <= '0';
-    sAxilWriteMasterWF.bready  <= '1';
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).awaddr  <= x"00000000";
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).awprot  <= "000";
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).awvalid <= '0';
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).wdata   <= x"00000000";
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).wstrb   <= x"0";
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).wvalid  <= '0';
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).bready  <= '1';
 
     wait for 3000 us;
 
     wait until sysClk = '1';
-    sAxilWriteMaster.awaddr  <= x"00001004";
-    sAxilWriteMaster.awprot  <= "111";
-    sAxilWriteMaster.awvalid <= '1';
-    sAxilWriteMaster.wdata   <= x"00000040";
-    sAxilWriteMaster.wstrb   <= x"F";
-    sAxilWriteMaster.wvalid  <= '1';
-    sAxilWriteMaster.bready  <= '1';
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).awaddr  <= x"00000004";
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).awprot  <= "111";
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).awvalid <= '1';
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).wdata   <= x"00000400";
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).wstrb   <= x"F";
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).wvalid  <= '1';
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).bready  <= '1';
 
     wait until sysClk = '1';
-    sAxilWriteMaster.awaddr  <= x"00001004";
-    sAxilWriteMaster.awprot  <= "000";
-    sAxilWriteMaster.awvalid <= '0';
-    sAxilWriteMaster.wdata   <= x"00000000";
-    sAxilWriteMaster.wstrb   <= x"0";
-    sAxilWriteMaster.wvalid  <= '0';
-    sAxilWriteMaster.bready  <= '1';
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).awaddr  <= x"00000004";
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).awprot  <= "000";
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).awvalid <= '0';
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).wdata   <= x"00000000";
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).wstrb   <= x"0";
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).wvalid  <= '0';
+    sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C).bready  <= '1';
 
 
     wait;

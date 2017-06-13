@@ -35,9 +35,11 @@ use work.SsiPkg.all;
 entity DacWaveformGenAxi is
    generic (
       TPD_G : time := 1 ns;
-      MASTER_AXI_STREAM_CONFIG_G : AxiStreamConfigType   := ssiAxiStreamConfig(4, TKEEP_COMP_C);
+      NUM_SLAVE_SLOTS_G  : natural := 2; 
+      NUM_MASTER_SLOTS_G : natural := 1;
+      MASTERS_CONFIG_G   : AxiStreamConfigType   := ssiAxiStreamConfig(4, TKEEP_COMP_C);
       AXIL_ERR_RESP_G            : slv(1 downto 0)       := AXI_RESP_DECERR_C
-   ); 
+   );       
    port ( 
 
       -- Master system clock
@@ -54,17 +56,13 @@ entity DacWaveformGenAxi is
       -- AXI lite slave port for register access
       axilClk           : in  std_logic;
       axilRst           : in  std_logic;
-      sAxilWriteMaster  : in  AxiLiteWriteMasterType;
-      sAxilWriteSlave   : out AxiLiteWriteSlaveType;
-      sAxilReadMaster   : in  AxiLiteReadMasterType;
-      sAxilReadSlave    : out AxiLiteReadSlaveType;
-      sAxilWriteMasterWF: in  AxiLiteWriteMasterType;
-      sAxilWriteSlaveWF : out AxiLiteWriteSlaveType;
-      sAxilReadMasterWF : in  AxiLiteReadMasterType;
-      sAxilReadSlaveWF  : out AxiLiteReadSlaveType
-
-
+      sAxilWriteMaster  : in  AxiLiteWriteMasterArray(NUM_MASTER_SLOTS_G-1 downto 0);
+      sAxilWriteSlave   : out AxiLiteWriteSlaveArray(NUM_MASTER_SLOTS_G-1 downto 0);
+      sAxilReadMaster   : in  AxiLiteReadMasterArray(NUM_MASTER_SLOTS_G-1 downto 0);
+      sAxilReadSlave    : out AxiLiteReadSlaveArray(NUM_MASTER_SLOTS_G-1 downto 0)
    );
+
+
 end DacWaveformGenAxi;
 
 
@@ -75,6 +73,7 @@ architecture DacWaveformGenAxi_arch of DacWaveformGenAxi is
 
     constant ADDR_WIDTH_G : integer := 10;
     constant DATA_WIDTH_G : integer := 16;
+    constant SAMPLING_COUNTER_WIDTH_G : integer := 12;
 
     -- Local Signals
     signal dacData            : std_logic_vector(15 downto 0);
@@ -92,7 +91,7 @@ architecture DacWaveformGenAxi_arch of DacWaveformGenAxi is
     signal dacSync            : Dac8812ConfigType;
     signal WaveformSync       : DacWaveformConfigType;
     signal counter, nextCounter : std_logic_vector(ADDR_WIDTH_G-1 downto 0);
-    signal samplingCounter, nextSamplingCounter : std_logic_vector(7 downto 0);
+    signal samplingCounter, nextSamplingCounter : std_logic_vector(SAMPLING_COUNTER_WIDTH_G-1 downto 0);
 
     type RegType is record
         dac               : Dac8812ConfigType;
@@ -135,9 +134,9 @@ begin
     begin
         -- dacData could be written by register or by the waveform gen
         if (r.waveform.enabled = '1') then
-            dacData  <= dacSync.dacData;
-        else
             dacData  <= waveform_dout;
+        else
+            dacData  <= dacSync.dacData;
         end if;
 
         -- dacCh is always set by an axi register
@@ -182,7 +181,7 @@ begin
          if sysClkRst = '1' then
             counter <= (others => '0') after TPD_G;
          else
-            if (samplingCounter = x"00") then
+            if (samplingCounter = x"000") then
                 counter <= nextCounter after TPD_G;
             end if;
          end if;
@@ -227,10 +226,10 @@ begin
             -- Axi Port
             axiClk         => sysClk,
             axiRst         => sysClkRst,
-            axiReadMaster  => sAxilReadMasterWF,
-            axiReadSlave   => sAxilReadSlaveWF,
-            axiWriteMaster => sAxilWriteMasterWF,
-            axiWriteSlave  => sAxilWriteSlaveWF,
+            axiReadMaster  => sAxilReadMaster(DACWFMEM_REG_AXI_INDEX_C),
+            axiReadSlave   => sAxilReadSlave(DACWFMEM_REG_AXI_INDEX_C),
+            axiWriteMaster => sAxilWriteMaster(DACWFMEM_REG_AXI_INDEX_C),
+            axiWriteSlave  => sAxilWriteSlave(DACWFMEM_REG_AXI_INDEX_C),
             -- Standard Port
             clk           => sysClk,
             en            => waveform_en,
@@ -257,7 +256,7 @@ begin
       v := r;
             
       v.sAxilReadSlave.rdata := (others => '0');
-      axiSlaveWaitTxn(regCon, sAxilWriteMaster, sAxilReadMaster, v.sAxilWriteSlave, v.sAxilReadSlave);
+      axiSlaveWaitTxn(regCon, sAxilWriteMaster(DAC8812_REG_AXI_INDEX_C), sAxilReadMaster(DAC8812_REG_AXI_INDEX_C), v.sAxilWriteSlave, v.sAxilReadSlave);
       
       axiSlaveRegister (regCon, x"0000",  0, v.waveform.enabled);
       axiSlaveRegister (regCon, x"0000",  1, v.waveform.run);
@@ -273,8 +272,8 @@ begin
 
       rin <= v;
 
-      sAxilWriteSlave   <= r.sAxilWriteSlave;
-      sAxilReadSlave    <= r.sAxilReadSlave;
+      sAxilWriteSlave(DAC8812_REG_AXI_INDEX_C)   <= r.sAxilWriteSlave;
+      sAxilReadSlave(DAC8812_REG_AXI_INDEX_C)    <= r.sAxilReadSlave;
 
    end process comb;
 

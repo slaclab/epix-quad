@@ -44,14 +44,14 @@ package Dac8812Pkg is
     type DacWaveformConfigType is record
         enabled         : std_logic;
         run             : std_logic;
-        samplingCounter : std_logic_vector(7 downto 0); -- number of clock cycles it waits to update the dac value (needs to be bigger than the refresh rate of the DAC itself).      
+        samplingCounter : std_logic_vector(11 downto 0); -- number of clock cycles it waits to update the dac value (needs to be bigger than the refresh rate of the DAC itself).      
    end record;
 
    -- Initialize
    constant DACWAVEFORM_CONFIG_INIT_C : DacWaveformConfigType := ( 
       enabled         => '0', 
       run             => '0', 
-      samplingCounter => x"20" 
+      samplingCounter => x"220" 
    ); 
    
 end Dac8812Pkg;
