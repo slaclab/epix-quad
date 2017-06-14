@@ -922,7 +922,7 @@ class TixelAsic(pr.Device):
         for i in range (0, 48):
             self.PrepareMultiConfig()
             self.ColCounter.set(i)
-            self.WriteColData(0)
+            self.WriteColData.set(0)
         self.CmdPrepForRead()
 
     # standard way to report a command has been executed
