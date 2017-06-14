@@ -641,7 +641,7 @@ class Epix10kaAsic(pr.Device):
                         else:
                            print('unexpected bank number')
                         self.ColCounter.set(colToWrite)
-                        self.WritePixelData.set(tixelCfg[x][y])
+                        self.WritePixelData.set(int(tixelCfg[x][y]))
                 self.CmdPrepForRead()
             else:
                 print('csv file must be 192x178 pixels')
@@ -898,7 +898,7 @@ class TixelAsic(pr.Device):
                     self.RowCounter.set(x)
                     for y in range (0, 48):
                         self.ColCounter.set(y)
-                        self.WritePixelData.set(tixelCfg[x][y])
+                        self.WritePixelData.set(int(tixelCfg[x][y]))
                 self.CmdPrepForRead()
             else:
                 print('csv file must be 48x48 pixels')

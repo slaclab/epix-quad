@@ -134,8 +134,6 @@ architecture ReadoutControl of ReadoutControl is
       '0',
       '0',
       '0',
-      '0',
-      (others => '0'),
       (others => '0'),
       (others => '0'),
       (others => '0'),
@@ -362,9 +360,6 @@ begin
          if (r.state = READ_FIFO_S and i = channelOrder(conv_integer(r.chCnt)) and 
              adcFifoRdValid(i) = '1' and mAxisSlave.tReady = '1') then
             adcFifoRdEn(i) <= '1';
-         elsif (r.state = READ_FIFO_TEST_S and i = channelOrder(conv_integer(r.chCnt)) and 
-                adcFifoRdValid(i) = '1' and mAxisSlave.tReady = '1' and acqBusy = '0') then
-            adcFifoRdEn(i) <= '1';
          else
             adcFifoRdEn(i) <= '0';
          end if;
@@ -534,7 +529,7 @@ begin
  
 
    --Count number of ADC writes
-   adcCntEn  <= readValidA0(0) and adcPulse;
+   adcCntEn  <= readValidA0 and adcPulse;
    adcCntRst <= memRst or sysClkRst;
    process(sysClk) begin
       if rising_edge(sysClk) then
@@ -573,11 +568,11 @@ begin
    process(sysClk) begin
       if rising_edge(sysClk) then
          for i in 0 to 15 loop
-            adcFifoWrEn(i)   <= adcMemRdValid(0)(i);
+            adcFifoWrEn(i)   <= adcMemRdValid(i);
             if r.testPattern = '0' then
-               adcFifoWrData(i) <= adcMemRdData(0,i);
+               adcFifoWrData(i) <= adcMemRdData(i);
             else
-               adcFifoWrData(i) <= "0000" & conv_std_logic_vector(i,4) & adcMemRdData(0,i)(7 downto 0);
+               adcFifoWrData(i) <= "0000" & conv_std_logic_vector(i,4) & adcMemRdData(i)(7 downto 0);
             end if;
          end loop;
       end if;

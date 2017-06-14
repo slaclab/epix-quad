@@ -149,9 +149,7 @@ architecture AcqControl of AcqControl is
                   NEXT_CELL_S,
                   WAIT_FOR_READOUT_S,
                   SACI_RESET_S,
-                  DONE_S,
-                  SYNC_TEST_S,
-                  TEST_S);
+                  DONE_S);
    signal curState           : state := IDLE_S;
    signal nxtState           : state := IDLE_S;
 
@@ -330,16 +328,6 @@ begin
             else
                stateCntEn      <= '1' after tpd;
             end if;
-         --Synchronize phase of ADC to get repeatable number of ADC valids 
-         when SYNC_TEST_S =>
-         --Test readout mode for running at full ADC rate
-         when TEST_S =>
-            if adcSampCnt <= ePixConfig.adcReadsPerPixel then
-               adcSampCntEn       <= '1' after tpd;
-					iReadValidTestMode <= '1' after tpd;
-            else
-               iAcqBusy           <= '0' after tpd;
-            end if;
          --Wait for readout to finish before sending SACI
          --"prepare for readout."  This way we avoid cross-talk
          --with the ADC lines.
@@ -371,11 +359,7 @@ begin
          --Remain idle until we get the acqStart signal
          when IDLE_S =>
             if acqStartEdge = '1' then
-               if ePixConfig.adcStreamMode = '0' then
-                  nxtState <= WAIT_R0_S after tpd;
-               else
-                  nxtState <= SYNC_TEST_S after tpd;
-               end if;
+               nxtState <= WAIT_R0_S after tpd;
             else
                nxtState <= curState after tpd;
             end if;
@@ -449,20 +433,6 @@ begin
             else 
                nxtState <= curState after tpd;
             end if;
-         --Synchronize to phase of ADC
-         when SYNC_TEST_S =>
-            if adcClkEdge = '1' then
-               nxtState <= TEST_S after tpd;
-            else
-               nxtState <= curState after tpd;
-            end if;
-         --Test mode that just dumps out ADC data every sample
-         when TEST_S =>
-            if adcSampCnt > ePixConfig.adcReadsPerPixel and readDone = '1' then
-               nxtState <= DONE_S after tpd;
-            else
-               nxtState <= curState after tpd;
-            end if;
          --Wait for readout to finish before sending SACI commands
          when WAIT_FOR_READOUT_S =>
             if readDone = '1' then
@@ -528,11 +498,11 @@ begin
          if ASIC_TYPE_G = EPIX10KA_C then
             -- in epix10ka analog output is valid after 4 readout clocks
             if adcSampCnt < ePixConfig.adcReadsPerPixel+1 and adcSampCnt > 0 and firstPixel = '0' and pixelCnt(1 downto 0) = 3 then
-               iReadValid(conv_integer(adcSampCnt)-1) <= '1' after tpd;
+               iReadValid <= '1' after tpd;
             end if;
          else
             if adcSampCnt < ePixConfig.adcReadsPerPixel+1 and adcSampCnt > 0 and firstPixel = '0' then
-               iReadValid(conv_integer(adcSampCnt)-1) <= '1' after tpd;
+               iReadValid <= '1' after tpd;
             end if;
          end if;
       end if;
