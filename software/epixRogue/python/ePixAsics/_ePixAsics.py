@@ -383,7 +383,7 @@ class Epix10kaAsic(pr.Device):
         #Setup registers & variables
                 
         # CMD = 0, Addr = 0  : Prepare for readout
-        self.add(pr.Command(name='CmdPrepForRead', description='ePix Prepare For Readout', 
+        self.add(pr.RemoteCommand(name='CmdPrepForRead', description='ePix Prepare For Readout', 
                              offset=0x00000000*addrSize, bitSize=1, bitOffset=0, function=pr.Command.touchZero, hidden=True))
         
         # CMD = 1, Addr = 1 
@@ -545,14 +545,14 @@ class Epix10kaAsic(pr.Device):
         
         # CMD = 6, Addr = 17 : Row counter[8:0]
         self.add((
-            pr.Command(name='RowCounter', description='', offset=0x00006011*addrSize, bitSize=9, bitOffset=0, base='hex', mode='RW', verify=False, hidden=True)))
+            pr.RemoteCommand(name='RowCounter', description='', offset=0x00006011*addrSize, bitSize=9, bitOffset=0, hidden=True)))
         #self.add((
         #    pr.Variable(name='RowCounter', description='RowCounter', bitSize=9, bitOffset=0, base='hex', mode='RW', setFunction='dev._defaultValue = value', getFunction='value = dev._defaultValue'),
         #    pr.Command( name='WriteRowCounter', description='Special command to write row counter', offset=0x00006011*addrSize, bitSize=9, bitOffset=0, function=self.fnWriteRowCounter, hidden=True)))
 
         # CMD = 6, Addr = 19 : Bank select [3:0] & Col counter[6:0]
         self.add((
-            pr.Command(name='ColCounter', description='', offset=0x00006013*addrSize, bitSize=11, bitOffset=0, base='hex', mode='RW', verify=False, hidden=True)))
+            pr.RemoteCommand(name='ColCounter', description='', offset=0x00006013*addrSize, bitSize=11, bitOffset=0, hidden=True)))
         #self.add((
         #    pr.Variable(name='ColCounter', description='',                                offset=0x00006013*addrSize, bitSize=7, bitOffset=0, base='hex', mode='RW'),
         #    pr.Variable(name='BankSelect', description='Active low bank select bit mask', offset=0x00006013*addrSize, bitSize=4, bitOffset=7, base='hex', mode='RW')))
@@ -560,22 +560,22 @@ class Epix10kaAsic(pr.Device):
 
         # CMD = 2, Addr = X  : Write Row with data
         self.add((
-            pr.Command(name='WriteRowData',    description='', offset=0x00002000*addrSize, bitSize=4, bitOffset=0, base='hex', mode='RW', verify=False, hidden=True)))
+            pr.RemoteCommand(name='WriteRowData',    description='', offset=0x00002000*addrSize, bitSize=4, bitOffset=0, hidden=True)))
 
         # CMD = 3, Addr = X  : Write Column with data
         self.add(
-            pr.Command(name='WriteColData',    description='', offset=0x00003000*addrSize, bitSize=4, bitOffset=0, base='hex', mode='RW', verify=False, hidden=True))
+            pr.RemoteCommand(name='WriteColData',    description='', offset=0x00003000*addrSize, bitSize=4, bitOffset=0, hidden=True))
 
         # CMD = 4, Addr = X  : Write Matrix with data  
         self.add((    
-            pr.Command(name='WriteMatrixData', description='', offset=0x00004000*addrSize, bitSize=4, bitOffset=0, base='hex', mode='RW', verify=False, hidden=True)))
+            pr.RemoteCommand(name='WriteMatrixData', description='', offset=0x00004000*addrSize, bitSize=4, bitOffset=0, hidden=True)))
         #self.add((    
         #    pr.Command(name='WriteMatrixData', description='Write PixelTest and PixelMask to all pixels', offset=0x00004000*addrSize, bitSize=1, bitOffset=0, function=self.fnWriteMatrixData),
         #    pr.Variable(name='PixelTest', description='', bitSize=1, bitOffset=0, base='bool', mode='RW', value=1, setFunction='dev._defaultValue = value', getFunction='value = dev._defaultValue'),
         #    pr.Variable(name='PixelMask', description='', bitSize=1, bitOffset=0, base='bool', mode='RW', value=1, setFunction='dev._defaultValue = value', getFunction='value = dev._defaultValue')))
         
         # CMD = 5, Addr = X  : Read/Write Pixel with data
-        self.add(pr.Command(name='WritePixelData',  description='WritePixelData',  offset=0x00005000*addrSize, bitSize=4, bitOffset=0,  base='hex',  mode='RW', verify=False, hidden=True))
+        self.add(pr.RemoteCommand(name='WritePixelData',  description='WritePixelData',  offset=0x00005000*addrSize, bitSize=4, bitOffset=0,  hidden=True))
         #self.add((
         #    pr.Command(name='WritePixelData', description='WritePixelData',  offset=0x00005000*addrSize, bitSize=32, bitOffset=0),
         #    pr.Command(name='ReadPixelData',  description='ReadPixelData',   offset=0x00005000*addrSize, bitSize=32, bitOffset=0)))
@@ -587,7 +587,7 @@ class Epix10kaAsic(pr.Device):
       
         # CMD = 8, Addr = X  : Prepare for row/column/matrix configuration
         self.add(
-            pr.Command(name='PrepareMultiConfig', description='PrepareMultiConfig', offset=0x00008000*addrSize, bitSize=32, bitOffset=0, function=pr.Command.touchZero, hidden=True))
+            pr.RemoteCommand(name='PrepareMultiConfig', description='PrepareMultiConfig', offset=0x00008000*addrSize, bitSize=32, bitOffset=0, function=pr.Command.touchZero, hidden=True))
 
         # Pixel Configuration
         #                    : Bit 0 = Test
@@ -730,7 +730,7 @@ class TixelAsic(pr.Device):
         addrSize = 4	
         
         # CMD = 0, Addr = 0  : Prepare for readout
-        self.add(pr.Command(name='CmdPrepForRead', description='ePix Prepare For Readout', 
+        self.add(pr.RemoteCommand(name='CmdPrepForRead', description='ePix Prepare For Readout', 
                              offset=0x00000000*addrSize, bitSize=1, bitOffset=0, function=pr.Command.touchZero, hidden=True))
         
         # CMD = 1, Addr = xxx - Register set
@@ -819,26 +819,26 @@ class TixelAsic(pr.Device):
          
         # CMD = 6, Addr = 17 : Row counter[8:0]
         self.add((
-            pr.Command(name='RowCounter', description='', offset=0x00006001*addrSize, bitSize=8, bitOffset=0, base='hex', mode='WO', verify=False, hidden=True)))
+            pr.RemoteCommand(name='RowCounter', description='', offset=0x00006001*addrSize, bitSize=8, bitOffset=0, hidden=True)))
         #self.add((
         #    pr.Variable(name='RowCounter', description='RowCounter', bitSize=9, bitOffset=0, base='hex', mode='RW', setFunction='dev._defaultValue = value', getFunction='value = dev._defaultValue'),
         #    pr.Command( name='WriteRowCounter', description='Special command to write row counter', offset=0x00006001*addrSize, bitSize=8, bitOffset=0, function=self.fnWriteRowCounter, hidden=True)))
 
         # CMD = 6, Addr = 19 : Bank select [3:0] & Col counter[6:0]
         self.add((
-            pr.Command(name='ColCounter', description='', offset=0x00006003*addrSize, bitSize=8, bitOffset=0, base='hex', mode='WO', verify=False, hidden=True)))
+            pr.RemoteCommand(name='ColCounter', description='', offset=0x00006003*addrSize, bitSize=8, bitOffset=0, hidden=True)))
             
         # CMD = 2, Addr = X  : Write Row with data
         self.add((
-            pr.Command(name='WriteRowData',    description='', offset=0x00002000*addrSize, bitSize=2, bitOffset=0, verify=False, hidden=True)))
+            pr.RemoteCommand(name='WriteRowData',    description='', offset=0x00002000*addrSize, bitSize=2, bitOffset=0, hidden=True)))
 
         # CMD = 3, Addr = X  : Write Column with data
         self.add(
-            pr.Command(name='WriteColData',    description='', offset=0x00003000*addrSize, bitSize=2, bitOffset=0, verify=False, hidden=True))
+            pr.RemoteCommand(name='WriteColData',    description='', offset=0x00003000*addrSize, bitSize=2, bitOffset=0, hidden=True))
 
         # CMD = 4, Addr = X  : Write Matrix with data        
         self.add((    
-            pr.Command(name='WriteMatrixData', description='', offset=0x00004000*addrSize, bitSize=2, bitOffset=0, verify=False, hidden=True)))
+            pr.RemoteCommand(name='WriteMatrixData', description='', offset=0x00004000*addrSize, bitSize=2, bitOffset=0, hidden=True)))
         
         #self.add((    
         #    pr.Command(name='WriteMatrixData', description='Write PixelTest and PixelMask to all pixels', offset=0x00004000*addrSize, bitSize=1, bitOffset=0, function=self.fnWriteMatrixData),
@@ -848,7 +848,7 @@ class TixelAsic(pr.Device):
         
 
         # CMD = 5, Addr = X  : Read/Write Pixel with data
-        self.add(pr.Command(name='WritePixelData',  description='WritePixelData',  offset=0x00005000*addrSize, bitSize=2, bitOffset=0,  base='uint',  mode='RW', verify=False, hidden=True))
+        self.add(pr.RemoteCommand(name='WritePixelData',  description='WritePixelData',  offset=0x00005000*addrSize, bitSize=2, bitOffset=0, hidden=True))
         #self.add((
         #    pr.Command(name='WritePixelData', description='Write PixelTest and PixelMask to current pixel only',  offset=0x00005000*addrSize, bitSize=32, bitOffset=0, function=self.fnWritePixelData),
         #    pr.Command(name='ReadPixelData',  description='Read PixelTest and PixelMask from current pixel only', offset=0x00005000*addrSize, bitSize=32, bitOffset=0, function=self.fnReadPixelData)))
@@ -860,7 +860,7 @@ class TixelAsic(pr.Device):
       
         # CMD = 8, Addr = X  : Prepare for row/column/matrix configuration
         self.add(
-            pr.Command(name='PrepareMultiConfig', description='PrepareMultiConfig', offset=0x00008000*addrSize, bitSize=32, bitOffset=0, function=pr.Command.touchZero, hidden=True))
+            pr.RemoteCommand(name='PrepareMultiConfig', description='PrepareMultiConfig', offset=0x00008000*addrSize, bitSize=32, bitOffset=0, function=pr.Command.touchZero, hidden=True))
 
         # Pixel Configuration
         #                    : Bit 0 = Test
