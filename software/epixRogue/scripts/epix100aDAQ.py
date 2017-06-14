@@ -25,7 +25,6 @@ import pyrogue.utilities.fileio
 #import pyrogue.epics
 import pyrogue.gui
 import surf
-import surf.SsiPrbsTx
 import threading
 import signal
 import atexit
