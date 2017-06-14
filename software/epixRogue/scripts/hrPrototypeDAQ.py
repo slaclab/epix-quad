@@ -22,11 +22,10 @@
 import rogue.hardware.pgp
 import pyrogue.utilities.prbs
 import pyrogue.utilities.fileio
-import pyrogue.mesh
 import pyrogue.gui
 import surf
-import surf.AxiVersion
-import surf.SsiPrbsTx
+import surf.axi
+import surf.protocols.ssi
 import threading
 import signal
 import atexit
@@ -91,11 +90,9 @@ class MbDebug(rogue.interfaces.stream.Slave):
 #######################################
 class MyRunControl(pyrogue.RunControl):
     def __init__(self,name):
-        pyrogue.RunControl.__init__(self,name,'Run Controller HR prototype')
+        pyrogue.RunControl.__init__(self,name=name,description='Run Controller HR prototype', rates={1:'1 Hz', 2:'2 Hz', 4:'4 Hz', 8:'8 Hz', 10:'10 Hz', 30:'30 Hz', 60:'60 Hz', 120:'120 Hz'})
         self._thread = None
-
-        self.runRate.enum = {1:'1 Hz', 2:'2 Hz', 4:'4 Hz', 8:'8 Hz', 10:'10 Hz', 30:'30 Hz', 60:'60 Hz', 120:'120 Hz'}
-
+        
     def _setRunState(self,dev,var,value):
         if self._runState != value:
             self._runState = value

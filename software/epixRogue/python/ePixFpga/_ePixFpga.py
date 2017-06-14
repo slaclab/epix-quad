@@ -23,7 +23,10 @@ import pyrogue as pr
 import collections
 import os
 import ePixAsics as epix
-import surf.AxiVersion
+import surf.axi as axi
+import surf.protocols.pgp as pgp
+import surf.devices.analog_devices as analog_devices
+import surf.misc
 import surf
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import *
@@ -44,7 +47,7 @@ class HrPrototype(pr.Device):
       
         super(self.__class__, self).__init__(**kwargs)
         self.add((
-            surf.AxiVersion.create(offset=0x00000000),
+            axi.AxiVersion(offset=0x00000000),
             TixelFpgaRegisters(name="HrPrototypeFpgaRegisters", offset=0x01000000),
             TriggerRegisters(name="TriggerRegisters", offset=0x02000000, expand=False),
             SlowAdcRegisters(name="SlowAdcRegisters", offset=0x03000000, expand=False),
@@ -54,14 +57,14 @@ class HrPrototype(pr.Device):
             AsicDeserRegisters(name='Asic1Deserializer', offset=0x10000000, enabled=False, expand=False),
             AsicPktRegisters(name='Asic0PktRegisters', offset=0x11000000, enabled=False, expand=False),
             AsicPktRegisters(name='Asic1PktRegisters', offset=0x12000000, enabled=False, expand=False),
-            surf.Pgp2bAxi(name='Pgp2bAxi', offset=0x06000000, expand=False),
-            surf.Ad9249ReadoutGroup(name = 'Ad9249Rdout[1].Adc[0]', offset=0x09000000, channels=4, enabled=False, expand=False),
+            pgp.Pgp2bAxi(name='Pgp2bAxi', offset=0x06000000, enabled=False, expand=False),
+            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[1].Adc[0]', offset=0x09000000, channels=4, enabled=False, expand=False),
             #surf.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]', offset=0x0A000000),    # not used in tixel, disabled by microblaze
             #surf.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]', offset=0x0A000800),    # not used in tixel, disabled by microblaze
-            surf.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]', offset=0x0A001000, enabled=False, expand=False),
+            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]', offset=0x0A001000, enabled=False, expand=False),
             OscilloscopeRegisters(name='Oscilloscope', offset=0x0C000000, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum),
             HighSpeedDacRegisters(name='High Speed DAC', offset=0x0D000000, enabled=True, expand=False, HsDacEnum = HsDacEnum),
-            surf.GenericMemory(name='waveformMem', offset=0x0E000000,elements=1024),
+            surf.misc.GenericMemory(name='waveformMem', offset=0x0E000000,nelms=1024),
             MicroblazeLog(name='MicroblazeLog', offset=0x0B000000, expand=False),
             MMCM7Registers(name='MMCM7Registers', offset=0x0F000000, enabled=False, expand=False)))
 
@@ -72,21 +75,21 @@ class HrPrototype(pr.Device):
         """SetTestBitmap command function"""
         self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
         if os.path.splitext(self.filename)[1] == '.csv':
-            waveform = np.genfromtxt(self.filename, delimiter=',')
-            if waveform.shape == (1, 1024):
+            waveform = np.genfromtxt(self.filename, delimiter=',', dtype='uint16')
+            if waveform.shape == (1024,):
                 for x in range (0, 1024):
-                    self.waveformMem[x].set(waveform[x])
+                    self.waveformMem.Mem[x].set(int(waveform[x]))
 
             else:
-                print('csv file must be 48x48 pixels')
+                print('wrong csv file format')
 
     def fnGetWaveform(self, dev,cmd,arg):
         """GetTestBitmap command function"""
         self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
         if os.path.splitext(self.filename)[1] == '.csv':
-            readBack = np.zeros((1,1024),dtype='uint16')
-            for x in range (0, 1):
-                readBack[x] = self.waveformMem[x].get()
+            readBack = np.zeros((1024),dtype='uint16')
+            for x in range (0, 1024):
+                readBack[x] = self.waveformMem.Mem[x].get()
             np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
       
 
@@ -764,7 +767,7 @@ class HighSpeedDacRegisters(pr.Device):
       self.add((
          pr.Variable(name='enabled',         description='Enable waveform generation',                  offset=0x00000000, bitSize=1,   bitOffset=0,   base='bool', mode='RW'),
          pr.Variable(name='run',             description='Generates waveform when true',                offset=0x00000000, bitSize=1,   bitOffset=1,   base='bool', mode='RW'),
-         pr.Variable(name='samplingCounter', description='Sampling period (times 1/clock ref. 156MHz)', offset=0x00000004, bitSize=12,   bitOffset=0,   base='hex', mode='RW'),
+         pr.Variable(name='samplingCounter', description='Sampling period (>269, times 1/clock ref. 156MHz)', offset=0x00000004, bitSize=12,   bitOffset=0,   base='hex', mode='RW'),
          pr.Variable(name='DacValue',        description='Set a fixed value for the DAC',               offset=0x00000008, bitSize=16,  bitOffset=0,   base='hex', mode='RW'),
          pr.Variable(name='DacChannel',      description='Select the DAC channel to use',               offset=0x00000008, bitSize=2,   bitOffset=16,  base='enum', mode='RW', enum=HsDacEnum)))
       
