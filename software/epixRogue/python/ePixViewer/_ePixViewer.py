@@ -495,7 +495,26 @@ class Window(QtGui.QMainWindow, QObject):
         if(not self.cbpixelTimeSeriesEnabled.isChecked()):
             self. clearPixelTimeSeriesLinePlot()
 
+    """Save the enabled series to file"""
+    def SaveSeriesToFile(self):
+        #open a pop up menu to set the filename
+        self.filename = QtGui.QFileDialog.getOpenFileName(self, 'Save File', '', 'csv file (*.csv);; Any (*.*)')
+        if (self.cbHorizontalLineEnabled.isChecked()):
+            if (self.imgTool.imgDark_isSet):
+                np.savetxt(os.path.splitext(self.filename)[0] + "_horizontal" + os.path.splitext(self.filename)[1], self.ImgDarkSub[self.mouseY,:], fmt='%d', delimiter=',', newline='\n')
+            else:
+                np.savetxt(os.path.splitext(self.filename)[0] + "_horizontal" + os.path.splitext(self.filename)[1], self.imgDesc[self.mouseY,:], fmt='%d', delimiter=',', newline='\n')                    
 
+        if (self.cbVerticalLineEnabled.isChecked()):
+            if (self.imgTool.imgDark_isSet):
+                np.savetxt(os.path.splitext(self.filename)[0] + "_vertical" + os.path.splitext(self.filename)[1], self.ImgDarkSub[:,self.mouseX], fmt='%d', delimiter=',', newline='\n')
+            else:
+                np.savetxt(os.path.splitext(self.filename)[0] + "_vertical" + os.path.splitext(self.filename)[1], self.imgDesc[:,self.mouseX], fmt='%d', delimiter=',', newline='\n')                    
+
+        if (self.cbpixelTimeSeriesEnabled.isChecked()):
+            np.savetxt(os.path.splitext(self.filename)[0] + "_pixel" + os.path.splitext(self.filename)[1], self.pixelTimeSeries, fmt='%d', delimiter=',', newline='\n')
+        
+        
     def _paintEvent(self, e):
         qp = QtGui.QPainter()
         qp.begin(self.image) 
@@ -890,8 +909,16 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
 
         # check boxes
         myParent.cbHorizontalLineEnabled = QtGui.QCheckBox('Plot Horizontal Line')
+        #
         myParent.cbVerticalLineEnabled = QtGui.QCheckBox('Plot Vertical Line')
+        #
         myParent.cbpixelTimeSeriesEnabled = QtGui.QCheckBox('Pixel Time Series Line')
+
+        # button save trace to file
+        btnSaveSeriesToFile = QtGui.QPushButton("Save to file")
+        btnSaveSeriesToFile.setMaximumWidth(150)
+        btnSaveSeriesToFile.clicked.connect(myParent.SaveSeriesToFile)
+        btnSaveSeriesToFile.resize(btnSaveSeriesToFile.minimumSizeHint())    
 
 
         # set layout to tab 3
@@ -911,6 +938,7 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         grid3.addWidget(myParent.cbHorizontalLineEnabled,1, 1)
         grid3.addWidget(myParent.cbVerticalLineEnabled,2, 1)
         grid3.addWidget(myParent.cbpixelTimeSeriesEnabled,3, 1)
+        grid3.addWidget(btnSaveSeriesToFile,4, 1)
 
 
         # complete tab3

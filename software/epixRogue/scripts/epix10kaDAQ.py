@@ -137,7 +137,7 @@ class MyRunControl(pyrogue.RunControl):
         self._last = int(time.time()) 
  
  
-        while (self.runState.get(read=False) == 'Running'): 
+        while (self.runState.value() == 'Running'): 
             delay = 1.0 / ({value: key for key,value in self.runRate.enum.items()}[self._runRate]) 
             time.sleep(delay) 
             self._root.ssiPrbsTx.oneShot() 
