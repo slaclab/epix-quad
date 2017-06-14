@@ -545,14 +545,14 @@ class Epix10kaAsic(pr.Device):
         
         # CMD = 6, Addr = 17 : Row counter[8:0]
         self.add((
-            pr.RemoteCommand(name='RowCounter', description='', offset=0x00006011*addrSize, bitSize=9, bitOffset=0, hidden=True)))
+            pr.RemoteCommand(name='RowCounter', description='', offset=0x00006011*addrSize, bitSize=9, bitOffset=0, function=pr.Command.touch, hidden=False)))
         #self.add((
         #    pr.Variable(name='RowCounter', description='RowCounter', bitSize=9, bitOffset=0, base='hex', mode='RW', setFunction='dev._defaultValue = value', getFunction='value = dev._defaultValue'),
         #    pr.Command( name='WriteRowCounter', description='Special command to write row counter', offset=0x00006011*addrSize, bitSize=9, bitOffset=0, function=self.fnWriteRowCounter, hidden=True)))
 
         # CMD = 6, Addr = 19 : Bank select [3:0] & Col counter[6:0]
         self.add((
-            pr.RemoteCommand(name='ColCounter', description='', offset=0x00006013*addrSize, bitSize=11, bitOffset=0, hidden=True)))
+            pr.RemoteCommand(name='ColCounter', description='', offset=0x00006013*addrSize, bitSize=11, bitOffset=0, function=pr.Command.touch, hidden=False)))
         #self.add((
         #    pr.Variable(name='ColCounter', description='',                                offset=0x00006013*addrSize, bitSize=7, bitOffset=0, base='hex', mode='RW'),
         #    pr.Variable(name='BankSelect', description='Active low bank select bit mask', offset=0x00006013*addrSize, bitSize=4, bitOffset=7, base='hex', mode='RW')))
@@ -560,15 +560,15 @@ class Epix10kaAsic(pr.Device):
 
         # CMD = 2, Addr = X  : Write Row with data
         self.add((
-            pr.RemoteCommand(name='WriteRowData',    description='', offset=0x00002000*addrSize, bitSize=4, bitOffset=0, hidden=True)))
+            pr.RemoteCommand(name='WriteRowData',    description='', offset=0x00002000*addrSize, bitSize=4, bitOffset=0, function=pr.Command.touch, hidden=False)))
 
         # CMD = 3, Addr = X  : Write Column with data
         self.add(
-            pr.RemoteCommand(name='WriteColData',    description='', offset=0x00003000*addrSize, bitSize=4, bitOffset=0, hidden=True))
+            pr.RemoteCommand(name='WriteColData',    description='', offset=0x00003000*addrSize, bitSize=4, bitOffset=0, function=pr.Command.touch, hidden=False))
 
         # CMD = 4, Addr = X  : Write Matrix with data  
         self.add((    
-            pr.RemoteCommand(name='WriteMatrixData', description='', offset=0x00004000*addrSize, bitSize=4, bitOffset=0, hidden=True)))
+            pr.RemoteCommand(name='WriteMatrixData', description='', offset=0x00004000*addrSize, bitSize=4, bitOffset=0, function=pr.Command.touch, hidden=False)))
         #self.add((    
         #    pr.Command(name='WriteMatrixData', description='Write PixelTest and PixelMask to all pixels', offset=0x00004000*addrSize, bitSize=1, bitOffset=0, function=self.fnWriteMatrixData),
         #    pr.Variable(name='PixelTest', description='', bitSize=1, bitOffset=0, base='bool', mode='RW', value=1, setFunction='dev._defaultValue = value', getFunction='value = dev._defaultValue'),
@@ -587,7 +587,7 @@ class Epix10kaAsic(pr.Device):
       
         # CMD = 8, Addr = X  : Prepare for row/column/matrix configuration
         self.add(
-            pr.RemoteCommand(name='PrepareMultiConfig', description='PrepareMultiConfig', offset=0x00008000*addrSize, bitSize=32, bitOffset=0, function=pr.Command.touchZero, hidden=True))
+            pr.RemoteCommand(name='PrepareMultiConfig', description='PrepareMultiConfig', offset=0x00008000*addrSize, bitSize=32, bitOffset=0, function=pr.Command.touchZero, hidden=False))
 
         # Pixel Configuration
         #                    : Bit 0 = Test
