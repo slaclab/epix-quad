@@ -22,7 +22,7 @@
 import rogue.hardware.pgp
 import pyrogue.utilities.prbs
 import pyrogue.utilities.fileio
-import pyrogue.mesh
+
 import pyrogue.gui
 import surf
 import surf.AxiVersion
@@ -151,10 +151,10 @@ pyrogue.streamTap(pgpVc0, gui.eventReader)
 pyrogue.streamTap(pgpVc2, gui.eventReaderScope)# PseudoScope
 pyrogue.streamTap(pgpVc3, gui.eventReaderMonitoring) # Slow Monitoring
 
-# Create mesh node (this is for remote control only, no data is shared with this)
-mNode = pyrogue.mesh.MeshNode('rogueEpix100a',iface='eth0',root=None)
-mNode.setNewTreeCb(guiTop.addTree)
-mNode.start()
+## Create mesh node (this is for remote control only, no data is shared with this)
+#mNode = pyrogue.mesh.MeshNode('rogueEpix100a',iface='eth0',root=None)
+#mNode.setNewTreeCb(guiTop.addTree)
+#mNode.start()
 
 # Run gui
 if (START_GUI):
