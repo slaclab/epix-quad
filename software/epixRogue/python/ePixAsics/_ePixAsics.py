@@ -919,10 +919,8 @@ class TixelAsic(pr.Device):
     def fnClearMatrix(self, dev,cmd,arg):
         """ClearMatrix command function"""
         self.reportCmd(dev,cmd,arg)
-        for i in range (0, 48):
-            self.PrepareMultiConfig()
-            self.ColCounter.set(i)
-            self.WriteColData.set(0)
+        self.PrepareMultiConfig()
+        self.WriteMatrixData.set(0)
         self.CmdPrepForRead()
 
     # standard way to report a command has been executed
