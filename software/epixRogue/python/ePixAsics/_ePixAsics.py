@@ -300,7 +300,7 @@ class Epix100aAsic(pr.Device):
         for i in range (0, 96):
             self.PrepareMultiConfig()
             self.ColCounter.post(i)
-            self.WriteColData()
+            self.WriteColData(0)
         self.CmdPrepForRead()
 
     def fnWriteMatrixData(self,dev,cmd,arg):
@@ -675,7 +675,7 @@ class Epix10kaAsic(pr.Device):
         for i in range (0, 48):
             self.PrepareMultiConfig()
             self.ColCounter.set(i)
-            self.WriteColData()
+            self.WriteColData(0)
         self.CmdPrepForRead()
 
     def fnWriteMatrixData(self,dev,cmd,arg):
@@ -931,7 +931,7 @@ class TixelAsic(pr.Device):
         for i in range (0, 48):
             self.PrepareMultiConfig()
             self.ColCounter.set(i)
-            self.WriteColData()
+            self.WriteColData(0)
         self.CmdPrepForRead()
 
     def fnWriteMatrixData(self,dev,cmd,arg):
