@@ -373,18 +373,18 @@ class Epix10ka(pr.Device):
       self.add((
             Epix10kaFpgaRegisters(name="EpixFpgaRegisters", offset=0x00000000),
             OscilloscopeRegisters(name='Oscilloscope', offset=0x00000140, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum),
-            surf.Pgp2bAxi(name='Pgp2bAxi', offset=0x00300000, expand=False),
+            pgp.Pgp2bAxi(name='Pgp2bAxi', offset=0x00300000, enabled=False, expand=False),
             epix.Epix10kaAsic(name='Epix10kaAsic0', offset=0x02000000, enabled=False, expand=False),
             epix.Epix10kaAsic(name='Epix10kaAsic1', offset=0x02400000, enabled=False, expand=False),
             epix.Epix10kaAsic(name='Epix10kaAsic2', offset=0x02800000, enabled=False, expand=False),
             epix.Epix10kaAsic(name='Epix10kaAsic3', offset=0x02C00000, enabled=False, expand=False),
-            surf.AxiVersion.create(offset=0x08000000),
-            surf.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[0]', offset=0x14000000, channels=8, enabled=False, expand=False),
-            surf.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[1]', offset=0x18000000, channels=8, enabled=False, expand=False),
-            surf.Ad9249ReadoutGroup(name = 'Ad9249Rdout[1].Adc[0]', offset=0x1C000000, channels=4, enabled=False, expand=False),
-            surf.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]', offset=0x20000000, enabled=False, expand=False),
-            surf.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]', offset=0x20000800, enabled=False, expand=False),
-            surf.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]', offset=0x20001000, enabled=False, expand=False),
+            axi.AxiVersion(offset=0x08000000),
+            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[0]', offset=0x14000000, channels=8, enabled=False, expand=False),
+            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[1]', offset=0x18000000, channels=8, enabled=False, expand=False),
+            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[1].Adc[0]', offset=0x1C000000, channels=4, enabled=False, expand=False),
+            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]', offset=0x20000000, enabled=False, expand=False),
+            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]', offset=0x20000800, enabled=False, expand=False),
+            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]', offset=0x20001000, enabled=False, expand=False),
             MicroblazeLog(name='MicroblazeLog', offset=0x24000000, expand=False)))
       
 
@@ -451,10 +451,10 @@ class Epix10kaFpgaRegisters(pr.Device):
       self.add(pr.Variable(name='AdcPatternEnable',    description='Enables test pattern on data out',                        offset=0x0000002A*addrSize, bitSize=1,  bitOffset=8, base='bool', mode='RW'))
       self.add(pr.Variable(name='AsicR0Mode',          description='AsicR0Mode',                                              offset=0x0000002A*addrSize, bitSize=1,  bitOffset=11,base='bool', mode='RW'))
       self.add(pr.Variable(name='AsicR0Width',         description='Width of R0 low pulse',                                   offset=0x0000002B*addrSize, bitSize=31, bitOffset=0, base='hex',  mode='RW'))
-      self.add(pr.Variable(name='DigitalCardId0',      description='Digital Card Serial Number (low 32 bits)',                offset=0x00000030*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RW'))
-      self.add(pr.Variable(name='DigitalCardId1',      description='Digital Card Serial Number (high 32 bits)',               offset=0x00000031*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RW'))
-      self.add(pr.Variable(name='AnalogCardId0',       description='Analog Card Serial Number (low 32 bits)',                 offset=0x00000032*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RW'))
-      self.add(pr.Variable(name='AnalogCardId1',       description='Analog Card Serial Number (high 32 bits)',                offset=0x00000033*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RW'))
+      self.add(pr.Variable(name='DigitalCardId0',      description='Digital Card Serial Number (low 32 bits)',                offset=0x00000030*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
+      self.add(pr.Variable(name='DigitalCardId1',      description='Digital Card Serial Number (high 32 bits)',               offset=0x00000031*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
+      self.add(pr.Variable(name='AnalogCardId0',       description='Analog Card Serial Number (low 32 bits)',                 offset=0x00000032*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
+      self.add(pr.Variable(name='AnalogCardId1',       description='Analog Card Serial Number (high 32 bits)',                offset=0x00000033*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
       self.add(pr.Variable(name='AsicPreAcqTime',      description='Sum of time delays leading to the ASIC ACQ pulse',        offset=0x00000039*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
       self.add(pr.Variable(name='AsicPPmatToReadout',  description='Delay (in 10ns) between Ppmat pulse and readout',         offset=0x0000003A*addrSize, bitSize=31, bitOffset=0, base='hex',  mode='RW'))
       self.add(pr.Variable(name='CarrierCardId0',      description='Carrier Card Serial Number (low 32 bits)',                offset=0x0000003B*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RO'))

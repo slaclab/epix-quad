@@ -22,12 +22,10 @@
 import rogue.hardware.pgp
 import pyrogue.utilities.prbs
 import pyrogue.utilities.fileio
-import pyrogue.mesh
-#import pyrogue.epics
 import pyrogue.gui
 import surf
-import surf.AxiVersion
-import surf.SsiPrbsTx
+import surf.axi
+import surf.protocols.ssi
 import threading
 import signal
 import atexit
@@ -121,35 +119,34 @@ class MbDebug(rogue.interfaces.stream.Slave):
 #######################################
 class MyRunControl(pyrogue.RunControl):
     def __init__(self,name):
-        pyrogue.RunControl.__init__(self,name,'Run Controller ePix 10ka')
+        pyrogue.RunControl.__init__(self,name, description='Run Controller ePix 10ka',  rates={1:'1 Hz', 2:'2 Hz', 4:'4 Hz', 8:'8 Hz', 10:'10 Hz', 30:'30 Hz', 60:'60 Hz', 120:'120 Hz'})
         self._thread = None
 
-        self.runRate.enum = {1:'1 Hz', 2:'2 Hz', 4:'4 Hz', 8:'8 Hz', 10:'10 Hz', 30:'30 Hz', 60:'60 Hz', 120:'120 Hz'}
+    def _setRunState(self,dev,var,value,changed):
+        if changed: 
+            if self.runState.get(read=False) == 'Running': 
+                self._thread = threading.Thread(target=self._run) 
+                self._thread.start() 
+            else: 
+                self._thread.join() 
+                self._thread = None 
 
-    def _setRunState(self,dev,var,value):
-        if self._runState != value:
-            self._runState = value
-
-            if self._runState == 'Running':
-                self._thread = threading.Thread(target=self._run)
-                self._thread.start()
-            else:
-                self._thread.join()
-                self._thread = None
 
     def _run(self):
-        self._runCount = 0
-        self._last = int(time.time())
+        self.runCount.set(0) 
+        self._last = int(time.time()) 
+ 
+ 
+        while (self.runState.get(read=False) == 'Running'): 
+            delay = 1.0 / ({value: key for key,value in self.runRate.enum.items()}[self._runRate]) 
+            time.sleep(delay) 
+            self._root.ssiPrbsTx.oneShot() 
+  
+            self._runCount += 1 
+            if self._last != int(time.time()): 
+                self._last = int(time.time()) 
+                self.runCount._updated() 
 
-        while (self._runState == 'Running'):
-            delay = 1.0 / ({value: key for key,value in self.runRate.enum.items()}[self._runRate])
-            time.sleep(delay)
-            self._root.Trigger()
-
-            self._runCount += 1
-            if self._last != int(time.time()):
-                self._last = int(time.time())
-                self.runCount._updated()
 
             
 ##############################
@@ -203,9 +200,9 @@ pyrogue.streamTap(pgpVc3, gui.eventReaderMonitoring) # Slow Monitoring
 
 # Create mesh node (this is for remote control only, no data is shared with this)
 #mNode = pyrogue.mesh.MeshNode('rogueTest',iface='eth0',root=ePixBoard)
-mNode = pyrogue.mesh.MeshNode('rogueEpix10ka',iface='eth0',root=None)
-mNode.setNewTreeCb(guiTop.addTree)
-mNode.start()
+#mNode = pyrogue.mesh.MeshNode('rogueEpix10ka',iface='eth0',root=None)
+#mNode.setNewTreeCb(guiTop.addTree)
+#mNode.start()
 
 
 # Run gui
