@@ -155,16 +155,20 @@ class MyRunControl(pyrogue.RunControl):
 class EpixBoard(pyrogue.Root):
     def __init__(self, guiTop, cmd, dataWriter, srp, **kwargs):
         super().__init__('ePixBoard','ePix 10ka Board', pollEn=True, **kwargs)
-        self.add(MyRunControl('runControl'))
+        #self.add(MyRunControl('runControl'))
         self.add(dataWriter)
         self.guiTop = guiTop
-
-        # Add Devices
-        self.add(fpga.Epix10ka(name='Epix10ka', offset=0, memBase=srp, hidden=False, enabled=True))
 
         @self.command()
         def Trigger():
             cmd.sendCmd(0, 0)
+
+        # Add Devices
+        self.add(fpga.Epix10ka(name='Epix10ka', offset=0, memBase=srp, hidden=False, enabled=True))
+        self.add(pyrogue.RunControl(name = 'My Run Control', description='Run Controller ePix 10ka', cmd=self.Trigger, rates={1:'1 Hz', 2:'2 Hz', 4:'4 Hz', 8:'8 Hz', 10:'10 Hz', 30:'30 Hz', 60:'60 Hz', 120:'120 Hz'}))
+        
+
+        
 
 
 # debug
