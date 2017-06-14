@@ -119,30 +119,28 @@ class MyRunControl(pyrogue.RunControl):
         pyrogue.RunControl.__init__(self,name,'Run Controller ePix 100a',  rates={1:'1 Hz', 2:'2 Hz', 4:'4 Hz', 8:'8 Hz', 10:'10 Hz', 30:'30 Hz', 60:'60 Hz', 120:'120 Hz'})
         self._thread = None
 
-    def _setRunState(self,dev,var,value):
-        if self._runState != value:
-            self._runState = value
-
-            if self._runState == 'Running':
-                self._thread = threading.Thread(target=self._run)
-                self._thread.start()
-            else:
-                self._thread.join()
+    def _setRunState(self,dev,var,value,changed):
+        if changed: 
+            if self.runState.get(read=False) == 'Running': 
+                self._thread = threading.Thread(target=self._run) 
+                self._thread.start() 
+            else: 
+                self._thread.join() 
                 self._thread = None
 
     def _run(self):
-        self._runCount = 0
-        self._last = int(time.time())
+        self.runCount.set(0) 
+        self._last = int(time.time()) 
 
-        while (self._runState == 'Running'):
-            delay = 1.0 / ({value: key for key,value in self.runRate.enum.items()}[self._runRate])
-            time.sleep(delay)
-            self._root.Trigger()
-
-            self._runCount += 1
-            if self._last != int(time.time()):
-                self._last = int(time.time())
-                self.runCount._updated()
+        while (self.runState.get(read=False) == 'Running'): 
+            delay = 1.0 / ({value: key for key,value in self.runRate.enum.items()}[self._runRate]) 
+            time.sleep(delay) 
+            self._root.ssiPrbsTx.oneShot() 
+  
+            self._runCount += 1 
+            if self._last != int(time.time()): 
+                self._last = int(time.time()) 
+                self.runCount._updated() 
 
             
 ##############################
