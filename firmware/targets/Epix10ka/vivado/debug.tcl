@@ -72,9 +72,9 @@ ConfigProbe ${ilaName} {U_EpixCore/iSaciRsp}
 #ConfigProbe ${ilaName} {U_EpixCore/U_ReadoutControl/fifoEmptyAll}
 #ConfigProbe ${ilaName} {U_EpixCore/acqBusy}
 #ConfigProbe ${ilaName} {U_EpixCore/acqStart}
-#ConfigProbe ${ilaName} {U_EpixCore/U_AcqControl/iReadValid}
-#ConfigProbe ${ilaName} {U_EpixCore/U_AcqControl/pixelCnt[*]}
-#ConfigProbe ${ilaName} {U_EpixCore/U_AcqControl/curState[*]}
+ConfigProbe ${ilaName} {U_EpixCore/U_AcqControl/iReadValid}
+ConfigProbe ${ilaName} {U_EpixCore/U_AcqControl/pixelCnt[*]}
+ConfigProbe ${ilaName} {U_EpixCore/U_AcqControl/curState[*]}
 ##
 ##
 ####Slow ADC debug

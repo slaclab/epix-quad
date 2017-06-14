@@ -60,10 +60,10 @@ entity ReadoutControl is
       
       -- Run control
       acqStart            : in    sl;
-      readValidA0         : in    slv(MAX_OVERSAMPLE_C-1 downto 0);
-      readValidA1         : in    slv(MAX_OVERSAMPLE_C-1 downto 0);
-      readValidA2         : in    slv(MAX_OVERSAMPLE_C-1 downto 0);
-      readValidA3         : in    slv(MAX_OVERSAMPLE_C-1 downto 0);
+      readValidA0         : in    sl;
+      readValidA1         : in    sl;
+      readValidA2         : in    sl;
+      readValidA3         : in    sl;
       readDone            : out   sl;
       acqBusy             : in    sl;
       dataSend            : in    sl;
@@ -112,17 +112,15 @@ architecture ReadoutControl of ReadoutControl is
 
    
    -- State definitions
-   type StateType is (IDLE_S,ARMED_S,HEADER_S,READ_FIFO_S,READ_FIFO_TEST_S,
+   type StateType is (IDLE_S,ARMED_S,HEADER_S,READ_FIFO_S,
                       ENV_DATA_S,TPS_DATA_S,FOOTER_S);
 
    -- Local Signals
    type RegType is record
       readDone       : sl;
       testPattern    : sl;
-      streamMode     : sl;
       seqCountEn     : sl;
       fillCnt        : slv(CH_FIFO_ADDR_WIDTH_C-1 downto 0);
-      overSmplCnt    : slv(log2(MAX_OVERSAMPLE_C)-1 downto 0);
       chCnt          : slv(3 downto 0);
       timeoutCnt     : slv(31 downto 0);
       clearFifos     : sl;
@@ -155,13 +153,13 @@ architecture ReadoutControl of ReadoutControl is
    signal memRst         : sl := '0';
    signal dataSendEdge   : sl;
    signal acqStartEdge   : sl;
-   signal adcMemWrEn     : Slv16Array(MAX_OVERSAMPLE_C-1 downto 0);
+   signal adcMemWrEn     : slv(15 downto 0);
    signal adcMemRdOrder  : std_logic_vector(15 downto 0);
-   signal adcMemRdRdy    : Slv16Array(MAX_OVERSAMPLE_C-1 downto 0);
-   signal adcMemRdValid  : Slv16Array(MAX_OVERSAMPLE_C-1 downto 0);
-   signal adcMemOflow    : Slv16Array(MAX_OVERSAMPLE_C-1 downto 0);
+   signal adcMemRdRdy    : slv(15 downto 0);
+   signal adcMemRdValid  : slv(15 downto 0);
+   signal adcMemOflow    : slv(15 downto 0);
    signal adcMemOflowAny : std_logic;
-   signal adcMemRdData   : Slv16VectorArray(MAX_OVERSAMPLE_C-1 downto 0,15 downto 0);
+   signal adcMemRdData   : Slv16Array(15 downto 0);
 
    signal adcCntEn       : sl;
    signal adcCntRst      : sl;
@@ -255,11 +253,9 @@ begin
       iAdcData(18) <= adcData(18);
       iAdcData(19) <= adcData(19);
       asicOrder <= (3,3,3,3,2,2,2,2,0,0,0,0,1,1,1,1);
-      channelOrder <= (0,3,1,2,8,11,9,10,6,4,5,7,14,12,13,15) when r.streamMode = '0' else
-                      (15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0); 
+      channelOrder <= (0,3,1,2,8,11,9,10,6,4,5,7,14,12,13,15);
       channelValid  <= (others => '1');
-      adcMemRdOrder <= x"0F0F" when r.streamMode = '0' else
-                       x"0000";
+      adcMemRdOrder <= x"0F0F";
       tpsData(0) <= r.adcData(16+1);
       tpsData(1) <= r.adcData(16+3);
       tpsData(2) <= r.adcData(16+2);
@@ -315,11 +311,9 @@ begin
       iAdcData(17) <= adcData(17);
       iAdcData(18) <= adcData(18);
       iAdcData(19) <= adcData(19);
-      channelOrder <= (4,5,6,7,8,9,10,11,3,2,1,0,15,14,13,12) when r.streamMode = '0' else
-                      (15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0); 
+      channelOrder <= (4,5,6,7,8,9,10,11,3,2,1,0,15,14,13,12);
       channelValid  <= (others => '1');
-      adcMemRdOrder <= x"0FF0" when r.streamMode = '0' else
-                       x"0000";
+      adcMemRdOrder <= x"0FF0";
       tpsData(0) <= r.adcData(16+0);
       tpsData(1) <= r.adcData(16+1);
       tpsData(2) <= r.adcData(16+2);
@@ -337,11 +331,9 @@ begin
    G_EPIXS_CARRIER : if (ASIC_TYPE_G = EPIXS_C) generate
       iAdcValid    <= adcValid;
       iAdcData     <= adcData;
-      channelOrder <= (4,5,6,7,8,9,10,11,3,2,1,0,15,14,13,12) when r.streamMode = '0' else
-                      (15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0); 
+      channelOrder <= (4,5,6,7,8,9,10,11,3,2,1,0,15,14,13,12);
       channelValid  <= "1000100000010001";
-      adcMemRdOrder <= x"0FF0" when r.streamMode = '0' else
-                       x"0000";
+      adcMemRdOrder <= x"0FF0";
       tpsData(0) <= r.adcData(16+0);
       tpsData(1) <= r.adcData(16+1);
       tpsData(2) <= r.adcData(16+2);
@@ -410,12 +402,10 @@ begin
             when IDLE_S =>
                v.wordCnt     := (others => '0');
                v.chCnt       := (others => '0');
-               v.overSmplCnt := (others => '0');
                v.fillCnt     := (others => '0');
                v.timeoutCnt  := (others => '0');
                v.clearFifos  := '1';
                v.readDone    := '1';
-               v.streamMode  := epixConfig.adcStreamMode;
                v.testPattern := epixConfig.testPattern;
                v.error       := '0';
                if acqStartEdge = '1' then
@@ -449,11 +439,7 @@ begin
                end case;
                if (r.wordCnt = 7) then
                   v.wordCnt := (others => '0');
-                  if (r.streamMode = '0') then
-                     v.state := READ_FIFO_S;
-                  elsif (r.streamMode = '1') then
-                     v.state := READ_FIFO_TEST_S;
-                  end if;
+                  v.state := READ_FIFO_S;
                end if;
             when READ_FIFO_S => 
                v.mAxisMaster.tData(31 downto 0) := adcFifoRdData(channelOrder(conv_integer(r.chCnt)));
@@ -471,23 +457,6 @@ begin
                end if;
                if acqBusy = '0' and fifoEmptyAll = '1' then
                   v.state := ENV_DATA_S;
-               elsif r.error = '1' or r.timeoutCnt = STUCK_TIMEOUT_C then
-                  v.state := FOOTER_S;
-               end if;
-            when READ_FIFO_TEST_S =>
-               v.mAxisMaster.tData(31 downto 0) := adcFifoRdData(channelOrder(conv_integer(r.chCnt)));
-               if adcFifoRdValid(channelOrder(conv_integer(r.chCnt))) = '1' and acqBusy = '0' then
-                  v.mAxisMaster.tValid := '1';
-                  v.fillCnt         := r.fillCnt + 1;
-               else
-                  v.timeoutCnt := r.timeoutCnt + 1;
-               end if;
-               if adcFifoEmpty(channelOrder(conv_integer(r.chCnt))) = '1' and acqBusy = '0' then
-                  v.chCnt   := r.chCnt + 1;
-                  v.fillCnt := (others => '0');
-               end if;
-               if acqBusy = '0' and fifoEmptyAll = '1' then
-                  v.state := FOOTER_S;
                elsif r.error = '1' or r.timeoutCnt = STUCK_TIMEOUT_C then
                   v.state := FOOTER_S;
                end if;
@@ -603,35 +572,14 @@ begin
    --Simple logic to choose which memory to read from
    process(sysClk) begin
       if rising_edge(sysClk) then
-         if r.streamMode = '0' then
-            for i in 0 to 15 loop
-               adcFifoWrEn(i)   <= adcMemRdValid(0)(i);
-               if r.testPattern = '0' then
-                  adcFifoWrData(i) <= adcMemRdData(0,i);
-               else
-                  adcFifoWrData(i) <= "0000" & conv_std_logic_vector(i,4) & adcMemRdData(0,i)(7 downto 0);
-               end if;
-            end loop;
-         else
-            for i in 0 to 15 loop
-               
-               if asicOrder(i) = 0 then
-                  adcFifoWrEn(i) <= readValidA0(0) and adcPulse;
-               elsif asicOrder(i) = 1 then
-                  adcFifoWrEn(i) <= readValidA1(0) and adcPulse;
-               elsif asicOrder(i) = 2 then
-                  adcFifoWrEn(i) <= readValidA2(0) and adcPulse;
-               else
-                  adcFifoWrEn(i) <= readValidA3(0) and adcPulse;
-               end if;
-               
-               if r.testPattern = '0' then
-                  adcFifoWrData(i) <= adcDataToReorder(i);
-               else
-                  adcFifoWrData(i) <= conv_std_logic_vector(i,4) & std_logic_vector(adcCnt);
-               end if;
-            end loop;
-         end if;
+         for i in 0 to 15 loop
+            adcFifoWrEn(i)   <= adcMemRdValid(0)(i);
+            if r.testPattern = '0' then
+               adcFifoWrData(i) <= adcMemRdData(0,i);
+            else
+               adcFifoWrData(i) <= "0000" & conv_std_logic_vector(i,4) & adcMemRdData(0,i)(7 downto 0);
+            end if;
+         end loop;
       end if;
    end process;
 
@@ -650,48 +598,41 @@ begin
          end if;
       end process;
  
-      G_OversampBuffers : for j in 0 to MAX_OVERSAMPLE_C-1 generate
-         --Write when the ADC block says data is good AND when AcqControl agrees
-         process(sysClk) begin
-            if rising_edge(sysClk) then
-               if r.streamMode = '0' then
-                  
-                  if asicOrder(i) = 0  then
-                     adcMemWrEn(j)(i) <= readValidA0(j) and adcPulse;
-                  elsif asicOrder(i) = 1 then
-                     adcMemWrEn(j)(i) <= readValidA1(j) and adcPulse;
-                  elsif asicOrder(i) = 2 then
-                     adcMemWrEn(j)(i) <= readValidA2(j) and adcPulse;
-                  else
-                     adcMemWrEn(j)(i) <= readValidA3(j) and adcPulse;
-                  end if;                  
-                  
-               else
-                  adcMemWrEn(j)(i) <= '0';
-               end if;
-            end if;
-         end process;
+      --Write when the ADC block says data is good AND when AcqControl agrees
+      process(sysClk) begin
+         if rising_edge(sysClk) then
+            if asicOrder(i) = 0  then
+               adcMemWrEn(i) <= readValidA0 and adcPulse;
+            elsif asicOrder(i) = 1 then
+               adcMemWrEn(i) <= readValidA1 and adcPulse;
+            elsif asicOrder(i) = 2 then
+               adcMemWrEn(i) <= readValidA2 and adcPulse;
+            else
+               adcMemWrEn(i) <= readValidA3 and adcPulse;
+            end if;                  
+         end if;
+      end process;
 
-         --Instantiate memory
-         U_RowBuffer : entity work.EpixRowBlockRam
-         generic map (
-            TPD_G        => TPD_G,
-            ASIC_TYPE_G  => ASIC_TYPE_G)
-         port map (
-            sysClk      => sysClk,
-            sysClkRst   => sysClkRst,
-            wrReset     => r.clearFifos,
-            wrData      => adcDataToReorder(i),
-            wrEn        => adcMemWrEn(j)(i),
-            rdOrder     => adcMemRdOrder(i),
-            rdReady     => adcMemRdRdy(j)(i),
-            rdStart     => adcMemRdRdy(j)(i),
-            overflow    => adcMemOflow(j)(i),
-            rdData      => adcMemRdData(j,i),
-            dataValid   => adcMemRdValid(j)(i),
-            testPattern => r.testPattern
-         );
-      end generate;
+      --Instantiate memory
+      U_RowBuffer : entity work.EpixRowBlockRam
+      generic map (
+         TPD_G        => TPD_G,
+         ASIC_TYPE_G  => ASIC_TYPE_G)
+      port map (
+         sysClk      => sysClk,
+         sysClkRst   => sysClkRst,
+         wrReset     => r.clearFifos,
+         wrData      => adcDataToReorder(i),
+         wrEn        => adcMemWrEn(i),
+         rdOrder     => adcMemRdOrder(i),
+         rdReady     => adcMemRdRdy(i),
+         rdStart     => adcMemRdRdy(i),
+         overflow    => adcMemOflow(i),
+         rdData      => adcMemRdData(i),
+         dataValid   => adcMemRdValid(i),
+         testPattern => r.testPattern
+      );
+      
    end generate;
    --Or of all memory overflow bits
    process(sysClk) 
@@ -700,9 +641,7 @@ begin
       if rising_edge(sysClk) then
          runningOr := '0';
          for i in 0 to 15 loop
-            for j in 0 to MAX_OVERSAMPLE_C-1 loop
-               runningOr := runningOr or adcMemOflow(j)(i);
-            end loop;
+            runningOr := runningOr or adcMemOflow(i);
          end loop;
          adcMemOflowAny <= runningOr;
       end if;

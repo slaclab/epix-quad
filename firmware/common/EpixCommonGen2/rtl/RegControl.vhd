@@ -193,13 +193,13 @@ begin
       axiSlaveRegister (regCon, x"022" & "00",  0, v.epixRegOut.asicAcqWidth);
       axiSlaveRegister (regCon, x"023" & "00",  0, v.epixRegOut.asicAcqLToPPmatL);
       axiSlaveRegister (regCon, x"024" & "00",  0, v.epixRegOut.asicRoClkHalfT);
-      axiSlaveRegister (regCon, x"025" & "00",  0, v.epixRegOut.adcReadsPerPixel);
+      axiSlaveRegister (regCon, x"025" & "00",  0, v.epixRegOut.adcReadsPerPixel);  -- not used anymore
       axiSlaveRegister (regCon, x"026" & "00",  0, v.epixRegOut.adcClkHalfT);
       axiSlaveRegister (regCon, x"027" & "00",  0, v.epixRegOut.totalPixelsToRead);
       axiSlaveRegister (regCon, x"029" & "00",  0, v.epixRegOut.asicPins);
       axiSlaveRegister (regCon, x"02A" & "00",  0, v.epixRegOut.manualPinControl);
       axiSlaveRegister (regCon, x"02A" & "00",  6, v.dummyRegs(0)(0));
-      axiSlaveRegister (regCon, x"02A" & "00",  7, v.epixRegOut.adcStreamMode);
+      axiSlaveRegister (regCon, x"02A" & "00",  7, v.epixRegOut.adcStreamMode);     -- not used anymore
       axiSlaveRegister (regCon, x"02A" & "00",  8, v.epixRegOut.testPattern);
       axiSlaveRegister (regCon, x"02A" & "00", 11, v.epixRegOut.asicR0Mode);
       axiSlaveRegister (regCon, x"02B" & "00",  0, v.epixRegOut.asicR0Width);

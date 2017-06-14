@@ -114,7 +114,6 @@ package EpixPkgGen2 is
    
    constant NUM_FAST_ADCS_C  : natural := 3;
    constant NUM_ASICS_C      : natural := 4;
-   constant MAX_OVERSAMPLE_C : integer := 1;
    
    type EpixConfigType is record
       runTriggerEnable   : sl;

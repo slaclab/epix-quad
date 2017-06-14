@@ -49,10 +49,10 @@ entity AcqControl is
       acqStart            : in    std_logic;
       acqBusy             : out   std_logic;
       readDone            : in    std_logic;
-      readValidA0         : out   std_logic_vector(MAX_OVERSAMPLE_C-1 downto 0);
-      readValidA1         : out   std_logic_vector(MAX_OVERSAMPLE_C-1 downto 0);
-      readValidA2         : out   std_logic_vector(MAX_OVERSAMPLE_C-1 downto 0);
-      readValidA3         : out   std_logic_vector(MAX_OVERSAMPLE_C-1 downto 0);
+      readValidA0         : out   std_logic;
+      readValidA1         : out   std_logic;
+      readValidA2         : out   std_logic;
+      readValidA3         : out   std_logic;
       adcPulse            : out   std_logic;
       readTps             : out   std_logic;
 
@@ -102,16 +102,16 @@ architecture AcqControl of AcqControl is
    signal pixelCnt           : unsigned(31 downto 0) := (others => '0');
    signal pixelCntEn         : sl := '0';
    signal pixelCntRst        : sl := '0';
-   signal iReadValid         : slv(MAX_OVERSAMPLE_C-1 downto 0) := (others => '0');
+   signal iReadValid         : sl := '0';
    signal iReadValidWaitingA0: sl := '0';
    signal iReadValidWaitingA1: sl := '0';
    signal iReadValidWaitingA2: sl := '0';
    signal iReadValidWaitingA3: sl := '0';
    signal iReadValidTestMode : sl := '0';
-   signal readValidDelayedA0 : Slv128Array(MAX_OVERSAMPLE_C-1 downto 0);
-   signal readValidDelayedA1 : Slv128Array(MAX_OVERSAMPLE_C-1 downto 0);
-   signal readValidDelayedA2 : Slv128Array(MAX_OVERSAMPLE_C-1 downto 0);
-   signal readValidDelayedA3 : Slv128Array(MAX_OVERSAMPLE_C-1 downto 0);
+   signal readValidDelayedA0 : slv(127 downto 0);
+   signal readValidDelayedA1 : slv(127 downto 0);
+   signal readValidDelayedA2 : slv(127 downto 0);
+   signal readValidDelayedA3 : slv(127 downto 0);
    signal firstPixel         : sl := '0';
    signal firstPixelSet      : sl := '0';
    signal firstPixelRst      : sl := '0';
@@ -522,9 +522,9 @@ begin
    --Give a flag saying whether the samples are valid to read
    process(adcSampCnt,epixConfig,firstPixel,sysClkRst, pixelCnt) begin
       if sysClkRst = '1' then
-         iReadValid <= (others => '0');
+         iReadValid <= '0';
       else
-         iReadValid <= (others => '0');
+         iReadValid <= '0';
          if ASIC_TYPE_G = EPIX10KA_C then
             -- in epix10ka analog output is valid after 4 readout clocks
             if adcSampCnt < ePixConfig.adcReadsPerPixel+1 and adcSampCnt > 0 and firstPixel = '0' and pixelCnt(1 downto 0) = 3 then
@@ -587,46 +587,32 @@ begin
    process(sysClk) begin
       if rising_edge(sysClk) then
          if sysClkRst = '1' then
-            for n in 0 to MAX_OVERSAMPLE_C-1 loop
-               readValidDelayedA0(n) <= (others => '0') after tpd;
-               readValidDelayedA1(n) <= (others => '0') after tpd;
-               readValidDelayedA2(n) <= (others => '0') after tpd;
-               readValidDelayedA3(n) <= (others => '0') after tpd;
-            end loop;        
+            readValidDelayedA0 <= (others => '0') after tpd;
+            readValidDelayedA1 <= (others => '0') after tpd;
+            readValidDelayedA2 <= (others => '0') after tpd;
+            readValidDelayedA3 <= (others => '0') after tpd;       
          elsif (adcClkEdge = '1') then
             --Shift register to allow picking off delayed samples
-            for n in 0 to MAX_OVERSAMPLE_C-1 loop
-               for i in 1 to 127 loop
-                  readValidDelayedA0(n)(i) <= readValidDelayedA0(n)(i-1) after tpd; 
-                  readValidDelayedA1(n)(i) <= readValidDelayedA1(n)(i-1) after tpd; 
-                  readValidDelayedA2(n)(i) <= readValidDelayedA2(n)(i-1) after tpd; 
-                  readValidDelayedA3(n)(i) <= readValidDelayedA3(n)(i-1) after tpd; 
-               end loop;
+            for i in 1 to 127 loop
+               readValidDelayedA0(i) <= readValidDelayedA0(i-1) after tpd; 
+               readValidDelayedA1(i) <= readValidDelayedA1(i-1) after tpd; 
+               readValidDelayedA2(i) <= readValidDelayedA2(i-1) after tpd; 
+               readValidDelayedA3(i) <= readValidDelayedA3(i-1) after tpd; 
             end loop;
             --Assignment of shifted-in bits
             --Test mode can only use the first oversampling shift register
-            readValidDelayedA0(0)(0) <= iReadValid(0) or iReadValidTestMode after tpd;
-            readValidDelayedA1(0)(0) <= iReadValid(0) or iReadValidTestMode after tpd;
-            readValidDelayedA2(0)(0) <= iReadValid(0) or iReadValidTestMode after tpd;
-            readValidDelayedA3(0)(0) <= iReadValid(0) or iReadValidTestMode after tpd;
-            --The other shift registers can make use of the oversampling arrays
-            for n in 1 to MAX_OVERSAMPLE_C-1 loop
-               --For normal mode, allow multiple samples
-               readValidDelayedA0(n)(0) <= iReadValid(n) after tpd;
-               readValidDelayedA1(n)(0) <= iReadValid(n) after tpd;
-               readValidDelayedA2(n)(0) <= iReadValid(n) after tpd;
-               readValidDelayedA3(n)(0) <= iReadValid(n) after tpd;
-            end loop;
+            readValidDelayedA0(0) <= iReadValid or iReadValidTestMode after tpd;
+            readValidDelayedA1(0) <= iReadValid or iReadValidTestMode after tpd;
+            readValidDelayedA2(0) <= iReadValid or iReadValidTestMode after tpd;
+            readValidDelayedA3(0) <= iReadValid or iReadValidTestMode after tpd;
          end if;
       end if;
    end process; 
    --Wire up the delayed output
-   G_ReadValidOut : for i in 0 to MAX_OVERSAMPLE_C-1 generate
-      readValidA0(i) <= readValidDelayedA0(i)( conv_integer(epixConfig.pipelineDelayA0(6 downto 0)) );
-      readValidA1(i) <= readValidDelayedA1(i)( conv_integer(epixConfig.pipelineDelayA1(6 downto 0)) );
-      readValidA2(i) <= readValidDelayedA2(i)( conv_integer(epixConfig.pipelineDelayA2(6 downto 0)) );
-      readValidA3(i) <= readValidDelayedA3(i)( conv_integer(epixConfig.pipelineDelayA3(6 downto 0)) );
-   end generate;
+   readValidA0 <= readValidDelayedA0( conv_integer(epixConfig.pipelineDelayA0(6 downto 0)) );
+   readValidA1 <= readValidDelayedA1( conv_integer(epixConfig.pipelineDelayA1(6 downto 0)) );
+   readValidA2 <= readValidDelayedA2( conv_integer(epixConfig.pipelineDelayA2(6 downto 0)) );
+   readValidA3 <= readValidDelayedA3( conv_integer(epixConfig.pipelineDelayA3(6 downto 0)) );
    --Single bit signal that indicates whether there is anything left in the pipeline
    process(sysClk)
       variable runningOrA0 : std_logic := '0';
@@ -646,12 +632,10 @@ begin
             runningOrA2 := '0';
             runningOrA3 := '0';
             for i in 0 to 127 loop
-               for j in 0 to MAX_OVERSAMPLE_C-1 loop
-                  runningOrA0 := runningOrA0 or readValidDelayedA0(j)(i);
-                  runningOrA1 := runningOrA1 or readValidDelayedA1(j)(i);
-                  runningOrA2 := runningOrA2 or readValidDelayedA2(j)(i);
-                  runningOrA3 := runningOrA3 or readValidDelayedA3(j)(i);
-               end loop;
+               runningOrA0 := runningOrA0 or readValidDelayedA0(i);
+               runningOrA1 := runningOrA1 or readValidDelayedA1(i);
+               runningOrA2 := runningOrA2 or readValidDelayedA2(i);
+               runningOrA3 := runningOrA3 or readValidDelayedA3(i);
             end loop;
             iReadValidWaitingA0 <= runningOrA0;
             iReadValidWaitingA1 <= runningOrA1;
