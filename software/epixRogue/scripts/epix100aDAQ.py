@@ -119,10 +119,8 @@ class MbDebug(rogue.interfaces.stream.Slave):
 #######################################
 class MyRunControl(pyrogue.RunControl):
     def __init__(self,name):
-        pyrogue.RunControl.__init__(self,name,'Run Controller ePix 100a')
+        pyrogue.RunControl.__init__(self,name,'Run Controller ePix 100a',  rates={1:'1 Hz', 2:'2 Hz', 4:'4 Hz', 8:'8 Hz', 10:'10 Hz', 30:'30 Hz', 60:'60 Hz', 120:'120 Hz'})
         self._thread = None
-
-        self.runRate.enum = {1:'1 Hz', 2:'2 Hz', 4:'4 Hz', 8:'8 Hz', 10:'10 Hz', 30:'30 Hz', 60:'60 Hz', 120:'120 Hz'}
 
     def _setRunState(self,dev,var,value):
         if self._runState != value:
