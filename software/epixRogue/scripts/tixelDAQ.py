@@ -25,7 +25,6 @@ import pyrogue.utilities.fileio
 
 import pyrogue.gui
 import surf
-import surf.AxiVersion
 import surf.SsiPrbsTx
 import threading
 import signal
