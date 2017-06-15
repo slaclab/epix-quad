@@ -481,7 +481,7 @@ begin
       --since data will need to be synchronized with ASIC clock (x4).
       process(sysClk) begin
          if rising_edge(sysClk) then
-            if (ddcValid(i) = '1') then
+            if (adcValid(i) = '1') then
                adcDataToReorder(i) <= '0' & asicDoutDelayed(i) & r.adcData(i)(13 downto 0);
             end if;
          end if;
