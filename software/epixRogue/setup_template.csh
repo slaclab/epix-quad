@@ -1,7 +1,7 @@
 
 # Python 3 support
 source /afs/slac.stanford.edu/g/reseng/python/3.6.1/settings.csh
-source /afs/slac.stanford.edu/g/reseng/boost/1.62.0_p3/settings.csh
+source /afs/slac.stanford.edu/g/reseng/boost/1.64.0/settings.csh
 
 # Python 2 support
 #source /afs/slac.stanford.edu/g/reseng/python/2.7.13/settings.csh
