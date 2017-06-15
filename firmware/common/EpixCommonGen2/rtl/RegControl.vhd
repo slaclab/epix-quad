@@ -193,7 +193,7 @@ begin
       axiSlaveRegister (regCon, x"022" & "00",  0, v.epixRegOut.asicAcqWidth);
       axiSlaveRegister (regCon, x"023" & "00",  0, v.epixRegOut.asicAcqLToPPmatL);
       axiSlaveRegister (regCon, x"024" & "00",  0, v.epixRegOut.asicRoClkHalfT);
-      axiSlaveRegister (regCon, x"025" & "00",  0, v.epixRegOut.adcReadsPerPixel);  -- not used anymore
+      axiSlaveRegister (regCon, x"025" & "00",  0, v.epixRegOut.adcReadsPerPixel);  -- must be set to 1 (default). To be removed.
       axiSlaveRegister (regCon, x"026" & "00",  0, v.epixRegOut.adcClkHalfT);
       axiSlaveRegister (regCon, x"027" & "00",  0, v.epixRegOut.totalPixelsToRead);
       axiSlaveRegister (regCon, x"029" & "00",  0, v.epixRegOut.asicPins);
