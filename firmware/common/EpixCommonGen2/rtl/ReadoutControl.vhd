@@ -252,6 +252,9 @@ begin
       iAdcData(18) <= adcData(18);
       iAdcData(19) <= adcData(19);
       channelOrder <= (8,9,3,4,5,6,7,15,0,1,2,10,11,12,13,14);
+      adcMemRdOrder <= "1000001111111000";
+      --channelOrder <= (0,3,1,2,8,11,9,10,6,4,5,7,14,12,13,15);
+      --adcMemRdOrder <= x"0F0F";
       
       --iAdcValid(0) <= adcValid(8);
       --iAdcValid(1) <= adcValid(3);
@@ -296,7 +299,7 @@ begin
       asicOrder <= (3,3,3,3,2,2,2,2,0,0,0,0,1,1,1,1);
       --channelOrder <= (0,3,1,2,8,11,9,10,6,4,5,7,14,12,13,15);
       channelValid  <= (others => '1');
-      adcMemRdOrder <= x"0F0F";
+      --adcMemRdOrder <= x"0F0F";
       tpsData(0) <= r.adcData(16+1);
       tpsData(1) <= r.adcData(16+3);
       tpsData(2) <= r.adcData(16+2);
