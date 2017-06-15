@@ -54,7 +54,7 @@ class Epix100aAsic(pr.Device):
         #Setup registers & variables
                 
         # CMD = 0, Addr = 0  : Prepare for readout
-        self.add(pr.Command(name='CmdPrepForRead', description='ePix Prepare For Readout', 
+        self.add(pr.RemoteCommand(name='CmdPrepForRead', description='ePix Prepare For Readout', 
                              offset=0x00000000*addrSize, bitSize=1, bitOffset=0, function=pr.Command.touchZero, hidden=True))
         
         # CMD = 1, Addr = 1  : Bits 2:0 - Pulser monostable bits
@@ -88,16 +88,14 @@ class Epix100aAsic(pr.Device):
 
         # CMD = 1, Addr = 4  : Bits 3:0 = DM1[3:0]
         #                    : Bits 7:4 = DM2[3:0]
-        self.add(
-            pr.Variable(name='Config4', description='Config4',offset=0x00001004*addrSize, bitSize=32, bitOffset=0, base='hex', mode='RW'))
         
         self.add(
-            pr.Variable(name='DigMon1', base='enum', mode='RW', enum={0:'Clk', 1:'Exec', 2:'RoRst', 3:'Ack',
+            pr.Variable(name='DigMon1', offset=0x00001004*addrSize, bitSize=4, bitOffset=0, base='enum', mode='RW', enum={0:'Clk', 1:'Exec', 2:'RoRst', 3:'Ack',
             4:'IsEn', 5:'RoWClk', 6:'Addr0', 7:'Addr1', 8:'Addr2', 9:'Addr3', 10:'Addr4', 11:'Cmd0', 12:'Cmd1',
             13:'Cmd2', 14:'Cmd3', 15:'Config'}, description='Run rate of the system.'))         
 
         self.add(
-            pr.Variable(name='DigMon2', base='enum', mode='RW', enum={0:'Clk', 1:'Exec', 2:'RoRst', 3:'Ack',
+            pr.Variable(name='DigMon2', offset=0x00001004*addrSize, bitSize=4, bitOffset=4, base='enum', mode='RW', enum={0:'Clk', 1:'Exec', 2:'RoRst', 3:'Ack',
             4:'IsEn', 5:'RoWClk', 6:'Db0', 7:'Db1', 8:'Db2', 9:'Db3', 10:'Db4', 11:'Db5', 12:'Db6', 13:'Db7',
             14:'AddrMot', 15:'Config'}, description='Run rate of the system.'))         
  
@@ -126,14 +124,11 @@ class Epix100aAsic(pr.Device):
         #                    : Bit  7:5 = RO_Monost[2:0]
         self.add((
             pr.Variable(name='TPS_tcomp',  description='', offset=0x00001008*addrSize, bitSize=1, bitOffset=0, base='bool', mode='RW'),
-            pr.Variable(name='TPS_MUX',    description='', offset=0x00001008*addrSize, bitSize=4, bitOffset=1, base='hex',  mode='RW'),
-            pr.Variable(name='TPS_Monost', description='', offset=0x00001008*addrSize, bitSize=3, bitOffset=5, base='hex',  mode='RW')))
-        self.add(pr.Variable(name='TpsMux', base='enum', mode='RW', enum={0:'in', 1:'fin', 2:'fo', 3:'abus', 4:'cdso3', 5:'bgr_2V', 
+            pr.Variable(name='TPS_MUX',    description='', offset=0x00001008*addrSize, bitSize=4, bitOffset=1, base='enum',  mode='RW',
+            enum={0:'in', 1:'fin', 2:'fo', 3:'abus', 4:'cdso3', 5:'bgr_2V', 
              6:'bgr_2vd', 7:'vc_comp', 8:'vcmi', 9:'Pix_Vref', 10:'VtestBE', 11:'Pix_Vctrl', 12:'testline', 
-             13:'Unused13', 14:'Unused14', 15:'Unused15'}, description='Analog Test Point Multiplexer'))         
-       
-        self.add(
-            pr.Variable(name='RoMonost', description='', bitSize=8, bitOffset=0, base='hex',  mode='RW', setFunction='dev._defaultValue = value', getFunction='value = dev._defaultValue'))
+             13:'Unused13', 14:'Unused14', 15:'Unused15'}),
+            pr.Variable(name='TPS_Monost', description='', offset=0x00001008*addrSize, bitSize=3, bitOffset=5, base='hex',  mode='RW')))
 
         # CMD = 1, Addr = 9  : Bit  3:0 = S2D0_GR[3:0]
         #                    : Bit  7:4 = S2D1_GR[3:0]
@@ -230,52 +225,38 @@ class Epix100aAsic(pr.Device):
             pr.Variable(name='S2d2Dac',   description='', offset=0x00001018*addrSize, bitSize=6, bitOffset=2, base='hex', mode='RW'),
             pr.Variable(name='S2d3TcDac', description='', offset=0x00001019*addrSize, bitSize=2, bitOffset=0, base='hex', mode='RW'),
             pr.Variable(name='S2d3Dac',   description='', offset=0x00001019*addrSize, bitSize=6, bitOffset=2, base='hex', mode='RW')))
-
+        
         # CMD = 6, Addr = 17 : Row counter[8:0]
         self.add((
-            pr.Variable(name='RowCounter', description='RowCounter', bitSize=9, bitOffset=0, base='hex', mode='RW', setFunction='dev._defaultValue = value', getFunction='value = dev._defaultValue'),
-            pr.Command( name='WriteRowCounter', description='Special command to write row counter', offset=0x00006011*addrSize, bitSize=9, bitOffset=0, function=self.fnWriteRowCounter, hidden=True)))
+            pr.RemoteCommand(name='RowCounter', description='', offset=0x00006011*addrSize, bitSize=9, bitOffset=0, function=pr.Command.touch, hidden=False)))
 
         # CMD = 6, Addr = 19 : Bank select [3:0] & Col counter[6:0]
         self.add((
-            pr.Variable(name='ColCounter', description='',                                offset=0x00006013*addrSize, bitSize=7, bitOffset=0, base='hex', mode='RW'),
-            pr.Variable(name='BankSelect', description='Active low bank select bit mask', offset=0x00006013*addrSize, bitSize=4, bitOffset=7, base='hex', mode='RW')))
+            pr.RemoteCommand(name='ColCounter', description='', offset=0x00006013*addrSize, bitSize=11, bitOffset=0, function=pr.Command.touch, hidden=False)))
 
         # CMD = 2, Addr = X  : Write Row with data
         self.add((
-            pr.Command(name='WriteRowData',    description='Write PixelTest and PixelMask to selected row', offset=0x00002000*addrSize, bitSize=1, bitOffset=0, function=self.fnWriteRowData, hidden=True)))
+            pr.RemoteCommand(name='WriteRowData',    description='', offset=0x00002000*addrSize, bitSize=2, bitOffset=0, function=pr.Command.touch, hidden=False)))
 
         # CMD = 3, Addr = X  : Write Column with data
         self.add(
-            pr.Command(name='WriteColData',    description='', offset=0x00003000*addrSize, bitSize=32, bitOffset=0, function=pr.Command.touch, hidden=True))
+            pr.RemoteCommand(name='WriteColData',    description='', offset=0x00003000*addrSize, bitSize=2, bitOffset=0, function=pr.Command.touch, hidden=False))
 
-        # CMD = 4, Addr = X  : Write Matrix with data        
-        #self.add((    
-        #    pr.Command(name='WriteMatrixData', description='Write PixelTest and PixelMask to all pixels', offset=0x00004000*addrSize, bitSize=1, bitOffset=0, function=self.fnWriteMatrixData),
-        #    pr.Variable(name='PixelTest', description='', bitSize=1, bitOffset=0, base='bool', mode='RW', value=1, setFunction='dev._defaultValue = value', getFunction='value = dev._defaultValue'),
-        #    pr.Variable(name='PixelMask', description='', bitSize=1, bitOffset=0, base='bool', mode='RW', value=1, setFunction='dev._defaultValue = value', getFunction='value = dev._defaultValue')))
+        # CMD = 4, Addr = X  : Write Matrix with data  
         self.add((    
-            pr.Variable(name='WriteMatrixData', description='Write PixelTest and PixelMask to all pixels', offset=0x00004000*addrSize, bitSize=32, bitOffset=0, base='hex', mode='RW', verify=False)))
-        
-        
-
+            pr.RemoteCommand(name='WriteMatrixData', description='', offset=0x00004000*addrSize, bitSize=2, bitOffset=0, function=pr.Command.touch, hidden=False)))
+ 
         # CMD = 5, Addr = X  : Read/Write Pixel with data
-        self.add((
-            pr.Command(name='WritePixelData', description='Write PixelTest and PixelMask to current pixel only',  offset=0x00005000*addrSize, bitSize=32, bitOffset=0, function=self.fnWritePixelData),
-            pr.Command(name='ReadPixelData',  description='Read PixelTest and PixelMask from current pixel only', offset=0x00005000*addrSize, bitSize=32, bitOffset=0, function=self.fnReadPixelData)))
+        self.add(pr.RemoteCommand(name='WritePixelData',  description='WritePixelData',  offset=0x00005000*addrSize, bitSize=2, bitOffset=0,  function=pr.Command.touch, hidden=False))
 
         # CMD = 7, Addr = X  : Prepare to write chip ID
-        self.add((
-            pr.Variable(name='PrepareWriteChipIdA', description='PrepareWriteChipIdA', offset=0x00007000*addrSize, bitSize=32, bitOffset=0, base='hex', mode='RW'),
-            pr.Variable(name='PrepareWriteChipIdB', description='PrepareWriteChipIdB', offset=0x00007015*addrSize, bitSize=32, bitOffset=0, base='hex', mode='RW')))
+        #self.add((
+        #    pr.Variable(name='PrepareWriteChipIdA', description='PrepareWriteChipIdA', offset=0x00007000*addrSize, bitSize=32, bitOffset=0, base='hex', mode='RO'),
+        #    pr.Variable(name='PrepareWriteChipIdB', description='PrepareWriteChipIdB', offset=0x00007015*addrSize, bitSize=32, bitOffset=0, base='hex', mode='RO')))
       
         # CMD = 8, Addr = X  : Prepare for row/column/matrix configuration
         self.add(
-            pr.Command(name='PrepareMultiConfig', description='PrepareMultiConfig', offset=0x00008000*addrSize, bitSize=32, bitOffset=0, function=pr.Command.touchZero))
-
-        # Pixel Configuration
-        #                    : Bit 0 = Test
-        #                    : Bit 1 = Test
+            pr.RemoteCommand(name='PrepareMultiConfig', description='PrepareMultiConfig', offset=0x00008000*addrSize, bitSize=32, bitOffset=0, function=pr.Command.touchZero, hidden=False))
 
 
 
@@ -292,6 +273,62 @@ class Epix100aAsic(pr.Device):
         self.add(
             pr.Command(name='ClearMatrix',description='Clear configuration bits of all pixels', function=self.fnClearMatrix))
 
+        self.add(
+            pr.Command(name='SetPixelBitmap',description='Set pixel bitmap of the matrix', function=self.fnSetPixelBitmap))
+        
+        self.add(
+            pr.Command(name='GetPixelBitmap',description='Get pixel bitmap of the matrix', function=self.fnGetPixelBitmap))
+
+    def fnSetPixelBitmap(self, dev,cmd,arg):
+        """SetPixelBitmap command function"""
+        self.reportCmd(dev,cmd,arg)
+        self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+        if os.path.splitext(self.filename)[1] == '.csv':
+            matrixCfg = np.genfromtxt(self.filename, delimiter=',')
+            if matrixCfg.shape == (354, 384):
+                for x in range (0, 354):
+                    self.RowCounter.set(x)
+                    for y in range (0, 384):
+                        bankToWrite = int(y/96);
+                        if (bankToWrite == 0):
+                           colToWrite = 0x700 + y%96;
+                        elif (bankToWrite == 1):
+                           colToWrite = 0x680 + y%96;
+                        elif (bankToWrite == 2):
+                           colToWrite = 0x580 + y%96;
+                        elif (bankToWrite == 3):
+                           colToWrite = 0x380 + y%96;
+                        else:
+                           print('unexpected bank number')
+                        self.ColCounter.set(colToWrite)
+                        self.WritePixelData.set(int(matrixCfg[x][y]))
+                self.CmdPrepForRead()
+            else:
+                print('csv file must be 384x354 pixels')
+
+    def fnGetPixelBitmap(self, dev,cmd,arg):
+        """GetPixelBitmap command function"""
+        self.reportCmd(dev,cmd,arg)
+        self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+        if os.path.splitext(self.filename)[1] == '.csv':
+            readBack = np.zeros((354, 384),dtype='uint16')
+            for x in range (0, 354):
+               self.RowCounter.set(x)
+               for y in range (0, 384):
+                  bankToWrite = int(y/96);
+                  if (bankToWrite == 0):
+                     colToWrite = 0x700 + y%96;
+                  elif (bankToWrite == 1):
+                     colToWrite = 0x680 + y%96;
+                  elif (bankToWrite == 2):
+                     colToWrite = 0x580 + y%96;
+                  elif (bankToWrite == 3):
+                     colToWrite = 0x380 + y%96;
+                  else:
+                     print('unexpected bank number')
+                  self.ColCounter.set(colToWrite)
+                  readBack[x, y] = self.WritePixelData.get()
+            np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
        
 
     def fnClearMatrix(self, dev,cmd,arg):
@@ -299,52 +336,9 @@ class Epix100aAsic(pr.Device):
         self.reportCmd(dev,cmd,arg)
         for i in range (0, 96):
             self.PrepareMultiConfig()
-            self.ColCounter.post(i)
-            self.WriteColData()
+            self.ColCounter.set(i)
+            self.WriteColData.set(0)
         self.CmdPrepForRead()
-
-    def fnWriteMatrixData(self,dev,cmd,arg):
-        """WriteMatrixData command function"""
-        self.reportCmd(dev,cmd,arg)
-        self.PrepareMultiConfig()
-        self.WriteMatrixData.post((self.PixelTest.get() << 1) | (self.PixelMask.get()))
-        self.CmdPrepForRead()
-
-    def fnWriteRowCounter(self,dev,cmd,arg):
-        """WriteRowCounter command function"""
-        self.reportCmd(self,dev,cmd,arg)
-        self.CmdPrepForRead()
-        self.WriteRowCounter.post(self.RowCounter.get())
-        
-
-    def fnWritePixelData(self,dev,cmd,arg):
-        """WritePixelData command function"""
-        self.reportCmd(self,dev,cmd,arg)
-        self.PrepareMultiConfig()
-        self.WriteRowCounter()
-        self.ColCounter.post(self.ColCounter.get())
-        self.BankSelect.post(self.BankSelect.get())
-        self.PixelTest.post(self.PixelTest.get())
-        self.PixelMask.post(self.PixelMask.get())
-
-    def fnReadPixelData(self, dev,cmd,arg):
-        """ReadPixelData command function"""
-        self.reportCmd(self,dev,cmd,arg)
-        self.PrepareMultiConfig()
-        self.RowCounter.post(self.RowCounter.get())
-        self.ColCounter.post(self.ColCounter.get())
-        self.BankSelect.post(self.BankSelect.get())
-        self.PixelTest.get()
-        self.PixelMask.get()
-
-    def fnWriteRowData(self, dev,cmd,arg):
-        """WriteRowData command function"""
-        self.reportCmd(self,dev,cmd,arg)
-        self.CmdPrepForRead()
-        self.PrepareMultiConfig()
-        self.RowCounter.post(self.RowCounter.get())
-        self.PixelTest.post(self.PixelTest.get())
-        self.PixelMask.post(self.PixelMask.get())
 
     # standard way to report a command has been executed
     def reportCmd(self, dev,cmd,arg):
@@ -546,17 +540,10 @@ class Epix10kaAsic(pr.Device):
         # CMD = 6, Addr = 17 : Row counter[8:0]
         self.add((
             pr.RemoteCommand(name='RowCounter', description='', offset=0x00006011*addrSize, bitSize=9, bitOffset=0, function=pr.Command.touch, hidden=False)))
-        #self.add((
-        #    pr.Variable(name='RowCounter', description='RowCounter', bitSize=9, bitOffset=0, base='hex', mode='RW', setFunction='dev._defaultValue = value', getFunction='value = dev._defaultValue'),
-        #    pr.Command( name='WriteRowCounter', description='Special command to write row counter', offset=0x00006011*addrSize, bitSize=9, bitOffset=0, function=self.fnWriteRowCounter, hidden=True)))
 
         # CMD = 6, Addr = 19 : Bank select [3:0] & Col counter[6:0]
         self.add((
             pr.RemoteCommand(name='ColCounter', description='', offset=0x00006013*addrSize, bitSize=11, bitOffset=0, function=pr.Command.touch, hidden=False)))
-        #self.add((
-        #    pr.Variable(name='ColCounter', description='',                                offset=0x00006013*addrSize, bitSize=7, bitOffset=0, base='hex', mode='RW'),
-        #    pr.Variable(name='BankSelect', description='Active low bank select bit mask', offset=0x00006013*addrSize, bitSize=4, bitOffset=7, base='hex', mode='RW')))
-
 
         # CMD = 2, Addr = X  : Write Row with data
         self.add((
@@ -569,17 +556,10 @@ class Epix10kaAsic(pr.Device):
         # CMD = 4, Addr = X  : Write Matrix with data  
         self.add((    
             pr.RemoteCommand(name='WriteMatrixData', description='', offset=0x00004000*addrSize, bitSize=4, bitOffset=0, function=pr.Command.touch, hidden=False)))
-        #self.add((    
-        #    pr.Command(name='WriteMatrixData', description='Write PixelTest and PixelMask to all pixels', offset=0x00004000*addrSize, bitSize=1, bitOffset=0, function=self.fnWriteMatrixData),
-        #    pr.Variable(name='PixelTest', description='', bitSize=1, bitOffset=0, base='bool', mode='RW', value=1, setFunction='dev._defaultValue = value', getFunction='value = dev._defaultValue'),
-        #    pr.Variable(name='PixelMask', description='', bitSize=1, bitOffset=0, base='bool', mode='RW', value=1, setFunction='dev._defaultValue = value', getFunction='value = dev._defaultValue')))
-        
+   
         # CMD = 5, Addr = X  : Read/Write Pixel with data
-        self.add(pr.RemoteCommand(name='WritePixelData',  description='WritePixelData',  offset=0x00005000*addrSize, bitSize=4, bitOffset=0,  hidden=True))
-        #self.add((
-        #    pr.Command(name='WritePixelData', description='WritePixelData',  offset=0x00005000*addrSize, bitSize=32, bitOffset=0),
-        #    pr.Command(name='ReadPixelData',  description='ReadPixelData',   offset=0x00005000*addrSize, bitSize=32, bitOffset=0)))
-
+        self.add(pr.RemoteCommand(name='WritePixelData',  description='WritePixelData',  offset=0x00005000*addrSize, bitSize=4, bitOffset=0,  function=pr.Command.touch, hidden=False))
+ 
         # CMD = 7, Addr = X  : Prepare to write chip ID
         #self.add((
         #    pr.Variable(name='PrepareWriteChipIdA', description='PrepareWriteChipIdA', offset=0x00007000*addrSize, bitSize=32, bitOffset=0, base='hex', mode='RO'),
@@ -589,9 +569,6 @@ class Epix10kaAsic(pr.Device):
         self.add(
             pr.RemoteCommand(name='PrepareMultiConfig', description='PrepareMultiConfig', offset=0x00008000*addrSize, bitSize=32, bitOffset=0, function=pr.Command.touchZero, hidden=False))
 
-        # Pixel Configuration
-        #                    : Bit 0 = Test
-        #                    : Bit 1 = Test
 
 
 
@@ -613,22 +590,17 @@ class Epix10kaAsic(pr.Device):
         
         self.add(
             pr.Command(name='GetPixelBitmap',description='Get pixel bitmap of the matrix', function=self.fnGetPixelBitmap))
-        
-        self.add(
-            pr.Command(name='TestCommand',description='', function=self.fnTestCommand))
 
     def fnSetPixelBitmap(self, dev,cmd,arg):
         """SetPixelBitmap command function"""
         self.reportCmd(dev,cmd,arg)
         self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
         if os.path.splitext(self.filename)[1] == '.csv':
-            tixelCfg = np.genfromtxt(self.filename, delimiter=',')
-            if tixelCfg.shape == (178, 192):
+            matrixCfg = np.genfromtxt(self.filename, delimiter=',')
+            if matrixCfg.shape == (178, 192):
                 for x in range (0, 178):
-                #for x in range (0, 30):
                     self.RowCounter.set(x)
                     for y in range (0, 192):
-                    #for y in range (0, 30):
                         bankToWrite = int(y/48);
                         if (bankToWrite == 0):
                            colToWrite = 0x700 + y%48;
@@ -641,7 +613,7 @@ class Epix10kaAsic(pr.Device):
                         else:
                            print('unexpected bank number')
                         self.ColCounter.set(colToWrite)
-                        self.WritePixelData.set(int(tixelCfg[x][y]))
+                        self.WritePixelData.set(int(matrixCfg[x][y]))
                 self.CmdPrepForRead()
             else:
                 print('csv file must be 192x178 pixels')
@@ -653,10 +625,8 @@ class Epix10kaAsic(pr.Device):
         if os.path.splitext(self.filename)[1] == '.csv':
             readBack = np.zeros((178, 192),dtype='uint16')
             for x in range (0, 178):
-            #for x in range (0, 30):
                self.RowCounter.set(x)
                for y in range (0, 192):
-               #for y in range (0, 30):
                   bankToWrite = int(y/48);
                   if (bankToWrite == 0):
                      colToWrite = 0x700 + y%48;
@@ -680,32 +650,6 @@ class Epix10kaAsic(pr.Device):
             self.PrepareMultiConfig()
             self.ColCounter.set(i)
             self.WriteColData.set(0)
-        self.CmdPrepForRead()
-   
-    def fnTestCommand(self, dev,cmd,arg):
-        """ClearMatrix command function"""
-        self.reportCmd(dev,cmd,arg)
-        
-        self.ClearMatrix()
-        
-        self.PrepareMultiConfig()
-        self.ColCounter.set(0x700+0)
-        self.WriteColData.set(10)
-        self.CmdPrepForRead()
-        
-        self.PrepareMultiConfig()
-        self.ColCounter.set(0x680+1)
-        self.WriteColData.set(10)
-        self.CmdPrepForRead()
-        
-        self.PrepareMultiConfig()
-        self.ColCounter.set(0x580+2)
-        self.WriteColData.set(10)
-        self.CmdPrepForRead()
-        
-        self.PrepareMultiConfig()
-        self.ColCounter.set(0x380+3)
-        self.WriteColData.set(10)
         self.CmdPrepForRead()
 
 
@@ -819,39 +763,27 @@ class TixelAsic(pr.Device):
          
         # CMD = 6, Addr = 17 : Row counter[8:0]
         self.add((
-            pr.RemoteCommand(name='RowCounter', description='', offset=0x00006001*addrSize, bitSize=8, bitOffset=0, hidden=True)))
-        #self.add((
-        #    pr.Variable(name='RowCounter', description='RowCounter', bitSize=9, bitOffset=0, base='hex', mode='RW', setFunction='dev._defaultValue = value', getFunction='value = dev._defaultValue'),
-        #    pr.Command( name='WriteRowCounter', description='Special command to write row counter', offset=0x00006001*addrSize, bitSize=8, bitOffset=0, function=self.fnWriteRowCounter, hidden=True)))
-
+            pr.RemoteCommand(name='RowCounter', description='', offset=0x00006001*addrSize, bitSize=8, bitOffset=0, function=pr.Command.touch, hidden=False)))
+        
         # CMD = 6, Addr = 19 : Bank select [3:0] & Col counter[6:0]
         self.add((
-            pr.RemoteCommand(name='ColCounter', description='', offset=0x00006003*addrSize, bitSize=8, bitOffset=0, hidden=True)))
+            pr.RemoteCommand(name='ColCounter', description='', offset=0x00006003*addrSize, bitSize=8, bitOffset=0, function=pr.Command.touch, hidden=False)))
             
         # CMD = 2, Addr = X  : Write Row with data
         self.add((
-            pr.RemoteCommand(name='WriteRowData',    description='', offset=0x00002000*addrSize, bitSize=2, bitOffset=0, hidden=True)))
+            pr.RemoteCommand(name='WriteRowData',    description='', offset=0x00002000*addrSize, bitSize=2, bitOffset=0, function=pr.Command.touch, hidden=False)))
 
         # CMD = 3, Addr = X  : Write Column with data
         self.add(
-            pr.RemoteCommand(name='WriteColData',    description='', offset=0x00003000*addrSize, bitSize=2, bitOffset=0, hidden=True))
+            pr.RemoteCommand(name='WriteColData',    description='', offset=0x00003000*addrSize, bitSize=2, bitOffset=0, function=pr.Command.touch, hidden=False))
 
         # CMD = 4, Addr = X  : Write Matrix with data        
         self.add((    
-            pr.RemoteCommand(name='WriteMatrixData', description='', offset=0x00004000*addrSize, bitSize=2, bitOffset=0, hidden=True)))
-        
-        #self.add((    
-        #    pr.Command(name='WriteMatrixData', description='Write PixelTest and PixelMask to all pixels', offset=0x00004000*addrSize, bitSize=1, bitOffset=0, function=self.fnWriteMatrixData),
-        #    pr.Variable(name='PixelTest', description='', bitSize=1, bitOffset=0, base='bool', mode='RW', value=1, setFunction='dev._defaultValue = value', getFunction='value = dev._defaultValue'),
-        #    pr.Variable(name='PixelMask', description='', bitSize=1, bitOffset=0, base='bool', mode='RW', value=1, setFunction='dev._defaultValue = value', getFunction='value = dev._defaultValue')))
-        
+            pr.RemoteCommand(name='WriteMatrixData', description='', offset=0x00004000*addrSize, bitSize=2, bitOffset=0, function=pr.Command.touch, hidden=False)))   
         
 
         # CMD = 5, Addr = X  : Read/Write Pixel with data
-        self.add(pr.RemoteCommand(name='WritePixelData',  description='WritePixelData',  offset=0x00005000*addrSize, bitSize=2, bitOffset=0, hidden=True))
-        #self.add((
-        #    pr.Command(name='WritePixelData', description='Write PixelTest and PixelMask to current pixel only',  offset=0x00005000*addrSize, bitSize=32, bitOffset=0, function=self.fnWritePixelData),
-        #    pr.Command(name='ReadPixelData',  description='Read PixelTest and PixelMask from current pixel only', offset=0x00005000*addrSize, bitSize=32, bitOffset=0, function=self.fnReadPixelData)))
+        self.add(pr.RemoteCommand(name='WritePixelData',  description='WritePixelData',  offset=0x00005000*addrSize, bitSize=2, bitOffset=0, function=pr.Command.touch, hidden=False))
 
         # CMD = 7, Addr = X  : Prepare to write chip ID
         #self.add((
@@ -860,11 +792,7 @@ class TixelAsic(pr.Device):
       
         # CMD = 8, Addr = X  : Prepare for row/column/matrix configuration
         self.add(
-            pr.RemoteCommand(name='PrepareMultiConfig', description='PrepareMultiConfig', offset=0x00008000*addrSize, bitSize=32, bitOffset=0, function=pr.Command.touchZero, hidden=True))
-
-        # Pixel Configuration
-        #                    : Bit 0 = Test
-        #                    : Bit 1 = Test
+            pr.RemoteCommand(name='PrepareMultiConfig', description='PrepareMultiConfig', offset=0x00008000*addrSize, bitSize=32, bitOffset=0, function=pr.Command.touchZero, hidden=False))
 
 
 
@@ -892,13 +820,13 @@ class TixelAsic(pr.Device):
         self.reportCmd(dev,cmd,arg)
         self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
         if os.path.splitext(self.filename)[1] == '.csv':
-            tixelCfg = np.genfromtxt(self.filename, delimiter=',')
-            if tixelCfg.shape == (48, 48):
+            matrixCfg = np.genfromtxt(self.filename, delimiter=',')
+            if matrixCfg.shape == (48, 48):
                 for x in range (0, 48):
                     self.RowCounter.set(x)
                     for y in range (0, 48):
                         self.ColCounter.set(y)
-                        self.WritePixelData.set(int(tixelCfg[x][y]))
+                        self.WritePixelData.set(int(matrixCfg[x][y]))
                 self.CmdPrepForRead()
             else:
                 print('csv file must be 48x48 pixels')

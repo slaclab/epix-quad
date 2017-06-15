@@ -329,7 +329,7 @@ class Epix100aFpgaRegisters(pr.Device):
       self.add(pr.Command(name='testCpsw',      description='Test CPSW',          function=collections.OrderedDict({ 'masterResetVar': 1, 'usleep': 100, 'counter': 1 })))
 
       # Overwrite reset calls with local functions
-      self.setResetFunc(self.resetFunc)
+      #self.setResetFunc(self.resetFunc)
      
 
    def cmdFpgaReload(dev,cmd,arg):
