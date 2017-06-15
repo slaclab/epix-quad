@@ -379,12 +379,12 @@ class Epix10ka(pr.Device):
             epix.Epix10kaAsic(name='Epix10kaAsic2', offset=0x02800000, enabled=False, expand=False),
             epix.Epix10kaAsic(name='Epix10kaAsic3', offset=0x02C00000, enabled=False, expand=False),
             axi.AxiVersion(offset=0x08000000),
-            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[0]', offset=0x14000000, channels=8, enabled=False, expand=False),
-            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[1]', offset=0x18000000, channels=8, enabled=False, expand=False),
-            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[1].Adc[0]', offset=0x1C000000, channels=4, enabled=False, expand=False),
-            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]', offset=0x20000000, enabled=False, expand=False),
-            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]', offset=0x20000800, enabled=False, expand=False),
-            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]', offset=0x20001000, enabled=False, expand=False),
+            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout0Adc0', offset=0x14000000, channels=8, enabled=False, expand=False),
+            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout0Adc1', offset=0x18000000, channels=8, enabled=False, expand=False),
+            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout1Adc0', offset=0x1C000000, channels=4, enabled=False, expand=False),
+            analog_devices.Ad9249ConfigGroup(name='Ad9249Config0Adc0', offset=0x20000000, enabled=False, expand=False),
+            analog_devices.Ad9249ConfigGroup(name='Ad9249Config0Adc1', offset=0x20000800, enabled=False, expand=False),
+            analog_devices.Ad9249ConfigGroup(name='Ad9249Config1Adc0', offset=0x20001000, enabled=False, expand=False),
             MicroblazeLog(name='MicroblazeLog', offset=0x24000000, expand=False)))
       
 
