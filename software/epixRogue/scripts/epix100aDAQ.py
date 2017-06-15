@@ -22,9 +22,10 @@
 import rogue.hardware.pgp
 import pyrogue.utilities.prbs
 import pyrogue.utilities.fileio
-#import pyrogue.epics
 import pyrogue.gui
 import surf
+import surf.axi
+import surf.protocols.ssi
 import threading
 import signal
 import atexit
@@ -34,15 +35,17 @@ import sys
 import testBridge
 import PyQt4.QtGui
 import PyQt4.QtCore
-import ePixFpga as fpga
 import ePixViewer as vi
+import ePixFpga as fpga
 
 #############################################
 # Define if the GUI is started (1 starts it)
 START_GUI = True
 START_VIEWER = False
 #############################################
-
+#print debug info
+PRINT_VERBOSE = False
+#############################################
 
 # Create the PGP interfaces for ePix camera
 pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,0) # Data & cmds
@@ -144,26 +147,29 @@ class MyRunControl(pyrogue.RunControl):
                 self._last = int(time.time()) 
                 self.runCount._updated() 
 
+
             
 ##############################
 # Set base
 ##############################
 class EpixBoard(pyrogue.Root):
-    def __init__(self, cmd, dataWriter, srp, **kwargs):
+    def __init__(self, guiTop, cmd, dataWriter, srp, **kwargs):
         super().__init__('ePixBoard','ePix 100a Board', pollEn=False, **kwargs)
-        self.add(MyRunControl('runControl'))
+        #self.add(MyRunControl('runControl'))
         self.add(dataWriter)
-
-        # Add Devices, defined at AxiVersionEpix100a file
-        #self.add(digFpga.create(name='DigFpga', offset=0, memBase=srp, hidden=False, enabled=True))
-        self.add(fpga.Epix100a(name='ePix 100a FPGA', offset=0, memBase=srp, hidden=False, enabled=True))
+        self.guiTop = guiTop
 
         @self.command()
         def Trigger():
             cmd.sendCmd(0, 0)
+        
+        # Add Devices, defined at AxiVersionEpix100a file
+        self.add(fpga.Epix100a(name='ePix 100a FPGA', offset=0, memBase=srp, hidden=False, enabled=True))
+        self.add(pyrogue.RunControl(name = 'runControl', description='Run Controller ePix 10ka', cmd=self.Trigger, rates={1:'1 Hz', 2:'2 Hz', 4:'4 Hz', 8:'8 Hz', 10:'10 Hz', 30:'30 Hz', 60:'60 Hz', 120:'120 Hz'}))
 
 
-ePixBoard = EpixBoard(cmd, dataWriter, srp)
+
+
 
 # debug
 #mbcon = MbDebug()
@@ -175,14 +181,15 @@ ePixBoard = EpixBoard(cmd, dataWriter, srp)
 #mbcon2 = MbDebug()
 #pyrogue.streamTap(pgpVc3,mbcon)
 
-#dbgData = rogue.interfaces.stream.Slave()
-#dbgData.setDebug(60, "DATA[{}]".format(0))
-#pyrogue.streamTap(pgpVc0, dbgData)
+if (PRINT_VERBOSE): dbgData = rogue.interfaces.stream.Slave()
+if (PRINT_VERBOSE): dbgData.setDebug(60, "DATA[{}]".format(0))
+if (PRINT_VERBOSE): pyrogue.streamTap(pgpVc0, dbgData)
 
 
 # Create GUI
 appTop = PyQt4.QtGui.QApplication(sys.argv)
 guiTop = pyrogue.gui.GuiTop('ePix100aGui')
+ePixBoard = EpixBoard(guiTop, cmd, dataWriter, srp)
 guiTop.addTree(ePixBoard)
 guiTop.resize(1000,1000)
 

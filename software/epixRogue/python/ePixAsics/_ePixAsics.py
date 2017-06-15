@@ -282,7 +282,10 @@ class Epix100aAsic(pr.Device):
     def fnSetPixelBitmap(self, dev,cmd,arg):
         """SetPixelBitmap command function"""
         self.reportCmd(dev,cmd,arg)
-        self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+        if len(arg) > 0:
+           self.filename = arg
+        else:
+           self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
         if os.path.splitext(self.filename)[1] == '.csv':
             matrixCfg = np.genfromtxt(self.filename, delimiter=',')
             if matrixCfg.shape == (354, 384):
@@ -305,11 +308,16 @@ class Epix100aAsic(pr.Device):
                 self.CmdPrepForRead()
             else:
                 print('csv file must be 384x354 pixels')
+        else:
+            print("Not csv file : ", self.filename)
 
     def fnGetPixelBitmap(self, dev,cmd,arg):
         """GetPixelBitmap command function"""
         self.reportCmd(dev,cmd,arg)
-        self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+        if len(arg) > 0:
+           self.filename = arg
+        else:
+           self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
         if os.path.splitext(self.filename)[1] == '.csv':
             readBack = np.zeros((354, 384),dtype='uint16')
             for x in range (0, 354):
@@ -594,7 +602,10 @@ class Epix10kaAsic(pr.Device):
     def fnSetPixelBitmap(self, dev,cmd,arg):
         """SetPixelBitmap command function"""
         self.reportCmd(dev,cmd,arg)
-        self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+        if len(arg) > 0:
+           self.filename = arg
+        else:
+           self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
         if os.path.splitext(self.filename)[1] == '.csv':
             matrixCfg = np.genfromtxt(self.filename, delimiter=',')
             if matrixCfg.shape == (178, 192):
@@ -617,11 +628,16 @@ class Epix10kaAsic(pr.Device):
                 self.CmdPrepForRead()
             else:
                 print('csv file must be 192x178 pixels')
+        else:
+            print("Not csv file : ", self.filename)
 
     def fnGetPixelBitmap(self, dev,cmd,arg):
         """GetPixelBitmap command function"""
         self.reportCmd(dev,cmd,arg)
-        self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+        if len(arg) > 0:
+           self.filename = arg
+        else:
+           self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
         if os.path.splitext(self.filename)[1] == '.csv':
             readBack = np.zeros((178, 192),dtype='uint16')
             for x in range (0, 178):
@@ -818,7 +834,10 @@ class TixelAsic(pr.Device):
     def fnSetPixelBitmap(self, dev,cmd,arg):
         """SetPixelBitmap command function"""
         self.reportCmd(dev,cmd,arg)
-        self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+        if len(arg) > 0:
+           self.filename = arg
+        else:
+           self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
         if os.path.splitext(self.filename)[1] == '.csv':
             matrixCfg = np.genfromtxt(self.filename, delimiter=',')
             if matrixCfg.shape == (48, 48):
@@ -830,10 +849,15 @@ class TixelAsic(pr.Device):
                 self.CmdPrepForRead()
             else:
                 print('csv file must be 48x48 pixels')
+        else:
+            print("Not csv file : ", self.filename)
 
     def fnGetPixelBitmap(self, dev,cmd,arg):
         """GetPixelBitmap command function"""
-        self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+        if len(arg) > 0:
+           self.filename = arg
+        else:
+           self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
         if os.path.splitext(self.filename)[1] == '.csv':
             readBack = np.zeros((48,48),dtype='uint16')
             for x in range (0, 48):

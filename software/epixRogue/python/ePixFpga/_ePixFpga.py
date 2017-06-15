@@ -208,7 +208,7 @@ class Epix100a(pr.Device):
       
       super(self.__class__, self).__init__(**kwargs)
       self.add((
-            Epix100aFpgaRegisters(name="EpixFpgaRegisters", offset=0x00000000, expand=False),
+            Epix100aFpgaRegisters(name="EpixFpgaRegisters", offset=0x00000000, expand=True),
             OscilloscopeRegisters(name='Oscilloscope', offset=0x00000140, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum),
             pgp.Pgp2bAxi(name='Pgp2bAxi', offset=0x00300000, expand=False),
             epix.Epix100aAsic(name='Epix100aAsic0', offset=0x00800000*addrSize, hidden=False, enabled=False, expand=False),
@@ -287,10 +287,10 @@ class Epix100aFpgaRegisters(pr.Device):
       self.add(pr.Variable(name='AdcPatternEnable',    description='Enables test pattern on data out',                        offset=0x0000002A*addrSize, bitSize=1,  bitOffset=8, base='bool', mode='RW'))
       self.add(pr.Variable(name='AsicR0Mode',          description='AsicR0Mode',                                              offset=0x0000002A*addrSize, bitSize=1,  bitOffset=11,base='bool', mode='RW'))
       self.add(pr.Variable(name='AsicR0Width',         description='Width of R0 low pulse',                                   offset=0x0000002B*addrSize, bitSize=31, bitOffset=0, base='hex',  mode='RW'))
-      self.add(pr.Variable(name='DigitalCardId0',      description='Digital Card Serial Number (low 32 bits)',                offset=0x00000030*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RW'))
-      self.add(pr.Variable(name='DigitalCardId1',      description='Digital Card Serial Number (high 32 bits)',               offset=0x00000031*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RW'))
-      self.add(pr.Variable(name='AnalogCardId0',       description='Analog Card Serial Number (low 32 bits)',                 offset=0x00000032*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RW'))
-      self.add(pr.Variable(name='AnalogCardId1',       description='Analog Card Serial Number (high 32 bits)',                offset=0x00000033*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RW'))
+      self.add(pr.Variable(name='DigitalCardId0',      description='Digital Card Serial Number (low 32 bits)',                offset=0x00000030*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
+      self.add(pr.Variable(name='DigitalCardId1',      description='Digital Card Serial Number (high 32 bits)',               offset=0x00000031*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
+      self.add(pr.Variable(name='AnalogCardId0',       description='Analog Card Serial Number (low 32 bits)',                 offset=0x00000032*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
+      self.add(pr.Variable(name='AnalogCardId1',       description='Analog Card Serial Number (high 32 bits)',                offset=0x00000033*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
       self.add(pr.Variable(name='AsicPreAcqTime',      description='Sum of time delays leading to the ASIC ACQ pulse',        offset=0x00000039*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
       self.add(pr.Variable(name='AsicPPmatToReadout',  description='Delay (in 10ns) between Ppmat pulse and readout',         offset=0x0000003A*addrSize, bitSize=31, bitOffset=0, base='hex',  mode='RW'))
       self.add(pr.Variable(name='CarrierCardId0',      description='Carrier Card Serial Number (low 32 bits)',                offset=0x0000003B*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
@@ -451,10 +451,10 @@ class Epix10kaFpgaRegisters(pr.Device):
       self.add(pr.Variable(name='AdcPatternEnable',    description='Enables test pattern on data out',                        offset=0x0000002A*addrSize, bitSize=1,  bitOffset=8, base='bool', mode='RW'))
       self.add(pr.Variable(name='AsicR0Mode',          description='AsicR0Mode',                                              offset=0x0000002A*addrSize, bitSize=1,  bitOffset=11,base='bool', mode='RW'))
       self.add(pr.Variable(name='AsicR0Width',         description='Width of R0 low pulse',                                   offset=0x0000002B*addrSize, bitSize=31, bitOffset=0, base='hex',  mode='RW'))
-      self.add(pr.Variable(name='DigitalCardId0',      description='Digital Card Serial Number (low 32 bits)',                offset=0x00000030*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RW'))
-      self.add(pr.Variable(name='DigitalCardId1',      description='Digital Card Serial Number (high 32 bits)',               offset=0x00000031*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RW'))
-      self.add(pr.Variable(name='AnalogCardId0',       description='Analog Card Serial Number (low 32 bits)',                 offset=0x00000032*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RW'))
-      self.add(pr.Variable(name='AnalogCardId1',       description='Analog Card Serial Number (high 32 bits)',                offset=0x00000033*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RW'))
+      self.add(pr.Variable(name='DigitalCardId0',      description='Digital Card Serial Number (low 32 bits)',                offset=0x00000030*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
+      self.add(pr.Variable(name='DigitalCardId1',      description='Digital Card Serial Number (high 32 bits)',               offset=0x00000031*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
+      self.add(pr.Variable(name='AnalogCardId0',       description='Analog Card Serial Number (low 32 bits)',                 offset=0x00000032*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
+      self.add(pr.Variable(name='AnalogCardId1',       description='Analog Card Serial Number (high 32 bits)',                offset=0x00000033*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
       self.add(pr.Variable(name='AsicPreAcqTime',      description='Sum of time delays leading to the ASIC ACQ pulse',        offset=0x00000039*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
       self.add(pr.Variable(name='AsicPPmatToReadout',  description='Delay (in 10ns) between Ppmat pulse and readout',         offset=0x0000003A*addrSize, bitSize=31, bitOffset=0, base='hex',  mode='RW'))
       self.add(pr.Variable(name='CarrierCardId0',      description='Carrier Card Serial Number (low 32 bits)',                offset=0x0000003B*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
