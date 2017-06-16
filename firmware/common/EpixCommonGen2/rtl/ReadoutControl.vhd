@@ -285,7 +285,7 @@ begin
          risingEdge => acqStartEdge
       );
 
-   process(adcFifoRdValid,channelOrder,mAxisSlave,r, acqBusy) begin
+   process(adcFifoRdValid,channelOrder, doutOrder,mAxisSlave,r, acqBusy) begin
       for i in 0 to 15 loop
          -- read ADC FIFOs
          if (r.state = READ_FIFO_S and i = channelOrder(conv_integer(r.chCnt)) and 
