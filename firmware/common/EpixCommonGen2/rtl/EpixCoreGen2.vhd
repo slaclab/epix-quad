@@ -224,7 +224,6 @@ architecture top_level of EpixCoreGen2 is
    signal readTps            : sl;
    signal saciPrepReadoutReq : sl;
    signal saciPrepReadoutAck : sl;
-   signal iAsicDoutNo        : slv(1 downto 0);
    
    -- Power up reset to SERDES block
    signal adcCardPowerUp     : sl;
@@ -262,6 +261,9 @@ architecture top_level of EpixCoreGen2 is
    
    signal iAdcSpiCsb : slv(3 downto 0);
    signal iAdcPdwn   : slv(3 downto 0);
+   
+   signal doutOut    : Slv2Array(15 downto 0);
+   signal doutRd     : slv(15 downto 0);
    
    constant DDR_AXI_CONFIG_C : AxiConfigType := axiConfig(
       ADDR_WIDTH_C => 30,
@@ -635,7 +637,28 @@ begin
       acqStart       => acqStart,
       dataSend       => dataSend
    );   
-
+   
+   ---------------------------------------------------------------
+   -- Digital output deserializer only for EPIX10KA
+   --------------------- ------------------------------------------
+   G_DOUT_EPIX10KA : if ASIC_TYPE_G = EPIX10KA_C generate
+   
+      U_AcqControl : entity work.DoutDeserializer
+      port map ( 
+         clk         => coreClk,
+         rst         => axiRst,
+         acqBusy     => acqBusy,
+         asicDout    => asicDout,
+         asicRoClk   => iAsicRoClk,
+         asicLatency => epixConfig.doutPipelineDelay,
+         doutOut     => doutOut,
+         doutRd      => doutRd
+      );
+      
+   end generate;
+   G_DOUT_NONE : if ASIC_TYPE_G /= EPIX10KA_C generate
+      doutOut <= (others=>(others=>'0'));
+   end generate;
    ---------------------
    -- Acq control     --
    ---------------------      
@@ -666,8 +689,7 @@ begin
       asicGlblRst     => iAsicGrst,
       asicAcq         => iAsicAcq,
       asicSync        => iAsicSync,
-      asicRoClk       => iAsicRoClk,
-      asicDoutNo      => iAsicDoutNo
+      asicRoClk       => iAsicRoClk
    );
  
    ---------------------
@@ -702,8 +724,8 @@ begin
       mAxisMaster    => dataAxisMaster,
       mAxisSlave     => dataAxisSlave,
       mpsOut         => open,
-      asicDout       => asicDout,
-      asicDoutNo     => iAsicDoutNo
+      doutOut        => doutOut,
+      doutRd         => doutRd
    );
    
    GenAdcStr : for i in 0 to 19 generate 

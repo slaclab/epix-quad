@@ -83,11 +83,10 @@ entity ReadoutControl is
 
       -- MPS
       mpsOut              : out   sl;
-
-      -- ASIC digital outputs
-      asicDout            : in    slv(3 downto 0);
-      -- ASIC digital output number (for 10ka)
-      asicDoutNo          : in    slv(1 downto 0) := "00"
+      
+      -- EPIX10KA bank-deserialized digital outputs
+      doutOut             : in  Slv2Array(15 downto 0);
+      doutRd              : out slv(15 downto 0)
    );
 end ReadoutControl;
 
@@ -174,14 +173,12 @@ architecture ReadoutControl of ReadoutControl is
    signal fifoEmptyAll   : sl := '0';
    signal intSeqCount    : slv(31 downto 0) := (others => '0');
 
-   signal asicDoutPipeline : Slv128Array(15 downto 0);
-   signal asicDoutDelayed  : slv(15 downto 0);
-
    signal adcDataToReorder : Slv16Array(19 downto 0);
    signal tpsData          : Slv16Array(3 downto 0);
 
    type chanMap is array(15 downto 0) of integer range 0 to 15;
    signal channelOrder   : chanMap;
+   signal doutOrder      : chanMap;
    signal asicOrder      : chanMap;
    signal channelValid   : slv(15 downto 0);
 
@@ -233,16 +230,27 @@ begin
       -- 14:'ASIC3_B0',  13:'ASIC3_B1',  12:'ASIC3_B2',  11:'ASIC3_B3'
       -- 17:'ASIC0_TPS', 19:'ASIC1_TPS', 18:'ASIC2_TPS', 16:'ASIC3_TPS'
       
+      -- ADC channel mapping. See above.
       channelOrder <= (8,9,3,4,5,6,7,15,0,1,2,10,11,12,13,14);
+      -- readout order per ADC channel (0 - forward, 1 - backward)
       adcMemRdOrder <= "1000001111111000";
-      asicOrder <= (2,3,3,3,3,0,1,1,2,2,2,1,1,0,0,0); -- used for ADC Pipeline Delay per ASIC
+      -- used for ADC Pipeline Delay per ASIC
+      asicOrder <= (2,3,3,3,3,0,1,1,2,2,2,1,1,0,0,0);
+      -- valid only for EPIX10KA_C
+      -- see DoutDeserializer for dout mapping
+      doutOrder <= (4,5,6,7,8,9,10,11,3,2,1,0,15,14,13,12);
+      -- all 16 channels used
       channelValid  <= (others => '1');
+      -- TPS ADC channnels mapping. See above.
       tpsData(0) <= r.adcData(17);
       tpsData(1) <= r.adcData(19);
       tpsData(2) <= r.adcData(18);
       tpsData(3) <= r.adcData(16);
    end generate;
    G_EPIX10KP_CARRIER_ADC_GEN2 : if (ASIC_TYPE_G = EPIX10KP_C) generate
+      
+      -- digital outputs are no longer supported for the EPIX10KP_C
+      
       channelOrder <= (1,2,0,10,5,7,15, 6,9,4,3,8,10,11,13,12);
       channelValid  <= (others => '1');
       adcMemRdOrder <= "1100010010100111";
@@ -279,12 +287,22 @@ begin
 
    process(adcFifoRdValid,channelOrder,mAxisSlave,r, acqBusy) begin
       for i in 0 to 15 loop
+         -- read ADC FIFOs
          if (r.state = READ_FIFO_S and i = channelOrder(conv_integer(r.chCnt)) and 
              adcFifoRdValid(i) = '1' and mAxisSlave.tReady = '1') then
             adcFifoRdEn(i) <= '1';
          else
             adcFifoRdEn(i) <= '0';
          end if;
+         -- read dout FIFOs always with ADC FIFOs but in different order
+         -- no validity check on dout FIFOs
+         if (r.state = READ_FIFO_S and i = doutOrder(conv_integer(r.chCnt)) and 
+             adcFifoRdValid(i) = '1' and mAxisSlave.tReady = '1') then
+            doutRd(i) <= '1';
+         else
+            doutRd(i) <= '0';
+         end if;
+         
       end loop;
    end process;
    --------------------------------------------------
@@ -359,7 +377,13 @@ begin
                   v.state := READ_FIFO_S;
                end if;
             when READ_FIFO_S => 
-               v.mAxisMaster.tData(31 downto 0) := adcFifoRdData(channelOrder(conv_integer(r.chCnt)));
+               -- read from ADC FIFOs and from Dout FIFOs (valid for EPIX10KA_C)
+               v.mAxisMaster.tData(31 downto 0) := 
+                  '0' & doutOut(doutOrder(conv_integer(r.chCnt)))(1) &
+                  adcFifoRdData(channelOrder(conv_integer(r.chCnt)))(29 downto 16) & 
+                  '0' & doutOut(doutOrder(conv_integer(r.chCnt)))(0) &
+                  adcFifoRdData(channelOrder(conv_integer(r.chCnt)))(13 downto 0);
+               
                if adcFifoRdValid(channelOrder(conv_integer(r.chCnt))) = '1' then
                   if (channelValid(conv_integer(r.chCnt)) = '1') then
                      v.mAxisMaster.tValid := '1';
@@ -505,12 +529,10 @@ begin
    memRst <= r.clearFifos or sysClkRst;
    --Generate logic
    G_RowBuffers : for i in 0 to 15 generate
-      --The following line will need to be modified when we go to full size 10k
-      --since data will need to be synchronized with ASIC clock (x4).
       process(sysClk) begin
          if rising_edge(sysClk) then
             if (adcValid(i) = '1') then
-               adcDataToReorder(i) <= '0' & asicDoutDelayed(i) & r.adcData(i)(13 downto 0);
+               adcDataToReorder(i) <= "00" & r.adcData(i)(13 downto 0);
             end if;
          end if;
       end process;
@@ -610,45 +632,9 @@ begin
          fifoEmptyAll <= runningAnd;
       end if;
    end process;
-
-   --Pipeline delay for the ASIC digital outputs
-   PROC_DOUT_PIPELINE : process(sysClk) 
-      variable delay : integer range 0 to 127; 
-   begin
-      if rising_edge(sysClk) then
-         
-         if sysClkRst = '1' then
-            for n in 0 to 15 loop
-               asicDoutPipeline(n) <= (others => '0');
-            end loop;
-         else
-            for n in 0 to 3 loop
-               if asicDoutNo = n then
-                  for i in 1 to 127 loop
-                     asicDoutPipeline(n)(i)     <= asicDoutPipeline(n)(i-1);
-                     asicDoutPipeline(n+4)(i)   <= asicDoutPipeline(n+4)(i-1);
-                     asicDoutPipeline(n+8)(i)   <= asicDoutPipeline(n+8)(i-1);
-                     asicDoutPipeline(n+12)(i)  <= asicDoutPipeline(n+12)(i-1);
-                  end loop;
-                  asicDoutPipeline(n)(0)     <= asicDout(1);
-                  asicDoutPipeline(n+4)(0)   <= asicDout(0);
-                  asicDoutPipeline(n+8)(0)   <= asicDout(2);
-                  asicDoutPipeline(n+12)(0)  <= asicDout(3);
-               end if;
-            end loop;
-         end if;
-         
-         delay := conv_integer(epixConfig.doutPipelineDelay(6 downto 0));
-         for n in 0 to 15 loop
-            if ASIC_TYPE_G = EPIX10KP_C or ASIC_TYPE_G = EPIX10KA_C then
-               asicDoutDelayed(n) <= asicDoutPipeline(n)( delay );
-            else
-               asicDoutDelayed(n) <= '0';
-            end if;
-         end loop;
-         
-      end if;
-   end process;
-
+   
+   -- use as dout roClk skew setting for dout deserializer
+   -- epixConfig.doutPipelineDelay(6 downto 0)
+   
 end ReadoutControl;
 

@@ -74,10 +74,7 @@ entity AcqControl is
       asicGlblRst         : out   std_logic;
       asicAcq             : out   std_logic;
       asicSync            : out   std_logic;
-      asicRoClk           : out   std_logic;
-      
-      -- ASIC digital output number (for 10ka)
-      asicDoutNo          : out   std_logic_vector(1 downto 0)
+      asicRoClk           : out   std_logic
 
    );
 end AcqControl;
@@ -163,8 +160,6 @@ architecture AcqControl of AcqControl is
    
 
 begin
-   
-   asicDoutNo <= std_logic_vector(pixelCnt(1 downto 0));
 
    -- ADC Clock outputs
    U_AdcClk0 : OBUFDS port map ( I => adcClk, O => adcClkP(0), OB => adcClkM(0) );
