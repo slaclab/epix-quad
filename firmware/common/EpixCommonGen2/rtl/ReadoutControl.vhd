@@ -205,32 +205,60 @@ begin
    -- (i.e., if the channel reads out an ASIC from upper half of carrier,
    --  read it backward, otherwise, read it forward)
    G_EPIX100A_CARRIER_ADC_GEN2 : if (ASIC_TYPE_G = EPIX100A_C or ASIC_TYPE_G = EPIX10KA_C) generate
+   
+      -- EPIX100A and EPIX10KA Carrier Board View:
+      --                             TOP
+      --     B3    B2    B1    B0     |     B3    B2    B1    B0     
+      --                              |
+      --                              |
+      --                              |
+      --           ASIC2              |           ASIC1 
+      --                              |
+      --                              |
+      --                              |
+      --------------------------------------------------------------
+      --                              |
+      --                              |
+      --                              |
+      --           ASIC3              |           ASIC0 
+      --                              |
+      --                              |
+      --                              |
+      --     B0    B1    B2    B3     |     B0    B1    B2    B3     
+      --
+      -- ADC Channel Mappping for EPIX100A and EPIX10KA GEN2 ADC Board:
+      -- 10:'ASIC0_B0',   2:'ASIC0_B1',   1:'ASIC0_B2',   0:'ASIC0_B3'
+      --  8:'ASIC1_B0',   9:'ASIC1_B1',   3:'ASIC1_B2',   4:'ASIC1_B3'
+      --  5:'ASIC2_B0',   6:'ASIC2_B1',   7:'ASIC2_B2',  15:'ASIC2_B3'
+      -- 14:'ASIC3_B0',  13:'ASIC3_B1',  12:'ASIC3_B2',  11:'ASIC3_B3'
+      -- 17:'ASIC0_TPS', 19:'ASIC1_TPS', 18:'ASIC2_TPS', 16:'ASIC3_TPS'
+      
       channelOrder <= (8,9,3,4,5,6,7,15,0,1,2,10,11,12,13,14);
       adcMemRdOrder <= "1000001111111000";
-      asicOrder <= (2,1,1,1,1,0,3,3,2,2,2,3,3,0,0,0);
+      asicOrder <= (2,3,3,3,3,0,1,1,2,2,2,1,1,0,0,0); -- used for ADC Pipeline Delay per ASIC
       channelValid  <= (others => '1');
-      tpsData(0) <= r.adcData(16+1);
-      tpsData(1) <= r.adcData(16+3);
-      tpsData(2) <= r.adcData(16+2);
-      tpsData(3) <= r.adcData(16+0);
+      tpsData(0) <= r.adcData(17);
+      tpsData(1) <= r.adcData(19);
+      tpsData(2) <= r.adcData(18);
+      tpsData(3) <= r.adcData(16);
    end generate;
    G_EPIX10KP_CARRIER_ADC_GEN2 : if (ASIC_TYPE_G = EPIX10KP_C) generate
       channelOrder <= (1,2,0,10,5,7,15, 6,9,4,3,8,10,11,13,12);
       channelValid  <= (others => '1');
       adcMemRdOrder <= "1100010010100111";
-      tpsData(0) <= r.adcData(16+0);
-      tpsData(1) <= r.adcData(16+1);
-      tpsData(2) <= r.adcData(16+2);
-      tpsData(3) <= r.adcData(16+3);
+      tpsData(0) <= r.adcData(16);
+      tpsData(1) <= r.adcData(17);
+      tpsData(2) <= r.adcData(18);
+      tpsData(3) <= r.adcData(19);
    end generate;
    G_EPIXS_CARRIER_ADC_GEN2 : if (ASIC_TYPE_G = EPIXS_C) generate
       channelOrder <= (4,5,6,7,8,9,10,11,3,2,1,0,15,14,13,12);
       channelValid  <= "1000100000010001";
       adcMemRdOrder <= x"0FF0";
-      tpsData(0) <= r.adcData(16+0);
-      tpsData(1) <= r.adcData(16+1);
-      tpsData(2) <= r.adcData(16+2);
-      tpsData(3) <= r.adcData(16+3);
+      tpsData(0) <= r.adcData(16);
+      tpsData(1) <= r.adcData(17);
+      tpsData(2) <= r.adcData(18);
+      tpsData(3) <= r.adcData(19);
    end generate;
 
    -- Edge detection for signals that interface with other blocks
