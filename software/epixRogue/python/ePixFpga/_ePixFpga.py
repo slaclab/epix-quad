@@ -199,9 +199,18 @@ class Epix100a(pr.Device):
       
       trigChEnum={0:'TrigReg', 1:'ThresholdChA', 2:'ThresholdChB', 3:'AcqStart', 4:'AsicAcq', 5:'AsicR0', 6:'AsicRoClk', 7:'AsicPpmat', 8:'AsicPpbe', 9:'AsicSync', 10:'AsicGr', 11:'AsicSaciSel0', 12:'AsicSaciSel1', 13:'AsicSaciSel2', 14:'AsicSaciSel3'}
       #TODO: assign meaningful channel names
-      inChaEnum={0:'Ch0', 1:'Ch1', 2:'Ch2', 3:'Ch3', 4:'Ch4', 5:'Ch5', 6:'Ch6', 7:'Ch7', 8:'Ch8', 9:'Ch9', 10:'Ch10', 11:'Ch11', 12:'Ch12', 13:'Ch13', 14:'Ch14', 15:'Ch15', 16:'Ch16', 17:'Ch17', 18:'Ch18', 19:'Ch19'}
-      inChbEnum={0:'Ch0', 1:'Ch1', 2:'Ch2', 3:'Ch3', 4:'Ch4', 5:'Ch5', 6:'Ch6', 7:'Ch7', 8:'Ch8', 9:'Ch9', 10:'Ch10', 11:'Ch11', 12:'Ch12', 13:'Ch13', 14:'Ch14', 15:'Ch15', 16:'Ch16', 17:'Ch17', 18:'Ch18', 19:'Ch19'}
-
+      inChaEnum={
+            10:'ASIC0_B0',  2: 'ASIC0_B1',  1: 'ASIC0_B2',  0: 'ASIC0_B3', 
+            8: 'ASIC1_B0',  9: 'ASIC1_B1',  3: 'ASIC1_B2',  4: 'ASIC1_B3', 
+            5: 'ASIC2_B0',  6: 'ASIC2_B1',  7: 'ASIC2_B2',  15:'ASIC2_B3', 
+            14:'ASIC3_B0',  13:'ASIC3_B1',  12:'ASIC3_B2',  11:'ASIC3_B3', 
+            17:'ASIC0_TPS', 19:'ASIC1_TPS', 18:'ASIC2_TPS', 16:'ASIC3_TPS'}
+      inChbEnum={
+            10:'ASIC0_B0',  2: 'ASIC0_B1',  1: 'ASIC0_B2',  0: 'ASIC0_B3', 
+            8: 'ASIC1_B0',  9: 'ASIC1_B1',  3: 'ASIC1_B2',  4: 'ASIC1_B3', 
+            5: 'ASIC2_B0',  6: 'ASIC2_B1',  7: 'ASIC2_B2',  15:'ASIC2_B3', 
+            14:'ASIC3_B0',  13:'ASIC3_B1',  12:'ASIC3_B2',  11:'ASIC3_B3', 
+            17:'ASIC0_TPS', 19:'ASIC1_TPS', 18:'ASIC2_TPS', 16:'ASIC3_TPS'}
       #In order to easely compare GedDAQ address map with the eprix rogue address map 
       #it is defined the addrSize variable
       addrSize = 4	
@@ -366,9 +375,18 @@ class Epix10ka(pr.Device):
       
       trigChEnum={0:'TrigReg', 1:'ThresholdChA', 2:'ThresholdChB', 3:'AcqStart', 4:'AsicAcq', 5:'AsicR0', 6:'AsicRoClk', 7:'AsicPpmat', 8:'AsicPpbe', 9:'AsicSync', 10:'AsicGr', 11:'AsicSaciSel0', 12:'AsicSaciSel1', 13:'AsicSaciSel2', 14:'AsicSaciSel3'}
       #TODO: assign meaningful channel names
-      inChaEnum={0:'Ch0', 1:'Ch1', 2:'Ch2', 3:'Ch3', 4:'Ch4', 5:'Ch5', 6:'Ch6', 7:'Ch7', 8:'Ch8', 9:'Ch9', 10:'Ch10', 11:'Ch11', 12:'Ch12', 13:'Ch13', 14:'Ch14', 15:'Ch15', 16:'Ch16', 17:'Ch17', 18:'Ch18', 19:'Ch19'}
-      inChbEnum={0:'Ch0', 1:'Ch1', 2:'Ch2', 3:'Ch3', 4:'Ch4', 5:'Ch5', 6:'Ch6', 7:'Ch7', 8:'Ch8', 9:'Ch9', 10:'Ch10', 11:'Ch11', 12:'Ch12', 13:'Ch13', 14:'Ch14', 15:'Ch15', 16:'Ch16', 17:'Ch17', 18:'Ch18', 19:'Ch19'}
-      
+      inChaEnum={
+            10:'ASIC0_B0',  2: 'ASIC0_B1',  1: 'ASIC0_B2',  0: 'ASIC0_B3', 
+            8: 'ASIC1_B0',  9: 'ASIC1_B1',  3: 'ASIC1_B2',  4: 'ASIC1_B3', 
+            5: 'ASIC2_B0',  6: 'ASIC2_B1',  7: 'ASIC2_B2',  15:'ASIC2_B3', 
+            14:'ASIC3_B0',  13:'ASIC3_B1',  12:'ASIC3_B2',  11:'ASIC3_B3', 
+            17:'ASIC0_TPS', 19:'ASIC1_TPS', 18:'ASIC2_TPS', 16:'ASIC3_TPS'}
+      inChbEnum={
+            10:'ASIC0_B0',  2: 'ASIC0_B1',  1: 'ASIC0_B2',  0: 'ASIC0_B3', 
+            8: 'ASIC1_B0',  9: 'ASIC1_B1',  3: 'ASIC1_B2',  4: 'ASIC1_B3', 
+            5: 'ASIC2_B0',  6: 'ASIC2_B1',  7: 'ASIC2_B2',  15:'ASIC2_B3', 
+            14:'ASIC3_B0',  13:'ASIC3_B1',  12:'ASIC3_B2',  11:'ASIC3_B3', 
+            17:'ASIC0_TPS', 19:'ASIC1_TPS', 18:'ASIC2_TPS', 16:'ASIC3_TPS'}
       super(self.__class__, self).__init__(**kwargs)
       self.add((
             Epix10kaFpgaRegisters(name="EpixFpgaRegisters", offset=0x00000000),
