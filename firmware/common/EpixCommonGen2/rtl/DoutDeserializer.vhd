@@ -96,7 +96,7 @@ architecture RTL of DoutDeserializer is
    
 begin
    
-   comb : process (rst, f, asicDout, asicLatency, asicRoClk) is
+   comb : process (rst, f, asicDout, asicLatency, asicRoClk, acqBusy) is
       variable fv             : FsmType;
       variable roClkRising    : sl;
       variable acqBusyRising  : sl;
