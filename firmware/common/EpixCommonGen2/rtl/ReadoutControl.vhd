@@ -86,7 +86,8 @@ entity ReadoutControl is
       
       -- EPIX10KA bank-deserialized digital outputs
       doutOut             : in  Slv2Array(15 downto 0);
-      doutRd              : out slv(15 downto 0)
+      doutRd              : out slv(15 downto 0);
+      doutValid           : in  slv(15 downto 0)
    );
 end ReadoutControl;
 

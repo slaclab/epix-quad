@@ -59,7 +59,8 @@ entity DoutDeserializer is
       asicRoClk   : in  sl;
       asicLatency : in  slv(31 downto 0);
       doutOut     : out Slv2Array(15 downto 0);
-      doutRd      : in  slv(15 downto 0)
+      doutRd      : in  slv(15 downto 0);
+      doutValid   : out slv(15 downto 0)
    );
 end DoutDeserializer;
 
@@ -216,7 +217,8 @@ begin
          din      => f.fifoIn(i),
          rd_clk   => clk,
          rd_en    => doutRd(i),
-         dout     => doutOut(i)
+         dout     => doutOut(i),
+         valid    => doutValid(i)
       );
    end generate;
 

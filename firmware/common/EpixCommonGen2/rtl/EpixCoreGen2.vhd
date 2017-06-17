@@ -264,6 +264,7 @@ architecture top_level of EpixCoreGen2 is
    
    signal doutOut    : Slv2Array(15 downto 0);
    signal doutRd     : slv(15 downto 0);
+   signal doutValid  : slv(15 downto 0);
    
    constant DDR_AXI_CONFIG_C : AxiConfigType := axiConfig(
       ADDR_WIDTH_C => 30,
@@ -652,12 +653,14 @@ begin
          asicRoClk   => iAsicRoClk,
          asicLatency => epixConfig.doutPipelineDelay,
          doutOut     => doutOut,
-         doutRd      => doutRd
+         doutRd      => doutRd,
+         doutValid   => doutValid
       );
       
    end generate;
    G_DOUT_NONE : if ASIC_TYPE_G /= EPIX10KA_C generate
       doutOut <= (others=>(others=>'0'));
+      doutValid <= (others=>'1');
    end generate;
    ---------------------
    -- Acq control     --
@@ -725,7 +728,8 @@ begin
       mAxisSlave     => dataAxisSlave,
       mpsOut         => open,
       doutOut        => doutOut,
-      doutRd         => doutRd
+      doutRd         => doutRd,
+      doutValid      => doutValid
    );
    
    GenAdcStr : for i in 0 to 19 generate 
