@@ -610,6 +610,7 @@ class EventReader(rogue.interfaces.stream.Slave):
         self.VIEW_MONITORING_DATA_ID = 0x3
         self.readFileDelay = 0.1
         self.busy = False
+        self.busyTimeout = 0
         
 
 
@@ -633,7 +634,13 @@ class EventReader(rogue.interfaces.stream.Slave):
         self.numAcceptedFrames += 1
 
         VcNum =  p[0] & 0xF
-        if (self.busy): print("Event Reader Busy")
+        if (self.busy): 
+            self.busyTimeout = self.busyTimeout + 1
+            print("Event Reader Busy: " +  str(self.busyTimeout))
+            if self.busyTimeout == 10:
+                self.busy = False
+        else:
+            self.busyTimeout = 0
 
         if ((VcNum == self.VIEW_PSEUDOSCOPE_ID) and (not self.busy)):
             self.parent.processPseudoScopeFrameTrigger.emit()

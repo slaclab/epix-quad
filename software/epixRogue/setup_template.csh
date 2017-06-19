@@ -26,3 +26,6 @@ setenv LD_LIBRARY_PATH ${ROGUE_DIR}/python::${LD_LIBRARY_PATH}
 
 # Boot thread library names differ from system to system, not all have -mt
 setenv BOOST_THREAD -lboost_thread-mt
+
+# set matplotlib to use qt
+#setenv MPLBACKEND 'Qt4Agg'

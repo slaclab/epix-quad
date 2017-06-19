@@ -31,6 +31,14 @@ def run():
 
 # creates and runs a viewer gui
 app = QtGui.QApplication(sys.argv)
-gui = vi.Window(cameraType = 'ePix100a')
 
-run()
+if __name__ == '__main__':
+    if (len(sys.argv) > 1):
+        gui = vi.Window(cameraType = sys.argv[1])
+    else:
+        print ('Warning! Opening viewer with default camera: ePix100a')
+        gui = vi.Window(cameraType = 'ePix100a')
+
+    run()
+
+
