@@ -281,72 +281,90 @@ class Epix100aAsic(pr.Device):
 
     def fnSetPixelBitmap(self, dev,cmd,arg):
         """SetPixelBitmap command function"""
-        self.reportCmd(dev,cmd,arg)
-        if len(arg) > 0:
-           self.filename = arg
+        #set r0mode in order to have saci cmd to work properly on legacy firmware
+        self.root.ePix100aFPGA.EpixFpgaRegisters.AsicR0Mode.set(True)
+
+        if (self.enable.get()):
+            self.reportCmd(dev,cmd,arg)
+            if len(arg) > 0:
+                self.filename = arg
+            else:
+                self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+            if os.path.splitext(self.filename)[1] == '.csv':
+                matrixCfg = np.genfromtxt(self.filename, delimiter=',')
+                if matrixCfg.shape == (354, 384):
+                    for x in range (0, 354):
+                        self.RowCounter.set(x)
+                        for y in range (0, 384):
+                            bankToWrite = int(y/96);
+                            if (bankToWrite == 0):
+                                colToWrite = 0x700 + y%96;
+                            elif (bankToWrite == 1):
+                                colToWrite = 0x680 + y%96;
+                            elif (bankToWrite == 2):
+                                colToWrite = 0x580 + y%96;
+                            elif (bankToWrite == 3):
+                                colToWrite = 0x380 + y%96;
+                            else:
+                                print('unexpected bank number')
+                            self.ColCounter.set(colToWrite)
+                            self.WritePixelData.set(int(matrixCfg[x][y]))
+                    self.CmdPrepForRead()
+                else:
+                    print('csv file must be 384x354 pixels')
+            else:
+                print("Not csv file : ", self.filename)
         else:
-           self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
-        if os.path.splitext(self.filename)[1] == '.csv':
-            matrixCfg = np.genfromtxt(self.filename, delimiter=',')
-            if matrixCfg.shape == (354, 384):
+            print("Warning: ASIC enable is set to False!")
+
+    def fnGetPixelBitmap(self, dev,cmd,arg):
+        """GetPixelBitmap command function"""
+        #set r0mode in order to have saci cmd to work properly on legacy firmware
+        self.root.ePix100aFPGA.EpixFpgaRegisters.AsicR0Mode.set(True)
+
+        if (self.enable.get()):
+
+            self.reportCmd(dev,cmd,arg)
+            if len(arg) > 0:
+                self.filename = arg
+            else:
+                self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+            if os.path.splitext(self.filename)[1] == '.csv':
+                readBack = np.zeros((354, 384),dtype='uint16')
                 for x in range (0, 354):
                     self.RowCounter.set(x)
                     for y in range (0, 384):
                         bankToWrite = int(y/96);
                         if (bankToWrite == 0):
-                           colToWrite = 0x700 + y%96;
+                            colToWrite = 0x700 + y%96;
                         elif (bankToWrite == 1):
-                           colToWrite = 0x680 + y%96;
+                            colToWrite = 0x680 + y%96;
                         elif (bankToWrite == 2):
-                           colToWrite = 0x580 + y%96;
+                            colToWrite = 0x580 + y%96;
                         elif (bankToWrite == 3):
-                           colToWrite = 0x380 + y%96;
+                            colToWrite = 0x380 + y%96;
                         else:
-                           print('unexpected bank number')
+                            print('unexpected bank number')
                         self.ColCounter.set(colToWrite)
-                        self.WritePixelData.set(int(matrixCfg[x][y]))
-                self.CmdPrepForRead()
-            else:
-                print('csv file must be 384x354 pixels')
+                        readBack[x, y] = self.WritePixelData.get()
+                np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
         else:
-            print("Not csv file : ", self.filename)
-
-    def fnGetPixelBitmap(self, dev,cmd,arg):
-        """GetPixelBitmap command function"""
-        self.reportCmd(dev,cmd,arg)
-        if len(arg) > 0:
-           self.filename = arg
-        else:
-           self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
-        if os.path.splitext(self.filename)[1] == '.csv':
-            readBack = np.zeros((354, 384),dtype='uint16')
-            for x in range (0, 354):
-               self.RowCounter.set(x)
-               for y in range (0, 384):
-                  bankToWrite = int(y/96);
-                  if (bankToWrite == 0):
-                     colToWrite = 0x700 + y%96;
-                  elif (bankToWrite == 1):
-                     colToWrite = 0x680 + y%96;
-                  elif (bankToWrite == 2):
-                     colToWrite = 0x580 + y%96;
-                  elif (bankToWrite == 3):
-                     colToWrite = 0x380 + y%96;
-                  else:
-                     print('unexpected bank number')
-                  self.ColCounter.set(colToWrite)
-                  readBack[x, y] = self.WritePixelData.get()
-            np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
-       
+            print("Warning: ASIC enable is set to False!")      
 
     def fnClearMatrix(self, dev,cmd,arg):
         """ClearMatrix command function"""
-        self.reportCmd(dev,cmd,arg)
-        for i in range (0, 96):
-            self.PrepareMultiConfig()
-            self.ColCounter.set(i)
-            self.WriteColData.set(0)
-        self.CmdPrepForRead()
+        #set r0mode in order to have saci cmd to work properly on legacy firmware
+        self.root.ePix100aFPGA.EpixFpgaRegisters.AsicR0Mode.set(True)
+
+        if (self.enable.get()):
+            self.reportCmd(dev,cmd,arg)
+            for i in range (0, 96):
+                self.PrepareMultiConfig()
+                self.ColCounter.set(i)
+                self.WriteColData.set(0)
+            self.CmdPrepForRead()
+        else:
+            print("Warning: ASIC enable is set to False!")      
 
     # standard way to report a command has been executed
     def reportCmd(self, dev,cmd,arg):
@@ -601,73 +619,89 @@ class Epix10kaAsic(pr.Device):
 
     def fnSetPixelBitmap(self, dev,cmd,arg):
         """SetPixelBitmap command function"""
-        self.reportCmd(dev,cmd,arg)
-        if len(arg) > 0:
-           self.filename = arg
-        else:
-           self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
-        if os.path.splitext(self.filename)[1] == '.csv':
-            matrixCfg = np.genfromtxt(self.filename, delimiter=',')
-            if matrixCfg.shape == (178, 192):
-                for x in range (0, 178):
-                    self.RowCounter.set(x)
-                    for y in range (0, 192):
-                        bankToWrite = int(y/48);
-                        if (bankToWrite == 0):
-                           colToWrite = 0x700 + y%48;
-                        elif (bankToWrite == 1):
-                           colToWrite = 0x680 + y%48;
-                        elif (bankToWrite == 2):
-                           colToWrite = 0x580 + y%48;
-                        elif (bankToWrite == 3):
-                           colToWrite = 0x380 + y%48;
-                        else:
-                           print('unexpected bank number')
-                        self.ColCounter.set(colToWrite)
-                        self.WritePixelData.set(int(matrixCfg[x][y]))
-                self.CmdPrepForRead()
+        #set r0mode in order to have saci cmd to work properly on legacy firmware
+        self.root.Epix10ka.EpixFpgaRegisters.AsicR0Mode.set(True)
+
+        if (self.enable.get()):
+            self.reportCmd(dev,cmd,arg)
+            if len(arg) > 0:
+               self.filename = arg
             else:
-                print('csv file must be 192x178 pixels')
+               self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+            if os.path.splitext(self.filename)[1] == '.csv':
+                matrixCfg = np.genfromtxt(self.filename, delimiter=',')
+                if matrixCfg.shape == (178, 192):
+                    for x in range (0, 178):
+                        self.RowCounter.set(x)
+                        for y in range (0, 192):
+                            bankToWrite = int(y/48);
+                            if (bankToWrite == 0):
+                               colToWrite = 0x700 + y%48;
+                            elif (bankToWrite == 1):
+                               colToWrite = 0x680 + y%48;
+                            elif (bankToWrite == 2):
+                               colToWrite = 0x580 + y%48;
+                            elif (bankToWrite == 3):
+                               colToWrite = 0x380 + y%48;
+                            else:
+                               print('unexpected bank number')
+                            self.ColCounter.set(colToWrite)
+                            self.WritePixelData.set(int(matrixCfg[x][y]))
+                    self.CmdPrepForRead()
+                else:
+                    print('csv file must be 192x178 pixels')
+            else:
+                print("Not csv file : ", self.filename)
         else:
-            print("Not csv file : ", self.filename)
+            print("Warning: ASIC enable is set to False!")      
 
     def fnGetPixelBitmap(self, dev,cmd,arg):
         """GetPixelBitmap command function"""
-        self.reportCmd(dev,cmd,arg)
-        if len(arg) > 0:
-           self.filename = arg
+        #set r0mode in order to have saci cmd to work properly on legacy firmware
+        self.root.Epix10ka.EpixFpgaRegisters.AsicR0Mode.set(True)
+
+        if (self.enable.get()):
+            self.reportCmd(dev,cmd,arg)
+            if len(arg) > 0:
+               self.filename = arg
+            else:
+               self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+            if os.path.splitext(self.filename)[1] == '.csv':
+                readBack = np.zeros((178, 192),dtype='uint16')
+                for x in range (0, 178):
+                   self.RowCounter.set(x)
+                   for y in range (0, 192):
+                      bankToWrite = int(y/48);
+                      if (bankToWrite == 0):
+                         colToWrite = 0x700 + y%48;
+                      elif (bankToWrite == 1):
+                         colToWrite = 0x680 + y%48;
+                      elif (bankToWrite == 2):
+                         colToWrite = 0x580 + y%48;
+                      elif (bankToWrite == 3):
+                         colToWrite = 0x380 + y%48;
+                      else:
+                         print('unexpected bank number')
+                      self.ColCounter.set(colToWrite)
+                      readBack[x, y] = self.WritePixelData.get()
+                np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
         else:
-           self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
-        if os.path.splitext(self.filename)[1] == '.csv':
-            readBack = np.zeros((178, 192),dtype='uint16')
-            for x in range (0, 178):
-               self.RowCounter.set(x)
-               for y in range (0, 192):
-                  bankToWrite = int(y/48);
-                  if (bankToWrite == 0):
-                     colToWrite = 0x700 + y%48;
-                  elif (bankToWrite == 1):
-                     colToWrite = 0x680 + y%48;
-                  elif (bankToWrite == 2):
-                     colToWrite = 0x580 + y%48;
-                  elif (bankToWrite == 3):
-                     colToWrite = 0x380 + y%48;
-                  else:
-                     print('unexpected bank number')
-                  self.ColCounter.set(colToWrite)
-                  readBack[x, y] = self.WritePixelData.get()
-            np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
-       
+            print("Warning: ASIC enable is set to False!")             
 
     def fnClearMatrix(self, dev,cmd,arg):
         """ClearMatrix command function"""
-        self.reportCmd(dev,cmd,arg)
-        for i in range (0, 48):
-            self.PrepareMultiConfig()
-            self.ColCounter.set(i)
-            self.WriteColData.set(0)
-        self.CmdPrepForRead()
+        #set r0mode in order to have saci cmd to work properly on legacy firmware
+        self.root.Epix10ka.EpixFpgaRegisters.AsicR0Mode.set(True)
 
+        if (self.enable.get()):
+            self.reportCmd(dev,cmd,arg)
+            for i in range (0, 48):
+                self.PrepareMultiConfig()
+                self.ColCounter.set(i)
+                self.WriteColData.set(0)
+            self.CmdPrepForRead()
+        else:
+            print("Warning: ASIC enable is set to False!")          
 
     # standard way to report a command has been executed
     def reportCmd(self, dev,cmd,arg):
@@ -833,47 +867,67 @@ class TixelAsic(pr.Device):
 
     def fnSetPixelBitmap(self, dev,cmd,arg):
         """SetPixelBitmap command function"""
-        self.reportCmd(dev,cmd,arg)
-        if len(arg) > 0:
-           self.filename = arg
-        else:
-           self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
-        if os.path.splitext(self.filename)[1] == '.csv':
-            matrixCfg = np.genfromtxt(self.filename, delimiter=',')
-            if matrixCfg.shape == (48, 48):
-                for x in range (0, 48):
-                    self.RowCounter.set(x)
-                    for y in range (0, 48):
-                        self.ColCounter.set(y)
-                        self.WritePixelData.set(int(matrixCfg[x][y]))
-                self.CmdPrepForRead()
+        #set r0mode in order to have saci cmd to work properly on legacy firmware
+        self.root.Tixel.TixelFpgaRegisters.AsicR0Mode.set(True)
+
+        if (self.enable.get()):
+            self.reportCmd(dev,cmd,arg)
+            if len(arg) > 0:
+               self.filename = arg
             else:
-                print('csv file must be 48x48 pixels')
+               self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+            if os.path.splitext(self.filename)[1] == '.csv':
+                matrixCfg = np.genfromtxt(self.filename, delimiter=',')
+                if matrixCfg.shape == (48, 48):
+                    for x in range (0, 48):
+                        self.RowCounter.set(x)
+                        for y in range (0, 48):
+                            self.ColCounter.set(y)
+                            self.WritePixelData.set(int(matrixCfg[x][y]))
+                    self.CmdPrepForRead()
+                else:
+                    print('csv file must be 48x48 pixels')
+            else:
+                print("Not csv file : ", self.filename)
         else:
-            print("Not csv file : ", self.filename)
+            print("Warning: ASIC enable is set to False!")      
+
 
     def fnGetPixelBitmap(self, dev,cmd,arg):
         """GetPixelBitmap command function"""
-        if len(arg) > 0:
-           self.filename = arg
+        #set r0mode in order to have saci cmd to work properly on legacy firmware
+        self.root.Tixel.TixelFpgaRegisters.AsicR0Mode.set(True)
+
+        if (self.enable.get()):
+            if len(arg) > 0:
+               self.filename = arg
+            else:
+               self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+            if os.path.splitext(self.filename)[1] == '.csv':
+                readBack = np.zeros((48,48),dtype='uint16')
+                for x in range (0, 48):
+                   self.RowCounter.set(x)
+                   for y in range (0, 48):
+                      self.ColCounter.set(y)
+                      readBack[x, y] = self.WritePixelData.get()
+                np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
         else:
-           self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
-        if os.path.splitext(self.filename)[1] == '.csv':
-            readBack = np.zeros((48,48),dtype='uint16')
-            for x in range (0, 48):
-               self.RowCounter.set(x)
-               for y in range (0, 48):
-                  self.ColCounter.set(y)
-                  readBack[x, y] = self.WritePixelData.get()
-            np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
+            print("Warning: ASIC enable is set to False!")      
 
 
     def fnClearMatrix(self, dev,cmd,arg):
         """ClearMatrix command function"""
-        self.reportCmd(dev,cmd,arg)
-        self.PrepareMultiConfig()
-        self.WriteMatrixData.set(0)
-        self.CmdPrepForRead()
+        #set r0mode in order to have saci cmd to work properly on legacy firmware
+        self.root.Tixel.TixelFpgaRegisters.AsicR0Mode.set(True)
+
+        if (self.enable.get()):
+            self.reportCmd(dev,cmd,arg)
+            self.PrepareMultiConfig()
+            self.WriteMatrixData.set(0)
+            self.CmdPrepForRead()
+        else:
+            print("Warning: ASIC enable is set to False!")      
+
 
     # standard way to report a command has been executed
     def reportCmd(self, dev,cmd,arg):

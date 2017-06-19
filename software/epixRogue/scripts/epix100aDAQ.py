@@ -164,7 +164,7 @@ class EpixBoard(pyrogue.Root):
             cmd.sendCmd(0, 0)
         
         # Add Devices, defined at AxiVersionEpix100a file
-        self.add(fpga.Epix100a(name='ePix 100a FPGA', offset=0, memBase=srp, hidden=False, enabled=True))
+        self.add(fpga.Epix100a(name='ePix100aFPGA', offset=0, memBase=srp, hidden=False, enabled=True))
         self.add(pyrogue.RunControl(name = 'runControl', description='Run Controller ePix 10ka', cmd=self.Trigger, rates={1:'1 Hz', 2:'2 Hz', 4:'4 Hz', 8:'8 Hz', 10:'10 Hz', 30:'30 Hz', 60:'60 Hz', 120:'120 Hz'}))
 
 
