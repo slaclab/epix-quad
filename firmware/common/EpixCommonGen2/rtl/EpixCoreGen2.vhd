@@ -644,7 +644,7 @@ begin
    --------------------- ------------------------------------------
    G_DOUT_EPIX10KA : if ASIC_TYPE_G = EPIX10KA_C generate
    
-      U_AcqControl : entity work.DoutDeserializer
+      U_DoutDeser : entity work.DoutDeserializer
       port map ( 
          clk         => coreClk,
          rst         => axiRst,

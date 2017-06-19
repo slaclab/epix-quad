@@ -176,6 +176,7 @@ begin
                -- change row buffer and trigger copy logic
                if conv_integer(f.stCnt(7 downto 2)) = 47 and f.stCnt(1 downto 0) = "11" then
                   fv.rowBuffRdy := '1';
+                  fv.stCnt := (others=>'0');
                   if f.rowBuffAct = 0 then
                      fv.rowBuffAct := 1;
                   else
@@ -190,7 +191,7 @@ begin
          
       end case;
       
-      -- copy row buffer to FIFO is requested order
+      -- copy row buffer to FIFO in requested order
       if f.rowBuffRdy = '1' or f.copyReq = '1' then
          fv.copyReq := '1';
          fv.copyCnt := f.copyCnt + 1;
