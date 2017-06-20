@@ -1099,7 +1099,6 @@ begin
    U_AxiMicronN25QCore : entity work.AxiMicronN25QCore
    generic map (
       TPD_G          => TPD_G,
-      PIPE_STAGES_G  => 1,
       AXI_CLK_FREQ_G => 100.0E+6,   -- units of Hz
       SPI_CLK_FREQ_G => 25.0E+6     -- units of Hz
    )
@@ -1114,11 +1113,6 @@ begin
       axiReadSlave   => mAxiReadSlaves(BOOTMEM_AXI_INDEX_C),
       axiWriteMaster => mAxiWriteMasters(BOOTMEM_AXI_INDEX_C),
       axiWriteSlave  => mAxiWriteSlaves(BOOTMEM_AXI_INDEX_C),
-      -- AXI Streaming Interface (Optional)
-      mAxisMaster    => open,
-      mAxisSlave     => AXI_STREAM_SLAVE_FORCE_C,
-      sAxisMaster    => AXI_STREAM_MASTER_INIT_C,
-      sAxisSlave     => open,
       -- Clocks and Resets
       axiClk         => coreClk,
       axiRst         => axiRst
