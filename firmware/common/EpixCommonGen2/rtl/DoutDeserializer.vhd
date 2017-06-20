@@ -218,19 +218,18 @@ begin
          fv.copyReq := '1';
          fv.copyCnt := f.copyCnt + 1;
          
-         -- pick completed row buffer
-         if f.rowBuffAct = 0 then
-            rowBuffCopy := 1;
-         else
-            rowBuffCopy := 0;
-         end if;
-         
          -- copy done
          if f.copyCnt = 47 then
             fv.copyReq := '0';
             fv.copyCnt := 0;
             fv.fifoWr := (others=>'0');
          end if;
+      end if;
+      -- pick completed row buffer
+      if f.rowBuffAct = 0 then
+         rowBuffCopy := 1;
+      else
+         rowBuffCopy := 0;
       end if;
       -- write FIFOs
       for i in 0 to 15 loop
