@@ -117,6 +117,9 @@ begin
       fv := f;
       
       -- sync
+      -- multiply latency by 4 - one pixel requires 4 asicRoClk cycles
+      --fv.asicLatency := asicLatency(29 downto 0) & "00";
+      -- do not multiply for better control while testing the ASIC
       fv.asicLatency := asicLatency;
       fv.asicRoClk := asicRoClk;
       fv.acqBusy := acqBusy;
@@ -144,8 +147,10 @@ begin
             fv.rowBuffAct := 0;
             fv.rowBuffRdy := '0';
             fv.fifoIn := (others=>(others=>'0'));
-            if roClkRising = '1' then
+            if f.asicLatency > 0 then
                fv.state := WAIT_S;
+            else
+               fv.state := STORE_S;
             end if;
          
          when WAIT_S =>
@@ -153,36 +158,36 @@ begin
             -- before deserializing
             fv.fifoRst := '0';
             if roClkRising = '1' then
-               if f.stCnt < f.asicLatency then
-                  fv.stCnt := f.stCnt + 1;
-               else
-                  fv.stCnt := (others=>'0');
-                  fv.state := STORE_S;
-               end if;
+               fv.stCnt := f.stCnt + 1;
+            end if;
+            if f.stCnt >= f.asicLatency then
+               fv.stCnt := (others=>'0');
+               fv.state := STORE_S;
             end if;
          
          when STORE_S =>
+            fv.fifoRst := '0';
             fv.rowBuffRdy := '0';
             if roClkRising = '1' then
                -- write douts to appropriate row buffer on every roClkRising edge
-               --fv.rowBuff(f.rowBuffAct, 0 +conv_integer(f.stCnt(1 downto 0)))(conv_integer(f.stCnt(7 downto 2))) := asicDout(0);
-               --fv.rowBuff(f.rowBuffAct, 4 +conv_integer(f.stCnt(1 downto 0)))(conv_integer(f.stCnt(7 downto 2))) := asicDout(1);
-               --fv.rowBuff(f.rowBuffAct, 8 +conv_integer(f.stCnt(1 downto 0)))(conv_integer(f.stCnt(7 downto 2))) := asicDout(2);
-               --fv.rowBuff(f.rowBuffAct, 12+conv_integer(f.stCnt(1 downto 0)))(conv_integer(f.stCnt(7 downto 2))) := asicDout(3);
+               fv.rowBuff(f.rowBuffAct, 0 +conv_integer(f.stCnt(1 downto 0)))(conv_integer(f.stCnt(7 downto 2))) := asicDout(0);
+               fv.rowBuff(f.rowBuffAct, 4 +conv_integer(f.stCnt(1 downto 0)))(conv_integer(f.stCnt(7 downto 2))) := asicDout(1);
+               fv.rowBuff(f.rowBuffAct, 8 +conv_integer(f.stCnt(1 downto 0)))(conv_integer(f.stCnt(7 downto 2))) := asicDout(2);
+               fv.rowBuff(f.rowBuffAct, 12+conv_integer(f.stCnt(1 downto 0)))(conv_integer(f.stCnt(7 downto 2))) := asicDout(3);
                
-               fv.fifoIn(0 +conv_integer(f.stCnt(1 downto 0)))(0) := asicDout(0);
-               fv.fifoIn(4 +conv_integer(f.stCnt(1 downto 0)))(0) := asicDout(1);
-               fv.fifoIn(8 +conv_integer(f.stCnt(1 downto 0)))(0) := asicDout(2);
-               fv.fifoIn(12+conv_integer(f.stCnt(1 downto 0)))(0) := asicDout(3);
-               if f.stCnt(1 downto 0) = "00" then
-                  fv.fifoWr := "0001000100010001";
-               elsif f.stCnt(1 downto 0) = "01" then
-                  fv.fifoWr := "0010001000100010";
-               elsif f.stCnt(1 downto 0) = "10" then
-                  fv.fifoWr := "0100010001000100";
-               else
-                  fv.fifoWr := "1000100010001000";
-               end if;
+               --fv.fifoIn(0 +conv_integer(f.stCnt(1 downto 0)))(0) := asicDout(0);
+               --fv.fifoIn(4 +conv_integer(f.stCnt(1 downto 0)))(0) := asicDout(1);
+               --fv.fifoIn(8 +conv_integer(f.stCnt(1 downto 0)))(0) := asicDout(2);
+               --fv.fifoIn(12+conv_integer(f.stCnt(1 downto 0)))(0) := asicDout(3);
+               --if f.stCnt(1 downto 0) = "00" then
+               --   fv.fifoWr := "0001000100010001";
+               --elsif f.stCnt(1 downto 0) = "01" then
+               --   fv.fifoWr := "0010001000100010";
+               --elsif f.stCnt(1 downto 0) = "10" then
+               --   fv.fifoWr := "0100010001000100";
+               --else
+               --   fv.fifoWr := "1000100010001000";
+               --end if;
 
                -- count rising edges of roClk
                fv.stCnt := f.stCnt + 1;
@@ -191,6 +196,7 @@ begin
                if conv_integer(f.stCnt(7 downto 2)) = 47 and f.stCnt(1 downto 0) = "11" then
                   fv.rowBuffRdy := '1';
                   fv.stCnt := (others=>'0');
+                  fv.fifoWr := (others=>'1');
                   if f.rowBuffAct = 0 then
                      fv.rowBuffAct := 1;
                   else
@@ -198,8 +204,8 @@ begin
                   end if;
                end if;
             
-            else                             -- remove line ---------------------------------------------
-               fv.fifoWr := (others=>'0');   -- remove line ---------------------------------------------
+            --else                             -- remove line ---------------------------------------------
+            --   fv.fifoWr := (others=>'0');   -- remove line ---------------------------------------------
             end if;
          
          when others =>
@@ -207,35 +213,33 @@ begin
          
       end case;
       
-      ---- copy row buffer to FIFO in requested order
-      --if f.rowBuffRdy = '1' or f.copyReq = '1' then
-      --   fv.copyReq := '1';
-      --   fv.copyCnt := f.copyCnt + 1;
-      --   
-      --   -- pick completed row buffer
-      --   if f.rowBuffAct = 0 then
-      --      rowBuffCopy := 1;
-      --   else
-      --      rowBuffCopy := 0;
-      --   end if;
-      --   
-      --   -- write FIFOs
-      --   for i in 0 to 15 loop
-      --      if RD_ORDER_G(i) = '0' then
-      --         fv.fifoIn(i)(0) := f.rowBuff(rowBuffCopy, i)(f.copyCnt);
-      --      else
-      --         fv.fifoIn(i)(0) := f.rowBuff(rowBuffCopy, i)(47 - f.copyCnt);
-      --      end if;
-      --   end loop;
-      --   fv.fifoWr := (others=>'1');
-      --   
-      --   -- copy done
-      --   if f.copyCnt = 47 then
-      --      fv.copyReq := '0';
-      --      fv.copyCnt := 0;
-      --      fv.fifoWr := (others=>'0');
-      --   end if;
-      --end if;
+      -- copy row buffer to FIFO in requested order
+      if f.rowBuffRdy = '1' or f.copyReq = '1' then
+         fv.copyReq := '1';
+         fv.copyCnt := f.copyCnt + 1;
+         
+         -- pick completed row buffer
+         if f.rowBuffAct = 0 then
+            rowBuffCopy := 1;
+         else
+            rowBuffCopy := 0;
+         end if;
+         
+         -- copy done
+         if f.copyCnt = 47 then
+            fv.copyReq := '0';
+            fv.copyCnt := 0;
+            fv.fifoWr := (others=>'0');
+         end if;
+      end if;
+      -- write FIFOs
+      for i in 0 to 15 loop
+         if RD_ORDER_G(i) = '0' then
+            fv.fifoIn(i)(0) := f.rowBuff(rowBuffCopy, i)(f.copyCnt);
+         else
+            fv.fifoIn(i)(0) := f.rowBuff(rowBuffCopy, i)(47 - f.copyCnt);
+         end if;
+      end loop;
       
       -- reset FSM when acquisition start is detected
       if acqBusyRising = '1' then
