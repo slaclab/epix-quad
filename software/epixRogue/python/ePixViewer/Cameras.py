@@ -148,7 +148,7 @@ class Camera():
         self._NumColPerAdcCh = 96
         self._superRowSizeInBytes = self._superRowSize * 4
         self.sensorWidth = self._calcImgWidth()
-        self.sensorHeight = 706
+        self.sensorHeight = 708
         self.pixelDepth = 16
         self.cameraModule = "Standard ePix100a"
         self.bitMask = np.uint16(0xFFFF)
@@ -359,8 +359,8 @@ class Camera():
             rawData.pop(0)
         
         #get the first superline
-        imgTop = rawData[(0*self._superRowSizeInBytes):(1*self._superRowSizeInBytes)] 
-        imgBot = rawData[(1*self._superRowSizeInBytes):(2*self._superRowSizeInBytes)] 
+        imgBot = rawData[(0*self._superRowSizeInBytes):(1*self._superRowSizeInBytes)] 
+        imgTop = rawData[(1*self._superRowSizeInBytes):(2*self._superRowSizeInBytes)] 
         for j in range(2,self.sensorHeight+1):
             if (j%2):
                 imgTop.extend(rawData[((self.sensorHeight-j-2)*self._superRowSizeInBytes):((self.sensorHeight-j-1)*self._superRowSizeInBytes)])
