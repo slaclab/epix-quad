@@ -191,7 +191,7 @@ appTop = PyQt4.QtGui.QApplication(sys.argv)
 guiTop = pyrogue.gui.GuiTop('ePix10kaGui')
 ePixBoard = EpixBoard(guiTop, cmd, dataWriter, srp)
 guiTop.addTree(ePixBoard)
-guiTop.resize(1000,1000)
+guiTop.resize(1000,800)
 
 # Viewer gui
 gui = vi.Window(cameraType = 'ePix10ka')

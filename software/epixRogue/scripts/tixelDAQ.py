@@ -138,6 +138,7 @@ appTop = PyQt4.QtGui.QApplication(sys.argv)
 guiTop = pyrogue.gui.GuiTop('tixelGui')
 ePixBoard = EpixBoard(guiTop, cmd, dataWriter, srp)
 guiTop.addTree(ePixBoard)
+guiTop.resize(1000,800)
 
 # Viewer gui
 gui = vi.Window(cameraType = 'Tixel48x48')

@@ -359,11 +359,11 @@ class Camera():
             rawData.pop(0)
         
         #get the first superline
-        imgBot = rawData[(0*self._superRowSizeInBytes):(1*self._superRowSizeInBytes)] 
-        imgTop = rawData[(1*self._superRowSizeInBytes):(2*self._superRowSizeInBytes)] 
-        for j in range(2,self.sensorHeight+1):
+        imgBot = bytearray()
+        imgTop = bytearray()
+        for j in range(0,self.sensorHeight):
             if (j%2):
-                imgTop.extend(rawData[((self.sensorHeight-j-2)*self._superRowSizeInBytes):((self.sensorHeight-j-1)*self._superRowSizeInBytes)])
+                imgTop.extend(rawData[((self.sensorHeight-j)*self._superRowSizeInBytes):((self.sensorHeight-j+1)*self._superRowSizeInBytes)])
             else:
                 imgBot.extend(rawData[(j*self._superRowSizeInBytes):((j+1)*self._superRowSizeInBytes)]) 
         imgDesc = imgTop
