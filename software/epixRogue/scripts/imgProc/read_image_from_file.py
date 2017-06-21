@@ -1,3 +1,24 @@
+#-----------------------------------------------------------------------------
+# Title      : read images from file script
+#-----------------------------------------------------------------------------
+# File       : read_image_from_file.py
+# Created    : 2017-06-19
+# Last update: 2017-06-21
+#-----------------------------------------------------------------------------
+# Description:
+# Simple image viewer that enble a local feedback from data collected using
+# ePix cameras. The initial intent is to use it with stand alone systems
+#
+#-----------------------------------------------------------------------------
+# This file is part of the ePix rogue. It is subject to 
+# the license terms in the LICENSE.txt file found in the top-level directory 
+# of this distribution and at: 
+#    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
+# No part of the ePix rogue, including this file, may be 
+# copied, modified, propagated, or distributed except according to the terms 
+# contained in the LICENSE.txt file.
+#-----------------------------------------------------------------------------
+
 import os, sys, time
 import numpy as np
 import ePixViewer.Cameras as cameras
@@ -7,7 +28,7 @@ import matplotlib
 matplotlib.use('QT4Agg')
 import matplotlib.pyplot as plt
 #matplotlib.pyplot.ion()
-
+MAX_NUMBER_OF_FRAMES_PER_BATCH  = 1000
 
 ##################################################
 # Global variables
@@ -22,7 +43,7 @@ f = open('/u1/ddoering/10kaImages/darkImage_10ka_120Hz_afterClearMatrix.dat', mo
 
 frame_size = [0]
 numberOfFrames = 0
-while (len(frame_size)==1):
+while ((len(frame_size)==1) and (numberOfFrames<MAX_NUMBER_OF_FRAMES_PER_BATCH)):
     try:
         # reads the number of bytes to read 
         frame_size = np.fromfile(f, dtype='uint32', count=1)

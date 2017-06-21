@@ -3,10 +3,8 @@
 # Title      : ePix 10ka board instance
 #-----------------------------------------------------------------------------
 # File       : epix10kaDAQ.py evolved from evalBoard.py
-# Author     : Ryan Herbst, rherbst@slac.stanford.edu
-# Modified by: Dionisio Doering
-# Created    : 2016-09-29
-# Last update: 2017-02-01
+# Created    : 2017-06-19
+# Last update: 2017-06-21
 #-----------------------------------------------------------------------------
 # Description:
 # Rogue interface to ePix 10ka board
