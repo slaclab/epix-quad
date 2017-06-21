@@ -28,4 +28,4 @@ setenv LD_LIBRARY_PATH ${ROGUE_DIR}/python::${LD_LIBRARY_PATH}
 setenv BOOST_THREAD -lboost_thread-mt
 
 # set matplotlib to use qt
-#setenv MPLBACKEND 'Qt4Agg'
+setenv MPLBACKEND 'Qt4Agg'
