@@ -394,7 +394,7 @@ class Window(QtGui.QMainWindow, QObject):
         chBdata = -1.0 + data[int(oscWords/2): oscWords] * (2.0/2**14)
         
         if (self.LinePlot2_RB1.isChecked()):
-            self.lineDisplay2.update_figure(self.cbScopeCh0.isChecked(), "Scope Trace A", 'r',  chAdata, 
+            self.lineDisplay2.update_plot(self.cbScopeCh0.isChecked(), "Scope Trace A", 'r',  chAdata, 
                                             self.cbScopeCh1.isChecked(), "Scope Trace B", 'b',  chBdata)
         self.eventReaderScope.busy = False
        
@@ -422,7 +422,7 @@ class Window(QtGui.QMainWindow, QObject):
             self.monitoringDataTraces = np.append(self.monitoringDataTraces, envData, 1)
         
         if (self.LinePlot2_RB2.isChecked()):
-            self.lineDisplay2.update_figure(self.cbEnvMonCh0.isChecked(), "Env. Data 0", 'r',  self.monitoringDataTraces[0,:], 
+            self.lineDisplay2.update_plot(self.cbEnvMonCh0.isChecked(), "Env. Data 0", 'r',  self.monitoringDataTraces[0,:], 
                                             self.cbEnvMonCh1.isChecked(), "Env. Data 1", 'b',  self.monitoringDataTraces[1,:],
                                             self.cbEnvMonCh2.isChecked(), "Env. Data 2", 'g',  self.monitoringDataTraces[2,:],
                                             self.cbEnvMonCh3.isChecked(), "Env. Data 3", 'y',  self.monitoringDataTraces[3,:],
@@ -463,12 +463,12 @@ class Window(QtGui.QMainWindow, QObject):
         #full line plot
         if (self.imgTool.imgDark_isSet):
             #self.ImgDarkSub        
-            self.lineDisplay1.update_figure(self.cbHorizontalLineEnabled.isChecked(),  "Horizontal", 'r', self.ImgDarkSub[self.mouseY,:], 
+            self.lineDisplay1.update_plot(self.cbHorizontalLineEnabled.isChecked(),  "Horizontal", 'r', self.ImgDarkSub[self.mouseY,:], 
                                             self.cbVerticalLineEnabled.isChecked(),    "Vertical",   'b', self.ImgDarkSub[:,self.mouseX],
                                             self.cbpixelTimeSeriesEnabled.isChecked(), "Pixel TS",   'k', self.pixelTimeSeries)
         else:
             #self.imgDesc
-            self.lineDisplay1.update_figure(self.cbHorizontalLineEnabled.isChecked(),  "Horizontal", 'r', self.imgDesc[self.mouseY,:], 
+            self.lineDisplay1.update_plot(self.cbHorizontalLineEnabled.isChecked(),  "Horizontal", 'r', self.imgDesc[self.mouseY,:], 
                                             self.cbVerticalLineEnabled.isChecked(),    "Vertical",   'b', self.imgDesc[:,self.mouseX],
                                             self.cbpixelTimeSeriesEnabled.isChecked(), "Pixel TS",   'k', self.pixelTimeSeries)
 
@@ -577,6 +577,13 @@ class Window(QtGui.QMainWindow, QObject):
             self.mouseXLine.setText(str(self.mouseX))
             self.mouseYLine.setText(str(self.mouseY))
             self.mouseValueLine.setText(str(self.mousePixelValue))
+            #test on update_figure
+            if (self.cbImageZoomEnabled.isChecked()):
+                if (self.imgTool.imgDark_isSet):
+                    self.lineDisplay1.update_figure(self.ImgDarkSub[self.mouseY-10:self.mouseY+10, self.mouseX-10:self.mouseX+10])
+                elif (self.imgDesc != []):
+                    self.lineDisplay1.update_figure(self.imgDesc[self.mouseY-10:self.mouseY+10, self.mouseX-10:self.mouseX+10])
+            
 
 
 ################################################################################
@@ -715,17 +722,18 @@ class MplCanvas(FigureCanvas):
 
     def __init__(self, parent=None, width=5, height=4, dpi=100, MyTitle=""):
 
-        fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = fig.add_subplot(111)
+        self.fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = self.fig.add_subplot(111)
 
         self.compute_initial_figure()
 
-        FigureCanvas.__init__(self, fig)
+        FigureCanvas.__init__(self, self.fig)
         self.setParent(parent)
         FigureCanvas.setSizePolicy(self, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
         FigureCanvas.updateGeometry(self)
         self.MyTitle = MyTitle
         self.axes.set_title(self.MyTitle)
+        self.fig.cbar = None
         
 
     def compute_initial_figure(self):
@@ -733,7 +741,7 @@ class MplCanvas(FigureCanvas):
         #self.axes.plot([0, 1, 2, 3], [1, 2, 0, 4], 'b')
         self.axes.plot([], [], 'b')
 
-    def update_figure(self):
+    def update_plot(self):
         # Build a list of 4 random integers between 0 and 10 (both inclusive)
         l = [-1, -2, 10, 14] #[random.randint(0, 10) for i in range(4)]
         #self.axes.cla()
@@ -742,7 +750,7 @@ class MplCanvas(FigureCanvas):
 
     #the arguments are expected in the following sequence
     # (display enabled, line name, line color, data array)
-    def update_figure(self, *args):
+    def update_plot(self, *args):
         argIndex = 0
         lineName = ""
         self.axes.cla()
@@ -762,6 +770,21 @@ class MplCanvas(FigureCanvas):
             argIndex = argIndex + 1    
         self.axes.set_title(self.MyTitle)        
         self.draw()
+
+    def update_figure(self, image=None):
+        self.axes.cla()
+        if (len(image)>0):
+            #self.axes.gray()        
+            self.cax = self.axes.imshow(image, interpolation='nearest', cmap='gray')
+            if (self.fig.cbar==None):              
+                self.fig.cbar = self.fig.colorbar(self.cax)
+            else:
+                self.fig.cbar.remove()
+                self.fig.cbar = self.fig.colorbar(self.cax)
+        self.draw()
+
+        
+
 
 ################################################################################
 ################################################################################
@@ -920,6 +943,7 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         myParent.cbVerticalLineEnabled = QtGui.QCheckBox('Plot Vertical Line')
         #
         myParent.cbpixelTimeSeriesEnabled = QtGui.QCheckBox('Pixel Time Series Line')
+        myParent.cbImageZoomEnabled = QtGui.QCheckBox('Image zoom')
 
         # button save trace to file
         btnSaveSeriesToFile = QtGui.QPushButton("Save to file")
@@ -945,6 +969,7 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         grid3.addWidget(myParent.cbHorizontalLineEnabled,1, 1)
         grid3.addWidget(myParent.cbVerticalLineEnabled,2, 1)
         grid3.addWidget(myParent.cbpixelTimeSeriesEnabled,3, 1)
+        grid3.addWidget(myParent.cbImageZoomEnabled,1, 3)
         grid3.addWidget(btnSaveSeriesToFile,4, 1)
 
 
