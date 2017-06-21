@@ -631,7 +631,7 @@ class Epix10kaAsic(pr.Device):
             if os.path.splitext(self.filename)[1] == '.csv':
                 matrixCfg = np.genfromtxt(self.filename, delimiter=',')
                 if matrixCfg.shape == (178, 192):
-                    for x in range (0, 178):
+                    for x in range (0, 177):
                         self.RowCounter.set(x)
                         for y in range (0, 192):
                             bankToWrite = int(y/48);
@@ -668,7 +668,7 @@ class Epix10kaAsic(pr.Device):
                self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
             if os.path.splitext(self.filename)[1] == '.csv':
                 readBack = np.zeros((178, 192),dtype='uint16')
-                for x in range (0, 178):
+                for x in range (0, 177):
                    self.RowCounter.set(x)
                    for y in range (0, 192):
                       bankToWrite = int(y/48);
