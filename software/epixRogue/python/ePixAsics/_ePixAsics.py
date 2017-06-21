@@ -442,8 +442,8 @@ class Epix10kaAsic(pr.Device):
         self.add((
             pr.Variable(name='Dm1En',     description='Config6', offset=0x00001006*addrSize, bitSize=1, bitOffset=0, base='bool', mode='RW'),
             pr.Variable(name='Dm2En',     description='Config6', offset=0x00001006*addrSize, bitSize=1, bitOffset=1, base='bool', mode='RW'),
-            pr.Variable(name='emph_bd',   description='Config6', offset=0x00001006*addrSize, bitSize=3, bitOffset=2, base='bool', mode='RW'),
-            pr.Variable(name='emph_bc',   description='Config6', offset=0x00001006*addrSize, bitSize=3, bitOffset=5, base='bool', mode='RW')))
+            pr.Variable(name='emph_bd',   description='Config6', offset=0x00001006*addrSize, bitSize=3, bitOffset=2, base='hex', mode='RW'),
+            pr.Variable(name='emph_bc',   description='Config6', offset=0x00001006*addrSize, bitSize=3, bitOffset=5, base='hex', mode='RW')))
       
         # CMD = 1, Addr = 7  : Bit  5:0 = VREF[5:0]
         #                    : Bit  7:6 = VrefLow[1:0]
