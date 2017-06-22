@@ -20,6 +20,7 @@
 # copied, modified, propagated, or distributed except according to the terms 
 # contained in the LICENSE.txt file.
 #-----------------------------------------------------------------------------
+import time as ti
 import pyrogue as pr
 import collections
 import os
@@ -293,8 +294,9 @@ class Epix100aAsic(pr.Device):
             if os.path.splitext(self.filename)[1] == '.csv':
                 matrixCfg = np.genfromtxt(self.filename, delimiter=',')
                 if matrixCfg.shape == (354, 384):
+                    self.CmdPrepForRead()
+                    self.PrepareMultiConfig()
                     for x in range (0, 354):
-                        self.RowCounter.set(x)
                         for y in range (0, 384):
                             bankToWrite = int(y/96);
                             if (bankToWrite == 0):
@@ -307,6 +309,7 @@ class Epix100aAsic(pr.Device):
                                 colToWrite = 0x380 + y%96;
                             else:
                                 print('unexpected bank number')
+                            self.RowCounter.set(x)
                             self.ColCounter.set(colToWrite)
                             self.WritePixelData.set(int(matrixCfg[x][y]))
                     self.CmdPrepForRead()
@@ -331,8 +334,9 @@ class Epix100aAsic(pr.Device):
                 self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
             if os.path.splitext(self.filename)[1] == '.csv':
                 readBack = np.zeros((354, 384),dtype='uint16')
+                self.CmdPrepForRead()
+                self.PrepareMultiConfig()
                 for x in range (0, 354):
-                    self.RowCounter.set(x)
                     for y in range (0, 384):
                         bankToWrite = int(y/96);
                         if (bankToWrite == 0):
@@ -345,6 +349,7 @@ class Epix100aAsic(pr.Device):
                             colToWrite = 0x380 + y%96;
                         else:
                             print('unexpected bank number')
+                        self.RowCounter.set(x)
                         self.ColCounter.set(colToWrite)
                         readBack[x, y] = self.WritePixelData.get()
                 np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
@@ -631,8 +636,9 @@ class Epix10kaAsic(pr.Device):
             if os.path.splitext(self.filename)[1] == '.csv':
                 matrixCfg = np.genfromtxt(self.filename, delimiter=',')
                 if matrixCfg.shape == (178, 192):
+                    self.CmdPrepForRead()
+                    self.PrepareMultiConfig()
                     for x in range (0, 177):
-                        self.RowCounter.set(x)
                         for y in range (0, 192):
                             bankToWrite = int(y/48);
                             if (bankToWrite == 0):
@@ -645,6 +651,7 @@ class Epix10kaAsic(pr.Device):
                                colToWrite = 0x380 + y%48;
                             else:
                                print('unexpected bank number')
+                            self.RowCounter.set(x)
                             self.ColCounter.set(colToWrite)
                             self.WritePixelData.set(int(matrixCfg[x][y]))
                     self.CmdPrepForRead()
@@ -668,8 +675,9 @@ class Epix10kaAsic(pr.Device):
                self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
             if os.path.splitext(self.filename)[1] == '.csv':
                 readBack = np.zeros((178, 192),dtype='uint16')
+                self.CmdPrepForRead()
+                self.PrepareMultiConfig()
                 for x in range (0, 177):
-                   self.RowCounter.set(x)
                    for y in range (0, 192):
                       bankToWrite = int(y/48);
                       if (bankToWrite == 0):
@@ -682,6 +690,7 @@ class Epix10kaAsic(pr.Device):
                          colToWrite = 0x380 + y%48;
                       else:
                          print('unexpected bank number')
+                      self.RowCounter.set(x)
                       self.ColCounter.set(colToWrite)
                       readBack[x, y] = self.WritePixelData.get()
                 np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
@@ -879,9 +888,11 @@ class TixelAsic(pr.Device):
             if os.path.splitext(self.filename)[1] == '.csv':
                 matrixCfg = np.genfromtxt(self.filename, delimiter=',')
                 if matrixCfg.shape == (48, 48):
+                    self.CmdPrepForRead()
+                    self.PrepareMultiConfig()
                     for x in range (0, 48):
-                        self.RowCounter.set(x)
                         for y in range (0, 48):
+                            self.RowCounter.set(x)
                             self.ColCounter.set(y)
                             self.WritePixelData.set(int(matrixCfg[x][y]))
                     self.CmdPrepForRead()
@@ -905,9 +916,11 @@ class TixelAsic(pr.Device):
                self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
             if os.path.splitext(self.filename)[1] == '.csv':
                 readBack = np.zeros((48,48),dtype='uint16')
+                self.CmdPrepForRead()
+                self.PrepareMultiConfig()
                 for x in range (0, 48):
-                   self.RowCounter.set(x)
                    for y in range (0, 48):
+                      self.RowCounter.set(x)
                       self.ColCounter.set(y)
                       readBack[x, y] = self.WritePixelData.get()
                 np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
