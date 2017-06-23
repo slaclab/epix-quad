@@ -28,7 +28,7 @@ import matplotlib
 matplotlib.use('QT4Agg')
 import matplotlib.pyplot as plt
 #matplotlib.pyplot.ion()
-MAX_NUMBER_OF_FRAMES_PER_BATCH  = 1000
+MAX_NUMBER_OF_FRAMES_PER_BATCH  = 10
 
 ##################################################
 # Global variables
@@ -41,26 +41,27 @@ cameraType = 'ePix10ka'
 ##################################################
 f = open('/u1/ddoering/10kaImages/darkImage_10ka_120Hz_afterClearMatrix.dat', mode = 'rb')
 
-frame_size = [0]
+file_header = [0]
 numberOfFrames = 0
-while ((len(frame_size)==1) and (numberOfFrames<MAX_NUMBER_OF_FRAMES_PER_BATCH)):
+while ((len(file_header)>0) and (numberOfFrames<MAX_NUMBER_OF_FRAMES_PER_BATCH)):
     try:
-        # reads the number of bytes to read 
-        frame_size = np.fromfile(f, dtype='uint32', count=1)
-        #print ('size',  frame_size)
-        newPayload = np.fromfile(f, dtype='uint32', count=int(frame_size[0]/4)) #(frame size splited by four to read 32 bit 
+        # reads file header [the number of bytes to read, EVIO]
+        file_header = np.fromfile(f, dtype='uint32', count=2)
+        payloadSize = int(file_header[0]/4)-1 #-1 is need because size info includes the second word from the header
+        #print ('size',  file_header)
+        newPayload = np.fromfile(f, dtype='uint32', count=payloadSize) #(frame size splited by four to read 32 bit 
         if (numberOfFrames == 0):
             allFrames = [newPayload.copy()]
         else:
             newFrame  = [newPayload.copy()]
             allFrames = np.append(allFrames, newFrame, axis = 0)
         numberOfFrames = numberOfFrames + 1 
-        #print (newPayload[0:7])
-        previousSize = frame_size
+        print ("Payload" , numberOfFrames, ":",  (newPayload[0:15]))
+        previousSize = file_header
     except Exception: 
         #e = sys.exc_info()[0]
         #print ("Message\n", e)
-        #print ('size', frame_size, 'previous size', previousSize)
+        #print ('size', file_header, 'previous size', previousSize)
         print("numberOfFrames read: " ,numberOfFrames)
 
 
