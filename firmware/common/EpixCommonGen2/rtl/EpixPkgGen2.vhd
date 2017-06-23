@@ -222,6 +222,7 @@ package EpixPkgGen2 is
    );
 
    --Functions to allow use of EPIX100 or 10k
+   function saciClkPeriod(version: AsicType) return real;
    function getNumColumns ( version : AsicType ) return integer;
    function getWordsPerSuperRow ( version : AsicType ) return integer;
 
@@ -261,7 +262,16 @@ package EpixPkgGen2 is
 end EpixPkgGen2;
 
 package body EpixPkgGen2 is
-
+   
+   function saciClkPeriod(version: AsicType) return real is
+   begin
+      if (version = EPIX10KA_C) then
+         return 1.00E-6;   -- 1MHz
+      else
+         return 0.25E-6;   -- 4MHz
+      end if;
+   end function; 
+   
    function getNumColumns (version : AsicType ) return integer is
    begin
       --Epix100a

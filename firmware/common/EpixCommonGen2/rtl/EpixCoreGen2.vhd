@@ -266,6 +266,8 @@ architecture top_level of EpixCoreGen2 is
    signal doutRd     : slv(15 downto 0);
    signal doutValid  : slv(15 downto 0);
    
+   constant SACI_CLK_PERIOD_C : real := saciClkPeriod(ASIC_TYPE_G);
+   
    constant DDR_AXI_CONFIG_C : AxiConfigType := axiConfig(
       ADDR_WIDTH_C => 30,
       DATA_BYTES_C => 16,
@@ -591,7 +593,7 @@ begin
    generic map (
       AXIL_CLK_PERIOD_G  => 10.0E-9, -- In units of seconds
       AXIL_TIMEOUT_G     => 1.0E-3,  -- In units of seconds
-      SACI_CLK_PERIOD_G  => 1.00E-6, -- In units of seconds
+      SACI_CLK_PERIOD_G  => SACI_CLK_PERIOD_C, -- In units of seconds
       SACI_CLK_FREERUN_G => false,
       SACI_RSP_BUSSED_G  => true,
       SACI_NUM_CHIPS_G   => 4)
