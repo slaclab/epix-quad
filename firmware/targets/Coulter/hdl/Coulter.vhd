@@ -5,7 +5,7 @@
 -- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 09/30/2015
--- Last update: 2017-03-08
+-- Last update: 2017-06-15
 -- Platform   : Vivado 2014.4
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -115,7 +115,7 @@ architecture top_level of Coulter is
    -------------------------------------------------------------------------------------------------
    -- AXI-Lite config
    -------------------------------------------------------------------------------------------------
-   constant AXIL_MASTERS_C       : integer      := 11;
+   constant AXIL_MASTERS_C       : integer      := 12;
    constant VERSION_AXIL_C       : integer      := 0;
    constant ASIC_CONFIG_AXIL_C   : IntegerArray := (0 => 1, 1 => 2);
    constant ADC_CONFIG_AXIL_C    : integer      := 3;
@@ -126,6 +126,7 @@ architecture top_level of Coulter is
    constant XADC_AXIL_C          : integer      := 8;
    constant RING_BUF_AXIL_C      : integer      := 9;
    constant READOUT_CTRL_AXIL_C  : integer      := 10;
+   constant TEST_RAM_AXIL_C      : integer      := 11;
 
    constant AXIL_XBAR_CONFIG_C : AxiLiteCrossbarMasterConfigArray(AXIL_MASTERS_C-1 downto 0) :=
       genAxiLiteConfig(AXIL_MASTERS_C, X"00000000", 20, 16);
@@ -242,7 +243,7 @@ begin
          o   => open);                  -- [out]
 
    mps   <= not elineMck;               --debug(2);
-   tgOut <= not adcOverflow(0); --not elineSc;
+   tgOut <= not adcOverflow(0);         --not elineSc;
 
    -------------------------------------------------------------------------------------------------
    -- PGP
@@ -636,6 +637,28 @@ begin
          axilReadSlave   => locAxilReadSlaves(XADC_AXIL_C),    -- [out]
          axilWriteMaster => locAxilWriteMasters(XADC_AXIL_C),  -- [in]
          axilWriteSlave  => locAxilWriteSlaves(XADC_AXIL_C));  -- [out]
+
+   U_AxiDualPortRam_1 : entity work.AxiDualPortRam
+      generic map (
+         TPD_G            => TPD_G,
+         BRAM_EN_G        => true,
+         REG_EN_G         => true,
+         AXI_WR_EN_G      => true,
+         SYS_WR_EN_G      => false,
+         SYS_BYTE_WR_EN_G => false,
+         COMMON_CLK_G     => true,
+         ADDR_WIDTH_G     => 10,
+         DATA_WIDTH_G     => 32)
+      port map (
+         axiClk         => axilClk,                               -- [in]
+         axiRst         => axilRst,                               -- [in]
+         axiReadMaster  => locAxilReadMasters(TEST_RAM_AXIL_C),   -- [in]
+         axiReadSlave   => locAxilReadSlaves(TEST_RAM_AXIL_C),    -- [out]
+         axiWriteMaster => locAxilWriteMasters(TEST_RAM_AXIL_C),  -- [in]
+         axiWriteSlave  => locAxilWriteSlaves(TEST_RAM_AXIL_C),   -- [out]
+         clk            => axilClk,                               -- [in]
+         dout           => open);                                 -- [out]
+
 
 
 end top_level;
