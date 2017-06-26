@@ -34,12 +34,17 @@ MAX_NUMBER_OF_FRAMES_PER_BATCH  = 10
 # Global variables
 ##################################################
 cameraType = 'ePix10ka'
-
+bitMask = 0x3fff
 
 ##################################################
 # Dark images
 ##################################################
-f = open('/u1/ddoering/10kaImages/darkImage_10ka_120Hz_afterClearMatrix.dat', mode = 'rb')
+if (len(sys.argv[1])>0):
+    filename = sys.argv[1]
+else:
+    filename = '/u1/ddoering/10kaImages/darkImage_10ka_120Hz_afterClearMatrix.dat'
+
+f = open(filename, mode = 'rb')
 
 file_header = [0]
 numberOfFrames = 0
@@ -69,6 +74,7 @@ while ((len(file_header)>0) and (numberOfFrames<MAX_NUMBER_OF_FRAMES_PER_BATCH))
 # image descrambling
 ##################################################
 currentCam = cameras.Camera(cameraType = cameraType)
+currentCam.bitMask = bitMask
 numberOfFrames = allFrames.shape[0]
 print("numberOfFrames in the 3D array: " ,numberOfFrames)
 
@@ -88,21 +94,34 @@ for i in range(0, numberOfFrames):
 ##################################################
 avgDark = np.average(imgDesc,0)
 stdDark = np.std(imgDesc,0)
+#u0_height_range = int(currentCam.sensorHeight/2):currentCam.sensorHeight
+#u0_width_range = int(currentCam.sensorWidth/2):currentCam.sensorWidth
+avgDark_u0 = avgDark[int(currentCam.sensorHeight/2):currentCam.sensorHeight, int(currentCam.sensorWidth/2):currentCam.sensorWidth]
+stdDark_u0 = stdDark[int(currentCam.sensorHeight/2):currentCam.sensorHeight, int(currentCam.sensorWidth/2):currentCam.sensorWidth]
 
-plt.imshow(avgDark, interpolation='nearest')
+
+plt.imshow(avgDark_u0, interpolation='nearest')
 plt.gray()
 plt.colorbar()
 plt.title('Average dark image')
-
 plt.show()
 
-plt.imshow(stdDark, interpolation='nearest')
+plt.hist(avgDark_u0.reshape(-1,1), bins='auto')  # arguments are passed to np.histogram
+plt.title("Histogram with 'auto' bins")
+plt.show()
+
+
+plt.imshow(stdDark_u0, interpolation='nearest')
 plt.gray()
 plt.colorbar()
 plt.title('Standard deviation of the dark image')
 plt.show()
 
-plt.imshow(imgDesc[5,:,:]-avgDark, interpolation='nearest',vmin=-100, vmax=100)
+
+darkSubSampleImg = imgDesc[5,:,:]-avgDark
+darkSubSampleImg_u0 = darkSubSampleImg[int(currentCam.sensorHeight/2):currentCam.sensorHeight, int(currentCam.sensorWidth/2):currentCam.sensorWidth]
+
+plt.imshow(darkSubSampleImg_u0, interpolation='nearest',vmin=-100, vmax=100)
 plt.gray()
 plt.colorbar()
 plt.title('Example of dark image subtracted image')
