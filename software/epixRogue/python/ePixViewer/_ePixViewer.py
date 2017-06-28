@@ -158,17 +158,20 @@ class Window(QtGui.QMainWindow, QObject):
     #creates the main display element of the user interface
     def buildUi(self):
         #label used to display image
-        self.label = QtGui.QLabel()
-        self.label.mousePressEvent = self.mouseClickedOnImage
-        self.label.setAlignment(QtCore.Qt.AlignTop)
-        self.label.setFixedSize(800,800)
-        self.label.setScaledContents(True)
+        self.mainImageDisp = MplCanvas(MyTitle = "Image Display")
+        #self.label = QtGui.QLabel()
+        #self.label.mousePressEvent = self.mouseClickedOnImage
+        self.cid_mousePressEvent = self.mainImageDisp.mpl_connect('button_press_event', self.mouseClickedOnImage)
+        #self.label.setAlignment(QtCore.Qt.AlignTop)
+        #self.label.setFixedSize(800,800)
+        #self.label.setScaledContents(True)
         
         # left hand side layout
         self.mainWidget = QtGui.QWidget(self)
         vbox1 = QVBoxLayout()
         vbox1.setAlignment(QtCore.Qt.AlignTop)
-        vbox1.addWidget(self.label,  QtCore.Qt.AlignTop)
+        #vbox1.addWidget(self.label,  QtCore.Qt.AlignTop)
+        vbox1.addWidget(self.mainImageDisp,  QtCore.Qt.AlignTop)
 
         #tabbed control box
         self.gridVbox2 = TabbedCtrlCanvas(self)
@@ -287,11 +290,12 @@ class Window(QtGui.QMainWindow, QObject):
         print('File name: ', path)
         if path:
             image = QtGui.QImage(path)
-            pp = QtGui.QPixmap.fromImage(image)
-            self.label.setPixmap(pp.scaled(
-                    self.label.size(),
-                    QtCore.Qt.KeepAspectRatio,
-                    QtCore.Qt.SmoothTransformation))
+            self.mainImageDisp.update_figure(image)
+#            pp = QtGui.QPixmap.fromImage(image)
+#            self.label.setPixmap(pp.scaled(
+#                    self.label.size(),
+#                    QtCore.Qt.KeepAspectRatio,
+#                    QtCore.Qt.SmoothTransformation))
 
 
     # if the image is a rogue type, calls the file reader object to read all frames
@@ -345,16 +349,17 @@ class Window(QtGui.QMainWindow, QObject):
 
         if (self.imgTool.imgDark_isSet):
             self.ImgDarkSub = self.imgTool.getDarkSubtractedImg(self.imgDesc)
-            _8bitImg = self.imgTool.reScaleImgTo8bit(self.ImgDarkSub, self.imageScaleMax, self.imageScaleMin)
+            _8bitImg = self.ImgDarkSub#self.imgTool.reScaleImgTo8bit(self.ImgDarkSub, self.imageScaleMax, self.imageScaleMin)
         else:
             # get the data into the image object
-            _8bitImg = self.imgTool.reScaleImgTo8bit(self.imgDesc, self.imageScaleMax, self.imageScaleMin)
+            _8bitImg = self.imgDesc#self.imgTool.reScaleImgTo8bit(self.imgDesc, self.imageScaleMax, self.imageScaleMin)
 
-        self.image = QtGui.QImage(_8bitImg.repeat(4), self.imgTool.imgWidth, self.imgTool.imgHeight, QtGui.QImage.Format_RGB32)
+        #self.image = QtGui.QImage(_8bitImg.repeat(4), self.imgTool.imgWidth, self.imgTool.imgHeight, QtGui.QImage.Format_RGB32)
         
-        pp = QtGui.QPixmap.fromImage(self.image)
-        self.label.setPixmap(pp.scaled(self.label.size(),QtCore.Qt.KeepAspectRatio,QtCore.Qt.SmoothTransformation))
-        self.label.adjustSize()
+        #pp = QtGui.QPixmap.fromImage(self.image)
+        self.mainImageDisp.update_figure(_8bitImg, contrast=[self.imageScaleMax, self.imageScaleMin], autoScale = False)
+        #self.label.setPixmap(pp.scaled(self.label.size(),QtCore.Qt.KeepAspectRatio,QtCore.Qt.SmoothTransformation))
+        #self.label.adjustSize()
         # updates the frame number
         # this sleep is a weak way of waiting for the file to be readout completely... needs improvement
         time.sleep(self.readFileDelay)
@@ -454,12 +459,7 @@ class Window(QtGui.QMainWindow, QObject):
     
     def updateLinePlots(self):
         ##if (PRINT_VERBOSE): print('Horizontal plot processing')
-        size    = self.label.size()
-        imageH  = self.image.height()
-        imageW  = self.image.width()
-        pixmapH = self.label.height()
-        pixmapW = self.label.width()
-
+   
         #full line plot
         if (self.imgTool.imgDark_isSet):
             #self.ImgDarkSub        
@@ -480,12 +480,7 @@ class Window(QtGui.QMainWindow, QObject):
 
     def updatePixelTimeSeriesLinePlot(self):
         ##if (PRINT_VERBOSE): print('Horizontal plot processing')
-        size    = self.label.size()
-        imageH  = self.image.height()
-        imageW  = self.image.width()
-        pixmapH = self.label.height()
-        pixmapW = self.label.width()
-
+   
         #full line plot
         if (self.imgTool.imgDark_isSet):
             self.pixelTimeSeries = np.append(self.pixelTimeSeries, self.ImgDarkSub[self.mouseY,self.mouseY])
@@ -552,15 +547,16 @@ class Window(QtGui.QMainWindow, QObject):
 
     def mouseClickedOnImage(self, event):
         if (self.imgDesc != []):
-            mouseX = event.pos().x()
-            mouseY = event.pos().y()
-            pixmapH = self.label.height()
-            pixmapW = self.label.width()
-            imageH = self.image.height()
-            imageW = self.image.width()
+            #mouseX = event.pos().x()
+            #mouseY = event.pos().y()
+            self.mouseX, self.mouseY = int(event.xdata), int(event.ydata)
+            #pixmapH = self.label.height()
+            #pixmapW = self.label.width()
+            #imageH = self.image.height()
+            #imageW = self.image.width()
     
-            self.mouseX = int(imageW*mouseX/pixmapW)
-            self.mouseY = int(imageH*mouseY/pixmapH)
+            #self.mouseX = int(imageW*mouseX/pixmapW)
+            #self.mouseY = int(imageH*mouseY/pixmapH)
             
             if (self.imgTool.imgDark_isSet):
                 self.mousePixelValue = self.ImgDarkSub[self.mouseY, self.mouseX]
@@ -570,19 +566,20 @@ class Window(QtGui.QMainWindow, QObject):
             # clear the pixel time sereis every time the pixel of interest is changed
             self.clearPixelTimeSeriesLinePlot()
     
-            print('Raw mouse coordinates: {},{}'.format(mouseX, mouseY))
-            print('Pixel map dimensions: {},{}'.format(pixmapW, pixmapH))
-            print('Image dimensions: {},{}'.format(imageW, imageH))
+            #print('Raw mouse coordinates: {},{}'.format(mouseX, mouseY))
+            #print('Pixel map dimensions: {},{}'.format(pixmapW, pixmapH))
+            #print('Image dimensions: {},{}'.format(imageW, imageH))
             print('Pixel[{},{}] = {}'.format(self.mouseX, self.mouseY, self.mousePixelValue))
             self.mouseXLine.setText(str(self.mouseX))
             self.mouseYLine.setText(str(self.mouseY))
             self.mouseValueLine.setText(str(self.mousePixelValue))
             #test on update_figure
+            self.updateLinePlots()
             if (self.cbImageZoomEnabled.isChecked()):
                 if (self.imgTool.imgDark_isSet):
-                    self.lineDisplay1.update_figure(self.ImgDarkSub[self.mouseY-10:self.mouseY+10, self.mouseX-10:self.mouseX+10])
+                    self.lineDisplay1.update_figure(self.ImgDarkSub[self.mouseY-10:self.mouseY+10, self.mouseX-10:self.mouseX+10],contrast=[self.imageScaleMax, self.imageScaleMin], autoScale = False)
                 elif (self.imgDesc != []):
-                    self.lineDisplay1.update_figure(self.imgDesc[self.mouseY-10:self.mouseY+10, self.mouseX-10:self.mouseX+10])
+                    self.lineDisplay1.update_figure(self.imgDesc[self.mouseY-10:self.mouseY+10, self.mouseX-10:self.mouseX+10],contrast=[self.imageScaleMax, self.imageScaleMin], autoScale = False)
             
 
 
@@ -734,6 +731,7 @@ class MplCanvas(FigureCanvas):
         self.MyTitle = MyTitle
         self.axes.set_title(self.MyTitle)
         self.fig.cbar = None
+
         
 
     def compute_initial_figure(self):
@@ -753,6 +751,9 @@ class MplCanvas(FigureCanvas):
     def update_plot(self, *args):
         argIndex = 0
         lineName = ""
+#        if (self.fig.cbar!=None):              
+#            self.fig.cbar.remove()
+
         self.axes.cla()
         for arg in args:
             if (argIndex == 0):
@@ -771,16 +772,22 @@ class MplCanvas(FigureCanvas):
         self.axes.set_title(self.MyTitle)        
         self.draw()
 
-    def update_figure(self, image=None):
+    def update_figure(self, image=None, contrast=None, autoScale = True):
         self.axes.cla()
+        self.axes.autoscale = autoScale
+
         if (len(image)>0):
             #self.axes.gray()        
-            self.cax = self.axes.imshow(image, interpolation='nearest', cmap='gray')
-            if (self.fig.cbar==None):              
-                self.fig.cbar = self.fig.colorbar(self.cax)
+            if (contrast != None):
+                self.cax = self.axes.imshow(image, interpolation='nearest', cmap='gray',vmin=contrast[1], vmax=contrast[0])
             else:
-                self.fig.cbar.remove()
-                self.fig.cbar = self.fig.colorbar(self.cax)
+                self.cax = self.axes.imshow(image, interpolation='nearest', cmap='gray')
+
+#            if (self.fig.cbar==None):              
+#                self.fig.cbar = self.fig.colorbar(self.cax)
+#            else:
+#                self.fig.cbar.remove()
+#                self.fig.cbar = self.fig.colorbar(self.cax)
         self.draw()
 
         
