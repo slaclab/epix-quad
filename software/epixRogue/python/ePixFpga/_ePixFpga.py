@@ -48,7 +48,7 @@ class HrPrototype(pr.Device):
         super(self.__class__, self).__init__(**kwargs)
         self.add((
             axi.AxiVersion(offset=0x00000000),
-            TixelFpgaRegisters(name="HrPrototypeFpgaRegisters", offset=0x01000000),
+            HrPrototypeFpgaRegisters(name="HrPrototypeFpgaRegisters", offset=0x01000000),
             TriggerRegisters(name="TriggerRegisters", offset=0x02000000, expand=False),
             SlowAdcRegisters(name="SlowAdcRegisters", offset=0x03000000, expand=False),
             epix.TixelAsic(name='TixelAsic0', offset=0x04000000, enabled=False, expand=False),
@@ -161,8 +161,12 @@ class HrPrototypeFpgaRegisters(pr.Device):
          pr.Variable(name='AsicPwrManualFpga',  description='AsicPower', offset=0x0000020C, bitSize=1, bitOffset=23, base='bool', mode='RW')))
       self.add(pr.Variable(name='AsicMask',        description='AsicMask',          offset=0x00000210, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
       self.add(pr.Variable(name='VguardDacSetting',description='VguardDacSetting',  offset=0x00000214, bitSize=16, bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='TixelDebugSel1',  description='TixelDebugSel1',    offset=0x00000218, bitSize=5,  bitOffset=0, base='hex',  mode='RW'))
-      self.add(pr.Variable(name='TixelDebugSel2',  description='TixelDebugSel2',    offset=0x0000021C, bitSize=5,  bitOffset=0, base='hex',  mode='RW'))
+      self.add(pr.Variable(name='VBias1DacSetting',description='VBias1DacSetting',  offset=0x00000218, bitSize=16, bitOffset=0, base='uint', mode='RW'))
+      self.add(pr.Variable(name='VBias2DacSetting',description='VBias2DacSetting',  offset=0x0000021C, bitSize=16, bitOffset=0, base='uint', mode='RW'))
+      self.add(pr.Variable(name='VBias3DacSetting',description='VBias3DacSetting',  offset=0x00000220, bitSize=16, bitOffset=0, base='uint', mode='RW'))
+      self.add(pr.Variable(name='VocmDacSetting',  description='VocsDacSetting',    offset=0x00000224, bitSize=16, bitOffset=0, base='uint', mode='RW'))
+      self.add(pr.Variable(name='TixelDebugSel1',  description='TixelDebugSel1',    offset=0x00000228, bitSize=5,  bitOffset=0, base='hex',  mode='RW'))
+      self.add(pr.Variable(name='TixelDebugSel2',  description='TixelDebugSel2',    offset=0x0000022C, bitSize=5,  bitOffset=0, base='hex',  mode='RW'))
       
       self.add(pr.Variable(name='AdcClkHalfT',     description='AdcClkHalfT',       offset=0x00000300, bitSize=32, bitOffset=0, base='uint', mode='RW'))
       self.add((

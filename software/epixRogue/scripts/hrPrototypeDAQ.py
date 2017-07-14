@@ -129,7 +129,7 @@ class EpixBoard(pyrogue.Root):
         self.guiTop = guiTop
 
         # Add Devices
-        self.add(fpga.HrPrototype(name='HR prototype', offset=0, memBase=srp, hidden=False, enabled=True))
+        self.add(fpga.HrPrototype(name='hrFPGA', offset=0, memBase=srp, hidden=False, enabled=True))
 
         @self.command()
         def Trigger():
