@@ -49,15 +49,15 @@ TEST_DARK = False
 #and (Random pixel selection)
 TEST_LINEARITY_TEST_A = False
 #or
-TEST_LINEARITY_TEST_B = False
+TEST_LINEARITY_TEST_B = True
 #and (row pixel selection)
-TEST_LINEARITY_TEST_C = False
+TEST_LINEARITY_TEST_C = True
 #or 
 TEST_LINEARITY_TEST_D = False
 #and (col pixel selection)
-TEST_LINEARITY_TEST_E = False
+TEST_LINEARITY_TEST_E = True
 #or 
-TEST_LINEARITY_TEST_F = True
+TEST_LINEARITY_TEST_F = False
 #############################################
 #print debug info
 PRINT_VERBOSE = False
@@ -78,8 +78,8 @@ print("PGP Card Version: %x" % (pgpVc0.getInfo().version))
 dataWriter = pyrogue.utilities.fileio.StreamWriter('dataWriter')
 pyrogue.streamConnect(pgpVc0, dataWriter.getChannel(0x1))
 # Add pseudoscope to file writer
-pyrogue.streamConnect(pgpVc2, dataWriter.getChannel(0x2))
-pyrogue.streamConnect(pgpVc3, dataWriter.getChannel(0x3))
+#pyrogue.streamConnect(pgpVc2, dataWriter.getChannel(0x2))
+#pyrogue.streamConnect(pgpVc3, dataWriter.getChannel(0x3))
 
 cmd = rogue.protocols.srp.Cmd()
 pyrogue.streamConnect(cmd, pgpVc0)
@@ -256,13 +256,14 @@ if (TEST_LINEARITY_TEST_A or TEST_LINEARITY_TEST_B):
 
     #set registers to take dark images
     #ePixBoard.Epix10ka.Epix10kaAsic0.fnSetPixelBitmap(cmd=cmd, dev=ePixBoard.Epix10ka.Epix10kaAsic0, arg='pixelBitMaps/epix10ka_gain_00.csv')
-    ePixBoard.Epix10ka.Epix10kaAsic0.Pulser.set(0x100)
     ePixBoard.Epix10ka.Epix10kaAsic0.pbit.set(False)
     ePixBoard.Epix10ka.Epix10kaAsic0.atest.set(False)
     ePixBoard.Epix10ka.Epix10kaAsic0.test.set(True)
     if (TEST_LINEARITY_TEST_B):
+        print('Executing Test B')
         ePixBoard.Epix10ka.Epix10kaAsic0.hrtest.set(True)
     else:
+        print('Executing Test A')
         ePixBoard.Epix10ka.Epix10kaAsic0.hrtest.set(False)
 
 
@@ -270,41 +271,45 @@ if (TEST_LINEARITY_TEST_A or TEST_LINEARITY_TEST_B):
     fileFolders = [ ['/u1/ddoering/10kaImages/ffff_ffff_ffff_ffff/lin_random/tr_0/00/','/u1/ddoering/10kaImages/ffff_ffff_ffff_ffff/lin_random/tr_0/01/','/u1/ddoering/10kaImages/ffff_ffff_ffff_ffff/lin_random/tr_0/10/','/u1/ddoering/10kaImages/ffff_ffff_ffff_ffff/lin_random/tr_0/11/'],
                     ['/u1/ddoering/10kaImages/ffff_ffff_ffff_ffff/lin_random/tr_1/00/','/u1/ddoering/10kaImages/ffff_ffff_ffff_ffff/lin_random/tr_1/01/','/u1/ddoering/10kaImages/ffff_ffff_ffff_ffff/lin_random/tr_1/10/','/u1/ddoering/10kaImages/ffff_ffff_ffff_ffff/lin_random/tr_1/11/']]
     if (TEST_LINEARITY_TEST_B):
-        fileName = 'linearityRandom_10ka_120Hz_hrtest_true_run1.dat'
+        fileName = 'linearityRandom_10ka_120Hz_hrtest_true'
     else:
-        fileName = 'linearityRandom_10ka_120Hz_hrtest_false_run1.dat'
+        fileName = 'linearityRandom_10ka_120Hz_hrtest_false'
+
 #    configFiles = ['pixelBitMaps/epix10ka_AllPixelValues_0.csv','pixelBitMaps/epix10ka_AllPixelValues_4.csv','pixelBitMaps/epix10ka_AllPixelValues_8.csv','pixelBitMaps/epix10ka_AllPixelValues_12.csv']
 
     trs = [0, 1]
     gains = [0, 4, 8, 12]
-    NumberOfDarkFrames = 16
+    NumberOfFrames = 1024
     ePixBoard.Epix10ka.Epix10kaAsic0.ClearMatrix()
 
     mu, sigma = 0, 0.1
-
-    for tr in trs:
-        ePixBoard.Epix10ka.Epix10kaAsic0.trbit.set(tr)
-        print('trbit:', tr)
-        loopIndex = 0
-        for gain in gains:          
-            fullFileName = fileFolders[tr][loopIndex]+fileName
-            loopIndex = loopIndex + 1 
-            ePixBoard.dataWriter.dataFile.set(fullFileName)
-            ePixBoard.dataWriter.open.set(True)
-            #select pixels ramdomly          
-            rand_img =  np.random.normal(mu, sigma, size=(178,192))
-            rand_img_bool = rand_img>(np.average(rand_img)+1.5*np.std(rand_img))
-            config_matrix = rand_img_bool*(gain+1)
-            #saves csv to reused tested functions that config the matrix
-            np.savetxt('pixelBitMaps/currentFile'+str(tr+gain)+'.csv', config_matrix, fmt='%d', delimiter=',', newline='\n')
-            #config pixels
-            ePixBoard.Epix10ka.Epix10kaAsic0.fnSetPixelBitmap(cmd=cmd, dev=ePixBoard.Epix10ka.Epix10kaAsic0, arg='pixelBitMaps/currentFile'+str(tr+gain)+'.csv')
-     
-            for i in range(0,NumberOfDarkFrames):
-                cmd.sendCmd(0, 0)
-                time.sleep(1.0 / float(120))
-    
-            ePixBoard.dataWriter.open.set(False)
+    for run in range(2,18):
+        FileNameRun = '_run' + str(run) + '.dat'
+        for tr in trs:
+            ePixBoard.Epix10ka.Epix10kaAsic0.trbit.set(tr)
+            print('trbit:', tr)
+            loopIndex = 0
+            for gain in gains:          
+                fullFileName = fileFolders[tr][loopIndex]+fileName+FileNameRun
+                print(fullFileName)
+                loopIndex = loopIndex + 1 
+                ePixBoard.dataWriter.dataFile.set(fullFileName)
+                ePixBoard.dataWriter.open.set(True)
+                #select pixels ramdomly          
+                rand_img =  np.random.normal(mu, sigma, size=(178,192))
+                rand_img_bool = rand_img>(np.average(rand_img)+1.5*np.std(rand_img))
+                config_matrix = rand_img_bool*(gain+1)
+                #saves csv to reused tested functions that config the matrix
+                np.savetxt('pixelBitMaps/currentFile'+str(tr+gain)+'.csv', config_matrix, fmt='%d', delimiter=',', newline='\n')
+                #config pixels
+                ePixBoard.Epix10ka.Epix10kaAsic0.fnSetPixelBitmap(cmd=cmd, dev=ePixBoard.Epix10ka.Epix10kaAsic0, arg='pixelBitMaps/currentFile'+str(tr+gain)+'.csv')
+         
+                for i in range(0,NumberOfFrames):
+                    ePixBoard.Epix10ka.Epix10kaAsic0.Pulser.set(i)
+                    cmd.sendCmd(0, 0)
+                    time.sleep(1.0 / float(120))
+        
+                ePixBoard.dataWriter.open.set(False)
  
 
 
@@ -314,13 +319,14 @@ if (TEST_LINEARITY_TEST_C or TEST_LINEARITY_TEST_D):
 
     #set registers to take dark images
     #ePixBoard.Epix10ka.Epix10kaAsic0.fnSetPixelBitmap(cmd=cmd, dev=ePixBoard.Epix10ka.Epix10kaAsic0, arg='pixelBitMaps/epix10ka_gain_00.csv')
-    ePixBoard.Epix10ka.Epix10kaAsic0.Pulser.set(0x100)
     ePixBoard.Epix10ka.Epix10kaAsic0.pbit.set(False)
     ePixBoard.Epix10ka.Epix10kaAsic0.atest.set(False)
     ePixBoard.Epix10ka.Epix10kaAsic0.test.set(True)
     if (TEST_LINEARITY_TEST_D):
+        print('Executing Test D')
         ePixBoard.Epix10ka.Epix10kaAsic0.hrtest.set(True)
     else:
+        print('Executing Test C')
         ePixBoard.Epix10ka.Epix10kaAsic0.hrtest.set(False)
 
 
@@ -331,41 +337,45 @@ if (TEST_LINEARITY_TEST_C or TEST_LINEARITY_TEST_D):
         fileNameRoot = 'linearityRow_10ka_120Hz_hrtest_true_row_' 
     else:
         fileNameRoot = 'linearityRow_10ka_120Hz_hrtest_false_row_' 
-    FileNameRun = '_run1.dat'
+
 #    configFiles = ['pixelBitMaps/epix10ka_AllPixelValues_0.csv','pixelBitMaps/epix10ka_AllPixelValues_4.csv','pixelBitMaps/epix10ka_AllPixelValues_8.csv','pixelBitMaps/epix10ka_AllPixelValues_12.csv']
 
     trs = [0, 1]
     gains = [1, 5, 9, 13] # gains 00, 01, 10 and 11 [0, 4, 8, 12] plus test bit 1 
-    NumberOfDarkFrames = 16
+    NumberOfFrames = 1024
     ePixBoard.Epix10ka.Epix10kaAsic0.ClearMatrix()
 
     #rows = np.arange(0, 178, 1)
     rows = np.arange(0, 5, 1)
-    for row in rows:
-        print('Testing row : ', row)
-        for tr in trs:
-            ePixBoard.Epix10ka.Epix10kaAsic0.trbit.set(tr)
-            print('trbit:', tr)
-            loopIndex = 0
-            for gain in gains:          
-                fullFileName = fileFolders[tr][loopIndex]+fileNameRoot+str(row)+FileNameRun
-                loopIndex = loopIndex + 1 
-                ePixBoard.dataWriter.dataFile.set(fullFileName)
-                ePixBoard.dataWriter.open.set(True)
-                #select pixels ramdomly          
-                row_img =  np.zeros((178,192), dtype='uint32')
-                row_img[row,:] = 1
-                config_matrix = row_img*(gain)
-                #saves csv to reused tested functions that config the matrix
-                np.savetxt('pixelBitMaps/currentFile'+str(row+tr+gain)+'.csv', config_matrix, fmt='%d', delimiter=',', newline='\n')
-                #config pixels
-                ePixBoard.Epix10ka.Epix10kaAsic0.fnSetPixelBitmap(cmd=cmd, dev=ePixBoard.Epix10ka.Epix10kaAsic0, arg='pixelBitMaps/currentFile'+str(row+tr+gain)+'.csv')
-         
-                for i in range(0,NumberOfDarkFrames):
-                    cmd.sendCmd(0, 0)
-                    time.sleep(1.0 / float(120))
+    for run in range(2,18):
+        FileNameRun = '_run' + str(run) + '.dat'
+        for row in rows:
+            print('Testing row : ', row)
+            for tr in trs:
+                ePixBoard.Epix10ka.Epix10kaAsic0.trbit.set(tr)
+                print('trbit:', tr)
+                loopIndex = 0
+                for gain in gains:          
+                    fullFileName = fileFolders[tr][loopIndex]+fileNameRoot+str(row)+FileNameRun
+                    print(fullFileName)
+                    loopIndex = loopIndex + 1 
+                    ePixBoard.dataWriter.dataFile.set(fullFileName)
+                    ePixBoard.dataWriter.open.set(True)
+                    #select pixels ramdomly          
+                    row_img =  np.zeros((178,192), dtype='uint32')
+                    row_img[row,:] = 1
+                    config_matrix = row_img*(gain)
+                    #saves csv to reused tested functions that config the matrix
+                    np.savetxt('pixelBitMaps/currentFile'+str(row+tr+gain)+'.csv', config_matrix, fmt='%d', delimiter=',', newline='\n')
+                    #config pixels
+                    ePixBoard.Epix10ka.Epix10kaAsic0.fnSetPixelBitmap(cmd=cmd, dev=ePixBoard.Epix10ka.Epix10kaAsic0, arg='pixelBitMaps/currentFile'+str(row+tr+gain)+'.csv')
+             
+                    for i in range(0,NumberOfFrames):
+                        ePixBoard.Epix10ka.Epix10kaAsic0.Pulser.set(i)
+                        cmd.sendCmd(0, 0)
+                        time.sleep(1.0 / float(120))
         
-                ePixBoard.dataWriter.open.set(False)
+                    ePixBoard.dataWriter.open.set(False)
 
 if (TEST_LINEARITY_TEST_E or TEST_LINEARITY_TEST_F):
     #read config parameters for the fpga and asic
@@ -373,13 +383,14 @@ if (TEST_LINEARITY_TEST_E or TEST_LINEARITY_TEST_F):
 
     #set registers to take dark images
     #ePixBoard.Epix10ka.Epix10kaAsic0.fnSetPixelBitmap(cmd=cmd, dev=ePixBoard.Epix10ka.Epix10kaAsic0, arg='pixelBitMaps/epix10ka_gain_00.csv')
-    ePixBoard.Epix10ka.Epix10kaAsic0.Pulser.set(0x100)
     ePixBoard.Epix10ka.Epix10kaAsic0.pbit.set(False)
     ePixBoard.Epix10ka.Epix10kaAsic0.atest.set(False)
     ePixBoard.Epix10ka.Epix10kaAsic0.test.set(True)
     if (TEST_LINEARITY_TEST_F):
+        print('Executing Test F')
         ePixBoard.Epix10ka.Epix10kaAsic0.hrtest.set(True)
     else:
+        print('Executing Test E')
         ePixBoard.Epix10ka.Epix10kaAsic0.hrtest.set(False)
 
 
@@ -390,41 +401,44 @@ if (TEST_LINEARITY_TEST_E or TEST_LINEARITY_TEST_F):
         fileNameRoot = 'linearityCol_10ka_120Hz_hrtest_true_col_' 
     else:
         fileNameRoot = 'linearityCol_10ka_120Hz_hrtest_false_col_' 
-    FileNameRun = '_run1.dat'
 #    configFiles = ['pixelBitMaps/epix10ka_AllPixelValues_0.csv','pixelBitMaps/epix10ka_AllPixelValues_4.csv','pixelBitMaps/epix10ka_AllPixelValues_8.csv','pixelBitMaps/epix10ka_AllPixelValues_12.csv']
 
     trs = [0, 1]
     gains = [1, 5, 9, 13] # gains 00, 01, 10 and 11 [0, 4, 8, 12] plus test bit 1 
-    NumberOfDarkFrames = 16
+    NumberOfFrames = 1024
     ePixBoard.Epix10ka.Epix10kaAsic0.ClearMatrix()
 
     #cols = np.arange(0, 192, 1)
     cols = np.arange(0, 5, 1)
-    for col in cols:
-        print('Testing col : ', col)
-        for tr in trs:
-            ePixBoard.Epix10ka.Epix10kaAsic0.trbit.set(tr)
-            print('trbit:', tr)
-            loopIndex = 0
-            for gain in gains:          
-                fullFileName = fileFolders[tr][loopIndex]+fileNameRoot+str(col)+FileNameRun
-                loopIndex = loopIndex + 1 
-                ePixBoard.dataWriter.dataFile.set(fullFileName)
-                ePixBoard.dataWriter.open.set(True)
-                #select pixels ramdomly          
-                col_img =  np.zeros((178,192), dtype='uint32')
-                col_img[:,col] = 1
-                config_matrix = col_img*(gain)
-                #saves csv to reused tested functions that config the matrix
-                np.savetxt('pixelBitMaps/currentFileCol'+'.csv', config_matrix, fmt='%d', delimiter=',', newline='\n')
-                #config pixels
-                ePixBoard.Epix10ka.Epix10kaAsic0.fnSetPixelBitmap(cmd=cmd, dev=ePixBoard.Epix10ka.Epix10kaAsic0, arg='pixelBitMaps/currentFileCol'+'.csv')
-         
-                for i in range(0,NumberOfDarkFrames):
-                    cmd.sendCmd(0, 0)
-                    time.sleep(1.0 / float(120))
+    for run in range(2,18):
+        FileNameRun = '_run' + str(run) + '.dat'
+        for col in cols:
+            print('Testing col : ', col)
+            for tr in trs:
+                ePixBoard.Epix10ka.Epix10kaAsic0.trbit.set(tr)
+                print('trbit:', tr)
+                loopIndex = 0
+                for gain in gains:          
+                    fullFileName = fileFolders[tr][loopIndex]+fileNameRoot+str(col)+FileNameRun
+                    print(fullFileName)
+                    loopIndex = loopIndex + 1 
+                    ePixBoard.dataWriter.dataFile.set(fullFileName)
+                    ePixBoard.dataWriter.open.set(True)
+                    #select pixels ramdomly          
+                    col_img =  np.zeros((178,192), dtype='uint32')
+                    col_img[:,col] = 1
+                    config_matrix = col_img*(gain)
+                    #saves csv to reused tested functions that config the matrix
+                    np.savetxt('pixelBitMaps/currentFileCol'+'.csv', config_matrix, fmt='%d', delimiter=',', newline='\n')
+                    #config pixels
+                    ePixBoard.Epix10ka.Epix10kaAsic0.fnSetPixelBitmap(cmd=cmd, dev=ePixBoard.Epix10ka.Epix10kaAsic0, arg='pixelBitMaps/currentFileCol'+'.csv')
+             
+                    for i in range(0,NumberOfFrames):
+                        ePixBoard.Epix10ka.Epix10kaAsic0.Pulser.set(i)
+                        cmd.sendCmd(0, 0)
+                        time.sleep(1.0 / float(120))
         
-                ePixBoard.dataWriter.open.set(False)
+                    ePixBoard.dataWriter.open.set(False)
 
 
 # Run gui

@@ -28,7 +28,7 @@ import matplotlib
 matplotlib.use('QT4Agg')
 import matplotlib.pyplot as plt
 #matplotlib.pyplot.ion()
-MAX_NUMBER_OF_FRAMES_PER_BATCH  = 10
+MAX_NUMBER_OF_FRAMES_PER_BATCH  = 100
 
 ##################################################
 # Global variables
@@ -53,13 +53,13 @@ while ((len(file_header)>0) and (numberOfFrames<MAX_NUMBER_OF_FRAMES_PER_BATCH))
         # reads file header [the number of bytes to read, EVIO]
         file_header = np.fromfile(f, dtype='uint32', count=2)
         payloadSize = int(file_header[0]/4)-1 #-1 is need because size info includes the second word from the header
-        #print ('size',  file_header)
+        print ('size',  file_header)
         newPayload = np.fromfile(f, dtype='uint32', count=payloadSize) #(frame size splited by four to read 32 bit 
         if (numberOfFrames == 0):
             allFrames = [newPayload.copy()]
         else:
             newFrame  = [newPayload.copy()]
-            allFrames = np.append(allFrames, newFrame, axis = 0)
+#            allFrames = np.append(allFrames, newFrame, axis = 0)
         numberOfFrames = numberOfFrames + 1 
         print ("Payload" , numberOfFrames, ":",  (newPayload[0:15]))
         previousSize = file_header
