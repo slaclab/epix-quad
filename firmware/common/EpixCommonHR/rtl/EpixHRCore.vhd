@@ -67,10 +67,17 @@ entity EpixHRCore is
       gtDataTxP           : out sl;
       gtDataTxN           : out sl;
       -- Guard ring DAC
-      vGuardDacSclk       : out sl;
-      vGuardDacDin        : out sl;
-      vGuardDacCsb        : out sl;
-      vGuardDacClrb       : out sl;
+      vBiasDacSclk        : out slv(4 downto 0);
+      vBiasDacDin         : out slv(4 downto 0);
+      vBiasDacCsb         : out slv(4 downto 0);
+      vBiasDacClrb        : out slv(4 downto 0);
+      -- wave form (High speed) DAC (DAC8812)
+      WFDacDin            : out sl;
+      WFDacSclk           : out sl;
+      WFDacCsL            : out sl;
+      WFDacLdacL          : out sl;
+      WFDacClrL           : out sl;
+
       -- External Signals
       runTrigger          : in  sl;
       daqTrigger          : in  sl;
@@ -222,13 +229,6 @@ architecture top_level of EpixHRCore is
    signal saciPrepReadoutReq : sl;
    signal saciPrepReadoutAck : sl;
 
-   -- High speed DAC (DAC8812)
-   signal dacDin    : sl;
-   signal dacSclk   : sl;
-   signal dacCsL    : sl;
-   signal dacLdacL  : sl;
-   signal dacClrL   : sl;
-   
    -- Power up reset to SERDES block
    signal adcCardPowerUp     : sl;
    signal adcCardPowerUpEdge : sl;
@@ -270,12 +270,7 @@ architecture top_level of EpixHRCore is
    attribute keep of saciPrepReadoutReq : signal is "true";
    attribute keep of saciPrepReadoutAck : signal is "true";
    attribute keep of errInhibit : signal is "true";
-   -- hs dac
-   attribute keep of  dacDin    : signal is "true";
-   attribute keep of  dacSclk   : signal is "true";
-   attribute keep of  dacCsL    : signal is "true";
-   attribute keep of  dacLdacL  : signal is "true";
-   attribute keep of  dacClrL   : signal is "true";
+   
    
 begin
 
@@ -683,10 +678,10 @@ begin
       -- Register Inputs/Outputs (axiClk domain)
       EpixHRConfig    => EpixHRConfig,
       -- Guard ring DAC interfaces
-      dacSclk        => vGuardDacSclk,
-      dacDin         => vGuardDacDin,
-      dacCsb         => vGuardDacCsb,
-      dacClrb        => vGuardDacClrb,
+      dacSclk        => vBiasDacSclk,
+      dacDin         => vBiasDacDin,
+      dacCsb         => vBiasDacCsb,
+      dacClrb        => vBiasDacClrb,
       -- 1-wire board ID interfaces
       serialIdIo     => serialIdIo,
       -- fast ADC clock
@@ -1046,13 +1041,13 @@ begin
       MASTERS_CONFIG_G   => ssiAxiStreamConfig(4, TKEEP_COMP_C)
    )
     port map (
-      sysClk    => coreClk,
-      sysClkRst => axiRst,
-      dacDin    => dacDin,
-      dacSclk   => dacSclk,
-      dacCsL    => dacCsL,
-      dacLdacL  => dacLdacL,
-      dacClrL   => dacClrL,
+      sysClk            => coreClk,
+      sysClkRst         => axiRst,
+      dacDin            => WFDacDin,
+      dacSclk           => WFDacSclk,
+      dacCsL            => WFDacCsL,
+      dacLdacL          => WFDacLdacL,
+      dacClrL           => WFDacClrL,
       axilClk           => coreClk,
       axilRst           => axiRst,
       sAxilWriteMaster  => mAxiWriteMasters,

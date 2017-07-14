@@ -216,9 +216,9 @@ begin
       clk         => rxClk,
       rst         => rxRst,
       dataIn      => rxData,
-      dataInValid => iRxValid,
+      validIn     => iRxValid,
       dataOut     => decDataOut,
-      valid       => decValid,
+      validOut    => decValid,
       sof         => decSof,
       eof         => decEof,
       eofe        => decEofe

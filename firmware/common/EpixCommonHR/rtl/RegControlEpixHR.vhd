@@ -54,10 +54,10 @@ entity RegControlEpixHR is
       -- Register Inputs/Outputs (axiClk domain)
       epixhrConfig     : out EpixHRConfigType;
       -- Guard ring DAC interfaces
-      dacSclk        : out sl;
-      dacDin         : out sl;
-      dacCsb         : out sl;
-      dacClrb        : out sl;
+      dacSclk        : out slv(4 downto 0);
+      dacDin         : out slv(4 downto 0);
+      dacCsb         : out slv(4 downto 0);
+      dacClrb        : out slv(4 downto 0);
       -- 1-wire board ID interfaces
       serialIdIo     : inout slv(1 downto 0);
       -- fast ADC clock
@@ -171,7 +171,7 @@ architecture rtl of RegControlEpixHR is
       saciPrepRdoutCnt  : slv(31 downto 0);
       epixhrRegOut      : epixhrConfigType;
       asicAcqReg        : AsicAcqType;
-      vguardDacSetting  : slv(15 downto 0);
+      vDacSetting       : Slv16Array(4 downto 0);
       asicAcqTimeCnt    : slv(31 downto 0);
       errInhibitCnt     : slv(31 downto 0);
       axiReadSlave      : AxiLiteReadSlaveType;
@@ -188,7 +188,7 @@ architecture rtl of RegControlEpixHR is
       epixhrRegOut      => EPIXHR_CONFIG_INIT_C,
       asicAcqReg        => ASICACQ_TYPE_INIT_C,
       asicAcqTimeCnt    => (others=>'0'),
-      vguardDacSetting  => (others=>'0'),
+      vDacSetting       => (others => (others=>'0')),
       errInhibitCnt     => (others=>'0'),
       axiReadSlave      => AXI_LITE_READ_SLAVE_INIT_C,
       axiWriteSlave     => AXI_LITE_WRITE_SLAVE_INIT_C
@@ -277,9 +277,13 @@ begin
       axiSlaveRegister(regCon,  x"000208",  0, v.resetCounters);
       axiSlaveRegister(regCon,  x"00020C",  0, v.epixhrRegOut.powerEnable);
       axiSlaveRegister(regCon,  x"000210",  0, v.epixhrRegOut.asicMask);
-      axiSlaveRegister(regCon,  x"000214",  0, v.vguardDacSetting);
-      axiSlaveRegister(regCon,  x"000218",  0, v.epixhrRegOut.epixhrDbgSel1);
-      axiSlaveRegister(regCon,  x"00021C",  0, v.epixhrRegOut.epixhrDbgSel2);
+      axiSlaveRegister(regCon,  x"000214",  0, v.vDacSetting(0)); -- Guard ring dac
+      axiSlaveRegister(regCon,  x"000218",  0, v.vDacSetting(1));
+      axiSlaveRegister(regCon,  x"00021C",  0, v.vDacSetting(2));
+      axiSlaveRegister(regCon,  x"000220",  0, v.vDacSetting(3));
+      axiSlaveRegister(regCon,  x"000224",  0, v.vDacSetting(4)); -- dac that generates Vocm for HS dac
+      axiSlaveRegister(regCon,  x"000228",  0, v.epixhrRegOut.epixhrDbgSel1);
+      axiSlaveRegister(regCon,  x"00022C",  0, v.epixhrRegOut.epixhrDbgSel2);
       
       axiSlaveRegister(regCon,  x"000300",  0, v.adcClkHalfT);
       axiSlaveRegister(regCon,  x"000304",  0, v.epixhrRegOut.requestStartupCal);
@@ -461,20 +465,21 @@ begin
    -----------------------------------------------
    -- DAC Controller
    -----------------------------------------------
-   U_DacCntrl : entity work.DacCntrl 
-   generic map (
-      TPD_G => TPD_G
-   )
-   port map ( 
-      sysClk      => axiClk,
-      sysClkRst   => axiReset,
-      dacData     => r.vguardDacSetting,
-      dacDin      => dacDin,
-      dacSclk     => dacSclk,
-      dacCsL      => dacCsb,
-      dacClrL     => dacClrb
-   );
-      
+   G_MAX5443 : for i in 0 to 4 generate
+       U_DacCntrl : entity work.DacCntrl 
+       generic map (
+          TPD_G => TPD_G
+       )
+       port map ( 
+          sysClk      => axiClk,
+          sysClkRst   => axiReset,
+          dacData     => r.vDacSetting(i),
+          dacDin      => dacDin(i),
+          dacSclk     => dacSclk(i),
+          dacCsL      => dacCsb(i),
+          dacClrL     => dacClrb(i)
+       );
+   end generate;      
    -----------------------------------------------
    -- Serial IDs: FPGA Device DNA + DS2411's
    -----------------------------------------------  

@@ -67,10 +67,14 @@ entity EpixHR is
       -- SFP control signals
       sfpDisable          : out sl;
       -- Guard ring DAC
-      vGuardDacSclk       : out sl;
-      vGuardDacDin        : out sl;
-      vGuardDacCsb        : out sl;
-      vGuardDacClrb       : out sl;
+      vBiasDacSclk        : out sl;
+      vBiasDacDin         : out sl;
+      vBiasDacCsb         : out slv(4 downto 0);
+      vBiasDacClrb        : out sl;
+      -- wave form (High speed) DAC (DAC8812)
+      vWFDacCsL           : out sl;
+      vWFDacLdacL         : out sl;
+
       -- External Signals
       runTg               : in  sl;
       daqTg               : in  sl;
@@ -141,10 +145,18 @@ architecture RTL of EpixHR is
    -- Internal versions of signals so that we don't
    -- drive anything unpowered until the components
    -- are online.
-   signal iVGuardDacClrb : sl;
-   signal iVGuardDacSclk : sl;
-   signal iVGuardDacDin  : sl;
-   signal iVGuardDacCsb  : sl;
+   signal iVBiasDacClrb : slv(4 downto 0);
+   signal iVBiasDacSclk : slv(4 downto 0);
+   signal iVBiasDacDin  : slv(4 downto 0);
+   signal iVBiasDacCsb  : slv(4 downto 0);
+
+   -- wave form (High speed) DAC (DAC8812)
+   signal iWFDacCsL            : sl;
+   signal iWFDacLdacL          : sl;
+   signal iWFDacDin            : sl;
+   signal iWFDacSclk           : sl;
+   signal iWFDacClrL           : sl;
+
    
    signal iRunTg : sl;
    signal iDaqTg : sl;
@@ -212,10 +224,16 @@ begin
          gtDataTxP           => gtDataTxP,
          gtDataTxN           => gtDataTxN,
          -- Guard ring DAC
-         vGuardDacSclk       => iVGuardDacSclk,
-         vGuardDacDin        => iVGuardDacDin,
-         vGuardDacCsb        => iVGuardDacCsb,
-         vGuardDacClrb       => iVGuardDacClrb,
+         vBiasDacSclk        => iVBiasDacSclk,
+         vBiasDacDin         => iVBiasDacDin,
+         vBiasDacCsb         => iVBiasDacCsb,
+         vBiasDacClrb        => iVBiasDacClrb,
+         -- wave form (High speed) DAC (DAC8812)
+         WFDacDin            => iWFDacDin,
+         WFDacSclk           => iWFDacSclk,
+         WFDacCsL            => iWFDacCsL,
+         WFDacLdacL          => iWFDacLdacL,
+         WFDacClrL           => iWFDacClrL,
          -- External Signals
          runTrigger          => iRunTg,
          daqTrigger          => iDaqTg,
@@ -282,11 +300,16 @@ begin
    bootCsL  <= iBootCsL    when iFpgaOutputEn = '1' else 'Z';
    bootMosi <= iBootMosi   when iFpgaOutputEn = '1' else 'Z';
    
-   -- Guard ring DAC
-   vGuardDacSclk <= iVGuardDacSclk when iFpgaOutputEn = '1' else 'Z';
-   vGuardDacDin  <= iVGuardDacDin  when iFpgaOutputEn = '1' else 'Z';
-   vGuardDacCsb  <= iVGuardDacCsb  when iFpgaOutputEn = '1' else 'Z';
-   vGuardDacClrb <= ivGuardDacClrb when iFpgaOutputEn = '1' else 'Z';
+   -- Bias DAC (0 is the guard ring, all others are new)
+   vBiasDacSclk <= iVBiasDacSclk(0) or iVBiasDacSclk(1) or iVBiasDacSclk(2) or iVBiasDacSclk(3) or iVBiasDacSclk(4) or iWFDacSclk when iFpgaOutputEn = '1' else 'Z';
+   vBiasDacDin  <= iVBiasDacDin(0) or iVBiasDacDin(1) or iVBiasDacDin(2) or iVBiasDacDin(3) or iVBiasDacDin(4)  or iWFDacDin when iFpgaOutputEn = '1' else 'Z';
+   vBiasDacCsb  <= iVBiasDacCsb  when iFpgaOutputEn = '1' else (others => 'Z');
+   vBiasDacClrb <= ivBiasDacClrb(0) or ivBiasDacClrb(1) or ivBiasDacClrb(2) or ivBiasDacClrb(3) or ivBiasDacClrb(4) or iWFDacClrL when iFpgaOutputEn = '1' else 'Z';
+
+   -- wave form (High speed) DAC (DAC8812)
+   vWFDacCsL   <= iWFDacCsL when iFpgaOutputEn = '1' else 'Z';
+   vWFDacLdacL <= iWFDacLdacL when iFpgaOutputEn = '1' else 'Z';
+
    
    -- TTL interfaces (accounting for inverters on ADC card)
    mps    <= not(iMps)   when iFpgaOutputEn = '1' else 'Z';
