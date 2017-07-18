@@ -151,6 +151,10 @@ architecture top_level of Cpix2Core is
    
    attribute keep of iAsic01DM1    : signal is "true";
    attribute keep of iAsic01DM2    : signal is "true";
+   attribute keep of iasicEnA      : signal is "true";
+   attribute keep of iasicEnB      : signal is "true";
+   attribute keep of iasicVid      : signal is "true";
+   attribute keep of iasicSRO      : signal is "true";
    attribute keep of iAsicPPbe     : signal is "true";
    attribute keep of iAsicPpmat    : signal is "true";
    attribute keep of iAsicR0       : signal is "true";
@@ -544,7 +548,6 @@ begin
       );
 
 
-      
       -------------------------------------------------------
       -- ASIC AXI stream framers
       -------------------------------------------------------
@@ -687,6 +690,10 @@ begin
       acqStart       => acqStart,
       saciReadoutReq => saciPrepReadoutReq,
       saciReadoutAck => saciPrepReadoutAck,
+      asicEnA        => iasicEnA,
+      asicEnB        => iasicEnB,
+      asicVid        => iasicVid,
+      asicSRO        => iasicSRO,
       asicPPbe       => iAsicPpbe,
       asicPpmat      => iAsicPpmat,
       asicTpulse     => iAsicTpulse,

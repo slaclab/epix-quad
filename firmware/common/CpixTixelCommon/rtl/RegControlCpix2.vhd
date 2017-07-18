@@ -64,16 +64,16 @@ entity RegControlCpix2 is
       -- fast ADC clock
       adcClk         : out sl;
       -- ASIC Control
-      asicEnA             : out sl;
-      asicEnB             : out sl;
-      asicVid             : out sl;
-      asicPPbe            : out slv(1 downto 0);
-      asicPpmat           : out slv(1 downto 0);
-      asicR0              : out sl;
-      asicSRO             : out sl;
-      asicGlblRst         : out sl;
-      asicSync            : out sl;
-      asicAcq             : out sl;
+      asicEnA             : out sl; -- waveform
+      asicEnB             : out sl; -- waveform
+      asicVid             : out sl; -- static signal used to program asic eeprom
+      asicPPbe            : out slv(1 downto 0); -- waveform
+      asicPpmat           : out slv(1 downto 0); -- waveform
+      asicR0              : out sl; -- waveform
+      asicSRO             : out sl; -- waveform
+      asicGlblRst         : out sl; -- waveform
+      asicSync            : out sl; -- waveform
+      asicAcq             : out sl; -- waveform
       errInhibit     : out sl
    );
 end RegControlCpix2;
@@ -81,7 +81,21 @@ end RegControlCpix2;
 architecture rtl of RegControlCpix2 is
    
    type AsicAcqType is record
-      asicRefSync       : sl;
+      Vid               : sl;
+      EnA               : sl;
+      EnAPolarity       : sl;
+      EnADelay          : slv(31 downto 0);
+      EnAWidth          : slv(31 downto 0);
+      EnB               : sl;
+      EnBPolarity       : sl;
+      EnBDelay          : slv(31 downto 0);
+      EnBWidth          : slv(31 downto 0);
+      SR0               : sl;
+      SR0Polarity       : sl;
+      SR0Delay1          : slv(31 downto 0);
+      SR0Width1          : slv(31 downto 0);
+      SR0Delay2          : slv(31 downto 0);
+      SR0Width2          : slv(31 downto 0);
       R0                : sl;
       R0Polarity        : sl;
       R0Delay           : slv(31 downto 0);
@@ -96,14 +110,6 @@ architecture rtl of RegControlCpix2 is
       AcqDelay2         : slv(31 downto 0);
       AcqWidth1         : slv(31 downto 0);
       AcqWidth2         : slv(31 downto 0);
-      Tpulse            : sl;
-      TpulsePolarity    : sl;
-      TpulseDelay       : slv(31 downto 0);
-      TpulseWidth       : slv(31 downto 0);
-      Start             : sl;
-      StartPolarity     : sl;
-      StartDelay        : slv(31 downto 0);
-      StartWidth        : slv(31 downto 0);
       PPbe              : sl;
       PPbePolarity      : sl;
       PPbeDelay         : slv(31 downto 0);
@@ -123,7 +129,21 @@ architecture rtl of RegControlCpix2 is
    end record AsicAcqType;
    
    constant ASICACQ_TYPE_INIT_C : AsicAcqType := (
-      asicRefSync       => '0',
+      Vid               => '1',
+      EnA               => '0',
+      EnAPolarity       => '0',
+      EnADelay          => (others=>'0'),
+      EnAWidth          => (others=>'0'),
+      EnB               => '0',
+      EnBPolarity       => '0',
+      EnBDelay          => (others=>'0'),
+      EnBWidth          => (others=>'0'),
+      SR0               => '0',
+      SR0Polarity       => '0',
+      SR0Delay1         => (others=>'0'),
+      SR0Width1         => (others=>'0'),
+      SR0Delay2         => (others=>'0'),
+      SR0Width2         => (others=>'0'),
       R0                => '0',
       R0Polarity        => '0',
       R0Delay           => (others=>'0'),
@@ -138,14 +158,6 @@ architecture rtl of RegControlCpix2 is
       AcqDelay2         => (others=>'0'),
       AcqWidth1         => (others=>'0'),
       AcqWidth2         => (others=>'0'),
-      Tpulse            => '0',
-      TpulsePolarity    => '0',
-      TpulseDelay       => (others=>'0'),
-      TpulseWidth       => (others=>'0'),
-      Start             => '0',
-      StartPolarity     => '0',
-      StartDelay        => (others=>'0'),
-      StartWidth        => (others=>'0'),
       PPbe              => '0',
       PPbePolarity      => '0',
       PPbeDelay         => (others=>'0'),
@@ -265,12 +277,12 @@ begin
       axiSlaveRegister(regCon,  x"000120",  0, v.asicAcqReg.AcqWidth1);
       axiSlaveRegister(regCon,  x"000124",  0, v.asicAcqReg.AcqDelay2);
       axiSlaveRegister(regCon,  x"000128",  0, v.asicAcqReg.AcqWidth2);
-      axiSlaveRegister(regCon,  x"00012C",  0, v.asicAcqReg.TpulsePolarity);
-      axiSlaveRegister(regCon,  x"000130",  0, v.asicAcqReg.TpulseDelay);
-      axiSlaveRegister(regCon,  x"000134",  0, v.asicAcqReg.TpulseWidth);
-      axiSlaveRegister(regCon,  x"000138",  0, v.asicAcqReg.StartPolarity);
-      axiSlaveRegister(regCon,  x"00013C",  0, v.asicAcqReg.StartDelay);
-      axiSlaveRegister(regCon,  x"000140",  0, v.asicAcqReg.StartWidth);
+      axiSlaveRegister(regCon,  x"00012C",  0, v.asicAcqReg.EnAPolarity);
+      axiSlaveRegister(regCon,  x"000130",  0, v.asicAcqReg.EnADelay);
+      axiSlaveRegister(regCon,  x"000134",  0, v.asicAcqReg.EnAWidth);
+      axiSlaveRegister(regCon,  x"000138",  0, v.asicAcqReg.EnBPolarity);
+      axiSlaveRegister(regCon,  x"00013C",  0, v.asicAcqReg.EnBDelay);
+      axiSlaveRegister(regCon,  x"000140",  0, v.asicAcqReg.EnBWidth);
       axiSlaveRegister(regCon,  x"000144",  0, v.asicAcqReg.PPbePolarity);
       axiSlaveRegister(regCon,  x"000148",  0, v.asicAcqReg.PPbeDelay);
       axiSlaveRegister(regCon,  x"00014C",  0, v.asicAcqReg.PPbeWidth);
@@ -283,6 +295,12 @@ begin
       axiSlaveRegister(regCon,  x"000168",  0, v.asicAcqReg.saciSyncPolarity);
       axiSlaveRegister(regCon,  x"00016C",  0, v.asicAcqReg.saciSyncDelay);
       axiSlaveRegister(regCon,  x"000170",  0, v.asicAcqReg.saciSyncWidth);
+      axiSlaveRegister(regCon,  x"000174",  0, v.asicAcqReg.SR0Polarity);
+      axiSlaveRegister(regCon,  x"000178",  0, v.asicAcqReg.SR0Delay1);
+      axiSlaveRegister(regCon,  x"00017C",  0, v.asicAcqReg.SR0Width1);
+      axiSlaveRegister(regCon,  x"000180",  0, v.asicAcqReg.SR0Delay2);
+      axiSlaveRegister(regCon,  x"000184",  0, v.asicAcqReg.SR0Width2);
+      axiSlaveRegister(regCon,  x"00018C",  0, v.asicAcqReg.Vid);
       
       axiSlaveRegisterR(regCon, x"000200",  0, r.cpix2RegOut.acqCnt);
       axiSlaveRegisterR(regCon, x"000204",  0, r.saciPrepRdoutCnt);
@@ -322,22 +340,16 @@ begin
       if acqStart = '1' then
          v.cpix2RegOut.acqCnt    := r.cpix2RegOut.acqCnt + 1;
          v.asicAcqTimeCnt        := (others=>'0');
-         v.asicAcqReg.asicRefSync := '1';
          v.asicAcqReg.R0         := r.asicAcqReg.R0Polarity;
+         v.asicAcqReg.SR0        := r.asicAcqReg.SR0Polarity;
          v.asicAcqReg.GlblRst    := r.asicAcqReg.GlblRstPolarity;
          v.asicAcqReg.Acq        := r.asicAcqReg.AcqPolarity;
-         v.asicAcqReg.Tpulse     := r.asicAcqReg.TpulsePolarity;
-         v.asicAcqReg.Start      := r.asicAcqReg.StartPolarity;
+         v.asicAcqReg.EnA        := r.asicAcqReg.EnAPolarity;
+         v.asicAcqReg.EnB        := r.asicAcqReg.EnBPolarity;
          v.asicAcqReg.PPbe       := r.asicAcqReg.PPbePolarity;
          v.asicAcqReg.Ppmat      := r.asicAcqReg.PpmatPolarity;
          v.asicAcqReg.Sync       := r.asicAcqReg.SyncPolarity;
          v.asicAcqReg.saciSync   := r.asicAcqReg.saciSyncPolarity;
-      elsif r.asicAcqReg.asicRefSync = '1' then
-         -- start pulse must be synchronous to the asic reference clock div by 2
-         -- wait for the asic ref clock div by 2 edge
-         if asicRefClkEdge = '1' then
-            v.asicAcqReg.asicRefSync := '0';
-         end if;
       else
          if r.asicAcqTimeCnt /= x"FFFFFFFF" then
             v.asicAcqTimeCnt := r.asicAcqTimeCnt + 1;
@@ -348,6 +360,20 @@ begin
             v.asicAcqReg.R0 := not r.asicAcqReg.R0Polarity;
             if r.asicAcqReg.R0Width /= 0 and (r.asicAcqReg.R0Width + r.asicAcqReg.R0Delay) <= r.asicAcqTimeCnt then
                v.asicAcqReg.R0 := r.asicAcqReg.R0Polarity;
+            end if;
+         end if;
+
+         -- double pulse. zero value corresponds to infinite delay/width
+         if r.asicAcqReg.SR0Delay1 /= 0 and r.asicAcqReg.SR0Delay1 <= r.asicAcqTimeCnt then
+            v.asicAcqReg.SR0 := not r.asicAcqReg.SR0Polarity;
+            if r.asicAcqReg.SR0Width1 /= 0 and (r.asicAcqReg.SR0Width1 + r.asicAcqReg.SR0Delay1) <= r.asicAcqTimeCnt then
+               v.asicAcqReg.SR0 := r.asicAcqReg.SR0Polarity;
+               if r.asicAcqReg.SR0Delay2 /= 0 and (r.asicAcqReg.SR0Delay2 + r.asicAcqReg.SR0Width1 + r.asicAcqReg.SR0Delay1) <= r.asicAcqTimeCnt then
+                  v.asicAcqReg.SR0 := not r.asicAcqReg.SR0Polarity;
+                  if r.asicAcqReg.SR0Width2 /= 0 and (r.asicAcqReg.SR0Width2 + r.asicAcqReg.SR0Delay2 + r.asicAcqReg.SR0Width1 + r.asicAcqReg.SR0Delay1) <= r.asicAcqTimeCnt then
+                     v.asicAcqReg.SR0 := r.asicAcqReg.SR0Polarity;
+                  end if;
+               end if;
             end if;
          end if;
          
@@ -374,18 +400,18 @@ begin
          end if;
          
          -- single pulse. zero value corresponds to infinite delay/width
-         if r.asicAcqReg.TpulseDelay /= 0 and r.asicAcqReg.TpulseDelay <= r.asicAcqTimeCnt then
-            v.asicAcqReg.Tpulse := not r.asicAcqReg.TpulsePolarity;
-            if r.asicAcqReg.TpulseWidth /= 0 and (r.asicAcqReg.TpulseWidth + r.asicAcqReg.TpulseDelay) <= r.asicAcqTimeCnt then
-               v.asicAcqReg.Tpulse := r.asicAcqReg.TpulsePolarity;
+         if r.asicAcqReg.EnADelay /= 0 and r.asicAcqReg.EnADelay <= r.asicAcqTimeCnt then
+            v.asicAcqReg.EnA := not r.asicAcqReg.EnAPolarity;
+            if r.asicAcqReg.EnAWidth /= 0 and (r.asicAcqReg.EnAWidth + r.asicAcqReg.EnADelay) <= r.asicAcqTimeCnt then
+               v.asicAcqReg.EnA := r.asicAcqReg.EnAPolarity;
             end if;
          end if;
          
          -- single pulse. zero value corresponds to infinite delay/width
-         if r.asicAcqReg.StartDelay /= 0 and r.asicAcqReg.StartDelay <= r.asicAcqTimeCnt then
-            v.asicAcqReg.Start := not r.asicAcqReg.StartPolarity;
-            if r.asicAcqReg.StartWidth /= 0 and (r.asicAcqReg.StartWidth + r.asicAcqReg.StartDelay) <= r.asicAcqTimeCnt then
-               v.asicAcqReg.Start := r.asicAcqReg.StartPolarity;
+         if r.asicAcqReg.EnBDelay /= 0 and r.asicAcqReg.EnBDelay <= r.asicAcqTimeCnt then
+            v.asicAcqReg.EnB := not r.asicAcqReg.EnBPolarity;
+            if r.asicAcqReg.EnBWidth /= 0 and (r.asicAcqReg.EnBWidth + r.asicAcqReg.EnBDelay) <= r.asicAcqTimeCnt then
+               v.asicAcqReg.EnB := r.asicAcqReg.EnBPolarity;
             end if;
          end if;
          
@@ -463,14 +489,18 @@ begin
       cpix2Config    <= r.cpix2RegOut;
       adcClk         <= r.adcClk;
       saciReadoutReq <= r.asicAcqReg.saciSync;
-      asicPPbe       <= r.asicAcqReg.PPbe;
-      asicPpmat      <= r.asicAcqReg.Ppmat;
-      asicTpulse     <= r.asicAcqReg.Tpulse;
-      asicStart      <= r.asicAcqReg.Start;
+      asicPPbe(0)    <= r.asicAcqReg.PPbe;
+      asicPPbe(1)    <= r.asicAcqReg.PPbe;
+      asicPpmat(0)   <= r.asicAcqReg.Ppmat;
+      asicPpmat(1)   <= r.asicAcqReg.Ppmat;
+      asicEnA        <= r.asicAcqReg.EnA;
+      asicEnB        <= r.asicAcqReg.EnB;
       asicR0         <= r.asicAcqReg.R0;
+      asicSR0        <= r.asicAcqReg.SR0;
       asicGlblRst    <= r.asicAcqReg.GlblRst;
       asicSync       <= r.asicAcqReg.Sync;
       asicAcq        <= r.asicAcqReg.Acq;
+      asicVid        <= r.asicAcqReg.Vid;
       
    end process comb;
 
