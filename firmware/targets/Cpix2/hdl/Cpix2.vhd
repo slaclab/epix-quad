@@ -114,7 +114,7 @@ entity Cpix2 is
       asicPPbe            : out slv(1 downto 0);
       asicPpmat           : out slv(1 downto 0);
       asicR0              : out sl;
-      asicSRO             : out sl;
+      asicSR0             : out sl;
       asicGlblRst         : out sl;
       asicSync            : out sl;
       asicAcq             : out sl;
@@ -176,7 +176,7 @@ architecture RTL of Cpix2 is
    signal iAsicEnA      : sl;
    signal iAsicEnB      : sl;
    signal iAsicVid      : sl;
-   signal iAsicSRO      : sl;
+   signal iAsicSR0      : sl;
 
 
    
@@ -261,7 +261,7 @@ begin
          asicPPbe            => iAsicPPbe,
          asicPpmat           => iAsicPpmat,
          asicR0              => iAsicR0,
-         asicSRO             => iAsicSRO,
+         asicSR0             => iAsicSR0,
          asicGlblRst         => iAsicGlblRst,
          asicSync            => iAsicSync,
          asicAcq             => iAsicAcq,
@@ -328,6 +328,6 @@ begin
    asicEnA        <= iAsicEnA     when iFpgaOutputEn = '1' else 'Z';  
    asicEnB        <= iAsicEnB     when iFpgaOutputEn = '1' else 'Z';  
    asicVid        <= iAsicVid     when iFpgaOutputEn = '1' else 'Z';  
-   asicSRO        <= iAsicSRO     when iFpgaOutputEn = '1' else 'Z';  
+   asicSR0        <= iAsicSR0     when iFpgaOutputEn = '1' else 'Z';  
    
 end RTL;

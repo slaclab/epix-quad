@@ -115,7 +115,7 @@ entity Cpix2Core is
       asicPPbe            : out slv(1 downto 0);
       asicPpmat           : out slv(1 downto 0);
       asicR0              : out sl;
-      asicSRO             : out sl;
+      asicSR0             : out sl;
       asicGlblRst         : out sl;
       asicSync            : out sl;
       asicAcq             : out sl;
@@ -137,7 +137,7 @@ architecture top_level of Cpix2Core is
    signal iasicEnA              : sl;
    signal iasicEnB              : sl;
    signal iasicVid              : sl;
-   signal iasicSRO              : sl;
+   signal iasicSR0              : sl;
    signal iAsic01DM1           : sl;
    signal iAsic01DM2           : sl;
    signal iAsicPPbe            : slv(1 downto 0);
@@ -152,7 +152,7 @@ architecture top_level of Cpix2Core is
    attribute keep of iasicEnA      : signal is "true";
    attribute keep of iasicEnB      : signal is "true";
    attribute keep of iasicVid      : signal is "true";
-   attribute keep of iasicSRO      : signal is "true";
+   attribute keep of iasicSR0      : signal is "true";
    attribute keep of iAsicPPbe     : signal is "true";
    attribute keep of iAsicPpmat    : signal is "true";
    attribute keep of iAsicR0       : signal is "true";
@@ -311,7 +311,7 @@ begin
       asicRdClk         when cpix2Config.cpix2DbgSel1 = "01011" else
       bitClk            when cpix2Config.cpix2DbgSel1 = "01100" else
       byteClk           when cpix2Config.cpix2DbgSel1 = "01101" else
-      iasicSRO           when cpix2Config.cpix2DbgSel1 = "01110" else
+      iasicSR0           when cpix2Config.cpix2DbgSel1 = "01110" else
       '0';   
    
    mpsOutMux <=
@@ -329,7 +329,7 @@ begin
       asicRdClk         when cpix2Config.cpix2DbgSel2 = "01011" else
       bitClk            when cpix2Config.cpix2DbgSel2 = "01100" else
       byteClk           when cpix2Config.cpix2DbgSel2 = "01101" else
-      iasicSRO           when cpix2Config.cpix2DbgSel2 = "01110" else
+      iasicSR0           when cpix2Config.cpix2DbgSel2 = "01110" else
       '0';
    
    -- Temporary one-shot for grabbing PGP op code
@@ -569,7 +569,7 @@ begin
          mAxisSlave        => framerAxisSlave(i),
          acqNo             => cpix2Config.acqCnt,
          testTrig          => iAsicAcq,
-         asicSRO           => iasicSRO,
+         asicSR0           => iasicSR0,
          asicSync          => iAsicSync,
          errInhibit        => errInhibit
       );
@@ -691,7 +691,7 @@ begin
       asicEnA        => iasicEnA,
       asicEnB        => iasicEnB,
       asicVid        => iasicVid,
-      asicSRO        => iasicSRO,
+      asicSR0        => iasicSR0,
       asicPPbe       => iAsicPpbe,
       asicPpmat      => iAsicPpmat,
       asicR0         => iAsicR0,

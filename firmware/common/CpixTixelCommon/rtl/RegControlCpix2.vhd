@@ -73,7 +73,7 @@ entity RegControlCpix2 is
       asicPPbe            : out slv(1 downto 0); -- waveform
       asicPpmat           : out slv(1 downto 0); -- waveform
       asicR0              : out sl; -- waveform
-      asicSRO             : out sl; -- waveform
+      asicSR0             : out sl; -- waveform
       asicGlblRst         : out sl; -- waveform
       asicSync            : out sl; -- waveform
       asicAcq             : out sl; -- waveform
@@ -224,19 +224,12 @@ architecture rtl of RegControlCpix2 is
    
    signal axiReset : sl;
    
-   signal asicRefClkEdge : sl;
-   
+ 
    constant BUILD_INFO_C       : BuildInfoRetType    := toBuildInfo(BUILD_INFO_G);
    
 begin
    
-   U_RoClkEdge : entity work.SynchronizerEdge
-   port map (
-      clk        => axiClk,
-      rst        => axiReset,
-      dataIn     => asicRefClkDiv2,
-      risingEdge => asicRefClkEdge
-   );
+
 
    axiReset <= sysRst or r.usrRst;
    axiRst   <= axiReset;
@@ -244,7 +237,7 @@ begin
    -------------------------------
    -- Configuration Register
    -------------------------------  
-   comb : process (axiReadMaster, axiReset, axiWriteMaster, r, idValids, idValues, acqStart, asicRefClkEdge, saciReadoutAck) is
+   comb : process (axiReadMaster, axiReset, axiWriteMaster, r, idValids, idValues, acqStart, saciReadoutAck) is
       variable v           : RegType;
       variable regCon      : AxiLiteEndPointType;
       

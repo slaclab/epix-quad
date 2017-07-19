@@ -67,7 +67,7 @@ entity Cpix2StreamAxi is
       testTrig          : in  sl := '0';
 
       -- waveform signal in
-      asicSRO           : in  sl; -- waveform
+      asicSR0           : in  sl; -- waveform
       asicSync          : in  sl; -- waveform
       -- optional inhibit counting errors 
       -- workaround to tixel bug dropping link after R0
@@ -303,14 +303,14 @@ begin
    port map( 
       Clk               => axisClk,
       Rst               => axisRst, 
-      asicSRO           => asicSRO,
+      asicSR0           => asicSR0,
       asicSync          => asicSync,
       decSof            => decSof,
       countersABStatus  => iContersABStatus
    );   
    
    comb : process (axilRst, axisRst, sAxilReadMaster, sAxilWriteMaster, sAxisSlave, r, s, 
-      acqNo, dFifoOut, dFifoValid, dFifoSof, dFifoEof, dFifoEofe, testTrig, errInhibit) is
+      acqNo, dFifoOut, dFifoValid, dFifoSof, dFifoEof, dFifoEofe, testTrig, errInhibit, iContersABStatus) is
       variable sv       : StrType;
       variable rv       : RegType;
       variable regCon   : AxiLiteEndPointType;
@@ -407,7 +407,7 @@ begin
                sv.axisMaster.tData(15 downto 0) := s.acqNo(1)(31 downto 16);
             elsif s.stCnt = 4 then
                if s.testMode = '0' then
-                  sv.axisMaster.tData(15 downto 0) := x"00" & iContersABStatus & ASIC_NO_G; -- Put the flag counter A or B here
+                  sv.axisMaster.tData(15 downto 0) := x"00" & "000" & iContersABStatus & ASIC_NO_G; -- Put the flag counter A or B here
                else
                   sv.axisMaster.tData(15 downto 0) := x"000" & s.testBitFlip & ASIC_NO_G;
                end if;

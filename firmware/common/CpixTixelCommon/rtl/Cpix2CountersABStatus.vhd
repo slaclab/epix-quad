@@ -36,7 +36,7 @@ entity Cpix2CountersABStatus is
       Clk               : in  sl;
       Rst               : in  sl;
       -- waveform signal in
-      asicSRO           : in  sl; -- waveform
+      asicSR0           : in  sl; -- waveform
       asicSync          : in  sl; -- waveform
       -- deserializer data in
       decSof            : in  sl;
@@ -67,7 +67,7 @@ architecture RTL of Cpix2CountersABStatus is
   
    signal s   : StrType := STR_INIT_C;
    signal sin : StrType;
-   signal asicSRO_i   : sl;
+   signal asicSR0_i   : sl;
    signal asicSync_i  : sl;
    signal decSof_i    : sl;
    
@@ -86,8 +86,8 @@ begin
    port map (
       clk     => Clk,
       rst     => Rst,
-      dataIn  => asicSRO,
-      dataOut => asicSRO_i
+      dataIn  => asicSR0,
+      dataOut => asicSR0_i
    );
 
    Sync_SYNC_U : entity work.Synchronizer
@@ -110,7 +110,7 @@ begin
    -----------------------------------------
    -- state machine combinatorial process
    -----------------------------------------   
-   comb : process (Rst,s,asicSRO_i,asicSync_i,decSof_i ) is
+   comb : process (Rst,s,asicSR0_i,asicSync_i,decSof_i ) is
       variable sv       : StrType;
    begin
       sv := s;    -- s is in AXI stream clock domain
@@ -122,14 +122,14 @@ begin
          -- WAIT_SRO_A_ST, WAIT_SRO_B_ST, WAIT_DATA_A_ST, DONE_ST, ERROR_ST
          when WAIT_SRO_A_ST =>
             sv.status := "00";
-            if (asicSRO_i = '1') then
+            if (asicSR0_i = '1') then
                 -- 
                 sv.state := WAIT_DATA_A_ST;
             end if;    
 
          when WAIT_DATA_A_ST =>
             sv.status := "00";
-            if (asicSRO_i = '1') then
+            if (asicSR0_i = '1') then
                 -- 
                 sv.state := ERROR_ST;
             elsif (decSof_i = '1') then
@@ -139,7 +139,7 @@ begin
 
          when WAIT_SRO_B_ST =>
             sv.status := "00";
-            if (asicSRO_i = '1') then
+            if (asicSR0_i = '1') then
                 -- 
                 sv.state := DONE_ST;
             end if;    
