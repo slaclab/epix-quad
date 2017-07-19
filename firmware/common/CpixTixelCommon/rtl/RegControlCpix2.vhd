@@ -296,7 +296,7 @@ begin
       axiSlaveRegister(regCon,  x"00017C",  0, v.asicAcqReg.SR0Width1);
       axiSlaveRegister(regCon,  x"000180",  0, v.asicAcqReg.SR0Delay2);
       axiSlaveRegister(regCon,  x"000184",  0, v.asicAcqReg.SR0Width2);
-      axiSlaveRegister(regCon,  x"00018C",  0, v.asicAcqReg.Vid);
+      axiSlaveRegister(regCon,  x"000188",  0, v.asicAcqReg.Vid);
       
       axiSlaveRegisterR(regCon, x"000200",  0, r.cpix2RegOut.acqCnt);
       axiSlaveRegisterR(regCon, x"000204",  0, r.saciPrepRdoutCnt);
