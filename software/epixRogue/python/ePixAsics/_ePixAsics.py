@@ -953,3 +953,271 @@ class TixelAsic(pr.Device):
         def func(dev, var):         
             return '{:.3f} kHz'.format(1/(self.clkPeriod * self._count(var.dependencies)) * 1e-3)
         return func
+
+#################################################################################################################################################
+##
+## Cpix2 ASIC register definition
+##
+#################################################################################################################################################
+class Cpix2Asic(pr.Device):
+    def __init__(self, **kwargs):
+        """Create registers for Cpix2 ASIC"""
+        super().__init__(description='Cpix2 ASIC Configuration', **kwargs)
+        
+        addrSize = 4	
+        
+        # CMD = 0, Addr = 0  : Prepare for readout
+        self.add(pr.RemoteCommand(name='CmdPrepForRead', description='ePix Prepare For Readout', 
+                             offset=0x00000000*addrSize, bitSize=1, bitOffset=0, function=pr.Command.touchZero, hidden=True))
+        
+        # CMD = 1, Addr = xxx - Register set
+        
+        self.add(pr.Variable(name='CompTH1_DAC',   description='Config01', offset=0x00001001*addrSize, bitSize=6,  bitOffset=0,  base='uint',  mode='RW'))
+        self.add(pr.Variable(name='PulserSync',    description='Config01', offset=0x00001001*addrSize, bitSize=1,  bitOffset=7,  base='bool',  mode='RW'))
+        self.add(pr.Variable(name='PLL_RO_Reset',  description='Config02', offset=0x00001002*addrSize, bitSize=1,  bitOffset=0,  base='bool',  mode='RW'))
+        self.add(pr.Variable(name='PLL_RO_Itune',  description='Config02', offset=0x00001002*addrSize, bitSize=3,  bitOffset=1,  base='uint',  mode='RW'))
+        self.add(pr.Variable(name='PLL_RO_Reset',  description='Config02', offset=0x00001002*addrSize, bitSize=3,  bitOffset=4,  base='uint',  mode='RW'))
+        self.add(pr.Variable(name='PLL_RO_Reset',  description='Config02', offset=0x00001002*addrSize, bitSize=1,  bitOffset=7,  base='bool',  mode='RW'))
+        self.add(pr.Variable(name='Pulser',        description='Config03', offset=0x00001003*addrSize, bitSize=10, bitOffset=0,  base='uint',  mode='WO'))
+        self.add(pr.Variable(name='Pbit',          description='Config03', offset=0x00001003*addrSize, bitSize=1,  bitOffset=10, base='bool',  mode='WO'))
+        self.add(pr.Variable(name='atest',         description='Config03', offset=0x00001003*addrSize, bitSize=1,  bitOffset=11, base='bool',  mode='WO'))
+        self.add(pr.Variable(name='test',          description='Config03', offset=0x00001003*addrSize, bitSize=1,  bitOffset=12, base='bool',  mode='WO'))
+        self.add(pr.Variable(name='Sba_test',      description='Config03', offset=0x00001003*addrSize, bitSize=1,  bitOffset=13, base='bool',  mode='WO'))
+        self.add(pr.Variable(name='Hrtest',        description='Config03', offset=0x00001003*addrSize, bitSize=1,  bitOffset=14, base='bool',  mode='WO'))
+        self.add(pr.Variable(name='PulserR',       description='Config03', offset=0x00001003*addrSize, bitSize=1,  bitOffset=15, base='bool',  mode='WO'))
+        self.add(pr.Variable(name='DM1',           description='Config04', offset=0x00001004*addrSize, bitSize=4,  bitOffset=0,  base='uint',  mode='RW'))
+        self.add(pr.Variable(name='DM2',           description='Config04', offset=0x00001004*addrSize, bitSize=4,  bitOffset=4,  base='uint',  mode='RW'))
+        self.add(pr.Variable(name='Pulser_DAC',    description='Config05', offset=0x00001005*addrSize, bitSize=3,  bitOffset=0,  base='uint',  mode='RW'))
+        self.add(pr.Variable(name='Monost_Pulser', description='Config05', offset=0x00001005*addrSize, bitSize=3,  bitOffset=3,  base='uint',  mode='RW'))
+        self.add(pr.Variable(name='DM1en',         description='Config06', offset=0x00001006*addrSize, bitSize=1,  bitOffset=0,  base='bool',  mode='WO'))
+        self.add(pr.Variable(name='DM2en',         description='Config06', offset=0x00001006*addrSize, bitSize=1,  bitOffset=1,  base='bool',  mode='WO'))
+        self.add(pr.Variable(name='emph_bd',       description='Config06', offset=0x00001006*addrSize, bitSize=3,  bitOffset=2,  base='uint',  mode='RW'))
+        self.add(pr.Variable(name='emph_bc',       description='Config06', offset=0x00001006*addrSize, bitSize=3,  bitOffset=5,  base='uint',  mode='RW'))
+        self.add(pr.Variable(name='VREF_DAC',      description='Config07', offset=0x00001007*addrSize, bitSize=6,  bitOffset=0,  base='uint',  mode='RW'))
+        self.add(pr.Variable(name='VrefLow',       description='Config07', offset=0x00001007*addrSize, bitSize=2,  bitOffset=6,  base='uint',  mode='RW'))
+        self.add(pr.Variable(name='TPS_MUX',       description='Config08', offset=0x00001008*addrSize, bitSize=4,  bitOffset=1,  base='uint',  mode='RW'))
+        self.add(pr.Variable(name='RO_Monost',     description='Config08', offset=0x00001008*addrSize, bitSize=3,  bitOffset=5,  base='uint',  mode='RW'))
+        self.add(pr.Variable(name='TPS_GR',        description='Config09', offset=0x00001009*addrSize, bitSize=4,  bitOffset=0,  base='uint',  mode='RW'))
+        self.add(pr.Variable(name='cout',          description='Config09', offset=0x00001009*addrSize, bitSize=1,  bitOffset=5,  base='bool',  mode='WO'))
+        self.add(pr.Variable(name='ckc',           description='Config09', offset=0x00001009*addrSize, bitSize=1,  bitOffset=6,  base='bool',  mode='WO'))
+        self.add(pr.Variable(name='mod',           description='Config09', offset=0x00001009*addrSize, bitSize=1,  bitOffset=7,  base='bool',  mode='WO'))
+        self.add(pr.Variable(name='PP_OCB_S2D',    description='Config0A', offset=0x0000100A*addrSize, bitSize=1,  bitOffset=0,  base='bool',  mode='WO'))
+        self.add(pr.Variable(name='OCB',           description='Config0A', offset=0x0000100A*addrSize, bitSize=3,  bitOffset=1,  base='uint',  mode='RW'))
+        self.add(pr.Variable(name='Monost',        description='Config0A', offset=0x0000100A*addrSize, bitSize=3,  bitOffset=4,  base='uint',  mode='RW'))
+        self.add(pr.Variable(name='fastPP_enable', description='Config0A', offset=0x0000100A*addrSize, bitSize=1,  bitOffset=7,  base='bool',  mode='WO'))
+
+
+        self.add((
+            pr.Variable(name='TpsDacGain',   description='Config5', offset=0x00001005*addrSize, bitSize=2, bitOffset=0,  base='uint', mode='RW'),
+            pr.Variable(name='TpsDac',       description='Config5', offset=0x00001005*addrSize, bitSize=6, bitOffset=2,  base='uint', mode='RW'),
+            pr.Variable(name='TpsGr',        description='Config5', offset=0x00001005*addrSize, bitSize=4, bitOffset=8,  base='uint', mode='RW'),
+            pr.Variable(name='TpsMux',       description='Config5', offset=0x00001005*addrSize, bitSize=4, bitOffset=12, base='uint', mode='RW')))
+        self.add((
+            pr.Variable(name='BiasTpsBuffer', description='Config6', offset=0x00001006*addrSize, bitSize=3, bitOffset=0,  base='uint', mode='RW'),
+            pr.Variable(name='BiasTps',       description='Config6', offset=0x00001006*addrSize, bitSize=3, bitOffset=3,  base='uint', mode='RW'),
+            pr.Variable(name='BiasTpsDac',    description='Config6', offset=0x00001006*addrSize, bitSize=3, bitOffset=6,  base='uint', mode='RW'),
+            pr.Variable(name='DacComparator', description='Config6', offset=0x00001006*addrSize, bitSize=6, bitOffset=10, base='uint', mode='RW')))
+        self.add((
+            pr.Variable(name='BiasComparator',     description='Config7', offset=0x00001007*addrSize, bitSize=3, bitOffset=0,  base='uint', mode='RW'),
+            pr.Variable(name='Preamp',             description='Config7', offset=0x00001007*addrSize, bitSize=3, bitOffset=3,  base='uint', mode='RW'),
+            pr.Variable(name='BiasDac',            description='Config7', offset=0x00001007*addrSize, bitSize=3, bitOffset=6,  base='uint', mode='RW'),
+            pr.Variable(name='BgrCtrlDacTps',      description='Config7', offset=0x00001007*addrSize, bitSize=2, bitOffset=9,  base='uint', mode='RW'),
+            pr.Variable(name='BgrCtrlDacComp',     description='Config7', offset=0x00001007*addrSize, bitSize=2, bitOffset=11, base='uint', mode='RW'),
+            pr.Variable(name='DacComparatorGain',  description='Config7', offset=0x00001007*addrSize, bitSize=2, bitOffset=13, base='uint', mode='RW')))
+        self.add((
+            pr.Variable(name='Ppbit',           description='Config8', offset=0x00001008*addrSize, bitSize=1, bitOffset=0,  base='bool', mode='RW'),
+            pr.Variable(name='TestBe',          description='Config8', offset=0x00001008*addrSize, bitSize=1, bitOffset=1,  base='bool', mode='RW'),
+            pr.Variable(name='DelExec',         description='Config8', offset=0x00001008*addrSize, bitSize=1, bitOffset=2,  base='bool', mode='RW'),
+            pr.Variable(name='DelCCKreg',       description='Config8', offset=0x00001008*addrSize, bitSize=1, bitOffset=3,  base='bool', mode='RW'),
+            pr.Variable(name='syncExten',       description='Config8', offset=0x00001008*addrSize, bitSize=1, bitOffset=4,  base='bool', mode='RW'),
+            pr.Variable(name='syncRoleSel',     description='Config8', offset=0x00001008*addrSize, bitSize=1, bitOffset=5,  base='bool', mode='RW'),
+            pr.Variable(name='hdrMode',         description='Config8', offset=0x00001008*addrSize, bitSize=1, bitOffset=6,  base='bool', mode='RW'),
+            pr.Variable(name='acqRowlastEn',    description='Config8', offset=0x00001008*addrSize, bitSize=1, bitOffset=7,  base='bool', mode='RW'),
+            pr.Variable(name='DM1en',           description='Config8', offset=0x00001008*addrSize, bitSize=1, bitOffset=8,  base='bool', mode='RW'),
+            pr.Variable(name='DM2en',           description='Config8', offset=0x00001008*addrSize, bitSize=1, bitOffset=9,  base='bool', mode='RW'),
+            pr.Variable(name='DigROdisable',    description='Config8', offset=0x00001008*addrSize, bitSize=1, bitOffset=10, base='bool', mode='RW')))
+        self.add((
+            pr.Variable(name='pllReset',        description='Config9', offset=0x00001009*addrSize, bitSize=1, bitOffset=0,  base='bool', mode='RW'),
+            pr.Variable(name='pllItune',        description='Config9', offset=0x00001009*addrSize, bitSize=3, bitOffset=1,  base='uint', mode='RW'),
+            pr.Variable(name='pllKvco',         description='Config9', offset=0x00001009*addrSize, bitSize=3, bitOffset=4,  base='uint', mode='RW'),
+            pr.Variable(name='pllFilter1',      description='Config9', offset=0x00001009*addrSize, bitSize=3, bitOffset=7,  base='uint', mode='RW'),
+            pr.Variable(name='pllFilter2',      description='Config9', offset=0x00001009*addrSize, bitSize=3, bitOffset=10, base='uint', mode='RW'),
+            pr.Variable(name='pllOutDivider',   description='Config9', offset=0x00001009*addrSize, bitSize=3, bitOffset=13, base='uint', mode='RW')))
+        self.add((
+            pr.Variable(name='pllROReset',      description='Config10', offset=0x0000100a*addrSize, bitSize=1, bitOffset=0,  base='bool', mode='RW'),
+            pr.Variable(name='pllROItune',      description='Config10', offset=0x0000100a*addrSize, bitSize=3, bitOffset=1,  base='uint', mode='RW'),
+            pr.Variable(name='pllROKvco',       description='Config10', offset=0x0000100a*addrSize, bitSize=3, bitOffset=4,  base='uint', mode='RW'),
+            pr.Variable(name='pllROFilter1',    description='Config10', offset=0x0000100a*addrSize, bitSize=3, bitOffset=7,  base='uint', mode='RW'),
+            pr.Variable(name='pllROFilter2',    description='Config10', offset=0x0000100a*addrSize, bitSize=3, bitOffset=10, base='uint', mode='RW'),
+            pr.Variable(name='pllROOutDivider', description='Config10', offset=0x0000100a*addrSize, bitSize=3, bitOffset=13, base='uint', mode='RW')))
+        self.add((
+            pr.Variable(name='dllGlobalCalib',     description='Config11', offset=0x0000100b*addrSize, bitSize=3, bitOffset=0,  base='uint', mode='RW'),
+            pr.Variable(name='dllCalibrationRang', description='Config11', offset=0x0000100b*addrSize, bitSize=3, bitOffset=3,  base='uint', mode='RW'),
+            pr.Variable(name='DllCpBias',          description='Config11', offset=0x0000100b*addrSize, bitSize=3, bitOffset=6,  base='uint', mode='RW'),
+            pr.Variable(name='DllAlockRen',        description='Config11', offset=0x0000100b*addrSize, bitSize=1, bitOffset=9,  base='bool', mode='RW'),
+            pr.Variable(name='DllReset',           description='Config11', offset=0x0000100b*addrSize, bitSize=1, bitOffset=10, base='bool', mode='RW'),
+            pr.Variable(name='DllDACvctrlEn',      description='Config11', offset=0x0000100b*addrSize, bitSize=1, bitOffset=11, base='bool', mode='RW'),
+            pr.Variable(name='DllBiasDisable',     description='Config11', offset=0x0000100b*addrSize, bitSize=1, bitOffset=12, base='bool', mode='RW'),
+            pr.Variable(name='delayCellTestCalib', description='Config11', offset=0x0000100b*addrSize, bitSize=3, bitOffset=13, base='uint', mode='RW')))
+        self.add((
+            pr.Variable(name='BiasVthCalibStepSize',  description='Config12', offset=0x0000100c*addrSize, bitSize=2, bitOffset=0,  base='uint', mode='RW'),
+            pr.Variable(name='BiasVthCalibStepGlob',  description='Config12', offset=0x0000100c*addrSize, bitSize=3, bitOffset=2,  base='uint', mode='RW'),
+            pr.Variable(name='BiasVthCalibTail',      description='Config12', offset=0x0000100c*addrSize, bitSize=3, bitOffset=5,  base='uint', mode='RW'),
+            pr.Variable(name='GlobalCounterStart',    description='Config12', offset=0x0000100c*addrSize, bitSize=8, bitOffset=8,  base='uint', mode='RW')))
+        self.add((
+            pr.Variable(name='ROslvdsBit',   description='Config13', offset=0x0000100d*addrSize, bitSize=1, bitOffset=0,  base='bool', mode='RW'),
+            pr.Variable(name='REFslvdsBit',  description='Config13', offset=0x0000100d*addrSize, bitSize=1, bitOffset=1,  base='bool', mode='RW'),
+            pr.Variable(name='emphBc',       description='Config13', offset=0x0000100d*addrSize, bitSize=3, bitOffset=2,  base='uint', mode='RW'),
+            pr.Variable(name='emphBd',       description='Config13', offset=0x0000100d*addrSize, bitSize=3, bitOffset=5,  base='uint', mode='RW'),
+            pr.Variable(name='DM1Sel',       description='Config13', offset=0x0000100d*addrSize, bitSize=4, bitOffset=8,  base='uint', mode='RW'),
+            pr.Variable(name='DM2Sel',       description='Config13', offset=0x0000100d*addrSize, bitSize=4, bitOffset=12, base='uint', mode='RW')))
+        self.add((
+            pr.Variable(name='DacDllGain',      description='Config14', offset=0x0000100e*addrSize, bitSize=2, bitOffset=0,  base='uint', mode='RW'),
+            pr.Variable(name='DacDll',          description='Config14', offset=0x0000100e*addrSize, bitSize=6, bitOffset=2,  base='uint', mode='RW'),
+            pr.Variable(name='DacTestlineGain', description='Config14', offset=0x0000100e*addrSize, bitSize=2, bitOffset=8,  base='uint', mode='RW'),
+            pr.Variable(name='DacTestline',     description='Config14', offset=0x0000100e*addrSize, bitSize=6, bitOffset=10, base='uint', mode='RW')))
+        self.add((
+            pr.Variable(name='DacpfaCompGain',  description='Config15', offset=0x0000100f*addrSize, bitSize=2, bitOffset=0,  base='uint', mode='RW'),
+            pr.Variable(name='DacpfaComp',      description='Config15', offset=0x0000100f*addrSize, bitSize=6, bitOffset=2,  base='uint', mode='RW')))
+        self.add((
+            pr.Variable(name='LinearDecay',        description='Config16', offset=0x00001010*addrSize, bitSize=3, bitOffset=0,  base='uint', mode='RW'),
+            pr.Variable(name='BGRctrlDACdll',      description='Config16', offset=0x00001010*addrSize, bitSize=2, bitOffset=3,  base='uint', mode='RW'),
+            pr.Variable(name='BGRctrlDACtestine',  description='Config16', offset=0x00001010*addrSize, bitSize=2, bitOffset=5,  base='uint', mode='RW'),
+            pr.Variable(name='BGRctrlDACpfaComp',  description='Config16', offset=0x00001010*addrSize, bitSize=2, bitOffset=7,  base='uint', mode='RW')))
+         
+        # CMD = 6, Addr = 17 : Row counter[8:0]
+        self.add((
+            pr.RemoteCommand(name='RowCounter', description='', offset=0x00006001*addrSize, bitSize=8, bitOffset=0, function=pr.Command.touch, hidden=False)))
+        
+        # CMD = 6, Addr = 19 : Bank select [3:0] & Col counter[6:0]
+        self.add((
+            pr.RemoteCommand(name='ColCounter', description='', offset=0x00006003*addrSize, bitSize=8, bitOffset=0, function=pr.Command.touch, hidden=False)))
+            
+        # CMD = 2, Addr = X  : Write Row with data
+        self.add((
+            pr.RemoteCommand(name='WriteRowData',    description='', offset=0x00002000*addrSize, bitSize=2, bitOffset=0, function=pr.Command.touch, hidden=False)))
+
+        # CMD = 3, Addr = X  : Write Column with data
+        self.add(
+            pr.RemoteCommand(name='WriteColData',    description='', offset=0x00003000*addrSize, bitSize=2, bitOffset=0, function=pr.Command.touch, hidden=False))
+
+        # CMD = 4, Addr = X  : Write Matrix with data        
+        self.add((    
+            pr.RemoteCommand(name='WriteMatrixData', description='', offset=0x00004000*addrSize, bitSize=2, bitOffset=0, function=pr.Command.touch, hidden=False)))   
+        
+
+        # CMD = 5, Addr = X  : Read/Write Pixel with data
+        self.add(pr.RemoteCommand(name='WritePixelData',  description='WritePixelData',  offset=0x00005000*addrSize, bitSize=2, bitOffset=0, function=pr.Command.touch, hidden=False))
+
+        # CMD = 7, Addr = X  : Prepare to write chip ID
+        #self.add((
+        #    pr.Variable(name='PrepareWriteChipIdA', description='PrepareWriteChipIdA', offset=0x00007000*addrSize, bitSize=32, bitOffset=0, base='hex', mode='RW'),
+        #    pr.Variable(name='PrepareWriteChipIdB', description='PrepareWriteChipIdB', offset=0x00007015*addrSize, bitSize=32, bitOffset=0, base='hex', mode='RW')))
+      
+        # CMD = 8, Addr = X  : Prepare for row/column/matrix configuration
+        self.add(
+            pr.RemoteCommand(name='PrepareMultiConfig', description='PrepareMultiConfig', offset=0x00008000*addrSize, bitSize=32, bitOffset=0, function=pr.Command.touchZero, hidden=False))
+
+
+
+        #####################################
+        # Create commands
+        #####################################
+
+        # A command has an associated function. The function can be a series of
+        # python commands in a string. Function calls are executed in the command scope
+        # the passed arg is available as 'arg'. Use 'dev' to get to device scope.
+        # A command can also be a call to a local function with local scope.
+        # The command object and the arg are passed
+
+        self.add(
+            pr.Command(name='ClearMatrix',description='Clear configuration bits of all pixels', function=self.fnClearMatrix))
+            
+        self.add(
+            pr.Command(name='SetPixelBitmap',description='Set pixel bitmap of the matrix', function=self.fnSetPixelBitmap))
+        
+        self.add(
+            pr.Command(name='GetPixelBitmap',description='Get pixel bitmap of the matrix', function=self.fnGetPixelBitmap))
+
+    def fnSetPixelBitmap(self, dev,cmd,arg):
+        """SetPixelBitmap command function"""
+        #set r0mode in order to have saci cmd to work properly on legacy firmware
+        self.root.Tixel.TixelFpgaRegisters.AsicR0Mode.set(True)
+
+        if (self.enable.get()):
+            self.reportCmd(dev,cmd,arg)
+            if len(arg) > 0:
+               self.filename = arg
+            else:
+               self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+            if os.path.splitext(self.filename)[1] == '.csv':
+                matrixCfg = np.genfromtxt(self.filename, delimiter=',')
+                if matrixCfg.shape == (48, 48):
+                    self.CmdPrepForRead()
+                    self.PrepareMultiConfig()
+                    for x in range (0, 48):
+                        for y in range (0, 48):
+                            self.RowCounter.set(x)
+                            self.ColCounter.set(y)
+                            self.WritePixelData.set(int(matrixCfg[x][y]))
+                    self.CmdPrepForRead()
+                else:
+                    print('csv file must be 48x48 pixels')
+            else:
+                print("Not csv file : ", self.filename)
+        else:
+            print("Warning: ASIC enable is set to False!")      
+
+
+    def fnGetPixelBitmap(self, dev,cmd,arg):
+        """GetPixelBitmap command function"""
+        #set r0mode in order to have saci cmd to work properly on legacy firmware
+        self.root.Tixel.TixelFpgaRegisters.AsicR0Mode.set(True)
+
+        if (self.enable.get()):
+            if len(arg) > 0:
+               self.filename = arg
+            else:
+               self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+            if os.path.splitext(self.filename)[1] == '.csv':
+                readBack = np.zeros((48,48),dtype='uint16')
+                self.CmdPrepForRead()
+                self.PrepareMultiConfig()
+                for x in range (0, 48):
+                   for y in range (0, 48):
+                      self.RowCounter.set(x)
+                      self.ColCounter.set(y)
+                      readBack[x, y] = self.WritePixelData.get()
+                np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
+        else:
+            print("Warning: ASIC enable is set to False!")      
+
+
+    def fnClearMatrix(self, dev,cmd,arg):
+        """ClearMatrix command function"""
+        #set r0mode in order to have saci cmd to work properly on legacy firmware
+        self.root.Tixel.TixelFpgaRegisters.AsicR0Mode.set(True)
+
+        if (self.enable.get()):
+            self.reportCmd(dev,cmd,arg)
+            self.PrepareMultiConfig()
+            self.WriteMatrixData.set(0)
+            self.CmdPrepForRead()
+        else:
+            print("Warning: ASIC enable is set to False!")      
+
+
+    # standard way to report a command has been executed
+    def reportCmd(self, dev,cmd,arg):
+        """reportCmd command function"""
+        "Enables to unify the console print out for all cmds"
+        print("Command executed : ", cmd)
+        
+    @staticmethod   
+    def frequencyConverter(self):
+        def func(dev, var):         
+            return '{:.3f} kHz'.format(1/(self.clkPeriod * self._count(var.dependencies)) * 1e-3)
+        return func
+
+
+
