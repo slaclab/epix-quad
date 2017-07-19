@@ -64,6 +64,9 @@ entity RegControlCpix2 is
       -- fast ADC clock
       adcClk         : out sl;
       -- ASIC Control
+      acqStart            : in  sl;
+      saciReadoutReq      : out sl;
+      saciReadoutAck      : in  sl;
       asicEnA             : out sl; -- waveform
       asicEnB             : out sl; -- waveform
       asicVid             : out sl; -- static signal used to program asic eeprom

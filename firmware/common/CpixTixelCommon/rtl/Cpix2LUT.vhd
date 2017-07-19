@@ -64,18 +64,11 @@ begin
    seq_p: process ( sysClk ) 
    begin
       -- 1 stage pipeline
-      if rising_edge(sysClk) then
-         if sysRst = '1' then
-            sAxisMasterD1 <= AXI_STREAM_MASTER_INIT_C after TPD_G;
-         else
-            sAxisMasterD1 <= sAxisMaster              after TPD_G;
-         end if;
-      end if;
-      
+     
       -- output stream register
       if rising_edge(sysClk) then
          if sysRst = '1' then
-            mAxisMaster <= AXI_STREAM_MASTER_INIT_C      after TPD_G;
+            sDataOut <= (others => '0')      after TPD_G;
          else
             sDataOut(15 downto  0)           <= dataMux                after TPD_G;
             sDataOut(19 downto 16)           <= sDataIn(19 downto 16)  after TPD_G;

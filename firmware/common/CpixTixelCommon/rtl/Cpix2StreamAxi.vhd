@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
--- Title         : AsicStreamAxi
--- Project       : Tixel Detector
+-- Title         : Cpix2StreamAxi
+-- Project       : Cpix2 Detector
 -------------------------------------------------------------------------------
 -- File          : AsicStreamAxi.vhd
 -- Author        : Maciej Kwiatkowski, mkwiatko@slac.stanford.edu
@@ -30,7 +30,7 @@ use work.AxiLitePkg.all;
 use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
 
-entity AsicStreamAxi is 
+entity Cpix2StreamAxi is 
    generic (
       TPD_G           	: time := 1 ns;
       VC_NO_G           : slv(3 downto 0)  := "0000";
@@ -65,21 +65,25 @@ entity AsicStreamAxi is
       
       -- optional readout trigger for test mode
       testTrig          : in  sl := '0';
+
+      -- waveform signal in
+      asicSRO           : in  sl; -- waveform
+      asicSync          : in  sl; -- waveform
       -- optional inhibit counting errors 
       -- workaround to tixel bug dropping link after R0
       -- affects only SOF error counter
       errInhibit        : in  sl := '0'
       
    );
-end AsicStreamAxi;
+end Cpix2StreamAxi;
 
 
 -- Define architecture
-architecture RTL of AsicStreamAxi is
+architecture RTL of Cpix2StreamAxi is
 
    constant AXI_STREAM_CONFIG_I_C : AxiStreamConfigType   := ssiAxiStreamConfig(2, TKEEP_COMP_C);
    constant AXI_STREAM_CONFIG_O_C : AxiStreamConfigType   := ssiAxiStreamConfig(4, TKEEP_COMP_C);
-   constant TOA_C : natural := 1;
+
    
    type StateType is (IDLE_S, HDR_S, DATA_S);
    
@@ -167,6 +171,7 @@ architecture RTL of AsicStreamAxi is
    signal decSof        : sl;
    signal decEof        : sl;
    signal decEofe       : sl;
+   signal lutDataOut    : slv(19 downto 0);
    
    signal dFifoRd       : sl;
    signal dFifoEofe     : sl;
@@ -180,6 +185,8 @@ architecture RTL of AsicStreamAxi is
    
    signal testModeSync  : sl;
    signal iRxValid      : sl;
+
+   signal iContersABStatus : slv(1 downto 0);
    
    signal rxDataCs   : slv(19 downto 0);                 -- for chipscope
    signal rxValidCs  : sl;                               -- for chipscope
@@ -216,9 +223,9 @@ begin
       clk         => rxClk,
       rst         => rxRst,
       dataIn      => rxData,
-      dataInValid => iRxValid,
+      validIn     => iRxValid,
       dataOut     => decDataOut,
-      valid       => decValid,
+      validOut    => decValid,
       sof         => decSof,
       eof         => decEof,
       eofe        => decEofe
@@ -227,12 +234,16 @@ begin
    -------------------------------------------------------
    -- CPIX2 LUT translators 
    -------------------------------------------------------
-   U_Cpix2LUT : entity work.CpixLUT2
+   U_Cpix2LUT : entity work.Cpix2LUT
    port map (
-      sysClk         => byteClk,
-      sysRst         => byteClkRst,
+      sysClk         => rxClk,
+      sysRst         => rxRst,
       -- input stream
-      sDataIn    => decValid & decSof & decEof & decEofe & decDataOut,   
+      sDataIn(15 downto 0)    => decDataOut,
+      sDataIn(16)             => decEofe,   
+      sDataIn(17)             => decEof,   
+      sDataIn(18)             => decSof,   
+      sDataIn(19)             => decValid,      
       -- output stream
       sDataout   => lutDataOut
    );
@@ -255,7 +266,7 @@ begin
       rst               => rxRst,
       wr_clk            => rxClk,
       wr_en             => lutDataOut(19),
-      din(15 downto 0)  => lutDataOut(18 downto 0),
+      din(18 downto 0)  => lutDataOut(18 downto 0),
       --Read Ports (rd_clk domain)
       rd_clk            => axisClk,
       rd_en             => dFifoRd,
@@ -285,7 +296,18 @@ begin
       mAxisMaster => mAxisMaster,
       mAxisSlave  => mAxisSlave
    );
-   
+
+   -- implements a state machine to keep track of which counter is being readout
+   -- or if we lost a sof then a error bit is raised
+   CounterABStatus_U : entity Cpix2CountersABStatus
+   port map( 
+      Clk               => axisClk,
+      Rst               => axisRst, 
+      asicSRO           => asicSRO,
+      asicSync          => asicSync,
+      decSof            => decSof,
+      countersABStatus  => iContersABStatus
+   );   
    
    comb : process (axilRst, axisRst, sAxilReadMaster, sAxilWriteMaster, sAxisSlave, r, s, 
       acqNo, dFifoOut, dFifoValid, dFifoSof, dFifoEof, dFifoEofe, testTrig, errInhibit) is
@@ -385,7 +407,7 @@ begin
                sv.axisMaster.tData(15 downto 0) := s.acqNo(1)(31 downto 16);
             elsif s.stCnt = 4 then
                if s.testMode = '0' then
-                  sv.axisMaster.tData(15 downto 0) := x"000" & dFifoOut(TOA_C) & ASIC_NO_G;
+                  sv.axisMaster.tData(15 downto 0) := x"00" & iContersABStatus & ASIC_NO_G; -- Put the flag counter A or B here
                else
                   sv.axisMaster.tData(15 downto 0) := x"000" & s.testBitFlip & ASIC_NO_G;
                end if;

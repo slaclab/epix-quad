@@ -134,14 +134,12 @@ architecture top_level of Cpix2Core is
    attribute keep : string;
 
    -- ASIC signals
-   signal asicEnA              : sl;
-   signal asicEnB              : sl;
-   signal asicVid              : sl;
-   signal asicSRO              : sl;
+   signal iasicEnA              : sl;
+   signal iasicEnB              : sl;
+   signal iasicVid              : sl;
+   signal iasicSRO              : sl;
    signal iAsic01DM1           : sl;
    signal iAsic01DM2           : sl;
-   signal iAsicTpulse          : sl;
-   signal iAsicStart           : sl;
    signal iAsicPPbe            : slv(1 downto 0);
    signal iAsicPpmat           : slv(1 downto 0);
    signal iAsicR0              : sl;
@@ -161,8 +159,7 @@ architecture top_level of Cpix2Core is
    attribute keep of iAsicGrst     : signal is "true";
    attribute keep of iAsicSync     : signal is "true";
    attribute keep of iAsicAcq      : signal is "true";
-   attribute keep of iAsicStart    : signal is "true";
-   attribute keep of iAsicTpulse   : signal is "true";
+
    
    signal coreClk     : sl;
    signal coreClkRst  : sl;
@@ -173,7 +170,6 @@ architecture top_level of Cpix2Core is
    signal txLinkReady : sl;
    signal rxLinkReady : sl;
    
-   signal asicRfClkDiv2 : sl;
    signal asicRfClk     : sl;
    signal asicRfClkRst  : sl;
    signal asicRdClk     : sl;
@@ -303,9 +299,9 @@ begin
    tgOutMux <= 
       iAsic01DM1        when cpix2Config.cpix2DbgSel1 = "00000" else
       iAsicSync         when cpix2Config.cpix2DbgSel1 = "00001" else
-      iAsicStart        when cpix2Config.cpix2DbgSel1 = "00010" else
+      iAsicEnA          when cpix2Config.cpix2DbgSel1 = "00010" else
       iAsicAcq          when cpix2Config.cpix2DbgSel1 = "00011" else
-      iAsicTpulse       when cpix2Config.cpix2DbgSel1 = "00100" else
+      iAsicEnB          when cpix2Config.cpix2DbgSel1 = "00100" else
       iAsicR0           when cpix2Config.cpix2DbgSel1 = "00101" else
       iSaciClk          when cpix2Config.cpix2DbgSel1 = "00110" else
       iSaciCmd          when cpix2Config.cpix2DbgSel1 = "00111" else
@@ -315,15 +311,15 @@ begin
       asicRdClk         when cpix2Config.cpix2DbgSel1 = "01011" else
       bitClk            when cpix2Config.cpix2DbgSel1 = "01100" else
       byteClk           when cpix2Config.cpix2DbgSel1 = "01101" else
-      asicRfClkDiv2     when cpix2Config.cpix2DbgSel1 = "01110" else
+      iasicSRO           when cpix2Config.cpix2DbgSel1 = "01110" else
       '0';   
    
    mpsOutMux <=
       iAsic01DM2        when cpix2Config.cpix2DbgSel2 = "00000" else
       iAsicSync         when cpix2Config.cpix2DbgSel2 = "00001" else
-      iAsicStart        when cpix2Config.cpix2DbgSel2 = "00010" else
+      iAsicEnA          when cpix2Config.cpix2DbgSel2 = "00010" else
       iAsicAcq          when cpix2Config.cpix2DbgSel2 = "00011" else
-      iAsicTpulse       when cpix2Config.cpix2DbgSel2 = "00100" else
+      iAsicEnB          when cpix2Config.cpix2DbgSel2 = "00100" else
       iAsicR0           when cpix2Config.cpix2DbgSel2 = "00101" else
       iSaciClk          when cpix2Config.cpix2DbgSel2 = "00110" else
       iSaciCmd          when cpix2Config.cpix2DbgSel2 = "00111" else
@@ -333,7 +329,7 @@ begin
       asicRdClk         when cpix2Config.cpix2DbgSel2 = "01011" else
       bitClk            when cpix2Config.cpix2DbgSel2 = "01100" else
       byteClk           when cpix2Config.cpix2DbgSel2 = "01101" else
-      asicRfClkDiv2     when cpix2Config.cpix2DbgSel2 = "01110" else
+      iasicSRO           when cpix2Config.cpix2DbgSel2 = "01110" else
       '0';
    
    -- Temporary one-shot for grabbing PGP op code
@@ -552,7 +548,7 @@ begin
       -- ASIC AXI stream framers
       -------------------------------------------------------
       
-      U_AXI_Framer : entity work.AsicStreamAxi
+      U_AXI_Framer : entity work.Cpix2StreamAxi
       generic map (
          ASIC_NO_G   => std_logic_vector(to_unsigned(i, 3))
       )
@@ -573,6 +569,8 @@ begin
          mAxisSlave        => framerAxisSlave(i),
          acqNo             => cpix2Config.acqCnt,
          testTrig          => iAsicAcq,
+         asicSRO           => iasicSRO,
+         asicSync          => iAsicSync,
          errInhibit        => errInhibit
       );
    
@@ -696,8 +694,6 @@ begin
       asicSRO        => iasicSRO,
       asicPPbe       => iAsicPpbe,
       asicPpmat      => iAsicPpmat,
-      asicTpulse     => iAsicTpulse,
-      asicStart      => iAsicStart,
       asicR0         => iAsicR0,
       asicGlblRst    => iAsicGrst,
       asicSync       => iAsicSync,
@@ -711,8 +707,8 @@ begin
    asicPPbe       <= iAsicPpbe;
    asicSync       <= iAsicSync;
    asicGlblRst    <= iAsicGrst;
-   asicTpulse     <= iAsicTpulse;
-   asicStart      <= iAsicStart;
+   asicEnA        <= iAsicEnA;
+   asicEnB        <= iAsicEnB;
    
    iAsic01DM1     <= asic01DM1;
    iAsic01DM2     <= asic01DM2;
@@ -720,28 +716,32 @@ begin
    --------------------------------------------
    --     Cpix2 power seqence controller     --
    --------------------------------------------   
-   U_Cpix2PwrCtrl: entity work.Cpix2PwrCtrl
-   generic map (
-      ON_DIG_ANA_G   => 1000000, -- 10 ms @ 100MHz
-      ON_ANA_IO_G    => 1000000,
-      OFF_IO_ANA_G   => 1000000,
-      OFF_ANA_DIG_G  => 1000000
-   )
-   port map ( 
-      clk         => coreClk,
-      rst         => axiRst,
-      enableReq   => cpix2Config.pwrEnableReq,
-      enableAck   => pwrEnableAck,
-      digPwr      => iDigitalPowerEn,
-      anaPwr      => iAnalogPowerEn,
-      ioPwr       => iIoPowerEn
-   );
+--   U_Cpix2PwrCtrl: entity work.Cpix2PwrCtrl
+--   generic map (
+--      ON_DIG_ANA_G   => 1000000, -- 10 ms @ 100MHz
+--      ON_ANA_IO_G    => 1000000,
+--      OFF_IO_ANA_G   => 1000000,
+--      OFF_ANA_DIG_G  => 1000000
+--   )
+--   port map ( 
+--      clk         => coreClk,
+--      rst         => axiRst,
+--      enableReq   => cpix2Config.pwrEnableReq,
+--      enableAck   => pwrEnableAck,
+--      digPwr      => iDigitalPowerEn,
+--      anaPwr      => iAnalogPowerEn,
+--      ioPwr       => iIoPowerEn
+--   );
    
    -- Map out power enables
-   digitalPowerEn <= iDigitalPowerEn   when cpix2Config.pwrManual = '0' else cpix2Config.pwrManualDig;
-   analogPowerEn  <= iAnalogPowerEn    when cpix2Config.pwrManual = '0' else cpix2Config.pwrManualAna;
-   ioPowerEn      <= iIoPowerEn        when cpix2Config.pwrManual = '0' else cpix2Config.pwrManualIo;
-   fpgaOutputEn   <= iIoPowerEn        when cpix2Config.pwrManual = '0' else cpix2Config.pwrManualFpga;
+--   digitalPowerEn <= iDigitalPowerEn   when cpix2Config.pwrManual = '0' else cpix2Config.pwrManualDig;
+--   analogPowerEn  <= iAnalogPowerEn    when cpix2Config.pwrManual = '0' else cpix2Config.pwrManualAna;
+--   ioPowerEn      <= iIoPowerEn        when cpix2Config.pwrManual = '0' else cpix2Config.pwrManualIo;
+--   fpgaOutputEn   <= iIoPowerEn        when cpix2Config.pwrManual = '0' else cpix2Config.pwrManualFpga;
+   digitalPowerEn <= cpix2Config.pwrManualDig;
+   analogPowerEn  <= cpix2Config.pwrManualAna;
+   ioPowerEn      <= cpix2Config.pwrManualIo;
+   fpgaOutputEn   <= cpix2Config.pwrManualFpga;
    
    --------------------------------------------
    -- SACI interface controller              --
@@ -1037,8 +1037,8 @@ begin
       acqStart       => acqStart,
       asicAcq        => iAsicAcq,
       asicR0         => iAsicR0,
-      asicPpmat      => iAsicPpmat,
-      asicPpbe       => iAsicPpbe,
+      asicPpmat      => iAsicEnA,
+      asicPpbe       => iAsicEnB,
       asicSync       => iAsicSync,
       asicGr         => iAsicGrst,
       asicRoClk      => asicRdClk,
@@ -1120,7 +1120,6 @@ begin
    U_AxiMicronN25QCore : entity work.AxiMicronN25QCore
    generic map (
       TPD_G          => TPD_G,
-      PIPE_STAGES_G  => 1,
       AXI_CLK_FREQ_G => 100.0E+6,   -- units of Hz
       SPI_CLK_FREQ_G => 25.0E+6     -- units of Hz
    )
@@ -1135,11 +1134,6 @@ begin
       axiReadSlave   => mAxiReadSlaves(BOOTMEM_AXI_INDEX_C),
       axiWriteMaster => mAxiWriteMasters(BOOTMEM_AXI_INDEX_C),
       axiWriteSlave  => mAxiWriteSlaves(BOOTMEM_AXI_INDEX_C),
-      -- AXI Streaming Interface (Optional)
-      mAxisMaster    => open,
-      mAxisSlave     => AXI_STREAM_SLAVE_FORCE_C,
-      sAxisMaster    => AXI_STREAM_MASTER_INIT_C,
-      sAxisSlave     => open,
       -- Clocks and Resets
       axiClk         => coreClk,
       axiRst         => axiRst

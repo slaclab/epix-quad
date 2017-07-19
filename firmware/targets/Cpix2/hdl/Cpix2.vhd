@@ -130,11 +130,12 @@ entity Cpix2 is
       -- TODO: Add I2C pins for SFP
       -- TODO: Add sync pins for DC/DCs
    );
-end Cpix2P;
+end Cpix2;
 
 architecture RTL of Cpix2 is
 
    signal iFpgaOutputEn : sl;
+   signal iFpgaOutputEnL : sl;
    
    -- Internal versions of signals so that we don't
    -- drive anything unpowered until the components
