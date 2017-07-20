@@ -976,8 +976,8 @@ class Cpix2Asic(pr.Device):
         self.add(pr.Variable(name='PulserSync',    description='Config01', offset=0x00001001*addrSize, bitSize=1,  bitOffset=7,  base='bool',  mode='RW'))
         self.add(pr.Variable(name='PLL_RO_Reset',  description='Config02', offset=0x00001002*addrSize, bitSize=1,  bitOffset=0,  base='bool',  mode='RW'))
         self.add(pr.Variable(name='PLL_RO_Itune',  description='Config02', offset=0x00001002*addrSize, bitSize=3,  bitOffset=1,  base='uint',  mode='RW'))
-        self.add(pr.Variable(name='PLL_RO_Reset',  description='Config02', offset=0x00001002*addrSize, bitSize=3,  bitOffset=4,  base='uint',  mode='RW'))
-        self.add(pr.Variable(name='PLL_RO_Reset',  description='Config02', offset=0x00001002*addrSize, bitSize=1,  bitOffset=7,  base='bool',  mode='RW'))
+        self.add(pr.Variable(name='PLL_RO_KVCO',   description='Config02', offset=0x00001002*addrSize, bitSize=3,  bitOffset=4,  base='uint',  mode='RW'))
+        self.add(pr.Variable(name='PLL_RO_filt1a', description='Config02', offset=0x00001002*addrSize, bitSize=1,  bitOffset=7,  base='bool',  mode='RW', hidden=True))
         self.add(pr.Variable(name='Pulser',        description='Config03', offset=0x00001003*addrSize, bitSize=10, bitOffset=0,  base='uint',  mode='RW'))
         self.add(pr.Variable(name='Pbit',          description='Config03', offset=0x00001003*addrSize, bitSize=1,  bitOffset=10, base='bool',  mode='RW'))
         self.add(pr.Variable(name='atest',         description='Config03', offset=0x00001003*addrSize, bitSize=1,  bitOffset=11, base='bool',  mode='RW'))
@@ -1014,11 +1014,9 @@ class Cpix2Asic(pr.Device):
         self.add(pr.Variable(name='S2D',           description='Config0D', offset=0x0000100D*addrSize, bitSize=3,  bitOffset=2,  base='uint',  mode='RW'))
         self.add(pr.Variable(name='S2D_DAC_Bias',  description='Config0D', offset=0x0000100D*addrSize, bitSize=3,  bitOffset=5,  base='uint',  mode='RW'))
         self.add(pr.Variable(name='TPS_DAC',       description='Config0E', offset=0x0000100E*addrSize, bitSize=6,  bitOffset=2,  base='uint',  mode='RW'))
-        self.add(pr.Variable(name='PLL_RO_filter1',description='Config0F', offset=0x0000100F*addrSize, bitSize=2,  bitOffset=0,  base='uint',  mode='RW'))
+        self.add(pr.Variable(name='PLL_RO_filt1b', description='Config0F', offset=0x0000100F*addrSize, bitSize=2,  bitOffset=0,  base='uint',  mode='RW', hidden=True))
         self.add(pr.Variable(name='PLL_RO_filter2',description='Config0F', offset=0x0000100F*addrSize, bitSize=3,  bitOffset=2,  base='uint',  mode='RW'))
         self.add(pr.Variable(name='PLL_RO_divider',description='Config0F', offset=0x0000100F*addrSize, bitSize=3,  bitOffset=5,  base='uint',  mode='RW'))
-
-
         self.add(pr.Variable(name='test_BE',       description='Config10', offset=0x00001010*addrSize, bitSize=1,  bitOffset=0,  base='bool',  mode='RW'))
         self.add(pr.Variable(name='DigRO_disable', description='Config10', offset=0x00001010*addrSize, bitSize=1,  bitOffset=1,  base='bool',  mode='RW'))
         self.add(pr.Variable(name='DelEXEC',       description='Config10', offset=0x00001010*addrSize, bitSize=1,  bitOffset=2,  base='bool',  mode='RW'))
@@ -1028,22 +1026,32 @@ class Cpix2Asic(pr.Device):
         self.add(pr.Variable(name='Pix_Count_T',   description='Config10', offset=0x00001010*addrSize, bitSize=1,  bitOffset=6,  base='bool',  mode='RW'))
         self.add(pr.Variable(name='Pix_Count_sel', description='Config10', offset=0x00001010*addrSize, bitSize=1,  bitOffset=7,  base='bool',  mode='RW'))
 
+        self.add(pr.Variable(name='RowStart',      description='RowStart',       offset=0x00001011*addrSize, bitSize=9,  bitOffset=0,  base='uint',  mode='WO'))
+        self.add(pr.Variable(name='RowStop',       description='RowStop',        offset=0x00001012*addrSize, bitSize=9,  bitOffset=0,  base='uint',  mode='RW'))
+        self.add(pr.Variable(name='ColumnStart',   description='ColumnStart',    offset=0x00001013*addrSize, bitSize=7,  bitOffset=0,  base='uint',  mode='WO'))
+        self.add(pr.Variable(name='ColumnStop',    description='ColumnStop',     offset=0x00001014*addrSize, bitSize=7,  bitOffset=0,  base='uint',  mode='RW'))
+        self.add(pr.Variable(name='CHIP ID',       description='CHIP ID',        offset=0x00001015*addrSize, bitSize=16, bitOffset=0,  base='uint',  mode='RW'))
+
+
+        # linked variables
+        self.add(pr.LinkVariable(name='PLL_RO_filter1', description='Config02_0F', typeStr='Linked',  base='uint',  mode='RW', dependencies=[self.PLL_RO_filt1a, self.PLL_RO_filt1b]))
+
                
         # CMD = 6, Addr = 17 : Row counter[8:0]
         self.add((
-            pr.RemoteCommand(name='RowStart', description='', offset=0x00006011*addrSize, bitSize=9, bitOffset=0, function=pr.Command.touch, hidden=False)))      
+            pr.RemoteCommand(name='RowStartC', description='', offset=0x00006011*addrSize, bitSize=9, bitOffset=0, function=pr.Command.touch, hidden=False)))      
         # CMD = 6, Addr = 18 : Bank select [3:0] & Col counter[6:0]
         self.add((
-            pr.RemoteCommand(name='RowStop', description='', offset=0x00006012*addrSize, bitSize=9, bitOffset=0, function=pr.Command.touch, hidden=False)))
+            pr.RemoteCommand(name='RowStopC', description='', offset=0x00006012*addrSize, bitSize=9, bitOffset=0, function=pr.Command.touch, hidden=False)))
         # CMD = 6, Addr = 18 : Bank select [3:0] & Col counter[6:0]
         self.add((
-            pr.RemoteCommand(name='ColumnStart', description='', offset=0x00006013*addrSize, bitSize=7, bitOffset=0, function=pr.Command.touch, hidden=False)))
+            pr.RemoteCommand(name='ColumnStartC', description='', offset=0x00006013*addrSize, bitSize=7, bitOffset=0, function=pr.Command.touch, hidden=False)))
         # CMD = 6, Addr = 18 : Bank select [3:0] & Col counter[6:0]
         self.add((
-            pr.RemoteCommand(name='ColumnStop', description='', offset=0x00006014*addrSize, bitSize=7, bitOffset=0, function=pr.Command.touch, hidden=False)))
+            pr.RemoteCommand(name='ColumnStopC', description='', offset=0x00006014*addrSize, bitSize=7, bitOffset=0, function=pr.Command.touch, hidden=False)))
         # CMD = 6, Addr = 18 : Bank select [3:0] & Col counter[6:0]
         self.add((
-            pr.RemoteCommand(name='ChipID', description='', offset=0x00006015*addrSize, bitSize=16, bitOffset=0, function=pr.Command.touch, hidden=False)))
+            pr.RemoteCommand(name='ChipIDC', description='', offset=0x00006015*addrSize, bitSize=16, bitOffset=0, function=pr.Command.touch, hidden=False)))
             
         # CMD = 2, Addr = X  : Write Row with data
         self.add((

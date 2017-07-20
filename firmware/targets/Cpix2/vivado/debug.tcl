@@ -13,13 +13,13 @@
 open_run synth_1
 
 ### Configure the Core
-#set ilaName u_ila_0
+set ilaName u_ila_0
 ##set ilaName1 u_ila_1
-#CreateDebugCore ${ilaName}
+CreateDebugCore ${ilaName}
 ##CreateDebugCore ${ilaName1}
 #
 ### Increase the record depth
-#set_property C_DATA_DEPTH 16384 [get_debug_cores ${ilaName}]
+set_property C_DATA_DEPTH 16384 [get_debug_cores ${ilaName}]
 ##set_property C_DATA_DEPTH 2048 [get_debug_cores ${ilaName1}]
 #
 #############################################################################
@@ -29,12 +29,12 @@ open_run synth_1
 ### Core debug signals
 ##SetDebugCoreClk ${ilaName} {U_EpixCore/coreClk}
 ##SetDebugCoreClk ${ilaName} {U_TixelCore/coreClk}
-#SetDebugCoreClk ${ilaName} {U_TixelCore/coreClk}
+SetDebugCoreClk ${ilaName} {U_Cpix2Core/coreClk}
 #
 #ConfigProbe ${ilaName} {U_TixelCore/errInhibit}
-#ConfigProbe ${ilaName} {U_TixelCore/iAsicSync}
-#ConfigProbe ${ilaName} {U_TixelCore/iAsicR0}
-#ConfigProbe ${ilaName} {U_TixelCore/iAsicAcq}
+#ConfigProbe ${ilaName} {U_Cpix2Core/iAsicSync}
+#ConfigProbe ${ilaName} {U_Cpix2Core/iAsicR0}
+#ConfigProbe ${ilaName} {U_Cpix2Core/iAsicAcq}
 #ConfigProbe ${ilaName} {U_TixelCore/G_ASIC[0].U_AXI_Framer/rxDataCs[*]}
 #ConfigProbe ${ilaName} {U_TixelCore/G_ASIC[0].U_AXI_Framer/rxValidCs}
 #ConfigProbe ${ilaName} {U_TixelCore/G_ASIC[0].U_AXI_Framer/dFifoOut[*]}
@@ -53,16 +53,17 @@ open_run synth_1
 #ConfigProbe ${ilaName} {U_TixelCore/G_ASIC[1].U_AXI_Framer/dFifoValid}
 #ConfigProbe ${ilaName} {U_TixelCore/G_ASIC[1].U_AXI_Framer/s[state][*]}
 #
-##ConfigProbe ${ilaName} {U_TixelCore/iAsic01DM1}
-##ConfigProbe ${ilaName} {U_TixelCore/iAsic01DM2}
-##ConfigProbe ${ilaName} {U_TixelCore/iAsicR0}
-##ConfigProbe ${ilaName} {U_TixelCore/iAsicStart}
-##ConfigProbe ${ilaName} {U_TixelCore/iAsicTpulse}
-##ConfigProbe ${ilaName} {U_TixelCore/iAsicAcq}
-##ConfigProbe ${ilaName} {U_TixelCore/iAsicGrst}
-##ConfigProbe ${ilaName} {U_TixelCore/iAsicSync}
-##ConfigProbe ${ilaName} {U_TixelCore/iAsicPpmat}
-##ConfigProbe ${ilaName} {U_TixelCore/iAsicPPbe}
+ConfigProbe ${ilaName} {U_Cpix2Core/iAsic01DM1}
+ConfigProbe ${ilaName} {U_Cpix2Core/iAsic01DM2}
+ConfigProbe ${ilaName} {U_Cpix2Core/iAsicR0}
+ConfigProbe ${ilaName} {U_Cpix2Core/iAsicSR0}
+ConfigProbe ${ilaName} {U_Cpix2Core/iAsicEnA}
+ConfigProbe ${ilaName} {U_Cpix2Core/iAsicEnB}
+ConfigProbe ${ilaName} {U_Cpix2Core/iAsicAcq}
+ConfigProbe ${ilaName} {U_Cpix2Core/iAsicGrst}
+ConfigProbe ${ilaName} {U_Cpix2Core/iAsicSync}
+ConfigProbe ${ilaName} {U_Cpix2Core/iAsicPpmat[0]}
+ConfigProbe ${ilaName} {U_Cpix2Core/iAsicPPbe[0]}
 #
 ##ConfigProbe ${ilaName1} {U_TixelCore/dataOut[1][*]}
 ##ConfigProbe ${ilaName1} {U_TixelCore/dataKOut[1]}
