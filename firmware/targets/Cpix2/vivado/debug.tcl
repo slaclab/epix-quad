@@ -72,9 +72,9 @@ ConfigProbe ${ilaName} {U_Cpix2Core/iAsicPPbe[*]}
 #############################################################################
 #
 ### Delete the last unused port
-#delete_debug_port [get_debug_ports [GetCurrentProbe ${ilaName}]]
+delete_debug_port [get_debug_ports [GetCurrentProbe ${ilaName}]]
 ##delete_debug_port [get_debug_ports [GetCurrentProbe ${ilaName1}]]
 #
 ### Write the port map file
-###write_debug_probes -force ${PROJ_DIR}/debug/debug_probes.ltx
+write_debug_probes -force ${PROJ_DIR}/debug/debug_probes.ltx
 #
