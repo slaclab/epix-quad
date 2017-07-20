@@ -134,10 +134,10 @@ architecture top_level of Cpix2Core is
    attribute keep : string;
 
    -- ASIC signals
-   signal iasicEnA              : sl;
-   signal iasicEnB              : sl;
-   signal iasicVid              : sl;
-   signal iasicSR0              : sl;
+   signal iAsicEnA              : sl;
+   signal iAsicEnB              : sl;
+   signal iAsicVid              : sl;
+   signal iAsicSR0              : sl;
    signal iAsic01DM1           : sl;
    signal iAsic01DM2           : sl;
    signal iAsicPPbe            : slv(1 downto 0);
@@ -149,10 +149,10 @@ architecture top_level of Cpix2Core is
    
    attribute keep of iAsic01DM1    : signal is "true";
    attribute keep of iAsic01DM2    : signal is "true";
-   attribute keep of iasicEnA      : signal is "true";
-   attribute keep of iasicEnB      : signal is "true";
-   attribute keep of iasicVid      : signal is "true";
-   attribute keep of iasicSR0      : signal is "true";
+   attribute keep of iAsicEnA      : signal is "true";
+   attribute keep of iAsicEnB      : signal is "true";
+   attribute keep of iAsicVid      : signal is "true";
+   attribute keep of iAsicSR0      : signal is "true";
    attribute keep of iAsicPPbe     : signal is "true";
    attribute keep of iAsicPpmat    : signal is "true";
    attribute keep of iAsicR0       : signal is "true";
@@ -311,7 +311,8 @@ begin
       asicRdClk         when cpix2Config.cpix2DbgSel1 = "01011" else
       bitClk            when cpix2Config.cpix2DbgSel1 = "01100" else
       byteClk           when cpix2Config.cpix2DbgSel1 = "01101" else
-      iasicSR0           when cpix2Config.cpix2DbgSel1 = "01110" else
+      iAsicSR0          when cpix2Config.cpix2DbgSel1 = "01110" else
+      acqStart          when cpix2Config.cpix2DbgSel1 = "01111" else
       '0';   
    
    mpsOutMux <=
@@ -329,7 +330,8 @@ begin
       asicRdClk         when cpix2Config.cpix2DbgSel2 = "01011" else
       bitClk            when cpix2Config.cpix2DbgSel2 = "01100" else
       byteClk           when cpix2Config.cpix2DbgSel2 = "01101" else
-      iasicSR0           when cpix2Config.cpix2DbgSel2 = "01110" else
+      iAsicSR0          when cpix2Config.cpix2DbgSel2 = "01110" else
+      acqStart          when cpix2Config.cpix2DbgSel1 = "01111" else
       '0';
    
    -- Temporary one-shot for grabbing PGP op code
@@ -569,7 +571,7 @@ begin
          mAxisSlave        => framerAxisSlave(i),
          acqNo             => cpix2Config.acqCnt,
          testTrig          => iAsicAcq,
-         asicSR0           => iasicSR0,
+         asicSR0           => iAsicSR0,
          asicSync          => iAsicSync,
          errInhibit        => errInhibit
       );
@@ -688,10 +690,10 @@ begin
       acqStart       => acqStart,
       saciReadoutReq => saciPrepReadoutReq,
       saciReadoutAck => saciPrepReadoutAck,
-      asicEnA        => iasicEnA,
-      asicEnB        => iasicEnB,
-      asicVid        => iasicVid,
-      asicSR0        => iasicSR0,
+      asicEnA        => iAsicEnA,
+      asicEnB        => iAsicEnB,
+      asicVid        => iAsicVid,
+      asicSR0        => iAsicSR0,
       asicPPbe       => iAsicPpbe,
       asicPpmat      => iAsicPpmat,
       asicR0         => iAsicR0,

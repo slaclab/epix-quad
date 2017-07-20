@@ -85,7 +85,7 @@ class Cpix2FpgaRegisters(pr.Device):
       #############################################
       # Create block / variable combinations
       #############################################
-      
+      debugChEnum={0:'Asic01DM', 1:'AsicSync', 2:'AsicEnA', 3:'AsicAcq', 4:'AsicEnB', 5:'AsicR0', 6:'SaciClk', 7:'SaciCmd', 8:'saciRsp', 9:'SaciSelL(0)', 10:'SaciSelL(1)', 11:'asicRdClk', 12:'bitClk', 13:'byteClk', 14:'asicSR0', 15: 'acqStart'}
       
       #Setup registers & variables
       
@@ -110,9 +110,9 @@ class Cpix2FpgaRegisters(pr.Device):
       self.add(pr.Variable(name='EnAPolarity',     description='EnAPolarity',       offset=0x0000012C, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
       self.add(pr.Variable(name='EnADelay',        description='EnADelay',          offset=0x00000130, bitSize=32, bitOffset=0, base='uint', mode='RW'))
       self.add(pr.Variable(name='EnAWidth',        description='EnAWidth',          offset=0x00000134, bitSize=32, bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='EnBPolarity',     description='EnBPolarity',     offset=0x00000138, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
-      self.add(pr.Variable(name='EnBDelay',        description='EnBDelay',        offset=0x0000013C, bitSize=32, bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='EnBWidth',        description='EnBWidth',        offset=0x00000140, bitSize=32, bitOffset=0, base='uint', mode='RW'))
+      self.add(pr.Variable(name='EnBPolarity',     description='EnBPolarity',       offset=0x00000138, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
+      self.add(pr.Variable(name='EnBDelay',        description='EnBDelay',          offset=0x0000013C, bitSize=32, bitOffset=0, base='uint', mode='RW'))
+      self.add(pr.Variable(name='EnBWidth',        description='EnBWidth',          offset=0x00000140, bitSize=32, bitOffset=0, base='uint', mode='RW'))
       self.add(pr.Variable(name='PPbePolarity',    description='PPbePolarity',      offset=0x00000144, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
       self.add(pr.Variable(name='PPbeDelay',       description='PPbeDelay',         offset=0x00000148, bitSize=32, bitOffset=0, base='uint', mode='RW'))
       self.add(pr.Variable(name='PPbeWidth',       description='PPbeWidth',         offset=0x0000014C, bitSize=32, bitOffset=0, base='uint', mode='RW'))
@@ -145,8 +145,9 @@ class Cpix2FpgaRegisters(pr.Device):
          pr.Variable(name='AsicPwrManualFpga',  description='AsicPower', offset=0x0000020C, bitSize=1, bitOffset=23, base='bool', mode='RW')))
       self.add(pr.Variable(name='AsicMask',        description='AsicMask',          offset=0x00000210, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
       self.add(pr.Variable(name='VguardDacSetting',description='VguardDacSetting',  offset=0x00000214, bitSize=16, bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='Cpix2DebugSel1',  description='Cpix2DebugSel1',    offset=0x00000218, bitSize=5,  bitOffset=0, base='hex',  mode='RW'))
-      self.add(pr.Variable(name='Cpix2DebugSel2',  description='Cpix2DebugSel2',    offset=0x0000021C, bitSize=5,  bitOffset=0, base='hex',  mode='RW'))
+              #pr.Variable(name='TriggerChannel',  description='Setting1',          offset=0x00000008, bitSize=4,  bitOffset=2, base='enum', mode='RW', enum=trigChEnum),
+      self.add(pr.Variable(name='Cpix2DebugSel1',  description='Cpix2DebugSel1',    offset=0x00000218, bitSize=5,  bitOffset=0, base='enum', mode='RW', enum=debugChEnum))
+      self.add(pr.Variable(name='Cpix2DebugSel2',  description='Cpix2DebugSel2',    offset=0x0000021C, bitSize=5,  bitOffset=0, base='enum', mode='RW', enum=debugChEnum))
       
       self.add(pr.Variable(name='AdcClkHalfT',     description='AdcClkHalfT',       offset=0x00000300, bitSize=32, bitOffset=0, base='uint', mode='RW'))
       self.add((
