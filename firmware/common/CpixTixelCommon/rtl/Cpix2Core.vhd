@@ -170,8 +170,6 @@ architecture top_level of Cpix2Core is
    signal txLinkReady : sl;
    signal rxLinkReady : sl;
    
-   signal asicRfClk     : sl;
-   signal asicRfClkRst  : sl;
    signal asicRdClk     : sl;
    signal asicRdClkRst  : sl;
    signal bitClk        : sl;
@@ -267,7 +265,6 @@ architecture top_level of Cpix2Core is
    
    attribute keep of coreClk : signal is "true";
    attribute keep of byteClk : signal is "true";
-   attribute keep of asicRfClk : signal is "true";
    attribute keep of acqStart : signal is "true";
    attribute keep of mAxiWriteMasters : signal is "true";
    attribute keep of sAxiWriteMaster : signal is "true";
@@ -425,10 +422,10 @@ begin
    -- Generate clocks from 156.25 MHz PGP  --
    ------------------------------------------
    -- clkIn     : 156.25 MHz PGP
-   -- clkOut(0) : 80 MHz serial data bit clock
+   -- clkOut(0) : 100 MHz serial data bit clock
    -- clkOut(1) : 100.00 MHz system clock
-   -- clkOut(2) : 8 MHz ASIC readout clock
-   -- clkOut(3) : 20 MHz ASIC reference clock
+   -- clkOut(2) : 5 MHz ASIC readout clock
+   -- clkOut(3) : 
    -- clkOut(4) : 200 MHz Idelaye2 calibration clock
    U_CoreClockGen : entity work.ClockManager7
    generic map (
@@ -439,7 +436,7 @@ begin
       DIVCLK_DIVIDE_G      => 10,
       CLKFBOUT_MULT_F_G    => 38.4,
       
-      CLKOUT0_DIVIDE_F_G   => 7.5,
+      CLKOUT0_DIVIDE_F_G   => 6,
       CLKOUT0_PHASE_G      => 0.0,
       CLKOUT0_DUTY_CYCLE_G => 0.5,
       
@@ -447,7 +444,7 @@ begin
       CLKOUT1_PHASE_G      => 0.0,
       CLKOUT1_DUTY_CYCLE_G => 0.5,
       
-      CLKOUT2_DIVIDE_G     => 75,
+      CLKOUT2_DIVIDE_G     => 120,
       CLKOUT2_PHASE_G      => 0.0,
       CLKOUT2_DUTY_CYCLE_G => 0.5,
       
@@ -465,7 +462,7 @@ begin
       clkOut(0) => bitClk,
       clkOut(1) => coreClk,
       clkOut(2) => asicRdClk,
-      clkOut(3) => asicRfClk,
+      clkOut(3) => open,
       clkOut(4) => iDelayCtrlClk,
       rstOut(0) => bitClkRst,
       rstOut(1) => coreClkRst,

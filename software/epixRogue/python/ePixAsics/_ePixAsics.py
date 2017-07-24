@@ -977,7 +977,7 @@ class Cpix2Asic(pr.Device):
         self.add(pr.Variable(name='PLL_RO_Reset',  description='Config02', offset=0x00001002*addrSize, bitSize=1,  bitOffset=0,  base='bool',  mode='RW'))
         self.add(pr.Variable(name='PLL_RO_Itune',  description='Config02', offset=0x00001002*addrSize, bitSize=3,  bitOffset=1,  base='uint',  mode='RW'))
         self.add(pr.Variable(name='PLL_RO_KVCO',   description='Config02', offset=0x00001002*addrSize, bitSize=3,  bitOffset=4,  base='uint',  mode='RW'))
-        self.add(pr.Variable(name='PLL_RO_filt1a', description='Config02', offset=0x00001002*addrSize, bitSize=1,  bitOffset=7,  base='bool',  mode='RW', hidden=True))
+        self.add(pr.Variable(name='PLL_RO_filt1a', description='Config02', offset=0x00001002*addrSize, bitSize=1,  bitOffset=7,  base='bool',  mode='RW', hidden=False))
         self.add(pr.Variable(name='Pulser',        description='Config03', offset=0x00001003*addrSize, bitSize=10, bitOffset=0,  base='uint',  mode='RW'))
         self.add(pr.Variable(name='Pbit',          description='Config03', offset=0x00001003*addrSize, bitSize=1,  bitOffset=10, base='bool',  mode='RW'))
         self.add(pr.Variable(name='atest',         description='Config03', offset=0x00001003*addrSize, bitSize=1,  bitOffset=11, base='bool',  mode='RW'))
@@ -1014,7 +1014,8 @@ class Cpix2Asic(pr.Device):
         self.add(pr.Variable(name='S2D',           description='Config0D', offset=0x0000100D*addrSize, bitSize=3,  bitOffset=2,  base='uint',  mode='RW'))
         self.add(pr.Variable(name='S2D_DAC_Bias',  description='Config0D', offset=0x0000100D*addrSize, bitSize=3,  bitOffset=5,  base='uint',  mode='RW'))
         self.add(pr.Variable(name='TPS_DAC',       description='Config0E', offset=0x0000100E*addrSize, bitSize=6,  bitOffset=2,  base='uint',  mode='RW'))
-        self.add(pr.Variable(name='PLL_RO_filt1b', description='Config0F', offset=0x0000100F*addrSize, bitSize=2,  bitOffset=0,  base='uint',  mode='RW', hidden=True))
+        self.add(pr.Variable(name='PLL_RO_filt1b', description='Config0F', offset=0x0000100F*addrSize, bitSize=2,  bitOffset=0,  base='uint',  mode='RW', hidden=False))
+        #self.add(pr.RemoteVariable(name='PLL_RO_filt1', description='Config_020F', offset=[0x00001002*addrSize,0x0000100F*addrSize], bitSize=[1,2],  bitOffset=[7,0],  base='uint',  mode='RW', disp='{#x}', hidden=True))
         self.add(pr.Variable(name='PLL_RO_filter2',description='Config0F', offset=0x0000100F*addrSize, bitSize=3,  bitOffset=2,  base='uint',  mode='RW'))
         self.add(pr.Variable(name='PLL_RO_divider',description='Config0F', offset=0x0000100F*addrSize, bitSize=3,  bitOffset=5,  base='uint',  mode='RW'))
         self.add(pr.Variable(name='test_BE',       description='Config10', offset=0x00001010*addrSize, bitSize=1,  bitOffset=0,  base='bool',  mode='RW'))
@@ -1034,7 +1035,7 @@ class Cpix2Asic(pr.Device):
 
 
         # linked variables
-        self.add(pr.LinkVariable(name='PLL_RO_filter1', description='Config02_0F', typeStr='Linked',  base='uint',  mode='RW', dependencies=[self.PLL_RO_filt1a, self.PLL_RO_filt1b]))
+        #self.add(pr.LinkVariable(name='PLL_RO_filter1', description='Config02_0F', typeStr='Linked',  base='uint',  mode='RW', dependencies=[self.PLL_RO_filt1a, self.PLL_RO_filt1b]))
 
                
         # CMD = 6, Addr = 17 : Row counter[8:0]
