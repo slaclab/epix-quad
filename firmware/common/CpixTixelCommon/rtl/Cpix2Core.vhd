@@ -425,8 +425,7 @@ begin
    -- clkOut(0) : 100 MHz serial data bit clock
    -- clkOut(1) : 100.00 MHz system clock
    -- clkOut(2) : 5 MHz ASIC readout clock
-   -- clkOut(3) : 
-   -- clkOut(4) : 200 MHz Idelaye2 calibration clock
+   -- clkOut(3) : 200 MHz Idelaye2 calibration clock
    U_CoreClockGen : entity work.ClockManager7
    generic map (
       INPUT_BUFG_G         => false,
@@ -437,7 +436,7 @@ begin
       CLKFBOUT_MULT_F_G    => 38.4,
       
       CLKOUT0_DIVIDE_F_G   => 6.0,
-      CLKOUT0_PHASE_G      => 0.0,
+      CLKOUT0_PHASE_G      => 90.0,
       CLKOUT0_DUTY_CYCLE_G => 0.5,
       
       CLKOUT1_DIVIDE_G     => 6,
@@ -447,14 +446,10 @@ begin
       CLKOUT2_DIVIDE_G     => 120,
       CLKOUT2_PHASE_G      => 0.0,
       CLKOUT2_DUTY_CYCLE_G => 0.5,
-      
-      CLKOUT3_DIVIDE_G     => 30,
+    
+      CLKOUT3_DIVIDE_G     => 3,
       CLKOUT3_PHASE_G      => 0.0,
-      CLKOUT3_DUTY_CYCLE_G => 0.5,
-      
-      CLKOUT4_DIVIDE_G     => 3,
-      CLKOUT4_PHASE_G      => 0.0,
-      CLKOUT4_DUTY_CYCLE_G => 0.5
+      CLKOUT3_DUTY_CYCLE_G => 0.5
    )
    port map (
       clkIn     => pgpClk,
@@ -462,13 +457,11 @@ begin
       clkOut(0) => bitClk,
       clkOut(1) => coreClk,
       clkOut(2) => asicRdClk,
-      clkOut(3) => open,
-      clkOut(4) => iDelayCtrlClk,
+      clkOut(3) => iDelayCtrlClk,
       rstOut(0) => bitClkRst,
       rstOut(1) => coreClkRst,
       rstOut(2) => open,
-      rstOut(3) => open,
-      rstOut(4) => iDelayCtrlRst,
+      rstOut(3) => iDelayCtrlRst,
       locked    => open,
       -- AXI-Lite Interface       
       axilClk           => coreClk,
