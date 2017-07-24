@@ -430,7 +430,7 @@ begin
    generic map (
       INPUT_BUFG_G         => false,
       FB_BUFG_G            => true,
-      NUM_CLOCKS_G         => 5,
+      NUM_CLOCKS_G         => 4,
       CLKIN_PERIOD_G       => 6.4,
       DIVCLK_DIVIDE_G      => 10,
       CLKFBOUT_MULT_F_G    => 38.4,
