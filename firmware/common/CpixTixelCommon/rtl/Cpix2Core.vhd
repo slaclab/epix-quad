@@ -517,6 +517,7 @@ begin
       -------------------------------------------------------      
       U_AsicDeser : entity work.Deserializer
       generic map (
+         INVERT_SDATA_G    => true,
          IODELAY_GROUP_G => IODELAY_GROUP_G
       )
       port map ( 
