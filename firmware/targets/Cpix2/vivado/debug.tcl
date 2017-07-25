@@ -64,10 +64,10 @@ ConfigProbe ${ilaName} {U_Cpix2Core/iAsicGrst}
 ConfigProbe ${ilaName} {U_Cpix2Core/iAsicSync}
 ConfigProbe ${ilaName} {U_Cpix2Core/iAsicPpmat[*]}
 ConfigProbe ${ilaName} {U_Cpix2Core/iAsicPPbe[*]}
-ConfigProbe ${ilaName} {U_Cpix2Core/U_AsicDeser/iserdeseOut[*]}
-ConfigProbe ${ilaName} {U_Cpix2Core/U_AsicDeser/idleWord}
-ConfigProbe ${ilaName} {U_Cpix2Core/U_AsicDeser/twoWords[*]}
-ConfigProbe ${ilaName} {U_Cpix2Core/U_AsicDeser/iLocked}
+ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[0].U_AsicDeser/iserdeseOut[*]}
+ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[0].U_AsicDeser/idleWord}
+ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[0].U_AsicDeser/twoWords[*]}
+ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[0].U_AsicDeser/iLocked}
 #
 ##ConfigProbe ${ilaName1} {U_TixelCore/dataOut[1][*]}
 ##ConfigProbe ${ilaName1} {U_TixelCore/dataKOut[1]}
