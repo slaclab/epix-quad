@@ -1033,6 +1033,13 @@ class Cpix2Asic(pr.Device):
         self.add(pr.Variable(name='ColumnStop',    description='ColumnStop',     offset=0x00001014*addrSize, bitSize=7,  bitOffset=0,  base='uint',  mode='RW'))
         self.add(pr.Variable(name='CHIP ID',       description='CHIP ID',        offset=0x00001015*addrSize, bitSize=16, bitOffset=0,  base='uint',  mode='RW'))
 
+        self.add(pr.Variable(name='DCycle_DAC',    description='Config16',       offset=0x00001016*addrSize, bitSize=6,  bitOffset=0,  base='uint',  mode='RW'))
+        self.add(pr.Variable(name='DCycle_en',     description='Config16',       offset=0x00001016*addrSize, bitSize=1,  bitOffset=6,  base='bool',  mode='RW'))
+        self.add(pr.Variable(name='DCycle_bypass', description='Config16',       offset=0x00001016*addrSize, bitSize=1,  bitOffset=7,  base='bool',  mode='RW'))
+
+        self.add(pr.Variable(name='MSBCompTH1_DAC',description='Config17',       offset=0x00001017*addrSize, bitSize=4,  bitOffset=0,  base='uint',  mode='RW'))
+        self.add(pr.Variable(name='MSBCompTH2_DAC',description='Config17',       offset=0x00001017*addrSize, bitSize=4,  bitOffset=4,  base='uint',  mode='RW'))
+
 
         # linked variables
         #self.add(pr.LinkVariable(name='PLL_RO_filter1', description='Config02_0F', typeStr='Linked',  base='uint',  mode='RW', dependencies=[self.PLL_RO_filt1a, self.PLL_RO_filt1b]))
