@@ -340,13 +340,13 @@ class HrPrototypeFpgaRegisters(pr.Device):
 
 ################################################################################################
 ##
-## epix10ka Classes definition
+## epix100a Classes definition
 ##
 ################################################################################################
 class Epix100a(pr.Device):
    def __init__(self, **kwargs):
       if 'description' not in kwargs:
-            kwargs['description'] = "EPIX10KA FPGA"
+            kwargs['description'] = "EPIX100A FPGA"
       
       trigChEnum={0:'TrigReg', 1:'ThresholdChA', 2:'ThresholdChB', 3:'AcqStart', 4:'AsicAcq', 5:'AsicR0', 6:'AsicRoClk', 7:'AsicPpmat', 8:'AsicPpbe', 9:'AsicSync', 10:'AsicGr', 11:'AsicSaciSel0', 12:'AsicSaciSel1', 13:'AsicSaciSel2', 14:'AsicSaciSel3'}
       #TODO: assign meaningful channel names
