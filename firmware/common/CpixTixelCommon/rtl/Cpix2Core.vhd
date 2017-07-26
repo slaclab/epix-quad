@@ -422,7 +422,7 @@ begin
    -- Generate clocks from 156.25 MHz PGP  --
    ------------------------------------------
    -- clkIn     : 156.25 MHz PGP
-   -- clkOut(0) : 100 MHz serial data bit clock
+   -- clkOut(0) : 200 MHz serial data bit clock
    -- clkOut(1) : 100.00 MHz system clock
    -- clkOut(2) : 10 MHz ASIC readout clock
    -- clkOut(3) : 200 MHz Idelaye2 calibration clock
@@ -435,7 +435,7 @@ begin
       DIVCLK_DIVIDE_G      => 10,
       CLKFBOUT_MULT_F_G    => 38.4,
       
-      CLKOUT0_DIVIDE_F_G   => 6.0,
+      CLKOUT0_DIVIDE_F_G   => 3.0,
       CLKOUT0_PHASE_G      => 90.0,
       CLKOUT0_DUTY_CYCLE_G => 0.5,
       
