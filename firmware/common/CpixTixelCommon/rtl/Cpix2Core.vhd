@@ -702,10 +702,14 @@ begin
    asicGlblRst    <= iAsicGrst;
    asicEnA        <= iAsicEnA;
    asicEnB        <= iAsicEnB;
-   
+   asicSR0        <= iAsicSR0;
+   asicVid        <= iAsicVid;
    iAsic01DM1     <= asic01DM1;
    iAsic01DM2     <= asic01DM2;
    
+
+
+
    --------------------------------------------
    --     Cpix2 power seqence controller     --
    --------------------------------------------   
