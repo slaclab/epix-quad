@@ -101,8 +101,8 @@ architecture rtl of RegControlCpix2 is
       R0Width           : slv(31 downto 0);
       GlblRst           : sl;
       GlblRstPolarity   : sl;
---      GlblRstDelay      : slv(31 downto 0);
---      GlblRstWidth      : slv(31 downto 0);
+      GlblRstDelay      : slv(31 downto 0);
+      GlblRstWidth      : slv(31 downto 0);
       Acq               : sl;
       AcqPolarity       : sl;
       AcqDelay          : slv(31 downto 0);
@@ -143,8 +143,8 @@ architecture rtl of RegControlCpix2 is
       R0Width           => (others=>'0'),
       GlblRst           => '1',
       GlblRstPolarity   => '1',
---      GlblRstDelay      => (others=>'0'),
---      GlblRstWidth      => (others=>'0'),
+      GlblRstDelay      => (others=>'0'),
+      GlblRstWidth      => (others=>'0'),
       Acq               => '0',
       AcqPolarity       => '0',
       AcqDelay          => (others=>'0'),
