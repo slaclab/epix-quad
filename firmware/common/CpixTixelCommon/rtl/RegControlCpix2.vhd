@@ -123,6 +123,7 @@ architecture rtl of RegControlCpix2 is
       saciSyncPolarity  : sl;
       saciSyncDelay     : slv(31 downto 0);
       saciSyncWidth     : slv(31 downto 0);
+      asicWFEn          : sl;
    end record AsicAcqType;
    
    constant ASICACQ_TYPE_INIT_C : AsicAcqType := (
@@ -164,7 +165,8 @@ architecture rtl of RegControlCpix2 is
       saciSync          => '0',
       saciSyncPolarity  => '0',
       saciSyncDelay     => (others=>'0'),
-      saciSyncWidth     => (others=>'0')
+      saciSyncWidth     => (others=>'0'),
+      asicWFEn          => '0'
    );
    
    type RegType is record
@@ -182,6 +184,7 @@ architecture rtl of RegControlCpix2 is
       errInhibitCnt     : slv(31 downto 0);
       axiReadSlave      : AxiLiteReadSlaveType;
       axiWriteSlave     : AxiLiteWriteSlaveType;
+      ReqTriggerCnt     : slv(31 downto 0);
    end record RegType;
    
    constant REG_INIT_C : RegType := (
@@ -198,7 +201,8 @@ architecture rtl of RegControlCpix2 is
       vguardDacSetting  => (others=>'0'),
       errInhibitCnt     => (others=>'0'),
       axiReadSlave      => AXI_LITE_READ_SLAVE_INIT_C,
-      axiWriteSlave     => AXI_LITE_WRITE_SLAVE_INIT_C
+      axiWriteSlave     => AXI_LITE_WRITE_SLAVE_INIT_C,
+      triggerCntPerCycle=> (others=>'0')
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -266,9 +270,12 @@ begin
       axiSlaveRegister(regCon,  x"00012C",  0, v.asicAcqReg.EnAPolarity);
       axiSlaveRegister(regCon,  x"000130",  0, v.asicAcqReg.EnADelay);
       axiSlaveRegister(regCon,  x"000134",  0, v.asicAcqReg.EnAWidth);
---      axiSlaveRegister(regCon,  x"000138",  0, v.asicAcqReg.EnBPolarity);
---      axiSlaveRegister(regCon,  x"00013C",  0, v.asicAcqReg.EnBDelay);
---      axiSlaveRegister(regCon,  x"000140",  0, v.asicAcqReg.EnBWidth);
+      --
+      axiSlaveRegister(regCon,  x"000138",  0, v.cpix2RegOut.ReqTriggerCnt);
+      axiSlaveRegisterR(regCon, x"00013C",  0, v.triggerCntPerCycle);
+      axiSlaveRegister(regCon,  x"000140",  0, v.cpix2RegOut.EnAllFrames);
+      axiSlaveRegister(regCon,  x"000140",  1, v.cpix2RegOut.EnSingleFrame);
+      --
       axiSlaveRegister(regCon,  x"000144",  0, v.asicAcqReg.PPbePolarity);
       axiSlaveRegister(regCon,  x"000148",  0, v.asicAcqReg.PPbeDelay);
       axiSlaveRegister(regCon,  x"00014C",  0, v.asicAcqReg.PPbeWidth);
@@ -326,9 +333,6 @@ begin
       if acqStart = '1' then
          v.cpix2RegOut.acqCnt    := r.cpix2RegOut.acqCnt + 1;
          v.asicAcqTimeCnt1        := (others=>'0');
-         if (r.asicAcqReg.SyncWidth + r.asicAcqReg.SyncDelay) <= r.asicAcqTimeCnt2 and (r.asicAcqReg.SR0Width2 + r.asicAcqReg.SR0Delay2 + r.asicAcqReg.SR0Width1 + r.asicAcqReg.SR0Delay1) <= r.asicAcqTimeCnt2 then
-             v.asicAcqTimeCnt2        := (others=>'0');
-         end if;
          v.asicAcqReg.R0         := r.asicAcqReg.R0Polarity;
          v.asicAcqReg.SR0        := r.asicAcqReg.SR0Polarity;
          v.asicAcqReg.GlblRst    := r.asicAcqReg.GlblRstPolarity;
@@ -339,14 +343,12 @@ begin
          v.asicAcqReg.Sync       := r.asicAcqReg.SyncPolarity;
          v.asicAcqReg.saciSync   := r.asicAcqReg.saciSyncPolarity;
       else
-         if r.asicAcqTimeCnt1 /= x"FFFFFFFF" then
+
+         -- time counter
+         if r.asicAcqReg.asicWFEn = '1' and r.asicAcqTimeCnt1 /= x"FFFFFFFF" and (r.cpix2RegOut.EnAllFrames = '1' or r.cpix2RegOut.EnSingleFrame = '1') then
             v.asicAcqTimeCnt1 := r.asicAcqTimeCnt1 + 1;
          end if;
-
-
-         if r.asicAcqTimeCnt2 /= x"FFFFFFFF" then
-            v.asicAcqTimeCnt2 := r.asicAcqTimeCnt2 + 1;
-         end if;
+         
          
          -- single pulse. zero value corresponds to infinite delay/width
          if r.asicAcqReg.R0Delay /= 0 and r.asicAcqReg.R0Delay <= r.asicAcqTimeCnt1 then
@@ -439,8 +441,41 @@ begin
       if r.resetCounters = '1' then
          v.cpix2RegOut.acqCnt := (others=>'0');
          v.saciPrepRdoutCnt   := (others=>'0');
+         v.triggerCntPerCycle := (others=>'0');
       end if;
-      
+     
+     -- time counter readout phase
+     if r.asicAcqReg.asicWFEn = '0' and r.asicAcqTimeCnt2 /= x"FFFFFFFF" and (r.cpix2RegOut.EnAllFrames = '1' or r.cpix2RegOut.EnSingleFrame = '1') then
+            v.asicAcqTimeCnt2 := r.asicAcqTimeCnt2 + 1;
+     else
+         if r.asicAcqReg.Sync = '1' or r.asicAcqReg.saciSync = '1' then
+             v.asicAcqTimeCnt2        := (others=>'0');
+         end if;
+     end if;
+
+     -- flag that enables a single readout frame to be generated
+     if r.asicAcqReg.Sync = '1' or r.asicAcqReg.saciSync = '1' then 
+        v.cpix2RegOut.EnSingleFrame := '0';
+     end if;
+ 
+     -- trigger counter per cycle enables the system to wait for N acqStart before readout data
+     if r.asicAcqReg.asicWFEn = '1' then
+        if acqStart = '1' then
+           v.triggerCntPerCycle  := r.triggerCntPerCycle + 1;
+        end if;
+     else
+        if r.asicAcqReg.Sync = '1' or r.asicAcqReg.saciSync = '1' then
+           v.triggerCntPerCycle  := (others=>'0');
+        end if;
+     end if;
+
+     -- asic waveform enable is used to inhibit thw R0, ACQ and A/B from being generated during data readout
+     if (r.triggerCntPerCycle >= r.cpix2RegOut.ReqTriggerCnt) then
+        v.asicAcqReg.asicWFEn <= '0';
+     else
+        v.asicAcqReg.asicWFEn <= '1';
+     end if;
+
       -- cpix2 bug workaround
       -- for a number of clock cycles
       -- data link is dropped after R0 

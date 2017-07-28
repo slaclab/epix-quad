@@ -108,7 +108,8 @@ class MyRunControl(pyrogue.RunControl):
         while (self.runState.get(read=False) == 'Running'): 
             delay = 1.0 / ({value: key for key,value in self.runRate.enum.items()}[self._runRate]) 
             time.sleep(delay) 
-            self._root.ssiPrbsTx.oneShot() 
+            #self._root.ssiPrbsTx.oneShot() 
+            cmd.sendCmd(0, 0)
   
             self._runCount += 1 
             if self._last != int(time.time()): 
@@ -121,16 +122,19 @@ class MyRunControl(pyrogue.RunControl):
 class EpixBoard(pyrogue.Root):
     def __init__(self, guiTop, cmd, dataWriter, srp, **kwargs):
         super().__init__('ePixBoard','Cpix2 Board', pollEn=True, **kwargs)
-        self.add(MyRunControl('runControl'))
+#        self.add(MyRunControl('runControl'))
         self.add(dataWriter)
         self.guiTop = guiTop
-
-        # Add Devices
-        self.add(fpga.Cpix2(name='Cpix2', offset=0, memBase=srp, hidden=False, enabled=True))
 
         @self.command()
         def Trigger():
             cmd.sendCmd(0, 0)
+
+        # Add Devices
+        self.add(fpga.Cpix2(name='Cpix2', offset=0, memBase=srp, hidden=False, enabled=True))
+        self.add(pyrogue.RunControl(name = 'runControl', description='Run Controller cPix2', cmd=self.Trigger, rates={1:'1 Hz', 2:'2 Hz', 4:'4 Hz', 8:'8 Hz', 10:'10 Hz', 30:'30 Hz', 60:'60 Hz', 120:'120 Hz'}))
+#        self.start(pyroGroup='Cpix2')
+
 
 
 # Create GUI

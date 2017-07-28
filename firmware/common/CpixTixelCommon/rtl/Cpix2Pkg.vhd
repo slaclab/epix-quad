@@ -144,9 +144,12 @@ package Cpix2Pkg is
       pwrManualFpga        : sl;
       asicMask             : slv(NUMBER_OF_ASICS_C-1 downto 0);
       acqCnt               : slv(31 downto 0);
+      ReqTriggerCnt        : slv(31 downto 0);
       requestStartupCal    : sl;
       startupAck           : sl;
       startupFail          : sl;
+      EnAllFrames          : sl;
+      EnSingleFrame        : sl;
       CPIX2DbgSel1         : slv(4 downto 0);
       CPIX2DbgSel2         : slv(4 downto 0);
    end record;
@@ -159,9 +162,12 @@ package Cpix2Pkg is
       pwrManualFpga        => '0',
       asicMask             => (others => '0'),
       acqCnt               => (others => '0'),
+      ReqTriggerCnt        => (others=>'0'),
       requestStartupCal    => '1',
       startupAck           => '0',
       startupFail          => '0',
+      EnAllFrames          => '1',
+      EnSingleFrame        => '0',
       Cpix2DbgSel1         => (others => '0'),
       Cpix2DbgSel2         => (others => '0')
    );
