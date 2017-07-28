@@ -184,7 +184,7 @@ architecture rtl of RegControlCpix2 is
       errInhibitCnt     : slv(31 downto 0);
       axiReadSlave      : AxiLiteReadSlaveType;
       axiWriteSlave     : AxiLiteWriteSlaveType;
-      ReqTriggerCnt     : slv(31 downto 0);
+      triggerCntPerCycle: slv(31 downto 0);
    end record RegType;
    
    constant REG_INIT_C : RegType := (

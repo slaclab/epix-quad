@@ -110,9 +110,12 @@ class Cpix2FpgaRegisters(pr.Device):
       self.add(pr.Variable(name='EnAPolarity',     description='EnAPolarity',       offset=0x0000012C, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
       self.add(pr.Variable(name='EnADelay',        description='EnADelay',          offset=0x00000130, bitSize=32, bitOffset=0, base='uint', mode='RW'))
       self.add(pr.Variable(name='EnAWidth',        description='EnAWidth',          offset=0x00000134, bitSize=32, bitOffset=0, base='uint', mode='RW'))
-#      self.add(pr.Variable(name='EnBPolarity',     description='EnBPolarity',       offset=0x00000138, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
-#      self.add(pr.Variable(name='EnBDelay',        description='EnBDelay',          offset=0x0000013C, bitSize=32, bitOffset=0, base='uint', mode='RW'))
-#      self.add(pr.Variable(name='EnBWidth',        description='EnBWidth',          offset=0x00000140, bitSize=32, bitOffset=0, base='uint', mode='RW'))
+
+      self.add(pr.Variable(name='ReqTriggerCnt',     description='ReqTriggerCnt',     offset=0x00000138, bitSize=32, bitOffset=0, base='uint', mode='RW'))
+      self.add(pr.Variable(name='triggerCntPerCycle',description='triggerCntPerCycle',offset=0x0000013C, bitSize=32, bitOffset=0, base='uint', mode='RO'))
+      self.add(pr.Variable(name='EnAllFrames',       description='EnAllFrames',       offset=0x00000140, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
+      self.add(pr.Variable(name='EnSingleFrame',     description='EnSingleFrame',     offset=0x00000140, bitSize=1,  bitOffset=1, base='bool', mode='RW'))
+
       self.add(pr.Variable(name='PPbePolarity',    description='PPbePolarity',      offset=0x00000144, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
       self.add(pr.Variable(name='PPbeDelay',       description='PPbeDelay',         offset=0x00000148, bitSize=32, bitOffset=0, base='uint', mode='RW'))
       self.add(pr.Variable(name='PPbeWidth',       description='PPbeWidth',         offset=0x0000014C, bitSize=32, bitOffset=0, base='uint', mode='RW'))
