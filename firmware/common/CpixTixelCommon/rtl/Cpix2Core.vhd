@@ -424,8 +424,8 @@ begin
    -- clkIn     : 156.25 MHz PGP
    -- clkOut(0) : 200 MHz serial data bit clock
    -- clkOut(1) : 100.00 MHz system clock
-   -- clkOut(2) : 10 MHz ASIC readout clock
-   -- clkOut(3) : 200 MHz Idelaye2 calibration clock
+   -- clkOut(2) : 15 MHz ASIC readout clock
+   -- clkOut(3) : 300 MHz Idelaye2 calibration clock
    U_CoreClockGen : entity work.ClockManager7
    generic map (
       INPUT_BUFG_G         => false,
@@ -435,7 +435,7 @@ begin
       DIVCLK_DIVIDE_G      => 10,
       CLKFBOUT_MULT_F_G    => 38.4,
       
-      CLKOUT0_DIVIDE_F_G   => 3.0,
+      CLKOUT0_DIVIDE_F_G   => 2.0,
       CLKOUT0_PHASE_G      => 90.0,
       CLKOUT0_DUTY_CYCLE_G => 0.5,
       
@@ -443,7 +443,7 @@ begin
       CLKOUT1_PHASE_G      => 0.0,
       CLKOUT1_DUTY_CYCLE_G => 0.5,
       
-      CLKOUT2_DIVIDE_G     => 60,
+      CLKOUT2_DIVIDE_G     => 40,
       CLKOUT2_PHASE_G      => 0.0,
       CLKOUT2_DUTY_CYCLE_G => 0.5,
     

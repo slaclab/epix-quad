@@ -332,7 +332,7 @@ begin
       -- programmable ASIC acquisition waveform
       if acqStart = '1' then
          v.cpix2RegOut.acqCnt    := r.cpix2RegOut.acqCnt + 1;
-         v.asicAcqTimeCnt1        := (others=>'0');
+         v.asicAcqTimeCnt1       := (others=>'0');
          v.asicAcqReg.R0         := r.asicAcqReg.R0Polarity;
          v.asicAcqReg.SR0        := r.asicAcqReg.SR0Polarity;
          v.asicAcqReg.GlblRst    := r.asicAcqReg.GlblRstPolarity;
@@ -447,10 +447,9 @@ begin
      -- time counter readout phase
      if r.asicAcqReg.asicWFEn = '0' and r.asicAcqTimeCnt2 /= x"FFFFFFFF" and (r.cpix2RegOut.EnAllFrames = '1' or r.cpix2RegOut.EnSingleFrame = '1') then
             v.asicAcqTimeCnt2 := r.asicAcqTimeCnt2 + 1;
-     else
-         if r.asicAcqReg.Sync = '1' or r.asicAcqReg.saciSync = '1' then
-             v.asicAcqTimeCnt2        := (others=>'0');
-         end if;
+     end if;
+     if r.asicAcqReg.Sync = '1' or r.asicAcqReg.saciSync = '1' then
+        v.asicAcqTimeCnt2        := (others=>'0');
      end if;
 
      -- flag that enables a single readout frame to be generated

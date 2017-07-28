@@ -162,7 +162,7 @@ package Cpix2Pkg is
       pwrManualFpga        => '0',
       asicMask             => (others => '0'),
       acqCnt               => (others => '0'),
-      ReqTriggerCnt        => (others=>'0'),
+      ReqTriggerCnt        => 0x"0000000A",
       requestStartupCal    => '1',
       startupAck           => '0',
       startupFail          => '0',
