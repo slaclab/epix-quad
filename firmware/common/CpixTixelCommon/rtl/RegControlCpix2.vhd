@@ -471,9 +471,9 @@ begin
 
      -- asic waveform enable is used to inhibit thw R0, ACQ and A/B from being generated during data readout
      if (r.triggerCntPerCycle >= r.cpix2RegOut.ReqTriggerCnt) then
-        v.asicAcqReg.asicWFEn <= '0';
+        v.asicAcqReg.asicWFEn := '0';
      else
-        v.asicAcqReg.asicWFEn <= '1';
+        v.asicAcqReg.asicWFEn := '1';
      end if;
 
       -- cpix2 bug workaround
