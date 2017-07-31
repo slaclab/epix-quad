@@ -40,7 +40,7 @@ entity Deserializer is
       IDELAYCTRL_FREQ_G : real      := 200.0;
       IODELAY_GROUP_G   : string    := "DEFAULT_GROUP";
       INVERT_SDATA_G    : boolean   := false;
-      IDLE_WORDS_SYNC_G : natural   := 128
+      IDLE_WORDS_SYNC_G : natural   := 2048
    );
    port ( 
       -- global signals

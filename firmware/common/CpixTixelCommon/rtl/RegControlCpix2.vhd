@@ -308,6 +308,7 @@ begin
       axiSlaveRegister(regCon,  x"000214",  0, v.vguardDacSetting);
       axiSlaveRegister(regCon,  x"000218",  0, v.cpix2RegOut.cpix2DbgSel1);
       axiSlaveRegister(regCon,  x"00021C",  0, v.cpix2RegOut.cpix2DbgSel2);
+      axiSlaveRegisterR(regCon, x"000220",  0, r.cpix2RegOut.syncCounter);
       
       axiSlaveRegister(regCon,  x"000300",  0, v.adcClkHalfT);
       axiSlaveRegister(regCon,  x"000304",  0, v.cpix2RegOut.requestStartupCal);
@@ -439,9 +440,11 @@ begin
       
       -- reset counters
       if r.resetCounters = '1' then
-         v.cpix2RegOut.acqCnt := (others=>'0');
-         v.saciPrepRdoutCnt   := (others=>'0');
-         v.triggerCntPerCycle := (others=>'0');
+         v.cpix2RegOut.acqCnt      := (others=>'0');
+         v.cpix2RegOut.syncCounter := (others=>'0');
+         v.saciPrepRdoutCnt        := (others=>'0');
+         v.triggerCntPerCycle      := (others=>'0');
+
       end if;
      
      -- time counter readout phase
@@ -474,6 +477,13 @@ begin
      else
         v.asicAcqReg.asicWFEn := '1';
      end if;
+
+     -- syncCounter counter per cycle enables the system to wait for N acqStart before readout data
+     -- this counter goes to the reader of the frames sent out instead of the acqcounter since its behavior is different for cPix2 than it was for the other asics
+     if r.asicAcqReg.Sync = '1' or r.asicAcqReg.saciSync = '1' then
+        v.syncCounter  := r.syncCounter + 1;
+     end if;
+
 
       -- cpix2 bug workaround
       -- for a number of clock cycles

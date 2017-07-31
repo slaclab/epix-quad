@@ -40,7 +40,7 @@ import ePixFpga as fpga
 #############################################
 # Define if the GUI is started (1 starts it)
 START_GUI = True
-START_VIEWER = False
+START_VIEWER = True
 #############################################
 
 # Create the PGP interfaces for ePix camera

@@ -145,6 +145,7 @@ package Cpix2Pkg is
       asicMask             : slv(NUMBER_OF_ASICS_C-1 downto 0);
       acqCnt               : slv(31 downto 0);
       ReqTriggerCnt        : slv(31 downto 0);
+      syncCounter          : slv(31 downto 0);
       requestStartupCal    : sl;
       startupAck           : sl;
       startupFail          : sl;
@@ -163,6 +164,7 @@ package Cpix2Pkg is
       asicMask             => (others => '0'),
       acqCnt               => (others => '0'),
       ReqTriggerCnt        => x"000000FF",
+      syncCounter          => (others => '0'),
       requestStartupCal    => '1',
       startupAck           => '0',
       startupFail          => '0',
