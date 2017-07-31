@@ -481,7 +481,7 @@ begin
      -- syncCounter counter per cycle enables the system to wait for N acqStart before readout data
      -- this counter goes to the reader of the frames sent out instead of the acqcounter since its behavior is different for cPix2 than it was for the other asics
      if r.asicAcqReg.Sync = '1' or r.asicAcqReg.saciSync = '1' then
-        v.syncCounter  := r.syncCounter + 1;
+        v.cpix2RegOut.syncCounter  := r.cpix2RegOut.syncCounter + 1;
      end if;
 
 
