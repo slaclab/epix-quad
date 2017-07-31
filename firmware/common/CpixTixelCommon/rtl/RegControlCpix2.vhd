@@ -423,9 +423,9 @@ begin
          end if;
          
          -- single pulse. zero value corresponds to infinite delay/width
-         if r.asicAcqReg.saciSyncDelay /= 0 and r.asicAcqReg.saciSyncDelay <= r.asicAcqTimeCnt1 then
+         if r.asicAcqReg.saciSyncDelay /= 0 and r.asicAcqReg.saciSyncDelay <= r.asicAcqTimeCnt2 then
             v.asicAcqReg.saciSync := not r.asicAcqReg.saciSyncPolarity;
-            if r.asicAcqReg.saciSyncWidth /= 0 and (r.asicAcqReg.saciSyncWidth + r.asicAcqReg.saciSyncDelay) <= r.asicAcqTimeCnt1 then
+            if r.asicAcqReg.saciSyncWidth /= 0 and (r.asicAcqReg.saciSyncWidth + r.asicAcqReg.saciSyncDelay) <= r.asicAcqTimeCnt2 then
                v.asicAcqReg.saciSync := r.asicAcqReg.saciSyncPolarity;
             end if;
          end if;
@@ -469,7 +469,7 @@ begin
      end if;
 
      -- asic waveform enable is used to inhibit thw R0, ACQ and A/B from being generated during data readout
-     if (r.triggerCntPerCycle >= r.cpix2RegOut.ReqTriggerCnt) then
+     if (r.triggerCntPerCycle >= r.cpix2RegOut.ReqTriggerCnt) and (acqStart = '1' or ((r.asicAcqReg.EnAWidth + r.asicAcqReg.EnADelay) <= r.asicAcqTimeCnt1))then
         v.asicAcqReg.asicWFEn := '0';
      else
         v.asicAcqReg.asicWFEn := '1';
