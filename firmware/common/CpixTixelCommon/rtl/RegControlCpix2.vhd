@@ -233,7 +233,7 @@ begin
    -------------------------------
    -- Configuration Register
    -------------------------------  
-   comb : process (axiReadMaster, axiReset, axiWriteMaster, r, idValids, idValues, acqStart, saciReadoutAck) is
+   comb : process (axiReadMaster, axiReset, axiWriteMaster, r, r_1, idValids, idValues, acqStart, saciReadoutAck) is
       variable v           : RegType;
       variable regCon      : AxiLiteEndPointType;
       
