@@ -208,8 +208,9 @@ architecture rtl of RegControlCpix2 is
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
    
-   signal idValues : Slv64Array(2 downto 0);
-   signal idValids : slv(2 downto 0);
+   signal idValues        : Slv64Array(2 downto 0);
+   signal idValues_upper  : Slv64Array(2 downto 0);
+   signal idValids        : slv(2 downto 0);
    
    signal adcCardStartUp     : sl;
    signal adcCardStartUpEdge : sl;
@@ -333,7 +334,10 @@ begin
       -- programmable ASIC acquisition waveform
       if acqStart = '1' then
          v.cpix2RegOut.acqCnt    := r.cpix2RegOut.acqCnt + 1;
-         v.asicAcqTimeCnt1       := (others=>'0');
+         -- waits readout to complete to accept new events (done through counter)
+         if r.asicAcqReg.asicWFEn = '1' then
+            v.asicAcqTimeCnt1       := (others=>'0');
+         end if;
          v.asicAcqReg.R0         := r.asicAcqReg.R0Polarity;
          v.asicAcqReg.SR0        := r.asicAcqReg.SR0Polarity;
          v.asicAcqReg.GlblRst    := r.asicAcqReg.GlblRstPolarity;
@@ -346,7 +350,8 @@ begin
       else
 
          -- time counter
-         if r.asicAcqReg.asicWFEn = '1' and r.asicAcqTimeCnt1 /= x"FFFFFFFF" and (r.cpix2RegOut.EnAllFrames = '1' or r.cpix2RegOut.EnSingleFrame = '1') then
+         --if r.asicAcqReg.asicWFEn = '1' and r.asicAcqTimeCnt1 /= x"000FFFFF" and (r.cpix2RegOut.EnAllFrames = '1' or r.cpix2RegOut.EnSingleFrame = '1') then
+         if r.asicAcqTimeCnt1 /= x"FFFFFFFF" then
             v.asicAcqTimeCnt1 := r.asicAcqTimeCnt1 + 1;
          end if;
          
@@ -448,7 +453,7 @@ begin
       end if;
      
      -- time counter readout phase
-     if r.asicAcqReg.asicWFEn = '0' and r.asicAcqTimeCnt2 /= x"FFFFFFFF" and (r.cpix2RegOut.EnAllFrames = '1' or r.cpix2RegOut.EnSingleFrame = '1') then
+     if r.asicAcqReg.asicWFEn = '0' and r.asicAcqTimeCnt2 /= x"FFFFFFFF" then
             v.asicAcqTimeCnt2 := r.asicAcqTimeCnt2 + 1;
      end if;
      if r.asicAcqReg.Sync = '1' or r.asicAcqReg.saciSync = '1' then
@@ -472,7 +477,7 @@ begin
      end if;
 
      -- asic waveform enable is used to inhibit thw R0, ACQ and A/B from being generated during data readout
-     if (r.triggerCntPerCycle >= r.cpix2RegOut.ReqTriggerCnt) and (acqStart = '1' or ((r.asicAcqReg.EnAWidth + r.asicAcqReg.EnADelay) <= r.asicAcqTimeCnt1))then
+     if (r.triggerCntPerCycle >= r.cpix2RegOut.ReqTriggerCnt) and ((r.asicAcqReg.R0Width + r.asicAcqReg.R0Delay) <= r.asicAcqTimeCnt1) and ((r.asicAcqReg.EnAWidth + r.asicAcqReg.EnADelay) <= r.asicAcqTimeCnt1) and ((r.asicAcqReg.R0Width + r.asicAcqReg.R0Delay) <= r.asicAcqTimeCnt1) then
         v.asicAcqReg.asicWFEn := '0';
      else
         v.asicAcqReg.asicWFEn := '1';
@@ -480,7 +485,7 @@ begin
 
      -- syncCounter counter per cycle enables the system to wait for N acqStart before readout data
      -- this counter goes to the reader of the frames sent out instead of the acqcounter since its behavior is different for cPix2 than it was for the other asics
-     if r.asicAcqReg.Sync = '1' or r.asicAcqReg.saciSync = '1' then
+     if rising_edge(r.asicAcqReg.Sync) or rising_edge(r.asicAcqReg.saciSync) then
         v.cpix2RegOut.syncCounter  := r.cpix2RegOut.syncCounter + 1;
      end if;
 
@@ -564,7 +569,7 @@ begin
          port map (
             clk      => axiClk,
             rst      => axiReset,
-            dnaValue(127 downto 64) => open,
+            dnaValue(127 downto 64) => idValues_upper(0),
             dnaValue( 63 downto  0) => idValues(0),
             dnaValid => idValids(0)
          );
