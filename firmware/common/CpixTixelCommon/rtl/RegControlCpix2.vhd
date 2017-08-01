@@ -206,6 +206,7 @@ architecture rtl of RegControlCpix2 is
    );
 
    signal r   : RegType := REG_INIT_C;
+   signal r_1 : RegType := REG_INIT_C;
    signal rin : RegType;
    
    signal idValues        : Slv64Array(2 downto 0);
@@ -485,7 +486,7 @@ begin
 
      -- syncCounter counter per cycle enables the system to wait for N acqStart before readout data
      -- this counter goes to the reader of the frames sent out instead of the acqcounter since its behavior is different for cPix2 than it was for the other asics
-     if rising_edge(r.asicAcqReg.Sync) or rising_edge(r.asicAcqReg.saciSync) then
+     if (r.asicAcqReg.Sync = '1' and r_1.asicAcqReg.Sync = '0') or (r.asicAcqReg.saciSync = '1' and r.asicAcqReg.saciSync = '0') then
         v.cpix2RegOut.syncCounter  := r.cpix2RegOut.syncCounter + 1;
      end if;
 
@@ -537,7 +538,8 @@ begin
    seq : process (axiClk) is
    begin
       if rising_edge(axiClk) then
-         r <= rin after TPD_G;
+         r   <= rin after TPD_G;
+         r_1 <= r  after TPD_G;
       end if;
    end process seq;
    
