@@ -87,16 +87,16 @@ architecture rtl of RegControlCpix2 is
       Vid               : sl;
       EnA               : sl;
       EnAPolarity       : sl;
---      EnAPattern        : slv(31 downto 0);
+      EnAPattern        : slv(31 downto 0);
       EnAShiftPattern   : slv(31 downto 0);
       EnADelay          : slv(31 downto 0);
       EnAWidth          : slv(31 downto 0);
       SR0               : sl;
       SR0Polarity       : sl;
-      SR0Delay1          : slv(31 downto 0);
-      SR0Width1          : slv(31 downto 0);
-      SR0Delay2          : slv(31 downto 0);
-      SR0Width2          : slv(31 downto 0);
+      SR0Delay1         : slv(31 downto 0);
+      SR0Width1         : slv(31 downto 0);
+      SR0Delay2         : slv(31 downto 0);
+      SR0Width2         : slv(31 downto 0);
       R0                : sl;
       R0Polarity        : sl;
       R0Delay           : slv(31 downto 0);
@@ -136,7 +136,7 @@ architecture rtl of RegControlCpix2 is
       Vid               => '1',
       EnA               => '0',
       EnAPolarity       => '0',
---      EnAPattern        => (others=>'1'),
+      EnAPattern        => (others=>'1'),
       EnAShiftPattern   => (others=>'0'),
       EnADelay          => (others=>'0'),
       EnAWidth          => (others=>'0'),
@@ -256,6 +256,7 @@ begin
       -- Reset data and strobes
       v.axiReadSlave.rdata       := (others => '0');
       v.resetCounters            := '0';
+
       
       -- Determine the transaction type
       axiSlaveWaitTxn(regCon, axiWriteMaster, axiReadMaster, v.axiWriteSlave, v.axiReadSlave);
@@ -280,8 +281,8 @@ begin
       axiSlaveRegister(regCon,  x"00011C",  0, v.asicAcqReg.AcqDelay);
       axiSlaveRegister(regCon,  x"000120",  0, v.asicAcqReg.AcqWidth);
 
---      axiSlaveRegister(regCon,  x"000124",  0, v.asicAcqReg.EnAPattern);
-      axiSlaveRegister(regCon,  x"000128",  0, v.asicAcqReg.EnAShiftPattern);
+      axiSlaveRegister(regCon,  x"000124",  0, v.asicAcqReg.EnAPattern);
+      axiSlaveRegisterR(regCon, x"000128",  0, v.asicAcqReg.EnAShiftPattern);
       axiSlaveRegister(regCon,  x"00012C",  0, v.asicAcqReg.EnAPolarity);
       axiSlaveRegister(regCon,  x"000130",  0, v.asicAcqReg.EnADelay);
       axiSlaveRegister(regCon,  x"000134",  0, v.asicAcqReg.EnAWidth);
@@ -415,9 +416,9 @@ begin
 
          -- single pulse. zero value corresponds to infinite delay/width
          if r.asicAcqReg.EnADelay /= 0 and r.asicAcqReg.EnADelay <= r.asicAcqTimeCnt1 then
-            v.asicAcqReg.EnA := not (r.asicAcqReg.EnAPolarity xor r.asicAcqReg.EnAShiftPattern(r.triggerCntPerCycle(4 downto 0)));
+            v.asicAcqReg.EnA := not (r.asicAcqReg.EnAPolarity xor (not r.asicAcqReg.EnAShiftPattern(0)));
             if r.asicAcqReg.EnAWidth /= 0 and (r.asicAcqReg.EnAWidth + r.asicAcqReg.EnADelay) <= r.asicAcqTimeCnt1 then
-               v.asicAcqReg.EnA := (r.asicAcqReg.EnAPolarity xor r.asicAcqReg.EnAShiftPattern(r.triggerCntPerCycle(4 downto 0)));
+               v.asicAcqReg.EnA := (r.asicAcqReg.EnAPolarity xor (not r.asicAcqReg.EnAShiftPattern(0)));
             end if;
          end if;
          
@@ -465,6 +466,20 @@ begin
          
       end if;
       
+
+      -- ENAB shift register
+      if r.asicAcqReg.asicWFEn = '1' then
+         if acqStart = '1' then
+            v.asicAcqReg.EnAShiftPattern(30 downto 0)  := r.asicAcqReg.EnAShiftPattern(31 downto 1);
+            v.asicAcqReg.EnAShiftPattern(31)           := r.asicAcqReg.EnAShiftPattern(0);
+         end if;
+      else
+         if r.asicAcqReg.Sync = '1' or r.asicAcqReg.saciSync = '1' then
+            v.asicAcqReg.EnAShiftPattern  := r.asicAcqReg.EnAPattern;
+         end if;
+      end if;
+
+
       -- SACI preperare for readout ack counter
       if saciReadoutAck = '1' then
          v.saciPrepRdoutCnt := r.saciPrepRdoutCnt + 1;
