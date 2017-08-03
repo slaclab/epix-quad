@@ -87,6 +87,8 @@ architecture rtl of RegControlCpix2 is
       Vid               : sl;
       EnA               : sl;
       EnAPolarity       : sl;
+--      EnAPattern        : slv(31 downto 0);
+      EnAShiftPattern   : slv(31 downto 0);
       EnADelay          : slv(31 downto 0);
       EnAWidth          : slv(31 downto 0);
       SR0               : sl;
@@ -134,6 +136,8 @@ architecture rtl of RegControlCpix2 is
       Vid               => '1',
       EnA               => '0',
       EnAPolarity       => '0',
+--      EnAPattern        => (others=>'1'),
+      EnAShiftPattern   => (others=>'0'),
       EnADelay          => (others=>'0'),
       EnAWidth          => (others=>'0'),
       SR0               => '0',
@@ -275,8 +279,9 @@ begin
       axiSlaveRegister(regCon,  x"000118",  0, v.asicAcqReg.AcqPolarity);
       axiSlaveRegister(regCon,  x"00011C",  0, v.asicAcqReg.AcqDelay);
       axiSlaveRegister(regCon,  x"000120",  0, v.asicAcqReg.AcqWidth);
---      axiSlaveRegister(regCon,  x"000124",  0, v.asicAcqReg.AcqDelay2);
---      axiSlaveRegister(regCon,  x"000128",  0, v.asicAcqReg.AcqWidth2);
+
+--      axiSlaveRegister(regCon,  x"000124",  0, v.asicAcqReg.EnAPattern);
+      axiSlaveRegister(regCon,  x"000128",  0, v.asicAcqReg.EnAShiftPattern);
       axiSlaveRegister(regCon,  x"00012C",  0, v.asicAcqReg.EnAPolarity);
       axiSlaveRegister(regCon,  x"000130",  0, v.asicAcqReg.EnADelay);
       axiSlaveRegister(regCon,  x"000134",  0, v.asicAcqReg.EnAWidth);
@@ -410,9 +415,9 @@ begin
 
          -- single pulse. zero value corresponds to infinite delay/width
          if r.asicAcqReg.EnADelay /= 0 and r.asicAcqReg.EnADelay <= r.asicAcqTimeCnt1 then
-            v.asicAcqReg.EnA := not r.asicAcqReg.EnAPolarity;
+            v.asicAcqReg.EnA := not (r.asicAcqReg.EnAPolarity xor r.asicAcqReg.EnAShiftPattern(r.triggerCntPerCycle(4 downto 0)));
             if r.asicAcqReg.EnAWidth /= 0 and (r.asicAcqReg.EnAWidth + r.asicAcqReg.EnADelay) <= r.asicAcqTimeCnt1 then
-               v.asicAcqReg.EnA := r.asicAcqReg.EnAPolarity;
+               v.asicAcqReg.EnA := (r.asicAcqReg.EnAPolarity xor r.asicAcqReg.EnAShiftPattern(r.triggerCntPerCycle(4 downto 0)));
             end if;
          end if;
          
