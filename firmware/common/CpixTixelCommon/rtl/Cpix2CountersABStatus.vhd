@@ -125,14 +125,17 @@ begin
             if (asicSR0_i = '1') then
                 -- 
                 sv.state := WAIT_DATA_A_ST;
+            elsif (decSof_i  = '1') then
+                -- 
+                sv.state := ERROR_ST;
             end if;    
 
          when WAIT_DATA_A_ST =>
             sv.status := "00";
-            if (asicSR0_i = '1') then
+            --if (asicSR0_i = '1') then
                 -- 
-                sv.state := ERROR_ST;
-            elsif (decSof_i = '1') then
+            --    sv.state := ERROR_ST;
+            if (decSof_i = '1') then
                 --
                 sv.state := WAIT_SRO_B_ST;
             end if;    

@@ -149,7 +149,8 @@ guiTop.resize(1000,800)
 
 # Viewer gui
 if (START_VIEWER):
-    gui = vi.Window(cameraType = 'Cpix2')
+    gui = vi.Window(cameraType = 'Tixel48x48')
+#    gui = vi.Window(cameraType = 'Cpix2')
     gui.eventReader.frameIndex = 0
     gui.setReadDelay(0)
     pyrogue.streamTap(pgpVc0, gui.eventReader)

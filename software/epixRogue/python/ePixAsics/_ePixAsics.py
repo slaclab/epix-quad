@@ -1044,22 +1044,14 @@ class Cpix2Asic(pr.Device):
         # linked variables
         #self.add(pr.LinkVariable(name='PLL_RO_filter1', description='Config02_0F', typeStr='Linked',  base='uint',  mode='RW', dependencies=[self.PLL_RO_filt1a, self.PLL_RO_filt1b]))
 
-               
+
         # CMD = 6, Addr = 17 : Row counter[8:0]
         self.add((
-            pr.RemoteCommand(name='RowStartC', description='', offset=0x00006011*addrSize, bitSize=9, bitOffset=0, function=pr.Command.touch, hidden=False)))      
-        # CMD = 6, Addr = 18 : Bank select [3:0] & Col counter[6:0]
+            pr.RemoteCommand(name='RowCounter', description='', offset=0x00006011*addrSize, bitSize=8, bitOffset=0, function=pr.Command.touch, hidden=False)))
+        
+        # CMD = 6, Addr = 19 : Bank select [3:0] & Col counter[6:0]
         self.add((
-            pr.RemoteCommand(name='RowStopC', description='', offset=0x00006012*addrSize, bitSize=9, bitOffset=0, function=pr.Command.touch, hidden=False)))
-        # CMD = 6, Addr = 18 : Bank select [3:0] & Col counter[6:0]
-        self.add((
-            pr.RemoteCommand(name='ColumnStartC', description='', offset=0x00006013*addrSize, bitSize=7, bitOffset=0, function=pr.Command.touch, hidden=False)))
-        # CMD = 6, Addr = 18 : Bank select [3:0] & Col counter[6:0]
-        self.add((
-            pr.RemoteCommand(name='ColumnStopC', description='', offset=0x00006014*addrSize, bitSize=7, bitOffset=0, function=pr.Command.touch, hidden=False)))
-        # CMD = 6, Addr = 18 : Bank select [3:0] & Col counter[6:0]
-        self.add((
-            pr.RemoteCommand(name='ChipIDC', description='', offset=0x00006015*addrSize, bitSize=16, bitOffset=0, function=pr.Command.touch, hidden=False)))
+            pr.RemoteCommand(name='ColCounter', description='', offset=0x00006013*addrSize, bitSize=8, bitOffset=0, function=pr.Command.touch, hidden=False)))
             
         # CMD = 2, Addr = X  : Write Row with data
         self.add((
@@ -1078,13 +1070,55 @@ class Cpix2Asic(pr.Device):
         self.add(pr.RemoteCommand(name='WritePixelData',  description='WritePixelData',  offset=0x00005000*addrSize, bitSize=2, bitOffset=0, function=pr.Command.touch, hidden=False))
 
         # CMD = 7, Addr = X  : Prepare to write chip ID
-        self.add((
-            pr.Variable(name='PrepareWriteChipIdA', description='PrepareWriteChipIdA', offset=0x00007000*addrSize, bitSize=32, bitOffset=0, base='hex', mode='RW'),
-            pr.Variable(name='PrepareWriteChipIdB', description='PrepareWriteChipIdB', offset=0x00007015*addrSize, bitSize=32, bitOffset=0, base='hex', mode='RW')))
+        #self.add((
+        #    pr.Variable(name='PrepareWriteChipIdA', description='PrepareWriteChipIdA', offset=0x00007000*addrSize, bitSize=32, bitOffset=0, base='hex', mode='RW'),
+        #    pr.Variable(name='PrepareWriteChipIdB', description='PrepareWriteChipIdB', offset=0x00007015*addrSize, bitSize=32, bitOffset=0, base='hex', mode='RW')))
       
         # CMD = 8, Addr = X  : Prepare for row/column/matrix configuration
         self.add(
             pr.RemoteCommand(name='PrepareMultiConfig', description='PrepareMultiConfig', offset=0x00008000*addrSize, bitSize=32, bitOffset=0, function=pr.Command.touchZero, hidden=False))
+
+               
+        # CMD = 6, Addr = 17 : Row counter[8:0]
+#        self.add((
+#            pr.RemoteCommand(name='RowStartC', description='', offset=0x00006011*addrSize, bitSize=9, bitOffset=0, function=pr.Command.touch, hidden=False)))      
+#        # CMD = 6, Addr = 18 : Bank select [3:0] & Col counter[6:0]
+#        self.add((
+#            pr.RemoteCommand(name='RowStopC', description='', offset=0x00006012*addrSize, bitSize=9, bitOffset=0, function=pr.Command.touch, hidden=False)))
+#        # CMD = 6, Addr = 18 : Bank select [3:0] & Col counter[6:0]
+#        self.add((
+#            pr.RemoteCommand(name='ColumnStartC', description='', offset=0x00006013*addrSize, bitSize=7, bitOffset=0, function=pr.Command.touch, hidden=False)))
+#        # CMD = 6, Addr = 18 : Bank select [3:0] & Col counter[6:0]
+#        self.add((
+#            pr.RemoteCommand(name='ColumnStopC', description='', offset=0x00006014*addrSize, bitSize=7, bitOffset=0, function=pr.Command.touch, hidden=False)))
+#        # CMD = 6, Addr = 18 : Bank select [3:0] & Col counter[6:0]
+#        self.add((
+#            pr.RemoteCommand(name='ChipIDC', description='', offset=0x00006015*addrSize, bitSize=16, bitOffset=0, function=pr.Command.touch, hidden=False)))
+#            
+#        # CMD = 2, Addr = X  : Write Row with data
+#        self.add((
+#            pr.RemoteCommand(name='WriteRowData',    description='', offset=0x00002000*addrSize, bitSize=2, bitOffset=0, function=pr.Command.touch, hidden=False)))#
+#
+#        # CMD = 3, Addr = X  : Write Column with data
+#        self.add(
+#            pr.RemoteCommand(name='WriteColData',    description='', offset=0x00003000*addrSize, bitSize=2, bitOffset=0, function=pr.Command.touch, hidden=False))
+#
+#        # CMD = 4, Addr = X  : Write Matrix with data        
+#        self.add((    
+#            pr.RemoteCommand(name='WriteMatrixData', description='', offset=0x00004000*addrSize, bitSize=2, bitOffset=0, function=pr.Command.touch, hidden=False)))   
+#        
+#
+#        # CMD = 5, Addr = X  : Read/Write Pixel with data
+#        self.add(pr.RemoteCommand(name='WritePixelData',  description='WritePixelData',  offset=0x00005000*addrSize, bitSize=2, bitOffset=0, function=pr.Command.touch, hidden=False))
+#
+#        # CMD = 7, Addr = X  : Prepare to write chip ID
+#        self.add((
+#            pr.Variable(name='PrepareWriteChipIdA', description='PrepareWriteChipIdA', offset=0x00007000*addrSize, bitSize=32, bitOffset=0, base='hex', mode='RW'),
+#            pr.Variable(name='PrepareWriteChipIdB', description='PrepareWriteChipIdB', offset=0x00007015*addrSize, bitSize=32, bitOffset=0, base='hex', mode='RW')))
+      
+        # CMD = 8, Addr = X  : Prepare for row/column/matrix configuration
+#        self.add(
+#            pr.RemoteCommand(name='PrepareMultiConfig', description='PrepareMultiConfig', offset=0x00008000*addrSize, bitSize=32, bitOffset=0, function=pr.Command.touchZero, hidden=False))
 
 
 
@@ -1110,7 +1144,7 @@ class Cpix2Asic(pr.Device):
     def fnSetPixelBitmap(self, dev,cmd,arg):
         """SetPixelBitmap command function"""
         #set r0mode in order to have saci cmd to work properly on legacy firmware
-        self.root.Tixel.TixelFpgaRegisters.AsicR0Mode.set(True)
+        #self.root.Cpix2.Cpix2FpgaRegisters.AsicR0Mode.set(True)
 
         if (self.enable.get()):
             self.reportCmd(dev,cmd,arg)
@@ -1140,7 +1174,7 @@ class Cpix2Asic(pr.Device):
     def fnGetPixelBitmap(self, dev,cmd,arg):
         """GetPixelBitmap command function"""
         #set r0mode in order to have saci cmd to work properly on legacy firmware
-        self.root.Tixel.TixelFpgaRegisters.AsicR0Mode.set(True)
+        #self.root.Cpix2.Cpix2FpgaRegisters.AsicR0Mode.set(True)
 
         if (self.enable.get()):
             if len(arg) > 0:
@@ -1164,7 +1198,7 @@ class Cpix2Asic(pr.Device):
     def fnClearMatrix(self, dev,cmd,arg):
         """ClearMatrix command function"""
         #set r0mode in order to have saci cmd to work properly on legacy firmware
-        self.root.Tixel.TixelFpgaRegisters.AsicR0Mode.set(True)
+        #self.root.Cpix2.Cpix2FpgaRegisters.AsicR0Mode.set(True)
 
         if (self.enable.get()):
             self.reportCmd(dev,cmd,arg)

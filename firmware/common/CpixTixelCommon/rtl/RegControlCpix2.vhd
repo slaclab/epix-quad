@@ -115,6 +115,10 @@ architecture rtl of RegControlCpix2 is
       PpmatPolarity     : sl;
       PpmatDelay        : slv(31 downto 0);
       PpmatWidth        : slv(31 downto 0);
+      FastSync          : sl;
+      FastSyncPolarity  : sl;
+      FastSyncDelay     : slv(31 downto 0);
+      FastSyncWidth     : slv(31 downto 0);
       Sync              : sl;
       SyncPolarity      : sl;
       SyncDelay         : slv(31 downto 0);
@@ -158,6 +162,10 @@ architecture rtl of RegControlCpix2 is
       PpmatPolarity     => '0',
       PpmatDelay        => (others=>'0'),
       PpmatWidth        => (others=>'0'),
+      FastSync          => '0',
+      FastSyncPolarity  => '0',
+      FastSyncDelay     => (others=>'0'),
+      FastSyncWidth     => (others=>'0'),
       Sync              => '0',
       SyncPolarity      => '0',
       SyncDelay         => (others=>'0'),
@@ -284,18 +292,22 @@ begin
       axiSlaveRegister(regCon,  x"000150",  0, v.asicAcqReg.PpmatPolarity);
       axiSlaveRegister(regCon,  x"000154",  0, v.asicAcqReg.PpmatDelay);
       axiSlaveRegister(regCon,  x"000158",  0, v.asicAcqReg.PpmatWidth);
-      axiSlaveRegister(regCon,  x"00015C",  0, v.asicAcqReg.SyncPolarity);
-      axiSlaveRegister(regCon,  x"000160",  0, v.asicAcqReg.SyncDelay);
-      axiSlaveRegister(regCon,  x"000164",  0, v.asicAcqReg.SyncWidth);
-      axiSlaveRegister(regCon,  x"000168",  0, v.asicAcqReg.saciSyncPolarity);
-      axiSlaveRegister(regCon,  x"00016C",  0, v.asicAcqReg.saciSyncDelay);
-      axiSlaveRegister(regCon,  x"000170",  0, v.asicAcqReg.saciSyncWidth);
-      axiSlaveRegister(regCon,  x"000174",  0, v.asicAcqReg.SR0Polarity);
-      axiSlaveRegister(regCon,  x"000178",  0, v.asicAcqReg.SR0Delay1);
-      axiSlaveRegister(regCon,  x"00017C",  0, v.asicAcqReg.SR0Width1);
-      axiSlaveRegister(regCon,  x"000180",  0, v.asicAcqReg.SR0Delay2);
-      axiSlaveRegister(regCon,  x"000184",  0, v.asicAcqReg.SR0Width2);
-      axiSlaveRegister(regCon,  x"000188",  0, v.asicAcqReg.Vid);
+      axiSlaveRegister(regCon,  x"00015C",  0, v.asicAcqReg.FastSyncPolarity);
+      axiSlaveRegister(regCon,  x"000160",  0, v.asicAcqReg.FastSyncDelay);
+      axiSlaveRegister(regCon,  x"000164",  0, v.asicAcqReg.FastSyncWidth);
+      axiSlaveRegister(regCon,  x"000168",  0, v.asicAcqReg.SyncPolarity);
+      axiSlaveRegister(regCon,  x"00016C",  0, v.asicAcqReg.SyncDelay);
+      axiSlaveRegister(regCon,  x"000170",  0, v.asicAcqReg.SyncWidth);
+      axiSlaveRegister(regCon,  x"000174",  0, v.asicAcqReg.saciSyncPolarity);
+      axiSlaveRegister(regCon,  x"000178",  0, v.asicAcqReg.saciSyncDelay);
+      axiSlaveRegister(regCon,  x"00017C",  0, v.asicAcqReg.saciSyncWidth);
+      axiSlaveRegister(regCon,  x"000180",  0, v.asicAcqReg.SR0Polarity);
+      axiSlaveRegister(regCon,  x"000184",  0, v.asicAcqReg.SR0Delay1);
+      axiSlaveRegister(regCon,  x"000188",  0, v.asicAcqReg.SR0Width1);
+      axiSlaveRegister(regCon,  x"00018C",  0, v.asicAcqReg.SR0Delay2);
+      axiSlaveRegister(regCon,  x"000190",  0, v.asicAcqReg.SR0Width2);
+      axiSlaveRegister(regCon,  x"000194",  0, v.asicAcqReg.Vid);
+
       
       axiSlaveRegisterR(regCon, x"000200",  0, r.cpix2RegOut.acqCnt);
       axiSlaveRegisterR(regCon, x"000204",  0, r.saciPrepRdoutCnt);
@@ -420,6 +432,15 @@ begin
                v.asicAcqReg.Ppmat := r.asicAcqReg.PpmatPolarity;
             end if;
          end if;
+
+         -- single pulse. zero value corresponds to infinite delay/width
+         -- signal used to pulse counter on cpix2
+         if r.asicAcqReg.FastSyncDelay /= 0 and r.asicAcqReg.FastSyncDelay <= r.asicAcqTimeCnt1 then
+            v.asicAcqReg.FastSync := not r.asicAcqReg.FastSyncPolarity;
+            if r.asicAcqReg.FastSyncWidth /= 0 and (r.asicAcqReg.FastSyncWidth + r.asicAcqReg.FastSyncDelay) <= r.asicAcqTimeCnt1 then
+               v.asicAcqReg.FastSync := r.asicAcqReg.FastSyncPolarity;
+            end if;
+         end if;
          
          -- single pulse. zero value corresponds to infinite delay/width
          if r.asicAcqReg.SyncDelay /= 0 and r.asicAcqReg.SyncDelay <= r.asicAcqTimeCnt2 then
@@ -529,7 +550,7 @@ begin
       asicR0         <= r.asicAcqReg.R0;
       asicSR0        <= r.asicAcqReg.SR0;
       asicGlblRst    <= r.asicAcqReg.GlblRst;
-      asicSync       <= r.asicAcqReg.Sync;
+      asicSync       <= r.asicAcqReg.Sync or r.asicAcqReg.FastSync;
       asicAcq        <= r.asicAcqReg.Acq;
       asicVid        <= r.asicAcqReg.Vid;
       
