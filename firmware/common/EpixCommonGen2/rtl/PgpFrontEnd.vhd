@@ -119,7 +119,7 @@ begin
    refClk      <= iStableClk;
 
 
-   cmdMux : process (axiRst, ssiCmd_0, ssiCmd_2) is
+   cmdMux : process (axiRst, ssiCmd_0, ssiCmd_2, selecCmdSrc) is
    begin
 
       if (axiRst = '1') then
