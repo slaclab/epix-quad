@@ -65,8 +65,17 @@ pyrogue.streamConnect(pgpVc0, dataWriter.getChannel(0x1))
 pyrogue.streamConnect(pgpVc2, dataWriter.getChannel(0x2))
 pyrogue.streamConnect(pgpVc3, dataWriter.getChannel(0x3))
 
+#After git hash builds 9ac7dcd (8/4/2017) commands for epix camera can be sent on VC0 or VC2
+#this is to fulfill a request by EUXFEL project.
 cmd = rogue.protocols.srp.Cmd()
-pyrogue.streamConnect(cmd, pgpVc0)
+VC_NUM_ID = 2
+if (VC_NUM_ID == 0):
+   pyrogue.streamConnect(cmd, pgpVc0)
+elif (VC_NUM_ID == 2):
+   pyrogue.streamConnect(cmd, pgpVc2)
+else:
+    VC_NUM_ID = 0
+    pyrogue.streamConnect(cmd, pgpVc0)
 
 # Create and Connect SRP to VC1 to send commands
 srp = rogue.protocols.srp.SrpV0()
@@ -161,6 +170,7 @@ class EpixBoard(pyrogue.Root):
 
         @self.command()
         def Trigger():
+            print("Sending cmd through VC" , VC_NUM_ID)
             cmd.sendCmd(0, 0)
         
         # Add Devices, defined at AxiVersionEpix100a file
@@ -203,11 +213,11 @@ pyrogue.streamTap(pgpVc2, gui.eventReaderScope)# PseudoScope
 pyrogue.streamTap(pgpVc3, gui.eventReaderMonitoring) # Slow Monitoring
 
 # scope gui
-guiScope = vi.Window(cameraType = 'ePix100a')
-guiScope.eventReader.frameIndex = 0
+#guiScope = vi.Window(cameraType = 'ePix100a')
+#guiScope.eventReader.frameIndex = 0
 #gui.eventReaderImage.VIEW_DATA_CHANNEL_ID = 0
-guiScope.setReadDelay(0)
-pyrogue.streamTap(pgpVc2, guiScope.eventReaderScope)# PseudoScope
+#guiScope.setReadDelay(0)
+#pyrogue.streamTap(pgpVc2, guiScope.eventReaderScope)# PseudoScope
 
 
 # Create mesh node (this is for remote control only, no data is shared with this)

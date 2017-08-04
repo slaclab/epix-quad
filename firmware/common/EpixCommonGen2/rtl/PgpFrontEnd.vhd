@@ -105,8 +105,8 @@ architecture mapping of PgpFrontEnd is
    signal pgpTxOut    : Pgp2bTxOutType;
 
    -- command signals
-   signal ssiCmd_0    : SsiCmdMasterType;
-   signal ssiCmd_2    : SsiCmdMasterType;
+   signal ssiCmd_0, ssiCmd_0_i    : SsiCmdMasterType;
+   signal ssiCmd_2, ssiCmd_2_i    : SsiCmdMasterType;
    signal selecCmdSrc, selecCmdSrc_i : sl;
    
 begin
@@ -133,9 +133,9 @@ begin
       end if;
 
       if (selecCmdSrc = '0') then
-         ssiCmd      <= ssiCmd_0;
+         ssiCmd      <= ssiCmd_0_i;
       else
-         ssiCmd      <= ssiCmd_2;
+         ssiCmd      <= ssiCmd_2_i;
       end if;
    end process cmdMux;
 
@@ -143,6 +143,8 @@ begin
    begin
       if (rising_edge(axiClk)) then
          selecCmdSrc <= selecCmdSrc_i after TPD_G;
+         ssiCmd_0_i <= ssiCmd_0;
+         ssiCmd_2_i <= ssiCmd_2;
       end if;
    end process seqcmdMux;
    
