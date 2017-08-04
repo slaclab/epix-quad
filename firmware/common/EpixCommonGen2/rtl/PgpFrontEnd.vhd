@@ -103,6 +103,11 @@ architecture mapping of PgpFrontEnd is
    signal iPgpRxOut   : Pgp2bRxOutType;
    signal pgpTxIn     : Pgp2bTxInType;
    signal pgpTxOut    : Pgp2bTxOutType;
+
+   -- command signals
+   signal ssiCmd_0    : SsiCmdMasterType;
+   signal ssiCmd_2    : SsiCmdMasterType;
+   signal selecCmdSrc : sl;
    
 begin
    
@@ -112,6 +117,34 @@ begin
    txLinkReady <= pgpTxOut.linkReady;
    pgpClk      <= iPgpClk;
    refClk      <= iStableClk;
+
+
+   cmdMux : process (axiRst, ssiCmd_0, ssiCmd_2) is
+   begin
+
+      if (axiRst = '1') then
+         selecCmdSrc_i <= '0';
+      elsif (ssiCmd_0.valid = '1') then 
+         selecCmdSrc_i <= '0';
+      elsif (ssiCmd_2.valid = '1') then 
+         selecCmdSrc_i <= '1';
+      else 
+         selecCmdSrc_i <= selecCmdSrc;
+      end if;
+
+      if (selecCmdSrc = '0') then
+         ssiCmd      <= ssiCmd_0;
+      else
+         ssiCmd      <= ssiCmd_2;
+      end if;
+   end process cmdMux;
+
+   seqcmdMux : process (axiClk) is
+   begin
+      if (rising_edge(axiClk)) then
+         selecCmdSrc <= selecCmdSrc_i after TPD_G;
+      end if;
+   end process seqcmdMux;
    
    -- Generate stable reset signal
    U_PwrUpRst : entity work.PwrUpRst
@@ -232,7 +265,7 @@ begin
          -- Command signals
          cmdClk      => axiClk,
          cmdRst      => axiRst,
-         cmdMaster   => ssiCmd
+         cmdMaster   => ssiCmd_0
       );     
    
    -- Lane 0, VC1 RX/TX, Register access control        
@@ -287,7 +320,22 @@ begin
          mAxisRst    => stableRst,
          mAxisMaster => pgpTxMasters(2),
          mAxisSlave  => pgpTxSlaves(2));     
-   -- Lane 0, VC2 RX unused (reserved for programming via fiber?)
+   -- Lane 0, VC2 RX, Command processor in parallel with VC0 (implemented for EuXFEL)
+   U_Vc0SsiCmdMaster : entity work.SsiCmdMaster
+      generic map (
+         AXI_STREAM_CONFIG_G => SSI_PGP2B_CONFIG_C)   
+      port map (
+         -- Streaming Data Interface
+         axisClk     => iPgpClk,
+         axisRst     => stableRst,
+         sAxisMaster => pgpRxMasters(2),
+         sAxisSlave  => open,
+         sAxisCtrl   => pgpRxCtrl(2),
+         -- Command signals
+         cmdClk      => axiClk,
+         cmdRst      => axiRst,
+         cmdMaster   => ssiCmd_2
+      );
    
    -- Lane 0, VC3 TX monitoring data stream
    U_Vc3SsiMonitorFifo : entity work.AxiStreamFifo
@@ -341,7 +389,6 @@ begin
    );
    
    -- If we have unused RX CTRL
-   pgpRxCtrl(2) <= AXI_STREAM_CTRL_UNUSED_C;
    pgpRxCtrl(3) <= AXI_STREAM_CTRL_UNUSED_C;
       
 end mapping;
