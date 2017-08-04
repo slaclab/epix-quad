@@ -107,7 +107,7 @@ architecture mapping of PgpFrontEnd is
    -- command signals
    signal ssiCmd_0    : SsiCmdMasterType;
    signal ssiCmd_2    : SsiCmdMasterType;
-   signal selecCmdSrc : sl;
+   signal selecCmdSrc, selecCmdSrc_i : sl;
    
 begin
    
