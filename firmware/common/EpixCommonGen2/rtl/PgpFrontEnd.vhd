@@ -321,7 +321,7 @@ begin
          mAxisMaster => pgpTxMasters(2),
          mAxisSlave  => pgpTxSlaves(2));     
    -- Lane 0, VC2 RX, Command processor in parallel with VC0 (implemented for EuXFEL)
-   U_Vc0SsiCmdMaster : entity work.SsiCmdMaster
+   U_Vc2SsiCmdMaster : entity work.SsiCmdMaster
       generic map (
          AXI_STREAM_CONFIG_G => SSI_PGP2B_CONFIG_C)   
       port map (
