@@ -62,6 +62,9 @@ set_property PACKAGE_PIN  T16 [get_ports {analogCardDigPwrEn}]
 set_property PACKAGE_PIN  U16 [get_ports {analogCardAnaPwrEn}]
 set_property IOSTANDARD LVCMOS25 [get_ports {analogCard*PwrEn}]
 
+set_property PACKAGE_PIN  V2  [get_ports {SYNC_ANA_DCDC}]
+set_property IOSTANDARD LVCMOS25 [get_ports {SYNC_ANA_DCDC}]
+
 set_property PACKAGE_PIN F6 [get_ports {gtRefClk0P}]
 #set_property PACKAGE_PIN E6 [get_ports {gtRefClk0N}]
 

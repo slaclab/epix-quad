@@ -56,6 +56,7 @@ entity EpixHR is
       -- Power Control
       analogCardDigPwrEn  : out sl;
       analogCardAnaPwrEn  : out sl;
+      SYNC_ANA_DCDC       : out sl;
       -- GT CLK Pins
       gtRefClk0P          : in  sl;
       gtRefClk0N          : in  sl;
@@ -347,5 +348,8 @@ begin
    asicSync       <= iAsicSync    when iFpgaOutputEn = '1' else 'Z';  
    asicTpulse     <= iAsicTpulse  when iFpgaOutputEn = '1' else 'Z';  
    asicStart      <= iAsicStart  when iFpgaOutputEn = '1' else 'Z';  
+
+   -- power 
+   SYNC_ANA_DCDC  <= 'Z';
    
 end RTL;
