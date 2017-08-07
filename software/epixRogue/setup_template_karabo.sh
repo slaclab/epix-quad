@@ -15,7 +15,7 @@ export EPIXROGUE_DIR=${PWD}
 #setenv SURF_DIR   ${PWD}/../surf
 export  SURF_DIR=${PWD}/../../firmware/submodules/surf
 #export  ROGUE_DIR=${PWD}/../rogue
-export  ROGUE_DIR=/usr/local/rogue/rogue
+export  ROGUE_DIR=/usr/local/rogue/rogue2
 
 # Setup python path
 export PYTHONPATH=${PWD}/python:${SURF_DIR}/python:${ROGUE_DIR}/python:${PYTHONPATH}

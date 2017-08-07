@@ -59,7 +59,7 @@ print("PGP Card Version: %x" % (pgpVc0.getInfo().version))
 
 # Add data stream to file as channel 1
 # File writer
-dataWriter = pyrogue.utilities.fileio.StreamWriter('dataWriter')
+dataWriter = pyrogue.utilities.fileio.StreamWriter(name = 'dataWriter')
 pyrogue.streamConnect(pgpVc0, dataWriter.getChannel(0x1))
 # Add pseudoscope to file writer
 pyrogue.streamConnect(pgpVc2, dataWriter.getChannel(0x2))
@@ -163,7 +163,7 @@ class MyRunControl(pyrogue.RunControl):
 ##############################
 class EpixBoard(pyrogue.Root):
     def __init__(self, guiTop, cmd, dataWriter, srp, **kwargs):
-        super().__init__('ePixBoard','ePix 100a Board', pollEn=False, **kwargs)
+        super().__init__(name = 'ePixBoard', description = 'ePix 100a Board', **kwargs)
         #self.add(MyRunControl('runControl'))
         self.add(dataWriter)
         self.guiTop = guiTop
@@ -198,8 +198,9 @@ if (PRINT_VERBOSE): pyrogue.streamTap(pgpVc0, dbgData)
 
 # Create GUI
 appTop = PyQt4.QtGui.QApplication(sys.argv)
-guiTop = pyrogue.gui.GuiTop('ePix100aGui')
+guiTop = pyrogue.gui.GuiTop(group = 'ePix100aGui')
 ePixBoard = EpixBoard(guiTop, cmd, dataWriter, srp)
+ePixBoard.start()
 guiTop.addTree(ePixBoard)
 guiTop.resize(1000,800)
 
