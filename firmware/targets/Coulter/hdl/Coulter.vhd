@@ -5,7 +5,7 @@
 -- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 09/30/2015
--- Last update: 2017-06-15
+-- Last update: 2017-07-10
 -- Platform   : Vivado 2014.4
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -647,7 +647,7 @@ begin
          SYS_WR_EN_G      => false,
          SYS_BYTE_WR_EN_G => false,
          COMMON_CLK_G     => true,
-         ADDR_WIDTH_G     => 10,
+         ADDR_WIDTH_G     => 16,
          DATA_WIDTH_G     => 32)
       port map (
          axiClk         => axilClk,                               -- [in]
