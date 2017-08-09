@@ -55,6 +55,7 @@ entity EpixHRCore is
       digitalPowerEn      : out sl;
       analogPowerEn       : out sl;
       fpgaOutputEn        : out sl;
+      syncAnaDcdc         : out sl;
       -- Clocks and reset
       powerGood           : in  sl;
       gtRefClk0P          : in  sl;
@@ -255,6 +256,13 @@ architecture top_level of EpixHRCore is
    
    signal asicValid     : slv(NUMBER_OF_ASICS_C-1 downto 0);
    signal asicData      : Slv20Array(NUMBER_OF_ASICS_C-1 downto 0);
+
+   -- HS DAC
+   signal WFdacDin_i    : sl;
+   signal WFdacSclk_i   : sl;
+   signal WFdacCsL_i    : sl;
+   signal WFdacLdacL_i  : sl;
+   signal WFdacClrL_i   : sl;
    
    attribute IODELAY_GROUP : string;
    attribute IODELAY_GROUP of U_IDelayCtrl : label is IODELAY_GROUP_G;
@@ -278,6 +286,7 @@ begin
    digitalPowerEn <= EpixHRConfig.powerEnable(0);
    analogPowerEn  <= EpixHRConfig.powerEnable(1);
    fpgaOutputEn   <= EpixHRConfig.powerEnable(2);
+   syncAnaDcdc    <= EpixHRConfig.powerEnable(3);
    -- Fixed state logic signals
    sfpDisable     <= '0';
    -- Triggers in
@@ -292,7 +301,13 @@ begin
    saciSelL       <= iSaciSelL;
    saciClk        <= iSaciClk;
    saciCmd        <= iSaciCmd;
-   
+
+
+   WFdacDin   <= WFdacDin_i;
+   WFdacSclk  <= WFdacSclk_i;
+   WFdacCsL   <= WFdacCsL_i;
+   WFdacLdacL <= WFdacLdacL_i;
+   WFdacClrL  <= WFdacClrL_i;
    
    tgOutMux <= 
       iAsic01DM1        when EpixHRConfig.epixhrDbgSel1 = "00000" else
@@ -309,6 +324,11 @@ begin
       asicRdClk         when EpixHRConfig.epixhrDbgSel1 = "01011" else
       bitClk            when EpixHRConfig.epixhrDbgSel1 = "01100" else
       byteClk           when EpixHRConfig.epixhrDbgSel1 = "01101" else
+      WFdacDin_i        when EpixHRConfig.epixhrDbgSel1 = "01110" else
+      WFdacSclk_i       when EpixHRConfig.epixhrDbgSel1 = "01111" else
+      WFdacCsL_i        when EpixHRConfig.epixhrDbgSel1 = "10000" else
+      WFdacLdacL_i      when EpixHRConfig.epixhrDbgSel1 = "10001" else
+      WFdacClrL_i       when EpixHRConfig.epixhrDbgSel1 = "10010" else
       '0';   
    
    mpsOutMux <=
@@ -326,6 +346,11 @@ begin
       asicRdClk         when EpixHRConfig.epixhrDbgSel2 = "01011" else
       bitClk            when EpixHRConfig.epixhrDbgSel2 = "01100" else
       byteClk           when EpixHRConfig.epixhrDbgSel2 = "01101" else
+      WFdacDin_i        when EpixHRConfig.epixhrDbgSel2 = "01110" else
+      WFdacSclk_i       when EpixHRConfig.epixhrDbgSel2 = "01111" else
+      WFdacCsL_i        when EpixHRConfig.epixhrDbgSel2 = "10000" else
+      WFdacLdacL_i      when EpixHRConfig.epixhrDbgSel2 = "10001" else
+      WFdacClrL_i       when EpixHRConfig.epixhrDbgSel2 = "10010" else
       '0';
    
    -- Temporary one-shot for grabbing PGP op code
@@ -1043,11 +1068,11 @@ begin
     port map (
       sysClk            => coreClk,
       sysClkRst         => axiRst,
-      dacDin            => WFDacDin,
-      dacSclk           => WFDacSclk,
-      dacCsL            => WFDacCsL,
-      dacLdacL          => WFDacLdacL,
-      dacClrL           => WFDacClrL,
+      dacDin            => WFDacDin_i,
+      dacSclk           => WFDacSclk_i,
+      dacCsL            => WFDacCsL_i,
+      dacLdacL          => WFDacLdacL_i,
+      dacClrL           => WFDacClrL_i,
       axilClk           => coreClk,
       axilRst           => axiRst,
       sAxilWriteMaster  => mAxiWriteMasters,
@@ -1114,7 +1139,6 @@ begin
    U_AxiMicronN25QCore : entity work.AxiMicronN25QCore
    generic map (
       TPD_G          => TPD_G,
-      PIPE_STAGES_G  => 1,
       AXI_CLK_FREQ_G => 100.0E+6,   -- units of Hz
       SPI_CLK_FREQ_G => 25.0E+6     -- units of Hz
    )
@@ -1129,15 +1153,11 @@ begin
       axiReadSlave   => mAxiReadSlaves(BOOTMEM_AXI_INDEX_C),
       axiWriteMaster => mAxiWriteMasters(BOOTMEM_AXI_INDEX_C),
       axiWriteSlave  => mAxiWriteSlaves(BOOTMEM_AXI_INDEX_C),
-      -- AXI Streaming Interface (Optional)
-      mAxisMaster    => open,
-      mAxisSlave     => AXI_STREAM_SLAVE_FORCE_C,
-      sAxisMaster    => AXI_STREAM_MASTER_INIT_C,
-      sAxisSlave     => open,
       -- Clocks and Resets
       axiClk         => coreClk,
       axiRst         => axiRst
    );   
-   
+
+
 end top_level;
 

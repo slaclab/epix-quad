@@ -110,6 +110,11 @@ architecture DacWaveformGenAxi_arch of DacWaveformGenAxi is
     signal r   : RegType := REG_INIT_C;
     signal rin : RegType;
 
+    attribute keep of dacDin : signal is "true";
+    attribute keep of dacSclk : signal is "true";
+    attribute keep of dacCsL : signal is "true";
+    attribute keep of dacLdacL : signal is "true";
+    attribute keep of dacClrL : signal is "true";
     attribute keep of dacData : signal is "true";
     attribute keep of dacCh : signal is "true";
     attribute keep of waveform_addr : signal is "true";

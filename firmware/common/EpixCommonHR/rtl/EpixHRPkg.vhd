@@ -148,7 +148,7 @@ package EpixHRPkg is
    );
    
    type EpixHRConfigType is record
-      powerEnable          : slv(2 downto 0);
+      powerEnable          : slv(3 downto 0);
       asicMask             : slv(NUMBER_OF_ASICS_C-1 downto 0);
       acqCnt               : slv(31 downto 0);
       requestStartupCal    : sl;

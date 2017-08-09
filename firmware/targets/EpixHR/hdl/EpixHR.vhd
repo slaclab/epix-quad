@@ -213,6 +213,7 @@ begin
          digitalPowerEn      => analogCardDigPwrEn,
          analogPowerEn       => analogCardAnaPwrEn,
          fpgaOutputEn        => iFpgaOutputEn,
+         syncAnaDcdc         => SYNC_ANA_DCDC,
          -- Clocks and reset
          powerGood           => powerGood,
          gtRefClk0P          => gtRefClk0P,
@@ -349,7 +350,5 @@ begin
    asicTpulse     <= iAsicTpulse  when iFpgaOutputEn = '1' else 'Z';  
    asicStart      <= iAsicStart  when iFpgaOutputEn = '1' else 'Z';  
 
-   -- power 
-   SYNC_ANA_DCDC  <= 'Z';
    
 end RTL;
