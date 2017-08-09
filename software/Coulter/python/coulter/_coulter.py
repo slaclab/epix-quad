@@ -45,7 +45,7 @@ import pprint
 
 
 class CoulterRootBase(pr.Root):
-    def __init__(self, vcReg, vcData, vcTrigger, **kwargs):
+    def __init__(self, vcReg, vcData, vcTrigger, pollEn=False, **kwargs):
 
         super().__init__(name="CoulterDaq", description="Coulter Data Acquisition", **kwargs)
 
@@ -53,32 +53,32 @@ class CoulterRootBase(pr.Root):
         self.add(CoulterRunControl("RunControl"))
 
         # add DataWriter
-        dataWriter = pyrogue.utilities.fileio.StreamWriter('dataWriter')
+        dataWriter = pyrogue.utilities.fileio.StreamWriter(name='dataWriter')
         self.add(dataWriter)
 
         
         # Create SRP interfaces and attach to vcReg channels
 
         for i, vc in enumerate(vcReg):
-            srp = rogue.protocols.srp.SrpV0()
+            srp = rogue.protocols.srp.SrpV3()
             pr.streamConnectBiDir(vc, srp)
-            self.add(Coulter(name="Coulter[{}]".format(i), memBase=srp, offset=0, enabled=True))
+            self.add(Coulter(name=f'Coulter[{i}]', memBase=srp, offset=0, enabled=True))
 
             # Debug
-            logging.getLogger("pyrogue.SRP[{}]".format(i)).setLevel(logging.INFO)        
-            dbgSrp = rogue.interfaces.stream.Slave()
-            dbgSrp.setDebug(16, "SRP[{}]".format(i))
-            pr.streamTap(srp, dbgSrp)
+            #logging.getLogger("pyrogue.SRP[{}]".format(i)).setLevel(logging.INFO)        
+            #dbgSrp = rogue.interfaces.stream.Slave()
+            #dbgSrp.setDebug(16, "SRP[{}]".format(i))
+            #pr.streamTap(srp, dbgSrp)
             
 
         # Connect data vc to dataWriter
         for i, vc in enumerate(vcData):
             pr.streamConnect(vc, dataWriter.getChannel(i))
 
-            logging.getLogger("pyrogue.DATA[{}]".format(i)).setLevel(logging.INFO)                
-            dbgData = rogue.interfaces.stream.Slave()
-            dbgData.setDebug(32, "DATA[{}]".format(i))
-            pr.streamTap(vcData[i], dbgData)
+            #logging.getLogger("pyrogue.DATA[{}]".format(i)).setLevel(logging.INFO)                
+            #dbgData = rogue.interfaces.stream.Slave()
+            #dbgData.setDebug(32, "DATA[{}]".format(i))
+            #pr.streamTap(vcData[i], dbgData)
             
         
         if len(vcReg) > 1:
@@ -88,9 +88,11 @@ class CoulterRootBase(pr.Root):
         def Trigger():
             vcTrigger.sendOpCode(0x55)
 
-        @self.command(base='hex')
-        def SendOpCode(code):
-            vcTrigger.sendOpCode(code)
+        @self.command()
+        def SendOpCode(arg):
+            vcTrigger.sendOpCode(arg)
+
+        self.start(pollEn=pollEn)
 
 class CoulterRoot(CoulterRootBase):
     def __init__(self):
@@ -104,7 +106,8 @@ class CoulterRoot(CoulterRootBase):
         vcReg = [rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',i,0) for i in range(2)] # Registers
         vcData = [rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',i,1) for i in range(2)] # Data
         vcTrigger = vcReg[0]
-
+        
+        super().__init__(vcReg=[vcReg], vcData=[vcData], vcTrigger=vcTrigger)
         
 
 class CoulterSimRoot(CoulterRootBase):
@@ -115,9 +118,9 @@ class CoulterSimRoot(CoulterRootBase):
 
         
         # Simulated PGP interface
-        vcReg = pyrogue.simulation.StreamSim('localhost', 0, 1, ssi=True)
-        vcData = pyrogue.simulation.StreamSim('localhost', 1, 1, ssi=True)
-        vcTrigger = pyrogue.simulation.StreamSim('localhost', 4, 1, ssi=True)
+        vcReg = pyrogue.simulation.StreamSim(host='localhost', dest=0, uid=1, ssi=True)
+        vcData = pyrogue.simulation.StreamSim(host='localhost', dest=1, uid=1, ssi=True)
+        vcTrigger = pyrogue.simulation.StreamSim(host='localhost', dest=4, uid=1, ssi=True)
 
 
 
@@ -126,10 +129,10 @@ class CoulterSimRoot(CoulterRootBase):
         pr.streamTap(vcData, parser)
 
         # Call generic super constructor
-        super().__init__(vcReg=[vcReg], vcData=[vcData], vcTrigger=vcTrigger, pollEn=False)
+        super().__init__(vcReg=[vcReg], vcData=[vcData], vcTrigger=vcTrigger)
 
         # Simulation needs longer txn timeouts
-        self.setTimeout(100000000)
+        self.setTimeout(1000)
 
         
 
@@ -137,7 +140,7 @@ class CoulterSimRoot(CoulterRootBase):
 # Custom run control
 class CoulterRunControl(pr.RunControl):
    def __init__(self,name):
-      pr.RunControl.__init__(self,name,'Run Controller', rates={1:'1 Hz', 10:'10 Hz', 30:'30 Hz', 0:'Auto'})
+      pr.RunControl.__init__(self,name='Run Controller', rates={1:'1 Hz', 10:'10 Hz', 30:'30 Hz', 0:'Auto'})
 #      self._thread = None
 
 #    def _setRunState(self,dev,var,value):
@@ -176,20 +179,22 @@ class Coulter(pr.Device):
         super(self.__class__, self).__init__(**kwargs)
 
         self.add((
-#            surf.misc.GenericMemory(name="TestRam", nelms=2**10-1, bitSize=32, offset=0x000B0000, hidden=False),
-#            surf.xilinx.Xadc(offset=0x00080000),
+            surf.xilinx.Xadc(offset=0x00080000),
             surf.axi.AxiVersion(offset=0x00000000),
-#            AcquisitionControl(name='AcquisitionControl', offset=0x00060000, clkFreq=125.0e6),
+            AcquisitionControl(name='AcquisitionControl', offset=0x00060000, clkFreq=125.0e6),
             ReadoutControl(name='ReadoutControl', offset=0x000A0000),
             ELine100Config(name='ASIC[0]', offset=0x00010000, enabled=False),
             ELine100Config(name='ASIC[1]', offset=0x00020000, enabled=False),
             surf.devices.analog_devices.Ad9249Config(name='AdcConfig', offset=0x00030000, chips=1, enabled=False),
             surf.devices.analog_devices.Ad9249ReadoutGroup(name = 'AdcReadoutBank[0]', offset=0x00040000, channels=6),
             surf.devices.analog_devices.Ad9249ReadoutGroup(name = 'AdcReadoutBank[1]', offset=0x00050000, channels=6),
-            CoulterPgp(name='CoulterPgp', offset=0x00070000)))
+            #CoulterPgp(name='CoulterPgp', offset=0x00070000),
+        ))
+
+
         
         
-#        self.Xadc.simpleView()
+        self.Xadc.simpleView()
 
 class CoulterPgp(pr.Device):
     def __init__(self, **kwargs):
@@ -208,7 +213,12 @@ class ELine100Config(pr.Device):
 
         super(self.__class__, self).__init__(**kwargs)
 
-        self.add(pr.Variable(name = "EnaAnalogMonitor", offset = 0x80, bitSize=1, base='bool', description="Set the ENA_AMON pin on the ASIC"))
+        self.add(pr.RemoteVariable(
+            name = "EnaAnalogMonitor",
+            offset = 0x80,
+            bitSize=1,
+            base=pr.Bool,
+            description="Set the ENA_AMON pin on the ASIC"))
              
         self.add((
             pr.RemoteVariable(name = "pbitt",   offset = 0x30, bitOffset = 0 , bitSize = 1,  description = "Test Pulse Polarity (0=pos, 1=neg)"),
@@ -257,10 +267,10 @@ class ELine100Config(pr.Device):
            
         self.add(pr.RemoteCommand(name = "WriteAsic",
                                   description = "Write the current configuration registers into the ASIC",
-                                  offset = 0x40, bitSize = 1, bitOffset = 0, hidden = False, mode='WO',
+                                  offset = 0x40, bitSize = 1, bitOffset = 0, hidden = False, 
                                   function = pr.BaseCommand.touchOne))
         self.add(pr.RemoteCommand(name = "ReadAsic", description = "Read the current configuration registers from the ASIC",
-                                  offset = 0x44, bitSize = 1, bitOffset = 0, hidden = False, mode='WO',
+                                  offset = 0x44, bitSize = 1, bitOffset = 0, hidden = False, 
                                   function = pr.BaseCommand.touchOne))
 
 #         for n,v in self.variables.items():
@@ -328,126 +338,216 @@ class ReadoutControl(pr.Device):
         super(self.__class__, self).__init__(**kwargs)
 
         for i in range(11):
-            self.add(AdcStreamFilter(name='AdcStreamFilter[{}]'.format(i), offset=i*2**12))
+            self.add(AdcStreamFilter(name=f'AdcStreamFilter[{i}]', offset=i*2**12))
 
                      
 
-# class AcquisitionControl(pr.Device):
-#     def __init__(self, clkFreq=156.25e6, **kwargs):
+class AcquisitionControl(pr.Device):
+    def __init__(self, clkFreq=156.25e6, **kwargs):
 
-#         super(self.__class__, self).__init__(description="Configure Coulter Acquisition Parameters", **kwargs)
+        super(self.__class__, self).__init__(description="Configure Coulter Acquisition Parameters", **kwargs)
 
-#         self.clkFreq = clkFreq
-#         self.clkPeriod = 1/clkFreq
+        self.clkFreq = clkFreq
+        self.clkPeriod = 1/clkFreq
 
-#         def addPeriodLink(variables):
+        def addPeriodLink(name, variables):
+            self.add(pr.LinkVariable(
+                name=name
+                units='us',
+                disp='{:.3f}',
+                linkedGet=self.periodConverter))
+
+        def addFrequencyLink(name, variables):
+            self.add(pr.LinkVariable(
+                name=name
+                units='us',
+                disp='{:.3f}',
+                linkedGet=self.frequencyConverter))
             
-#             def linkedGet(dev, var, read):
-#                 return self.clkPeriod * self._count(variables) * 1e6
-            
-#             self.add(pr.LinkVariable(name='{}Period'.format(var.name),
-#                                      mode='RO', units='us', value=0.0, disp='{:df}',
-#                                      linkedGet=linkedGet))
 
-#         # SC Params
-#         self.add(pr.RemoteVariable(name='ScDelay', description="Delay between trigger and SC rising edge",
-#                                     offset=0x00, bitSize=16, bitOffset=0))
+        # SC Params
+        self.add(pr.RemoteVariable(
+            name='ScDelay',
+            description="Delay between trigger and SC rising edge",
+            offset=0x00,
+            bitSize=16,
+            bitOffset=0))
 
-#         addPeriodLink([self.ScDelay])
+        addPeriodLink('ScDelayPeriod', [self.ScDelay])
 
-#         self.add(pr.RemoteVariable(name='ScPosWidth', description="SC high time (baseline sampling)",
-#                          offset=0x04, bitSize=16, bitOffset=0, base='hex'))
-#         self.add(pr.RemoteVariable(name='ScNegWidth', description="SC low time",
-#                          offset=0x08, bitSize=16, bitOffset=0, base='hex'))
+        self.add(pr.RemoteVariable(
+            name='ScPosWidth',
+            description="SC high time (baseline sampling)",
+            offset=0x04,
+            bitSize=16,
+            bitOffset=0,
+            base=pr.UInt))
+        
+        self.add(pr.RemoteVariable(
+            name='ScNegWidth',
+            description="SC low time",
+            offset=0x08,
+            bitSize=16,
+            bitOffset=0,
+            base=pr.UInt))
                  
-#         addPeriodLink([self.ScPosWidth, self.ScNegWidth])
-#         addFrequencyLink([self.ScPosWidth, self.ScNegWidth])
+        addPeriodLink('ScPeriod', [self.ScPosWidth, self.ScNegWidth])
+        addFrequencyLink('ScFrequency', [self.ScPosWidth, self.ScNegWidth])
         
-#         self.add(pr.RemoteVariable(name="ScCount", description="Number of slots per acquisition",
-#                                    offset=0x0C, bitSize=16, bitOffset=0))
+        self.add(pr.RemoteVariable(
+            name="ScCount",
+            description="Number of slots per acquisition",
+            offset=0x0C,
+            bitSize=16,
+            bitOffset=0))
         
-#         # MCK params
-#         self.add(pr.RemoteVariable(name='MckDelay', description="Delay between trigger and SC rising edge",
-#                                    offset=0x10, bitSize=16, bitOffset=0, base='hex')
+        # MCK params
+        self.add(pr.RemoteVariable(
+            name='MckDelay',
+            description="Delay between trigger and SC rising edge",
+            offset=0x10,
+            bitSize=16,
+            bitOffset=0,
+            base=pr.UInt))
                  
-#         addPeriodLink([self.MckDelay])
+        addPeriodLink('MckDelayPeriod', [self.MckDelay])
+        
+        self.add(pr.RemoteVariable(
+            name='MckPosWidth',
+            description="SC high time (baseline sampling)",
+            offset=0x14,
+            bitSize=16,
+            bitOffset=0))
+                 
+        self.add(pr.RemoteVariable(
+            name='MckNegWidth',
+            description="SC low time",
+            offset=0x18,
+            bitSize=16,
+            bitOffset=0,
+            base=pr.UInt))
 
+        addPeriodLink('MckPeriod', [self.MckPosWidth, self.MckNegWidth])
+        addFrequencyLink('MckFrequency', [self.MckPosWidth, self.MckNegWidth])
         
-#         self.add(pr.RemoteVariable(name='MckPosWidth', description="SC high time (baseline sampling)",
-#                          offset=0x14, bitSize=16, bitOffset=0)
-#         self.add(pr.RemoteVariable(name='MckNegWidth', description="SC low time",
-#                          offset=0x18, bitSize=16, bitOffset=0, base='hex')
+        self.add(pr.RemoteVariable(
+            name="MckCount",
+            description="Number of MCK pulses per slot (should always be 16)",
+            offset=0x1C,
+            bitSize=8,
+            bitOffset=0,
+            base=pr.UInt))
         
-        
-#         self.add(pr.RemoteVariable(name="MckCount", description="Number of MCK pulses per slot (should always be 16)",
-#                          offset=0x1C, bitSize=8, bitOffset=0, base='hex')
-        
-#         # ADC CLK params
-#         self.add(pr.RemoteVariable(name='AdcClkDelay', description="Delay between trigger and new rising edge of ADC clk",
-#                          offset=0x28, bitSize=16, bitOffset=0, base='hex')
-#         self.add(pr.RemoteVariable(name='AdcClkDelayTime', description="Delay between trigger and new rising edge of ADC clk",
-#                          mode='RO',  base='string',
-#                          getFunction=self.periodConverter(), dependencies=[self.AdcClkDelay])
-        
-#         self.add(pr.RemoteVariable(name='AdcClkPosWidth', description="AdcClk high time",
-#                          offset=0x20, bitSize=16, bitOffset=0, base='hex')
-#         self.add(pr.RemoteVariable(name='AdcClkNegWidth', description="AdcClk low time",
-#                          offset=0x24, bitSize=16, bitOffset=0, base='hex')
-#         self.add(pr.RemoteVariable(name="AdcClkPeriod", description="Adc Clk period",
-#                          mode = 'RO',  base='string',
-#                          getFunction=self.periodConverter(), dependencies=[self.AdcClkPosWidth, self.AdcClkNegWidth])
-#         self.add(pr.RemoteVariable(name='AdcFrequency', mode='RO', base='string', getFunction=self.frequencyConverter(),
-#                          dependencies=[self.AdcClkPosWidth, self.AdcClkNegWidth])
-        
-        
-#         # ADC window
-#         self.add(pr.RemoteVariable(name="AdcWindowDelay", description="Delay between first mck of slot at start of adc sample capture",
-#                          offset=0x2c, bitSize=10, bitOffset=0, base='uint')
-#         self.add(pr.RemoteVariable(name="AdcWindowDelayTime", description="AdcWindowDelay in readable units",
-#                          mode = 'RO',  base='string',
-#                          getFunction=self.periodConverter(), dependencies=[self.AdcWindowDelay])
-        
-#         #There are probably useless
-#         self.add(pr.RemoteVariable(name="MckDisable", description="Disables MCK generation",
-#                          offset=0x30, bitSize=1, bitOffset=0, base = 'bool')
-#         self.add(pr.RemoteVariable(name="ClkDisable", description="Disable SC, MCK and AdcClk generation",
-#                          offset=0x34, bitSize=1, bitOffset=0, base = 'bool')
+        # ADC CLK params
+        self.add(pr.RemoteVariable(
+            name='AdcClkDelay',
+            description="Delay between trigger and new rising edge of ADC clk",
+            offset=0x28,
+            bitSize=16,
+            bitOffset=0,
+            base=pr.UInt))
 
-#         self.add(pr.Variable(name="ScFallCount", offset=0x3C, base='hex', mode='RO'))
+        addPeriodLink('AdcClkDelayTime', [self.AdcClkDelay])
+                 
+        self.add(pr.RemoteVariable(
+            name='AdcClkPosWidth',
+            description="AdcClk high time",
+            offset=0x20,
+            bitSize=16,
+            bitOffset=0,
+            base=pr.UInt))
+                 
+        self.add(pr.RemoteVariable(
+            name='AdcClkNegWidth',
+            description="AdcClk low time",
+            offset=0x24,
+            bitSize=16,
+            bitOffset=0,
+            base=pr.UInt))
 
-#         self.add(pr.Variable(name="InvertMck", offset=0x44, bitSize=1, base='bool', mode='RW'))
+        addPeriodLink('AdcClkPeriod', [self.AdcClkPosWidth, self.AdcClkNegWidth])
+        addFrequencyLink('AdcFrequency', [self.AdcClkPosWidth, self.AdcClkNegWidth])
+                 
+        
+        # ADC window
+        self.add(pr.RemoteVariable(
+            name="AdcWindowDelay",
+            description="Delay between first mck of slot at start of adc sample capture",
+            offset=0x2c,
+            bitSize=10,
+            bitOffset=0,
+            disp='{:d}',
+            base=pr.UInt))
 
-#         def reset(dev, cmd, arg):
+        addPeriodLink('AdcWindowDelayTime', [self.AdcWindowDelay])
+                 
+        #There are probably useless
+        self.add(pr.RemoteVariable(
+            name="MckDisable",
+            description="Disables MCK generation",
+            offset=0x30,
+            bitSize=1,
+            bitOffset=0,
+            base = pr.Bool))
+                 
+        self.add(pr.RemoteVariable(
+            name="ClkDisable",
+            description="Disable SC, MCK and AdcClk generation",
+            offset=0x34,
+            bitSize=1,
+            bitOffset=0,
+            base=pr.Bool))
+
+        self.add(pr.RemoteVariable(
+            name="ScFallCount",
+            offset=0x3C,
+            base=pr.UInt,
+            mode='RO'))
+
+        self.add(pr.RemoteVariable(
+            name="InvertMck",
+            offset=0x44,
+            bitSize=1,
+            base=pr.Bool,
+            mode='RW'))
+
+
+#         def reset():
 #             print('Reseting ASICs')
 #             cmd.set(1)
 #             time.sleep(1)
 #             cmd.set(0)
 #             print('Done')            
         
-#         # Asic reset
-#         self.addCommand(name = "ResetAsic", description = "Reset the ELine100 ASICS",
-#                         offset=0x38, bitSize=1, bitOffset=0, function=reset)
+        # Asic reset
+        self.add(pr.RemoteCommand(
+            name = "ResetAsic",
+            description = "Reset the ELine100 ASICS",
+            offset=0x38,
+            bitSize=1,
+            bitOffset=0,
+            function=pr.RemoteCommand.toggle))
 
 
-#     @staticmethod
-#     def _count(vars):
-#         count = 2
-#         for v in vars:
-#             count += v.get(read=False)
-#         #print('_count-> {}'.format(count))
-#         return count
+    @staticmethod
+    def _count(vars):
+        count = 2
+        for v in vars:
+            count += v.value()
+        #print('_count-> {}'.format(count))
+        return count
 
-#     def periodConverter(self):
-#         def func(dev, var):
-#             return '{:.3f} us'.format(self.clkPeriod * self._count(var.dependencies) * 1e6)
-#         return func
+    @staticmethod
+    def periodConverter(var):
+        return self.clkPeriod.value() * self._count(var.dependencies) * 1e6)
+#return '{:.3f} us'.format(                 
 
-    
-#     def frequencyConverter(self):
-#         def func(dev, var):         
-#             return '{:.3f} kHz'.format(1/(self.clkPeriod * self._count(var.dependencies)) * 1e-3)
-#         return func
-
+    @staticmethod
+    def frequencyConverter(var):
+        return (1/(self.clkPeriod.value() * self._count(var.dependencies)) * 1e-3)
+ 
+#return '{:.3f} kHz'.format
+                 
 class CoulterFrameParser(rogue.interfaces.stream.Slave):
 
     def __init__(self):
