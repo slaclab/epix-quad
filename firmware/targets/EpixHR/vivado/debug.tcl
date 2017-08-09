@@ -18,50 +18,53 @@ source -quiet $::env(RUCKUS_DIR)/vivado_proc.tcl
 ############################
 ## Open the synthesis design
 ############################
-#open_run synth_1
+open_run synth_1
 
 ###############################
 ## Set the name of the ILA core
 ###############################
-#set ilaName u_ila_1
+set ilaName u_ila_1
 
 ##################
 ## Create the core
 ##################
-#CreateDebugCore ${ilaName}
+CreateDebugCore ${ilaName}
 
 #######################
 ## Set the record depth
 #######################
-#set_property C_DATA_DEPTH 2048 [get_debug_cores ${ilaName}]
+set_property C_DATA_DEPTH 2048 [get_debug_cores ${ilaName}]
 
 #################################
 ## Set the clock for the ILA core
 #################################
-#SetDebugCoreClk ${ilaName} {U_EpixHR/coreClk}
+SetDebugCoreClk ${ilaName} {U_EpixHR/coreClk}
 
 #######################
 ## Set the debug Probes
 #######################
 
-#ConfigProbe ${ilaName} {U_EpixHR/dacDin}
-#ConfigProbe ${ilaName} {U_EpixHR/dacSclk}
-#ConfigProbe ${ilaName} {U_EpixHR/dacCsL}
-#ConfigProbe ${ilaName} {U_EpixHR/dacLdacL}
-#ConfigProbe ${ilaName} {U_EpixHR/dacClrL}
-#ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/dacData[*]}
-#ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/dacCh[*]}
-#ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/waveform_addr[*]}
-#ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/waveform_dout[*]}
-#ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/DAC8812_0/curState[*]}
-#ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/DAC8812_0/dacStrobe}
+ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/dacDin}
+ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/dacSclk}
+ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/dacCsL}
+ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/dacLdacL}
+ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/dacClrL}
+ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/dacData[*]}
+ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/dacCh[*]}
+ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/waveform_addr[*]}
+ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/waveform_dout[*]}
+ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/DAC8812_0/curState[*]}
+ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/DAC8812_0/dacStrobe}
 
 
+### Delete the last unused port
+delete_debug_port [get_debug_ports [GetCurrentProbe ${ilaName}]]
 
 ##########################
 ## Write the port map file
 ##########################
-#WriteDebugProbes ${ilaName} ${PROJ_DIR}/images/debug_probes.ltx
+WriteDebugProbes ${ilaName} ${PROJ_DIR}/images/debug_probes.ltx
+
 
 
 ################################################################
