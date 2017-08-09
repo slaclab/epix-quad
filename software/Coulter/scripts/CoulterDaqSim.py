@@ -25,15 +25,18 @@ import signal
 import atexit
 import PyQt4.QtGui
 import PyQt4.QtCore
+import rogue
 
+rogue.Logging.setFilter('pyrogue.SrpV3', rogue.Logging.Debug)
 
     
 # Create Coulter Root
 simTop = coulter.CoulterSimRoot()
 
+
 # Create GUI
 appTop = PyQt4.QtGui.QApplication(sys.argv)
-guiTop = pyrogue.gui.GuiTop('CoulterGui')
+guiTop = pyrogue.gui.GuiTop(group='CoulterGui')
 guiTop.addTree(simTop)
 guiTop.resize(1000,1000)
 
