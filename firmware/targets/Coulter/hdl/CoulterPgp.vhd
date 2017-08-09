@@ -5,7 +5,7 @@
 -- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-06-03
--- Last update: 2017-03-13
+-- Last update: 2017-07-18
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -407,37 +407,38 @@ begin
          axilWriteSlave  => locAxilWriteSlaves(PGP_AXI_INDEX_C));  -- [out]
 
 -- Lane 0, VC0 RX/TX, Register access control        
-   U_Vc0AxiMasterRegisters : entity work.SrpV0AxiLite
+   U_Vc0AxiMasterRegisters : entity work.SrpV3AxiLite
       generic map (
          TPD_G               => TPD_G,
-         RESP_THOLD_G        => 1,
-         SLAVE_READY_EN_G    => false,
-         EN_32BIT_ADDR_G     => false,
-         USE_BUILT_IN_G      => false,
-         GEN_SYNC_FIFO_G     => false,
-         FIFO_ADDR_WIDTH_G   => 9,
-         FIFO_PAUSE_THRESH_G => 2**8,
+         SLAVE_READY_EN_G    => SIMULATION_G,
+--          RESP_THOLD_G        => 1,
+--          SLAVE_READY_EN_G    => false,
+--          EN_32BIT_ADDR_G     => false,
+--          USE_BUILT_IN_G      => false,
+--          GEN_SYNC_FIFO_G     => false,
+--          FIFO_ADDR_WIDTH_G   => 9,
+--          FIFO_PAUSE_THRESH_G => 2**8,
          AXI_STREAM_CONFIG_G => SSI_PGP2B_CONFIG_C
          )
       port map (
          -- Streaming Slave (Rx) Interface (sAxisClk domain) 
-         sAxisClk            => pgpRxClk,
-         sAxisRst            => pgpRxRst,
-         sAxisMaster         => pgpRxMasters(0),
-         sAxisSlave          => pgpRxSlaves(0),
-         sAxisCtrl           => pgpRxCtrl(0),
+         sAxisClk         => pgpRxClk,
+         sAxisRst         => pgpRxRst,
+         sAxisMaster      => pgpRxMasters(0),
+         sAxisSlave       => pgpRxSlaves(0),
+         sAxisCtrl        => pgpRxCtrl(0),
          -- Streaming Master (Tx) Data Interface (mAxisClk domain)
-         mAxisClk            => pgpTxClk,
-         mAxisRst            => pgpTxRst,
-         mAxisMaster         => pgpTxMasters(0),
-         mAxisSlave          => pgpTxSlaves(0),
+         mAxisClk         => pgpTxClk,
+         mAxisRst         => pgpTxRst,
+         mAxisMaster      => pgpTxMasters(0),
+         mAxisSlave       => pgpTxSlaves(0),
          -- AXI Lite Bus (axiLiteClk domain)
-         axiLiteClk          => pgpTxClk,
-         axiLiteRst          => pgpTxRst,
-         mAxiLiteWriteMaster => mAxilWriteMaster,
-         mAxiLiteWriteSlave  => mAxilWriteSlave,
-         mAxiLiteReadMaster  => mAxilReadMaster,
-         mAxiLiteReadSlave   => mAxilReadSlave);
+         axilClk          => pgpTxClk,
+         axilRst          => pgpTxRst,
+         mAxilWriteMaster => mAxilWriteMaster,
+         mAxilWriteSlave  => mAxilWriteSlave,
+         mAxilReadMaster  => mAxilReadMaster,
+         mAxilReadSlave   => mAxilReadSlave);
 
 -- Lane 0, VC1 TX, streaming data out
    U_AxiStreamFifoV2_1 : entity work.AxiStreamFifoV2
@@ -462,15 +463,15 @@ begin
          SLAVE_AXI_CONFIG_G     => COULTER_AXIS_CFG_C,
          MASTER_AXI_CONFIG_G    => SSI_PGP2B_CONFIG_C)
       port map (
-         sAxisClk    => pgpTxClk,           -- [in]
-         sAxisRst    => pgpTxRst,           -- [in]
-         sAxisMaster => userAxisMaster,     -- [in]
-         sAxisSlave  => userAxisSlave,      -- [out]
-         sAxisCtrl   => userAxisCtrl,       -- [out]
-         mAxisClk    => pgpTxClk,           -- [in]
-         mAxisRst    => pgpTxRst,           -- [in]
-         mAxisMaster => pgpTxMasters(1),    -- [out]
-         mAxisSlave  => pgpTxSlaves(1));    -- [in]
+         sAxisClk    => pgpTxClk,            -- [in]
+         sAxisRst    => pgpTxRst,            -- [in]
+         sAxisMaster => userAxisMaster,      -- [in]
+         sAxisSlave  => userAxisSlave,       -- [out]
+         sAxisCtrl   => userAxisCtrl,        -- [out]
+         mAxisClk    => pgpTxClk,            -- [in]
+         mAxisRst    => pgpTxRst,            -- [in]
+         mAxisMaster => pgpTxMasters(1),     -- [out]
+         mAxisSlave  => pgpTxSlaves(1));     -- [in]
 
 
 --    U_Vc1SsiTxFifo : entity work.AxiStreamFifo
