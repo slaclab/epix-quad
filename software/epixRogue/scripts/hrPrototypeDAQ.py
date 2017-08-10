@@ -56,7 +56,7 @@ print("PGP Card Version: %x" % (pgpVc0.getInfo().version))
 
 # Add data stream to file as channel 1
 # File writer
-dataWriter = pyrogue.utilities.fileio.StreamWriter('dataWriter')
+dataWriter = pyrogue.utilities.fileio.StreamWriter(name = 'dataWriter')
 pyrogue.streamConnect(pgpVc0, dataWriter.getChannel(0x1))
 # Add pseudoscope to file writer
 pyrogue.streamConnect(pgpVc2, dataWriter.getChannel(0x2))
@@ -123,23 +123,27 @@ class MyRunControl(pyrogue.RunControl):
 ##############################
 class EpixBoard(pyrogue.Root):
     def __init__(self, guiTop, cmd, dataWriter, srp, **kwargs):
-        super().__init__('ePixBoard','HR prototype Board', pollEn=True, **kwargs)
-        self.add(MyRunControl('runControl'))
+        super().__init__(name = 'ePixBoard', description = 'HR prototype Board', **kwargs)
+        #self.add(MyRunControl('runControl'))
         self.add(dataWriter)
         self.guiTop = guiTop
-
-        # Add Devices
-        self.add(fpga.HrPrototype(name='hrFPGA', offset=0, memBase=srp, hidden=False, enabled=True))
 
         @self.command()
         def Trigger():
             cmd.sendCmd(0, 0)
 
+        # Add Devices
+        self.add(fpga.HrPrototype(name='hrFPGA', offset=0, memBase=srp, hidden=False, enabled=True))
+        self.add(pyrogue.RunControl(name = 'runControl', description='Run Controller hr prototype', cmd=self.Trigger, rates={1:'1 Hz', 2:'2 Hz', 4:'4 Hz', 8:'8 Hz', 10:'10 Hz', 30:'30 Hz', 60:'60 Hz', 120:'120 Hz'}))
+
+
+
 
 # Create GUI
 appTop = PyQt4.QtGui.QApplication(sys.argv)
-guiTop = pyrogue.gui.GuiTop('HR Gui')
+guiTop = pyrogue.gui.GuiTop(group = 'HRGui')
 ePixBoard = EpixBoard(guiTop, cmd, dataWriter, srp)
+ePixBoard.start()
 guiTop.addTree(ePixBoard)
 
 # Viewer gui

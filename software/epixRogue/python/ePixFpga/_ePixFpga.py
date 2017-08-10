@@ -51,7 +51,7 @@ class Cpix2(pr.Device):
       
       super(self.__class__, self).__init__(**kwargs)
       self.add((
-            axi.AxiVersion(                                                   offset=0x00000000),
+            axi.AxiVersion(                   name="AxiVersion", description="AXI-Lite Version Module", memBase=None, offset=0x00000000, hidden =  False, expand=False),
             Cpix2FpgaRegisters(               name="Cpix2FpgaRegisters",      offset=0x01000000, enabled=True),
             TriggerRegisters(                 name="TriggerRegisters",        offset=0x02000000, enabled=True, expand=False),
             SlowAdcRegisters(                 name="SlowAdcRegisters",        offset=0x03000000, enabled=False, expand=False),
@@ -201,7 +201,7 @@ class HrPrototype(pr.Device):
       
         super(self.__class__, self).__init__(**kwargs)
         self.add((
-            axi.AxiVersion(offset=0x00000000),
+            axi.AxiVersion(name="AxiVersion", description="AXI-Lite Version Module", memBase=None, offset=0x00000000, hidden =  False, expand=False),
             HrPrototypeFpgaRegisters(name="HrPrototypeFpgaRegisters", offset=0x01000000),
             TriggerRegisters(name="TriggerRegisters", offset=0x02000000, expand=False),
             SlowAdcRegisters(name="SlowAdcRegisters", offset=0x03000000, expand=False),
@@ -218,7 +218,8 @@ class HrPrototype(pr.Device):
             analog_devices.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]', offset=0x0A001000, enabled=False, expand=False),
             OscilloscopeRegisters(name='Oscilloscope', offset=0x0C000000, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum),
             HighSpeedDacRegisters(name='High Speed DAC', offset=0x0D000000, enabled=True, expand=False, HsDacEnum = HsDacEnum),
-            surf.misc.GenericMemory(name='waveformMem', offset=0x0E000000,nelms=1024),
+            #surf.misc.GenericMemory(name='waveformMem', offset=0x0E000000,nelms=1024, hidden=False),
+            pr.MemoryDevice(name='WaveformMem',offset=0x0E000000, wordBitSize=16, stride=4, size=1024*4),
             MicroblazeLog(name='MicroblazeLog', offset=0x0B000000, expand=False),
             MMCM7Registers(name='MMCM7Registers', offset=0x0F000000, enabled=False, expand=False)))
 
@@ -230,21 +231,23 @@ class HrPrototype(pr.Device):
         self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
         if os.path.splitext(self.filename)[1] == '.csv':
             waveform = np.genfromtxt(self.filename, delimiter=',', dtype='uint16')
-            if waveform.shape == (1024,):
-                for x in range (0, 1024):
-                    self.waveformMem.Mem[x].set(int(waveform[x]))
+            #if waveform.shape == (1024,):
+                #for x in range (0, 1024):
+                #    self.WaveformMem.Mem[x].set(int(waveform[x]))
+                #self.WaveformMem._setDict({0, waveform.tolist()})
+                #self.WaveformMem.writeBlocks()
 
-            else:
-                print('wrong csv file format')
+            #else:
+            #    print('wrong csv file format')
 
     def fnGetWaveform(self, dev,cmd,arg):
         """GetTestBitmap command function"""
         self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
         if os.path.splitext(self.filename)[1] == '.csv':
             readBack = np.zeros((1024),dtype='uint16')
-            for x in range (0, 1024):
-                readBack[x] = self.waveformMem.Mem[x].get()
-            np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
+            #for x in range (0, 1024):
+            #    readBack[x] = self.WaveformMem.Mem[x].get()
+            #np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
       
 
 class HrPrototypeFpgaRegisters(pr.Device):
