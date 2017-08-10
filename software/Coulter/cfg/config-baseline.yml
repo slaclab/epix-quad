@@ -25,9 +25,9 @@ CoulterDaq:
       OT Limit: '-273.1'
     AxiVersion:
       enable: true
-      scratchPad: 0
-      fpgaReloadHalt: false
-      fpgaReloadAddress: 0
+      ScratchPad: 0
+      FpgaReloadHalt: 0
+      FpgaReloadAddress: 0
     AcquisitionControl:
       enable: true
       ScDelay: 25088
@@ -87,8 +87,8 @@ CoulterDaq:
         DutyCycleStabilizer: 'On'
         ClockDivide: Divide by 1
         ChopMode: 'Off'
-        DevIndexMask[7:0]: 0b1111111
-        DevIndexMask[DCO:FCO]: 3
+        DevIndexMask: 0b1111111
+        DevIndexMask[DCO:FCO]: 0b11
         UserTestModeCfg: single
         OutputTestMode: 'Off'
         OffsetAdjust: 0

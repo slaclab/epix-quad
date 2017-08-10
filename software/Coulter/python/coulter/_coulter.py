@@ -47,10 +47,10 @@ import pprint
 class CoulterRootBase(pr.Root):
     def __init__(self, vcReg, vcData, vcTrigger, pollEn=False, **kwargs):
 
-        super().__init__(name="CoulterDaq", description="Coulter Data Acquisition", **kwargs)
+        super().__init__(name='CoulterDaq', description='Coulter Data Acquisition', **kwargs)
 
         # Add run control
-        self.add(CoulterRunControl("RunControl"))
+        self.add(CoulterRunControl('RunControl'))
 
         # add DataWriter
         dataWriter = pyrogue.utilities.fileio.StreamWriter(name='dataWriter')
@@ -65,9 +65,9 @@ class CoulterRootBase(pr.Root):
             self.add(Coulter(name=f'Coulter[{i}]', memBase=srp, offset=0, enabled=True))
 
             # Debug
-            #logging.getLogger("pyrogue.SRP[{}]".format(i)).setLevel(logging.INFO)        
+            #logging.getLogger('pyrogue.SRP[{}]'.format(i)).setLevel(logging.INFO)        
             #dbgSrp = rogue.interfaces.stream.Slave()
-            #dbgSrp.setDebug(16, "SRP[{}]".format(i))
+            #dbgSrp.setDebug(16, 'SRP[{}]'.format(i))
             #pr.streamTap(srp, dbgSrp)
             
 
@@ -75,9 +75,9 @@ class CoulterRootBase(pr.Root):
         for i, vc in enumerate(vcData):
             pr.streamConnect(vc, dataWriter.getChannel(i))
 
-            #logging.getLogger("pyrogue.DATA[{}]".format(i)).setLevel(logging.INFO)                
+            #logging.getLogger('pyrogue.DATA[{}]'.format(i)).setLevel(logging.INFO)                
             #dbgData = rogue.interfaces.stream.Slave()
-            #dbgData.setDebug(32, "DATA[{}]".format(i))
+            #dbgData.setDebug(32, 'DATA[{}]'.format(i))
             #pr.streamTap(vcData[i], dbgData)
             
         
@@ -98,8 +98,8 @@ class CoulterRoot(CoulterRootBase):
     def __init__(self):
 
         # Set up logging
-        logging.getLogger("pyrogue.SRP").setLevel(logging.DEBUG)
-        #logging.getLogger("pyrogue.DATA[0]").setLevel(logging.INFO)
+        logging.getLogger('pyrogue.SRP').setLevel(logging.DEBUG)
+        #logging.getLogger('pyrogue.DATA[0]').setLevel(logging.INFO)
 
 
         # Create the PGP interfaces
@@ -158,9 +158,9 @@ class CoulterRunControl(pr.RunControl):
       self.runCount.set(0)
 
       while (self.runState.valueDisp() == 'Running'):
-          print("Sending Trigger")
+          print('Sending Trigger')
           self.root.Trigger()          
-          if self.runRate == "Auto":
+          if self.runRate == 'Auto':
               self.root.dataWriter.getChannel(0).waitFrameCount(self.runCount.value()+1)
           else:
               delay = 1.0 / self.runRate.value()
@@ -174,7 +174,7 @@ class CoulterRunControl(pr.RunControl):
 class Coulter(pr.Device):
     def __init__(self, **kwargs):
         if 'description' not in kwargs:
-            kwargs['description'] = "Coulter FPGA"
+            kwargs['description'] = 'Coulter FPGA'
             
         super(self.__class__, self).__init__(**kwargs)
 
@@ -209,48 +209,48 @@ class ELine100Config(pr.Device):
 
     def __init__(self, **kwargs):
         if 'description' not in kwargs:
-            kwargs['description'] = "ELINE100 ASIC Configuration"
+            kwargs['description'] = 'ELINE100 ASIC Configuration'
 
         super(self.__class__, self).__init__(**kwargs)
 
         self.add(pr.RemoteVariable(
-            name = "EnaAnalogMonitor",
+            name = 'EnaAnalogMonitor',
             offset = 0x80,
             bitSize=1,
             base=pr.Bool,
-            description="Set the ENA_AMON pin on the ASIC"))
+            description='Set the ENA_AMON pin on the ASIC'))
              
         self.add((
-            pr.RemoteVariable(name = "pbitt",   offset = 0x30, bitOffset = 0 , bitSize = 1,  description = "Test Pulse Polarity (0=pos, 1=neg)"),
-            pr.RemoteVariable(name = "cs",      offset = 0x30, bitOffset = 1 , bitSize = 1,  description = "Disable Outputs"),
-            pr.RemoteVariable(name = "atest",   offset = 0x30, bitOffset = 2 , bitSize = 1,  description = "Automatic Test Mode Enable"),
-            pr.RemoteVariable(name = "vdacm",   offset = 0x30, bitOffset = 3 , bitSize = 1,  description = "Enabled APS monitor AO2"),
-            pr.RemoteVariable(name = "hrtest",  offset = 0x30, bitOffset = 4 , bitSize = 1,  description = "High Resolution Test Mode"),
-            pr.RemoteVariable(name = "sbm",     offset = 0x30, bitOffset = 5 , bitSize = 1,  description = "Monitor Output Buffer Enable"),
-            pr.RemoteVariable(name = "sb",      offset = 0x30, bitOffset = 6 , bitSize = 1,  description = "Output Buffers Enable"),
-            pr.RemoteVariable(name = "test",    offset = 0x30, bitOffset = 7 , bitSize = 1,  description = "Test Pulser Enable"),
-            pr.RemoteVariable(name = "saux",    offset = 0x30, bitOffset = 8 , bitSize = 1,  description = "Enable Auxilary Output"),
-            pr.RemoteVariable(name = "slrb",    offset = 0x30, bitOffset = 9 , bitSize = 2,  description = "Reset Time"),
+            pr.RemoteVariable(name = 'pbitt',   offset = 0x30, bitOffset = 0 , bitSize = 1,  description = 'Test Pulse Polarity (0=pos, 1=neg)'),
+            pr.RemoteVariable(name = 'cs',      offset = 0x30, bitOffset = 1 , bitSize = 1,  description = 'Disable Outputs'),
+            pr.RemoteVariable(name = 'atest',   offset = 0x30, bitOffset = 2 , bitSize = 1,  description = 'Automatic Test Mode Enable'),
+            pr.RemoteVariable(name = 'vdacm',   offset = 0x30, bitOffset = 3 , bitSize = 1,  description = 'Enabled APS monitor AO2'),
+            pr.RemoteVariable(name = 'hrtest',  offset = 0x30, bitOffset = 4 , bitSize = 1,  description = 'High Resolution Test Mode'),
+            pr.RemoteVariable(name = 'sbm',     offset = 0x30, bitOffset = 5 , bitSize = 1,  description = 'Monitor Output Buffer Enable'),
+            pr.RemoteVariable(name = 'sb',      offset = 0x30, bitOffset = 6 , bitSize = 1,  description = 'Output Buffers Enable'),
+            pr.RemoteVariable(name = 'test',    offset = 0x30, bitOffset = 7 , bitSize = 1,  description = 'Test Pulser Enable'),
+            pr.RemoteVariable(name = 'saux',    offset = 0x30, bitOffset = 8 , bitSize = 1,  description = 'Enable Auxilary Output'),
+            pr.RemoteVariable(name = 'slrb',    offset = 0x30, bitOffset = 9 , bitSize = 2,  description = 'Reset Time'),
                        # enum={0: '450 ns', 1: '600 ns', 2: '825 ns', 3: '1100 ns'}, base='enum'),
-            pr.RemoteVariable(name = "claen",   offset = 0x30, bitOffset = 11, bitSize = 1,  description = "Manual Pulser DAC"),
-            pr.RemoteVariable(name = "pb",      offset = 0x30, bitOffset = 12, bitSize = 10, description = "Pump timout disable"),
-            pr.RemoteVariable(name = "tr",      offset = 0x30, bitOffset = 22, bitSize = 3,  description = "Baseline Adjust"),
+            pr.RemoteVariable(name = 'claen',   offset = 0x30, bitOffset = 11, bitSize = 1,  description = 'Manual Pulser DAC'),
+            pr.RemoteVariable(name = 'pb',      offset = 0x30, bitOffset = 12, bitSize = 10, description = 'Pump timout disable'),
+            pr.RemoteVariable(name = 'tr',      offset = 0x30, bitOffset = 22, bitSize = 3,  description = 'Baseline Adjust'),
                        # enum={0: '0m', 1: '75m', 2: '150m', 3: '225m', 4: '300m', 5: '375m', 6: '450m', 7: '525m'}, base='enum'),
-            pr.RemoteVariable(name = "sse",     offset = 0x30, bitOffset = 25, bitSize = 1,  description = "Disable Multiple Firings Inhibit (1-disabled)"),
-            pr.RemoteVariable(name = "disen",   offset = 0x30, bitOffset = 26, bitSize = 1,  description = "Disable Pump"),
-            pr.RemoteVariable(name = "pa",      offset = 0x34, bitOffset = 0 , bitSize = 10, description = "Threshold DAC")))
+            pr.RemoteVariable(name = 'sse',     offset = 0x30, bitOffset = 25, bitSize = 1,  description = 'Disable Multiple Firings Inhibit (1-disabled)'),
+            pr.RemoteVariable(name = 'disen',   offset = 0x30, bitOffset = 26, bitSize = 1,  description = 'Disable Pump'),
+            pr.RemoteVariable(name = 'pa',      offset = 0x34, bitOffset = 0 , bitSize = 10, description = 'Threshold DAC')))
         self.add((
 #            pr.Variable(name = 'pa_Voltage', mode = 'RO', getFunction=self.voltage, dependencies=[self.pa]),
-            pr.RemoteVariable(name = "esm",     offset = 0x34, bitOffset = 10, bitSize = 1,  description = "Enable DAC Monitor"),
-            pr.RemoteVariable(name = "t",       offset = 0x34, bitOffset = 11, bitSize = 3,  description = "Filter time to flat top"),
+            pr.RemoteVariable(name = 'esm',     offset = 0x34, bitOffset = 10, bitSize = 1,  description = 'Enable DAC Monitor'),
+            pr.RemoteVariable(name = 't',       offset = 0x34, bitOffset = 11, bitSize = 3,  description = 'Filter time to flat top'),
                        # enum = {x: '{} us'.format((x+2)*2) for x in range(8)}, base='enum'),
-            pr.RemoteVariable(name = "dd",      offset = 0x34, bitOffset = 14, bitSize = 1,  description = "DAC Monitor Select (0-thr, 1-pulser)"),
-            pr.RemoteVariable(name = "sabtest", offset = 0x34, bitOffset = 15, bitSize = 1,  description = "Select CDS test"),
-            pr.RemoteVariable(name = "clab",    offset = 0x34, bitOffset = 16, bitSize = 3,  description = "Pump Timeout"),
+            pr.RemoteVariable(name = 'dd',      offset = 0x34, bitOffset = 14, bitSize = 1,  description = 'DAC Monitor Select (0-thr, 1-pulser)'),
+            pr.RemoteVariable(name = 'sabtest', offset = 0x34, bitOffset = 15, bitSize = 1,  description = 'Select CDS test'),
+            pr.RemoteVariable(name = 'clab',    offset = 0x34, bitOffset = 16, bitSize = 3,  description = 'Pump Timeout'),
                        # enum = {0: '550 ns', 1: '1670 ns', 2: '2800 ns', 3: '4000 ns',
                        #         4: '5200 ns', 5: '6400 ns', 6: '7500 ns', 7: '8700 ns'},
                        # base= 'enum'),
-            pr.RemoteVariable(name = "tres",    offset = 0x34, bitOffset = 19, bitSize = 3,  description = "Reset Tweak OP")))
+            pr.RemoteVariable(name = 'tres',    offset = 0x34, bitOffset = 19, bitSize = 3,  description = 'Reset Tweak OP')))
                        # enum = {0: '0', 1: '10m', 2: '20m', 3: '30m', 4: '-10m', 5: '-20m', 6: '-30m', 7: '-40m'}, base='enum')))
                 
         self.add((
@@ -263,18 +263,18 @@ class ELine100Config(pr.Device):
             pr.RemoteVariable(name='st[63:32]', offset=0x24, bitSize=32, bitOffset=0,  description='Enable Test[63:32]'),
             pr.RemoteVariable(name='st[95:64]', offset=0x28, bitSize=32, bitOffset=0,  description='Enable Test[95:64]')))
 
-        #self.somi.enum[0] = "None"
+        #self.somi.enum[0] = 'None'
            
-        self.add(pr.RemoteCommand(name = "WriteAsic",
-                                  description = "Write the current configuration registers into the ASIC",
+        self.add(pr.RemoteCommand(name = 'WriteAsic',
+                                  description = 'Write the current configuration registers into the ASIC',
                                   offset = 0x40, bitSize = 1, bitOffset = 0, hidden = False, 
                                   function = pr.BaseCommand.touchOne))
-        self.add(pr.RemoteCommand(name = "ReadAsic", description = "Read the current configuration registers from the ASIC",
+        self.add(pr.RemoteCommand(name = 'ReadAsic', description = 'Read the current configuration registers from the ASIC',
                                   offset = 0x44, bitSize = 1, bitOffset = 0, hidden = False, 
                                   function = pr.BaseCommand.touchOne))
 
 #         for n,v in self.variables.items():
-#             if n != "EnaAnalogMonitor":
+#             if n != 'EnaAnalogMonitor':
 #                 v.beforeReadCmd = self.ReadAsic
 #                 v.afterWriteCmd = self.WriteAsic
 
@@ -290,7 +290,7 @@ class ELine100Config(pr.Device):
                    if not all((isinstance(v, pr.RemoteCommand) for v in block._variables)):
                        block.backgroundTransaction(rogue.interfaces.memory.Write)
                    else:
-                       print(f"Skipping write on Command {block}")                       
+                       print(f'Skipping write on Command {block}')                       
 
        # Hold until all blocks have been written
        self.checkBlocks(varUpdate=True, recurse=recurse, variable=variable)
@@ -315,7 +315,7 @@ class ELine100Config(pr.Device):
                 if not all((isinstance(v, pr.RemoteCommand) for v in block._variables)):
                     block.backgroundTransaction(rogue.interfaces.memory.Read)
                 else:
-                    print(f"Skipping read on Command {block}")
+                    print(f'Skipping read on Command {block}')
 
     def readBlocks(self, recurse=True, variable=None):
         self.__readHelper(rogue.interfaces.memory.Read, recurse=recurse, variable=variable)
@@ -345,22 +345,22 @@ class ReadoutControl(pr.Device):
 class AcquisitionControl(pr.Device):
     def __init__(self, clkFreq=156.25e6, **kwargs):
 
-        super(self.__class__, self).__init__(description="Configure Coulter Acquisition Parameters", **kwargs)
+        super(self.__class__, self).__init__(description='Configure Coulter Acquisition Parameters', **kwargs)
 
         self.clkFreq = clkFreq
         self.clkPeriod = 1/clkFreq
 
         def addPeriodLink(name, variables):
             self.add(pr.LinkVariable(
-                name=name
+                name=name,
                 units='us',
                 disp='{:.3f}',
                 linkedGet=self.periodConverter))
 
         def addFrequencyLink(name, variables):
             self.add(pr.LinkVariable(
-                name=name
-                units='us',
+                name=name,
+                units='kHz',
                 disp='{:.3f}',
                 linkedGet=self.frequencyConverter))
             
@@ -368,7 +368,7 @@ class AcquisitionControl(pr.Device):
         # SC Params
         self.add(pr.RemoteVariable(
             name='ScDelay',
-            description="Delay between trigger and SC rising edge",
+            description='Delay between trigger and SC rising edge',
             offset=0x00,
             bitSize=16,
             bitOffset=0))
@@ -377,7 +377,7 @@ class AcquisitionControl(pr.Device):
 
         self.add(pr.RemoteVariable(
             name='ScPosWidth',
-            description="SC high time (baseline sampling)",
+            description='SC high time (baseline sampling)',
             offset=0x04,
             bitSize=16,
             bitOffset=0,
@@ -385,7 +385,7 @@ class AcquisitionControl(pr.Device):
         
         self.add(pr.RemoteVariable(
             name='ScNegWidth',
-            description="SC low time",
+            description='SC low time',
             offset=0x08,
             bitSize=16,
             bitOffset=0,
@@ -395,8 +395,8 @@ class AcquisitionControl(pr.Device):
         addFrequencyLink('ScFrequency', [self.ScPosWidth, self.ScNegWidth])
         
         self.add(pr.RemoteVariable(
-            name="ScCount",
-            description="Number of slots per acquisition",
+            name='ScCount',
+            description='Number of slots per acquisition',
             offset=0x0C,
             bitSize=16,
             bitOffset=0))
@@ -404,7 +404,7 @@ class AcquisitionControl(pr.Device):
         # MCK params
         self.add(pr.RemoteVariable(
             name='MckDelay',
-            description="Delay between trigger and SC rising edge",
+            description='Delay between trigger and SC rising edge',
             offset=0x10,
             bitSize=16,
             bitOffset=0,
@@ -414,14 +414,14 @@ class AcquisitionControl(pr.Device):
         
         self.add(pr.RemoteVariable(
             name='MckPosWidth',
-            description="SC high time (baseline sampling)",
+            description='SC high time (baseline sampling)',
             offset=0x14,
             bitSize=16,
             bitOffset=0))
                  
         self.add(pr.RemoteVariable(
             name='MckNegWidth',
-            description="SC low time",
+            description='SC low time',
             offset=0x18,
             bitSize=16,
             bitOffset=0,
@@ -431,8 +431,8 @@ class AcquisitionControl(pr.Device):
         addFrequencyLink('MckFrequency', [self.MckPosWidth, self.MckNegWidth])
         
         self.add(pr.RemoteVariable(
-            name="MckCount",
-            description="Number of MCK pulses per slot (should always be 16)",
+            name='MckCount',
+            description='Number of MCK pulses per slot (should always be 16)',
             offset=0x1C,
             bitSize=8,
             bitOffset=0,
@@ -441,7 +441,7 @@ class AcquisitionControl(pr.Device):
         # ADC CLK params
         self.add(pr.RemoteVariable(
             name='AdcClkDelay',
-            description="Delay between trigger and new rising edge of ADC clk",
+            description='Delay between trigger and new rising edge of ADC clk',
             offset=0x28,
             bitSize=16,
             bitOffset=0,
@@ -451,7 +451,7 @@ class AcquisitionControl(pr.Device):
                  
         self.add(pr.RemoteVariable(
             name='AdcClkPosWidth',
-            description="AdcClk high time",
+            description='AdcClk high time',
             offset=0x20,
             bitSize=16,
             bitOffset=0,
@@ -459,7 +459,7 @@ class AcquisitionControl(pr.Device):
                  
         self.add(pr.RemoteVariable(
             name='AdcClkNegWidth',
-            description="AdcClk low time",
+            description='AdcClk low time',
             offset=0x24,
             bitSize=16,
             bitOffset=0,
@@ -471,8 +471,8 @@ class AcquisitionControl(pr.Device):
         
         # ADC window
         self.add(pr.RemoteVariable(
-            name="AdcWindowDelay",
-            description="Delay between first mck of slot at start of adc sample capture",
+            name='AdcWindowDelay',
+            description='Delay between first mck of slot at start of adc sample capture',
             offset=0x2c,
             bitSize=10,
             bitOffset=0,
@@ -483,29 +483,29 @@ class AcquisitionControl(pr.Device):
                  
         #There are probably useless
         self.add(pr.RemoteVariable(
-            name="MckDisable",
-            description="Disables MCK generation",
+            name='MckDisable',
+            description='Disables MCK generation',
             offset=0x30,
             bitSize=1,
             bitOffset=0,
             base = pr.Bool))
                  
         self.add(pr.RemoteVariable(
-            name="ClkDisable",
-            description="Disable SC, MCK and AdcClk generation",
+            name='ClkDisable',
+            description='Disable SC, MCK and AdcClk generation',
             offset=0x34,
             bitSize=1,
             bitOffset=0,
             base=pr.Bool))
 
         self.add(pr.RemoteVariable(
-            name="ScFallCount",
+            name='ScFallCount',
             offset=0x3C,
             base=pr.UInt,
             mode='RO'))
 
         self.add(pr.RemoteVariable(
-            name="InvertMck",
+            name='InvertMck',
             offset=0x44,
             bitSize=1,
             base=pr.Bool,
@@ -521,8 +521,8 @@ class AcquisitionControl(pr.Device):
         
         # Asic reset
         self.add(pr.RemoteCommand(
-            name = "ResetAsic",
-            description = "Reset the ELine100 ASICS",
+            name = 'ResetAsic',
+            description = 'Reset the ELine100 ASICS',
             offset=0x38,
             bitSize=1,
             bitOffset=0,
@@ -537,14 +537,12 @@ class AcquisitionControl(pr.Device):
         #print('_count-> {}'.format(count))
         return count
 
-    @staticmethod
-    def periodConverter(var):
-        return self.clkPeriod.value() * self._count(var.dependencies) * 1e6)
+    def periodConverter(self, var):
+        return self.clkPeriod * self._count(var.dependencies) * 1e6
 #return '{:.3f} us'.format(                 
 
-    @staticmethod
-    def frequencyConverter(var):
-        return (1/(self.clkPeriod.value() * self._count(var.dependencies)) * 1e-3)
+    def frequencyConverter(self, var):
+        return 1.0/(self.clkPeriod * self._count(var.dependencies)) * 1e-3
  
 #return '{:.3f} kHz'.format
                  
@@ -565,7 +563,7 @@ class CoulterFrameParser(rogue.interfaces.stream.Slave):
     def _acceptFrame(self, frame):
 
         if frame.getError():
-            print("Frame Error!")
+            print('Frame Error!')
             return
 
         
@@ -621,14 +619,14 @@ class CoulterFrameParser(rogue.interfaces.stream.Slave):
         even = d[10:, 2::2, :, :]
         odd =  d[10:, 3::2, :, :]
         print('{} samples'.format(len(d)))
-        print("Pixels Noise")
+        print('Pixels Noise')
 
         noise = [((i,j),
                   numpy.rint(numpy.std(even[:,:,i,j])),
                   numpy.rint(numpy.std(odd[:,:,i,j])))                  
             for i in range(12) for j in range(16)]
 
-        print("Pixel, std, mean, min, max")        
+        print('Pixel, std, mean, min, max')        
         pprint.pprint(sorted(noise, key=lambda x:x[0]))
 
         print('Best 10')
