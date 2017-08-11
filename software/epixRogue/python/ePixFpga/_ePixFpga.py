@@ -89,7 +89,7 @@ class Cpix2FpgaRegisters(pr.Device):
 
       #Setup registers & variables
       
-      self.add(pr.Variable(name='Version',         description='Version',           offset=0x00000000, bitSize=32, bitOffset=0, base='hex',  mode='RW'))
+      self.add(pr.Variable(name='Version',         description='Version',           offset=0x00000000, bitSize=32, bitOffset=0, base='hex',  verify = False, mode='RW'))
       self.add(pr.Variable(name='IdDigitalLow',    description='IdDigitalLow',      offset=0x00000004, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
       self.add(pr.Variable(name='IdDigitalHigh',   description='IdDigitalHigh',     offset=0x00000008, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
       self.add(pr.Variable(name='IdAnalogLow',     description='IdAnalogLow',       offset=0x0000000C, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
@@ -1144,7 +1144,7 @@ class AsicDeserRegisters(pr.Device):
       #Setup registers & variables
       
       self.add(pr.Variable(name='Delay',        description='Delay',       offset=0x00000000, bitSize=5,  bitOffset=0, base='uint', mode='RO'))
-      self.add(pr.Variable(name='Resync',       description='Resync',      offset=0x00000004, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
+      self.add(pr.Variable(name='Resync',       description='Resync',      offset=0x00000004, bitSize=1,  bitOffset=0, base='bool', verify = False,mode='RW'))
       self.add(pr.Variable(name='Locked',       description='Locked',      offset=0x00000008, bitSize=1,  bitOffset=0, base='bool', mode='RO'))
       self.add(pr.Variable(name='LockErrors',   description='LockErrors',  offset=0x0000000C, bitSize=16, bitOffset=0, base='uint', mode='RO'))
       
@@ -1193,7 +1193,7 @@ class AsicPktRegisters(pr.Device):
       self.add(pr.Variable(name='EofErrors',       description='EofErrors',      offset=0x00000014, bitSize=16,  bitOffset=0, base='uint', mode='RO'))
       self.add(pr.Variable(name='OverflowErrors',  description='OverflowErrors', offset=0x00000018, bitSize=16,  bitOffset=0, base='uint', mode='RO'))
       self.add(pr.Variable(name='TestMode',        description='TestMode',       offset=0x0000001C, bitSize=1,   bitOffset=0, base='bool', mode='RW'))
-      self.add(pr.Variable(name='ResetCounters',   description='ResetCounters',  offset=0x00000020, bitSize=1,   bitOffset=0, base='bool', mode='RW'))
+      self.add(pr.Variable(name='ResetCounters',   description='ResetCounters',  offset=0x00000020, bitSize=1,   bitOffset=0, base='bool', mode='RW', verify = False))
       
       #####################################
       # Create commands
