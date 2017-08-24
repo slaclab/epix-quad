@@ -82,9 +82,7 @@ entity EpixM32ArrayCore is
       slowAdcDrdy         : in  sl;
       -- Fast ADC Control
       adcSpiClk           : out sl;
-      adcSpiDataIn        : in  sl;
-      adcSpiDataOut       : out sl;
-      adcSpiDataEn        : out sl;
+      adcSpiData          : inout sl;
       adcSpiCsb           : out slv(2 downto 0);
       adcPdwn             : out slv(2 downto 0);
       -- Fast ADC readoutCh
@@ -166,7 +164,7 @@ architecture top_level of EpixM32ArrayCore is
    constant MEM_LOG_AXI_BASE_ADDR_C    : slv(31 downto 0) := X"0A000000";
    constant SCOPE_AXI_BASE_ADDR_C      : slv(31 downto 0) := X"0B000000";
    
-   constant AXI_CROSSBAR_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(TIXEL_NUM_AXI_MASTER_SLOTS_C-1 downto 0) := (
+   constant AXI_CROSSBAR_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0) := (
       VERSION_AXI_INDEX_C      => (
          baseAddr             => VERSION_AXI_BASE_ADDR_C,
          addrBits             => 24,
@@ -563,14 +561,13 @@ begin
    --     Master Register Controller         --
    --------------------------------------------   
    
-   U_RegControl : entity work.RegControl
+   U_RegControlM : entity work.RegControlM
    generic map (
       TPD_G                => TPD_G,
       BUILD_INFO_G         => BUILD_INFO_G,
       CLK_PERIOD_G         => 10.0e-9
    )
-   port (
-      port map (
+   port map (
       axiClk         => coreClk,
       axiRst         => axiRst,
       sysRst         => sysRst,
@@ -602,7 +599,7 @@ begin
    ---------------------
    -- Acquisition control    --
    ---------------------
-   U_AcqControl : entity work.AcqControl
+   U_AcqControlM : entity work.AcqControlM
    port map (
       clk               => coreClk,
       rst               => axiRst,
@@ -884,14 +881,14 @@ begin
       adcValid       => adcValid,
       arm            => acqStart,
       acqStart       => acqStart,
-      asicAcq        => iAsicAcq,
-      asicR0         => iAsicR0,
-      asicPpmat      => iAsicPpmat,
-      asicPpbe       => iAsicPpbe,
-      asicSync       => iAsicSync,
-      asicGr         => iAsicGrst,
-      asicRoClk      => asicRdClk,
-      asicSaciSel(1 downto 0) => iSaciSelL,
+      asicAcq        => acqStart,
+      asicR0         => iAsicR1,
+      asicPpmat      => iAsicR2,
+      asicPpbe       => iAsicR3,
+      asicSync       => iAsicStart,
+      asicGr         => iAsicSample,
+      asicRoClk      => iAsicClk,
+      asicSaciSel(1 downto 0) => "00",
       asicSaciSel(3 downto 2) => "00",
       mAxisMaster    => scopeAxisMaster,
       mAxisSlave     => scopeAxisSlave,
@@ -904,7 +901,6 @@ begin
       sAxilReadSlave    => mAxiReadSlaves(SCOPE_REG_AXI_INDEX_C)
 
    );
-   
    
    --------------------------
    -- AXI-Lite Version Module

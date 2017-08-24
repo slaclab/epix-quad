@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
--- File       : AcqControl.vhd
+-- File       : AcqControlM.vhd
 -- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2017-07-14
@@ -25,7 +25,7 @@ use work.StdRtlPkg.all;
 use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
 
-entity AcqControl is
+entity AcqControlM is
    generic (
       TPD_G             : time                     := 1 ns;
       PGP_LANE_G        : slv(3 downto 0)          := "0000";
@@ -45,9 +45,9 @@ entity AcqControl is
       axisMaster        : out AxiStreamMasterType;
       axisSlave         : in  AxiStreamSlaveType
    );
-end AcqControl;
+end AcqControlM;
 
-architecture rtl of AcqControl is
+architecture rtl of AcqControlM is
    
    constant SLAVE_AXI_CONFIG_C   : AxiStreamConfigType := ssiAxiStreamConfig(4);
    constant MASTER_AXI_CONFIG_C  : AxiStreamConfigType := ssiAxiStreamConfig(4);

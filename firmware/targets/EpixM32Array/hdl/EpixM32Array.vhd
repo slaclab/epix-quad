@@ -86,11 +86,6 @@ entity EpixM32Array is
       adcSpiCsb           : out slv(2 downto 0);
       adcPdwn01           : out sl;
       adcPdwnMon          : out sl;
-      -- ASIC SACI Interface
-      asicSaciCmd         : out sl;
-      asicSaciClk         : out sl;
-      asicSaciSel         : out slv(3 downto 0);
-      asicSaciRsp         : in  sl;
       -- ADC readout signals
       adcClkP             : out slv( 1 downto 0);
       adcClkM             : out slv( 1 downto 0);
@@ -101,15 +96,16 @@ entity EpixM32Array is
       adcDoP              : in  slv(19 downto 0);
       adcDoM              : in  slv(19 downto 0);
       -- ASIC Control
-      asicR0              : out sl;
-      asicPpmat           : out sl;
-      asicGlblRst         : out sl;
-      asicSync            : out sl;
-      asicAcq             : out sl;
+      asicGr              : out sl;
+      asicClk             : out sl;
+      asicR1              : out sl;
+      asicR2              : out sl;
+      asicR3              : out sl;
+      vbufOe              : out sl;
 --      asicDoutP           : in  slv(3 downto 0);
 --      asicDoutM           : in  slv(3 downto 0);
-      asicRoClkP          : out slv(3 downto 0);
-      asicRoClkM          : out slv(3 downto 0);
+--      asicRoClkP          : out slv(3 downto 0);
+--      asicRoClkM          : out slv(3 downto 0);
       -- Boot Memory Ports
       bootCsL             : out sl;
       bootMosi            : out sl;
@@ -144,11 +140,6 @@ architecture top_level of EpixM32Array is
    -- Internal versions of signals so that we don't
    -- drive anything unpowered until the components
    -- are online.
-   signal iVGuardDacClrb : sl;
-   signal iVGuardDacSclk : sl;
-   signal iVGuardDacDin  : sl;
-   signal iVGuardDacCsb  : sl;
-   
    signal iRunTg : sl;
    signal iDaqTg : sl;
    signal iMps   : sl;
@@ -156,13 +147,6 @@ architecture top_level of EpixM32Array is
    
    signal iSerialIdIo : slv(1 downto 0);
    
-   signal iSaciClk  : sl;
-   signal iSaciSelL : slv(3 downto 0);
-   signal iSaciCmd  : sl;
-   
-   signal iAdcSpiDataOut : sl;
-   signal iAdcSpiDataIn   : sl;
-   signal iAdcSpiDataEn  : sl;
    signal iAdcPdwn       : slv(2 downto 0);
    signal iAdcSpiCsb     : slv(2 downto 0);
    signal iAdcSpiClk     : sl;   
@@ -172,24 +156,16 @@ architecture top_level of EpixM32Array is
    signal iBootCsL      : sl;
    signal iBootMosi     : sl;
    
-   signal iAsicRoClk    : sl;
-   signal iAsicR0       : sl;
-   signal iAsicAcq      : sl;
-   signal iAsicPpmat    : sl;
-   signal iAsicGlblRst  : sl;
-   signal iAsicSync     : sl;
-   signal iAsicDm1      : sl;
-   signal iAsicDm2      : sl;
+   signal iAsicGlblRst    : sl;
+   signal iAsicR1         : sl;
+   signal iAsicR2         : sl;
+   signal iAsicR3         : sl;
+   signal iAsicClk        : sl;
    signal iAsicDout     : slv(3 downto 0);
    
-   -- Keep douts from getting trimmed even if they're not used in this design
-   attribute dont_touch : string;
-   attribute dont_touch of iAsicDout : signal is "true";
-   attribute dont_touch of iAsicDm1  : signal is "true";
-   attribute dont_touch of iAsicDm2  : signal is "true";
    
 begin
-
+   
    ---------------------------
    -- Core block            --
    ---------------------------
@@ -221,11 +197,6 @@ begin
          gtDataRxN           => gtDataRxN,
          gtDataTxP           => gtDataTxP,
          gtDataTxN           => gtDataTxN,
-         -- Guard ring DAC
-         vGuardDacSclk       => iVGuardDacSclk,
-         vGuardDacDin        => iVGuardDacDin,
-         vGuardDacCsb        => iVGuardDacCsb,
-         vGuardDacClrb       => iVGuardDacClrb,
          -- External Signals
          runTrigger          => iRunTg,
          daqTrigger          => iDaqTg,
@@ -241,16 +212,9 @@ begin
          slowAdcCsb          => slowAdcCsb,
          slowAdcDout         => slowAdcDout,
          slowAdcDrdy         => slowAdcDrdy,
-         -- SACI
-         saciClk             => iSaciClk,
-         saciSelL            => iSaciSelL,
-         saciCmd             => iSaciCmd,
-         saciRsp             => asicSaciRsp,
          -- Fast ADC Control
          adcSpiClk           => iAdcSpiClk,
-         adcSpiDataOut       => iAdcSpiDataOut,
-         adcSpiDataIn        => iAdcSpiDataIn,
-         adcSpiDataEn        => iAdcSpiDataEn,
+         adcSpiData          => adcSpiData,
          adcSpiCsb           => iAdcSpiCsb,
          adcPdwn             => iAdcPdwn,
          -- Fast ADC readout
@@ -263,37 +227,17 @@ begin
          adcChP              => adcDoP,
          adcChN              => adcDoM,
          -- ASIC Control
-         asicR0              => iAsicR0,
-         asicPpmat           => iAsicPpmat,
-         asicPpbe            => open,
-         asicGrst            => iAsicGlblRst,
-         asicAcq             => iAsicAcq,
-         asic0Dm2            => iAsicDm1,
-         asic0Dm1            => iAsicDm2,
-         asicRoClk           => iAsicRoClk,
-         asicSync            => iAsicSync,
+         asicGlblRst         => iAsicGlblRst,
+         asicR1              => iAsicR1,
+         asicR2              => iAsicR2,
+         asicR3              => iAsicR3,
+         asicClk             => iAsicClk,
          -- ASIC digital data
          asicDout            => iAsicDout,
          -- Boot Memory Ports
          bootCsL             => iBootCsL,
          bootMosi            => iBootMosi,
          bootMiso            => bootMiso
-         -- DDR pins
-         --ddr3_dq             => ddr3_dq,
-         --ddr3_dqs_n          => ddr3_dqs_n,
-         --ddr3_dqs_p          => ddr3_dqs_p,
-         --ddr3_addr           => ddr3_addr,
-         --ddr3_ba             => ddr3_ba,
-         --ddr3_ras_n          => ddr3_ras_n,
-         --ddr3_cas_n          => ddr3_cas_n,
-         --ddr3_we_n           => ddr3_we_n,
-         --ddr3_reset_n        => ddr3_reset_n,
-         --ddr3_ck_p           => ddr3_ck_p,
-         --ddr3_ck_n           => ddr3_ck_n,
-         --ddr3_cke            => ddr3_cke,
-         --ddr3_cs_n           => ddr3_cs_n,
-         --ddr3_dm             => ddr3_dm,
-         --ddr3_odt            => ddr3_odt
       );
       
       adcClkP(0) <= iAdcClkP(0);      
@@ -311,54 +255,26 @@ begin
    bootCsL  <= iBootCsL    when iFpgaOutputEn = '1' else 'Z';
    bootMosi <= iBootMosi   when iFpgaOutputEn = '1' else 'Z';
    
-   -- Guard ring DAC
-   vGuardDacSclk <= iVGuardDacSclk when iFpgaOutputEn = '1' else 'Z';
-   vGuardDacDin  <= iVGuardDacDin  when iFpgaOutputEn = '1' else 'Z';
-   vGuardDacCsb  <= iVGuardDacCsb  when iFpgaOutputEn = '1' else 'Z';
-   vGuardDacClrb <= ivGuardDacClrb when iFpgaOutputEn = '1' else 'Z';
-   
    -- TTL interfaces (accounting for inverters on ADC card)
    mps    <= not(iMps)   when iFpgaOutputEn = '1' else 'Z';
    tgOut  <= not(iTgOut) when iFpgaOutputEn = '1' else 'Z';
    iRunTg <= not(runTg);
    iDaqTg <= not(daqTg);
 
-   -- ASIC SACI interfaces
-   asicSaciCmd    <= iSaciCmd when iFpgaOutputEn = '1' else 'Z';
-   asicSaciClk    <= iSaciClk when iFpgaOutputEn = '1' else 'Z';
-   G_SACISEL : for i in 0 to 3 generate
-      asicSaciSel(i) <= iSaciSelL(i) when iFpgaOutputEn = '1' else 'Z';
-   end generate;
-
    -- Fast ADC Configuration
    adcSpiClk     <= iAdcSpiClk when iFpgaOutputEn = '1' else 'Z';
-   --adcSpiData    <= '0' when iAdcSpiDataOut = '0' and iAdcSpiDataEn = '1' and iFpgaOutputEn = '1' else 'Z';
-   adcSpiData    <= iAdcSpiDataOut when  iAdcSpiDataEn = '1' and iFpgaOutputEn = '1' else 'Z';
-   iAdcSpiDataIn <= adcSpiData;
    adcSpiCsb(0)  <= iAdcSpiCsb(0) when iFpgaOutputEn = '1' else 'Z';
    adcSpiCsb(1)  <= iAdcSpiCsb(1) when iFpgaOutputEn = '1' else 'Z';
    adcSpiCsb(2)  <= iAdcSpiCsb(2) when iFpgaOutputEn = '1' else 'Z';
    adcPdwn01     <= iAdcPdwn(0) when iFpgaOutputEn = '1' else '0';
-   --adcPdwn(1)    <= iAdcPdwn(1) when iFpgaOutputEn = '1' else '0';
    adcPdwnMon    <= iAdcPdwn(2) when iFpgaOutputEn = '1' else '0';
    
-   -- ASIC Connections
-   -- Digital bits, unused in this design but used to check pinout
---   G_ASIC_DOUT : for i in 0 to 3 generate
---      U_ASIC_DOUT_IBUFDS : IBUFDS port map (I => asicDoutP(i), IB => asicDoutM(i), O => iAsicDout(i));
---   end generate;
-   -- ASIC control signals (differential)
-   G_ROCLK : for i in 0 to 3 generate
-      U_ASIC_ROCLK_OBUFTDS : OBUFTDS port map ( I => iAsicRoClk, T => not(iFpgaOutputEn), O => asicRoClkP(i), OB => asicRoClkM(i) );
-   end generate;
-   -- ASIC control signals (single ended)
-   asicR0      <= iAsicR0      when iFpgaOutputEn = '1' else 'Z';
-   asicAcq     <= iAsicAcq     when iFpgaOutputEn = '1' else 'Z';
-   asicPpmat   <= iAsicPpmat   when iFpgaOutputEn = '1' else 'Z';
-   asicGlblRst <= iAsicGlblRst when iFpgaOutputEn = '1' else 'Z';
-   asicSync    <= iAsicSync    when iFpgaOutputEn = '1' else 'Z';
-   -- On this carrier ASIC digital monitors are shared with SN device
-   --iAsicDm1    <= snIoCarrier;
-   --iAsicDm2    <= snIoCarrier;
+   -- ASIC control signals (single ended)   
+   asicGr      <= iAsicGlblRst when iFpgaOutputEn = '1' else 'Z';
+   asicClk     <= iAsicClk     when iFpgaOutputEn = '1' else 'Z';
+   asicR1      <= iAsicR1      when iFpgaOutputEn = '1' else 'Z';
+   asicR2      <= iAsicR2      when iFpgaOutputEn = '1' else 'Z';
+   asicR3      <= iAsicR3      when iFpgaOutputEn = '1' else 'Z';
+   vbufOe      <= iFpgaOutputEn;
    
 end top_level;

@@ -1,7 +1,7 @@
 -------------------------------------------------------------------------------
 -- Title      : 
 -------------------------------------------------------------------------------
--- File       : RegControl.vhd
+-- File       : RegControlM.vhd
 -- Author     : Maciej Kwiatkowski  <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 04/26/2016
@@ -34,7 +34,7 @@ use work.AxiLitePkg.all;
 library unisim;
 use unisim.vcomponents.all;
 
-entity RegControl is
+entity RegControlM is
    generic (
       TPD_G             : time               := 1 ns;
       EN_DEVICE_DNA_G   : boolean            := true;
@@ -70,9 +70,9 @@ entity RegControl is
       asicSample     : out sl;   -- to readout (with pipeline delay setting)
       asicReady      : in  sl    -- from readout
    );
-end RegControl;
+end RegControlM;
 
-architecture rtl of RegControl is
+architecture rtl of RegControlM is
    
    type AsicAcqType is record
       asicStart         : sl;
@@ -110,8 +110,8 @@ architecture rtl of RegControl is
       asicR1Tr2         => toSlv(600, 32),   -- T = value * 10ns
       asicR2Tr2         => toSlv(450, 32),   -- T = value * 10ns
       asicR3Tr2         => toSlv(500, 32),   -- T = value * 10ns
-      asicR1Test        => '0'
-      asicClk           => '0'
+      asicR1Test        => '0',
+      asicClk           => '0',
       asicClkDly        => toSlv(1000, 32),  -- T = value * 10ns,
       asicClkPerHalf    => toSlv(100, 32),   -- T = value * 10ns),
       asicClkPerCnt     => (others=>'0'),
@@ -301,32 +301,32 @@ begin
          -- asicClk generator 
          -- starts after delay as set in the register
          if r.asicAcqReg.asicClkDly <= r.asicAcqTimeCnt then
-            if r.asicClkCnt < 2048 then
+            if r.asicAcqReg.asicClkCnt < 2048 then
                -- rising edge transition
-               if r.asicClkPerCnt = (r.asicClkPerHalf - 1) and r.asicClk = '0' then
-                  v.asicClk      := '1';
+               if r.asicAcqReg.asicClkPerCnt = (r.asicAcqReg.asicClkPerHalf - 1) and r.asicAcqReg.asicClk = '0' then
+                  v.asicAcqReg.asicClk      := '1';
                   -- R1 test mode (for ADC latency measurement)
                   if r.asicAcqReg.asicR1Test = '1' then
                      v.asicAcqReg.asicR1 := '0';
                   end if;
                end if;
                -- falling edge transition
-               if r.asicClkPerCnt = (r.asicClkPerHalf - 1) and r.asicClk = '1' then
-                  v.asicClk      := '0';
-                  v.asicClkCnt   := r.asicClkCnt + 1;
+               if r.asicAcqReg.asicClkPerCnt = (r.asicAcqReg.asicClkPerHalf - 1) and r.asicAcqReg.asicClk = '1' then
+                  v.asicAcqReg.asicClk      := '0';
+                  v.asicAcqReg.asicClkCnt   := r.asicAcqReg.asicClkCnt + 1;
                   -- sample at or after falling edge of asicClk
                   v.asicAcqReg.asicSample(0) := '1';
                   -- R1 test mode (for ADC latency measurement)
-                  if r.asicAcqReg.asicR1Test = '1' and r.asicClkCnt = '0' then
+                  if r.asicAcqReg.asicR1Test = '1' and r.asicAcqReg.asicClkCnt = 0 then
                      v.asicAcqReg.asicR1 := '1';
                   end if;
                end if;
             end if;
             -- asicClk half period counter
-            if r.asicClkPerCnt < (r.asicClkPerHalf - 1) then
-               v.asicClkPerCnt := r.asicClkPerCnt + 1;
+            if r.asicAcqReg.asicClkPerCnt < (r.asicAcqReg.asicClkPerHalf - 1) then
+               v.asicAcqReg.asicClkPerCnt := r.asicAcqReg.asicClkPerCnt + 1;
             else
-               v.asicClkPerCnt := (others=>'0');
+               v.asicAcqReg.asicClkPerCnt := (others=>'0');
             end if;
             
          end if;
