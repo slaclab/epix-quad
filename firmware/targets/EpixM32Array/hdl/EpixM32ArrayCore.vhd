@@ -665,8 +665,7 @@ begin
    -- ADC Clock outputs
    U_AdcClk0 : OBUFDS port map ( I => adcClk, O => adcClkP(0), OB => adcClkN(0) );
    U_AdcClk1 : OBUFDS port map ( I => adcClk, O => adcClkP(1), OB => adcClkN(1) );
-   adcClkP(2) <= '0';
-   adcClkN(2) <= '1';
+   U_AdcClk2 : OBUFDS port map ( I => adcClk, O => adcClkP(2), OB => adcClkN(2) );
    
    -- Tap delay calibration  
    U_IDelayCtrl : IDELAYCTRL
