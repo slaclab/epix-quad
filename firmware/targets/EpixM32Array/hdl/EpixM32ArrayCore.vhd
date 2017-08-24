@@ -86,14 +86,14 @@ entity EpixM32ArrayCore is
       adcSpiCsb           : out slv(2 downto 0);
       adcPdwn             : out slv(2 downto 0);
       -- Fast ADC readoutCh
-      adcClkP             : out slv( 2 downto 0);
-      adcClkN             : out slv( 2 downto 0);
-      adcFClkP            : in  slv( 2 downto 0);
-      adcFClkN            : in  slv( 2 downto 0);
-      adcDClkP            : in  slv( 2 downto 0);
-      adcDClkN            : in  slv( 2 downto 0);
-      adcChP              : in  slv(19 downto 0);
-      adcChN              : in  slv(19 downto 0);
+      adcClkP             : out slv( 0 downto 0);
+      adcClkN             : out slv( 0 downto 0);
+      adcFClkP            : in  slv( 1 downto 0);
+      adcFClkN            : in  slv( 1 downto 0);
+      adcDClkP            : in  slv( 1 downto 0);
+      adcDClkN            : in  slv( 1 downto 0);
+      adcChP              : in  slv(15 downto 0);
+      adcChN              : in  slv(15 downto 0);
       -- ASIC Control
       asicGlblRst         : out sl;   -- to ASIC
       asicR1              : out sl;   -- to ASIC
@@ -664,8 +664,6 @@ begin
    
    -- ADC Clock outputs
    U_AdcClk0 : OBUFDS port map ( I => adcClk, O => adcClkP(0), OB => adcClkN(0) );
-   U_AdcClk1 : OBUFDS port map ( I => adcClk, O => adcClkP(1), OB => adcClkN(1) );
-   U_AdcClk2 : OBUFDS port map ( I => adcClk, O => adcClkP(2), OB => adcClkN(2) );
    
    -- Tap delay calibration  
    U_IDelayCtrl : IDELAYCTRL

@@ -15,14 +15,12 @@ create_clock -name gtRefClk0P   -period  6.400 [get_ports gtRefClk0P]
 create_clock -name pgpClk       -period  6.400 [get_pins {U_EpixCore/U_PgpFrontEnd/U_Pgp2bVarLatWrapper/Pgp2bGtp7VarLat_Inst/MuliLane_Inst/GTP7_CORE_GEN[0].Gtp7Core_Inst/gtpe2_i/TXOUTCLK}]
 create_clock -name adc0DoClkP   -period  2.857 [get_ports {adcDoClkP[0]}]
 create_clock -name adc1DoClkP   -period  2.857 [get_ports {adcDoClkP[1]}]
-create_clock -name adcMonDoClkP -period  2.857 [get_ports {adcDoClkP[2]}]
 
 create_generated_clock -name coreClk      [get_pins {U_EpixCore/U_CoreClockGen/MmcmGen.U_Mmcm/CLKOUT0}]
 create_generated_clock -name delayCtrlClk [get_pins {U_EpixCore/U_CalClockGen/MmcmGen.U_Mmcm/CLKOUT0}]
 create_generated_clock -name progClk      [get_pins {U_EpixCore/U_Iprog7Series/DIVCLK_GEN.BUFR_ICPAPE2/O}]
 create_generated_clock -name adc0BitClkR  [get_pins {U_EpixCore/G_AdcReadout[0].U_AdcReadout/U_AdcBitClkR/O}]
 create_generated_clock -name adc1BitClkR  [get_pins {U_EpixCore/G_AdcReadout[1].U_AdcReadout/U_AdcBitClkR/O}]
-create_generated_clock -name adcMonBitClkR [get_pins {U_EpixCore/U_MonAdcReadout/U_AdcBitClkR/O}]
 
 set_clock_groups -asynchronous \
    -group [get_clocks -include_generated_clocks pgpClk] \
@@ -31,10 +29,8 @@ set_clock_groups -asynchronous \
    -group [get_clocks -include_generated_clocks gtRefClk0P] \
    -group [get_clocks -include_generated_clocks adc0DoClkP] \
    -group [get_clocks -include_generated_clocks adc1DoClkP] \
-   -group [get_clocks -include_generated_clocks adcMonDoClkP] \
    -group [get_clocks -include_generated_clocks adc0BitClkR] \
    -group [get_clocks -include_generated_clocks adc1BitClkR] \
-   -group [get_clocks -include_generated_clocks adcMonBitClkR] \
    -group [get_clocks -include_generated_clocks progClk]
 
 
@@ -171,16 +167,16 @@ set_property PULLUP true [get_ports {snIoCarrier}]
 
 set_property PACKAGE_PIN   V9 [get_ports {adcClkP[0]}]
 set_property PACKAGE_PIN   V8 [get_ports {adcClkM[0]}]
-set_property PACKAGE_PIN  T14 [get_ports {adcClkP[1]}]
-set_property PACKAGE_PIN  T15 [get_ports {adcClkM[1]}]   
+#set_property PACKAGE_PIN  T14 [get_ports {adcClkP[1]}]
+#set_property PACKAGE_PIN  T15 [get_ports {adcClkM[1]}]   
 set_property IOSTANDARD LVDS_25 [get_ports {adcClkP[*]}]
 
 set_property PACKAGE_PIN   R4 [get_ports {adcDoClkP[0]}]
 set_property PACKAGE_PIN   T4 [get_ports {adcDoClkM[0]}]
 set_property PACKAGE_PIN   K4 [get_ports {adcDoClkP[1]}]
 set_property PACKAGE_PIN   J4 [get_ports {adcDoClkM[1]}]
-set_property PACKAGE_PIN  V13 [get_ports {adcDoClkP[2]}]   
-set_property PACKAGE_PIN  V14 [get_ports {adcDoClkM[2]}] 
+#set_property PACKAGE_PIN  V13 [get_ports {adcDoClkP[2]}]   
+#set_property PACKAGE_PIN  V14 [get_ports {adcDoClkM[2]}] 
 set_property IOSTANDARD LVDS_25 [get_ports {adcDoClkP[*]}]
 set_property DIFF_TERM true [get_ports {adcDoClkP[*]}]
 
@@ -188,8 +184,8 @@ set_property PACKAGE_PIN   V4 [get_ports {adcFrameClkP[0]}]
 set_property PACKAGE_PIN   W4 [get_ports {adcFrameClkM[0]}]
 set_property PACKAGE_PIN   H4 [get_ports {adcFrameClkP[1]}]
 set_property PACKAGE_PIN   G4 [get_ports {adcFrameClkM[1]}]
-set_property PACKAGE_PIN  W11 [get_ports {adcFrameClkP[2]}]
-set_property PACKAGE_PIN  W12 [get_ports {adcFrameClkM[2]}]
+#set_property PACKAGE_PIN  W11 [get_ports {adcFrameClkP[2]}]
+#set_property PACKAGE_PIN  W12 [get_ports {adcFrameClkM[2]}]
 set_property IOSTANDARD LVDS_25 [get_ports {adcFrameClkP[*]}]
 set_property DIFF_TERM true [get_ports {adcFrameClkP[*]}]
 
@@ -225,14 +221,14 @@ set_property PACKAGE_PIN   K6 [get_ports {adcDoP[14]}]
 set_property PACKAGE_PIN   J6 [get_ports {adcDoM[14]}] 
 set_property PACKAGE_PIN   N4 [get_ports {adcDoP[15]}] 
 set_property PACKAGE_PIN   N3 [get_ports {adcDoM[15]}] 
-set_property PACKAGE_PIN  V10 [get_ports {adcDoP[16]}] 
-set_property PACKAGE_PIN  W10 [get_ports {adcDoM[16]}] 
-set_property PACKAGE_PIN  AA9 [get_ports {adcDoP[17]}] 
-set_property PACKAGE_PIN AB10 [get_ports {adcDoM[17]}] 
-set_property PACKAGE_PIN  W14 [get_ports {adcDoP[18]}] 
-set_property PACKAGE_PIN  Y14 [get_ports {adcDoM[18]}] 
-set_property PACKAGE_PIN AA15 [get_ports {adcDoP[19]}] 
-set_property PACKAGE_PIN AB15 [get_ports {adcDoM[19]}] 
+#set_property PACKAGE_PIN  V10 [get_ports {adcDoP[16]}] 
+#set_property PACKAGE_PIN  W10 [get_ports {adcDoM[16]}] 
+#set_property PACKAGE_PIN  AA9 [get_ports {adcDoP[17]}] 
+#set_property PACKAGE_PIN AB10 [get_ports {adcDoM[17]}] 
+#set_property PACKAGE_PIN  W14 [get_ports {adcDoP[18]}] 
+#set_property PACKAGE_PIN  Y14 [get_ports {adcDoM[18]}] 
+#set_property PACKAGE_PIN AA15 [get_ports {adcDoP[19]}] 
+#set_property PACKAGE_PIN AB15 [get_ports {adcDoM[19]}] 
 set_property IOSTANDARD LVDS_25 [get_ports {adcDoP[*]}]
 set_property DIFF_TERM true [get_ports {adcDoP[*]}]
 

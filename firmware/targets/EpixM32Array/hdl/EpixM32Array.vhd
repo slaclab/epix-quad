@@ -87,14 +87,14 @@ entity EpixM32Array is
       adcPdwn01           : out sl;
       adcPdwnMon          : out sl;
       -- ADC readout signals
-      adcClkP             : out slv( 1 downto 0);
-      adcClkM             : out slv( 1 downto 0);
-      adcDoClkP           : in  slv( 2 downto 0);
-      adcDoClkM           : in  slv( 2 downto 0);
-      adcFrameClkP        : in  slv( 2 downto 0);
-      adcFrameClkM        : in  slv( 2 downto 0);
-      adcDoP              : in  slv(19 downto 0);
-      adcDoM              : in  slv(19 downto 0);
+      adcClkP             : out slv( 0 downto 0);
+      adcClkM             : out slv( 0 downto 0);
+      adcDoClkP           : in  slv( 1 downto 0);
+      adcDoClkM           : in  slv( 1 downto 0);
+      adcFrameClkP        : in  slv( 1 downto 0);
+      adcFrameClkM        : in  slv( 1 downto 0);
+      adcDoP              : in  slv(15 downto 0);
+      adcDoM              : in  slv(15 downto 0);
       -- ASIC Control
       asicGr              : out sl;
       asicClk             : out sl;
@@ -150,8 +150,8 @@ architecture top_level of EpixM32Array is
    signal iAdcPdwn       : slv(2 downto 0);
    signal iAdcSpiCsb     : slv(2 downto 0);
    signal iAdcSpiClk     : sl;   
-   signal iAdcClkP       : slv( 2 downto 0);
-   signal iAdcClkM       : slv( 2 downto 0);
+   signal iAdcClkP       : slv( 0 downto 0);
+   signal iAdcClkM       : slv( 0 downto 0);
    
    signal iBootCsL      : sl;
    signal iBootMosi     : sl;
@@ -243,8 +243,6 @@ begin
       adcClkP(0) <= iAdcClkP(0);      
       adcClkM(0) <= iAdcClkM(0);
       
-      adcClkP(1) <= iAdcClkP(2);
-      adcClkM(1) <= iAdcClkM(2);
 
    ----------------------------
    -- Map ports/signals/etc. --
