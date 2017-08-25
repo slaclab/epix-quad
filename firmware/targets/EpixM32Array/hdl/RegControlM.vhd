@@ -279,7 +279,8 @@ begin
          if r.asicAcqReg.asicR1Test = '0' then
             if r.asicAcqReg.asicR1Tr1 <= r.asicAcqTimeCnt then
                v.asicAcqReg.asicR1 := '0';
-            elsif r.asicAcqReg.asicR1Tr1 + r.asicAcqReg.asicR1Tr2 <= r.asicAcqTimeCnt then
+            end if;
+            if r.asicAcqReg.asicR1Tr1 + r.asicAcqReg.asicR1Tr2 <= r.asicAcqTimeCnt then
                v.asicAcqReg.asicR1 := '1';
             end if;
          end if;
@@ -287,14 +288,16 @@ begin
          -- asicR2 waveform (2 transitions)
          if r.asicAcqReg.asicR2Tr1 <= r.asicAcqTimeCnt then
             v.asicAcqReg.asicR2 := '0';
-         elsif r.asicAcqReg.asicR2Tr1 + r.asicAcqReg.asicR2Tr2 <= r.asicAcqTimeCnt then
+         end if;
+         if r.asicAcqReg.asicR2Tr1 + r.asicAcqReg.asicR2Tr2 <= r.asicAcqTimeCnt then
             v.asicAcqReg.asicR2 := '1';
          end if;
          
          -- asicR3 waveform (2 transitions)
          if r.asicAcqReg.asicR3Tr1 <= r.asicAcqTimeCnt then
             v.asicAcqReg.asicR3 := '0';
-         elsif r.asicAcqReg.asicR3Tr1 + r.asicAcqReg.asicR3Tr2 <= r.asicAcqTimeCnt then
+         end if;
+         if r.asicAcqReg.asicR3Tr1 + r.asicAcqReg.asicR3Tr2 <= r.asicAcqTimeCnt then
             v.asicAcqReg.asicR3 := '1';
          end if; 
          
