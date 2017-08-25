@@ -35,9 +35,6 @@ int main() {
       epixInit();
       ssi_printf("ADC REQ %d\n", req);
       
-      // only monitoring ADC in use with tixel or cpix
-      res = adcAlign(2,  4);
-      
       //align ADCs
       for (res = 0, i = 0; i <= 1; i++)
          res |= (adcAlign(i,  8)<<i);
