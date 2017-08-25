@@ -227,6 +227,8 @@ architecture top_level of EpixM32ArrayCore is
    signal mAxiReadSlaves   : AxiLiteReadSlaveArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
 
    -- AXI-Stream signals
+   signal doutAxisMaster      : AxiStreamMasterArray(1 downto 0);
+   signal doutAxisSlave       : AxiStreamSlaveArray(1 downto 0);
    signal dataAxisMaster      : AxiStreamMasterType;
    signal dataAxisSlave       : AxiStreamSlaveType;
    signal scopeAxisMaster     : AxiStreamMasterType;
@@ -281,6 +283,8 @@ architecture top_level of EpixM32ArrayCore is
    signal iAsicStart      : sl;
    signal iAsicSample     : sl;
    signal iAsicReady      : sl;
+   signal iAsicReady0     : sl;
+   signal iAsicReady1     : sl;
    
    signal fpgaReload : sl;
    signal bootSck    : sl;
@@ -599,23 +603,63 @@ begin
    ---------------------
    -- Acquisition control    --
    ---------------------
-   U_AcqControlM : entity work.AcqControlM
+   U_Acq0ControlM : entity work.AcqControlM
+   generic map (
+      ASIC_NO_G         => "0000"
+   )
    port map (
       clk               => coreClk,
       rst               => axiRst,
-      adcData(0)        => adcData(3),
-      adcData(1)        => adcData(8),
-      adcValid(0)       => adcValid(3),
-      adcValid(1)       => adcValid(8),
+      adcData           => adcData(3),
+      adcValid          => adcValid(3),
       asicStart         => iAsicStart,
       asicSample        => iAsicSample,
-      asicReady         => iAsicReady,
+      asicReady         => iAsicReady0,
       asicGlblRst       => iAsicGlblRst,
       -- AxiStream output
       axisClk           => coreClk,
       axisRst           => axiRst,
-      axisMaster        => dataAxisMaster,
-      axisSlave         => dataAxisSlave
+      axisMaster        => doutAxisMaster(0),
+      axisSlave         => doutAxisSlave(0)
+   );
+   
+   U_Acq1ControlM : entity work.AcqControlM
+   generic map (
+      ASIC_NO_G         => "0001"
+   )
+   port map (
+      clk               => coreClk,
+      rst               => axiRst,
+      adcData           => adcData(8),
+      adcValid          => adcValid(8),
+      asicStart         => iAsicStart,
+      asicSample        => iAsicSample,
+      asicReady         => iAsicReady1,
+      asicGlblRst       => iAsicGlblRst,
+      -- AxiStream output
+      axisClk           => coreClk,
+      axisRst           => axiRst,
+      axisMaster        => doutAxisMaster(1),
+      axisSlave         => doutAxisSlave(1)
+   );
+   
+   iAsicReady <= iAsicReady0 and iAsicReady1;
+   
+   U_AxiStreamMux : entity work.AxiStreamMux
+   generic map(
+      NUM_SLAVES_G   => 2
+   )
+   port map(
+      -- Clock and reset
+      axisClk        => coreClk,
+      axisRst        => axiRst,
+      -- Slaves
+      sAxisMasters   => doutAxisMaster,
+      sAxisSlaves    => doutAxisSlave,
+      -- Master
+      mAxisMaster    => dataAxisMaster,
+      mAxisSlave     => dataAxisSlave
+      
    );
 
    ---------------------

@@ -29,13 +29,14 @@ entity AcqControlM is
    generic (
       TPD_G             : time                     := 1 ns;
       PGP_LANE_G        : slv(3 downto 0)          := "0000";
-      PGP_VC_G          : slv(3 downto 0)          := "0000"
+      PGP_VC_G          : slv(3 downto 0)          := "0000";
+      ASIC_NO_G         : slv(3 downto 0)          := "0000"
    );
    port (
       clk               : in  sl;
       rst               : in  sl;
-      adcData           : in  Slv16Array(1 downto 0);
-      adcValid          : in  slv(1 downto 0);
+      adcData           : in  slv(15 downto 0);
+      adcValid          : in  sl;
       asicStart         : in  sl;   -- from waveform gen
       asicSample        : in  sl;   -- from waveform gen
       asicReady         : out sl;   -- to waveform gen
@@ -50,7 +51,7 @@ end AcqControlM;
 
 architecture rtl of AcqControlM is
    
-   constant SLAVE_AXI_CONFIG_C   : AxiStreamConfigType := ssiAxiStreamConfig(4);
+   constant SLAVE_AXI_CONFIG_C   : AxiStreamConfigType := ssiAxiStreamConfig(2);
    constant MASTER_AXI_CONFIG_C  : AxiStreamConfigType := ssiAxiStreamConfig(4);
    
    type StateType is (
@@ -63,7 +64,7 @@ architecture rtl of AcqControlM is
       state          : StateType;
       asicReady      : sl;
       acqCnt         : slv(31 downto 0);
-      adcData        : Slv16Array(1 downto 0);
+      adcData        : slv(15 downto 0);
       txMaster       : AxiStreamMasterType;
       hdrCnt         : integer;
       pixelCnt       : integer;
@@ -73,7 +74,7 @@ architecture rtl of AcqControlM is
       state          => IDLE_S,
       asicReady      => '0',
       acqCnt         => (others=>'0'),
-      adcData        => (others=>(others=>'0')),
+      adcData        => (others=>'0'),
       txMaster       => AXI_STREAM_MASTER_INIT_C,
       hdrCnt         => 0,
       pixelCnt       => 0
@@ -99,11 +100,9 @@ begin
       vreg.asicReady := '0';
       
       -- register valid ADC data
-      for i in 1 downto 0 loop
-         if adcValid(i) = '1' then
-            vreg.adcData(i) := adcData(i);
-         end if;
-      end loop;
+      if adcValid = '1' then
+         vreg.adcData := adcData;
+      end if;
       
       ------------------------------------------------
       -- AXI transactions
@@ -136,10 +135,18 @@ begin
                vreg.txMaster.tValid := '1';
                if reg.hdrCnt = 0 then
                   ssiSetUserSof(SLAVE_AXI_CONFIG_C, vreg.txMaster, '1');
-                  vreg.txMaster.tData(31 downto 0) := x"000000" & PGP_LANE_G & PGP_VC_G;           -- PGP lane and VC
-               else
-                  vreg.txMaster.tData(31 downto 0) := reg.acqCnt;
+                  vreg.txMaster.tData(15 downto 0) := x"00" & PGP_LANE_G & PGP_VC_G;   -- PGP lane and VC
+               elsif reg.hdrCnt = 1 then
+                  vreg.txMaster.tData(15 downto 0) := x"0000";                         -- PGP lane and VC
+               elsif reg.hdrCnt = 2 then
+                  vreg.txMaster.tData(15 downto 0) := reg.acqCnt(15 downto 0);         -- ACQ number
+               elsif reg.hdrCnt = 3 then
+                  vreg.txMaster.tData(15 downto 0) := reg.acqCnt(31 downto 16);        -- ACQ number
                   vreg.acqCnt                      := reg.acqCnt + 1;
+               elsif reg.hdrCnt = 4 then
+                  vreg.txMaster.tData(15 downto 0) := x"000" & ASIC_NO_G;              -- ASIC number
+               else
+                  vreg.txMaster.tData(15 downto 0) := x"0000";                         -- ASIC number
                   vreg.state   := MOVE_S;
                end if;
                vreg.hdrCnt := reg.hdrCnt + 1;
@@ -152,7 +159,7 @@ begin
                
                -- stream data samples
                vreg.txMaster.tValid := '1';
-               vreg.txMaster.tData(31 downto 0) := reg.adcData(1) & reg.adcData(0);
+               vreg.txMaster.tData(15 downto 0) := reg.adcData;
                
                
                -- all samples done
