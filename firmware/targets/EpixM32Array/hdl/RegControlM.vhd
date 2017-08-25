@@ -246,7 +246,7 @@ begin
       case (r.acqState) is
          
          when IDLE_S =>
-            if acqStart = '1' and asicReady = '1' then
+            if acqStart = '1' and asicReady = '1' and r.asicAcqReg.asicGlblRst = '1' then
                v.acqState := WAIT_ADC_S;
             end if;
          
@@ -261,7 +261,9 @@ begin
       end case;
       
       -- programmable ASIC acquisition waveform
-      if acqStart = '1' and asicReady = '1' then
+      if r.asicAcqReg.asicGlblRst = '0' then
+         v.asicAcqTimeCnt           := (others=>'1');
+      elsif acqStart = '1' and asicReady = '1' then
          v.asicAcqTimeCnt           := (others=>'0');
          if r.asicAcqReg.asicR1Test = '0' then
             v.asicAcqReg.asicR1     := '1';

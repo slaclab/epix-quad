@@ -610,6 +610,7 @@ begin
       asicStart         => iAsicStart,
       asicSample        => iAsicSample,
       asicReady         => iAsicReady,
+      asicGlblRst       => iAsicGlblRst,
       -- AxiStream output
       axisClk           => coreClk,
       axisRst           => axiRst,

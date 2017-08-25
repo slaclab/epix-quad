@@ -39,6 +39,7 @@ entity AcqControlM is
       asicStart         : in  sl;   -- from waveform gen
       asicSample        : in  sl;   -- from waveform gen
       asicReady         : out sl;   -- to waveform gen
+      asicGlblRst       : in  sl;
       -- AxiStream output
       axisClk           : in  sl;
       axisRst           : in  sl;
@@ -78,6 +79,8 @@ architecture rtl of AcqControlM is
       pixelCnt       => 0
    );
    
+   signal fifoRst : sl;
+   
    signal reg     : RegType   := REG_INIT_C;
    signal regIn   : RegType;
    
@@ -86,7 +89,7 @@ architecture rtl of AcqControlM is
 begin
    
    
-   comb : process (rst, reg, txSlave, asicStart, asicSample, adcData, adcValid) is
+   comb : process (rst, reg, txSlave, asicStart, asicSample, adcData, adcValid, asicGlblRst) is
       variable vreg     : RegType;
    begin
       -- Latch the current value
@@ -169,7 +172,7 @@ begin
       end case;
       
       -- Reset      
-      if (rst = '1') then
+      if (rst = '1' or asicGlblRst = '0') then
          vreg := REG_INIT_C;
       end if;
 
@@ -191,6 +194,8 @@ begin
    ----------------------------------------------------------------------
    -- Streaming out FIFO
    ----------------------------------------------------------------------
+   
+   fifoRst <= '1' when rst = '1' or asicGlblRst = '0' else '0';
    
    U_AxisOut : entity work.AxiStreamFifoV2
    generic map (
@@ -214,7 +219,7 @@ begin
    port map (
       -- Slave Port
       sAxisClk    => clk,
-      sAxisRst    => rst,
+      sAxisRst    => fifoRst,
       sAxisMaster => reg.txMaster,
       sAxisSlave  => txSlave,
       -- Master Port
