@@ -37,6 +37,106 @@ import numpy as np
 
 ################################################################################################
 ##
+## epixM32Array Classes definition
+##
+################################################################################################
+class EpixM32Array(pr.Device):
+   def __init__(self, **kwargs):
+      if 'description' not in kwargs:
+            kwargs['description'] = "EPIXM32ARRAY FPGA"
+      
+      trigChEnum={0:'TrigReg', 1:'ThresholdChA', 2:'ThresholdChB', 3:'AcqStart', 5:'AsicR1', 7:'AsicR2', 8:'AsicR3', 6:'AsicClk', 9:'AsicStart', 10:'AsicSample'}
+      #TODO: assign meaningful channel names
+      inChaEnum={
+            8: 'ASIC_OUT1', 3: 'ASIC_OUT2',  0: 'NONE00',   1: 'NONE01',    
+            2: 'NONE02',    4: 'NONE04',     5: 'NONE05',   6: 'NONE06',
+            7: 'NONE07',    9: 'NONE09',     10:'NONE10',   11:'NONE11', 
+            12:'NONE12',    13:'NONE13',     14:'NONE14',   15:'NONE15'}
+      inChbEnum={
+            8: 'ASIC_OUT1', 3: 'ASIC_OUT2',  0: 'NONE00',   1: 'NONE01',    
+            2: 'NONE02',    4: 'NONE04',     5: 'NONE05',   6: 'NONE06',
+            7: 'NONE07',    9: 'NONE09',     10:'NONE10',   11:'NONE11', 
+            12:'NONE12',    13:'NONE13',     14:'NONE14',   15:'NONE15'}
+      #In order to easely compare GedDAQ address map with the eprix rogue address map 
+      #it is defined the addrSize variable
+      addrSize = 4	
+      
+      super(self.__class__, self).__init__(**kwargs)
+      self.add((
+            axi.AxiVersion(offset=0x00000000, expand=False),
+            EpixM32ArrayFpgaRegisters(name="EpixM32ArrayFpgaRegisters", offset=0x01000000, expand=True),
+            TriggerRegisters(name="TriggerRegisters", offset=0x02000000, expand=False),
+            SlowAdcRegisters(name="SlowAdcRegisters", offset=0x03000000, expand=False),
+            OscilloscopeRegisters(name='Oscilloscope', offset=0x0B000000, enabled=False, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum),
+            pgp.Pgp2bAxi(name='Pgp2bAxi', offset=0x04000000, expand=False),
+            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[0]', offset=0x07000000, channels=8, enabled=False, expand=False),
+            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[1]', offset=0x08000000, channels=8, enabled=False, expand=False),
+            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]', offset=0x09000000, enabled=False, expand=False),
+            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]', offset=0x09000800, enabled=False, expand=False),
+            #analog_devices.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]', offset=0x09001000, enabled=False, expand=False),
+            MicroblazeLog(name='MicroblazeLog', offset=0x0A000000, expand=False)))
+      
+
+class EpixM32ArrayFpgaRegisters(pr.Device):
+   def __init__(self, **kwargs):
+      """Create the configuration device for Epix"""
+      super().__init__(description='Epix Configuration Registers', **kwargs)	
+      
+      #############################################
+      # Create block / variable combinations
+      #############################################
+      self.add(pr.Variable(name='Version',         description='Version',           offset=0x00000000, bitSize=32, bitOffset=0, base='hex',  mode='RW'))
+      self.add(pr.Variable(name='IdDigitalLow',    description='IdDigitalLow',      offset=0x00000004, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
+      self.add(pr.Variable(name='IdDigitalHigh',   description='IdDigitalHigh',     offset=0x00000008, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
+      self.add(pr.Variable(name='IdAnalogLow',     description='IdAnalogLow',       offset=0x0000000C, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
+      self.add(pr.Variable(name='IdAnalogHigh',    description='IdAnalogHigh',      offset=0x00000010, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
+      self.add(pr.Variable(name='IdCarrierLow',    description='IdCarrierLow',      offset=0x00000014, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
+      self.add(pr.Variable(name='IdCarrierHigh',   description='IdCarrierHigh',     offset=0x00000018, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
+      
+      self.add(pr.Variable(name='AsicR1Tr1',       description='AsicR1Tr1',         offset=0x00000100, bitSize=32, bitOffset=0, base='uint', mode='RW'))
+      self.add(pr.Variable(name='AsicR2Tr1',       description='AsicR2Tr1',         offset=0x00000104, bitSize=32, bitOffset=0, base='uint', mode='RW'))
+      self.add(pr.Variable(name='AsicR3Tr1',       description='AsicR3Tr1',         offset=0x00000108, bitSize=32, bitOffset=0, base='uint', mode='RW'))
+      self.add(pr.Variable(name='AsicR1Tr2',       description='AsicR1Tr2',         offset=0x0000010C, bitSize=32, bitOffset=0, base='uint', mode='RW'))
+      self.add(pr.Variable(name='AsicR2Tr2',       description='AsicR2Tr2',         offset=0x00000110, bitSize=32, bitOffset=0, base='uint', mode='RW'))
+      self.add(pr.Variable(name='AsicR3Tr2',       description='AsicR3Tr2',         offset=0x00000114, bitSize=32, bitOffset=0, base='uint', mode='RW'))
+      self.add(pr.Variable(name='AsicR1Test',      description='AsicR1Test',        offset=0x00000118, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
+      self.add(pr.Variable(name='AsicClkDly',      description='AsicClkDly',        offset=0x0000011C, bitSize=32, bitOffset=0, base='uint', mode='RW'))
+      self.add(pr.Variable(name='AsicClkPerHalf',  description='AsicClkPerHalf',    offset=0x00000120, bitSize=32, bitOffset=0, base='uint', mode='RW'))
+      self.add(pr.Variable(name='AsicSampleDly',   description='AsicSampleDly',     offset=0x00000124, bitSize=8,  bitOffset=0, base='uint', mode='RW'))
+      
+      self.add((
+         pr.Variable(name='AsicDigitalPwrEnable',  description='AsicPower', offset=0x00000200, bitSize=1, bitOffset=0,  base='bool', mode='RW'),
+         pr.Variable(name='AsicAnalogPwrEnable',   description='AsicPower', offset=0x00000200, bitSize=1, bitOffset=1,  base='bool', mode='RW'),
+         pr.Variable(name='FpgaOutputEnable',      description='AsicPower', offset=0x00000200, bitSize=1, bitOffset=2,  base='bool', mode='RW')))
+      self.add(pr.Variable(name='DebugSel1',       description='DebugSel1', offset=0x00000204, bitSize=5, bitOffset=0, base='uint',  mode='RW'))
+      self.add(pr.Variable(name='DebugSel2',       description='DebugSel2', offset=0x00000208, bitSize=5, bitOffset=0, base='uint',  mode='RW'))
+      
+      self.add(pr.Variable(name='AdcClkHalfT',     description='AdcClkHalfT',       offset=0x00000300, bitSize=32, bitOffset=0, base='uint', mode='RW'))
+      self.add((
+         pr.Variable(name='StartupReq',  description='AdcStartup', offset=0x00000304, bitSize=1, bitOffset=0, base='bool', mode='RW'),
+         pr.Variable(name='StartupAck',  description='AdcStartup', offset=0x00000304, bitSize=1, bitOffset=1, base='bool', mode='RO'),
+         pr.Variable(name='StartupFail', description='AdcStartup', offset=0x00000304, bitSize=1, bitOffset=2, base='bool', mode='RO')))
+      
+      #####################################
+      # Create commands
+      #####################################
+      
+      # A command has an associated function. The function can be a series of
+      # python commands in a string. Function calls are executed in the command scope
+      # the passed arg is available as 'arg'. Use 'dev' to get to device scope.
+      # A command can also be a call to a local function with local scope.
+      # The command object and the arg are passed
+
+   @staticmethod   
+   def frequencyConverter(self):
+      def func(dev, var):         
+         return '{:.3f} kHz'.format(1/(self.clkPeriod * self._count(var.dependencies)) * 1e-3)
+      return func
+
+
+
+################################################################################################
+##
 ## Cpix2 Class definition
 ##
 ################################################################################################
