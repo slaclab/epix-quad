@@ -30,7 +30,7 @@ entity AcqControlM is
       TPD_G             : time                     := 1 ns;
       PGP_LANE_G        : slv(3 downto 0)          := "0000";
       PGP_VC_G          : slv(3 downto 0)          := "0000";
-      ASIC_NO_G         : slv(3 downto 0)          := "0000"
+      CHANNEL_G         : slv(3 downto 0)          := "0000"
    );
    port (
       clk               : in  sl;
@@ -144,7 +144,7 @@ begin
                   vreg.txMaster.tData(15 downto 0) := reg.acqCnt(31 downto 16);        -- ACQ number
                   vreg.acqCnt                      := reg.acqCnt + 1;
                elsif reg.hdrCnt = 4 then
-                  vreg.txMaster.tData(15 downto 0) := x"000" & ASIC_NO_G;              -- ASIC number
+                  vreg.txMaster.tData(15 downto 0) := x"000" & CHANNEL_G;              -- ASIC number
                else
                   vreg.txMaster.tData(15 downto 0) := x"0000";                         -- ASIC number
                   vreg.state   := MOVE_S;

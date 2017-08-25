@@ -605,42 +605,40 @@ begin
    ---------------------
    U_Acq0ControlM : entity work.AcqControlM
    generic map (
-      ASIC_NO_G         => "0000"
+      CHANNEL_G      => "0000"
    )
    port map (
-      clk               => coreClk,
-      rst               => axiRst,
-      adcData           => adcData(3),
-      adcValid          => adcValid(3),
-      asicStart         => iAsicStart,
-      asicSample        => iAsicSample,
-      asicReady         => iAsicReady0,
-      asicGlblRst       => iAsicGlblRst,
-      -- AxiStream output
-      axisClk           => coreClk,
-      axisRst           => axiRst,
-      axisMaster        => doutAxisMaster(0),
-      axisSlave         => doutAxisSlave(0)
+      clk            => coreClk,
+      rst            => axiRst,
+      adcData        => adcData(3),
+      adcValid       => adcValid(3),
+      asicStart      => iAsicStart,
+      asicSample     => iAsicSample,
+      asicReady      => iAsicReady0,
+      asicGlblRst    => iAsicGlblRst,
+      axisClk        => coreClk,
+      axisRst        => axiRst,
+      axisMaster     => doutAxisMaster(0),
+      axisSlave      => doutAxisSlave(0)
    );
    
    U_Acq1ControlM : entity work.AcqControlM
    generic map (
-      ASIC_NO_G         => "0001"
+      CHANNEL_G      => "0001"
    )
    port map (
-      clk               => coreClk,
-      rst               => axiRst,
-      adcData           => adcData(8),
-      adcValid          => adcValid(8),
-      asicStart         => iAsicStart,
-      asicSample        => iAsicSample,
-      asicReady         => iAsicReady1,
-      asicGlblRst       => iAsicGlblRst,
-      -- AxiStream output
-      axisClk           => coreClk,
-      axisRst           => axiRst,
-      axisMaster        => doutAxisMaster(1),
-      axisSlave         => doutAxisSlave(1)
+      clk            => coreClk,
+      rst            => axiRst,
+      adcData        => adcData(8),
+      adcValid       => adcValid(8),
+      asicStart      => iAsicStart,
+      asicSample     => iAsicSample,
+      asicReady      => iAsicReady1,
+      asicGlblRst    => iAsicGlblRst,
+      axisClk        => coreClk,
+      axisRst        => axiRst,
+      axisMaster     => doutAxisMaster(1),
+      axisSlave      => doutAxisSlave(1)
    );
    
    iAsicReady <= iAsicReady0 and iAsicReady1;
