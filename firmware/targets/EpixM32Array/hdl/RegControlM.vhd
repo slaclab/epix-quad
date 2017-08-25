@@ -263,7 +263,11 @@ begin
       -- programmable ASIC acquisition waveform
       if acqStart = '1' and asicReady = '1' then
          v.asicAcqTimeCnt           := (others=>'0');
-         v.asicAcqReg.asicR1        := '1';
+         if r.asicAcqReg.asicR1Test = '0' then
+            v.asicAcqReg.asicR1     := '1';
+         else
+            v.asicAcqReg.asicR1     := '0';
+         end if;
          v.asicAcqReg.asicR2        := '1';
          v.asicAcqReg.asicR3        := '1';
          v.asicAcqReg.asicClk       := '0';
