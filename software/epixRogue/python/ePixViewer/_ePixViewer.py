@@ -318,11 +318,11 @@ class Window(QtGui.QMainWindow, QObject):
     # If image is incomplete stores the partial image
     def buildImageFrame(self):
         newRawData = self.eventReader.frameData
-        print('newRawData', len(newRawData))
-        print('self.rawImageFrame',len(self.rawImgFrame))
-        print('self.currentCam',self.currentCam)
+        #print('newRawData', len(newRawData))
+        #print('self.rawImageFrame',len(self.rawImgFrame))
+        #print('self.currentCam',self.currentCam)
         [frameComplete, readyForDisplay, self.rawImgFrame] = self.currentCam.buildImageFrame(currentRawData = self.rawImgFrame, newRawData = newRawData)
-        print('@ bulidImageFrame: frameComplete: ', frameComplete, 'readyForDisplay: ', readyForDisplay, 'returned raw data len', len(self.rawImgFrame))
+        #print('@ bulidImageFrame: frameComplete: ', frameComplete, 'readyForDisplay: ', readyForDisplay, 'returned raw data len', len(self.rawImgFrame))
 
         if (readyForDisplay):
             if (not self.displayBusy): 

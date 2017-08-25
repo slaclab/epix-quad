@@ -143,7 +143,7 @@ guiTop.addTree(ePixBoard)
 guiTop.resize(1000,800)
 
 # Viewer gui
-gui = vi.Window(cameraType = 'ePix10ka')
+gui = vi.Window(cameraType = 'ePixM32Array')
 gui.eventReader.frameIndex = 0
 #gui.eventReaderImage.VIEW_DATA_CHANNEL_ID = 0
 gui.setReadDelay(0)
