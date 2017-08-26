@@ -112,12 +112,12 @@ architecture rtl of RegControlM is
       asicR3Tr2         => toSlv(500, 32),   -- T = value * 10ns
       asicR1Test        => '0',
       asicClk           => '0',
-      asicClkDly        => toSlv(1000, 32),  -- T = value * 10ns,
-      asicClkPerHalf    => toSlv(100, 32),   -- T = value * 10ns),
+      asicClkDly        => toSlv(1000, 32),  -- T = value * 10ns
+      asicClkPerHalf    => toSlv(100, 32),   -- T = value * 10ns
       asicClkPerCnt     => (others=>'0'),
       asicClkCnt        => 0,
       asicSample        => (others=>'0'),
-      asicSampleDly     => (others=>'0')
+      asicSampleDly     => toSlv(112, 8)     -- 112 is sampling in the middle of low asicClk (verified in asicR1Test mode)
    );
    
    type StateType is (IDLE_S, WAIT_ADC_S);
