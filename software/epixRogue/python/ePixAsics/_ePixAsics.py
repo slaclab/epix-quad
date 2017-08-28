@@ -425,13 +425,13 @@ class Epix10kaAsic(pr.Device):
 
         # CMD = 1, Addr = 3  
         self.add((
-            pr.Variable(name='Pulser',   description='Config3', offset=0x00001003*addrSize, bitSize=10, bitOffset=0,  base='hex',  mode='RW'),
-            pr.Variable(name='pbit',     description='Config3', offset=0x00001003*addrSize, bitSize=1,  bitOffset=10, base='bool', mode='RW'),
-            pr.Variable(name='atest',    description='Config3', offset=0x00001003*addrSize, bitSize=1,  bitOffset=11, base='bool', mode='RW'),
-            pr.Variable(name='test',     description='Config3', offset=0x00001003*addrSize, bitSize=1,  bitOffset=12, base='bool', mode='RW'),
-            pr.Variable(name='sab_test', description='Config3', offset=0x00001003*addrSize, bitSize=1,  bitOffset=13, base='bool', mode='RW'),
-            pr.Variable(name='hrtest',   description='Config3', offset=0x00001003*addrSize, bitSize=1,  bitOffset=14, base='bool', mode='RW'),
-            pr.Variable(name='PulserR',  description='Config3', offset=0x00001003*addrSize, bitSize=1,  bitOffset=15, base='bool', mode='RW')))
+            pr.RemoteVariable(name='Pulser',   description='Config3', offset=0x00001003*addrSize, bitSize=10, bitOffset=0,  base=pr.UInt,  mode='RW'),
+            pr.RemoteVariable(name='pbit',     description='Config3', offset=0x00001003*addrSize, bitSize=1,  bitOffset=10, base=pr.Bool, mode='RW'),
+            pr.RemoteVariable(name='atest',    description='Config3', offset=0x00001003*addrSize, bitSize=1,  bitOffset=11, base=pr.Bool, mode='RW'),
+            pr.RemoteVariable(name='test',     description='Config3', offset=0x00001003*addrSize, bitSize=1,  bitOffset=12, base=pr.Bool, mode='RW'),
+            pr.RemoteVariable(name='sab_test', description='Config3', offset=0x00001003*addrSize, bitSize=1,  bitOffset=13, base=pr.Bool, mode='RW'),
+            pr.RemoteVariable(name='hrtest',   description='Config3', offset=0x00001003*addrSize, bitSize=1,  bitOffset=14, base=pr.Bool, mode='RW'),
+            pr.RemoteVariable(name='PulserR',  description='Config3', offset=0x00001003*addrSize, bitSize=1,  bitOffset=15, base=pr.Bool, mode='RW')))
 
         # CMD = 1, Addr = 4 
         self.add((
@@ -622,6 +622,11 @@ class Epix10kaAsic(pr.Device):
         self.add(
             pr.Command(name='GetPixelBitmap',description='Get pixel bitmap of the matrix', function=self.fnGetPixelBitmap))
 
+    def enableChanged(self,value):
+        if value is True:
+            self.readBlocks(recurse=True, variable=None)
+            self.checkBlocks(recurse=True, variable=None)
+
     def fnSetPixelBitmap(self, dev,cmd,arg):
         """SetPixelBitmap command function"""
         #set r0mode in order to have saci cmd to work properly on legacy firmware
@@ -664,6 +669,7 @@ class Epix10kaAsic(pr.Device):
 
     def fnGetPixelBitmap(self, dev,cmd,arg):
         """GetPixelBitmap command function"""
+        addrSize = 4
         #set r0mode in order to have saci cmd to work properly on legacy firmware
         self.root.Epix10ka.EpixFpgaRegisters.AsicR0Mode.set(True)
 
@@ -690,9 +696,9 @@ class Epix10kaAsic(pr.Device):
                          colToWrite = 0x380 + y%48;
                       else:
                          print('unexpected bank number')
-                      self.RowCounter.set(x)
-                      self.ColCounter.set(colToWrite)
-                      readBack[x, y] = self.WritePixelData.get()
+                      self._rawWrite(0x00006011*addrSize, x)
+                      self._rawWrite(0x00006013*addrSize, colToWrite)
+                      readBack[x, y] = self._rawRead(0x00005000*addrSize)
                 np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
         else:
             print("Warning: ASIC enable is set to False!")             
