@@ -282,6 +282,7 @@ class Epix100aAsic(pr.Device):
 
     def fnSetPixelBitmap(self, dev,cmd,arg):
         """SetPixelBitmap command function"""
+        addrSize = 4
         #set r0mode in order to have saci cmd to work properly on legacy firmware
         self.root.ePix100aFPGA.EpixFpgaRegisters.AsicR0Mode.set(True)
 
@@ -294,25 +295,25 @@ class Epix100aAsic(pr.Device):
             if os.path.splitext(self.filename)[1] == '.csv':
                 matrixCfg = np.genfromtxt(self.filename, delimiter=',')
                 if matrixCfg.shape == (354, 384):
-                    self.CmdPrepForRead()
-                    self.PrepareMultiConfig()
+                    self._rawWrite(0x00000000*addrSize,0)
+                    self._rawWrite(0x00008000*addrSize,0)
                     for x in range (0, 354):
                         for y in range (0, 384):
                             bankToWrite = int(y/96);
                             if (bankToWrite == 0):
-                                colToWrite = 0x700 + y%96;
+                               colToWrite = 0x700 + y%96;
                             elif (bankToWrite == 1):
-                                colToWrite = 0x680 + y%96;
+                               colToWrite = 0x680 + y%96;
                             elif (bankToWrite == 2):
-                                colToWrite = 0x580 + y%96;
+                               colToWrite = 0x580 + y%96;
                             elif (bankToWrite == 3):
-                                colToWrite = 0x380 + y%96;
+                               colToWrite = 0x380 + y%96;
                             else:
-                                print('unexpected bank number')
-                            self.RowCounter.set(x)
-                            self.ColCounter.set(colToWrite)
-                            self.WritePixelData.set(int(matrixCfg[x][y]))
-                    self.CmdPrepForRead()
+                               print('unexpected bank number')
+                            self._rawWrite(0x00006011*addrSize, x)
+                            self._rawWrite(0x00006013*addrSize, colToWrite) 
+                            self._rawWrite(0x00005000*addrSize, (int(matrixCfg[x][y])))
+                    self._rawWrite(0x00000000*addrSize,0)
                 else:
                     print('csv file must be 384x354 pixels')
             else:
@@ -322,6 +323,7 @@ class Epix100aAsic(pr.Device):
 
     def fnGetPixelBitmap(self, dev,cmd,arg):
         """GetPixelBitmap command function"""
+        addrSize = 4
         #set r0mode in order to have saci cmd to work properly on legacy firmware
         self.root.ePix100aFPGA.EpixFpgaRegisters.AsicR0Mode.set(True)
 
@@ -334,24 +336,24 @@ class Epix100aAsic(pr.Device):
                 self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
             if os.path.splitext(self.filename)[1] == '.csv':
                 readBack = np.zeros((354, 384),dtype='uint16')
-                self.CmdPrepForRead()
-                self.PrepareMultiConfig()
+                self._rawWrite(0x00000000*addrSize,0)
+                self._rawWrite(0x00008000*addrSize,0)
                 for x in range (0, 354):
-                    for y in range (0, 384):
-                        bankToWrite = int(y/96);
-                        if (bankToWrite == 0):
-                            colToWrite = 0x700 + y%96;
-                        elif (bankToWrite == 1):
-                            colToWrite = 0x680 + y%96;
-                        elif (bankToWrite == 2):
-                            colToWrite = 0x580 + y%96;
-                        elif (bankToWrite == 3):
-                            colToWrite = 0x380 + y%96;
-                        else:
-                            print('unexpected bank number')
-                        self.RowCounter.set(x)
-                        self.ColCounter.set(colToWrite)
-                        readBack[x, y] = self.WritePixelData.get()
+                   for y in range (0, 384):
+                      bankToWrite = int(y/96);
+                      if (bankToWrite == 0):
+                         colToWrite = 0x700 + y%96;
+                      elif (bankToWrite == 1):
+                         colToWrite = 0x680 + y%96;
+                      elif (bankToWrite == 2):
+                         colToWrite = 0x580 + y%96;
+                      elif (bankToWrite == 3):
+                         colToWrite = 0x380 + y%96;
+                      else:
+                         print('unexpected bank number')
+                      self._rawWrite(0x00006011*addrSize, x)
+                      self._rawWrite(0x00006013*addrSize, colToWrite)
+                      readBack[x, y] = self._rawRead(0x00005000*addrSize)
                 np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
         else:
             print("Warning: ASIC enable is set to False!")      
@@ -425,7 +427,7 @@ class Epix10kaAsic(pr.Device):
 
         # CMD = 1, Addr = 3  
         self.add((
-            pr.RemoteVariable(name='Pulser',   description='Config3', offset=0x00001003*addrSize, bitSize=10, bitOffset=0,  base=pr.UInt,  mode='RW'),
+            pr.RemoteVariable(name='Pulser',   description='Config3', offset=0x00001003*addrSize, bitSize=10, bitOffset=0,  base=pr.UInt, mode='RW'),
             pr.RemoteVariable(name='pbit',     description='Config3', offset=0x00001003*addrSize, bitSize=1,  bitOffset=10, base=pr.Bool, mode='RW'),
             pr.RemoteVariable(name='atest',    description='Config3', offset=0x00001003*addrSize, bitSize=1,  bitOffset=11, base=pr.Bool, mode='RW'),
             pr.RemoteVariable(name='test',     description='Config3', offset=0x00001003*addrSize, bitSize=1,  bitOffset=12, base=pr.Bool, mode='RW'),
@@ -883,6 +885,7 @@ class TixelAsic(pr.Device):
 
     def fnSetPixelBitmap(self, dev,cmd,arg):
         """SetPixelBitmap command function"""
+        addrSize = 4
         #set r0mode in order to have saci cmd to work properly on legacy firmware
         self.root.Tixel.TixelFpgaRegisters.AsicR0Mode.set(True)
 
@@ -895,14 +898,14 @@ class TixelAsic(pr.Device):
             if os.path.splitext(self.filename)[1] == '.csv':
                 matrixCfg = np.genfromtxt(self.filename, delimiter=',')
                 if matrixCfg.shape == (48, 48):
-                    self.CmdPrepForRead()
-                    self.PrepareMultiConfig()
+                    self._rawWrite(0x00000000*addrSize,0)
+                    self._rawWrite(0x00008000*addrSize,0)
                     for x in range (0, 48):
                         for y in range (0, 48):
-                            self.RowCounter.set(x)
-                            self.ColCounter.set(y)
-                            self.WritePixelData.set(int(matrixCfg[x][y]))
-                    self.CmdPrepForRead()
+                            self._rawWrite(0x00006001*addrSize, x)
+                            self._rawWrite(0x00006003*addrSize, y) 
+                            self._rawWrite(0x00005000*addrSize, (int(matrixCfg[x][y])))
+                    self._rawWrite(0x00000000*addrSize,0)
                 else:
                     print('csv file must be 48x48 pixels')
             else:
@@ -913,6 +916,7 @@ class TixelAsic(pr.Device):
 
     def fnGetPixelBitmap(self, dev,cmd,arg):
         """GetPixelBitmap command function"""
+        addrSize = 4
         #set r0mode in order to have saci cmd to work properly on legacy firmware
         self.root.Tixel.TixelFpgaRegisters.AsicR0Mode.set(True)
 
@@ -923,13 +927,13 @@ class TixelAsic(pr.Device):
                self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
             if os.path.splitext(self.filename)[1] == '.csv':
                 readBack = np.zeros((48,48),dtype='uint16')
-                self.CmdPrepForRead()
-                self.PrepareMultiConfig()
+                self._rawWrite(0x00000000*addrSize,0)
+                self._rawWrite(0x00008000*addrSize,0)
                 for x in range (0, 48):
                    for y in range (0, 48):
-                      self.RowCounter.set(x)
-                      self.ColCounter.set(y)
-                      readBack[x, y] = self.WritePixelData.get()
+                      self._rawWrite(0x00006001*addrSize, x)
+                      self._rawWrite(0x00006003*addrSize, y) 
+                      readBack[x, y] = self._rawRead(0x00005000*addrSize)
                 np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
         else:
             print("Warning: ASIC enable is set to False!")      
@@ -1150,6 +1154,7 @@ class Cpix2Asic(pr.Device):
 
     def fnSetPixelBitmap(self, dev,cmd,arg):
         """SetPixelBitmap command function"""
+        addrSize = 4
         #set r0mode in order to have saci cmd to work properly on legacy firmware
         #self.root.Cpix2.Cpix2FpgaRegisters.AsicR0Mode.set(True)
 
@@ -1162,14 +1167,14 @@ class Cpix2Asic(pr.Device):
             if os.path.splitext(self.filename)[1] == '.csv':
                 matrixCfg = np.genfromtxt(self.filename, delimiter=',')
                 if matrixCfg.shape == (48, 48):
-                    self.CmdPrepForRead()
-                    self.PrepareMultiConfig()
+                    self._rawWrite(0x00000000*addrSize,0)
+                    self._rawWrite(0x00008000*addrSize,0)
                     for x in range (0, 48):
                         for y in range (0, 48):
-                            self.RowCounter.set(x)
-                            self.ColCounter.set(y)
-                            self.WritePixelData.set(int(matrixCfg[x][y]))
-                    self.CmdPrepForRead()
+                            self._rawWrite(0x00006011*addrSize, x)
+                            self._rawWrite(0x00006013*addrSize, y) 
+                            self._rawWrite(0x00005000*addrSize, (int(matrixCfg[x][y])))
+                    self._rawWrite(0x00000000*addrSize,0)
                 else:
                     print('csv file must be 48x48 pixels')
             else:
@@ -1180,6 +1185,7 @@ class Cpix2Asic(pr.Device):
 
     def fnGetPixelBitmap(self, dev,cmd,arg):
         """GetPixelBitmap command function"""
+        addrSize = 4
         #set r0mode in order to have saci cmd to work properly on legacy firmware
         #self.root.Cpix2.Cpix2FpgaRegisters.AsicR0Mode.set(True)
 
@@ -1190,13 +1196,13 @@ class Cpix2Asic(pr.Device):
                self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
             if os.path.splitext(self.filename)[1] == '.csv':
                 readBack = np.zeros((48,48),dtype='uint16')
-                self.CmdPrepForRead()
-                self.PrepareMultiConfig()
+                self._rawWrite(0x00000000*addrSize,0)
+                self._rawWrite(0x00008000*addrSize,0)
                 for x in range (0, 48):
                    for y in range (0, 48):
-                      self.RowCounter.set(x)
-                      self.ColCounter.set(y)
-                      readBack[x, y] = self.WritePixelData.get()
+                      self._rawWrite(0x00006011*addrSize, x)
+                      self._rawWrite(0x00006013*addrSize, y) 
+                      readBack[x, y] = self._rawRead(0x00005000*addrSize)
                 np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
         else:
             print("Warning: ASIC enable is set to False!")      
