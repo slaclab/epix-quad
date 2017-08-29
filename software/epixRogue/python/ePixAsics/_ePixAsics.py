@@ -629,6 +629,7 @@ class Epix10kaAsic(pr.Device):
 
     def fnSetPixelBitmap(self, dev,cmd,arg):
         """SetPixelBitmap command function"""
+        addrSize = 4
         #set r0mode in order to have saci cmd to work properly on legacy firmware
         self.root.Epix10ka.EpixFpgaRegisters.AsicR0Mode.set(True)
 
@@ -641,8 +642,8 @@ class Epix10kaAsic(pr.Device):
             if os.path.splitext(self.filename)[1] == '.csv':
                 matrixCfg = np.genfromtxt(self.filename, delimiter=',')
                 if matrixCfg.shape == (178, 192):
-                    self.CmdPrepForRead()
-                    self.PrepareMultiConfig()
+                    self._rawWrite(0x00000000*addrSize,0)
+                    self._rawWrite(0x00008000*addrSize,0)
                     for x in range (0, 177):
                         for y in range (0, 192):
                             bankToWrite = int(y/48);
@@ -656,10 +657,10 @@ class Epix10kaAsic(pr.Device):
                                colToWrite = 0x380 + y%48;
                             else:
                                print('unexpected bank number')
-                            self.RowCounter.set(x)
-                            self.ColCounter.set(colToWrite)
-                            self.WritePixelData.set(int(matrixCfg[x][y]))
-                    self.CmdPrepForRead()
+                            self._rawWrite(0x00006011*addrSize, x)
+                            self._rawWrite(0x00006013*addrSize, colToWrite) 
+                            self._rawWrite(0x00005000*addrSize, (int(matrixCfg[x][y])))
+                    self._rawWrite(0x00000000*addrSize,0)
                 else:
                     print('csv file must be 192x178 pixels')
             else:
@@ -681,8 +682,8 @@ class Epix10kaAsic(pr.Device):
                self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
             if os.path.splitext(self.filename)[1] == '.csv':
                 readBack = np.zeros((178, 192),dtype='uint16')
-                self.CmdPrepForRead()
-                self.PrepareMultiConfig()
+                self._rawWrite(0x00000000*addrSize,0)
+                self._rawWrite(0x00008000*addrSize,0)
                 for x in range (0, 177):
                    for y in range (0, 192):
                       bankToWrite = int(y/48);
