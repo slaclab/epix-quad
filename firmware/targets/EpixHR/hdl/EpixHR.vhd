@@ -104,31 +104,38 @@ entity EpixHR is
       asicSaciSel         : out slv(1 downto 0);
       asicSaciRsp         : in  sl;
       -- ADC readout signals
-      adcClkP             : out slv( 1 downto 0);
-      adcClkM             : out slv( 1 downto 0);
-      adcDoClkP           : in  slv( 2 downto 0);
-      adcDoClkM           : in  slv( 2 downto 0);
-      adcFrameClkP        : in  slv( 2 downto 0);
-      adcFrameClkM        : in  slv( 2 downto 0);
-      adcDoP              : in  slv(19 downto 0);
-      adcDoM              : in  slv(19 downto 0);
+      adcClkP             : out sl;
+      adcClkM             : out sl;
+      adcDoClkP           : in  sl;
+      adcDoClkM           : in  sl;
+      adcFrameClkP        : in  sl;
+      adcFrameClkM        : in  sl;
+      adcDoP              : in  slv(3 downto 0);
+      adcDoM              : in  slv(3 downto 0);
       -- ASIC Control
       asic01DM1           : in sl;
       asic01DM2           : in sl;
       asicTpulse          : out sl;
       asicStart           : out sl;
       asicPPbe            : out sl;
-      asicR0              : out sl;
+      asicSR0             : out sl;
       asicPpmat           : out sl;
       asicGlblRst         : out sl;
       asicSync            : out sl;
       asicAcq             : out sl;
+      asicVid             : out sl;
       asicDoutP           : in  slv(1 downto 0);
       asicDoutM           : in  slv(1 downto 0);
       asicRoClkP          : out slv(1 downto 0);
       asicRoClkM          : out slv(1 downto 0);
       asicRefClkP         : out slv(1 downto 0);
       asicRefClkM         : out slv(1 downto 0);
+      -- hr test structure
+      asicTsData          : in  slv(15 downto 0);
+      asicTsSync          : in  sl; 
+      asicTsRst           : out sl;
+      asicTsAdcClk        : out sl;
+      asicTsShClk         : out sl;
       -- Boot Memory Ports
       bootCsL             : out sl;
       bootMosi            : out sl;
@@ -174,22 +181,26 @@ architecture RTL of EpixHR is
    signal iAdcPdwn       : slv(2 downto 0);
    signal iAdcSpiCsb     : slv(2 downto 0);
    signal iAdcSpiClk     : sl;   
-   signal iAdcClkP       : slv( 2 downto 0);
-   signal iAdcClkM       : slv( 2 downto 0);
+
    
    signal iBootCsL      : sl;
    signal iBootMosi     : sl;
    
    signal iAsicRoClk    : slv(1 downto 0);
    signal iAsicRefClk   : slv(1 downto 0);
-   signal iAsicR0       : sl;
+   signal iAsicSR0      : sl;
    signal iAsicAcq      : sl;
+   signal iAsicVid      : sl;
    signal iAsicPpmat    : sl;
    signal iAsicPPbe     : sl;
    signal iAsicGlblRst  : sl;
    signal iAsicSync     : sl;
    signal iAsicTpulse   : sl;
    signal iAsicStart    : sl;
+   -- hr test structure
+   signal iasicTsRst     : sl;
+   signal iasicTsAdcClk  : sl;
+   signal iasicTsShClk   : sl;
 
    
 begin
@@ -262,8 +273,8 @@ begin
          adcSpiCsb           => iAdcSpiCsb,
          adcPdwn             => iAdcPdwn,
          -- Fast ADC readout
-         adcClkP             => iAdcClkP,
-         adcClkN             => iAdcClkM,
+         adcClkP             => AdcClkP,
+         adcClkN             => AdcClkM,
          adcFClkP            => adcFrameClkP,
          adcFClkN            => adcFrameClkM,
          adcDClkP            => adcDoClkP,
@@ -277,22 +288,27 @@ begin
          asicPpmat           => iAsicPpmat,
          asicTpulse          => iAsicTpulse,
          asicStart           => iAsicStart,
-         asicR0              => iAsicR0,
+         asicSR0             => iAsicSR0,
          asicGlblRst         => iAsicGlblRst,
          asicSync            => iAsicSync,
          asicAcq             => iAsicAcq,
+         asicVid             => iAsicVid,
          asicDoutP           => asicDoutP,
          asicDoutM           => asicDoutM,
          asicRefClk          => iAsicRefClk,
          asicRoClk           => iAsicRoClk,
+         -- hr test structure
+         asicTsData          => asicTsData,
+         asicTsSync          => asicTsSync,
+         asicTsRst           => iasicTsRst,
+         asicTsAdcClk        => iasicTsAdcClk,
+         asicTsShClk         => iasicTsShClk,
          -- Boot Memory Ports
          bootCsL             => iBootCsL,
          bootMosi            => iBootMosi,
          bootMiso            => bootMiso
       );
-      
-      adcClkP(1) <= iAdcClkP(2);
-      adcClkM(1) <= iAdcClkM(2);
+   
 
    ----------------------------
    -- Map ports/signals/etc. --
@@ -341,14 +357,18 @@ begin
       U_ASIC_RFCLK_OBUFTDS : OBUFTDS port map ( I => iAsicRefClk(i), T => not(iFpgaOutputEn), O => asicRefClkP(i), OB => asicRefClkM(i) );
    end generate;
    -- ASIC control signals (single ended)
-   asicR0         <= iAsicR0      when iFpgaOutputEn = '1' else 'Z';
-   asicAcq        <= iAsicAcq     when iFpgaOutputEn = '1' else 'Z';
-   asicPpmat      <= iAsicPpmat   when iFpgaOutputEn = '1' else 'Z';
-   asicPPbe       <= iAsicPPbe    when iFpgaOutputEn = '1' else 'Z';
-   asicGlblRst    <= iAsicGlblRst when iFpgaOutputEn = '1' else 'Z';
-   asicSync       <= iAsicSync    when iFpgaOutputEn = '1' else 'Z';  
-   asicTpulse     <= iAsicTpulse  when iFpgaOutputEn = '1' else 'Z';  
-   asicStart      <= iAsicStart  when iFpgaOutputEn = '1' else 'Z';  
+   asicSR0        <= iAsicSR0      when iFpgaOutputEn = '1' else 'Z';
+   asicAcq        <= iAsicAcq      when iFpgaOutputEn = '1' else 'Z';
+   asicVid        <= iAsicVid      when iFpgaOutputEn = '1' else 'Z';
+   asicPpmat      <= iAsicPpmat    when iFpgaOutputEn = '1' else 'Z';
+   asicPPbe       <= iAsicPPbe     when iFpgaOutputEn = '1' else 'Z';
+   asicGlblRst    <= iAsicGlblRst  when iFpgaOutputEn = '1' else 'Z';
+   asicSync       <= iAsicSync     when iFpgaOutputEn = '1' else 'Z';  
+   asicTpulse     <= iAsicTpulse   when iFpgaOutputEn = '1' else 'Z';  
+   asicStart      <= iAsicStart    when iFpgaOutputEn = '1' else 'Z';  
+   asicTsRst      <= iasicTsRst    when iFpgaOutputEn = '1' else 'Z';  
+   asicTsAdcClk   <= iasicTsAdcClk when iFpgaOutputEn = '1' else 'Z';  
+   asicTsShClk    <= iasicTsShClk  when iFpgaOutputEn = '1' else 'Z';  
 
    
 end RTL;

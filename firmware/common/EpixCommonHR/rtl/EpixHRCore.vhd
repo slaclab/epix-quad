@@ -104,14 +104,14 @@ entity EpixHRCore is
       adcSpiCsb           : out slv(2 downto 0);
       adcPdwn             : out slv(2 downto 0);
       -- Fast ADC readoutCh
-      adcClkP             : out slv( 2 downto 0);
-      adcClkN             : out slv( 2 downto 0);
-      adcFClkP            : in  slv( 2 downto 0);
-      adcFClkN            : in  slv( 2 downto 0);
-      adcDClkP            : in  slv( 2 downto 0);
-      adcDClkN            : in  slv( 2 downto 0);
-      adcChP              : in  slv(19 downto 0);
-      adcChN              : in  slv(19 downto 0);
+      adcClkP             : out sl;
+      adcClkN             : out sl;
+      adcFClkP            : in  sl;
+      adcFClkN            : in  sl;
+      adcDClkP            : in  sl;
+      adcDClkN            : in  sl;
+      adcChP              : in  slv(3 downto 0);
+      adcChN              : in  slv(3 downto 0);
       -- ASIC Control
       asic01DM1           : in sl;
       asic01DM2           : in sl;
@@ -119,14 +119,21 @@ entity EpixHRCore is
       asicPpmat           : out sl;
       asicTpulse          : out sl;
       asicStart           : out sl;
-      asicR0              : out sl;
+      asicSR0             : out sl;
       asicGlblRst         : out sl;
       asicSync            : out sl;
       asicAcq             : out sl;
+      asicVid             : out sl;
       asicDoutP           : in  slv(1 downto 0);
       asicDoutM           : in  slv(1 downto 0);
       asicRefClk          : out slv(1 downto 0);
       asicRoClk           : out slv(1 downto 0);
+      -- hr test structure
+      asicTsData          : in  slv(15 downto 0);
+      asicTsSync          : in  sl; 
+      asicTsRst           : out sl := '0';
+      asicTsAdcClk        : out sl := '0';
+      asicTsShClk         : out sl := '0';
       -- Boot Memory Ports
       bootCsL             : out sl;
       bootMosi            : out sl;
@@ -145,19 +152,21 @@ architecture top_level of EpixHRCore is
    signal iAsicStart           : sl;
    signal iAsicPPbe            : sl;
    signal iAsicPpmat           : sl;
-   signal iAsicR0              : sl;
+   signal iAsicSR0             : sl;
    signal iAsicSync            : sl;
    signal iAsicAcq             : sl;
+   signal iAsicVid             : sl;
    signal iAsicGrst            : sl;
    
    attribute keep of iAsic01DM1    : signal is "true";
    attribute keep of iAsic01DM2    : signal is "true";
    attribute keep of iAsicPPbe     : signal is "true";
    attribute keep of iAsicPpmat    : signal is "true";
-   attribute keep of iAsicR0       : signal is "true";
+   attribute keep of iAsicSR0       : signal is "true";
    attribute keep of iAsicGrst     : signal is "true";
    attribute keep of iAsicSync     : signal is "true";
    attribute keep of iAsicAcq      : signal is "true";
+   attribute keep of iAsicVid      : signal is "true";
    attribute keep of iAsicStart    : signal is "true";
    attribute keep of iAsicTpulse   : signal is "true";
    
@@ -315,7 +324,7 @@ begin
       iAsicStart        when EpixHRConfig.epixhrDbgSel1 = "00010" else
       iAsicAcq          when EpixHRConfig.epixhrDbgSel1 = "00011" else
       iAsicTpulse       when EpixHRConfig.epixhrDbgSel1 = "00100" else
-      iAsicR0           when EpixHRConfig.epixhrDbgSel1 = "00101" else
+      iAsicSR0          when EpixHRConfig.epixhrDbgSel1 = "00101" else
       iSaciClk          when EpixHRConfig.epixhrDbgSel1 = "00110" else
       iSaciCmd          when EpixHRConfig.epixhrDbgSel1 = "00111" else
       saciRsp           when EpixHRConfig.epixhrDbgSel1 = "01000" else
@@ -337,7 +346,7 @@ begin
       iAsicStart        when EpixHRConfig.epixhrDbgSel2 = "00010" else
       iAsicAcq          when EpixHRConfig.epixhrDbgSel2 = "00011" else
       iAsicTpulse       when EpixHRConfig.epixhrDbgSel2 = "00100" else
-      iAsicR0           when EpixHRConfig.epixhrDbgSel2 = "00101" else
+      iAsicSR0          when EpixHRConfig.epixhrDbgSel2 = "00101" else
       iSaciClk          when EpixHRConfig.epixhrDbgSel2 = "00110" else
       iSaciCmd          when EpixHRConfig.epixhrDbgSel2 = "00111" else
       saciRsp           when EpixHRConfig.epixhrDbgSel2 = "01000" else
@@ -719,15 +728,17 @@ begin
       asicPpmat      => iAsicPpmat,
       asicTpulse     => iAsicTpulse,
       asicStart      => iAsicStart,
-      asicR0         => iAsicR0,
+      asicSR0        => iAsicSR0,
       asicGlblRst    => iAsicGrst,
       asicSync       => iAsicSync,
       asicAcq        => iAsicAcq,
+      asicVid        => iAsicVid,
       errInhibit     => errInhibit
    );
    
    asicAcq        <= iAsicAcq;
-   asicR0         <= iAsicR0;
+   asicVid        <= iAsicVid;
+   asicSR0        <= iAsicSR0;
    asicPpmat      <= iAsicPpmat;
    asicPPbe       <= iAsicPpbe;
    asicSync       <= iAsicSync;
@@ -802,7 +813,7 @@ begin
    --------------------------------------------
    
    -- ADC Clock outputs
-   U_AdcClk2 : OBUFDS port map ( I => adcClk, O => adcClkP(2), OB => adcClkN(2) );
+   U_AdcClk2 : OBUFDS port map ( I => adcClk, O => adcClkP, OB => adcClkN );
    
    -- Tap delay calibration  
    U_IDelayCtrl : IDELAYCTRL
@@ -812,12 +823,12 @@ begin
       RDY    => open
    );   
    
-   monAdc.fClkP <= adcFClkP(2);
-   monAdc.fClkN <= adcFClkN(2);
-   monAdc.dClkP <= adcDClkP(2);
-   monAdc.dClkN <= adcDClkN(2);
-   monAdc.chP   <= adcChP(19 downto 16);
-   monAdc.chN   <= adcChN(19 downto 16);
+   monAdc.fClkP <= adcFClkP;
+   monAdc.fClkN <= adcFClkN;
+   monAdc.dClkP <= adcDClkP;
+   monAdc.dClkN <= adcDClkN;
+   monAdc.chP   <= adcChP(3 downto 0);
+   monAdc.chN   <= adcChN(3 downto 0);
       
    U_MonAdcReadout : entity work.Ad9249ReadoutGroup
    generic map (
@@ -1029,7 +1040,7 @@ begin
       arm            => acqStart,
       acqStart       => acqStart,
       asicAcq        => iAsicAcq,
-      asicR0         => iAsicR0,
+      asicR0         => iAsicSR0,
       asicPpmat      => iAsicPpmat,
       asicPpbe       => iAsicPpbe,
       asicSync       => iAsicSync,

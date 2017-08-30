@@ -70,10 +70,11 @@ entity RegControlEpixHR is
       asicPpmat      : out sl;
       asicTpulse     : out sl;
       asicStart      : out sl;
-      asicR0         : out sl;
+      asicSR0        : out sl;
       asicGlblRst    : out sl;
       asicSync       : out sl;
       asicAcq        : out sl;
+      asicVid        : out sl;
       errInhibit     : out sl
    );
 end RegControlEpixHR;
@@ -81,10 +82,10 @@ end RegControlEpixHR;
 architecture rtl of RegControlEpixHR is
    
    type AsicAcqType is record
-      R0                : sl;
-      R0Polarity        : sl;
-      R0Delay           : slv(31 downto 0);
-      R0Width           : slv(31 downto 0);
+      SR0               : sl;
+      SR0Polarity       : sl;
+      SR0Delay          : slv(31 downto 0);
+      SR0Width          : slv(31 downto 0);
       GlblRst           : sl;
       GlblRstPolarity   : sl;
       GlblRstDelay      : slv(31 downto 0);
@@ -95,6 +96,7 @@ architecture rtl of RegControlEpixHR is
       AcqDelay2         : slv(31 downto 0);
       AcqWidth1         : slv(31 downto 0);
       AcqWidth2         : slv(31 downto 0);
+      Vid               : sl;
       Tpulse            : sl;
       TpulsePolarity    : sl;
       TpulseDelay       : slv(31 downto 0);
@@ -122,10 +124,10 @@ architecture rtl of RegControlEpixHR is
    end record AsicAcqType;
    
    constant ASICACQ_TYPE_INIT_C : AsicAcqType := (
-      R0                => '0',
-      R0Polarity        => '0',
-      R0Delay           => (others=>'0'),
-      R0Width           => (others=>'0'),
+      SR0               => '0',
+      SR0Polarity       => '0',
+      SR0Delay          => (others=>'0'),
+      SR0Width          => (others=>'0'),
       GlblRst           => '1',
       GlblRstPolarity   => '1',
       GlblRstDelay      => (others=>'0'),
@@ -136,6 +138,7 @@ architecture rtl of RegControlEpixHR is
       AcqDelay2         => (others=>'0'),
       AcqWidth1         => (others=>'0'),
       AcqWidth2         => (others=>'0'),
+      Vid               => '0',
       Tpulse            => '0',
       TpulsePolarity    => '0',
       TpulseDelay       => (others=>'0'),
@@ -242,9 +245,9 @@ begin
       axiSlaveRegisterR(regCon, x"000014",  0, ite(idValids(2) = '1',idValues(2)(31 downto  0), x"00000000")); --Carrier card ID low
       axiSlaveRegisterR(regCon, x"000018",  0, ite(idValids(2) = '1',idValues(2)(63 downto 32), x"00000000")); --Carrier card ID high
       
-      axiSlaveRegister(regCon,  x"000100",  0, v.asicAcqReg.R0Polarity);
-      axiSlaveRegister(regCon,  x"000104",  0, v.asicAcqReg.R0Delay);
-      axiSlaveRegister(regCon,  x"000108",  0, v.asicAcqReg.R0Width);
+      axiSlaveRegister(regCon,  x"000100",  0, v.asicAcqReg.SR0Polarity);
+      axiSlaveRegister(regCon,  x"000104",  0, v.asicAcqReg.SR0Delay);
+      axiSlaveRegister(regCon,  x"000108",  0, v.asicAcqReg.SR0Width);
       axiSlaveRegister(regCon,  x"00010C",  0, v.asicAcqReg.GlblRstPolarity);
       axiSlaveRegister(regCon,  x"000110",  0, v.asicAcqReg.GlblRstDelay);
       axiSlaveRegister(regCon,  x"000114",  0, v.asicAcqReg.GlblRstWidth);
@@ -271,6 +274,8 @@ begin
       axiSlaveRegister(regCon,  x"000168",  0, v.asicAcqReg.saciSyncPolarity);
       axiSlaveRegister(regCon,  x"00016C",  0, v.asicAcqReg.saciSyncDelay);
       axiSlaveRegister(regCon,  x"000170",  0, v.asicAcqReg.saciSyncWidth);
+      --
+      axiSlaveRegister(regCon,  x"000174",  0, v.asicAcqReg.Vid);
       
       axiSlaveRegisterR(regCon, x"000200",  0, r.epixhrRegOut.acqCnt);
       axiSlaveRegisterR(regCon, x"000204",  0, r.saciPrepRdoutCnt);
@@ -309,7 +314,7 @@ begin
       if acqStart = '1' then
          v.epixhrRegOut.acqCnt    := r.epixhrRegOut.acqCnt + 1;
          v.asicAcqTimeCnt        := (others=>'0');
-         v.asicAcqReg.R0         := r.asicAcqReg.R0Polarity;
+         v.asicAcqReg.SR0        := r.asicAcqReg.SR0Polarity;
          v.asicAcqReg.GlblRst    := r.asicAcqReg.GlblRstPolarity;
          v.asicAcqReg.Acq        := r.asicAcqReg.AcqPolarity;
          v.asicAcqReg.Tpulse     := r.asicAcqReg.TpulsePolarity;
@@ -324,10 +329,10 @@ begin
          end if;
          
          -- single pulse. zero value corresponds to infinite delay/width
-         if r.asicAcqReg.R0Delay /= 0 and r.asicAcqReg.R0Delay <= r.asicAcqTimeCnt then
-            v.asicAcqReg.R0 := not r.asicAcqReg.R0Polarity;
-            if r.asicAcqReg.R0Width /= 0 and (r.asicAcqReg.R0Width + r.asicAcqReg.R0Delay) <= r.asicAcqTimeCnt then
-               v.asicAcqReg.R0 := r.asicAcqReg.R0Polarity;
+         if r.asicAcqReg.SR0Delay /= 0 and r.asicAcqReg.SR0Delay <= r.asicAcqTimeCnt then
+            v.asicAcqReg.SR0 := not r.asicAcqReg.SR0Polarity;
+            if r.asicAcqReg.SR0Width /= 0 and (r.asicAcqReg.SR0Width + r.asicAcqReg.SR0Delay) <= r.asicAcqTimeCnt then
+               v.asicAcqReg.SR0 := r.asicAcqReg.SR0Polarity;
             end if;
          end if;
          
@@ -417,7 +422,7 @@ begin
       -- epixhr bug workaround
       -- for a number of clock cycles
       -- data link is dropped after R0 
-      if r.asicAcqReg.R0 = not r.asicAcqReg.R0Polarity then
+      if r.asicAcqReg.SR0 = not r.asicAcqReg.SR0Polarity then
          v.errInhibitCnt := (others=>'0');
          errInhibit <= '1';
       elsif r.errInhibitCnt <= 5000 then    -- inhibit for 50 us
@@ -447,10 +452,11 @@ begin
       asicPpmat      <= r.asicAcqReg.Ppmat;
       asicTpulse     <= r.asicAcqReg.Tpulse;
       asicStart      <= r.asicAcqReg.Start;
-      asicR0         <= r.asicAcqReg.R0;
+      asicSR0        <= r.asicAcqReg.SR0;
       asicGlblRst    <= r.asicAcqReg.GlblRst;
       asicSync       <= r.asicAcqReg.Sync;
       asicAcq        <= r.asicAcqReg.Acq;
+      asicVid        <= r.asicAcqReg.Vid;
       
    end process comb;
 
