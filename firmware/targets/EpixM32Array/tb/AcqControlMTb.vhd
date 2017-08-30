@@ -212,6 +212,10 @@ begin
       
       -- enable power
       axiLiteBusSimWrite(clk, axiWriteMaster, axiWriteSlave, x"00000200", x"03", true);
+      axiLiteBusSimWrite(clk, axiWriteMaster, axiWriteSlave, x"0000010c", toSlv(10000+600,16), true);
+      axiLiteBusSimWrite(clk, axiWriteMaster, axiWriteSlave, x"00000110", toSlv(10000+450,16), true);
+      axiLiteBusSimWrite(clk, axiWriteMaster, axiWriteSlave, x"00000114", toSlv(10000+500,16), true);
+      axiLiteBusSimWrite(clk, axiWriteMaster, axiWriteSlave, x"0000011c", toSlv(10000+1000,16), true);
       wait until rising_edge(iAsicGlblRst);
       
       --axiLiteBusSimWrite(clk, axiWriteMaster, axiWriteSlave, x"00000200", x"FF", true);
