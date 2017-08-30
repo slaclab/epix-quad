@@ -40,7 +40,7 @@ import ePixFpga as fpga
 #############################################
 # Define if the GUI is started (1 starts it)
 START_GUI = True
-START_VIEWER = False
+START_VIEWER = True
 #############################################
 #print debug info
 PRINT_VERBOSE = False
@@ -143,13 +143,14 @@ guiTop.addTree(ePixBoard)
 guiTop.resize(1000,800)
 
 # Viewer gui
-gui = vi.Window(cameraType = 'ePixM32Array')
-gui.eventReader.frameIndex = 0
-#gui.eventReaderImage.VIEW_DATA_CHANNEL_ID = 0
-gui.setReadDelay(0)
-pyrogue.streamTap(pgpVc0, gui.eventReader) 
-pyrogue.streamTap(pgpVc2, gui.eventReaderScope)# PseudoScope
-pyrogue.streamTap(pgpVc3, gui.eventReaderMonitoring) # Slow Monitoring
+if START_VIEWER:
+   gui = vi.Window(cameraType = 'ePixM32Array')
+   gui.eventReader.frameIndex = 0
+   #gui.eventReaderImage.VIEW_DATA_CHANNEL_ID = 0
+   gui.setReadDelay(0)
+   pyrogue.streamTap(pgpVc0, gui.eventReader) 
+   pyrogue.streamTap(pgpVc2, gui.eventReaderScope)# PseudoScope
+   pyrogue.streamTap(pgpVc3, gui.eventReaderMonitoring) # Slow Monitoring
 
 # Run gui
 if (START_GUI):

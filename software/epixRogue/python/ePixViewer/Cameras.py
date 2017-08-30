@@ -34,7 +34,7 @@ from PyQt4.QtCore import QObject, pyqtSignal
 import numpy as np
 import ePixViewer.imgProcessing as imgPr
 
-PRINT_VERBOSE = 1
+PRINT_VERBOSE = 0
 
 # define global constants
 NOCAMERA   = 0
@@ -222,7 +222,7 @@ class Camera():
         #self._NumAdcChPerAsic = 4
         #self._NumColPerAdcCh = 96
         #self._superRowSizeInBytes = self._superRowSize * 4
-        self.sensorWidth  = 32 # The sensor size in this dimension is doubled because each pixel has two information (ToT and ToA) 
+        self.sensorWidth  = 64 # The sensor size in this dimension is doubled because each pixel has two information (ToT and ToA) 
         self.sensorHeight = 64 # The sensor size in this dimension is doubled because each pixel has two information (ToT and ToA) 
         self.pixelDepth = 16
         self.bitMask = np.uint16(0x3FFF)
@@ -704,14 +704,14 @@ class Camera():
             #if (PRINT_VERBOSE): print('raw data 1:', rawData[1,0:10])
             
             quadrant0 = np.frombuffer(rawData[0,4:],dtype='uint16')
-            quadrant0sq = quadrant0.reshape(32,64)
+            quadrant0sq = quadrant0.reshape(64,32)
             quadrant1 = np.frombuffer(rawData[1,4:],dtype='uint16')
-            quadrant1sq = quadrant1.reshape(32,64)
+            quadrant1sq = quadrant1.reshape(64,32)
         
             imgTop = quadrant0sq
             imgBot = quadrant1sq
 
-            imgDesc = np.concatenate((imgTop, imgBot),0)
+            imgDesc = np.concatenate((imgTop, imgBot),1)
         else:
             imgDesc = np.zeros((64,64), dtype='uint16')
         # returns final image
