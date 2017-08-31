@@ -776,6 +776,34 @@ class MplCanvas(FigureCanvas):
         self.axes.set_title(self.MyTitle)        
         self.draw()
 
+    def update_plot_with_marker(self, *args):
+        argIndex = 0
+        lineName = ""
+#        if (self.fig.cbar!=None):              
+#            self.fig.cbar.remove()
+
+        self.axes.cla()
+        for arg in args:
+            if (argIndex == 0):
+                lineEnabled = arg
+            if (argIndex == 1):
+                lineName = arg
+            if (argIndex == 2):
+                lineColor = arg
+            if (argIndex == 3):
+                ##if (PRINT_VERBOSE): print(lineName)
+                if (lineEnabled):
+                    ind = np.arange(len(arg))
+                    l = np.bitwise_and(arg, np.uint16(0x7FFF)) #[random.randint(0, 10) for i in range(4)]
+                    x_markers = np.where((np.bitwise_and(arg, np.uint16(0x8000))>>15)>0)
+                    self.axes.plot(l, lineColor)
+                    self.axes.scatter(x_markers,l[x_markers],color='black')
+                argIndex = -1
+            argIndex = argIndex + 1    
+        self.axes.set_title(self.MyTitle)        
+        self.draw()
+
+
     def update_figure(self, image=None, contrast=None, autoScale = True):
         self.axes.cla()
         self.axes.autoscale = autoScale
