@@ -919,7 +919,7 @@ begin
       sysClkRst      => axiRst,
       adcData        => adcData,
       adcValid       => adcValid,
-      adcMarker      => (others=>'iAsicSample'),
+      adcMarker      => (others=>iAsicSample),
       arm            => acqStart,
       acqStart       => acqStart,
       asicAcq        => acqStart,
