@@ -793,9 +793,8 @@ class MplCanvas(FigureCanvas):
             if (argIndex == 3):
                 ##if (PRINT_VERBOSE): print(lineName)
                 if (lineEnabled):
-                    ind = np.arange(len(arg))
-                    l = np.bitwise_and(arg, np.uint16(0x7FFF)) #[random.randint(0, 10) for i in range(4)]
-                    x_markers = np.where((np.bitwise_and(arg, np.uint16(0x8000))>>15)>0)
+                    l = np.bitwise_and(arg, np.uint16(0x3FFF)) #[random.randint(0, 10) for i in range(4)]
+                    x_markers = np.where((np.bitwise_and(arg, np.uint16(0x4000))>>14)>0)
                     self.axes.plot(l, lineColor)
                     self.axes.scatter(x_markers,l[x_markers],color='black')
                 argIndex = -1
