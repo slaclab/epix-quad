@@ -908,7 +908,7 @@ begin
    -- Virtual oscilloscope                   --
    --------------------------------------------
    
-   U_PseudoScope : entity work.PseudoScopeAxi
+   U_PseudoScope : entity work.PseudoScopeAxiM
    generic map (
      TPD_G                      => TPD_G,
      MASTER_AXI_STREAM_CONFIG_G => ssiAxiStreamConfig(4, TKEEP_COMP_C)      
