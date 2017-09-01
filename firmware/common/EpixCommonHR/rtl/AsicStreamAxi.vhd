@@ -36,7 +36,7 @@ entity AsicStreamAxi is
       VC_NO_G           : slv(3 downto 0)  := "0000";
       LANE_NO_G         : slv(3 downto 0)  := "0000";
       ASIC_NO_G         : slv(2 downto 0)  := "000";
-      ASIC_DATA_G       : natural := 2303;
+      ASIC_DATA_G       : natural := (32*32)-1; --workds
       AXIL_ERR_RESP_G   : slv(1 downto 0)  := AXI_RESP_DECERR_C
    );
    port ( 
@@ -387,7 +387,7 @@ begin
             if dFifoValid = '1' or s.testMode = '1' then
                
                -- test mode row and col counters
-               if s.testColCnt < 47 then
+               if s.testColCnt < 31 then
                   sv.testColCnt := s.testColCnt + 1;
                else
                   sv.testColCnt := 0;
