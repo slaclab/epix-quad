@@ -1,16 +1,17 @@
 
 # Setup the license files
 if ( $?LM_LICENSE_FILE ) then
-	setenv LM_LICENSE_FILE 2100@rdlic:1717@rdlic:${LM_LICENSE_FILE}
+    setenv LM_LICENSE_FILE "2100@rdlic1:1717@rdlic1:2100@rdlic2:1717@rdlic2:2100@rdlic3:1717@rdlic3":${LM_LICENSE_FILE}
+
 else
-	setenv LM_LICENSE_FILE 2100@rdlic:1717@rdlic
+    setenv LM_LICENSE_FILE "2100@rdlic1:1717@rdlic1:2100@rdlic2:1717@rdlic2:2100@rdlic3:1717@rdlic3"
 endif
 
 # Setup the Xilinx software 
 set KERNAL_TYPE = `uname -m`
 if ( $KERNAL_TYPE == "x86_64" ) then
 	printf  "Using 64-bit Xilinx\n"
-	source /afs/slac/g/reseng/xilinx/ise_14.7/ISE_DS/settings64.csh
+#	source /afs/slac/g/reseng/xilinx/ise_14.7/ISE_DS/settings64.csh
     source /afs/slac/g/reseng/xilinx/vivado_2016.4/Vivado/2016.4/settings64.csh
 else
 	printf  "Firmware can only be compiled on 64-bit OS\n"

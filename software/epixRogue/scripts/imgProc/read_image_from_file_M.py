@@ -28,7 +28,7 @@ import matplotlib
 matplotlib.use('QT4Agg')
 import matplotlib.pyplot as plt
 #matplotlib.pyplot.ion()
-MAX_NUMBER_OF_FRAMES_PER_BATCH  = 80000
+MAX_NUMBER_OF_FRAMES_PER_BATCH  = 8000
 
 ##################################################
 # Global variables
@@ -43,7 +43,7 @@ PLOT_IMAGE_DARKSUB = False
 if (len(sys.argv[1])>0):
     filename = sys.argv[1]
 else:
-    filename = '/afs/slac.stanford.edu/u/re/mkwiatko/epixM_data/dat1.dat'
+    filename = ''
 
 f = open(filename, mode = 'rb')
 
@@ -62,7 +62,7 @@ while ((len(file_header)>0) and (numberOfFrames<MAX_NUMBER_OF_FRAMES_PER_BATCH))
             newFrame  = [newPayload.copy()]
             allFrames = np.append(allFrames, newFrame, axis = 0)
         numberOfFrames = numberOfFrames + 1 
-        print ("Payload" , numberOfFrames, ":",  (newPayload[0:5]))
+        #print ("Payload" , numberOfFrames, ":",  (newPayload[0:5]))
         previousSize = file_header
     except Exception: 
         #e = sys.exc_info()[0]
@@ -127,10 +127,12 @@ if PLOT_IMAGE_DARKSUB :
 
 # the histogram of the data
 nbins = 1024
+EnergyTh = -50
 n = np.zeros(nbins)
 for i in range(0, imgDesc.shape[0]):
 #    n, bins, patches = plt.hist(darkSub[5,:,:], bins=256, range=(0.0, 256.0), fc='k', ec='k')
-    h, b = np.histogram(darkSub[i,:,32:63], np.arange(0,nbins+1))
+    [x,y] = np.where(darkSub[i,:,32:63]>EnergyTh)
+    h, b = np.histogram(darkSub[i,x,y], np.arange(-nbins/2,nbins/2+1))
     n = n + h
 
 plt.bar(b[1:nbins+1],n, width = 0.55)

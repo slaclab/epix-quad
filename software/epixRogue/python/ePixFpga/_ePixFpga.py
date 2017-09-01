@@ -301,27 +301,24 @@ class HrPrototype(pr.Device):
       
         super(self.__class__, self).__init__(**kwargs)
         self.add((
-            axi.AxiVersion(name="AxiVersion", description="AXI-Lite Version Module", memBase=None, offset=0x00000000, hidden =  False, expand=False),
-            HrPrototypeFpgaRegisters(name="HrPrototypeFpgaRegisters", offset=0x01000000),
-            TriggerRegisters(name="TriggerRegisters", offset=0x02000000, expand=False),
-            SlowAdcRegisters(name="SlowAdcRegisters", offset=0x03000000, expand=False),
-            epix.TixelAsic(name='TixelAsic0', offset=0x04000000, enabled=False, expand=False),
-            epix.TixelAsic(name='TixelAsic1', offset=0x04400000, enabled=False, expand=False),
-            AsicDeserRegisters(name='Asic0Deserializer', offset=0x0F000000, enabled=False, expand=False),
-            AsicDeserRegisters(name='Asic1Deserializer', offset=0x10000000, enabled=False, expand=False),
-            AsicPktRegisters(name='Asic0PktRegisters', offset=0x11000000, enabled=False, expand=False),
-            AsicPktRegisters(name='Asic1PktRegisters', offset=0x12000000, enabled=False, expand=False),
-            pgp.Pgp2bAxi(name='Pgp2bAxi', offset=0x06000000, enabled=False, expand=False),
-            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[1].Adc[0]', offset=0x09000000, channels=4, enabled=False, expand=False),
-            #surf.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]', offset=0x0A000000),    # not used in tixel, disabled by microblaze
-            #surf.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]', offset=0x0A000800),    # not used in tixel, disabled by microblaze
-            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]', offset=0x0A001000, enabled=False, expand=False),
-            OscilloscopeRegisters(name='Oscilloscope', offset=0x0C000000, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum),
-            HighSpeedDacRegisters(name='High Speed DAC', offset=0x0D000000, enabled=True, expand=False, HsDacEnum = HsDacEnum),
-            #surf.misc.GenericMemory(name='waveformMem', offset=0x0E000000,nelms=1024, hidden=False),
-            pr.MemoryDevice(name='WaveformMem',offset=0x0E000000, wordBitSize=16, stride=4, size=1024*4),
-            MicroblazeLog(name='MicroblazeLog', offset=0x0B000000, expand=False),
-            MMCM7Registers(name='MMCM7Registers', offset=0x0F000000, enabled=False, expand=False)))
+            axi.AxiVersion(                   name="AxiVersion",               description="AXI-Lite Version Module", memBase=None, offset=0x00000000, hidden =  False, expand=False),
+            HrPrototypeFpgaRegisters(         name="HrPrototypeFpgaRegisters", offset=0x01000000),
+            TriggerRegisters(                 name="TriggerRegisters",         offset=0x02000000, expand=False),
+            SlowAdcRegisters(                 name="SlowAdcRegisters",         offset=0x03000000, expand=False),
+            epix.EpixHrAdcAsic(               name='TixelAsic0',               offset=0x04000000, enabled=False, expand=False),
+            epix.EpixHrAdcAsic(               name='TixelAsic1',               offset=0x04400000, enabled=False, expand=False),
+            AsicDeserRegisters(               name='Asic0Deserializer',        offset=0x0F000000, enabled=False, expand=False),
+            AsicDeserRegisters(               name='Asic1Deserializer',        offset=0x10000000, enabled=False, expand=False),
+            AsicPktRegisters(                 name='Asic0PktRegisters',        offset=0x11000000, enabled=False, expand=False),
+            AsicPktRegisters(                 name='Asic1PktRegisters',        offset=0x12000000, enabled=False, expand=False),
+            pgp.Pgp2bAxi(                     name='Pgp2bAxi',                 offset=0x06000000, enabled=False, expand=False),
+            analog_devices.Ad9249ReadoutGroup(name='Ad9249Rdout[1].Adc[0]',    offset=0x09000000, channels=4, enabled=False, expand=False),
+            analog_devices.Ad9249ConfigGroup( name='Ad9249Config[1].Adc[0]',   offset=0x0A001000, enabled=False, expand=False),
+            OscilloscopeRegisters(            name='Oscilloscope',             offset=0x0C000000, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum),
+            HighSpeedDacRegisters(            name='High Speed DAC',           offset=0x0D000000, enabled=True, expand=False, HsDacEnum = HsDacEnum),
+            pr.MemoryDevice(                  name='WaveformMem',              offset=0x0E000000, wordBitSize=16, stride=4, size=1024*4),
+            MicroblazeLog(                    name='MicroblazeLog',            offset=0x0B000000, expand=False),
+            MMCM7Registers(                   name='MMCM7Registers',           offset=0x0F000000, enabled=False, expand=False)))
 
         self.add(pr.Command(name='SetWaveform',description='Set test waveform for high speed DAC', function=self.fnSetWaveform))
         self.add(pr.Command(name='GetWaveform',description='Get test waveform for high speed DAC', function=self.fnGetWaveform))
