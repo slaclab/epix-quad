@@ -36,7 +36,7 @@ use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
 use work.SsiCmdMasterPkg.all;
 use work.Pgp2bPkg.all;
-use work.CpixPkg.all;
+use work.Cpix2Pkg.all;
 
 entity TB_CpixCore is 
 
@@ -50,6 +50,7 @@ architecture beh of TB_CpixCore is
    
    signal coreClk      : std_logic;
    signal axiRst       : std_logic;
+   signal sysRst       : std_logic;
    
    signal asicRdClk     : sl;
    signal asicRdClkRst  : sl;
@@ -68,17 +69,33 @@ architecture beh of TB_CpixCore is
    
    signal asicEnA      : std_logic;
    signal asicEnB      : std_logic;
-   signal asicVid      : std_logic;
+   signal iasicVid      : std_logic;
    signal iAsicPpbe    : std_logic;
    signal iAsicPpmat   : std_logic;
    signal iAsicR0      : std_logic;
-   signal asicSRO      : std_logic;
+   signal iasicSRO     : std_logic;
    signal iAsicGrst    : std_logic;
    signal iAsicSync    : std_logic;   
    signal iAsicAcq     : std_logic;   
+   signal iAsicEnA     : std_logic;
+   signal iAsicEnB     : std_logic;
    signal saciPrepReadoutReq     : std_logic;   
    signal saciPrepReadoutAck     : std_logic;     
-   signal acqStart     : std_logic;     
+   signal acqStart               : std_logic;
+   signal errInhibit             : sl;     
+   
+   signal asicValid     : slv(NUMBER_OF_ASICS_C-1 downto 0);
+   signal asicData      : Slv20Array(NUMBER_OF_ASICS_C-1 downto 0);
+   
+         -- Guard ring DAC
+   signal vGuardDacSclk       : sl;
+   signal vGuardDacDin        : sl;
+   signal vGuardDacCsb        : sl;
+   signal vGuardDacClrb       : sl;
+   -- Board IDs
+   signal serialIdIo          : slv(1 downto 0) := "00";
+   
+   signal adcClk     : sl;
    
    signal epixStatus       : EpixStatusType;
    signal epixConfig       : EpixConfigType;
@@ -104,11 +121,30 @@ architecture beh of TB_CpixCore is
    signal cntFrameError    : Slv32Array(NUMBER_OF_ASICS-1 downto 0);
    signal cntCodeError     : Slv32Array(NUMBER_OF_ASICS-1 downto 0);
    signal cntToutError     : Slv32Array(NUMBER_OF_ASICS-1 downto 0);
-   signal framerAxisMaster : AxiStreamMasterArray(NUMBER_OF_ASICS-1 downto 0);
-   signal framerAxisSlave  : AxiStreamSlaveArray(NUMBER_OF_ASICS-1 downto 0);
    signal pgpAxisMaster    : AxiStreamMasterType;
    signal pgpAxisSlave     : AxiStreamSlaveType;
    
+      -- AXI-Lite Signals
+   signal sAxiReadMaster  : AxiLiteReadMasterArray(CPIX2_NUM_AXI_SLAVE_SLOTS_C-1 downto 0);
+   signal sAxiReadSlave   : AxiLiteReadSlaveArray(CPIX2_NUM_AXI_SLAVE_SLOTS_C-1 downto 0);
+   signal sAxiWriteMaster : AxiLiteWriteMasterArray(CPIX2_NUM_AXI_SLAVE_SLOTS_C-1 downto 0);
+   signal sAxiWriteSlave  : AxiLiteWriteSlaveArray(CPIX2_NUM_AXI_SLAVE_SLOTS_C-1 downto 0);
+   -- AXI-Lite Signals
+   signal mAxiWriteMasters : AxiLiteWriteMasterArray(CPIX2_NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
+   signal mAxiWriteSlaves  : AxiLiteWriteSlaveArray(CPIX2_NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
+   signal mAxiReadMasters  : AxiLiteReadMasterArray(CPIX2_NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
+   signal mAxiReadSlaves   : AxiLiteReadSlaveArray(CPIX2_NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
+
+   -- AXI-Stream signals
+   signal framerAxisMaster    : AxiStreamMasterArray(NUMBER_OF_ASICS_C-1 downto 0);
+   signal framerAxisSlave     : AxiStreamSlaveArray(NUMBER_OF_ASICS_C-1 downto 0);
+   signal userAxisMaster      : AxiStreamMasterType;
+   signal userAxisSlave       : AxiStreamSlaveType;
+   signal scopeAxisMaster     : AxiStreamMasterType;
+   signal scopeAxisSlave      : AxiStreamSlaveType;
+   signal monitorAxisMaster   : AxiStreamMasterType;
+   signal monitorAxisSlave    : AxiStreamSlaveType;
+
 
    procedure cpixSerialData ( 
          signal roClk         : in  std_logic;
@@ -261,8 +297,10 @@ begin
    process
    begin
       axiRst <= '1';
+      sysRst <= '1';
       wait for 10 ns;
       axiRst <= '0';
+      sysRst <= '0';
       wait;
    end process;
    
@@ -381,50 +419,53 @@ begin
       S  => '0'
    );
    
-   ------------------------------------------
-   -- Common ASIC acquisition control            --
-   ------------------------------------------      
-   U_ASIC_Acquisition : entity work.CpixAcquisition
-   generic map(
-      NUMBER_OF_ASICS   => NUMBER_OF_ASICS
-   )
-   port map(
-   
-      -- global signals
-      sysClk            => coreClk,
-      sysClkRst         => axiRst,
-   
-      -- trigger
-      acqStart          => acqStart,
-      
-      -- control/status signals (byteClk)
-      cntAcquisition    => cntAcquisition,
-      cntSequence       => cntSequence,
-      cntAReadout       => cntAReadout,
-      frameReq          => frameReq,
-      frameAck          => frameAck,
-      frameErr          => frameErr,
-      headerAck         => headerAck,
-      timeoutReq        => timeoutReq,
-      
-      epixConfig        => epixConfig,
-      cpixConfig        => cpixConfig,
-      saciReadoutReq    => saciPrepReadoutReq,
-      saciReadoutAck    => saciPrepReadoutAck,
-      
-      -- ASICs signals
-      asicEnA           => asicEnA,
-      asicEnB           => asicEnB,
-      asicVid           => asicVid,
-      asicPPbe          => iAsicPpbe,
-      asicPpmat         => iAsicPpmat,
-      asicR0            => iAsicR0,
-      asicSRO           => asicSRO,
-      asicGlblRst       => iAsicGrst,
-      asicSync          => iAsicSync,
-      asicAcq           => iAsicAcq
-      
-   );
+  --------------------------------------------
+    --     Master Register Controllers        --
+    --------------------------------------------   
+    
+    -- CPIX2 register controller
+    
+    U_RegControlCpix2 : entity work.RegControlCpix2
+    generic map (
+       TPD_G          => TPD_G,
+       BUILD_INFO_G   => BUILD_INFO_G
+    )
+    port map (
+       axiClk         => coreClk,
+       axiRst         => axiRst,
+       sysRst         => sysRst,
+       -- AXI-Lite Register Interface (axiClk domain)
+       axiReadMaster  => mAxiReadMasters(CPIX2_REG_AXI_INDEX_C),
+       axiReadSlave   => mAxiReadSlaves(CPIX2_REG_AXI_INDEX_C),
+       axiWriteMaster => mAxiWriteMasters(CPIX2_REG_AXI_INDEX_C),
+       axiWriteSlave  => mAxiWriteSlaves(CPIX2_REG_AXI_INDEX_C),
+       -- Register Inputs/Outputs (axiClk domain)
+       cpix2Config    => cpix2Config,
+       -- Guard ring DAC interfaces
+       dacSclk        => vGuardDacSclk,
+       dacDin         => vGuardDacDin,
+       dacCsb         => vGuardDacCsb,
+       dacClrb        => vGuardDacClrb,
+       -- 1-wire board ID interfaces
+       serialIdIo     => serialIdIo,
+       -- fast ADC clock
+       adcClk         => adcClk,
+       -- ASICs acquisition signals
+       acqStart       => acqStart,
+       saciReadoutReq => saciPrepReadoutReq,
+       saciReadoutAck => saciPrepReadoutAck,
+       asicEnA        => iAsicEnA,
+       asicEnB        => iAsicEnB,
+       asicVid        => iAsicVid,
+       asicSR0        => iasicSRO,
+       asicPPbe       => iAsicPpbe,
+       asicPpmat      => iAsicPpmat,
+       asicR0         => iAsicR0,
+       asicGlblRst    => iAsicGrst,
+       asicSync       => iAsicSync,
+       asicAcq        => iAsicAcq,
+       errInhibit     => errInhibit
+    );
    
    
    G_ASIC : for i in 0 to NUMBER_OF_ASICS-1 generate  
@@ -475,41 +516,31 @@ begin
       -------------------------------------------------------
       -- ASIC AXI stream framers
       -------------------------------------------------------
-      U_ASIC_Framer : entity work.Framer
-      generic map(
-         ASIC_NUMBER_G  => std_logic_vector(to_unsigned(i, 4))
-      )
-      port map(
-         -- global signals
-         sysClk         => coreClk,
-         sysRst         => axiRst,
-         byteClk        => byteClk,
-         byteClkRst     => byteClkRst,
-         
-         -- control/status signals (byteClk)
-         forceFrameRead => forceFrameRead,
-         cntAcquisition => cntAcquisition,
-         cntSequence    => cntSequence,
-         cntAReadout    => cntAReadout,
-         frameReq       => frameReq     ,
-         frameAck       => frameAck(i)     ,
-         frameErr       => frameErr(i)     ,
-         headerAck      => headerAck(i)    ,
-         timeoutReq     => timeoutReq   ,
-         cntFrameDone   => cntFrameDone(i) ,
-         cntFrameError  => cntFrameError(i),
-         cntCodeError   => cntCodeError(i) ,
-         cntToutError   => cntToutError(i) ,
-         cntReset       => '0',
-         epixConfig     => epixConfig,
-         
-         -- decoded data input stream (byteClk)
-         sAxisMaster    => lutAxisMaster(i),
-         
-         -- AXI Stream Master Port (sysClk)
-         mAxisMaster    => framerAxisMaster(i),
-         mAxisSlave     => framerAxisSlave(i)
-      );
+      U_AXI_Framer : entity work.Cpix2StreamAxi
+            generic map (
+               ASIC_NO_G   => std_logic_vector(to_unsigned(i, 3))
+            )
+            port map (
+               rxClk             => byteClk,
+               rxRst             => byteClkRst,
+               rxData            => asicData(i),
+               rxValid           => asicValid(i),
+               axilClk           => coreClk,
+               axilRst           => axiRst,
+               sAxilWriteMaster  => mAxiWriteMasters(ASICS0_AXI_INDEX_C+i),
+               sAxilWriteSlave   => mAxiWriteSlaves(ASICS0_AXI_INDEX_C+i),
+               sAxilReadMaster   => mAxiReadMasters(ASICS0_AXI_INDEX_C+i),
+               sAxilReadSlave    => mAxiReadSlaves(ASICS0_AXI_INDEX_C+i),
+               axisClk           => coreClk,
+               axisRst           => axiRst,
+               mAxisMaster       => framerAxisMaster(i),
+               mAxisSlave        => framerAxisSlave(i),
+               acqNo             => cpix2Config.syncCounter,
+               testTrig          => iAsicAcq,
+               asicSR0           => iasicSRO,
+               asicSync          => iAsicSync,
+               errInhibit        => errInhibit
+            );
       
       -- start of readout handshake
       -- only for simulation procedure
