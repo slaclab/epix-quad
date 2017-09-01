@@ -399,9 +399,9 @@ begin
                if s.testMode = '0' then
                   sv.axisMaster.tData(15 downto 0) := dFifoOut;
                else
-                  if s.testColCnt = 23 then
+                  if s.testColCnt = 15 then
                      sv.axisMaster.tData(15 downto 0) := ASIC_NO_G(1 downto 0) & s.testBitFlip & s.acqNo(1)(4 downto 0) & "00" & toSlv(s.testRowCnt, 6);
-                  elsif s.testRowCnt = 23 then
+                  elsif s.testRowCnt = 15 then
                      sv.axisMaster.tData(15 downto 0) := ASIC_NO_G(1 downto 0) & s.testBitFlip & s.acqNo(1)(4 downto 0) & "00" & toSlv(s.testColCnt, 6);
                   else
                      sv.axisMaster.tData(15 downto 0) := ASIC_NO_G(1 downto 0) & s.testBitFlip & "00000" & x"ff";
@@ -429,16 +429,7 @@ begin
                   if s.testMode = '0' then
                      sv.state := IDLE_S;
                   else
-                     -- if test mode is enabled 
-                     -- emulate second data set (toa and tot)
-                     if s.testBitFlip = '0' then
-                        sv.testBitFlip := '1';
-                        sv.testColCnt := 0;
-                        sv.testRowCnt := 0;
-                        sv.state := HDR_S;
-                     else
-                        sv.state := IDLE_S;
-                     end if;
+                    sv.state := IDLE_S;
                   end if;
                end if;               
             end if;
