@@ -328,23 +328,20 @@ class HrPrototype(pr.Device):
         self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
         if os.path.splitext(self.filename)[1] == '.csv':
             waveform = np.genfromtxt(self.filename, delimiter=',', dtype='uint16')
-            #if waveform.shape == (1024,):
-                #for x in range (0, 1024):
-                #    self.WaveformMem.Mem[x].set(int(waveform[x]))
-                #self.WaveformMem._setDict({0, waveform.tolist()})
-                #self.WaveformMem.writeBlocks()
-
-            #else:
-            #    print('wrong csv file format')
+            if waveform.shape == (1024,):
+                for x in range (0, 1024):
+                    self._rawWrite(offset = (0x0E000000 + x * 4),data =  int(waveform[x]))
+            else:
+                print('wrong csv file format')
 
     def fnGetWaveform(self, dev,cmd,arg):
         """GetTestBitmap command function"""
         self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
         if os.path.splitext(self.filename)[1] == '.csv':
             readBack = np.zeros((1024),dtype='uint16')
-            #for x in range (0, 1024):
-            #    readBack[x] = self.WaveformMem.Mem[x].get()
-            #np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
+            for x in range (0, 1024):
+                readBack[x] = self._rawRead(offset = (0x0E000000 + x * 4))
+            np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
       
 
 class HrPrototypeFpgaRegisters(pr.Device):
@@ -374,9 +371,6 @@ class HrPrototypeFpgaRegisters(pr.Device):
       self.add(pr.Variable(name='IdAnalogHigh',    description='IdAnalogHigh',      offset=0x00000010, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
       self.add(pr.Variable(name='IdCarrierLow',    description='IdCarrierLow',      offset=0x00000014, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
       self.add(pr.Variable(name='IdCarrierHigh',   description='IdCarrierHigh',     offset=0x00000018, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
-      self.add(pr.Variable(name='R0Polarity',      description='R0Polarity',        offset=0x00000100, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
-      self.add(pr.Variable(name='R0Delay',         description='R0Delay',           offset=0x00000104, bitSize=32, bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='R0Width',         description='R0Width',           offset=0x00000108, bitSize=32, bitOffset=0, base='uint', mode='RW'))
       self.add(pr.Variable(name='GlblRstPolarity', description='GlblRstPolarity',   offset=0x0000010C, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
       self.add(pr.Variable(name='GlblRstDelay',    description='GlblRstDelay',      offset=0x00000110, bitSize=32, bitOffset=0, base='uint', mode='RW'))
       self.add(pr.Variable(name='GlblRstWidth',    description='GlblRstWidth',      offset=0x00000114, bitSize=32, bitOffset=0, base='uint', mode='RW'))
@@ -403,6 +397,9 @@ class HrPrototypeFpgaRegisters(pr.Device):
       self.add(pr.Variable(name='SaciSyncPolarity',description='SaciSyncPolarity',  offset=0x00000168, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
       self.add(pr.Variable(name='SaciSyncDelay',   description='SaciSyncDelay',     offset=0x0000016C, bitSize=32, bitOffset=0, base='uint', mode='RW'))
       self.add(pr.Variable(name='SaciSyncWidth',   description='SaciSyncWidth',     offset=0x00000170, bitSize=32, bitOffset=0, base='uint', mode='RW'))
+      self.add(pr.Variable(name='SR0Polarity',     description='SR0Polarity',       offset=0x00000174, bitSize=1,  bitOffset=0, base='uint', mode='RW'))
+      self.add(pr.Variable(name='SR0Delay',        description='SR0Delay',          offset=0x00000178, bitSize=32, bitOffset=0, base='uint', mode='RW'))
+      self.add(pr.Variable(name='SR0Width',        description='SR0Width',          offset=0x0000017C, bitSize=32, bitOffset=0, base='uint', mode='RW'))
       
       self.add(pr.Variable(name='AcqCnt',          description='AcqCnt',            offset=0x00000200, bitSize=32, bitOffset=0, base='uint', mode='RO'))
       self.add(pr.Variable(name='SaciPrepRdoutCnt',description='SaciPrepRdoutCnt',  offset=0x00000204, bitSize=32, bitOffset=0, base='uint', mode='RO'))
@@ -411,7 +408,7 @@ class HrPrototypeFpgaRegisters(pr.Device):
          pr.Variable(name='DigPwrEnable',          description='AsicPower', offset=0x0000020C, bitSize=1, bitOffset=0,  base='bool', mode='RW'),
          pr.Variable(name='AnalogPwrManual',       description='AsicPower', offset=0x0000020C, bitSize=1, bitOffset=1,  base='bool', mode='RW'),
          pr.Variable(name='FPGAPwrManualDig',      description='AsicPower', offset=0x0000020C, bitSize=1, bitOffset=2,  base='bool', mode='RW'),
-         pr.Variable(name='NegPwrEnable',      description='AsicPower', offset=0x0000020C, bitSize=1, bitOffset=3,  base='bool', mode='RW')))
+         pr.Variable(name='NegPwrEnable',          description='AsicPower', offset=0x0000020C, bitSize=1, bitOffset=3,  base='bool', mode='RW')))
 #      self.add((
 #         pr.Variable(name='AsicPwrEnable',      description='AsicPower', offset=0x0000020C, bitSize=1, bitOffset=0,  base='bool', mode='RW'),
 #         pr.Variable(name='AsicPwrManual',      description='AsicPower', offset=0x0000020C, bitSize=1, bitOffset=16, base='bool', mode='RW'),

@@ -245,9 +245,6 @@ begin
       axiSlaveRegisterR(regCon, x"000014",  0, ite(idValids(2) = '1',idValues(2)(31 downto  0), x"00000000")); --Carrier card ID low
       axiSlaveRegisterR(regCon, x"000018",  0, ite(idValids(2) = '1',idValues(2)(63 downto 32), x"00000000")); --Carrier card ID high
       
-      axiSlaveRegister(regCon,  x"000100",  0, v.asicAcqReg.SR0Polarity);
-      axiSlaveRegister(regCon,  x"000104",  0, v.asicAcqReg.SR0Delay);
-      axiSlaveRegister(regCon,  x"000108",  0, v.asicAcqReg.SR0Width);
       axiSlaveRegister(regCon,  x"00010C",  0, v.asicAcqReg.GlblRstPolarity);
       axiSlaveRegister(regCon,  x"000110",  0, v.asicAcqReg.GlblRstDelay);
       axiSlaveRegister(regCon,  x"000114",  0, v.asicAcqReg.GlblRstWidth);
@@ -274,6 +271,9 @@ begin
       axiSlaveRegister(regCon,  x"000168",  0, v.asicAcqReg.saciSyncPolarity);
       axiSlaveRegister(regCon,  x"00016C",  0, v.asicAcqReg.saciSyncDelay);
       axiSlaveRegister(regCon,  x"000170",  0, v.asicAcqReg.saciSyncWidth);
+      axiSlaveRegister(regCon,  x"000174",  0, v.asicAcqReg.SR0Polarity);
+      axiSlaveRegister(regCon,  x"000178",  0, v.asicAcqReg.SR0Delay);
+      axiSlaveRegister(regCon,  x"00017C",  0, v.asicAcqReg.SR0Width);
       --
       axiSlaveRegister(regCon,  x"000174",  0, v.asicAcqReg.Vid);
       
