@@ -52,6 +52,8 @@ entity DacWaveformGenAxi is
       dacCsL          : out std_logic;
       dacLdacL        : out std_logic;
       dacClrL         : out std_logic;
+      -- external trigger
+      externalTrigger : in  std_logic;
 
       -- AXI lite slave port for register access
       axilClk           : in  std_logic;
@@ -186,8 +188,14 @@ begin
          if sysClkRst = '1' then
             counter <= (others => '0') after TPD_G;
          else
-            if (samplingCounter = x"000") then
-                counter <= nextCounter after TPD_G;
+            if (r.waveform.externalUpdateEn = '0') then
+               if (samplingCounter = x"000") then
+                   counter <= nextCounter after TPD_G;
+               end if;
+            else
+                if (externalTrigger = '1') then
+                   counter <= nextCounter after TPD_G;
+               end if;
             end if;
          end if;
       end if;
@@ -265,6 +273,7 @@ begin
       
       axiSlaveRegister (regCon, x"0000",  0, v.waveform.enabled);
       axiSlaveRegister (regCon, x"0000",  1, v.waveform.run);
+      axiSlaveRegister (regCon, x"0000",  2, v.waveform.externalUpdateEn);
       axiSlaveRegister (regCon, x"0004",  0, v.waveform.samplingCounter);
       axiSlaveRegister (regCon, x"0008",  0, v.dac.dacData);
       axiSlaveRegister (regCon, x"0008", 16, v.dac.dacCh);

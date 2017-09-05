@@ -19,9 +19,6 @@ ePixBoard:
     HrPrototypeFpgaRegisters:
       enable: 'True'
       Version: '0x10001'
-      SR0Polarity: '0'
-      SR0Delay: '0'
-      SR0Width: '0'
       GlblRstPolarity: 'True'
       GlblRstDelay: '0'
       GlblRstWidth: '0'
@@ -48,6 +45,9 @@ ePixBoard:
       SaciSyncPolarity: 'False'
       SaciSyncDelay: '0'
       SaciSyncWidth: '0'
+      SR0Polarity: '1'
+      SR0Delay: '0'
+      SR0Width: '0'
       ResetCounters: 'False'
       DigPwrEnable: 'True'
       AnalogPwrManual: 'True'
@@ -276,7 +276,8 @@ ePixBoard:
     High Speed DAC:
       enable: 'True'
       enabled: 'False'
-      run: 'True'
+      run: 'False'
+      externalUpdateEn: 'False'
       samplingCounter: '0x220'
       DacValue: '0x6000'
       DacChannel: DAC A & DAC B

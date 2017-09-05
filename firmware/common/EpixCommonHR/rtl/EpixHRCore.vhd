@@ -1084,6 +1084,7 @@ begin
       dacCsL            => WFDacCsL_i,
       dacLdacL          => WFDacLdacL_i,
       dacClrL           => WFDacClrL_i,
+      externalTrigger   => acqStart,
       axilClk           => coreClk,
       axilRst           => axiRst,
       sAxilWriteMaster  => mAxiWriteMasters,

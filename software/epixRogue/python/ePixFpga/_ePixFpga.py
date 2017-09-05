@@ -1043,11 +1043,12 @@ class HighSpeedDacRegisters(pr.Device):
       #Setup registers & variables
       
       self.add((
-         pr.Variable(name='enabled',         description='Enable waveform generation',                  offset=0x00000000, bitSize=1,   bitOffset=0,   base='bool', mode='RW'),
-         pr.Variable(name='run',             description='Generates waveform when true',                offset=0x00000000, bitSize=1,   bitOffset=1,   base='bool', mode='RW'),
-         pr.Variable(name='samplingCounter', description='Sampling period (>269, times 1/clock ref. 156MHz)', offset=0x00000004, bitSize=12,   bitOffset=0,   base='hex', mode='RW'),
-         pr.Variable(name='DacValue',        description='Set a fixed value for the DAC',               offset=0x00000008, bitSize=16,  bitOffset=0,   base='hex', mode='RW'),
-         pr.Variable(name='DacChannel',      description='Select the DAC channel to use',               offset=0x00000008, bitSize=2,   bitOffset=16,  base='enum', mode='RW', enum=HsDacEnum)))
+         pr.Variable(name='enabled',         description='Enable waveform generation',                        offset=0x00000000, bitSize=1,   bitOffset=0,   base='bool', mode='RW'),
+         pr.Variable(name='run',             description='Generates waveform when true',                      offset=0x00000000, bitSize=1,   bitOffset=1,   base='bool', mode='RW'),
+         pr.Variable(name='externalUpdateEn',description='Generates waveform when true',                      offset=0x00000000, bitSize=1,   bitOffset=2,   base='bool', mode='RW'),
+         pr.Variable(name='samplingCounter', description='Sampling period (>269, times 1/clock ref. 156MHz)', offset=0x00000004, bitSize=12,  bitOffset=0,   base='hex',  mode='RW'),
+         pr.Variable(name='DacValue',        description='Set a fixed value for the DAC',                     offset=0x00000008, bitSize=16,  bitOffset=0,   base='hex',  mode='RW'),
+         pr.Variable(name='DacChannel',      description='Select the DAC channel to use',                     offset=0x00000008, bitSize=2,   bitOffset=16,  base='enum', mode='RW', enum=HsDacEnum)))
       
       
       
