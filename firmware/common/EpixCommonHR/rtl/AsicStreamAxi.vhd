@@ -163,6 +163,7 @@ architecture RTL of AsicStreamAxi is
    signal sin : StrType;
    
    signal decDataOut    : slv(15 downto 0);
+   signal decDataOut2C  : slv(15 downto 0);
    signal decValid      : sl;
    signal decSof        : sl;
    signal decEof        : sl;
@@ -217,7 +218,7 @@ begin
       rst         => rxRst,
       dataIn      => rxData,
       validIn     => iRxValid,
-      dataOut     => decDataOut,
+      dataOut     => decDataOut2C,
       validOut    => decValid,
       sof         => decSof,
       eof         => decEof,
@@ -275,8 +276,20 @@ begin
       mAxisMaster => mAxisMaster,
       mAxisSlave  => mAxisSlave
    );
-   
-   
+
+   -- epixHR data is in two's complement with sign bit reversed
+   -- per data sheet when MSB is 0 then subtract 32768 from the incoming data
+   comp2ComplementDecode: process (decDataOut2C) is
+   begin
+      if (decDataOut2C(15) = '0') then
+         decDataOut <= decDataOut2C - x"8000";
+      else
+         decDataOut <= decDataOut2C;
+      end if;
+
+   end process comp2ComplementDecode;
+
+
    comb : process (axilRst, axisRst, sAxilReadMaster, sAxilWriteMaster, sAxisSlave, r, s, 
       acqNo, dFifoOut, dFifoValid, dFifoSof, dFifoEof, dFifoEofe, testTrig, errInhibit) is
       variable sv       : StrType;

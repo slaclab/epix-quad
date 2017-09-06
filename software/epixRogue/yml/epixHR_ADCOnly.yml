@@ -45,9 +45,9 @@ ePixBoard:
       SaciSyncPolarity: 'False'
       SaciSyncDelay: '0x0'
       SaciSyncWidth: '0x0'
-      SR0Polarity: '0x1'
-      SR0Delay: '0x0'
-      SR0Width: '0x0'
+      SR0Polarity: '0x0'
+      SR0Delay: '0x20'
+      SR0Width: '0x10'
       ResetCounters: 'False'
       DigPwrEnable: 'True'
       AnalogPwrManual: 'True'
@@ -58,8 +58,8 @@ ePixBoard:
       VBias2DacSetting: '0x0'
       VBias3DacSetting: '0x0'
       VocmDacSetting: '0x7d00'
-      HRDebugSel1: Asic01DM
-      HRDebugSel2: Asic01DM
+      HRDebugSel1: AsicAcq
+      HRDebugSel2: AsicSR0
       AdcClkHalfT: '0x1'
       StartupReq: 'False'
     TriggerRegisters:
@@ -222,12 +222,12 @@ ePixBoard:
       enable: 'False'
       Resync: 'False'
     Asic0PktRegisters:
-      enable: 'False'
-      TestMode: 'False'
+      enable: 'True'
+      TestMode: 'True'
       ResetCounters: 'False'
     Asic1PktRegisters:
-      enable: 'False'
-      TestMode: 'False'
+      enable: 'True'
+      TestMode: 'True'
       ResetCounters: 'False'
     Pgp2bAxi:
       enable: 'False'
@@ -276,10 +276,10 @@ ePixBoard:
     High Speed DAC:
       enable: 'True'
       enabled: 'False'
-      run: 'True'
+      run: 'False'
       externalUpdateEn: 'False'
       samplingCounter: '0x220'
-      DacValue: '0x6000'
+      DacValue: '0x5000'
       DacChannel: DAC A & DAC B
     MicroblazeLog:
       enable: 'True'
@@ -332,5 +332,5 @@ ePixBoard:
   runControl:
     enable: 'True'
     runState: Stopped
-    runRate: 1 Hz
-    runCount: '0'
+    runRate: 4 Hz
+    runCount: '4353'
