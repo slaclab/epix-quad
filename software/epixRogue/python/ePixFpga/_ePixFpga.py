@@ -358,57 +358,57 @@ class HrPrototypeFpgaRegisters(pr.Device):
       #############################################
       # Create block / variable combinations
       #############################################
-      debugChEnum={0 :'Asic01DM',     1:'AsicSync',     2:'AsicEnA',      3:'AsicAcq',    4:'AsicEnB', 5:'AsicR0',   6:'SaciClk',  7:'SaciCmd',  
+      debugChEnum={0 :'Asic01DM',     1:'AsicSync',     2:'AsicEnA',      3:'AsicAcq',    4:'AsicEnB', 5:'AsicSR0',   6:'SaciClk',  7:'SaciCmd',  
                    8 :'saciRsp',      9:'SaciSelL(0)', 10:'SaciSelL(1)', 11:'asicRdClk', 12:'bitClk', 13:'byteClk', 14:'dacDin',  15: 'dacSclk',
                    16:'dacCsL',      17:'dacLdacL',    18: 'dacClrL'}      
       
       #Setup registers & variables
       
-      self.add(pr.Variable(name='Version',         description='Version',           offset=0x00000000, bitSize=32, bitOffset=0, base='hex',  mode='RW'))
-      self.add(pr.Variable(name='IdDigitalLow',    description='IdDigitalLow',      offset=0x00000004, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
-      self.add(pr.Variable(name='IdDigitalHigh',   description='IdDigitalHigh',     offset=0x00000008, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
-      self.add(pr.Variable(name='IdAnalogLow',     description='IdAnalogLow',       offset=0x0000000C, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
-      self.add(pr.Variable(name='IdAnalogHigh',    description='IdAnalogHigh',      offset=0x00000010, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
-      self.add(pr.Variable(name='IdCarrierLow',    description='IdCarrierLow',      offset=0x00000014, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
-      self.add(pr.Variable(name='IdCarrierHigh',   description='IdCarrierHigh',     offset=0x00000018, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
-      self.add(pr.Variable(name='GlblRstPolarity', description='GlblRstPolarity',   offset=0x0000010C, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
-      self.add(pr.Variable(name='GlblRstDelay',    description='GlblRstDelay',      offset=0x00000110, bitSize=32, bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='GlblRstWidth',    description='GlblRstWidth',      offset=0x00000114, bitSize=32, bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='AcqPolarity',     description='AcqPolarity',       offset=0x00000118, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
-      self.add(pr.Variable(name='AcqDelay1',       description='AcqDelay1',         offset=0x0000011C, bitSize=32, bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='AcqWidth1',       description='AcqWidth1',         offset=0x00000120, bitSize=32, bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='AcqDelay2',       description='AcqDelay2',         offset=0x00000124, bitSize=32, bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='AcqWidth2',       description='AcqWidth2',         offset=0x00000128, bitSize=32, bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='TpulsePolarity',  description='TpulsePolarity',    offset=0x0000012C, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
-      self.add(pr.Variable(name='TpulseDelay',     description='TpulseDelay',       offset=0x00000130, bitSize=32, bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='TpulseWidth',     description='TpulseWidth',       offset=0x00000134, bitSize=32, bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='StartPolarity',   description='StartPolarity',     offset=0x00000138, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
-      self.add(pr.Variable(name='StartDelay',      description='StartDelay',        offset=0x0000013C, bitSize=32, bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='StartWidth',      description='StartWidth',        offset=0x00000140, bitSize=32, bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='PPbePolarity',    description='PPbePolarity',      offset=0x00000144, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
-      self.add(pr.Variable(name='PPbeDelay',       description='PPbeDelay',         offset=0x00000148, bitSize=32, bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='PPbeWidth',       description='PPbeWidth',         offset=0x0000014C, bitSize=32, bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='PpmatPolarity',   description='PpmatPolarity',     offset=0x00000150, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
-      self.add(pr.Variable(name='PpmatDelay',      description='PpmatDelay',        offset=0x00000154, bitSize=32, bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='PpmatWidth',      description='PpmatWidth',        offset=0x00000158, bitSize=32, bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='SyncPolarity',    description='SyncPolarity',      offset=0x0000015C, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
-      self.add(pr.Variable(name='SyncDelay',       description='SyncDelay',         offset=0x00000160, bitSize=32, bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='SyncWidth',       description='SyncWidth',         offset=0x00000164, bitSize=32, bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='SaciSyncPolarity',description='SaciSyncPolarity',  offset=0x00000168, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
-      self.add(pr.Variable(name='SaciSyncDelay',   description='SaciSyncDelay',     offset=0x0000016C, bitSize=32, bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='SaciSyncWidth',   description='SaciSyncWidth',     offset=0x00000170, bitSize=32, bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='SR0Polarity',     description='SR0Polarity',       offset=0x00000174, bitSize=1,  bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='SR0Delay',        description='SR0Delay',          offset=0x00000178, bitSize=32, bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='SR0Width',        description='SR0Width',          offset=0x0000017C, bitSize=32, bitOffset=0, base='uint', mode='RW'))
+      self.add(pr.RemoteVariable(name='Version',         description='Version',           offset=0x00000000, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RW'))
+      self.add(pr.RemoteVariable(name='IdDigitalLow',    description='IdDigitalLow',      offset=0x00000004, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
+      self.add(pr.RemoteVariable(name='IdDigitalHigh',   description='IdDigitalHigh',     offset=0x00000008, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
+      self.add(pr.RemoteVariable(name='IdAnalogLow',     description='IdAnalogLow',       offset=0x0000000C, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
+      self.add(pr.RemoteVariable(name='IdAnalogHigh',    description='IdAnalogHigh',      offset=0x00000010, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
+      self.add(pr.RemoteVariable(name='IdCarrierLow',    description='IdCarrierLow',      offset=0x00000014, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
+      self.add(pr.RemoteVariable(name='IdCarrierHigh',   description='IdCarrierHigh',     offset=0x00000018, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
+      self.add(pr.RemoteVariable(name='GlblRstPolarity', description='GlblRstPolarity',   offset=0x0000010C, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='GlblRstDelay',    description='GlblRstDelay',      offset=0x00000110, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='GlblRstWidth',    description='GlblRstWidth',      offset=0x00000114, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='AcqPolarity',     description='AcqPolarity',       offset=0x00000118, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='AcqDelay1',       description='AcqDelay1',         offset=0x0000011C, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='AcqWidth1',       description='AcqWidth1',         offset=0x00000120, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='AcqDelay2',       description='AcqDelay2',         offset=0x00000124, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='AcqWidth2',       description='AcqWidth2',         offset=0x00000128, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='TpulsePolarity',  description='TpulsePolarity',    offset=0x0000012C, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='TpulseDelay',     description='TpulseDelay',       offset=0x00000130, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='TpulseWidth',     description='TpulseWidth',       offset=0x00000134, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='StartPolarity',   description='StartPolarity',     offset=0x00000138, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='StartDelay',      description='StartDelay',        offset=0x0000013C, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='StartWidth',      description='StartWidth',        offset=0x00000140, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='PPbePolarity',    description='PPbePolarity',      offset=0x00000144, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='PPbeDelay',       description='PPbeDelay',         offset=0x00000148, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='PPbeWidth',       description='PPbeWidth',         offset=0x0000014C, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='PpmatPolarity',   description='PpmatPolarity',     offset=0x00000150, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='PpmatDelay',      description='PpmatDelay',        offset=0x00000154, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='PpmatWidth',      description='PpmatWidth',        offset=0x00000158, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='SyncPolarity',    description='SyncPolarity',      offset=0x0000015C, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='SyncDelay',       description='SyncDelay',         offset=0x00000160, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='SyncWidth',       description='SyncWidth',         offset=0x00000164, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='SaciSyncPolarity',description='SaciSyncPolarity',  offset=0x00000168, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='SaciSyncDelay',   description='SaciSyncDelay',     offset=0x0000016C, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='SaciSyncWidth',   description='SaciSyncWidth',     offset=0x00000170, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='SR0Polarity',     description='SR0Polarity',       offset=0x00000174, bitSize=1,  bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='SR0Delay',        description='SR0Delay',          offset=0x00000178, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='SR0Width',        description='SR0Width',          offset=0x0000017C, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
       
-      self.add(pr.Variable(name='AcqCnt',          description='AcqCnt',            offset=0x00000200, bitSize=32, bitOffset=0, base='uint', mode='RO'))
-      self.add(pr.Variable(name='SaciPrepRdoutCnt',description='SaciPrepRdoutCnt',  offset=0x00000204, bitSize=32, bitOffset=0, base='uint', mode='RO'))
-      self.add(pr.Variable(name='ResetCounters',   description='ResetCounters',     offset=0x00000208, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
+      self.add(pr.RemoteVariable(name='AcqCnt',          description='AcqCnt',            offset=0x00000200, bitSize=32, bitOffset=0, base=pr.UInt, mode='RO'))
+      self.add(pr.RemoteVariable(name='SaciPrepRdoutCnt',description='SaciPrepRdoutCnt',  offset=0x00000204, bitSize=32, bitOffset=0, base=pr.UInt, mode='RO'))
+      self.add(pr.RemoteVariable(name='ResetCounters',   description='ResetCounters',     offset=0x00000208, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
       self.add((
-         pr.Variable(name='DigPwrEnable',          description='AsicPower', offset=0x0000020C, bitSize=1, bitOffset=0,  base='bool', mode='RW'),
-         pr.Variable(name='AnalogPwrManual',       description='AsicPower', offset=0x0000020C, bitSize=1, bitOffset=1,  base='bool', mode='RW'),
-         pr.Variable(name='FPGAPwrManualDig',      description='AsicPower', offset=0x0000020C, bitSize=1, bitOffset=2,  base='bool', mode='RW'),
-         pr.Variable(name='NegPwrEnable',          description='AsicPower', offset=0x0000020C, bitSize=1, bitOffset=3,  base='bool', mode='RW')))
+         pr.RemoteVariable(name='DigPwrEnable',          description='AsicPower', offset=0x0000020C, bitSize=1, bitOffset=0,  base=pr.Bool, mode='RW'),
+         pr.RemoteVariable(name='AnalogPwrManual',       description='AsicPower', offset=0x0000020C, bitSize=1, bitOffset=1,  base=pr.Bool, mode='RW'),
+         pr.RemoteVariable(name='FPGAPwrManualDig',      description='AsicPower', offset=0x0000020C, bitSize=1, bitOffset=2,  base=pr.Bool, mode='RW'),
+         pr.RemoteVariable(name='NegPwrEnable',          description='AsicPower', offset=0x0000020C, bitSize=1, bitOffset=3,  base=pr.Bool, mode='RW')))
 #      self.add((
 #         pr.Variable(name='AsicPwrEnable',      description='AsicPower', offset=0x0000020C, bitSize=1, bitOffset=0,  base='bool', mode='RW'),
 #         pr.Variable(name='AsicPwrManual',      description='AsicPower', offset=0x0000020C, bitSize=1, bitOffset=16, base='bool', mode='RW'),
@@ -416,19 +416,19 @@ class HrPrototypeFpgaRegisters(pr.Device):
 #         pr.Variable(name='AsicPwrManualAna',   description='AsicPower', offset=0x0000020C, bitSize=1, bitOffset=21, base='bool', mode='RW'),
 #         pr.Variable(name='AsicPwrManualIo',    description='AsicPower', offset=0x0000020C, bitSize=1, bitOffset=22, base='bool', mode='RW'),
 #         pr.Variable(name='AsicPwrManualFpga',  description='AsicPower', offset=0x0000020C, bitSize=1, bitOffset=23, base='bool', mode='RW')))
-      self.add(pr.Variable(name='AsicMask',        description='AsicMask',          offset=0x00000210, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
-      self.add(pr.Variable(name='VguardDacSetting',description='VguardDacSetting',  offset=0x00000214, bitSize=16, bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='VBias1DacSetting',description='VBias1DacSetting',  offset=0x00000218, bitSize=16, bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='VBias2DacSetting',description='VBias2DacSetting',  offset=0x0000021C, bitSize=16, bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='VBias3DacSetting',description='VBias3DacSetting',  offset=0x00000220, bitSize=16, bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='VocmDacSetting',  description='VocsDacSetting',    offset=0x00000224, bitSize=16, bitOffset=0, base='uint', mode='RW'))
+      self.add(pr.RemoteVariable(name='AsicMask',        description='AsicMask',          offset=0x00000210, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
+      self.add(pr.RemoteVariable(name='VguardDacSetting',description='VguardDacSetting',  offset=0x00000214, bitSize=16, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='VBias1DacSetting',description='VBias1DacSetting',  offset=0x00000218, bitSize=16, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='VBias2DacSetting',description='VBias2DacSetting',  offset=0x0000021C, bitSize=16, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='VBias3DacSetting',description='VBias3DacSetting',  offset=0x00000220, bitSize=16, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='VocmDacSetting',  description='VocsDacSetting',    offset=0x00000224, bitSize=16, bitOffset=0, base=pr.UInt, mode='RW'))
       self.add(pr.Variable(name='HRDebugSel1',     description='HRDebugSel1',       offset=0x00000228, bitSize=5,  bitOffset=0, base='enum',  mode='RW', enum=debugChEnum))
       self.add(pr.Variable(name='HRDebugSel2',     description='HRDebugSel2',       offset=0x0000022C, bitSize=5,  bitOffset=0, base='enum',  mode='RW', enum=debugChEnum))
-      self.add(pr.Variable(name='AdcClkHalfT',     description='AdcClkHalfT',       offset=0x00000300, bitSize=32, bitOffset=0, base='uint', mode='RW'))
+      self.add(pr.RemoteVariable(name='AdcClkHalfT',     description='AdcClkHalfT',       offset=0x00000300, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
       self.add((
-         pr.Variable(name='StartupReq',  description='AdcStartup', offset=0x00000304, bitSize=1, bitOffset=0, base='bool', mode='RW'),
-         pr.Variable(name='StartupAck',  description='AdcStartup', offset=0x00000304, bitSize=1, bitOffset=1, base='bool', mode='RO'),
-         pr.Variable(name='StartupFail', description='AdcStartup', offset=0x00000304, bitSize=1, bitOffset=2, base='bool', mode='RO')))
+         pr.RemoteVariable(name='StartupReq',  description='AdcStartup', offset=0x00000304, bitSize=1, bitOffset=0, base=pr.Bool, mode='RW'),
+         pr.RemoteVariable(name='StartupAck',  description='AdcStartup', offset=0x00000304, bitSize=1, bitOffset=1, base=pr.Bool, mode='RO'),
+         pr.RemoteVariable(name='StartupFail', description='AdcStartup', offset=0x00000304, bitSize=1, bitOffset=2, base=pr.Bool, mode='RO')))
      
       
       #####################################

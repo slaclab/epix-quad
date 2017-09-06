@@ -84,7 +84,7 @@ void epixInit() {
    MB_Sleep(500);
    
    // enable the FPGA outputs
-   Xil_Out32( EPIX_PWR_REG, 0x7);
+   Xil_Out32( EPIX_PWR_REG, 0xF);
    
    // Perform ADC soft reset
    Xil_Out32( ADC2_PWRMOD_REG, 3);
