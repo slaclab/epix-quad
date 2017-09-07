@@ -59,13 +59,13 @@ ConfigProbe ${ilaName} {U_EpixHR/iasicTsSync}
 ConfigProbe ${ilaName} {U_EpixHR/iasicTsData[*]}
 ConfigProbe ${ilaName} {U_EpixHR/acqStart}
 ConfigProbe ${ilaName} {U_EpixHR/byteClk}
-ConfigProbe ${ilaName} {U_EpixHR/U_AXI_Framer/dFifoOut[*]}
-ConfigProbe ${ilaName} {U_EpixHR/U_AXI_Framer/dFifoSof}
-ConfigProbe ${ilaName} {U_EpixHR/U_AXI_Framer/dFifoEof}
-ConfigProbe ${ilaName} {U_EpixHR/U_AXI_Framer/dFifoEofe}
-ConfigProbe ${ilaName} {U_EpixHR/U_AXI_Framer/dFifoValid}
-ConfigProbe ${ilaName} {U_EpixHR/U_AXI_Framer/rxDataCs[*]}
-ConfigProbe ${ilaName} {U_EpixHR/U_AXI_Framer/rxValidCs}
+ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[0].U_AXI_Framer/dFifoOut[*]}
+ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[0].U_AXI_Framer/dFifoSof}
+ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[0].U_AXI_Framer/dFifoEof}
+ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[0].U_AXI_Framer/dFifoEofe}
+ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[0].U_AXI_Framer/dFifoValid}
+ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[0].U_AXI_Framer/rxDataCs[*]}
+ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[0].U_AXI_Framer/rxValidCs}
 
 ### Delete the last unused port
 delete_debug_port [get_debug_ports [GetCurrentProbe ${ilaName}]]
