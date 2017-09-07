@@ -44,18 +44,28 @@ SetDebugCoreClk ${ilaName} {U_EpixHR/coreClk}
 ## Set the debug Probes
 #######################
 
-ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/dacDin}
-ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/dacSclk}
-ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/dacCsL}
-ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/dacLdacL}
-ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/dacClrL}
-ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/dacData[*]}
-ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/dacCh[*]}
-ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/waveform_addr[*]}
-ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/waveform_dout[*]}
-ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/DAC8812_0/curState[*]}
-ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/DAC8812_0/dacStrobe}
-
+#ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/dacDin}
+#ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/dacSclk}
+#ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/dacCsL}
+#ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/dacLdacL}
+#ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/dacClrL}
+#ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/dacData[*]}
+#ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/dacCh[*]}
+#ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/waveform_addr[*]}
+#ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/waveform_dout[*]}
+#ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/DAC8812_0/curState[*]}
+#ConfigProbe ${ilaName} {U_EpixHR/U_HSDAC/DAC8812_0/dacStrobe}
+ConfigProbe ${ilaName} {U_EpixHR/iasicTsSync}
+ConfigProbe ${ilaName} {U_EpixHR/iasicTsData[*]}
+ConfigProbe ${ilaName} {U_EpixHR/acqStart}
+ConfigProbe ${ilaName} {U_EpixHR/byteClk}
+ConfigProbe ${ilaName} {U_EpixHR/U_AXI_Framer/dFifoOut[*]}
+ConfigProbe ${ilaName} {U_EpixHR/U_AXI_Framer/dFifoSof}
+ConfigProbe ${ilaName} {U_EpixHR/U_AXI_Framer/dFifoEof}
+ConfigProbe ${ilaName} {U_EpixHR/U_AXI_Framer/dFifoEofe}
+ConfigProbe ${ilaName} {U_EpixHR/U_AXI_Framer/dFifoValid}
+ConfigProbe ${ilaName} {U_EpixHR/U_AXI_Framer/rxDataCs[*]}
+ConfigProbe ${ilaName} {U_EpixHR/U_AXI_Framer/rxValidCs}
 
 ### Delete the last unused port
 delete_debug_port [get_debug_ports [GetCurrentProbe ${ilaName}]]

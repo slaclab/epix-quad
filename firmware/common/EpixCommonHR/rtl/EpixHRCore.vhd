@@ -157,18 +157,23 @@ architecture top_level of EpixHRCore is
    signal iAsicAcq             : sl;
    signal iAsicVid             : sl;
    signal iAsicGrst            : sl;
+   signal iasicTsData          : slv(15 downto 0);
+   signal iasicTsSync          : sl; 
    
    attribute keep of iAsic01DM1    : signal is "true";
    attribute keep of iAsic01DM2    : signal is "true";
    attribute keep of iAsicPPbe     : signal is "true";
    attribute keep of iAsicPpmat    : signal is "true";
-   attribute keep of iAsicSR0       : signal is "true";
+   attribute keep of iAsicSR0      : signal is "true";
    attribute keep of iAsicGrst     : signal is "true";
    attribute keep of iAsicSync     : signal is "true";
    attribute keep of iAsicAcq      : signal is "true";
    attribute keep of iAsicVid      : signal is "true";
    attribute keep of iAsicStart    : signal is "true";
    attribute keep of iAsicTpulse   : signal is "true";
+   attribute keep of iasicTsData   : signal is "true";
+   attribute keep of iasicTsSync   : signal is "true";
+
    
    signal coreClk     : sl;
    signal coreClkRst  : sl;
