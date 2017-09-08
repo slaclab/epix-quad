@@ -472,15 +472,15 @@ begin
       DIVCLK_DIVIDE_G      => 10,
       CLKFBOUT_MULT_F_G    => 38.4,
       
-      CLKOUT0_DIVIDE_F_G   => 7.5,
-      CLKOUT0_PHASE_G      => 0.0,
+      CLKOUT0_DIVIDE_F_G   => 4.0,
+      CLKOUT0_PHASE_G      => 90.0,
       CLKOUT0_DUTY_CYCLE_G => 0.5,
       
       CLKOUT1_DIVIDE_G     => 6,
       CLKOUT1_PHASE_G      => 0.0,
       CLKOUT1_DUTY_CYCLE_G => 0.5,
       
-      CLKOUT2_DIVIDE_G     => 75,
+      CLKOUT2_DIVIDE_G     => 80,
       CLKOUT2_PHASE_G      => 0.0,
       CLKOUT2_DUTY_CYCLE_G => 0.5,
       
