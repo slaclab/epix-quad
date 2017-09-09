@@ -545,7 +545,7 @@ begin
       roClkDdr_i : ODDR 
       port map ( 
          Q  => asicRoClk(i),
-         C  => asicRdClk,
+         C  => iDelayCtrlClk,
          CE => '1',
          D1 => '1',
          D2 => '0',
