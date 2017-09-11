@@ -323,6 +323,11 @@ class HrPrototype(pr.Device):
         self.add(pr.Command(name='SetWaveform',description='Set test waveform for high speed DAC', function=self.fnSetWaveform))
         self.add(pr.Command(name='GetWaveform',description='Get test waveform for high speed DAC', function=self.fnGetWaveform))
 
+    def enableChanged(self,value):
+        if value is True:
+            self.readBlocks(recurse=True, variable=None)
+            self.checkBlocks(recurse=True, variable=None)
+
     def fnSetWaveform(self, dev,cmd,arg):
         """SetTestBitmap command function"""
         self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
@@ -1219,6 +1224,11 @@ class MMCM7Registers(pr.Device):
       def func(dev, var):         
          return '{:.3f} kHz'.format(1/(self.clkPeriod * self._count(var.dependencies)) * 1e-3)
       return func
+
+   def enableChanged(self,value):
+        if value is True:
+            self.readBlocks(recurse=True, variable=None)
+            self.checkBlocks(recurse=True, variable=None)
 
 
 class AsicDeserRegisters(pr.Device):

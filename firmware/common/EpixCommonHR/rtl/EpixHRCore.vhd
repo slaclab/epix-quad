@@ -458,7 +458,7 @@ begin
    -- Generate clocks from 156.25 MHz PGP  --
    ------------------------------------------
    -- clkIn     : 156.25 MHz PGP
-   -- clkOut(0) : 80 MHz serial data bit clock
+   -- clkOut(0) : 250 MHz serial data bit clock
    -- clkOut(1) : 100.00 MHz system clock
    -- clkOut(2) : 8 MHz ASIC readout clock
    -- clkOut(3) : 20 MHz ASIC reference clock
@@ -469,26 +469,26 @@ begin
       FB_BUFG_G            => true,
       NUM_CLOCKS_G         => 5,
       CLKIN_PERIOD_G       => 6.4,
-      DIVCLK_DIVIDE_G      => 10,
+      DIVCLK_DIVIDE_G      => 6,     --base clock 1000MHz
       CLKFBOUT_MULT_F_G    => 38.4,
       
       CLKOUT0_DIVIDE_F_G   => 4.0,
       CLKOUT0_PHASE_G      => 90.0,
       CLKOUT0_DUTY_CYCLE_G => 0.5,
       
-      CLKOUT1_DIVIDE_G     => 6,
+      CLKOUT1_DIVIDE_G     => 10,
       CLKOUT1_PHASE_G      => 0.0,
       CLKOUT1_DUTY_CYCLE_G => 0.5,
       
-      CLKOUT2_DIVIDE_G     => 80,
+      CLKOUT2_DIVIDE_G     => 4,
       CLKOUT2_PHASE_G      => 0.0,
       CLKOUT2_DUTY_CYCLE_G => 0.5,
       
-      CLKOUT3_DIVIDE_G     => 30,
+      CLKOUT3_DIVIDE_G     => 20,
       CLKOUT3_PHASE_G      => 0.0,
       CLKOUT3_DUTY_CYCLE_G => 0.5,
       
-      CLKOUT4_DIVIDE_G     => 3,
+      CLKOUT4_DIVIDE_G     => 5,
       CLKOUT4_PHASE_G      => 0.0,
       CLKOUT4_DUTY_CYCLE_G => 0.5
    )
@@ -545,7 +545,7 @@ begin
       roClkDdr_i : ODDR 
       port map ( 
          Q  => asicRoClk(i),
-         C  => iDelayCtrlClk,
+         C  => asicRdClk,
          CE => '1',
          D1 => '1',
          D2 => '0',

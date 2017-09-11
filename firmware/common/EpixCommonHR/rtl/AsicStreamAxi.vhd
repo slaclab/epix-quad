@@ -281,11 +281,11 @@ begin
    -- per data sheet when MSB is 0 then subtract 32768 from the incoming data
    comp2ComplementDecode: process (decDataOut2C) is
    begin
-      if (decDataOut2C(15) = '0') then
-         decDataOut <= decDataOut2C - x"8000";
-      else
+      --if (decDataOut2C(15) = '0') then
+      --   decDataOut <= decDataOut2C - x"8000";
+      --else
          decDataOut <= decDataOut2C;
-      end if;
+      --end if;
 
    end process comp2ComplementDecode;
 
