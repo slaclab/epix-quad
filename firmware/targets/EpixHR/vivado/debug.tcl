@@ -66,6 +66,13 @@ ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[0].U_AXI_Framer/dFifoEofe}
 ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[0].U_AXI_Framer/dFifoValid}
 ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[0].U_AXI_Framer/rxDataCs[*]}
 ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[0].U_AXI_Framer/rxValidCs}
+ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[0].U_AXI_Framer/sAxisMaster[*]}
+ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[1].U_AXI_Framer/dFifoSof}
+ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[1].U_AXI_Framer/dFifoEof}
+ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[1].U_AXI_Framer/dFifoEofe}
+ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[1].U_AXI_Framer/dFifoValid}
+ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[1].U_AXI_Framer/rxValidCs}
+
 
 ### Delete the last unused port
 delete_debug_port [get_debug_ports [GetCurrentProbe ${ilaName}]]

@@ -343,6 +343,7 @@ begin
       WFdacCsL_i        when EpixHRConfig.epixhrDbgSel1 = "10000" else
       WFdacLdacL_i      when EpixHRConfig.epixhrDbgSel1 = "10001" else
       WFdacClrL_i       when EpixHRConfig.epixhrDbgSel1 = "10010" else
+      iAsicGrst         when EpixHRConfig.epixhrDbgSel1 = "10011" else
       '0';   
    
    mpsOutMux <=
@@ -365,6 +366,7 @@ begin
       WFdacCsL_i        when EpixHRConfig.epixhrDbgSel2 = "10000" else
       WFdacLdacL_i      when EpixHRConfig.epixhrDbgSel2 = "10001" else
       WFdacClrL_i       when EpixHRConfig.epixhrDbgSel2 = "10010" else
+      iAsicGrst         when EpixHRConfig.epixhrDbgSel1 = "10011" else
       '0';
    
    -- Temporary one-shot for grabbing PGP op code

@@ -193,6 +193,8 @@ architecture RTL of AsicStreamAxi is
    attribute keep of dFifoValid : signal is "true";      -- for chipscope
    attribute keep of rxDataCs : signal is "true";        -- for chipscope
    attribute keep of rxValidCs : signal is "true";       -- for chipscope
+   attribute keep of sAxisMaster : signal is "true";       -- for chipscope
+
 
 begin
    
