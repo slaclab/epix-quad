@@ -390,9 +390,9 @@ begin
                sv.axisMaster.tData(15 downto 0) := s.acqNo(1)(31 downto 16);
             elsif s.stCnt = 4 then
                if s.testMode = '0' then
-                  sv.axisMaster.tData(15 downto 0) := x"000" & dFifoOut(TOA_C) & ASIC_NO_G;
+                  sv.axisMaster.tData(15 downto 0) := x"000" & '0' & ASIC_NO_G;
                else
-                  sv.axisMaster.tData(15 downto 0) := x"000" & s.testBitFlip & ASIC_NO_G;
+                  sv.axisMaster.tData(15 downto 0) := x"000" & '0' & ASIC_NO_G;
                end if;
             else
                sv.axisMaster.tData(15 downto 0) := x"0000";
