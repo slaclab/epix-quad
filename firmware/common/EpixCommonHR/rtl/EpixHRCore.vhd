@@ -393,6 +393,14 @@ begin
    led(2) <= rxReady;
    led(1) <= txReady;
    led(0) <= heartBeat;
+
+
+   ---------------------
+   -- HR test structure signal assignments --
+   ---------------------
+   iasicTsData <= asicTsData;
+   iasicTsSync <= asicTsSync; 
+
    ---------------------
    -- Heart beat LED  --
    ---------------------
