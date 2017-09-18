@@ -23,10 +23,10 @@
 
 import sys
 import os
-import rogue.utilities
-import rogue.utilities.fileio
-import rogue.interfaces.stream
-import pyrogue    
+#import rogue.utilities
+#import rogue.utilities.fileio
+#import rogue.interfaces.stream
+#import pyrogue    
 import time
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import *
@@ -242,8 +242,8 @@ class Camera():
         #self._NumAdcChPerAsic = 4
         #self._NumColPerAdcCh = 96
         #self._superRowSizeInBytes = self._superRowSize * 4
-        self.sensorWidth  = 32 # The sensor size in this dimension is doubled because each pixel has two information (ToT and ToA) 
-        self.sensorHeight = 64 # The sensor size in this dimension is doubled because each pixel has two information (ToT and ToA) 
+        self.sensorWidth  = 64 # The sensor size in this dimension is doubled because each pixel has two information (ToT and ToA) 
+        self.sensorHeight = 32 # The sensor size in this dimension is doubled because each pixel has two information (ToT and ToA) 
         self.pixelDepth = 16
         self.bitMask = np.uint16(0xFFFF)
 
@@ -621,7 +621,7 @@ class Camera():
         #retrieves header info
                                                                   # header dword 0 (VC info)
         acqNum_newRawData  =  newRawData_DW[1]                    # header dword 1
-        asicNum_newRawData =  newRawData_DW[2] & 0xF              # header dword 2
+        asicNum_newRawData =  newRawData_DW[2] & 0x7              # header dword 2
         #if (PRINT_VERBOSE): print('\nacqNum_newRawData: ', acqNum_newRawData, '\nasicNum_newRawData:', asicNum_newRawData)
         
         #for i in range(3, 10):
@@ -665,7 +665,7 @@ class Camera():
                                                                                 # extended header dword 0 (valid trace)
                                                                                 # extended header dword 1 (VC info)
                     acqNum_currentRawData  =  currentRawData[j,2]               # extended header dword 2 (acq num)
-                    asicNum_currentRawData =  currentRawData[j,3] & 0xf         # extended header dword 1 (VC info)
+                    asicNum_currentRawData =  currentRawData[j,3] & 0x7         # extended header dword 1 (VC info)
             #saves current data on returned data before adding new data
             returnedRawData = currentRawData
         else:
