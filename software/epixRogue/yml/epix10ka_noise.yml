@@ -148,7 +148,7 @@ ePixBoard:
       S2d3TcDac: '0x1'
       S2d3Dac: '0x12'
     Epix10kaAsic1:
-      enable: 'False'
+      enable: 'True'
       CompTH_DAC: '0x28'
       CompEn0: 'True'
       CompEn1: 'True'
@@ -215,7 +215,7 @@ ePixBoard:
       S2d3TcDac: '0x1'
       S2d3Dac: '0x12'
     Epix10kaAsic2:
-      enable: 'False'
+      enable: 'True'
       CompTH_DAC: '0x28'
       CompEn0: 'True'
       CompEn1: 'True'
@@ -282,7 +282,7 @@ ePixBoard:
       S2d3TcDac: '0x1'
       S2d3Dac: '0x12'
     Epix10kaAsic3:
-      enable: 'False'
+      enable: 'True'
       CompTH_DAC: '0x28'
       CompEn0: 'True'
       CompEn1: 'True'
