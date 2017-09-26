@@ -19,7 +19,7 @@ package EpixHRPkg is
 
    constant NUMBER_OF_ASICS_C : natural := 2;   
    
-   constant EPIXHR_NUM_AXI_MASTER_SLOTS_C : natural := 20;
+   constant EPIXHR_NUM_AXI_MASTER_SLOTS_C : natural := 21;
    constant EPIXHR_NUM_AXI_SLAVE_SLOTS_C : natural := 3;
    
    constant VERSION_AXI_INDEX_C      : natural := 0;
@@ -42,6 +42,7 @@ package EpixHRPkg is
    constant DESER1_AXI_INDEX_C       : natural := 17;
    constant ASICS0_AXI_INDEX_C       : natural := 18;
    constant ASICS1_AXI_INDEX_C       : natural := 19;
+   constant TS_AXI_INDEX_C           : natural := 20;
    
    constant VERSION_AXI_BASE_ADDR_C    : slv(31 downto 0) := X"00000000";
    constant EPIXHR_REG_AXI_BASE_ADDR_C : slv(31 downto 0) := X"01000000";
@@ -63,6 +64,7 @@ package EpixHRPkg is
    constant DESER1_AXI_BASE_ADDR_C     : slv(31 downto 0) := X"11000000";
    constant ASICS0_AXI_BASE_ADDR_C     : slv(31 downto 0) := X"12000000";
    constant ASICS1_AXI_BASE_ADDR_C     : slv(31 downto 0) := X"13000000";
+   constant TS_AXI_BASE_ADDR_C         : slv(31 downto 0) := X"14000000";
    
    constant EPIXHR_AXI_CROSSBAR_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(EPIXHR_NUM_AXI_MASTER_SLOTS_C-1 downto 0) := (
       VERSION_AXI_INDEX_C      => (
@@ -143,6 +145,10 @@ package EpixHRPkg is
          connectivity         => x"FFFF"),
       ASICS1_AXI_INDEX_C      => ( 
          baseAddr             => ASICS1_AXI_BASE_ADDR_C,
+         addrBits             => 24,
+         connectivity         => x"FFFF"),
+      TS_AXI_INDEX_C          => ( 
+         baseAddr             => TS_AXI_BASE_ADDR_C,
          addrBits             => 24,
          connectivity         => x"FFFF")
    );

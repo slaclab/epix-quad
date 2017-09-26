@@ -211,8 +211,8 @@ architecture top_level of EpixHRCore is
    signal mAxiReadSlaves   : AxiLiteReadSlaveArray(EPIXHR_NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
 
    -- AXI-Stream signals
-   signal framerAxisMaster    : AxiStreamMasterArray(NUMBER_OF_ASICS_C-1 downto 0);
-   signal framerAxisSlave     : AxiStreamSlaveArray(NUMBER_OF_ASICS_C-1 downto 0);
+   signal framerAxisMaster    : AxiStreamMasterArray(NUMBER_OF_ASICS_C downto 0);
+   signal framerAxisSlave     : AxiStreamSlaveArray(NUMBER_OF_ASICS_C downto 0);
    signal userAxisMaster      : AxiStreamMasterType;
    signal userAxisSlave       : AxiStreamSlaveType;
    signal scopeAxisMaster     : AxiStreamMasterType;
@@ -627,13 +627,41 @@ begin
    
    end generate;
    
+   -------------------------------------------------------
+   -- HR test structure
+   -------------------------------------------------------
+   U_AXI_Framer : entity work.TestStructureHrAsicStreamAxi
+      generic map (
+         ASIC_NO_G   => std_logic_vector(to_unsigned(NUMBER_OF_ASICS_C, 3)) -- TS ID is the next after all ASICs
+      )
+      port map (
+         rxClk             => byteClk,
+         rxRst             => byteClkRst,
+         rxData            => iasicTsData,
+         rxValid           => iasicTsSync,
+         axilClk           => coreClk,
+         axilRst           => axiRst,
+         sAxilWriteMaster  => mAxiWriteMasters(TS_AXI_INDEX_C),
+         sAxilWriteSlave   => mAxiWriteSlaves(TS_AXI_INDEX_C),
+         sAxilReadMaster   => mAxiReadMasters(TS_AXI_INDEX_C),
+         sAxilReadSlave    => mAxiReadSlaves(TS_AXI_INDEX_C),
+         axisClk           => coreClk,
+         axisRst           => axiRst,
+         mAxisMaster       => framerAxisMaster(NUMBER_OF_ASICS_C), -- TS gets last slot, after all asics
+         mAxisSlave        => framerAxisSlave(NUMBER_OF_ASICS_C),
+         acqNo             => EpixHRConfig.acqCnt,
+         testTrig          => iAsicAcq,
+         errInhibit        => errInhibit
+      );
+
+
    
    -------------------------------------------------------
    -- AXI stream mux
    -------------------------------------------------------
    U_AxiStreamMux : entity work.AxiStreamMux
    generic map(
-      NUM_SLAVES_G   => NUMBER_OF_ASICS_C
+      NUM_SLAVES_G   => NUMBER_OF_ASICS_C + 1 -- TS is the +1
    )
    port map(
       -- Clock and reset
