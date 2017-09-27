@@ -630,7 +630,7 @@ begin
    -------------------------------------------------------
    -- HR test structure
    -------------------------------------------------------
-   U_AXI_Framer : entity work.TestStructureHrAsicStreamAxi
+   U_AXI_TS_Framer : entity work.TestStructureHrAsicStreamAxi
       generic map (
          ASIC_NO_G   => std_logic_vector(to_unsigned(NUMBER_OF_ASICS_C, 3)) -- TS ID is the next after all ASICs
       )

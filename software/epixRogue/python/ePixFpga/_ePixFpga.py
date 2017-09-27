@@ -318,7 +318,8 @@ class HrPrototype(pr.Device):
             HighSpeedDacRegisters(            name='High Speed DAC',           offset=0x0D000000, enabled=True, expand=False, HsDacEnum = HsDacEnum),
             pr.MemoryDevice(                  name='WaveformMem',              offset=0x0E000000, wordBitSize=16, stride=4, size=1024*4),
             MicroblazeLog(                    name='MicroblazeLog',            offset=0x0B000000, expand=False),
-            MMCM7Registers(                   name='MMCM7Registers',           offset=0x0F000000, enabled=False, expand=False)))
+            MMCM7Registers(                   name='MMCM7Registers',           offset=0x0F000000, enabled=False, expand=False),
+            AsicPktRegisters(                 name='AsicTSPktRegisters',       offset=0x14000000, enabled=False, expand=False)))
 
         self.add(pr.Command(name='SetWaveform',description='Set test waveform for high speed DAC', function=self.fnSetWaveform))
         self.add(pr.Command(name='GetWaveform',description='Get test waveform for high speed DAC', function=self.fnGetWaveform))
