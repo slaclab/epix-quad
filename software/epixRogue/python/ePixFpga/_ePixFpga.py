@@ -319,7 +319,7 @@ class HrPrototype(pr.Device):
             pr.MemoryDevice(                  name='WaveformMem',              offset=0x0E000000, wordBitSize=16, stride=4, size=1024*4),
             MicroblazeLog(                    name='MicroblazeLog',            offset=0x0B000000, expand=False),
             MMCM7Registers(                   name='MMCM7Registers',           offset=0x0F000000, enabled=False, expand=False),
-            AsicPktRegisters(                 name='AsicTSPktRegisters',       offset=0x14000000, enabled=False, expand=False)))
+            AsicTSPktRegisters(               name='AsicTSPktRegisters',       offset=0x14000000, enabled=False, expand=False)))
 
         self.add(pr.Command(name='SetWaveform',description='Set test waveform for high speed DAC', function=self.fnSetWaveform))
         self.add(pr.Command(name='GetWaveform',description='Get test waveform for high speed DAC', function=self.fnGetWaveform))
@@ -1317,6 +1317,51 @@ class AsicPktRegisters(pr.Device):
          return '{:.3f} kHz'.format(1/(self.clkPeriod * self._count(var.dependencies)) * 1e-3)
       return func
 
+
+class AsicTSPktRegisters(pr.Device):
+   def __init__(self, **kwargs):
+      super().__init__(description='Asic data packet registers', **kwargs)
+      
+      # Creation. memBase is either the register bus server (srp, rce mapped memory, etc) or the device which
+      # contains this object. In most cases the parent and memBase are the same but they can be 
+      # different in more complex bus structures. They will also be different for the top most node.
+      # The setMemBase call can be used to update the memBase for this Device. All sub-devices and local
+      # blocks will be updated.
+      
+      #############################################
+      # Create block / variable combinations
+      #############################################
+      
+      
+      #Setup registers & variables
+      
+      self.add(pr.Variable(name='FrameCount',      description='FrameCount',       offset=0x00000000, bitSize=32,  bitOffset=0, base='uint', mode='RO'))
+      self.add(pr.Variable(name='FrameSize',       description='FrameSize',        offset=0x00000004, bitSize=16,  bitOffset=0, base='uint', mode='RO'))
+      self.add(pr.Variable(name='FrameMaxSize',    description='FrameMaxSize',     offset=0x00000008, bitSize=16,  bitOffset=0, base='uint', mode='RO'))
+      self.add(pr.Variable(name='FrameMinSize',    description='FrameMinSize',     offset=0x0000000C, bitSize=16,  bitOffset=0, base='uint', mode='RO'))
+      self.add(pr.Variable(name='SofErrors',       description='SofErrors',        offset=0x00000010, bitSize=16,  bitOffset=0, base='uint', mode='RO'))
+      self.add(pr.Variable(name='EofErrors',       description='EofErrors',        offset=0x00000014, bitSize=16,  bitOffset=0, base='uint', mode='RO'))
+      self.add(pr.Variable(name='OverflowErrors',  description='OverflowErrors',   offset=0x00000018, bitSize=16,  bitOffset=0, base='uint', mode='RO'))
+      self.add(pr.Variable(name='TestMode',        description='TestMode',         offset=0x0000001C, bitSize=1,   bitOffset=0, base='bool', mode='RW'))
+      self.add(pr.Variable(name='ResetCounters',   description='ResetCounters',    offset=0x00000020, bitSize=1,   bitOffset=0, base='bool', mode='RW', verify = False))
+      self.add(pr.Variable(name='NumPixels',       description='Number of Pixels', offset=0x00000024, bitSize=16,  bitOffset=0, base='uint', mode='RW'))
+
+      
+      #####################################
+      # Create commands
+      #####################################
+      
+      # A command has an associated function. The function can be a series of
+      # python commands in a string. Function calls are executed in the command scope
+      # the passed arg is available as 'arg'. Use 'dev' to get to device scope.
+      # A command can also be a call to a local function with local scope.
+      # The command object and the arg are passed
+   
+   @staticmethod   
+   def frequencyConverter(self):
+      def func(dev, var):         
+         return '{:.3f} kHz'.format(1/(self.clkPeriod * self._count(var.dependencies)) * 1e-3)
+      return func
 
 class MicroblazeLog(pr.Device):
    def __init__(self, **kwargs):

@@ -395,7 +395,7 @@ begin
                end if;
                sv.dFifoRd := '1';
                sv.stCnt := s.stCnt + 1;
-               if s.stCnt = rv.frmExpSize then 
+               if s.stCnt = r.frmExpSize then 
                   sv.frmSize := toSlv(s.stCnt, 16);
                   sv.stCnt := 0;
                   if s.frmMax <= sv.frmSize then

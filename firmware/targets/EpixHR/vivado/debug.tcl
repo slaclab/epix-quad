@@ -79,7 +79,6 @@ ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/dFifoEofe}
 ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/dFifoValid}
 ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/rxDataCs[*]}
 ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/rxValidCs}
-ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/sAxisMaster[*]}
 
 
 ### Delete the last unused port
