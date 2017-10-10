@@ -656,6 +656,7 @@ class Epix10ka(pr.Device):
       super(self.__class__, self).__init__(**kwargs)
       self.add((
             Epix10kaFpgaRegisters(name="EpixFpgaRegisters", offset=0x00000000),
+            Epix10kADouts(name="Epix10kADouts", offset=0x28000000, expand=False),
             OscilloscopeRegisters(name='Oscilloscope', offset=0x00000140, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum),
             pgp.Pgp2bAxi(name='Pgp2bAxi', offset=0x00300000, expand=False),
             epix.Epix10kaAsic(name='Epix10kaAsic0', offset=0x02000000, enabled=False, expand=False),
@@ -764,6 +765,9 @@ class Epix10kaFpgaRegisters(pr.Device):
       self.add(pr.Variable(name='EnvData06',           description='Detector bias current',                                   offset=0x00000146*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
       self.add(pr.Variable(name='EnvData07',           description='Analog raw input voltage',                                offset=0x00000147*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
       self.add(pr.Variable(name='EnvData08',           description='Digital raw input voltage',                               offset=0x00000148*addrSize, bitSize=32, bitOffset=0, base='hex',  mode='RO'))
+      
+      self.add(pr.Variable(name='DebugOut',            description='DebugOut',                                                offset=0x00000200*addrSize, bitSize=5,  bitOffset=0, base='uint', mode='RW'))
+
   
       #####################################
       # Create commands
@@ -1403,4 +1407,38 @@ class MicroblazeLog(pr.Device):
          return '{:.3f} kHz'.format(1/(self.clkPeriod * self._count(var.dependencies)) * 1e-3)
       return func
 
-
+class Epix10kADouts(pr.Device):
+   def __init__(self, **kwargs):
+      super().__init__(description='Epix10kADoutDeserializer', **kwargs)
+      
+      # Creation. memBase is either the register bus server (srp, rce mapped memory, etc) or the device which
+      # contains this object. In most cases the parent and memBase are the same but they can be 
+      # different in more complex bus structures. They will also be different for the top most node.
+      # The setMemBase call can be used to update the memBase for this Device. All sub-devices and local
+      # blocks will be updated.
+      
+      #############################################
+      # Create block / variable combinations
+      #############################################
+      
+      
+      #Setup registers & variables
+      self.add(pr.Variable(name='RdoutClkDelay',   description='RdoutClkDelay',   offset=0x00000000,   bitSize=8,    bitOffset=0,   base='uint',   mode='RW'))
+      self.add(pr.Variable(name='SystemClkDelay',  description='SystemClkDelay',  offset=0x00000004,   bitSize=8,    bitOffset=0,   base='uint',   mode='RW'))
+      self.add(pr.Variable(name='RdoutOrder',      description='RdoutOrder',      offset=0x00000008,   bitSize=16,   bitOffset=0,   base='hex',    mode='RW'))
+      
+      #####################################
+      # Create commands
+      #####################################
+      
+      # A command has an associated function. The function can be a series of
+      # python commands in a string. Function calls are executed in the command scope
+      # the passed arg is available as 'arg'. Use 'dev' to get to device scope.
+      # A command can also be a call to a local function with local scope.
+      # The command object and the arg are passed
+   
+   @staticmethod   
+   def frequencyConverter(self):
+      def func(dev, var):         
+         return '{:.3f} kHz'.format(1/(self.clkPeriod * self._count(var.dependencies)) * 1e-3)
+      return func
