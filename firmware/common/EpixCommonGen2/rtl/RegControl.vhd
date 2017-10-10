@@ -255,6 +255,7 @@ begin
       axiSlaveRegisterR(regCon, x"147" & "00",  0, epixStatus.envData(7));
       axiSlaveRegisterR(regCon, x"148" & "00",  0, epixStatus.envData(8));
       
+      axiSlaveRegister (regCon, x"200" & "00",  0, v.epixRegOut.dbgReg);
       
       axiSlaveDefault(regCon, v.axiWriteSlave, v.axiReadSlave, AXI_ERROR_RESP_G);
 
