@@ -79,7 +79,7 @@ ePixBoard:
       StreamEn: 'False'
       StreamPeriod: '0'
     Cpix2Asic0:
-      enable: 'True'
+      enable: 'False'
       CompTH1_DAC: '31'
       PulserSync: 'True'
       PLL_RO_Reset: 'False'
@@ -142,7 +142,7 @@ ePixBoard:
       MSBCompTH1_DAC: '4'
       MSBCompTH2_DAC: '5'
     Cpix2Asic1:
-      enable: 'True'
+      enable: 'False'
       CompTH1_DAC: '31'
       PulserSync: 'True'
       PLL_RO_Reset: 'False'
@@ -223,9 +223,8 @@ ePixBoard:
       InternalPdwnMode: Chip Run
       DutyCycleStabilizer: 'Off'
       ClockDivide: Divide by 1
-      ChopMode: 'off'
-      DevIndexMask[7:4]: '0b0'
-      DevIndexMask[3:0]: '0b0'
+      ChopMode: 'Off'
+      DevIndexMask[7:0]: '0b0'
       DevIndexMask[DCO:FCO]: '0b0'
       UserTestModeCfg: single
       OutputTestMode: 'Off'
