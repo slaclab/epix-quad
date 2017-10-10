@@ -9,7 +9,7 @@
 -- Description: Deserializes EPIX10KA digital outputs. The ASIC has one output per 
 -- 4 banks therefore 4 readout clock cycles are needed to output digital data.
 -- It takes 10 roClk cycles before first valid data appears (verified with chipscope)
--- and the asicLatency should be set correspondingly for valid image readout.
+-- and the rdoClkDelay should be set correspondingly for valid image readout.
 -- Dout FIFOs mapping:
 -- doutOut(15): ASIC3_BANK3
 -- doutOut(14): ASIC3_BANK2
@@ -46,22 +46,32 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 use work.StdRtlPkg.all;
+use work.AxiLitePkg.all;
 
 entity DoutDeserializer is 
    generic (
-      TPD_G       : time               := 1 ns;
-      RD_ORDER_G  : slv(15 downto 0)   := (others=>'0')  -- 0 - forward, 1 - backward
+      TPD_G             : time            := 1 ns;
+      AXIL_ERR_RESP_G   : slv(1 downto 0) := AXI_RESP_DECERR_C
    );
    port ( 
       clk         : in  sl;
       rst         : in  sl;
-      acqBusy     : in  sl;
       asicDout    : in  slv(3 downto 0);
       asicRoClk   : in  sl;
-      asicLatency : in  slv(31 downto 0);
       doutOut     : out Slv2Array(15 downto 0);
       doutRd      : in  slv(15 downto 0);
-      doutValid   : out slv(15 downto 0)
+      doutValid   : out slv(15 downto 0);
+      
+      -- Acquisition state machine handshake
+      acqBusy     : in  sl;
+      roClkTail   : out slv(7 downto 0);
+      
+      
+      -- AXI lite slave port for register access
+      sAxilWriteMaster  : in  AxiLiteWriteMasterType;
+      sAxilWriteSlave   : out AxiLiteWriteSlaveType;
+      sAxilReadMaster   : in  AxiLiteReadMasterType;
+      sAxilReadSlave    : out AxiLiteReadSlaveType
    );
 end DoutDeserializer;
 
@@ -72,63 +82,85 @@ architecture RTL of DoutDeserializer is
    type StateType is (IDLE_S, WAIT_S, STORE_S);
    
    type FsmType is record
-      state          : StateType;
-      stCnt          : slv(31 downto 0);
-      asicRoClk      : sl;
-      acqBusy        : sl;
-      asicLatency    : slv(31 downto 0);
-      fifoIn         : Slv1Array(15 downto 0);
-      fifoWr         : slv(15 downto 0);
-      fifoRst        : sl;
-      rowBuff        : Slv48VectorArray(1 downto 0, 15 downto 0);
-      rowBuffRdy     : sl;
-      rowBuffAct     : natural;
-      copyReq        : sl;
-      copyCnt        : natural;
+      state             : StateType;
+      asicDout          : slv(3 downto 0);
+      stCnt             : slv(31 downto 0);
+      asicRoClk         : sl;
+      acqBusy           : sl;
+      fifoIn            : Slv1Array(15 downto 0);
+      fifoWr            : slv(15 downto 0);
+      fifoRst           : sl;
+      rowBuff           : Slv48VectorArray(1 downto 0, 15 downto 0);
+      rowBuffRdy        : sl;
+      rowBuffAct        : natural;
+      copyReq           : sl;
+      copyCnt           : natural;
+      rdOrder           : slv(15 downto 0);
+      rdoClkDelay       : slv(7 downto 0);
+      sysClkDelay       : slv(7 downto 0);
+      roClkRising       : slv(255 downto 0);
+      sAxilWriteSlave   : AxiLiteWriteSlaveType;
+      sAxilReadSlave    : AxiLiteReadSlaveType;
    end record;
 
    constant FSM_INIT_C : FsmType := (
-      state          => IDLE_S,
-      stCnt          => (others=>'0'),
-      asicRoClk      => '0',
-      acqBusy        => '0',
-      asicLatency    => (others=>'0'),
-      fifoIn         => (others=>(others=>'0')),
-      fifoWr         => (others=>'0'),
-      fifoRst        => '1',
-      rowBuff        => (others=>(others=>(others=>'0'))),
-      rowBuffRdy     => '0',
-      rowBuffAct     => 0,
-      copyReq        => '0',
-      copyCnt        => 0
+      state             => IDLE_S,
+      asicDout          => (others=>'0'),
+      stCnt             => (others=>'0'),
+      asicRoClk         => '0',
+      acqBusy           => '0',
+      fifoIn            => (others=>(others=>'0')),
+      fifoWr            => (others=>'0'),
+      fifoRst           => '1',
+      rowBuff           => (others=>(others=>(others=>'0'))),
+      rowBuffRdy        => '0',
+      rowBuffAct        => 0,
+      copyReq           => '0',
+      copyCnt           => 0,
+      rdOrder           => x"0FF0",
+      rdoClkDelay       => x"0A",
+      sysClkDelay       => (others=>'0'),
+      roClkRising       => (others=>'0'),
+      sAxilWriteSlave   => AXI_LITE_WRITE_SLAVE_INIT_C,
+      sAxilReadSlave    => AXI_LITE_READ_SLAVE_INIT_C
    );
    
    signal f   : FsmType := FSM_INIT_C;
    signal fin : FsmType;
    
+   attribute keep : string;
+   attribute keep of f : signal is "true";
+   
 begin
    
-   comb : process (rst, f, asicDout, asicLatency, asicRoClk, acqBusy) is
+   comb : process (rst, f, asicDout, asicRoClk, acqBusy, sAxilWriteMaster, sAxilReadMaster) is
       variable fv             : FsmType;
-      variable roClkRising    : sl;
       variable acqBusyRising  : sl;
       variable rowBuffCopy    : natural;
+      variable regCon         : AxiLiteEndPointType;
    begin
       fv := f;
       
-      -- sync
-      -- multiply latency by 4 - one pixel requires 4 asicRoClk cycles
-      --fv.asicLatency := asicLatency(29 downto 0) & "00";
-      -- do not multiply for better control while testing the ASIC
-      fv.asicLatency := asicLatency;
+      fv.sAxilReadSlave.rdata := (others => '0');
+      axiSlaveWaitTxn(regCon, sAxilWriteMaster, sAxilReadMaster, fv.sAxilWriteSlave, fv.sAxilReadSlave);
+      
+      axiSlaveRegister (regCon, x"00",  0, fv.rdoClkDelay);
+      axiSlaveRegister (regCon, x"04",  0, fv.sysClkDelay);
+      axiSlaveRegister (regCon, x"08",  0, fv.rdOrder);
+      
+      axiSlaveDefault(regCon, fv.sAxilWriteSlave, fv.sAxilReadSlave, AXIL_ERR_RESP_G);
+      
+      -- sync      
       fv.asicRoClk := asicRoClk;
       fv.acqBusy := acqBusy;
+      fv.asicDout := asicDout;
       
       -- detect rising edge
       if f.asicRoClk = '0' and asicRoClk = '1' then
-         roClkRising := '1';
+         fv.roClkRising(255 downto 1)  := (others=>'0');
+         fv.roClkRising(0)             := '1';
       else 
-         roClkRising := '0';
+         fv.roClkRising := f.roClkRising(254 downto 0) & '0';
       end if;
       
       -- detect rising edge
@@ -147,7 +179,7 @@ begin
             fv.rowBuffAct := 0;
             fv.rowBuffRdy := '0';
             fv.fifoIn := (others=>(others=>'0'));
-            if f.asicLatency > 0 then
+            if f.rdoClkDelay > 0 then
                fv.state := WAIT_S;
             else
                fv.state := STORE_S;
@@ -157,10 +189,10 @@ begin
             -- wait configured roClk cycles
             -- before deserializing
             fv.fifoRst := '0';
-            if roClkRising = '1' then
+            if f.roClkRising(0) = '1' then
                fv.stCnt := f.stCnt + 1;
             end if;
-            if f.stCnt >= f.asicLatency then
+            if f.stCnt >= f.rdoClkDelay then
                fv.stCnt := (others=>'0');
                fv.state := STORE_S;
             end if;
@@ -168,26 +200,12 @@ begin
          when STORE_S =>
             fv.fifoRst := '0';
             fv.rowBuffRdy := '0';
-            if roClkRising = '1' then
+            if f.roClkRising(conv_integer(f.sysClkDelay)) = '1' then
                -- write douts to appropriate row buffer on every roClkRising edge
-               fv.rowBuff(f.rowBuffAct, 0 +conv_integer(f.stCnt(1 downto 0)))(conv_integer(f.stCnt(7 downto 2))) := asicDout(0);
-               fv.rowBuff(f.rowBuffAct, 4 +conv_integer(f.stCnt(1 downto 0)))(conv_integer(f.stCnt(7 downto 2))) := asicDout(1);
-               fv.rowBuff(f.rowBuffAct, 8 +conv_integer(f.stCnt(1 downto 0)))(conv_integer(f.stCnt(7 downto 2))) := asicDout(2);
-               fv.rowBuff(f.rowBuffAct, 12+conv_integer(f.stCnt(1 downto 0)))(conv_integer(f.stCnt(7 downto 2))) := asicDout(3);
-               
-               --fv.fifoIn(0 +conv_integer(f.stCnt(1 downto 0)))(0) := asicDout(0);
-               --fv.fifoIn(4 +conv_integer(f.stCnt(1 downto 0)))(0) := asicDout(1);
-               --fv.fifoIn(8 +conv_integer(f.stCnt(1 downto 0)))(0) := asicDout(2);
-               --fv.fifoIn(12+conv_integer(f.stCnt(1 downto 0)))(0) := asicDout(3);
-               --if f.stCnt(1 downto 0) = "00" then
-               --   fv.fifoWr := "0001000100010001";
-               --elsif f.stCnt(1 downto 0) = "01" then
-               --   fv.fifoWr := "0010001000100010";
-               --elsif f.stCnt(1 downto 0) = "10" then
-               --   fv.fifoWr := "0100010001000100";
-               --else
-               --   fv.fifoWr := "1000100010001000";
-               --end if;
+               fv.rowBuff(f.rowBuffAct, 0 +conv_integer(f.stCnt(1 downto 0)))(conv_integer(f.stCnt(7 downto 2))) := f.asicDout(0);
+               fv.rowBuff(f.rowBuffAct, 4 +conv_integer(f.stCnt(1 downto 0)))(conv_integer(f.stCnt(7 downto 2))) := f.asicDout(1);
+               fv.rowBuff(f.rowBuffAct, 8 +conv_integer(f.stCnt(1 downto 0)))(conv_integer(f.stCnt(7 downto 2))) := f.asicDout(2);
+               fv.rowBuff(f.rowBuffAct, 12+conv_integer(f.stCnt(1 downto 0)))(conv_integer(f.stCnt(7 downto 2))) := f.asicDout(3);
 
                -- count rising edges of roClk
                fv.stCnt := f.stCnt + 1;
@@ -204,8 +222,6 @@ begin
                   end if;
                end if;
             
-            --else                             -- remove line ---------------------------------------------
-            --   fv.fifoWr := (others=>'0');   -- remove line ---------------------------------------------
             end if;
          
          when others =>
@@ -233,7 +249,7 @@ begin
       end if;
       -- write FIFOs
       for i in 0 to 15 loop
-         if RD_ORDER_G(i) = '0' then
+         if f.rdOrder(i) = '0' then
             fv.fifoIn(i)(0) := f.rowBuff(rowBuffCopy, i)(f.copyCnt);
          else
             fv.fifoIn(i)(0) := f.rowBuff(rowBuffCopy, i)(47 - f.copyCnt);
@@ -252,7 +268,11 @@ begin
       end if;
 
       -- outputs
-      fin         <= fv;
+      fin               <= fv;
+      sAxilWriteSlave   <= f.sAxilWriteSlave;
+      sAxilReadSlave    <= f.sAxilReadSlave;
+      -- Acquisition FSM must continue ASIC roClk until all Douts arre captured
+      roClkTail         <= f.rdoClkDelay;
 
    end process comb;
 

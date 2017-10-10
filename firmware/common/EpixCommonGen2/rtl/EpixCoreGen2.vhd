@@ -265,6 +265,7 @@ architecture top_level of EpixCoreGen2 is
    signal doutOut    : Slv2Array(15 downto 0);
    signal doutRd     : slv(15 downto 0);
    signal doutValid  : slv(15 downto 0);
+   signal roClkTail  : slv(7 downto 0);
    
    constant SACI_CLK_PERIOD_C : real := saciClkPeriod(ASIC_TYPE_G);
    
@@ -287,10 +288,14 @@ architecture top_level of EpixCoreGen2 is
    attribute keep of acqBusy : signal is true;
    attribute keep of acqStart : signal is true;
    attribute keep of dataSend : signal is true;
+   attribute keep of iAsicAcq : signal is true;
    attribute keep of iSaciClk : signal is true;
    attribute keep of iSaciCmd : signal is true;
    attribute keep of iSaciSelL : signal is true;
    attribute keep of iSaciRsp : signal is true;
+   attribute keep of doutOut : signal is true;
+   attribute keep of doutRd : signal is true;
+   attribute keep of doutValid : signal is true;
    
    attribute IODELAY_GROUP : string;
    attribute IODELAY_GROUP of U_IDelayCtrl : label is IODELAY_GROUP_G;
@@ -309,7 +314,16 @@ begin
    iDaqTrigger    <= daqTrigger;
    -- Triggers out
    triggerOut     <= iAsicAcq;
-   mpsOut         <= pgpOpCodeOneShot;
+   mpsOut         <= 
+      pgpOpCodeOneShot     when epixConfig.dbgReg = "00000" else
+      acqStart             when epixConfig.dbgReg = "00001" else
+      dataSend             when epixConfig.dbgReg = "00010" else
+      acqBusy              when epixConfig.dbgReg = "00011" else
+      readDone             when epixConfig.dbgReg = "00100" else
+      saciPrepReadoutReq   when epixConfig.dbgReg = "00101" else
+      saciPrepReadoutAck   when epixConfig.dbgReg = "00110" else
+      '0';
+   
    -- ASIC signals
    asicR0         <= iAsicR0;
    asicPpmat      <= iAsicPpmat;
@@ -645,24 +659,41 @@ begin
    -- Digital output deserializer only for EPIX10KA
    --------------------- ------------------------------------------
    G_DOUT_EPIX10KA : if ASIC_TYPE_G = EPIX10KA_C generate
-   
-      U_DoutDeser : entity work.DoutDeserializer
-      port map ( 
-         clk         => coreClk,
-         rst         => axiRst,
-         acqBusy     => acqBusy,
-         asicDout    => asicDout,
-         asicRoClk   => iAsicRoClk,
-         asicLatency => epixConfig.doutPipelineDelay,
-         doutOut     => doutOut,
-         doutRd      => doutRd,
-         doutValid   => doutValid
-      );
+   begin
       
+      U_DoutAsic : entity work.DoutDeserializer
+      port map ( 
+         clk               => coreClk,
+         rst               => axiRst,
+         acqBusy           => acqBusy,
+         roClkTail         => roClkTail,
+         asicDout          => asicDout,
+         asicRoClk         => iAsicRoClk,
+         doutOut           => doutOut,
+         doutRd            => doutRd,
+         doutValid         => doutValid,
+         sAxilWriteMaster  => mAxiWriteMasters(DOUT10KA_AXI_INDEX_C),
+         sAxilWriteSlave   => mAxiWriteSlaves(DOUT10KA_AXI_INDEX_C),
+         sAxilReadMaster   => mAxiReadMasters(DOUT10KA_AXI_INDEX_C),
+         sAxilReadSlave    => mAxiReadSlaves(DOUT10KA_AXI_INDEX_C)
+      );
+   
    end generate;
    G_DOUT_NONE : if ASIC_TYPE_G /= EPIX10KA_C generate
       doutOut <= (others=>(others=>'0'));
       doutValid <= (others=>'1');
+      roClkTail <= (others=>'0');
+      
+      U_AxiLiteEmpty: entity work.AxiLiteEmpty
+      port map (
+         axiClk         => coreClk,
+         axiClkRst      => axiRst,
+         axiReadMaster  => mAxiReadMasters(DOUT10KA_AXI_INDEX_C),
+         axiReadSlave   => mAxiReadSlaves(DOUT10KA_AXI_INDEX_C),
+         axiWriteMaster => mAxiWriteMasters(DOUT10KA_AXI_INDEX_C),
+         axiWriteSlave  => mAxiWriteSlaves(DOUT10KA_AXI_INDEX_C)
+      );
+      
    end generate;
    ---------------------
    -- Acq control     --
@@ -685,6 +716,7 @@ begin
       adcClkM         => adcClkN,
       adcPulse        => adcPulse,
       readTps         => readTps,
+      roClkTail       => roClkTail,
       epixConfig      => epixConfig,
       saciReadoutReq  => saciPrepReadoutReq,
       saciReadoutAck  => saciPrepReadoutAck,

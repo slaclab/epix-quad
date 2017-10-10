@@ -20,7 +20,7 @@ package EpixPkgGen2 is
    type AsicType is (EPIX100A_C, EPIX10KA_C, EPIX10KP_C, EPIXS_C);
 
    -- AXI-Lite Constants
-   constant NUM_AXI_MASTER_SLOTS_C : natural := 13;
+   constant NUM_AXI_MASTER_SLOTS_C : natural := 14;
    constant NUM_AXI_SLAVE_SLOTS_C : natural := 4;
    
    constant EPIXREGS_AXI_INDEX_C    : natural := 0;
@@ -36,7 +36,8 @@ package EpixPkgGen2 is
    constant ADC2_RD_AXI_INDEX_C     : natural := 10;
    constant ADC_CFG_AXI_INDEX_C     : natural := 11;
    constant MEM_LOG_AXI_INDEX_C     : natural := 12;
-   constant TESTMEM_AXI_INDEX_C     : natural := 13;
+   constant DOUT10KA_AXI_INDEX_C    : natural := 13;
+   constant TESTMEM_AXI_INDEX_C     : natural := 14;
    
    constant EPIXREGS_AXI_BASE_ADDR_C  : slv(31 downto 0) := X"00000000";
    constant PREPRDOUT_AXI_BASE_ADDR_C : slv(31 downto 0) := X"00100000";
@@ -51,7 +52,8 @@ package EpixPkgGen2 is
    constant ADC2_RD_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"1C000000";
    constant ADC_CFG_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"20000000";
    constant MEM_LOG_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"24000000";
-   constant TESTMEM_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"28000000";
+   constant DOUT10KA_AXI_BASE_ADDR_C  : slv(31 downto 0) := X"28000000";
+   constant TESTMEM_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"2C000000";
    
    constant AXI_CROSSBAR_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0) := (
       EPIXREGS_AXI_INDEX_C    => (
@@ -105,6 +107,10 @@ package EpixPkgGen2 is
       MEM_LOG_AXI_INDEX_C     => (
          baseAddr             => MEM_LOG_AXI_BASE_ADDR_C,
          addrBits             => 26,
+         connectivity         => x"FFFF"),
+      DOUT10KA_AXI_INDEX_C     => (
+         baseAddr             => DOUT10KA_AXI_BASE_ADDR_C,
+         addrBits             => 26,
          connectivity         => x"FFFF")
 --      TESTMEM_AXI_INDEX_C     => (
 --         baseAddr             => TESTMEM_AXI_BASE_ADDR_C,
@@ -157,6 +163,7 @@ package EpixPkgGen2 is
       pgpTrigEn          : sl;
       monitorEnable      : sl;
       requestConfDump    : sl;
+      dbgReg             : slv(4 downto 0);
    end record;
    type EpixConfigArray is array (natural range <>) of EpixConfigType;
    constant EPIX_CONFIG_INIT_C : EpixConfigType := (
@@ -200,7 +207,8 @@ package EpixPkgGen2 is
       startupFail        => '0',
       pgpTrigEn          => '0',
       monitorEnable      => '0',
-      requestConfDump    => '0'
+      requestConfDump    => '0',
+      dbgReg             => (others => '0')
    );
    
    type EpixStatusType is record

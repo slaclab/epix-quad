@@ -191,6 +191,8 @@ architecture ReadoutControl of ReadoutControl is
    attribute keep : string;
    attribute keep of fifoEmptyAll : signal is "true";
    attribute keep of r : signal is "true";
+   attribute keep of adcFifoRdValid : signal is "true";
+   attribute keep of adcFifoRdEn : signal is "true";
    
    
 begin
@@ -286,34 +288,38 @@ begin
          risingEdge => acqStartEdge
       );
 
-   process(adcFifoRdValid,channelOrder, doutOrder,mAxisSlave,r, acqBusy) begin
-      for i in 0 to 15 loop
-         -- read ADC FIFOs
-         if (r.state = READ_FIFO_S and i = channelOrder(conv_integer(r.chCnt)) and 
-             adcFifoRdValid(i) = '1' and mAxisSlave.tReady = '1') then
-            adcFifoRdEn(i) <= '1';
-         else
-            adcFifoRdEn(i) <= '0';
-         end if;
-         -- read dout FIFOs always with ADC FIFOs but in different order
-         -- no validity check on dout FIFOs
-         if (r.state = READ_FIFO_S and i = doutOrder(conv_integer(r.chCnt)) and 
-             adcFifoRdValid(i) = '1' and mAxisSlave.tReady = '1') then
-            doutRd(i) <= '1';
-         else
-            doutRd(i) <= '0';
-         end if;
-         
-      end loop;
-   end process;
+   --process(adcFifoRdValid,channelOrder, doutOrder,mAxisSlave,r, acqBusy) begin
+   --   for i in 0 to 15 loop
+   --      -- read ADC FIFOs
+   --      if (r.state = READ_FIFO_S and i = channelOrder(conv_integer(r.chCnt)) and 
+   --          adcFifoRdValid(i) = '1' and mAxisSlave.tReady = '1') then
+   --         adcFifoRdEn(i) <= '1';
+   --      else
+   --         adcFifoRdEn(i) <= '0';
+   --      end if;
+   --      -- read dout FIFOs always with ADC FIFOs but in different order
+   --      -- no validity check on dout FIFOs
+   --      if (r.state = READ_FIFO_S and i = doutOrder(conv_integer(r.chCnt)) and 
+   --          adcFifoRdValid(i) = '1' and mAxisSlave.tReady = '1') then
+   --         doutRd(i) <= '1';
+   --      else
+   --         doutRd(i) <= '0';
+   --      end if;
+   --      
+   --   end loop;
+   --end process;
+   
+   
+   
+   
    --------------------------------------------------
    -- Simple state machine to just send ADC values --
    --------------------------------------------------
-   comb : process (r,epixConfig,acqCount,intSeqCount,adcFifoRdData,adcFifoRdValid,
-                   channelOrder,fifoEmptyAll,acqBusy,adcMemOflowAny,fifoOflowAny,
+   comb : process (r,epixConfig,acqCount,intSeqCount,adcFifoRdData,adcFifoRdValid,doutValid,
+                   channelOrder,doutOrder,fifoEmptyAll,acqBusy,adcMemOflowAny,fifoOflowAny,
                    envData,tpsAdcData,acqStartEdge,dataSendEdge,adcFifoEmpty,
                    sysClkRst,mAxisSlave, adcData, channelValid, opCode,
-                   doutOrder, doutOut) 
+                   doutOut) 
       variable v : RegType;
    begin
       v := r;
@@ -322,6 +328,9 @@ begin
       ssiResetFlags(v.mAxisMaster);
       v.mAxisMaster.tData := (others => '0');
       v.seqCountEn := '0';
+      
+      adcFifoRdEn <= (others=>'0');
+      doutRd      <= (others=>'0');
 
       -- Always grab latest adc data
       for i in 0 to 19 loop
@@ -386,7 +395,12 @@ begin
                   '0' & doutOut(doutOrder(conv_integer(r.chCnt)))(0) &
                   adcFifoRdData(channelOrder(conv_integer(r.chCnt)))(13 downto 0);
                
-               if adcFifoRdValid(channelOrder(conv_integer(r.chCnt))) = '1' then
+               --if adcFifoRdValid(channelOrder(conv_integer(r.chCnt))) = '1' then
+               if adcFifoRdValid(channelOrder(conv_integer(r.chCnt))) = '1' and doutValid(doutOrder(conv_integer(r.chCnt))) = '1' then
+                  
+                  adcFifoRdEn(channelOrder(conv_integer(r.chCnt))) <= '1';
+                  doutRd(doutOrder(conv_integer(r.chCnt))) <= '1';
+                  
                   if (channelValid(conv_integer(r.chCnt)) = '1') then
                      v.mAxisMaster.tValid := '1';
                   end if;

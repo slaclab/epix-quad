@@ -55,6 +55,7 @@ entity AcqControl is
       readValidA3         : out   std_logic;
       adcPulse            : out   std_logic;
       readTps             : out   std_logic;
+      roClkTail           : in    std_logic_vector(7 downto 0);
 
       -- Configuration
       epixConfig          : in    EpixConfigType;
@@ -144,6 +145,10 @@ architecture AcqControl of AcqControl is
                   SYNC_TO_ADC_S,
                   WAIT_ADC_S,
                   NEXT_CELL_S,
+                  
+                  WAIT_DOUT_S,
+                  NEXT_DOUT_S,
+                  
                   WAIT_FOR_READOUT_S,
                   SACI_RESET_S,
                   DONE_S);
@@ -323,6 +328,28 @@ begin
             else
                stateCntEn      <= '1' after tpd;
             end if;
+         
+         
+         -- continue asicClk until alll douts are captured (epix10ka only)
+         when NEXT_DOUT_S =>
+            pixelCntRst  <= '0' after tpd;
+            iAsicClk     <= '1' after tpd;
+            if stateCnt = unsigned(ePixConfig.asicRoClkHalfT)-1 or ePixConfig.asicRoClkHalfT = 0 then
+               stateCntRst     <= '1' after tpd;
+            else
+               stateCntEn      <= '1' after tpd;
+            end if;
+            
+         when WAIT_DOUT_S =>
+            pixelCntRst   <= '0' after tpd;
+            if stateCnt = unsigned(ePixConfig.asicRoClkHalfT)-1 or ePixConfig.asicRoClkHalfT = 0 then
+               stateCntRst     <= '1' after tpd;
+               pixelCntEn      <= '1' after tpd;
+            else
+               stateCntEn      <= '1' after tpd;
+            end if;
+            
+         
          --Wait for readout to finish before sending SACI
          --"prepare for readout."  This way we avoid cross-talk
          --with the ADC lines.
@@ -349,7 +376,7 @@ begin
    end process;
 
    --Next state logic
-   process(curState,acqStartEdge,stateCnt,saciReadoutAck,adcSampCnt,pixelCnt,ePixConfig,adcClkEdge,readDone) begin
+   process(curState,acqStartEdge,stateCnt,saciReadoutAck,adcSampCnt,pixelCnt,ePixConfig,adcClkEdge,readDone,roClkTail) begin
       case curState is
          --Remain idle until we get the acqStart signal
          when IDLE_S =>
@@ -416,7 +443,11 @@ begin
                if pixelCnt < unsigned(ePixConfig.totalPixelsToRead)-1 then
                   nxtState <= NEXT_CELL_S after tpd;
                else
-                  nxtState <= WAIT_FOR_READOUT_S after tpd;
+                  if unsigned(roClkTail) = 0 then
+                     nxtState <= WAIT_FOR_READOUT_S after tpd;
+                  else
+                     nxtState <= NEXT_DOUT_S after tpd;
+                  end if;
                end if;
             else
                nxtState <= curState after tpd;
@@ -428,6 +459,26 @@ begin
             else 
                nxtState <= curState after tpd;
             end if;
+         
+         -- continue asicClk untill all douts are captured (epix10ka only)
+         when NEXT_DOUT_S => 
+            if stateCnt = unsigned(ePixConfig.asicRoClkHalfT)-1 or unsigned(ePixConfig.asicRoClkHalfT) = 0 then
+               nxtState <= WAIT_DOUT_S after tpd;
+            else 
+               nxtState <= curState after tpd;
+            end if;
+         
+         when WAIT_DOUT_S => 
+            if stateCnt = unsigned(ePixConfig.asicRoClkHalfT)-1 or unsigned(ePixConfig.asicRoClkHalfT) = 0 then
+               if pixelCnt < unsigned(ePixConfig.totalPixelsToRead)+unsigned(roClkTail)-1 then
+                  nxtState <= NEXT_DOUT_S after tpd;
+               else
+                  nxtState <= WAIT_FOR_READOUT_S after tpd;
+               end if;
+            else
+               nxtState <= curState after tpd;
+            end if;
+         
          --Wait for readout to finish before sending SACI commands
          when WAIT_FOR_READOUT_S =>
             if readDone = '1' then
