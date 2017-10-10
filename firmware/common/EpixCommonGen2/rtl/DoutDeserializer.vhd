@@ -89,6 +89,7 @@ architecture RTL of DoutDeserializer is
       acqBusy           : sl;
       fifoIn            : Slv1Array(15 downto 0);
       fifoWr            : slv(15 downto 0);
+      fifoWrDly         : slv(15 downto 0);
       fifoRst           : sl;
       rowBuff           : Slv48VectorArray(1 downto 0, 15 downto 0);
       rowBuffRdy        : sl;
@@ -111,6 +112,7 @@ architecture RTL of DoutDeserializer is
       acqBusy           => '0',
       fifoIn            => (others=>(others=>'0')),
       fifoWr            => (others=>'0'),
+      fifoWrDly         => (others=>'0'),
       fifoRst           => '1',
       rowBuff           => (others=>(others=>(others=>'0'))),
       rowBuffRdy        => '0',
@@ -154,6 +156,8 @@ begin
       fv.asicRoClk := asicRoClk;
       fv.acqBusy := acqBusy;
       fv.asicDout := asicDout;
+      -- delay FIFO write strobe
+      fv.fifoWrDly := f.fifoWr;
       
       -- detect rising edge
       if f.asicRoClk = '0' and asicRoClk = '1' then
@@ -297,7 +301,7 @@ begin
       port map (
          rst      => f.fifoRst,
          wr_clk   => clk,
-         wr_en    => f.fifoWr(i),
+         wr_en    => f.fifoWrDly(i),
          din      => f.fifoIn(i),
          rd_clk   => clk,
          rd_en    => doutRd(i),
