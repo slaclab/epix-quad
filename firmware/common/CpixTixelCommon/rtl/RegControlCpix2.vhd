@@ -552,7 +552,7 @@ begin
       end if;
 
       -- Sync_1 enables to find the edge of the pulse
-      v.asicAcqReg.Sync_1 <= r.asicAcqReg.Sync;
+      v.asicAcqReg.Sync_1 := r.asicAcqReg.Sync;
 
       -- Register the variable for next clock cycle
       rin <= v;
