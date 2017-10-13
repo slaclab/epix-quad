@@ -155,12 +155,12 @@ package Cpix2Pkg is
       CPIX2DbgSel2         : slv(4 downto 0);
    end record;
    constant CPIX2_CONFIG_INIT_C : CPIX2ConfigType := (
-      pwrEnableReq         => '0',
-      pwrManual            => '0',
-      pwrManualDig         => '0',
-      pwrManualAna         => '0',
-      pwrManualIo          => '0',
-      pwrManualFpga        => '0',
+      pwrEnableReq         => '1',
+      pwrManual            => '1',
+      pwrManualDig         => '1',
+      pwrManualAna         => '1',
+      pwrManualIo          => '1',
+      pwrManualFpga        => '1',
       asicMask             => (others => '0'),
       acqCnt               => (others => '0'),
       ReqTriggerCnt        => x"000000FF",
