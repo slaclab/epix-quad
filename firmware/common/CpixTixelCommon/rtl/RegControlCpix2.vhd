@@ -125,6 +125,7 @@ architecture rtl of RegControlCpix2 is
       SyncPolarity      : sl;
       SyncDelay         : slv(31 downto 0);
       SyncWidth         : slv(31 downto 0);
+      Sync_1            : sl;
       saciSync          : sl;
       saciSyncPolarity  : sl;
       saciSyncDelay     : slv(31 downto 0);
@@ -174,6 +175,7 @@ architecture rtl of RegControlCpix2 is
       SyncPolarity      => '0',
       SyncDelay         => (others=>'0'),
       SyncWidth         => (others=>'0'),
+      Sync_1            => '0',
       saciSync          => '0',
       saciSyncPolarity  => '0',
       saciSyncDelay     => (others=>'0'),
@@ -218,7 +220,6 @@ architecture rtl of RegControlCpix2 is
    );
 
    signal r   : RegType := REG_INIT_C;
-   signal r_1 : RegType := REG_INIT_C;
    signal rin : RegType;
    
    signal idValues        : Slv64Array(2 downto 0);
@@ -245,7 +246,7 @@ begin
    -------------------------------
    -- Configuration Register
    -------------------------------  
-   comb : process (axiReadMaster, axiReset, axiWriteMaster, r, r_1, idValids, idValues, acqStart, saciReadoutAck) is
+   comb : process (axiReadMaster, axiReset, axiWriteMaster, r, idValids, idValues, acqStart, saciReadoutAck) is
       variable v           : RegType;
       variable regCon      : AxiLiteEndPointType;
       
@@ -527,7 +528,7 @@ begin
 
      -- syncCounter counter per cycle enables the system to wait for N acqStart before readout data
      -- this counter goes to the reader of the frames sent out instead of the acqcounter since its behavior is different for cPix2 than it was for the other asics
-     if (r.asicAcqReg.Sync = '1' and r_1.asicAcqReg.Sync = '0') or (r.asicAcqReg.saciSync = '1' and r.asicAcqReg.saciSync = '0') then
+     if (r.asicAcqReg.Sync = '1' and r.asicAcqReg.Sync_1 = '0') or (r.asicAcqReg.saciSync = '1' and r.asicAcqReg.saciSync = '0') then
         v.cpix2RegOut.syncCounter  := r.cpix2RegOut.syncCounter + 1;
      end if;
 
@@ -549,6 +550,9 @@ begin
       if axiReset = '1' then
          v := REG_INIT_C;
       end if;
+
+      -- Sync_1 enables to find the edge of the pulse
+      v.asicAcqReg.Sync_1 <= r.asicAcqReg.Sync;
 
       -- Register the variable for next clock cycle
       rin <= v;
@@ -580,7 +584,6 @@ begin
    begin
       if rising_edge(axiClk) then
          r   <= rin after TPD_G;
-         r_1 <= r  after TPD_G;
       end if;
    end process seq;
    
