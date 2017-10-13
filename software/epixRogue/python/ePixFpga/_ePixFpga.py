@@ -155,8 +155,8 @@ class Cpix2(pr.Device):
             Cpix2FpgaRegisters(               name="Cpix2FpgaRegisters",      offset=0x01000000, enabled=True),
             TriggerRegisters(                 name="TriggerRegisters",        offset=0x02000000, enabled=True, expand=False),
             SlowAdcRegisters(                 name="SlowAdcRegisters",        offset=0x03000000, enabled=False, expand=False),
-            epix.Cpix2Asic(                   name='Cpix2Asic0',              offset=0x04000000, enabled=True, expand=False),
-            epix.Cpix2Asic(                   name='Cpix2Asic1',              offset=0x04400000, enabled=True, expand=False),
+            epix.Cpix2Asic(                   name='Cpix2Asic0',              offset=0x04000000, enabled=False, expand=False),
+            epix.Cpix2Asic(                   name='Cpix2Asic1',              offset=0x04400000, enabled=False, expand=False),
             pgp.Pgp2bAxi(                     name='Pgp2bAxi',                offset=0x06000000, enabled=False, expand=False),
             analog_devices.Ad9249ReadoutGroup(name='Ad9249Rdout[1].Adc[0]',   offset=0x09000000, channels=4, enabled=False, expand=False),
             #analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]', offset=0x0A000000),    # not used in tixel, disabled by microblaze

@@ -79,7 +79,7 @@ void epixInit() {
    // disable the power supply
    //Xil_Out32( EPIX_PWR_REG, 0x0);
    // enable the power supply
-   Xil_Out32( EPIX_PWR_REG, 0x1);
+   Xil_Out32( EPIX_PWR_REG, 0xF10001);
    // let the power settle
    MB_Sleep(2000);
    
