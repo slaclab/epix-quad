@@ -122,6 +122,11 @@ class Window(QtGui.QMainWindow, QObject):
         self.readFileDelay = 0.1
         self.displayBusy = False
 
+        # limits the rate of data to 1/ProcessFramePeriod
+        # only single frame images work with this option
+        if ((cameraType == 'ePix100a') or (cameraType == 'ePix10ka')):
+            self.eventReader.ProcessFramePeriod = 0.5
+
         # initialize image processing objects
         self.rawImgFrame = []
         self.imgDesc = []
@@ -602,6 +607,8 @@ class EventReader(rogue.interfaces.stream.Slave):
         self.numAcceptedFrames = 0
         self.numProcessFrames  = 0
         self.numSkipFrames = 1 # 1 accpts all frames, 2 accepts every other frame, 3 every thrid frame and so on
+        self.lastProcessedFrameTime = 0
+        self.ProcessFramePeriod = 0
         self.lastFrame = rogue.interfaces.stream.Frame
         self.frameIndex = 1
         self.frameData = bytearray()
@@ -655,7 +662,8 @@ class EventReader(rogue.interfaces.stream.Slave):
         elif (VcNum == self.VIEW_MONITORING_DATA_ID and (not self.busy)):
             self.parent.processMonitoringFrameTrigger.emit()
         elif (VcNum == 0):
-            if (((self.numAcceptedFrames == self.frameIndex) or (self.frameIndex == 0)) and (self.numAcceptedFrames%self.numSkipFrames==0)): 
+            if (((self.numAcceptedFrames == self.frameIndex) or (self.frameIndex == 0)) and (self.numAcceptedFrames%self.numSkipFrames==0) and ((time.time() - self.lastProcessedFrameTime) > self.ProcessFramePeriod)): 
+                self.lastProcessedFrameTime = time.time()
                 self.parent.processFrameTrigger.emit()
 
 
