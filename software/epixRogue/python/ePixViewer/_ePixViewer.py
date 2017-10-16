@@ -126,6 +126,9 @@ class Window(QtGui.QMainWindow, QObject):
         # only single frame images work with this option
         if ((cameraType == 'ePix100a') or (cameraType == 'ePix10ka')):
             self.eventReader.ProcessFramePeriod = 0.5
+        # Scompe and monitoring update rates are limited to 1 Hz
+        self.eventReaderScope.ProcessFramePeriod = 1
+        self.eventReaderMonitoring.ProcessFramePeriod = 1
 
         # initialize image processing objects
         self.rawImgFrame = []
@@ -657,9 +660,11 @@ class EventReader(rogue.interfaces.stream.Slave):
         else:
             self.busyTimeout = 0
 
-        if ((VcNum == self.VIEW_PSEUDOSCOPE_ID) and (not self.busy)):
+        if ((VcNum == self.VIEW_PSEUDOSCOPE_ID) and (not self.busy) and ((time.time() - self.lastProcessedFrameTime) > self.ProcessFramePeriod)):
+            self.lastProcessedFrameTime = time.time()
             self.parent.processPseudoScopeFrameTrigger.emit()
-        elif (VcNum == self.VIEW_MONITORING_DATA_ID and (not self.busy)):
+        elif (VcNum == self.VIEW_MONITORING_DATA_ID and (not self.busy) and ((time.time() - self.lastProcessedFrameTime) > self.ProcessFramePeriod)):
+            self.lastProcessedFrameTime = time.time()
             self.parent.processMonitoringFrameTrigger.emit()
         elif (VcNum == 0):
             if (((self.numAcceptedFrames == self.frameIndex) or (self.frameIndex == 0)) and (self.numAcceptedFrames%self.numSkipFrames==0) and ((time.time() - self.lastProcessedFrameTime) > self.ProcessFramePeriod)): 
