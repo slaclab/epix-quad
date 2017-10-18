@@ -248,8 +248,11 @@ begin
 --      sDataout   => lutDataOut
 --   );
 
-   lutDataOut <= decDataOut;
-
+   lutDataOut(15 downto 0) <= decDataOut;
+   lutDataOut(16) <= decEofe;
+   lutDataOut(17) <= decEof;
+   lutDataOut(18) <= decSof;
+   lutDataOut(19) <= decValid;
    -- disable decoder in test mode (fake ASIC data)
    iRxValid <= rxValid and not testModeSync;
    
