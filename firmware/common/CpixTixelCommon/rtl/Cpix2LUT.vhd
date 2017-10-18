@@ -80,7 +80,8 @@ begin
    dataMux <= '0' & lutData;
    
    -- LUT ram
-   lutAddress <= '0' & sDataIn(6 downto 0) & sDataIn(15 downto 8);
+   --lutAddress <= '0' & sDataIn(6 downto 0) & sDataIn(15 downto 8);
+   lutAddress <= '0' & sDataIn(14 downto 0);
    
    -- the input address is 15 bit therefore the lut size is 32kb
    -- the output converted data is 15 bit
