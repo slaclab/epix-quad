@@ -234,19 +234,21 @@ begin
    -------------------------------------------------------
    -- CPIX2 LUT translators 
    -------------------------------------------------------
-   U_Cpix2LUT : entity work.Cpix2LUT
-   port map (
-      sysClk         => rxClk,
-      sysRst         => rxRst,
-      -- input stream
-      sDataIn(15 downto 0)    => decDataOut,
-      sDataIn(16)             => decEofe,   
-      sDataIn(17)             => decEof,   
-      sDataIn(18)             => decSof,   
-      sDataIn(19)             => decValid,      
-      -- output stream
-      sDataout   => lutDataOut
-   );
+--   U_Cpix2LUT : entity work.Cpix2LUT
+--   port map (
+--      sysClk         => rxClk,
+--      sysRst         => rxRst,
+--      -- input stream
+--      sDataIn(15 downto 0)    => decDataOut,
+--      sDataIn(16)             => decEofe,   
+--      sDataIn(17)             => decEof,   
+--      sDataIn(18)             => decSof,   
+--      sDataIn(19)             => decValid,      
+--      -- output stream
+--      sDataout   => lutDataOut
+--   );
+
+   lutDataOut <= decDataOut;
 
    -- disable decoder in test mode (fake ASIC data)
    iRxValid <= rxValid and not testModeSync;
