@@ -38,7 +38,7 @@ class ePixBoard(pyrogue.Root):
         """Initialize me."""
         super().__init__(name='ePixBoard', description='ePix 10ka Board')
 
-        pgpVc1 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0', 1, 1)  # Registers for ePix board
+        pgpVc1 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0', 0, 1)  # Registers for ePix board
         srp = rogue.protocols.srp.SrpV0()  # construct register proto
         pyrogue.streamConnectBiDir(pgpVc1, srp)  # connect srp <--> pgpVc1
         # logging.getLogger('pyrogue').setLevel(logging.DEBUG)

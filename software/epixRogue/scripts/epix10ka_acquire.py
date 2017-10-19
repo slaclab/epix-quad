@@ -78,8 +78,8 @@ def main():
     board = pyrogue.Root(name='ePixBoard', description='ePix 10ka Board')
 
     # open pgpcard file descriptor
-    pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0', 1, 0)  # Data & cmds
-    pgpVc1 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0', 1, 1)  # Registers for ePix board
+    pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0', 0, 0)  # Data & cmds
+    pgpVc1 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0', 0, 1)  # Registers for ePix board
     acq_log.debug("PGP Card Version: %x" % (pgpVc0.getInfo().version))
 
     # config path
