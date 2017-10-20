@@ -66,7 +66,7 @@ ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[1].U_AXI_Framer/dFifoValid}
 ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[1].U_AXI_Framer/dFifoOut[*]}
 ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[1].U_AXI_Framer/rxDataCs[*]}
 ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[1].U_AXI_Framer/rxValidCs}
-ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[0].U_AXI_Framer/stCntCS[*]}
+ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[1].U_AXI_Framer/stCntCS[*]}
 #
 ##ConfigProbe ${ilaName1} {U_TixelCore/dataOut[1][*]}
 ##ConfigProbe ${ilaName1} {U_TixelCore/dataKOut[1]}
