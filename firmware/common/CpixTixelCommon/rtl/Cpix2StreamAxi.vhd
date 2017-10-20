@@ -188,22 +188,25 @@ architecture RTL of Cpix2StreamAxi is
 
    signal iContersABStatus : slv(1 downto 0);
    
+
+   signal stCntCS    : slv(15 downto 0);                 -- for chipscope
    signal rxDataCs   : slv(19 downto 0);                 -- for chipscope
    signal rxValidCs  : sl;                               -- for chipscope
    attribute keep : string;                              -- for chipscope
    attribute keep of s : signal is "true";               -- for chipscope
-   attribute keep of dFifoOut : signal is "true";        -- for chipscope
-   attribute keep of dFifoSof : signal is "true";        -- for chipscope
-   attribute keep of dFifoEof : signal is "true";        -- for chipscope
-   attribute keep of dFifoEofe : signal is "true";       -- for chipscope
+   attribute keep of dFifoOut   : signal is "true";        -- for chipscope
+   attribute keep of dFifoSof   : signal is "true";        -- for chipscope
+   attribute keep of dFifoEof   : signal is "true";        -- for chipscope
+   attribute keep of dFifoEofe  : signal is "true";       -- for chipscope
    attribute keep of dFifoValid : signal is "true";      -- for chipscope
-   attribute keep of rxDataCs : signal is "true";        -- for chipscope
-   attribute keep of rxValidCs : signal is "true";       -- for chipscope
-
+   attribute keep of rxDataCs   : signal is "true";        -- for chipscope
+   attribute keep of rxValidCs  : signal is "true";       -- for chipscope
+   attribute keep of stCntCS    : signal is "true";       -- for chipscope
 begin
    
-   rxDataCs <= rxData;     -- for chipscope
+   rxDataCs  <= rxData;     -- for chipscope
    rxValidCs <= rxValid;   -- for chipscope
+   stCntCS   <= toSlv(s.stCnt,16);
    
    -- synchronizers
    Sync1_U : entity work.Synchronizer
