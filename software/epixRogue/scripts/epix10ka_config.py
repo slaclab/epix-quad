@@ -119,7 +119,7 @@ def main():
             # targetASIC.PrepareMultiConfig()
             targetASIC._rawWrite(0x00008000*4, 0)
             # targetASIC.WriteMatrixData.set(mset)
-            targetASIC._rawWrite(0x00004000*4, 0)
+            targetASIC._rawWrite(0x00004000*4, mset)
             conf_log.debug("Pixel Matrix is set to 0x%x" % (mset))
 
         # set entire row to a certain value
