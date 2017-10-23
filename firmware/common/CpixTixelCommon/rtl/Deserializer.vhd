@@ -123,6 +123,8 @@ architecture RTL of Deserializer is
    type RegType is record
       resync         : slv(7 downto 0);
       iserdeseOutD   : Slv10Array(63 downto 0);
+      delay          : slv(4 downto 0);
+      delayEn        : sl;
       axilWriteSlave : AxiLiteWriteSlaveType;
       axilReadSlave  : AxiLiteReadSlaveType;
    end record;
@@ -130,6 +132,8 @@ architecture RTL of Deserializer is
    constant REG_INIT_C : RegType := (
       resync         => (others=>'0'),
       iserdeseOutD   => (others=>(others=>'0')),
+      delay          => (others=>'0'),
+      delayEn        => '0',
       axilWriteSlave => AXI_LITE_WRITE_SLAVE_INIT_C,
       axilReadSlave  => AXI_LITE_READ_SLAVE_INIT_C
    );
@@ -306,7 +310,10 @@ begin
       v  := serdR;   -- byteClk
       vr := axilR;   -- axilClk
 
-      v.slip  := '0';
+      v.delay   :=  vr.delay;
+      v.delayEn :=  vr.delayEn;
+
+      v.slip    := '0';
       v.delayEn := '0';
       
       -------------------------------------------------------------------------------------------------
@@ -324,8 +331,8 @@ begin
       axiSlaveRegister (axilEp, X"04", 0, vr.resync);
       axiSlaveRegisterR(axilEp, X"08", 0, serdR.locked);
       axiSlaveRegisterR(axilEp, X"0C", 0, std_logic_vector(to_unsigned(serdR.lockErrCnt,16)));
-      axiSlaveRegister (axilEp, X"10", 0, v.delay);
-      axiSlaveRegister (axilEp, X"14", 0, v.delayEn);
+      axiSlaveRegister (axilEp, X"10", 0, vr.delay);
+      axiSlaveRegister (axilEp, X"14", 0, vr.delayEn);
       
       for i in 0 to 63 loop
          axiSlaveRegisterR(axilEp, std_logic_vector(to_unsigned(256+(i*4), 12)), 0, axilR.iserdeseOutD(i));
