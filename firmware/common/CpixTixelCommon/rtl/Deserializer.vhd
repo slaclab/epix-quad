@@ -314,7 +314,7 @@ begin
       v.delayEn :=  vr.delayEn;
 
       v.slip    := '0';
-      v.delayEn := '0';
+      --vr.delayEn := '0';
       
       -------------------------------------------------------------------------------------------------
       -- AXIL Interface (axilClk)
