@@ -439,7 +439,7 @@ begin
       CLKOUT0_PHASE_G      => 90.0,
       CLKOUT0_DUTY_CYCLE_G => 0.5,
       
-      CLKOUT1_DIVIDE_G     => 6,
+      CLKOUT1_DIVIDE_G     => 12,
       CLKOUT1_PHASE_G      => 0.0,
       CLKOUT1_DUTY_CYCLE_G => 0.5,
       
