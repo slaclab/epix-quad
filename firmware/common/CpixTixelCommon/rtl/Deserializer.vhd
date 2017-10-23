@@ -305,6 +305,9 @@ begin
       
       v  := serdR;   -- byteClk
       vr := axilR;   -- axilClk
+
+      v.slip  := '0';
+      v.delayEn := '0';
       
       -------------------------------------------------------------------------------------------------
       -- AXIL Interface (axilClk)
@@ -321,6 +324,8 @@ begin
       axiSlaveRegister (axilEp, X"04", 0, vr.resync);
       axiSlaveRegisterR(axilEp, X"08", 0, serdR.locked);
       axiSlaveRegisterR(axilEp, X"0C", 0, std_logic_vector(to_unsigned(serdR.lockErrCnt,16)));
+      axiSlaveRegister (axilEp, X"10", 0, v.delay);
+      axiSlaveRegister (axilEp, X"14", 0, v.delayEn);
       
       for i in 0 to 63 loop
          axiSlaveRegisterR(axilEp, std_logic_vector(to_unsigned(256+(i*4), 12)), 0, axilR.iserdeseOutD(i));
@@ -341,8 +346,7 @@ begin
       -------------------------------------------------------------------------------------------------
       -- Bit slip state machine (byteClk)
       -------------------------------------------------------------------------------------------------
-      v.slip  := '0';
-      v.delayEn := '0';
+      
       
       case (serdR.state) is
          when BIT_SLIP_S =>
