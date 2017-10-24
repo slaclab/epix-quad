@@ -225,7 +225,7 @@ def main():
         acq_log.info('Number of lost frames %d out of %d' %
                      (checkframe.lost, checkframe.processed))
         acq_log.info('Data Rate %.2f MB/s' %
-                      (checkframe.processed*checkframe.EPIX10KA_FS/args.time[0]/1e6))
+                     (checkframe.processed*checkframe.EPIX10KA_FS/args.time[0]/1e6))
         if checkframe.processed != checkframe.accepted:
             acq_log.debug('Link Speed %.2f MB/s' %
                           (checkframe.accepted*checkframe.EPIX10KA_FS/args.time[0]/1e6))
