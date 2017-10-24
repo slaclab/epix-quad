@@ -319,6 +319,8 @@ class Camera():
                     asicNum_currentRawData =  currentRawData[j,3] & 0x7         # extended header dword 1 (VC info)
             #saves current data on returned data before adding new data
             returnedRawData = currentRawData
+
+            if (PRINT_VERBOSE): print('\n normal packet size, packet len: ', len(currentRawData))
         else:
             #packet size error
             if (PRINT_VERBOSE): print('\n packet size error, packet len: ', len(currentRawData))

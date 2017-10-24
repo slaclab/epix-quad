@@ -188,22 +188,25 @@ architecture RTL of Cpix2StreamAxi is
 
    signal iContersABStatus : slv(1 downto 0);
    
+
+   signal stCntCS    : slv(15 downto 0);                 -- for chipscope
    signal rxDataCs   : slv(19 downto 0);                 -- for chipscope
    signal rxValidCs  : sl;                               -- for chipscope
    attribute keep : string;                              -- for chipscope
    attribute keep of s : signal is "true";               -- for chipscope
-   attribute keep of dFifoOut : signal is "true";        -- for chipscope
-   attribute keep of dFifoSof : signal is "true";        -- for chipscope
-   attribute keep of dFifoEof : signal is "true";        -- for chipscope
-   attribute keep of dFifoEofe : signal is "true";       -- for chipscope
+   attribute keep of dFifoOut   : signal is "true";        -- for chipscope
+   attribute keep of dFifoSof   : signal is "true";        -- for chipscope
+   attribute keep of dFifoEof   : signal is "true";        -- for chipscope
+   attribute keep of dFifoEofe  : signal is "true";       -- for chipscope
    attribute keep of dFifoValid : signal is "true";      -- for chipscope
-   attribute keep of rxDataCs : signal is "true";        -- for chipscope
-   attribute keep of rxValidCs : signal is "true";       -- for chipscope
-
+   attribute keep of rxDataCs   : signal is "true";        -- for chipscope
+   attribute keep of rxValidCs  : signal is "true";       -- for chipscope
+   attribute keep of stCntCS    : signal is "true";       -- for chipscope
 begin
    
-   rxDataCs <= rxData;     -- for chipscope
+   rxDataCs  <= rxData;     -- for chipscope
    rxValidCs <= rxValid;   -- for chipscope
+   stCntCS   <= toSlv(s.stCnt,16);
    
    -- synchronizers
    Sync1_U : entity work.Synchronizer
@@ -441,7 +444,9 @@ begin
                end if;
                sv.dFifoRd := '1';
                sv.stCnt := s.stCnt + 1;
-               if ((dFifoEof = '1' or dFifoEofe = '1') and s.testMode = '0') or s.stCnt = ASIC_DATA_G then 
+               --if ((dFifoEof = '1' or dFifoEofe = '1') and s.testMode = '0') or s.stCnt = ASIC_DATA_G then 
+               -- check if the Eof flag is being miss issued/interpreted
+               if s.stCnt = ASIC_DATA_G then 
                   sv.frmSize := toSlv(s.stCnt, 16);
                   sv.stCnt := 0;
                   if s.frmMax <= sv.frmSize then
