@@ -254,6 +254,7 @@ architecture top_level of Cpix2Core is
    
    signal asicValid     : slv(NUMBER_OF_ASICS_C-1 downto 0);
    signal asicData      : Slv20Array(NUMBER_OF_ASICS_C-1 downto 0);
+   signal serialResync  : sl;
    
    signal pwrEnableAck     : sl;
    signal iDigitalPowerEn  : sl;
@@ -273,6 +274,7 @@ architecture top_level of Cpix2Core is
    attribute keep of saciPrepReadoutReq : signal is "true";
    attribute keep of saciPrepReadoutAck : signal is "true";
    attribute keep of errInhibit : signal is "true";
+   attribute keep of serialResync : signal is "true";
    
    
 begin
@@ -310,6 +312,7 @@ begin
       byteClk           when cpix2Config.cpix2DbgSel1 = "01101" else
       iAsicSR0          when cpix2Config.cpix2DbgSel1 = "01110" else
       acqStart          when cpix2Config.cpix2DbgSel1 = "01111" else
+      serialReSync      when cpix2Config.cpix2DbgSel2 = "10000" else
       '0';   
    
    mpsOutMux <=
@@ -329,6 +332,7 @@ begin
       byteClk           when cpix2Config.cpix2DbgSel2 = "01101" else
       iAsicSR0          when cpix2Config.cpix2DbgSel2 = "01110" else
       acqStart          when cpix2Config.cpix2DbgSel1 = "01111" else
+      serialReSync      when cpix2Config.cpix2DbgSel2 = "10000" else
       '0';
    
    -- Temporary one-shot for grabbing PGP op code
@@ -533,7 +537,8 @@ begin
          axilWriteMaster   => mAxiWriteMasters(DESER0_AXI_INDEX_C+i),
          axilWriteSlave    => mAxiWriteSlaves(DESER0_AXI_INDEX_C+i),
          rxData            => asicData(i),
-         rxValid           => asicValid(i)
+         rxValid           => asicValid(i),
+         exReSync          => serialResync
       );
 
 
@@ -691,7 +696,8 @@ begin
       asicGlblRst    => iAsicGrst,
       asicSync       => iAsicSync,
       asicAcq        => iAsicAcq,
-      errInhibit     => errInhibit
+      errInhibit     => errInhibit,
+      serialReSync   => serialReSync
    );
    
    asicAcq        <= iAsicAcq;

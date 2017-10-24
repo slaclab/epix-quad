@@ -77,7 +77,10 @@ entity RegControlCpix2 is
       asicGlblRst         : out sl; -- waveform
       asicSync            : out sl; -- waveform
       asicAcq             : out sl; -- waveform
-      errInhibit     : out sl
+
+      errInhibit          : out sl;
+      -- wf that request a serial resyncronization
+      serialReSync        : out  sl
    );
 end RegControlCpix2;
 
@@ -130,6 +133,10 @@ architecture rtl of RegControlCpix2 is
       saciSyncPolarity  : sl;
       saciSyncDelay     : slv(31 downto 0);
       saciSyncWidth     : slv(31 downto 0);
+      SerialResync          : sl;
+      SerialResyncPolarity  : sl;
+      SerialResyncDelay     : slv(31 downto 0);
+      SerialResyncWidth     : slv(31 downto 0);
       asicWFEn          : sl;
    end record AsicAcqType;
    
@@ -180,6 +187,10 @@ architecture rtl of RegControlCpix2 is
       saciSyncPolarity  => '0',
       saciSyncDelay     => (others=>'0'),
       saciSyncWidth     => (others=>'0'),
+      SerialResync          => '0',
+      SerialResyncPolarity  => '0',
+      SerialResyncDelay     => (others=>'0'),
+      SerialResyncWidth     => (others=>'0'),
       asicWFEn          => '0'
    );
    
@@ -335,6 +346,10 @@ begin
       axiSlaveRegister(regCon,  x"000304",  0, v.cpix2RegOut.requestStartupCal);
       axiSlaveRegister(regCon,  x"000304",  1, v.cpix2RegOut.startupAck);          -- set by Microblaze
       axiSlaveRegister(regCon,  x"000304",  2, v.cpix2RegOut.startupFail);         -- set by Microblaze     
+
+      axiSlaveRegister(regCon,  x"000400",  0, v.asicAcqReg.SerialResyncPolarity);
+      axiSlaveRegister(regCon,  x"000404",  0, v.asicAcqReg.SerialResyncDelay);
+      axiSlaveRegister(regCon,  x"000408",  0, v.asicAcqReg.SerialResyncWidth);
       
       -- Special reset for write to address 00
       --if regCon.axiStatus.writeEnable = '1' and axiWriteMaster.awaddr = 0 then
@@ -464,6 +479,14 @@ begin
                v.asicAcqReg.saciSync := r.asicAcqReg.saciSyncPolarity;
             end if;
          end if;
+
+         -- single pulse. zero value corresponds to infinite delay/width
+         if r.asicAcqReg.SerialResyncDelay /= 0 and r.asicAcqReg.SerialResyncDelay <= r.asicAcqTimeCnt2 then
+            v.asicAcqReg.SerialResync := not r.asicAcqReg.SerialResyncPolarity;
+            if r.asicAcqReg.SerialResyncWidth /= 0 and (r.asicAcqReg.SerialResyncWidth + r.asicAcqReg.SerialResyncDelay) <= r.asicAcqTimeCnt2 then
+               v.asicAcqReg.SerialResyncSync := r.asicAcqReg.SerialResyncPolarity;
+            end if;
+         end if;
          
       end if;
       
@@ -577,6 +600,7 @@ begin
       asicSync       <= r.asicAcqReg.Sync or r.asicAcqReg.FastSync;
       asicAcq        <= r.asicAcqReg.Acq;
       asicVid        <= r.asicAcqReg.Vid;
+      serialReSync   <= r.asicAcqReg.serialReSync;
       
    end process comb;
 

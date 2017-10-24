@@ -51,7 +51,7 @@ entity Deserializer is
       -- serial data in
       serDinP           : in  sl;
       serDinM           : in  sl;
-      
+            
       -- optional AXI Lite
       axilClk           : in  sl;
       axilRst           : in  sl;
@@ -65,6 +65,7 @@ entity Deserializer is
       rxValid           : out sl;   -- every 2nd rxData is valid
       
       -- optional feedback from decoder
+      exReSync          : in  sl := '0';
       validWord         : in  sl := '1'
       
    );
@@ -301,7 +302,7 @@ begin
       serdR.twoWords = "0101111100" & "1010101010" or serdR.twoWords = "1010000011" & "1010101010"
       else '0';
    
-   axilComb : process (serdR, axilR, axilReadMaster, byteRst, axilRst, axilWriteMaster, delayCurr, iserdeseOut, idleWord, validWord) is
+   axilComb : process (serdR, axilR, axilReadMaster, byteRst, axilRst, axilWriteMaster, delayCurr, iserdeseOut, idleWord, validWord, exReSync) is
       variable v      : SerType;
       variable vr     : RegType;
       variable axilEp : AxiLiteEndpointType;
@@ -341,7 +342,7 @@ begin
       axiSlaveDefault(axilEp, vr.axilWriteSlave, vr.axilReadSlave, AXI_RESP_DECERR_C);
       
       -- cross clock synchronization
-      if vr.resync /= "00000000" then
+      if ((vr.resync /= "00000000") or (exReSync = '1')) then
          v.resync := '1';
       else
          v.resync := '0';
