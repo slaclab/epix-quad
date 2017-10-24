@@ -20,6 +20,41 @@ import sys
 import time
 
 
+class frameit(rogue.interfaces.stream.Slave):
+    """Stream Slave subclass. Counts frames in real-time."""
+
+    def __init__(self):
+        """Sub Class Constructor."""
+        rogue.interfaces.stream.Slave.__init__(self)
+        self.EPIX10KA_FS = 274988  # frame size in bytes
+        self.accepted = 0
+        self.lost = 0
+        self.processed = 0
+        self.lastseq = 0
+        self.log = logging.getLogger("epix10ka.acquirelog")
+
+    def _acceptFrame(self, frame):
+        """Override acceptframe."""
+        p = bytearray(4)  # create an array of 4 bytes i.e. 32-bit word contintaing sequence #
+        # store frame data (4 bytes) in p
+        frame.read(p, 8)  # skip the 1st 4 bytes to get to sequence number, store it
+        framesize = frame.getPayload()  # store size of frame
+        seq = int.from_bytes(p, 'little')  # store sequence number
+        if framesize != self.EPIX10KA_FS:  # test correct frame size
+            self.log.error("frame size is not correct: acceptedFrames=%d lastseq=%d \
+            seq=%d newframesize=%d" % (self.accepted, self.lastseq, seq, framesize))
+            self.lost += 1
+        else:
+            if self.processed > 0:
+                if self.lastseq+1 != seq:
+                    self.log.error("lost a frame had=%d, got=%d" % (self.lastseq, seq))
+                    self.lost += 1
+            self.processed += 1
+
+        self.lastseq = seq  # remember this sequence for next frame
+        self.accepted += 1
+
+
 def main():
     """Routine to acquire data. This uses argparse to get cli params.
 
@@ -30,6 +65,7 @@ def main():
     parser.add_argument("-v", "--verbose", action="store_true", help="Show debugging info.")
     parser.add_argument("-a", "--asic", nargs=1, type=int, metavar=('value'),
                         help="config ASIC 0..3")
+    parser.add_argument("-b", "--bandwidth", action="store_true", help="Bandwidth stats")
     parser.add_argument("-n", "--nosave", action="store_true", help="Dont save data to disk")
     parser.add_argument("-l", "--linearitytest", action="store_true", help="Enable Test Pulser")
     parser.add_argument("-s", "--setmatrix", nargs=1, metavar=('smat'), type=int,
@@ -99,6 +135,10 @@ def main():
     # command board to read ePix config
     board.readConfig(args.yml[0])
     targetASIC = getattr(board.Epix10ka, 'Epix10kaAsic' + str(asic))
+
+    if args.bandwidth:
+        checkframe = frameit()
+        pyrogue.streamConnect(pgpVc0, checkframe)
 
     if args.asic:
         if args.setmatrix:
@@ -180,6 +220,15 @@ def main():
     board.Epix10ka.EpixFpgaRegisters.AutoRunEnable.set(False)
     if not args.nosave:
         board.dataWriter.open.set(False)
+
+    if args.bandwidth:
+        acq_log.info('Number of lost frames %d out of %d' %
+                     (checkframe.lost, checkframe.processed))
+        acq_log.info('Data Rate %.2f MB/s' %
+                      (checkframe.processed*checkframe.EPIX10KA_FS/args.time[0]/1e6))
+        if checkframe.processed != checkframe.accepted:
+            acq_log.debug('Link Speed %.2f MB/s' %
+                          (checkframe.accepted*checkframe.EPIX10KA_FS/args.time[0]/1e6))
 
     board.stop()
     acq_log.info("Done")
