@@ -235,6 +235,9 @@ class Cpix2FpgaRegisters(pr.Device):
       self.add(pr.Variable(name='SR0Width1',       description='SR0Width1',         offset=0x00000188, bitSize=32, bitOffset=0, base='uint', mode='RW'))
       self.add(pr.Variable(name='SR0Delay2',       description='SR0Delay2',         offset=0x0000018C, bitSize=32, bitOffset=0, base='uint', mode='RW'))
       self.add(pr.Variable(name='SR0Width2',       description='SR0Width2',         offset=0x00000190, bitSize=32, bitOffset=0, base='uint', mode='RW'))
+      self.add(pr.Variable(name='SerialReSyncPolarity',description='Serial resync polarity',  offset=0x00000400, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
+      self.add(pr.Variable(name='SerialReSyncDelay',   description='Serial resync delay',     offset=0x00000404, bitSize=32, bitOffset=0, base='uint', mode='RW'))
+      self.add(pr.Variable(name='SerialReSyncWidth',   description='Serial resync width',     offset=0x00000408, bitSize=32, bitOffset=0, base='uint', mode='RW'))
       self.add(pr.Variable(name='Vid',             description='Vid',               offset=0x00000194, bitSize=1,  bitOffset=0, base='uint', mode='RW'))
       
       self.add(pr.Variable(name='AcqCnt',          description='AcqCnt',            offset=0x00000200, bitSize=32, bitOffset=0, base='uint', mode='RO'))
@@ -1272,6 +1275,51 @@ class AsicDeserRegisters(pr.Device):
       # the passed arg is available as 'arg'. Use 'dev' to get to device scope.
       # A command can also be a call to a local function with local scope.
       # The command object and the arg are passed
+
+      self.add(
+            pr.Command(name='TuneSerialDelay',description='Tune serial data delay', function=self.fnEvaluateSerDelay))
+
+   def fnEvaluateSerDelay(self, dev,cmd,arg):
+        """SetPixelBitmap command function"""
+        addrSize = 4
+        #set r0mode in order to have saci cmd to work properly on legacy firmware
+        self.root.ePix100aFPGA.EpixFpgaRegisters.AsicR0Mode.set(True)
+
+        if (self.enable.get()):
+            self.reportCmd(dev,cmd,arg)
+            if len(arg) > 0:
+                self.filename = arg
+            else:
+                self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+            if os.path.splitext(self.filename)[1] == '.csv':
+                matrixCfg = np.genfromtxt(self.filename, delimiter=',')
+                if matrixCfg.shape == (354, 384):
+                    self._rawWrite(0x00000000*addrSize,0)
+                    self._rawWrite(0x00008000*addrSize,0)
+                    for x in range (0, 354):
+                        for y in range (0, 384):
+                            bankToWrite = int(y/96);
+                            if (bankToWrite == 0):
+                               colToWrite = 0x700 + y%96;
+                            elif (bankToWrite == 1):
+                               colToWrite = 0x680 + y%96;
+                            elif (bankToWrite == 2):
+                               colToWrite = 0x580 + y%96;
+                            elif (bankToWrite == 3):
+                               colToWrite = 0x380 + y%96;
+                            else:
+                               print('unexpected bank number')
+                            self._rawWrite(0x00006011*addrSize, x)
+                            self._rawWrite(0x00006013*addrSize, colToWrite) 
+                            self._rawWrite(0x00005000*addrSize, (int(matrixCfg[x][y])))
+                    self._rawWrite(0x00000000*addrSize,0)
+                else:
+                    print('csv file must be 384x354 pixels')
+            else:
+                print("Not csv file : ", self.filename)
+        else:
+            print("Warning: ASIC enable is set to False!")   
+
    
    @staticmethod   
    def frequencyConverter(self):
@@ -1316,7 +1364,7 @@ class AsicPktRegisters(pr.Device):
       # the passed arg is available as 'arg'. Use 'dev' to get to device scope.
       # A command can also be a call to a local function with local scope.
       # The command object and the arg are passed
-   
+
    @staticmethod   
    def frequencyConverter(self):
       def func(dev, var):         

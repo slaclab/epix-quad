@@ -484,7 +484,7 @@ begin
          if r.asicAcqReg.SerialResyncDelay /= 0 and r.asicAcqReg.SerialResyncDelay <= r.asicAcqTimeCnt2 then
             v.asicAcqReg.SerialResync := not r.asicAcqReg.SerialResyncPolarity;
             if r.asicAcqReg.SerialResyncWidth /= 0 and (r.asicAcqReg.SerialResyncWidth + r.asicAcqReg.SerialResyncDelay) <= r.asicAcqTimeCnt2 then
-               v.asicAcqReg.SerialResyncSync := r.asicAcqReg.SerialResyncPolarity;
+               v.asicAcqReg.SerialResync := r.asicAcqReg.SerialResyncPolarity;
             end if;
          end if;
          
@@ -522,7 +522,8 @@ begin
      if r.asicAcqReg.asicWFEn = '0' and r.asicAcqTimeCnt2 /= x"FFFFFFFF" then
             v.asicAcqTimeCnt2 := r.asicAcqTimeCnt2 + 1;
      end if;
-     if r.asicAcqReg.Sync = '1' or r.asicAcqReg.saciSync = '1' then
+     --if r.asicAcqReg.Sync = '1' or r.asicAcqReg.saciSync = '1' then
+     if r.asicAcqReg.asicWFEn = '1' then 
         v.asicAcqTimeCnt2        := (others=>'0');
      end if;
 
