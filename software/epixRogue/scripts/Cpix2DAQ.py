@@ -150,7 +150,7 @@ guiTop.resize(1000,800)
 
 # Viewer gui
 if (START_VIEWER):
-    gui = vi.Window(cameraType = 'Tixel48x48')
+    gui = vi.Window(cameraType = 'Cpix2')
 #    gui = vi.Window(cameraType = 'Cpix2') # check why the system reports error with Cpix2 (at this point both sensors read data the same way so I can use tixel config for now.
     gui.eventReader.frameIndex = 0
     gui.setReadDelay(0)

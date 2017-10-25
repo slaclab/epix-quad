@@ -529,7 +529,7 @@ begin
      end if;
      if (((r.asicAcqReg.Sync = '1' or r.asicAcqReg.saciSync = '1') and r.cpix2RegOut.EnAllFrames = '1') or r.cpix2RegOut.EnSingleFrame = '1') then
         v.asicAcqTimeCnt2           := (others=>'0');
-        r.cpix2RegOut.EnSingleFrame := '0';
+        v.cpix2RegOut.EnSingleFrame := '0';
      end if;
 
      -- trigger counter per cycle enables the system to wait for N acqStart before readout data
@@ -599,7 +599,7 @@ begin
       asicR0         <= r.asicAcqReg.R0 and r.asicAcqReg.asicWFEnOut(7);
       asicSR0        <= r.asicAcqReg.SR0 and r.asicAcqReg.asicWFEnOut(8);
       asicGlblRst    <= r.asicAcqReg.GlblRst and r.asicAcqReg.asicWFEnOut(9);
-      asicSync       <= (r.asicAcqReg.Sync and r.asicAcqReg.asicWFEnOut(0)) or (r.asicAcqReg.FastSync and asicWFEnOut(1)) ;
+      asicSync       <= (r.asicAcqReg.Sync and r.asicAcqReg.asicWFEnOut(0)) or (r.asicAcqReg.FastSync and r.asicAcqReg.asicWFEnOut(1)) ;
       asicAcq        <= r.asicAcqReg.Acq and r.asicAcqReg.asicWFEnOut(10);
       asicVid        <= r.asicAcqReg.Vid and r.asicAcqReg.asicWFEnOut(11);
       serialReSync   <= r.asicAcqReg.serialReSync and r.asicAcqReg.asicWFEnOut(12);

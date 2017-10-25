@@ -156,6 +156,7 @@ class Camera():
         if (camID == CPIX2):
             #Needs to check the two frames and make a decision on the flags
             [frameComplete, readyForDisplay, newRawData]  = self._buildFrameCpix2Image(currentRawData, newRawData)
+            return [frameComplete, readyForDisplay, newRawData]
             print('end of buildImageFrame')
         if (camID == EPIXM32):
             [frameComplete, readyForDisplay, newRawData]  = self._buildFrameEpixM32Image(currentRawData, newRawData)
@@ -333,20 +334,20 @@ class Camera():
 
         #fill the memory with the new data (when acqNums matches)
         returnedRawData = self.fill_memory(returnedRawData, asicNum_newRawData, isTOA_newRawData, newRawData_DW)
-        ##if (PRINT_VERBOSE): print('Return data 0:', returnedRawData[0,0:10])
-        ##if (PRINT_VERBOSE): print('Return data 1:', returnedRawData[1,0:10])
-        ##if (PRINT_VERBOSE): print('Return data 2:', returnedRawData[2,0:10])
-        ##if (PRINT_VERBOSE): print('Return data 3:', returnedRawData[3,0:10])
+        if (PRINT_VERBOSE): print('Return data 0:', returnedRawData[0,0:10])
+        if (PRINT_VERBOSE): print('Return data 1:', returnedRawData[1,0:10])
+        if (PRINT_VERBOSE): print('Return data 2:', returnedRawData[2,0:10])
+        if (PRINT_VERBOSE): print('Return data 3:', returnedRawData[3,0:10])
 
         #checks if the image is complete
         isValidTrace0 =  returnedRawData[0,0]
-        ##if (PRINT_VERBOSE): print('\nisValidTrace0', isValidTrace0)
+        if (PRINT_VERBOSE): print('\nisValidTrace0', isValidTrace0)
         isValidTrace1 =  returnedRawData[1,0]
-        ##if (PRINT_VERBOSE): print('\nisValidTrace1', isValidTrace1)
+        if (PRINT_VERBOSE): print('\nisValidTrace1', isValidTrace1)
         isValidTrace2 =  returnedRawData[2,0]
-        ##if (PRINT_VERBOSE): print('\nisValidTrace2', isValidTrace2)
+        if (PRINT_VERBOSE): print('\nisValidTrace2', isValidTrace2)
         isValidTrace3 =  returnedRawData[3,0]
-        ##if (PRINT_VERBOSE): print('\nisValidTrace3', isValidTrace3)
+        if (PRINT_VERBOSE): print('\nisValidTrace3', isValidTrace3)
 
         if((isValidTrace0 == 1) and (isValidTrace1 == 1) and (isValidTrace2 == 1) and (isValidTrace3 == 1)):
             frameComplete = 1
@@ -355,7 +356,7 @@ class Camera():
             frameComplete = 0
             readyForDisplay = 0
 
-        ##if (PRINT_VERBOSE): print('frameComplete: ', frameComplete, 'readyForDisplay: ', readyForDisplay, 'returned raw data len', len(returnedRawData))
+        if (PRINT_VERBOSE): print('frameComplete: ', frameComplete, 'readyForDisplay: ', readyForDisplay, 'returned raw data len', len(returnedRawData))
         #return parameters
         return [frameComplete, readyForDisplay, returnedRawData]
 
@@ -774,10 +775,10 @@ class Camera():
     def _descrambleTixel48x48Image(self, rawData):
         """performs the Tixel image descrambling """
         if (len(rawData)==4):
-            ##if (PRINT_VERBOSE): print('raw data 0:', rawData[0,0:10])
-            ##if (PRINT_VERBOSE): print('raw data 1:', rawData[1,0:10])
-            ##if (PRINT_VERBOSE): print('raw data 2:', rawData[2,0:10])
-            ##if (PRINT_VERBOSE): print('raw data 3:', rawData[3,0:10])
+            if (PRINT_VERBOSE): print('raw data 0:', rawData[0,0:10])
+            if (PRINT_VERBOSE): print('raw data 1:', rawData[1,0:10])
+            if (PRINT_VERBOSE): print('raw data 2:', rawData[2,0:10])
+            if (PRINT_VERBOSE): print('raw data 3:', rawData[3,0:10])
             
             quadrant0 = np.frombuffer(rawData[0,4:],dtype='uint16')
             quadrant0sq = quadrant0.reshape(48,48)
@@ -822,7 +823,7 @@ class Camera():
         else:
             imgDesc = np.zeros((48*2,48*2), dtype='uint16')
         # returns final image
-        imgDesc = np.where((imgDesc & 0x1) == 1 , imgDesc, 0)
+        
         return imgDesc
         
     def _descrambleEpixM32Image(self, rawData):

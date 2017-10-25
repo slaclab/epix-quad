@@ -5,3 +5,7 @@ source -quiet $::env(RUCKUS_DIR)/vivado_proc.tcl
 loadRuckusTcl $::env(PROJ_DIR)/../../submodules/surf
 loadRuckusTcl $::env(PROJ_DIR)/../../common/EpixCommonGen2
 loadRuckusTcl $::env(PROJ_DIR)/../../common/CpixTixelCommon
+
+
+# Set the top level synth_1 and sim_1
+set_property top {TB_RegControlCpix2} [get_filesets sim_1]

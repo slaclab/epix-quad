@@ -239,6 +239,7 @@ class Cpix2FpgaRegisters(pr.Device):
       self.add(pr.Variable(name='SerialReSyncDelay',   description='Serial resync delay',     offset=0x00000404, bitSize=32, bitOffset=0, base='uint', mode='RW'))
       self.add(pr.Variable(name='SerialReSyncWidth',   description='Serial resync width',     offset=0x00000408, bitSize=32, bitOffset=0, base='uint', mode='RW'))
       self.add(pr.Variable(name='Vid',             description='Vid',               offset=0x00000194, bitSize=1,  bitOffset=0, base='uint', mode='RW'))
+      self.add(pr.Variable(name='AsicWfEnOut',     description='Output enable',     offset=0x00000198, bitSize=13,  bitOffset=0, base='hex', mode='RW'))
       
       self.add(pr.Variable(name='AcqCnt',          description='AcqCnt',            offset=0x00000200, bitSize=32, bitOffset=0, base='uint', mode='RO'))
       self.add(pr.Variable(name='SaciPrepRdoutCnt',description='SaciPrepRdoutCnt',  offset=0x00000204, bitSize=32, bitOffset=0, base='uint', mode='RO'))
