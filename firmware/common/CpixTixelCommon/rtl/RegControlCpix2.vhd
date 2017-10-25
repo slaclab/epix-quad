@@ -589,20 +589,20 @@ begin
       axiWriteSlave  <= r.axiWriteSlave;
       cpix2Config    <= r.cpix2RegOut;
       adcClk         <= r.adcClk;
-      saciReadoutReq <= r.asicAcqReg.saciSync  and asicWFEnOut(2);
-      asicPPbe(0)    <= r.asicAcqReg.PPbe  and asicWFEnOut(3);
-      asicPPbe(1)    <= r.asicAcqReg.PPbe and asicWFEnOut(3);
-      asicPpmat(0)   <= r.asicAcqReg.Ppmat and asicWFEnOut(4);
-      asicPpmat(1)   <= r.asicAcqReg.Ppmat and asicWFEnOut(4);
-      asicEnA        <= r.asicAcqReg.EnA and asicWFEnOut(5);
-      asicEnB        <= not r.asicAcqReg.EnA and asicWFEnOut(6);
-      asicR0         <= r.asicAcqReg.R0 and asicWFEnOut(7);
-      asicSR0        <= r.asicAcqReg.SR0 and asicWFEnOut(8);
-      asicGlblRst    <= r.asicAcqReg.GlblRst and asicWFEnOut(9);
-      asicSync       <= (r.asicAcqReg.Sync and asicWFEnOut(0)) or (r.asicAcqReg.FastSync and asicWFEnOut(1)) ;
-      asicAcq        <= r.asicAcqReg.Acq and asicWFEnOut(10);
-      asicVid        <= r.asicAcqReg.Vid and asicWFEnOut(11);
-      serialReSync   <= r.asicAcqReg.serialReSync and asicWFEnOut(12);
+      saciReadoutReq <= r.asicAcqReg.saciSync  and r.asicAcqReg.asicWFEnOut(2);
+      asicPPbe(0)    <= r.asicAcqReg.PPbe  and r.asicAcqReg.asicWFEnOut(3);
+      asicPPbe(1)    <= r.asicAcqReg.PPbe and r.asicAcqReg.asicWFEnOut(3);
+      asicPpmat(0)   <= r.asicAcqReg.Ppmat and r.asicAcqReg.asicWFEnOut(4);
+      asicPpmat(1)   <= r.asicAcqReg.Ppmat and r.asicAcqReg.asicWFEnOut(4);
+      asicEnA        <= r.asicAcqReg.EnA and r.asicAcqReg.asicWFEnOut(5);
+      asicEnB        <= not r.asicAcqReg.EnA and r.asicAcqReg.asicWFEnOut(6);
+      asicR0         <= r.asicAcqReg.R0 and r.asicAcqReg.asicWFEnOut(7);
+      asicSR0        <= r.asicAcqReg.SR0 and r.asicAcqReg.asicWFEnOut(8);
+      asicGlblRst    <= r.asicAcqReg.GlblRst and r.asicAcqReg.asicWFEnOut(9);
+      asicSync       <= (r.asicAcqReg.Sync and r.asicAcqReg.asicWFEnOut(0)) or (r.asicAcqReg.FastSync and asicWFEnOut(1)) ;
+      asicAcq        <= r.asicAcqReg.Acq and r.asicAcqReg.asicWFEnOut(10);
+      asicVid        <= r.asicAcqReg.Vid and r.asicAcqReg.asicWFEnOut(11);
+      serialReSync   <= r.asicAcqReg.serialReSync and r.asicAcqReg.asicWFEnOut(12);
       
    end process comb;
 
