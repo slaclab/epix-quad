@@ -194,7 +194,7 @@ architecture rtl of RegControlCpix2 is
       SerialResyncPolarity  => '0',
       SerialResyncDelay     => (others=>'0'),
       SerialResyncWidth     => (others=>'0'),
-      asicWFEn          => ('0')
+      asicWFEn          => '0',
       asicWFEnOut       => (others=>'1')
    );
    
@@ -527,7 +527,7 @@ begin
      if r.asicAcqReg.asicWFEn = '0' and r.asicAcqTimeCnt2 /= x"FFFFFFFF" then
             v.asicAcqTimeCnt2 := r.asicAcqTimeCnt2 + 1;
      end if;
-     if ((r.asicAcqReg.Sync = '1' or r.asicAcqReg.saciSync = '1') and r.cpix2RegOut.EnAllFrames = '1') or r.cpix2RegOut.EnSingleFrame = '1') then
+     if (((r.asicAcqReg.Sync = '1' or r.asicAcqReg.saciSync = '1') and r.cpix2RegOut.EnAllFrames = '1') or r.cpix2RegOut.EnSingleFrame = '1') then
         v.asicAcqTimeCnt2           := (others=>'0');
         r.cpix2RegOut.EnSingleFrame := '0';
      end if;
@@ -538,7 +538,7 @@ begin
            v.triggerCntPerCycle  := r.triggerCntPerCycle + 1;
         end if;
      else
-        if ((r.asicAcqReg.Sync = '1' or r.asicAcqReg.saciSync = '1') and r.cpix2RegOut.EnAllFrames = '1') or r.cpix2RegOut.EnSingleFrame = '1') then
+        if (((r.asicAcqReg.Sync = '1' or r.asicAcqReg.saciSync = '1') and r.cpix2RegOut.EnAllFrames = '1') or r.cpix2RegOut.EnSingleFrame = '1') then
            v.triggerCntPerCycle  := (others=>'0');
         end if;
      end if;
