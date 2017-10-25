@@ -133,11 +133,13 @@ architecture rtl of RegControlCpix2 is
       saciSyncPolarity  : sl;
       saciSyncDelay     : slv(31 downto 0);
       saciSyncWidth     : slv(31 downto 0);
+      saciSync_1        : sl;
       SerialResync          : sl;
       SerialResyncPolarity  : sl;
       SerialResyncDelay     : slv(31 downto 0);
       SerialResyncWidth     : slv(31 downto 0);
       asicWFEn          : sl;
+      asicWFEnOut       : slv(31 downto 0);
    end record AsicAcqType;
    
    constant ASICACQ_TYPE_INIT_C : AsicAcqType := (
@@ -187,11 +189,13 @@ architecture rtl of RegControlCpix2 is
       saciSyncPolarity  => '0',
       saciSyncDelay     => (others=>'0'),
       saciSyncWidth     => (others=>'0'),
+      saciSync_1        => '0',
       SerialResync          => '0',
       SerialResyncPolarity  => '0',
       SerialResyncDelay     => (others=>'0'),
       SerialResyncWidth     => (others=>'0'),
-      asicWFEn          => '0'
+      asicWFEn          => ('0')
+      asicWFEnOut       => (others=>'1')
    );
    
    type RegType is record
@@ -325,6 +329,7 @@ begin
       axiSlaveRegister(regCon,  x"00018C",  0, v.asicAcqReg.SR0Delay2);
       axiSlaveRegister(regCon,  x"000190",  0, v.asicAcqReg.SR0Width2);
       axiSlaveRegister(regCon,  x"000194",  0, v.asicAcqReg.Vid);
+      axiSlaveRegister(regCon,  x"000198",  0, v.asicAcqReg.asicWFEnOut);
 
       
       axiSlaveRegisterR(regCon, x"000200",  0, r.cpix2RegOut.acqCnt);
@@ -522,23 +527,18 @@ begin
      if r.asicAcqReg.asicWFEn = '0' and r.asicAcqTimeCnt2 /= x"FFFFFFFF" then
             v.asicAcqTimeCnt2 := r.asicAcqTimeCnt2 + 1;
      end if;
-     --if r.asicAcqReg.Sync = '1' or r.asicAcqReg.saciSync = '1' then
-     if r.asicAcqReg.asicWFEn = '1' then 
-        v.asicAcqTimeCnt2        := (others=>'0');
+     if ((r.asicAcqReg.Sync = '1' or r.asicAcqReg.saciSync = '1') and r.cpix2RegOut.EnAllFrames = '1') or r.cpix2RegOut.EnSingleFrame = '1') then
+        v.asicAcqTimeCnt2           := (others=>'0');
+        r.cpix2RegOut.EnSingleFrame := '0';
      end if;
 
-     -- flag that enables a single readout frame to be generated
-     if r.asicAcqReg.Sync = '1' or r.asicAcqReg.saciSync = '1' then 
-        v.cpix2RegOut.EnSingleFrame := '0';
-     end if;
- 
      -- trigger counter per cycle enables the system to wait for N acqStart before readout data
      if r.asicAcqReg.asicWFEn = '1' then
         if acqStart = '1' then
            v.triggerCntPerCycle  := r.triggerCntPerCycle + 1;
         end if;
      else
-        if r.asicAcqReg.Sync = '1' or r.asicAcqReg.saciSync = '1' then
+        if ((r.asicAcqReg.Sync = '1' or r.asicAcqReg.saciSync = '1') and r.cpix2RegOut.EnAllFrames = '1') or r.cpix2RegOut.EnSingleFrame = '1') then
            v.triggerCntPerCycle  := (others=>'0');
         end if;
      end if;
@@ -552,7 +552,7 @@ begin
 
      -- syncCounter counter per cycle enables the system to wait for N acqStart before readout data
      -- this counter goes to the reader of the frames sent out instead of the acqcounter since its behavior is different for cPix2 than it was for the other asics
-     if (r.asicAcqReg.Sync = '1' and r.asicAcqReg.Sync_1 = '0') or (r.asicAcqReg.saciSync = '1' and r.asicAcqReg.saciSync = '0') then
+     if (r.asicAcqReg.Sync = '1' and r.asicAcqReg.Sync_1 = '0') or (r.asicAcqReg.saciSync = '1' and r.asicAcqReg.saciSync_1 = '0') then
         v.cpix2RegOut.syncCounter  := r.cpix2RegOut.syncCounter + 1;
      end if;
 
@@ -576,7 +576,8 @@ begin
       end if;
 
       -- Sync_1 enables to find the edge of the pulse
-      v.asicAcqReg.Sync_1 := r.asicAcqReg.Sync;
+      v.asicAcqReg.Sync_1     := r.asicAcqReg.Sync;
+      v.asicAcqReg.saciSync_1 := r.asicAcqReg.saciSync;
 
       -- Register the variable for next clock cycle
       rin <= v;
@@ -588,20 +589,20 @@ begin
       axiWriteSlave  <= r.axiWriteSlave;
       cpix2Config    <= r.cpix2RegOut;
       adcClk         <= r.adcClk;
-      saciReadoutReq <= r.asicAcqReg.saciSync;
-      asicPPbe(0)    <= r.asicAcqReg.PPbe;
-      asicPPbe(1)    <= r.asicAcqReg.PPbe;
-      asicPpmat(0)   <= r.asicAcqReg.Ppmat;
-      asicPpmat(1)   <= r.asicAcqReg.Ppmat;
-      asicEnA        <= r.asicAcqReg.EnA;
-      asicEnB        <= not r.asicAcqReg.EnA;
-      asicR0         <= r.asicAcqReg.R0;
-      asicSR0        <= r.asicAcqReg.SR0;
-      asicGlblRst    <= r.asicAcqReg.GlblRst;
-      asicSync       <= r.asicAcqReg.Sync or r.asicAcqReg.FastSync;
-      asicAcq        <= r.asicAcqReg.Acq;
-      asicVid        <= r.asicAcqReg.Vid;
-      serialReSync   <= r.asicAcqReg.serialReSync;
+      saciReadoutReq <= r.asicAcqReg.saciSync  and asicWFEnOut(2);
+      asicPPbe(0)    <= r.asicAcqReg.PPbe  and asicWFEnOut(3);
+      asicPPbe(1)    <= r.asicAcqReg.PPbe and asicWFEnOut(3);
+      asicPpmat(0)   <= r.asicAcqReg.Ppmat and asicWFEnOut(4);
+      asicPpmat(1)   <= r.asicAcqReg.Ppmat and asicWFEnOut(4);
+      asicEnA        <= r.asicAcqReg.EnA and asicWFEnOut(5);
+      asicEnB        <= not r.asicAcqReg.EnA and asicWFEnOut(6);
+      asicR0         <= r.asicAcqReg.R0 and asicWFEnOut(7);
+      asicSR0        <= r.asicAcqReg.SR0 and asicWFEnOut(8);
+      asicGlblRst    <= r.asicAcqReg.GlblRst and asicWFEnOut(9);
+      asicSync       <= (r.asicAcqReg.Sync and asicWFEnOut(0)) or (r.asicAcqReg.FastSync and asicWFEnOut(1)) ;
+      asicAcq        <= r.asicAcqReg.Acq and asicWFEnOut(10);
+      asicVid        <= r.asicAcqReg.Vid and asicWFEnOut(11);
+      serialReSync   <= r.asicAcqReg.serialReSync and asicWFEnOut(12);
       
    end process comb;
 
