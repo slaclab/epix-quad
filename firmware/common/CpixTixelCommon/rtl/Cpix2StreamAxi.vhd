@@ -441,7 +441,10 @@ begin
                end if;
                sv.dFifoRd := '1';
                sv.stCnt := s.stCnt + 1;
-               if ((dFifoEof = '1' or dFifoEofe = '1') and s.testMode = '0') or s.stCnt = ASIC_DATA_G then 
+               --if ((dFifoEof = '1' or dFifoEofe = '1') and s.testMode = '0') or s.stCnt = ASIC_DATA_G then 
+               -- check if the Eof flag is being miss issued/interpreted    
+               if s.stCnt = ASIC_DATA_G then   
+
                   sv.frmSize := toSlv(s.stCnt, 16);
                   sv.stCnt := 0;
                   if s.frmMax <= sv.frmSize then
