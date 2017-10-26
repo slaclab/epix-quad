@@ -426,10 +426,10 @@ begin
    -- Generate clocks from 156.25 MHz PGP  --
    ------------------------------------------
    -- clkIn     : 156.25 MHz PGP
-   -- clkOut(0) : 200 MHz serial data bit clock
+   -- clkOut(0) : 150 MHz serial data bit clock
    -- clkOut(1) : 100.00 MHz system clock
-   -- clkOut(2) : 10 MHz ASIC readout clock
-   -- clkOut(3) : 300 MHz Idelaye2 calibration clock
+   -- clkOut(2) : 7.5 MHz ASIC readout clock
+   -- clkOut(3) : 200 MHz Idelaye2 calibration clock
    U_CoreClockGen : entity work.ClockManager7
    generic map (
       INPUT_BUFG_G         => false,
