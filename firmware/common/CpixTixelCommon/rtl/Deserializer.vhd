@@ -384,7 +384,7 @@ begin
                   if serdR.tryCnt /= 31 then
                      v.tryCnt := serdR.tryCnt + 1;
                   else
-                     v.delay := std_logic_vector(unsigned(delayCurr);-- + to_unsigned(1, 5));
+                     v.delay := std_logic_vector(unsigned(delayCurr));-- + to_unsigned(1, 5));
                      v.delayEn := '1';
                      v.tryCnt := 0;
                   end if;
@@ -405,7 +405,7 @@ begin
                   v.lockErrCnt := serdR.lockErrCnt + 1;  
                end if;
                v.locked := '0';
-               v.delay := std_logic_vector(unsigned(delayCurr);-- + to_unsigned(1, 5));
+               v.delay := std_logic_vector(unsigned(delayCurr));-- + to_unsigned(1, 5));
                v.delayEn := '1';
                v.state  := BIT_SLIP_S;
             end if;
