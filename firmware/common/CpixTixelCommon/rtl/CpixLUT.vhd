@@ -90,8 +90,8 @@ begin
    dataMux <= '0' & lutData when sAxisMasterD1.tUser(1 downto 0) = "00" else sAxisMasterD1.tData(15 downto 0);
    
    -- LUT ram
-   --lutAddress <= '0' & sAxisMaster.tData(6 downto 0) & sAxisMaster.tData(15 downto 8);
-   lutAddress <= '0' & sDataIn(14 downto 0);
+   lutAddress <= '0' & sAxisMaster.tData(6 downto 0) & sAxisMaster.tData(15 downto 8);
+
    -- the input address is 15 bit therefore the lut size is 32kb
    -- the output converted data is 15 bit
    -- each output bit is stored in separate RAM block therefore 15 blocks
