@@ -422,13 +422,13 @@ begin
       
       -- latch whole double word
       v.valid := not serdR.valid;
-      --if serdR.valid = '1' then
+      if serdR.valid = '1' then
       --   if serdR.tenbOrder = '0' then
             v.twoWords  := serdR.iserdeseOutD(1) & serdR.iserdeseOutD(0);
       --   else
       --      v.twoWords  := serdR.iserdeseOutD(2) & serdR.iserdeseOutD(1);
       --   end if;
-      --end if;
+      end if;
       
       -- reset state machine whenever resync requested 
       if serdR.resync = '1' then
