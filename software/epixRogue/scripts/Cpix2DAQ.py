@@ -133,7 +133,7 @@ class EpixBoard(pyrogue.Root):
         @self.command()
         def Trigger():
             #cmd.sendCmd(0, 0)
-            self.Cpix2.Cpix2FpgaRegisters.EnSingleFrame.post(1)
+            self.Cpix2.Cpix2FpgaRegisters.EnSingleFrame.post(True)
 
         self.add(pyrogue.RunControl(name = 'runControl', description='Run Controller cPix2', cmd=self.Trigger, rates={1:'1 Hz', 2:'2 Hz', 4:'4 Hz', 8:'8 Hz', 10:'10 Hz', 30:'30 Hz', 60:'60 Hz', 120:'120 Hz'}))
 #        self.start(pyroGroup='Cpix2')
