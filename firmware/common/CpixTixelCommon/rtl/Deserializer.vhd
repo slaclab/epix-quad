@@ -454,7 +454,8 @@ begin
       --v.iserdeseOutD3 := serdR.iserdeseOutD2;
       
       -- output register
-      v.rxData    := serdR.twoWords(9 downto 0) & serdR.twoWords(19 downto 10);
+      --v.rxData    := serdR.twoWords(9 downto 0) & serdR.twoWords(19 downto 10);
+      v.rxData    := serdR.twoWords;
       if serdR.locked = '1' then
          v.rxValid := serdR.valid;
       else
