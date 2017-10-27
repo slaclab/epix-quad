@@ -301,7 +301,8 @@ begin
    
    -- look for idle data word
    idleWord <= '1' when
-      serdR.twoWords = "0101111100" & "1010101010" or serdR.twoWords = "1010000011" & "1010101010"
+      --serdR.twoWords = "0101111100" & "1010101010" or serdR.twoWords = "1010000011" & "1010101010"
+      serdR.twoWords = "1010101010" & "0101111100" or serdR.twoWords = "1010101010" & "1010000011" -- this should be the IDLE correct order
       else '0';
    
    axilComb : process (serdR, axilR, axilReadMaster, byteRst, axilRst, axilWriteMaster, delayCurr, iserdeseOut, idleWord, validWord, exReSync) is
