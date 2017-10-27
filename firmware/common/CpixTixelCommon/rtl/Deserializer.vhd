@@ -126,6 +126,7 @@ architecture RTL of Deserializer is
       iserdeseOutD   : Slv10Array(63 downto 0);
       delay          : slv(4 downto 0);
       delayEn        : sl;
+      10bWordSwappEn : sl;
       axilWriteSlave : AxiLiteWriteSlaveType;
       axilReadSlave  : AxiLiteReadSlaveType;
    end record;
@@ -135,6 +136,7 @@ architecture RTL of Deserializer is
       iserdeseOutD   => (others=>(others=>'0')),
       delay          => (others=>'0'),
       delayEn        => '0',
+      10bWordSwappEn => '0',
       axilWriteSlave => AXI_LITE_WRITE_SLAVE_INIT_C,
       axilReadSlave  => AXI_LITE_READ_SLAVE_INIT_C
    );
@@ -334,6 +336,7 @@ begin
       axiSlaveRegisterR(axilEp, X"0C", 0, std_logic_vector(to_unsigned(serdR.lockErrCnt,16)));
       axiSlaveRegister (axilEp, X"10", 0, vr.delay);
       axiSlaveRegister (axilEp, X"14", 0, vr.delayEn);
+      axiSlaveRegister (axilEp, X"14", 0, vr.10bWordSwappEn);
       
       for i in 0 to 63 loop
          axiSlaveRegisterR(axilEp, std_logic_vector(to_unsigned(256+(i*4), 12)), 0, axilR.iserdeseOutD(i));
@@ -390,10 +393,12 @@ begin
                   end if;
                   v.state := BIT_SLIP_S;
                end if;
-               if serdR.tryCnt >= 15 then
-                  v.tenbOrder := '1';
-               else
-                  v.tenbOrder := '0';
+               if axilR.10bWordSwappEn = '1' then
+                  if serdR.tryCnt >= 15 then
+                     v.tenbOrder := '1';
+                  else
+                     v.tenbOrder := '0';
+                  end if;
                end if;
             end if;
          
