@@ -394,13 +394,6 @@ begin
                   end if;
                   v.state := BIT_SLIP_S;
                end if;
---               if axilR.tenbWordSwappEn = '1' then
---                  if serdR.tryCnt >= 15 then
---                     v.tenbOrder := '1';
---                  else
---                     v.tenbOrder := '0';
---                  end if;
---               end if;
             end if;
          
          when INSYNC_S => 
@@ -423,11 +416,7 @@ begin
       -- latch whole double word
       v.valid := not serdR.valid;
       if serdR.valid = '1' then
-      --   if serdR.tenbOrder = '0' then
-            v.twoWords  := serdR.iserdeseOutD(1) & serdR.iserdeseOutD(0);
-      --   else
-      --      v.twoWords  := serdR.iserdeseOutD(2) & serdR.iserdeseOutD(1);
-      --   end if;
+         v.twoWords  := serdR.iserdeseOutD(1) & serdR.iserdeseOutD(0);
       end if;
       
       -- reset state machine whenever resync requested 
@@ -436,7 +425,9 @@ begin
          v.twoWords := (others=>'0');
          v.lockErrCnt := 0;
          v.locked := '0';
-         v.state  := BIT_SLIP_S;
+         v.idleCnt := 0;
+         --v.state  := BIT_SLIP_S;
+         v.state  := PT0_CHECK_S;
       end if;
       
       -------------------------------------------------------------------------------------------------
@@ -448,11 +439,7 @@ begin
       for i in 1 to 63 loop
          v.iserdeseOutD(i) := serdR.iserdeseOutD(i-1);
       end loop;
-      
-      --v.iserdeseOutD1 := iserdeseOut;
-      --v.iserdeseOutD2 := serdR.iserdeseOutD1;
-      --v.iserdeseOutD3 := serdR.iserdeseOutD2;
-      
+          
       -- output register
       --v.rxData    := serdR.twoWords(9 downto 0) & serdR.twoWords(19 downto 10);
       v.rxData    := serdR.twoWords;
