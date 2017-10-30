@@ -287,9 +287,6 @@ begin
       axiSlaveRegisterR(regCon, x"000014",  0, ite(idValids(2) = '1',idValues(2)(31 downto  0), x"00000000")); --Carrier card ID low
       axiSlaveRegisterR(regCon, x"000018",  0, ite(idValids(2) = '1',idValues(2)(63 downto 32), x"00000000")); --Carrier card ID high
       
-      axiSlaveRegister(regCon,  x"000100",  0, v.asicAcqReg.R0Polarity);
-      axiSlaveRegister(regCon,  x"000104",  0, v.asicAcqReg.R0Delay);
-      axiSlaveRegister(regCon,  x"000108",  0, v.asicAcqReg.R0Width);
       axiSlaveRegister(regCon,  x"00010C",  0, v.asicAcqReg.GlblRstPolarity);
       axiSlaveRegister(regCon,  x"000110",  0, v.asicAcqReg.GlblRstDelay);
       axiSlaveRegister(regCon,  x"000114",  0, v.asicAcqReg.GlblRstWidth);
@@ -355,6 +352,10 @@ begin
       axiSlaveRegister(regCon,  x"000400",  0, v.asicAcqReg.SerialResyncPolarity);
       axiSlaveRegister(regCon,  x"000404",  0, v.asicAcqReg.SerialResyncDelay);
       axiSlaveRegister(regCon,  x"000408",  0, v.asicAcqReg.SerialResyncWidth);
+      axiSlaveRegister(regCon,  x"000410",  0, v.asicAcqReg.R0Polarity);
+      axiSlaveRegister(regCon,  x"000414",  0, v.asicAcqReg.R0Delay);
+      axiSlaveRegister(regCon,  x"000418",  0, v.asicAcqReg.R0Width);
+
       
       -- Special reset for write to address 00
       --if regCon.axiStatus.writeEnable = '1' and axiWriteMaster.awaddr = 0 then
