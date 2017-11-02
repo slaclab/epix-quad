@@ -401,7 +401,7 @@ class Camera():
             isTOA_currentRawData   = isTOA_newRawData
             asicNum_currentRawData = asicNum_newRawData
         #case where the currentRawData is a byte array
-        elif(len(currentRawData) == 4620):
+        elif(len(currentRawData) == 1155):
             frameComplete = 0
             readyForDisplay = 0
             z = np.zeros((1156,),dtype='uint32')# 2310 for the package plus 1 (first byte for the valid flag 
