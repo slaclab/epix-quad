@@ -199,7 +199,7 @@ class Cpix2FpgaRegisters(pr.Device):
       self.add(pr.RemoteVariable(name='R0Polarity',      description='R0Polarity',        offset=0x00000410, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='R0Delay',         description='R0Delay',           offset=0x00000414, bitSize=32, bitOffset=0, base=pr.UInt, disp = '{}',  mode='RW'))
       self.add(pr.RemoteVariable(name='R0Width',         description='R0Width',           offset=0x00000418, bitSize=32, bitOffset=0, base=pr.UInt, disp = '{}',  mode='RW'))
-      self.add(pr.RemoteVariable(name='GlblRstPolarity', description='GlblRstPolarity',   offset=0x0000010C, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='GlblRstPolarity', description='GlblRstPolarity',   offset=0x0000010C, bitSize=1,  bitOffset=0, base=pr.Bool, verify = False,  mode='RW'))
       #self.add(pr.Variable(name='GlblRstDelay',    description='GlblRstDelay',      offset=0x00000110, bitSize=32, bitOffset=0, base='uint', mode='RW'))
       #self.add(pr.Variable(name='GlblRstWidth',    description='GlblRstWidth',      offset=0x00000114, bitSize=32, bitOffset=0, base='uint', mode='RW'))
       self.add(pr.RemoteVariable(name='AcqPolarity',     description='AcqPolarity',         offset=0x00000118, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
