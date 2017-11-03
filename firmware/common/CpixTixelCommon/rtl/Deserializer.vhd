@@ -301,8 +301,7 @@ begin
    
    -- look for idle data word
    idleWord <= '1' when
-      serdR.twoWords = "0101111100" & "1010101010" or serdR.twoWords = "1010000011" & "1010101010"   --this is the cPix order
-      --serdR.twoWords = "1010101010" & "0101111100" or serdR.twoWords = "1010101010" & "1010000011" -- this should be the IDLE correct order
+      serdR.twoWords = "1010101010" & "0101111100" or serdR.twoWords = "1010101010" & "1010000011" -- this is IDLE data pattern
       else '0';
    
    axilComb : process (serdR, axilR, axilReadMaster, byteRst, axilRst, axilWriteMaster, delayCurr, iserdeseOut, idleWord, validWord, exReSync) is
@@ -416,7 +415,7 @@ begin
       -- latch whole double word
       v.valid := not serdR.valid;
       if serdR.valid = '1' then
-         v.twoWords  := serdR.iserdeseOutD(1) & serdR.iserdeseOutD(0);
+         v.twoWords  := serdR.iserdeseOutD(0) & serdR.iserdeseOutD(1); -- cPix sends LS word first
       end if;
       
       -- reset state machine whenever resync requested 
@@ -441,8 +440,7 @@ begin
       end loop;
           
       -- output register
-      v.rxData    := serdR.twoWords(9 downto 0) & serdR.twoWords(19 downto 10);
-      --v.rxData    := serdR.twoWords;
+      v.rxData    := serdR.twoWords;
       if serdR.locked = '1' then
          v.rxValid := serdR.valid;
       else
