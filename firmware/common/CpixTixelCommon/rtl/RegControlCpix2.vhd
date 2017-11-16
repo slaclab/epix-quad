@@ -94,6 +94,12 @@ architecture rtl of RegControlCpix2 is
       EnAShiftPattern   : slv(31 downto 0);
       EnADelay          : slv(31 downto 0);
       EnAWidth          : slv(31 downto 0);
+      EnB              : sl;
+      EnBPolarity       : sl;
+      EnBPattern        : slv(31 downto 0);
+      EnBShiftPattern   : slv(31 downto 0);
+      EnBDelay          : slv(31 downto 0);
+      EnBWidth          : slv(31 downto 0);
       SR0               : sl;
       SR0Polarity       : sl;
       SR0Delay1         : slv(31 downto 0);
@@ -150,6 +156,12 @@ architecture rtl of RegControlCpix2 is
       EnAShiftPattern   => (others=>'0'),
       EnADelay          => (others=>'0'),
       EnAWidth          => (others=>'0'),
+      EnB               => '0',
+      EnBPolarity       => '0',
+      EnBPattern        => (others=>'1'),
+      EnBShiftPattern   => (others=>'0'),
+      EnBDelay          => (others=>'0'),
+      EnBWidth          => (others=>'0'),
       SR0               => '0',
       SR0Polarity       => '0',
       SR0Delay1         => (others=>'0'),
@@ -343,6 +355,12 @@ begin
       axiSlaveRegister(regCon,  x"000218",  0, v.cpix2RegOut.cpix2DbgSel1);
       axiSlaveRegister(regCon,  x"00021C",  0, v.cpix2RegOut.cpix2DbgSel2);
       axiSlaveRegisterR(regCon, x"000220",  0, r.cpix2RegOut.syncCounter);
+
+      axiSlaveRegister(regCon,  x"000224",  0, v.asicAcqReg.EnBPattern);
+      axiSlaveRegisterR(regCon, x"000228",  0, v.asicAcqReg.EnBShiftPattern);
+      axiSlaveRegister(regCon,  x"00022C",  0, v.asicAcqReg.EnBPolarity);
+      axiSlaveRegister(regCon,  x"000230",  0, v.asicAcqReg.EnBDelay);
+      axiSlaveRegister(regCon,  x"000234",  0, v.asicAcqReg.EnBWidth);
       
       axiSlaveRegister(regCon,  x"000300",  0, v.adcClkHalfT);
       axiSlaveRegister(regCon,  x"000304",  0, v.cpix2RegOut.requestStartupCal);
@@ -384,6 +402,7 @@ begin
          v.asicAcqReg.GlblRst    := r.asicAcqReg.GlblRstPolarity;
          v.asicAcqReg.Acq        := r.asicAcqReg.AcqPolarity;
          v.asicAcqReg.EnA        := r.asicAcqReg.EnAPolarity;
+         v.asicAcqReg.EnB        := r.asicAcqReg.EnBPolarity;
          v.asicAcqReg.PPbe       := r.asicAcqReg.PPbePolarity;
          v.asicAcqReg.Ppmat      := r.asicAcqReg.PpmatPolarity;
          v.asicAcqReg.Sync       := r.asicAcqReg.SyncPolarity;
@@ -444,6 +463,16 @@ begin
             end if;
          end if;
          
+
+         -- single pulse. zero value corresponds to infinite delay/width
+         if r.asicAcqReg.EnBDelay /= 0 and r.asicAcqReg.EnBDelay <= r.asicAcqTimeCnt1 then
+            v.asicAcqReg.EnB := not (r.asicAcqReg.EnBPolarity xor (not r.asicAcqReg.EnBShiftPattern(0)));
+            if r.asicAcqReg.EnBWidth /= 0 and (r.asicAcqReg.EnBWidth + r.asicAcqReg.EnBDelay) <= r.asicAcqTimeCnt1 then
+               v.asicAcqReg.EnB := (r.asicAcqReg.EnBPolarity xor (not r.asicAcqReg.EnBShiftPattern(0)));
+            end if;
+         end if;
+
+
          
          -- single pulse. zero value corresponds to infinite delay/width
          if r.asicAcqReg.PPbeDelay /= 0 and r.asicAcqReg.PPbeDelay <= r.asicAcqTimeCnt1 then
@@ -497,7 +526,7 @@ begin
       end if;
       
 
-      -- ENAB shift register
+      -- ENA shift register
       if r.asicAcqReg.asicWFEn = '1' then
          if acqStart = '1' then
             v.asicAcqReg.EnAShiftPattern(30 downto 0)  := r.asicAcqReg.EnAShiftPattern(31 downto 1);
@@ -506,6 +535,19 @@ begin
       else
          if r.asicAcqReg.Sync = '1' or r.asicAcqReg.saciSync = '1' then
             v.asicAcqReg.EnAShiftPattern  := r.asicAcqReg.EnAPattern;
+         end if;
+      end if;
+
+
+      -- ENB shift register
+      if r.asicAcqReg.asicWFEn = '1' then
+         if acqStart = '1' then
+            v.asicAcqReg.EnBShiftPattern(30 downto 0)  := r.asicAcqReg.EnBShiftPattern(31 downto 1);
+            v.asicAcqReg.EnBShiftPattern(31)           := r.asicAcqReg.EnBShiftPattern(0);
+         end if;
+      else
+         if r.asicAcqReg.Sync = '1' or r.asicAcqReg.saciSync = '1' then
+            v.asicAcqReg.EnBShiftPattern  := r.asicAcqReg.EnBPattern;
          end if;
       end if;
 
@@ -545,7 +587,7 @@ begin
      end if;
 
      -- asic waveform enable is used to inhibit thw R0, ACQ and A/B from being generated during data readout
-     if (r.triggerCntPerCycle >= r.cpix2RegOut.ReqTriggerCnt) and ((r.asicAcqReg.R0Width + r.asicAcqReg.R0Delay) <= r.asicAcqTimeCnt1) and ((r.asicAcqReg.EnAWidth + r.asicAcqReg.EnADelay) <= r.asicAcqTimeCnt1) and ((r.asicAcqReg.R0Width + r.asicAcqReg.R0Delay) <= r.asicAcqTimeCnt1) then
+     if (r.triggerCntPerCycle >= r.cpix2RegOut.ReqTriggerCnt) and ((r.asicAcqReg.R0Width + r.asicAcqReg.R0Delay) <= r.asicAcqTimeCnt1) and ((r.asicAcqReg.EnAWidth + r.asicAcqReg.EnADelay) <= r.asicAcqTimeCnt1) and ((r.asicAcqReg.EnBWidth + r.asicAcqReg.EnBDelay) <= r.asicAcqTimeCnt1) and ((r.asicAcqReg.R0Width + r.asicAcqReg.R0Delay) <= r.asicAcqTimeCnt1) then
         v.asicAcqReg.asicWFEn := '0';
      else
         v.asicAcqReg.asicWFEn := '1';
@@ -596,7 +638,7 @@ begin
       asicPpmat(0)   <= r.asicAcqReg.Ppmat and r.asicAcqReg.asicWFEnOut(4);
       asicPpmat(1)   <= r.asicAcqReg.Ppmat and r.asicAcqReg.asicWFEnOut(4);
       asicEnA        <= r.asicAcqReg.EnA and r.asicAcqReg.asicWFEnOut(5);
-      asicEnB        <= not r.asicAcqReg.EnA and r.asicAcqReg.asicWFEnOut(6);
+      asicEnB        <= r.asicAcqReg.EnB and r.asicAcqReg.asicWFEnOut(6);
       asicR0         <= r.asicAcqReg.R0 and r.asicAcqReg.asicWFEnOut(7);
       asicSR0        <= r.asicAcqReg.SR0 and r.asicAcqReg.asicWFEnOut(8);
       asicGlblRst    <= r.asicAcqReg.GlblRst and r.asicAcqReg.asicWFEnOut(9);
