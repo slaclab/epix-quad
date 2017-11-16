@@ -40,7 +40,7 @@ from matplotlib.figure import Figure
 import pdb
 
 
-PRINT_VERBOSE = 1
+PRINT_VERBOSE = 0
 
 ################################################################################
 ################################################################################
@@ -325,7 +325,7 @@ class Window(QtGui.QMainWindow, QObject):
     # If image frame is completed calls displayImageFromReader
     # If image is incomplete stores the partial image
     def buildImageFrame(self):
-        newRawData = self.eventReader.frameData
+        newRawData = self.eventReader.frameData.copy()
         #print('newRawData', len(newRawData))
         #print('self.rawImageFrame',len(self.rawImgFrame))
         #print('self.currentCam',self.currentCam)
@@ -654,7 +654,7 @@ class EventReader(rogue.interfaces.stream.Slave):
         VcNum =  p[0] & 0xF
         if (self.busy): 
             self.busyTimeout = self.busyTimeout + 1
-            print("Event Reader Busy: " +  str(self.busyTimeout))
+            if (PRINT_VERBOSE): print("Event Reader Busy: " +  str(self.busyTimeout))
             if self.busyTimeout == 10:
                 self.busy = False
         else:
@@ -690,7 +690,7 @@ class EventReader(rogue.interfaces.stream.Slave):
             if (chNum == self.VIEW_DATA_CHANNEL_ID or VcNum == 0) :
                 # Collect the data
                 if (PRINT_VERBOSE): print('Num. image data readout: ', len(p))
-                self.frameData = p
+                self.frameData[:] = p
                 cnt = 0
 #                if ((self.numAcceptedFrames == self.frameIndex) or (self.frameIndex == 0)):              
                 self.readDataDone = True

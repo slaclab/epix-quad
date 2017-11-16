@@ -34,7 +34,7 @@ from PyQt4.QtCore import QObject, pyqtSignal
 import numpy as np
 import ePixViewer.imgProcessing as imgPr
 
-PRINT_VERBOSE = 1
+PRINT_VERBOSE = 0
 
 # define global constants
 NOCAMERA   = 0
@@ -376,17 +376,17 @@ class Camera():
         asicNum_newRawData = 0
 
         
-        ##if (PRINT_VERBOSE): print('\nlen current Raw data', len(currentRawData), 'len new raw data', len(newRawData))
+        if (PRINT_VERBOSE): print('\n0 \nlen current Raw data', len(currentRawData), 'len new raw data', len(newRawData))
         #converts data to 32 bit 
         newRawData_DW = np.frombuffer(newRawData,dtype='uint32')
-        ##if (PRINT_VERBOSE): print('\nlen current Raw data', len(currentRawData), 'len new raw data DW', len(newRawData_DW))
+        if (PRINT_VERBOSE): print('\n1 \nlen current Raw data', len(currentRawData), 'len new raw data DW', len(newRawData_DW))
 
         #retrieves header info
                                                                   # header dword 0 (VC info)
         acqNum_newRawData  =  newRawData_DW[1]                    # header dword 1
         isTOA_newRawData   = (newRawData_DW[2] & 0x8) >> 3        # header dword 2  
         asicNum_newRawData =  newRawData_DW[2] & 0x7              # header dword 2
-        ##if (PRINT_VERBOSE): print('\nacqNum_newRawData: ', acqNum_newRawData, '\nisTOA_newRawData:', isTOA_newRawData, '\nasicNum_newRawData:', asicNum_newRawData)
+        if (PRINT_VERBOSE): print('\n2 \n acqNum_newRawData: ', acqNum_newRawData, '\nisTOA_newRawData:', isTOA_newRawData, '\nasicNum_newRawData:', asicNum_newRawData)
 
 
         #interpret headers
@@ -415,6 +415,11 @@ class Camera():
 
             currentRawData = self.fill_memory(returnedRawData, asicNum_currentRawData, isTOA_currentRawData, currentRawData_DW)
             returnedRawData = currentRawData
+
+            if (PRINT_VERBOSE): print('\n3 \n Return data 0:', returnedRawData[0,0:10])
+            if (PRINT_VERBOSE): print('\n3 \n Return data 1:', returnedRawData[1,0:10])
+            if (PRINT_VERBOSE): print('\n3 \n Return data 2:', returnedRawData[2,0:10])
+            if (PRINT_VERBOSE): print('\n3 \n Return data 3:', returnedRawData[3,0:10])
         
         elif(len(currentRawData)==4):
             #recovers currentRawData header info
@@ -428,13 +433,14 @@ class Camera():
                     isTOA_currentRawData   = (currentRawData[j,3] & 0x8) >> 3   # extended header dword 3 
                     asicNum_currentRawData =  currentRawData[j,3] & 0x7         # extended header dword 1 (VC info)
             #saves current data on returned data before adding new data
+            if (PRINT_VERBOSE): print('\n3B \n len 4')
             returnedRawData = currentRawData
         else:
             #packet size error
-            if (PRINT_VERBOSE): print('\n packet size error, packet len: ', len(currentRawData))
+            if (PRINT_VERBOSE): print('\n4  \npacket size error, packet len: ', len(currentRawData))
 
-        ##if (PRINT_VERBOSE): print('\nacqNum_currentRawData: ', acqNum_currentRawData, '\nisTOA_currentRawData: ', isTOA_currentRawData, '\nasicNum_currentRawData: ', asicNum_currentRawData)
-        ##if (PRINT_VERBOSE): print('\nacqNum_newRawData: ',     acqNum_newRawData,     '\nisTOA_newRawData: ',     isTOA_newRawData, '\nasicNum_newRawData: ', asicNum_newRawData)
+        if (PRINT_VERBOSE): print('\n5 \nacqNum_currentRawData: ', acqNum_currentRawData, '\nisTOA_currentRawData: ', isTOA_currentRawData, '\nasicNum_currentRawData: ', asicNum_currentRawData)
+        if (PRINT_VERBOSE): print('\n5 \nacqNum_newRawData: ',     acqNum_newRawData,     '\nisTOA_newRawData: ',     isTOA_newRawData, '\nasicNum_newRawData: ', asicNum_newRawData)
         #case 2: acqNumber are different
         if(acqNum_newRawData != acqNum_currentRawData):
             frameComplete = 0
@@ -443,20 +449,20 @@ class Camera():
 
         #fill the memory with the new data (when acqNums matches)
         returnedRawData = self.fill_memory(returnedRawData, asicNum_newRawData, isTOA_newRawData, newRawData_DW)
-        ##if (PRINT_VERBOSE): print('Return data 0:', returnedRawData[0,0:10])
-        ##if (PRINT_VERBOSE): print('Return data 1:', returnedRawData[1,0:10])
-        ##if (PRINT_VERBOSE): print('Return data 2:', returnedRawData[2,0:10])
-        ##if (PRINT_VERBOSE): print('Return data 3:', returnedRawData[3,0:10])
+        if (PRINT_VERBOSE): print('\n6 \nReturn data 0:', returnedRawData[0,0:10])
+        if (PRINT_VERBOSE): print('\n6 \nReturn data 1:', returnedRawData[1,0:10])
+        if (PRINT_VERBOSE): print('\n6 \nReturn data 2:', returnedRawData[2,0:10])
+        if (PRINT_VERBOSE): print('\n6 \nReturn data 3:', returnedRawData[3,0:10])
 
         #checks if the image is complete
         isValidTrace0 =  returnedRawData[0,0]
-        ##if (PRINT_VERBOSE): print('\nisValidTrace0', isValidTrace0)
+        if (PRINT_VERBOSE): print('\n7 \nisValidTrace0', isValidTrace0)
         isValidTrace1 =  returnedRawData[1,0]
-        ##if (PRINT_VERBOSE): print('\nisValidTrace1', isValidTrace1)
+        if (PRINT_VERBOSE): print('\n8 \nisValidTrace1', isValidTrace1)
         isValidTrace2 =  returnedRawData[2,0]
-        ##if (PRINT_VERBOSE): print('\nisValidTrace2', isValidTrace2)
+        if (PRINT_VERBOSE): print('\n9 \nisValidTrace2', isValidTrace2)
         isValidTrace3 =  returnedRawData[3,0]
-        ##if (PRINT_VERBOSE): print('\nisValidTrace3', isValidTrace3)
+        if (PRINT_VERBOSE): print('\n10 \nisValidTrace3', isValidTrace3)
 
         if((isValidTrace0 == 1) and (isValidTrace1 == 1) and (isValidTrace2 == 1) and (isValidTrace3 == 1)):
             frameComplete = 1
@@ -465,7 +471,7 @@ class Camera():
             frameComplete = 0
             readyForDisplay = 0
 
-        ##if (PRINT_VERBOSE): print('frameComplete: ', frameComplete, 'readyForDisplay: ', readyForDisplay, 'returned raw data len', len(returnedRawData))
+        if (PRINT_VERBOSE): print('\n11 \nframeComplete: ', frameComplete, 'readyForDisplay: ', readyForDisplay, 'returned raw data len', len(returnedRawData))
         #return parameters
         return [frameComplete, readyForDisplay, returnedRawData]
     
