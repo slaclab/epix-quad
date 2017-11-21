@@ -669,7 +669,8 @@ class EventReader(rogue.interfaces.stream.Slave):
         elif (VcNum == 0):
             if (((self.numAcceptedFrames == self.frameIndex) or (self.frameIndex == 0)) and (self.numAcceptedFrames%self.numSkipFrames==0) and ((time.time() - self.lastProcessedFrameTime) > self.ProcessFramePeriod)): 
                 self.lastProcessedFrameTime = time.time()
-                self.parent.processFrameTrigger.emit()
+                if (self.parent.cbdisplayImageEn.isChecked()): self.parent.processFrameTrigger.emit()
+                
 
 
     def _processFrame(self):
@@ -912,6 +913,8 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         myParent.imageScaleMinLine.setMaximumWidth(100)
         myParent.imageScaleMinLine.setMinimumWidth(50)
         myParent.imageScaleMinLine.setText(str(myParent.imageScaleMin))
+        # check boxes
+        myParent.cbdisplayImageEn = QtGui.QCheckBox('Display Image Enable')
         
         # set layout to tab 1
         tab1Frame = QtGui.QFrame()
@@ -934,6 +937,7 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         grid.addWidget(pixelBitMaskLabel, 3, 1)
         grid.addWidget(myParent.pixelBitMask, 3, 2)
         grid.addWidget(btnSetPixelBitMask, 3, 3)
+        grid.addWidget(myParent.cbdisplayImageEn, 3, 4)
         grid.addWidget(imageScaleLabel, 4, 1)
         grid.addWidget(myParent.imageScaleMaxLine, 4, 2)
         grid.addWidget(myParent.imageScaleMinLine,4, 3)     
