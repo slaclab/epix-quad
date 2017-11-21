@@ -149,14 +149,15 @@ guiTop.addTree(ePixBoard)
 guiTop.resize(1000,800)
 
 # Viewer gui
-if (START_VIEWER):
-    gui = vi.Window(cameraType = 'Cpix2')
-#    gui = vi.Window(cameraType = 'Cpix2') # check why the system reports error with Cpix2 (at this point both sensors read data the same way so I can use tixel config for now.
-    gui.eventReader.frameIndex = 0
-    gui.setReadDelay(0)
-    pyrogue.streamTap(pgpVc0, gui.eventReader)
-    pyrogue.streamTap(pgpVc2, gui.eventReaderScope)# PseudoScope
-    pyrogue.streamTap(pgpVc3, gui.eventReaderMonitoring) # Slow Monitoring
+gui = vi.Window(cameraType = 'Cpix2')
+gui.eventReader.frameIndex = 0
+gui.setReadDelay(0)
+pyrogue.streamTap(pgpVc0, gui.eventReader)
+pyrogue.streamTap(pgpVc2, gui.eventReaderScope)# PseudoScope
+pyrogue.streamTap(pgpVc3, gui.eventReaderMonitoring) # Slow Monitoring
+gui.cbdisplayImageEn.setChecked(START_VIEWER)
+
+    
 
 ## Create mesh node (this is for remote control only, no data is shared with this)
 #mNode = pyrogue.mesh.MeshNode('rogueEpix100a',iface='eth0',root=None)
