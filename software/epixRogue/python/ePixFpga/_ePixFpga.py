@@ -27,6 +27,7 @@ import surf.axi as axi
 import surf.protocols.pgp as pgp
 import surf.devices.analog_devices as analog_devices
 import surf.misc
+from surf.devices.micron._AxiMicronN25Q import *
 import surf
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtGui import *
@@ -158,6 +159,7 @@ class Cpix2(pr.Device):
             epix.Cpix2Asic(                   name='Cpix2Asic0',              offset=0x04000000, enabled=False, expand=False),
             epix.Cpix2Asic(                   name='Cpix2Asic1',              offset=0x04400000, enabled=False, expand=False),
             pgp.Pgp2bAxi(                     name='Pgp2bAxi',                offset=0x06000000, enabled=False, expand=False),
+            AxiMicronN25Q(                    name='MicronN25Q',              offset=0x07000000, expand=False, hidden=False),
             analog_devices.Ad9249ReadoutGroup(name='Ad9249Rdout[1].Adc[0]',   offset=0x09000000, channels=4, enabled=False, expand=False),
             #analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]', offset=0x0A000000),    # not used in tixel, disabled by microblaze
             #analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]', offset=0x0A000800),    # not used in tixel, disabled by microblaze
@@ -168,7 +170,8 @@ class Cpix2(pr.Device):
             AsicDeserRegisters(               name='Asic0Deserializer',       offset=0x0E000000, enabled=False, expand=False),
             AsicDeserRegisters(               name='Asic1Deserializer',       offset=0x0F000000, enabled=False, expand=False),
             AsicPktRegisters(                 name='Asic0PktRegisters',       offset=0x10000000, enabled=False, expand=False),
-            AsicPktRegisters(                 name='Asic1PktRegisters',       offset=0x11000000, enabled=False, expand=False),))
+            AsicPktRegisters(                 name='Asic1PktRegisters',       offset=0x11000000, enabled=False, expand=False),
+            ))
       
 
 class Cpix2FpgaRegisters(pr.Device):

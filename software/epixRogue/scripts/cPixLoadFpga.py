@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #-----------------------------------------------------------------------------
-# Title      : CPix2 board instance
+# Title      : ePix 100a board instance
 #-----------------------------------------------------------------------------
 # File       : epix100aDAQ.py evolved from evalBoard.py
 # Author     : Ryan Herbst, rherbst@slac.stanford.edu
@@ -9,7 +9,7 @@
 # Last update: 2017-02-01
 #-----------------------------------------------------------------------------
 # Description:
-# Rogue interface to CPix2 board
+# Rogue interface to ePix 100a board
 #-----------------------------------------------------------------------------
 # This file is part of the rogue_example software. It is subject to 
 # the license terms in the LICENSE.txt file found in the top-level directory 
@@ -36,12 +36,51 @@ import PyQt4.QtGui
 import PyQt4.QtCore
 import ePixViewer as vi
 import ePixFpga as fpga
+import operator
+import os
+import argparse
+
 
 #############################################
 # Define if the GUI is started (1 starts it)
-START_GUI = True
-START_VIEWER = True
+START_GUI = False
+START_VIEWER = False
 #############################################
+
+# Set the argument parser
+parser = argparse.ArgumentParser()
+
+
+def extant_file(x):
+    """
+    'Type' for argparse - checks that file exists but does not open.
+    """
+    if not os.path.exists(x):
+    #if not os.path.isfile("setup_template.csh"):
+        # Argparse uses the ArgumentTypeError to give a rejection message like:
+        # error: argument input: x does not exist
+        raise argparse.ArgumentTypeError("{0} does not exist".format(x))
+    else:
+        extension = os.path.splitext(x)[1]
+        if extension != '.mcs':
+            raise argparse.ArgumentTypeError("{0} not mcs file".format(x))
+    return x
+
+# Add arguments
+parser.add_argument(
+    "--f", 
+    type     = extant_file,
+    required = True,
+    default  = True,
+    help     = "path to mcs file",
+)
+
+# Get the arguments
+args = parser.parse_args()
+
+
+
+
 
 # Create the PGP interfaces for ePix camera
 pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,0) # Data & cmds
@@ -173,5 +212,16 @@ def stop():
     ePixBoard.stop()
     exit()
 
-print("Started rogue mesh and epics V3 server. To exit type stop()")
 
+# program flash
+ePixBoard.Cpix2.MicronN25Q.LoadMcsFile(args.f)
+
+#reload FPGA
+print('Reloading FPGA')
+#ePixBoard.Cpix2.AxiVersion.FpgaReload.set(1)
+ePixBoard.Cpix2.AxiVersion._rawWrite(0x104,1)
+
+time.sleep(5)
+print('Reloading FPGA done')
+
+exit()
