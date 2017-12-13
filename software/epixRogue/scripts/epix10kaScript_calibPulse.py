@@ -49,15 +49,17 @@ TEST_DARK = False
 #and (Random pixel selection)
 TEST_LINEARITY_TEST_A = False
 #or
-TEST_LINEARITY_TEST_B = True
+TEST_LINEARITY_TEST_B = False
 #and (row pixel selection)
-TEST_LINEARITY_TEST_C = True
+TEST_LINEARITY_TEST_C = False
 #or 
 TEST_LINEARITY_TEST_D = False
 #and (col pixel selection)
-TEST_LINEARITY_TEST_E = True
+TEST_LINEARITY_TEST_E = False
 #or 
 TEST_LINEARITY_TEST_F = False
+#or 
+TEST_WEIGHTINGFUNCTION = True
 #############################################
 #print debug info
 PRINT_VERBOSE = False
@@ -75,7 +77,7 @@ print("PGP Card Version: %x" % (pgpVc0.getInfo().version))
 
 # Add data stream to file as channel 1
 # File writer
-dataWriter = pyrogue.utilities.fileio.StreamWriter('dataWriter')
+dataWriter = pyrogue.utilities.fileio.StreamWriter(name='dataWriter')
 pyrogue.streamConnect(pgpVc0, dataWriter.getChannel(0x1))
 # Add pseudoscope to file writer
 #pyrogue.streamConnect(pgpVc2, dataWriter.getChannel(0x2))
@@ -136,7 +138,7 @@ class MbDebug(rogue.interfaces.stream.Slave):
 ##############################
 class EpixBoard(pyrogue.Root):
     def __init__(self, guiTop, cmd, dataWriter, srp, **kwargs):
-        super().__init__('ePixBoard','ePix 10ka Board', pollEn=True, **kwargs)
+        super().__init__(name='ePixBoard',description='ePix 10ka Board', **kwargs)
         #self.add(MyRunControl('runControl'))
         self.add(dataWriter)
         self.guiTop = guiTop
@@ -147,7 +149,7 @@ class EpixBoard(pyrogue.Root):
 
         # Add Devices
         self.add(fpga.Epix10ka(name='Epix10ka', offset=0, memBase=srp, hidden=False, enabled=True))
-        self.add(pyrogue.RunControl(name = 'MyRunControl', description='Run Controller ePix 10ka', cmd=self.Trigger, rates={1:'1 Hz', 2:'2 Hz', 4:'4 Hz', 8:'8 Hz', 10:'10 Hz', 30:'30 Hz', 60:'60 Hz', 120:'120 Hz'}))
+        self.add(pyrogue.RunControl(name = 'runControl', description='Run Controller ePix 10ka', cmd=self.Trigger, rates={1:'1 Hz', 2:'2 Hz', 4:'4 Hz', 8:'8 Hz', 10:'10 Hz', 30:'30 Hz', 60:'60 Hz', 120:'120 Hz'}))
         
 
         
@@ -170,8 +172,9 @@ if (PRINT_VERBOSE): pyrogue.streamTap(pgpVc0, dbgData)
 
 # Create GUI
 appTop = PyQt4.QtGui.QApplication(sys.argv)
-guiTop = pyrogue.gui.GuiTop('ePix10kaGui')
+guiTop = pyrogue.gui.GuiTop(group='ePix10kaGui')
 ePixBoard = EpixBoard(guiTop, cmd, dataWriter, srp)
+ePixBoard.start()
 guiTop.addTree(ePixBoard)
 guiTop.resize(1000,1000)
 
@@ -440,6 +443,46 @@ if (TEST_LINEARITY_TEST_E or TEST_LINEARITY_TEST_F):
         
                     ePixBoard.dataWriter.open.set(False)
 
+if (TEST_WEIGHTINGFUNCTION):
+    #read config parameters for the fpga and asic
+    ePixBoard.readConfig("yml/epix10ka_u0.yml")
+
+    #set registers to take dark images
+    #ePixBoard.Epix10ka.Epix10kaAsic0.fnSetPixelBitmap(cmd=cmd, dev=ePixBoard.Epix10ka.Epix10kaAsic0, arg='pixelBitMaps/epix10ka_gain_00.csv')
+    ePixBoard.Epix10ka.Epix10kaAsic0.pbit.set(False)
+    ePixBoard.Epix10ka.Epix10kaAsic0.atest.set(False)
+    ePixBoard.Epix10ka.Epix10kaAsic0.test.set(False)
+    ePixBoard.Epix10ka.Epix10kaAsic0.hrtest.set(False)
+
+    #setting camera for internal trigger
+    ePixBoard.Epix10ka.EpixFpgaRegisters.RunTriggerEnable.set(True)
+    ePixBoard.Epix10ka.EpixFpgaRegisters.AutoRunEnable.set(True)
+    ePixBoard.Epix10ka.EpixFpgaRegisters.AutoDaqEnable.set(True)
+    ePixBoard.Epix10ka.EpixFpgaRegisters.AutoRunPeriod.set(10000000)
+
+    #set dark image filename
+    fileFolders = [ ['./']]
+    fileNameRoot = 'laserPulse_delay_' 
+    FileNameRun = '_run_1.dat'
+    aquisitionDuration = 1
+    trs = [0, 1]
+    gains = [1, 5, 9, 13] # gains 00, 01, 10 and 11 [0, 4, 8, 12] plus test bit 1 
+    numDelays = 10
+    initialDelay  = 70000
+    delayStepSize =  1000
+    ePixBoard.Epix10ka.Epix10kaAsic0.ClearMatrix()
+
+    #cols = np.arange(0, 192, 1)
+    #cols = np.arange(0, 5, 1)
+    for delayIndex in range(0,numDelays):
+        delay = initialDelay + delayIndex * delayStepSize
+        fullFileName = fileFolders[0][0]+fileNameRoot+str(delay)+FileNameRun
+        print(fullFileName)
+        #loopIndex = loopIndex + 1 
+        ePixBoard.dataWriter.dataFile.set(fullFileName)
+        ePixBoard.dataWriter.open.set(True)
+        time.sleep(aquisitionDuration)
+        ePixBoard.dataWriter.open.set(False)
 
 # Run gui
 if (START_GUI):
@@ -454,4 +497,3 @@ def stop():
 
 # Start with: ipython -i scripts/epix10kaDAQ.py for interactive approach
 print("Started rogue mesh and epics V3 server. To exit type stop()")
-
