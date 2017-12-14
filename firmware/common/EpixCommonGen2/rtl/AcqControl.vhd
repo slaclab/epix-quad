@@ -210,7 +210,6 @@ begin
                    asicSyncMux;
    
    -- asicSync delay vector
-   --asicSyncEndVec(0) <= iAsicSync;
    process(sysClk) begin
       if rising_edge(sysClk) then
          if sysClkRst = '1' then
