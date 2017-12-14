@@ -322,6 +322,8 @@ begin
       readDone             when epixConfig.dbgReg = "00100" else
       saciPrepReadoutReq   when epixConfig.dbgReg = "00101" else
       saciPrepReadoutAck   when epixConfig.dbgReg = "00110" else
+      iAsicSync            when epixConfig.dbgReg = "00111" else
+      iAsicR0              when epixConfig.dbgReg = "01000" else
       '0';
    
    -- ASIC signals

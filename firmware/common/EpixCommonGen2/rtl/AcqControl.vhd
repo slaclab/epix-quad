@@ -129,6 +129,15 @@ architecture AcqControl of AcqControl is
    signal iAsicGlblRst     : std_logic := '0';
    signal iAsicAcq         : std_logic := '0';
    signal iAsicClk         : std_logic := '0';
+   
+   signal iAsicSync         : sl;
+   signal asicSyncExt       : sl;
+   signal asicSyncMux       : sl;
+   signal asicSyncEndVec    : slv(31 downto 0);
+   signal syncCntRst        : sl;
+   signal asicSyncStart     : sl;
+   signal asicSyncStartCnt  : slv(31 downto 0);
+   
    -- Alternate R0 that can be used for "original" polarity
    -- (i.e., usually low except before ACQ and through readout)
    signal iAsicR0Alt    : std_logic             := '0';
@@ -195,9 +204,41 @@ begin
    asicClk     <= iAsicClk               when ePixConfig.manualPinControl(5) = '0' else
                   ePixConfig.asicPins(5) when ePixConfig.manualPinControl(5) = '1' else
                   'X';
-   asicSync    <= '0';
-
-
+   asicSync    <= '0'                    when ePixConfig.syncCntrl = '0' else
+                   asicSyncMux;
+   
+   -- asicSync delay vector
+   --asicSyncEndVec(0) <= iAsicSync;
+   process(sysClk) begin
+      if rising_edge(sysClk) then
+         if sysClkRst = '1' then
+            asicSyncEndVec <= (others => '0') after tpd;     
+         else
+            for i in 0 to 31 loop
+               if i = 0 then
+                  asicSyncEndVec(i) <= iAsicSync after tpd; 
+               else
+                  asicSyncEndVec(i) <= asicSyncEndVec(i-1) after tpd; 
+               end if;
+            end loop;
+         end if;
+      end if;
+   end process; 
+   asicSyncExt    <= iAsicSync or asicSyncEndVec(conv_integer(ePixConfig.syncStopDly(4 downto 0)));
+   asicSyncMux    <= asicSyncExt when ePixConfig.syncStartDly = 0 else (asicSyncExt and asicSyncStart);
+   asicSyncStart  <= '1' when asicSyncStartCnt = ePixConfig.syncStartDly else '0';
+   
+   -- asicSync start delay counter
+   process(sysClk) begin
+      if rising_edge(sysClk) then
+         if sysClkRst = '1' or syncCntRst = '1' then
+            asicSyncStartCnt <= (others => '0') after tpd;     
+         elsif asicSyncStartCnt < ePixConfig.syncStartDly then
+            asicSyncStartCnt <= asicSyncStartCnt + 1 after tpd;
+         end if;
+      end if;
+   end process; 
+   
    --Outputs not incorporated into state machine at the moment
    iAsicPpbe    <= '1'; 
 
@@ -228,6 +269,8 @@ begin
       iAsicR0Alt         <= '1' after tpd;
       iAsicPpmat         <= '0' after tpd;
       iAsicAcq           <= '0' after tpd;
+      iAsicSync          <= '0' after tpd;
+      syncCntRst         <= '0' after tpd;
       saciReadoutReq     <= '0' after tpd;
       stateCntEn         <= '0' after tpd;
       stateCntRst        <= '0' after tpd;
@@ -247,10 +290,12 @@ begin
             adcSampCntRst   <= '1' after tpd;
             firstPixelRst   <= '1' after tpd;
             iAsicR0Alt      <= '0' after tpd;
+            syncCntRst      <= '1' after tpd;
          --Bring up PPmat through just before the asicClk
          when WAIT_R0_S =>
             iAsicPpmat      <= '1' after tpd;
             iAsicR0Alt      <= '0' after tpd;
+            syncCntRst      <= '1' after tpd;
             if stateCnt < unsigned(ePixConfig.acqToAsicR0Delay) then
                stateCntEn      <= '1' after tpd;
             else
@@ -261,6 +306,7 @@ begin
             iAsicPpmat      <= '1' after tpd;
             iAsicR0         <= '0' after tpd;
             iAsicR0Alt      <= '0' after tpd;
+            syncCntRst      <= '1' after tpd;
             if stateCnt < unsigned(ePixConfig.asicR0Width) then
                stateCntEn      <= '1' after tpd;
             else 
@@ -269,6 +315,7 @@ begin
          --Bring up R0 and hold through the rest of the readout
          when WAIT_ACQ_S =>
             iAsicPpmat      <= '1' after tpd;
+            iAsicSync       <= '1' after tpd;
             if stateCnt < unsigned(ePixConfig.asicR0ToAsicAcq) then
                stateCntEn      <= '1' after tpd;
             else
@@ -278,6 +325,7 @@ begin
          when ACQ_S =>
             iAsicPpmat      <= '1' after tpd;
             iAsicAcq        <= '1' after tpd;
+            iAsicSync       <= '1' after tpd;
             if stateCnt < unsigned(ePixConfig.asicAcqWidth) then
                stateCntEn      <= '1' after tpd;
             else

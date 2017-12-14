@@ -164,6 +164,9 @@ package EpixPkgGen2 is
       monitorEnable      : sl;
       requestConfDump    : sl;
       dbgReg             : slv(4 downto 0);
+      syncCntrl          : sl;
+      syncStopDly        : slv(4 downto 0);
+      syncStartDly       : slv(31 downto 0);
    end record;
    type EpixConfigArray is array (natural range <>) of EpixConfigType;
    constant EPIX_CONFIG_INIT_C : EpixConfigType := (
@@ -208,7 +211,10 @@ package EpixPkgGen2 is
       pgpTrigEn          => '0',
       monitorEnable      => '0',
       requestConfDump    => '0',
-      dbgReg             => (others => '0')
+      dbgReg             => (others => '0'),
+      syncCntrl          => '0',
+      syncStopDly        => (others => '0'),
+      syncStartDly       => (others => '0')
    );
    
    type EpixStatusType is record
