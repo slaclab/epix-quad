@@ -131,7 +131,6 @@ architecture AcqControl of AcqControl is
    signal iAsicClk         : std_logic := '0';
    
    signal iAsicSync         : sl;
-   signal asicSyncExtSel    : sl;
    signal asicSyncExt       : sl;
    signal asicSyncMux       : sl;
    signal asicSyncEndVec    : slv(31 downto 0);
@@ -230,9 +229,7 @@ begin
       asicSyncEndVecCmp(i) <= '1' when asicSyncEndVec(i downto 0) /= 0 else '0';
    end generate G_Sync;
    
-   
-   asicSyncExtSel <= '1' when asicSyncEndVecCmp(conv_integer(ePixConfig.syncStopDly(4 downto 0)) downto 0) /= 0 else '0';
-   asicSyncExt    <= iAsicSync or asicSyncExtSel;
+   asicSyncExt    <= iAsicSync or asicSyncEndVecCmp(conv_integer(ePixConfig.syncStopDly(4 downto 0)));
    asicSyncMux    <= asicSyncExt when ePixConfig.syncStartDly = 0 else (asicSyncExt and asicSyncStart);
    asicSyncStart  <= '1' when asicSyncStartCnt = ePixConfig.syncStartDly else '0';
    
