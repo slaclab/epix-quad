@@ -133,6 +133,7 @@ architecture AcqControl of AcqControl is
    signal iAsicSync         : sl;
    signal asicSyncExt       : sl;
    signal asicSyncMux       : sl;
+   signal asicSyncMuxReg    : sl;
    signal asicSyncEndVec    : slv(31 downto 0);
    signal asicSyncEndVecCmp : slv(31 downto 0);
    signal syncCntRst        : sl;
@@ -206,13 +207,14 @@ begin
                   ePixConfig.asicPins(5) when ePixConfig.manualPinControl(5) = '1' else
                   'X';
    asicSync    <= '0'                    when ePixConfig.syncCntrl = '0' else
-                   asicSyncMux;
+                   asicSyncMuxReg;
    
    -- asicSync delay vector
    process(sysClk) begin
       if rising_edge(sysClk) then
          if sysClkRst = '1' then
             asicSyncEndVec <= (others => '0') after tpd;     
+            asicSyncMuxReg <= '0' after tpd;     
          else
             for i in 0 to 31 loop
                if i = 0 then
@@ -221,12 +223,14 @@ begin
                   asicSyncEndVec(i) <= asicSyncEndVec(i-1) after tpd; 
                end if;
             end loop;
+            asicSyncMuxReg <= asicSyncMux;
          end if;
       end if;
    end process; 
    
-   G_Sync: for i in 0 to 31 generate
-      asicSyncEndVecCmp(i) <= '1' when asicSyncEndVec(i downto 0) /= 0 else '0';
+   asicSyncEndVecCmp(0) <= iAsicSync;
+   G_Sync: for i in 0 to 30 generate
+      asicSyncEndVecCmp(i+1) <= '1' when asicSyncEndVec(i downto 0) /= 0 else '0';
    end generate G_Sync;
    
    asicSyncExt    <= iAsicSync or asicSyncEndVecCmp(conv_integer(ePixConfig.syncStopDly(4 downto 0)));
