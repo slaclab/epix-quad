@@ -780,11 +780,11 @@ class Epix10kaFpgaRegisters(pr.Device):
       
       self.add(pr.Variable(name='DebugOut',            description='DebugOut',                                                offset=0x00000200*addrSize, bitSize=5,  bitOffset=0, base='uint', mode='RW'))
       
-      self.add(pr.Variable(name='SyncCntrlEn',         description='SyncCntrlEn',                                             offset=0x00000300*addrSize, bitSize=5,  bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='SyncStartDly',        description='SyncStartDly',                                            offset=0x00000301*addrSize, bitSize=5,  bitOffset=0, base='uint', mode='RW'))
-      self.add(pr.Variable(name='SyncStopDly',         description='SyncStopDly',                                             offset=0x00000302*addrSize, bitSize=5,  bitOffset=0, base='uint', mode='RW'))
-
-  
+      self.add((
+            pr.Variable(name='SyncStartDly',    description='SyncStartDly', offset=0x00000201*addrSize, bitSize=16, bitOffset=0,  base='uint', mode='RW'),
+            pr.Variable(name='SyncStopDly',     description='SyncStopDly',  offset=0x00000201*addrSize, bitSize=8,  bitOffset=16, base='uint', mode='RW'),
+            pr.Variable(name='SyncCntrlEn',     description='SyncCntrlEn',  offset=0x00000201*addrSize, bitSize=1,  bitOffset=24, base='bool', mode='RW')))
+      
       #####################################
       # Create commands
       #####################################
