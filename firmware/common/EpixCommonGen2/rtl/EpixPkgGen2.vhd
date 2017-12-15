@@ -165,8 +165,8 @@ package EpixPkgGen2 is
       requestConfDump    : sl;
       dbgReg             : slv(4 downto 0);
       syncCntrl          : sl;
-      syncStopDly        : slv(4 downto 0);
-      syncStartDly       : slv(31 downto 0);
+      syncStopDly        : slv(7 downto 0);
+      syncStartDly       : slv(15 downto 0);
    end record;
    type EpixConfigArray is array (natural range <>) of EpixConfigType;
    constant EPIX_CONFIG_INIT_C : EpixConfigType := (

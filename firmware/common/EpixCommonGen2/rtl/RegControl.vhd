@@ -257,9 +257,9 @@ begin
       
       axiSlaveRegister (regCon, x"200" & "00",  0, v.epixRegOut.dbgReg);
       
-      axiSlaveRegister (regCon, x"300" & "00",  0, v.epixRegOut.syncCntrl);
-      axiSlaveRegister (regCon, x"301" & "00",  0, v.epixRegOut.syncStartDly);
-      axiSlaveRegister (regCon, x"302" & "00",  0, v.epixRegOut.syncStopDly);
+      axiSlaveRegister (regCon, x"201" & "00",   0, v.epixRegOut.syncStartDly);
+      axiSlaveRegister (regCon, x"201" & "00",  16, v.epixRegOut.syncStopDly);
+      axiSlaveRegister (regCon, x"201" & "00",  24, v.epixRegOut.syncCntrl);
       
       axiSlaveDefault(regCon, v.axiWriteSlave, v.axiReadSlave, AXI_ERROR_RESP_G);
 

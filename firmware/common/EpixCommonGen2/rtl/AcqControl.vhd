@@ -134,11 +134,13 @@ architecture AcqControl of AcqControl is
    signal asicSyncExt       : sl;
    signal asicSyncMux       : sl;
    signal asicSyncMuxReg    : sl;
-   signal asicSyncEndVec    : slv(31 downto 0);
-   signal asicSyncEndVecCmp : slv(31 downto 0);
+   --signal asicSyncEndVec    : slv(31 downto 0);
+   --signal asicSyncEndVecCmp : slv(31 downto 0);
    signal syncCntRst        : sl;
    signal asicSyncStart     : sl;
-   signal asicSyncStartCnt  : slv(31 downto 0);
+   signal asicSyncStartCnt  : slv(15 downto 0);
+   signal asicSyncStop      : sl;
+   signal asicSyncStopCnt   : slv(7 downto 0);
    
    -- Alternate R0 that can be used for "original" polarity
    -- (i.e., usually low except before ACQ and through readout)
@@ -209,33 +211,22 @@ begin
    asicSync    <= '0'                    when ePixConfig.syncCntrl = '0' else
                    asicSyncMuxReg;
    
-   -- asicSync delay vector
+   
+   -- asicSync register
    process(sysClk) begin
       if rising_edge(sysClk) then
-         if sysClkRst = '1' then
-            asicSyncEndVec <= (others => '0') after tpd;     
+         if sysClkRst = '1' then  
             asicSyncMuxReg <= '0' after tpd;     
          else
-            for i in 0 to 31 loop
-               if i = 0 then
-                  asicSyncEndVec(i) <= iAsicSync after tpd; 
-               else
-                  asicSyncEndVec(i) <= asicSyncEndVec(i-1) after tpd; 
-               end if;
-            end loop;
-            asicSyncMuxReg <= asicSyncMux;
+            asicSyncMuxReg <= asicSyncMux after tpd;
          end if;
       end if;
    end process; 
    
-   asicSyncEndVecCmp(0) <= iAsicSync;
-   G_Sync: for i in 0 to 30 generate
-      asicSyncEndVecCmp(i+1) <= '1' when asicSyncEndVec(i downto 0) /= 0 else '0';
-   end generate G_Sync;
-   
-   asicSyncExt    <= iAsicSync or asicSyncEndVecCmp(conv_integer(ePixConfig.syncStopDly(4 downto 0)));
    asicSyncMux    <= asicSyncExt when ePixConfig.syncStartDly = 0 else (asicSyncExt and asicSyncStart);
    asicSyncStart  <= '1' when asicSyncStartCnt = ePixConfig.syncStartDly else '0';
+   asicSyncStop   <= '1' when asicSyncStopCnt < ePixConfig.syncStopDly else '0';
+   asicSyncExt    <= iAsicSync or asicSyncStop;
    
    -- asicSync start delay counter
    process(sysClk) begin
@@ -244,6 +235,17 @@ begin
             asicSyncStartCnt <= (others => '0') after tpd;     
          elsif asicSyncStartCnt < ePixConfig.syncStartDly then
             asicSyncStartCnt <= asicSyncStartCnt + 1 after tpd;
+         end if;
+      end if;
+   end process; 
+   
+   -- asicSync stop delay counter
+   process(sysClk) begin
+      if rising_edge(sysClk) then
+         if sysClkRst = '1' or iAsicSync = '1' then
+            asicSyncStopCnt <= (others => '0') after tpd;     
+         elsif asicSyncStopCnt < ePixConfig.syncStopDly then
+            asicSyncStopCnt <= asicSyncStopCnt + 1 after tpd;
          end if;
       end if;
    end process; 
