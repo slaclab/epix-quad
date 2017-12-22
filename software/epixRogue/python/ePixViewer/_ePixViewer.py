@@ -140,6 +140,8 @@ class Window(QtGui.QMainWindow, QObject):
         self.mouseY = 0
         self.image = QtGui.QImage()
         self.pixelTimeSeries = np.array([])
+        self.chAdata = np.array([])
+        self.chBdata = np.array([])
 
         #initialize data monitoring
         self.monitoringDataTraces = np.zeros((8,1), dtype='int32')
@@ -407,12 +409,12 @@ class Window(QtGui.QMainWindow, QObject):
         data  = data[16:-10]
         oscWords = len(data)
 
-        chAdata = -1.0 + data[0:int(oscWords/2)] * (2.0/2**14)
-        chBdata = -1.0 + data[int(oscWords/2): oscWords] * (2.0/2**14)
+        self.chAdata = -1.0 + data[0:int(oscWords/2)] * (2.0/2**14)
+        self.chBdata = -1.0 + data[int(oscWords/2): oscWords] * (2.0/2**14)
         
         if (self.LinePlot2_RB1.isChecked()):
-            self.lineDisplay2.update_plot(self.cbScopeCh0.isChecked(), "Scope Trace A", 'r',  chAdata, 
-                                            self.cbScopeCh1.isChecked(), "Scope Trace B", 'b',  chBdata)
+            self.lineDisplay2.update_plot(self.cbScopeCh0.isChecked(), "Scope Trace A", 'r',  self.chAdata, 
+                                            self.cbScopeCh1.isChecked(), "Scope Trace B", 'b',  self.chBdata)
         self.eventReaderScope.busy = False
        
 
@@ -502,7 +504,7 @@ class Window(QtGui.QMainWindow, QObject):
         if(not self.cbpixelTimeSeriesEnabled.isChecked()):
             self. clearPixelTimeSeriesLinePlot()
 
-    """Save the enabled series to file"""
+    """Save the enabled series to file, plot 1"""
     def SaveSeriesToFile(self):
         #open a pop up menu to set the filename
         self.filename = QtGui.QFileDialog.getOpenFileName(self, 'Save File', '', 'csv file (*.csv);; Any (*.*)')
@@ -521,6 +523,16 @@ class Window(QtGui.QMainWindow, QObject):
         if (self.cbpixelTimeSeriesEnabled.isChecked()):
             np.savetxt(os.path.splitext(self.filename)[0] + "_pixel" + os.path.splitext(self.filename)[1], self.pixelTimeSeries, fmt='%d', delimiter=',', newline='\n')
         
+
+    """Save the enabled monitoring series to file, plot 2"""
+    def SaveMonitoringSeriesToFile(self):
+        #open a pop up menu to set the filename
+        self.filename = QtGui.QFileDialog.getOpenFileName(self, 'Save File', '', 'csv file (*.csv);; Any (*.*)')
+        if (self.LinePlot2_RB1.isChecked()):
+            if (self.cbScopeCh0.isChecked()):
+                np.savetxt(os.path.splitext(self.filename)[0] + "_scopeA" + os.path.splitext(self.filename)[1], self.chAdata, fmt='%d', delimiter=',', newline='\n')
+            if (self.cbScopeCh1.isChecked()):
+                np.savetxt(os.path.splitext(self.filename)[0] + "_scopeB" + os.path.splitext(self.filename)[1], self.chBdata, fmt='%d', delimiter=',', newline='\n')
         
     def _paintEvent(self, e):
         qp = QtGui.QPainter()
@@ -1041,6 +1053,12 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         myParent.LinePlot2_RB1.setChecked(True)
         myParent.LinePlot2_RB2 = QRadioButton("Env. Monitoring")
 
+        # button save trace to file
+        btnSaveMonitoringSeriesToFile = QtGui.QPushButton("Save to file")
+        btnSaveMonitoringSeriesToFile.setMaximumWidth(150)
+        btnSaveMonitoringSeriesToFile.clicked.connect(myParent.SaveMonitoringSeriesToFile)
+        btnSaveMonitoringSeriesToFile.resize(btnSaveMonitoringSeriesToFile.minimumSizeHint())    
+
         # check boxes
         myParent.cbScopeCh0 = QtGui.QCheckBox('Channel 0')
         myParent.cbScopeCh1 = QtGui.QCheckBox('Channel 1')
@@ -1081,6 +1099,7 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         grid4.addWidget(myParent.cbEnvMonCh5, 3, 4)  
         grid4.addWidget(myParent.cbEnvMonCh6, 4, 4)  
         grid4.addWidget(myParent.cbEnvMonCh7, 5, 4)  
+        grid4.addWidget(btnSaveSeriesToFile,6, 1)
 
         # complete tab4
         tab4.setLayout(grid4)
