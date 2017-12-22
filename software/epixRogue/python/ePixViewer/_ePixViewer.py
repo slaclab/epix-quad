@@ -528,11 +528,14 @@ class Window(QtGui.QMainWindow, QObject):
     def SaveMonitoringSeriesToFile(self):
         #open a pop up menu to set the filename
         self.filename = QtGui.QFileDialog.getOpenFileName(self, 'Save File', '', 'csv file (*.csv);; Any (*.*)')
+        print("saveMonitoring")
         if (self.LinePlot2_RB1.isChecked()):
             if (self.cbScopeCh0.isChecked()):
-                np.savetxt(os.path.splitext(self.filename)[0] + "_scopeA" + os.path.splitext(self.filename)[1], self.chAdata, fmt='%d', delimiter=',', newline='\n')
+                print("channel0")
+                np.savetxt(os.path.splitext(self.filename)[0] + "_scope0" + os.path.splitext(self.filename)[1], self.chAdata, fmt='%d', delimiter=',', newline='\n')
             if (self.cbScopeCh1.isChecked()):
-                np.savetxt(os.path.splitext(self.filename)[0] + "_scopeB" + os.path.splitext(self.filename)[1], self.chBdata, fmt='%d', delimiter=',', newline='\n')
+                print("channel1")
+                np.savetxt(os.path.splitext(self.filename)[0] + "_scope1" + os.path.splitext(self.filename)[1], self.chBdata, fmt='%d', delimiter=',', newline='\n')
         
     def _paintEvent(self, e):
         qp = QtGui.QPainter()
@@ -1099,7 +1102,7 @@ class TabbedCtrlCanvas(QtGui.QTabWidget):
         grid4.addWidget(myParent.cbEnvMonCh5, 3, 4)  
         grid4.addWidget(myParent.cbEnvMonCh6, 4, 4)  
         grid4.addWidget(myParent.cbEnvMonCh7, 5, 4)  
-        grid4.addWidget(btnSaveSeriesToFile,6, 1)
+        grid4.addWidget(btnSaveMonitoringSeriesToFile,6, 1)
 
         # complete tab4
         tab4.setLayout(grid4)
