@@ -75,7 +75,7 @@ class EpixM32Array(pr.Device):
             analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]', offset=0x09000000, enabled=False, expand=False),
             analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]', offset=0x09000800, enabled=False, expand=False),
             #analog_devices.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]', offset=0x09001000, enabled=False, expand=False),
-            MicroblazeLog(name='MicroblazeLog', offset=0x0A000000, expand=False)))
+            MicroblazeLog(name='MicroblazeLog', offset=0x0A000000, enabled=False, expand=False)))
       
 
 class EpixM32ArrayFpgaRegisters(pr.Device):
@@ -509,7 +509,7 @@ class Epix100a(pr.Device):
             analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]', offset=0x14400000, enabled=False, expand=False),
             analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]', offset=0x14400800, enabled=False, expand=False),
             analog_devices.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]', offset=0x14401000, enabled=False, expand=False),
-            MicroblazeLog(name='MicroblazeLog', offset=0x18000000, expand=False)))
+            MicroblazeLog(name='MicroblazeLog', offset=0x18000000, enabled=False, expand=False)))
       
 
 class Epix100aFpgaRegisters(pr.Device):
@@ -682,7 +682,7 @@ class Epix10ka(pr.Device):
             analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]', offset=0x14400000, enabled=False, expand=False),
             analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]', offset=0x14400800, enabled=False, expand=False),
             analog_devices.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]', offset=0x14401000, enabled=False, expand=False),
-            MicroblazeLog(name='MicroblazeLog', offset=0x18000000, expand=False)))
+            MicroblazeLog(name='MicroblazeLog', offset=0x18000000, enabled=False, expand=False)))
       
 
 class Epix10kaFpgaRegisters(pr.Device):
