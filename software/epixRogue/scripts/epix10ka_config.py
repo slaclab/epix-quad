@@ -82,8 +82,9 @@ def main():
     parser.add_argument("-p", "--pixel", nargs=2, type=int, metavar=('row', 'col'),
                         help="pixel location")
     parser.add_argument("-y", "--yml", nargs=1, metavar=('YMLFILE'),
-                        help="yml config file.", required=True)
-
+                        help="yml config file.")
+    parser.add_argument("-w", "--write", nargs=1, metavar=('YMLFILE'),
+                        help="dump yml config for all ASICs.")
     args = parser.parse_args()
 
     if args.verbose:
@@ -94,12 +95,26 @@ def main():
     conf_log = logging.getLogger("epix10ka.conflog")
     conf_log.setLevel(myloglevel)
 
-    if args.yml:
-        try:
-            with open(args.yml[0]):
-                pass
-        except IOError as e:
-            conf_log.error("cannot open yaml config file [%s]", args.yml[0])
+    if args.write:
+        with ePixBoard() as board:
+            board.Epix10ka.Epix10kaAsic0.enable.set(True)
+            board.Epix10ka.Epix10kaAsic1.enable.set(True)
+            board.Epix10ka.Epix10kaAsic2.enable.set(True)
+            board.Epix10ka.Epix10kaAsic3.enable.set(True)
+            board.writeConfig(args.write[0])
+            conf_log.info("YML config dumped to [%s]", args.write[0])
+            return 0
+    else:
+        if args.yml:
+            try:
+                with open(args.yml[0]):
+                    pass
+            except IOError as e:
+                conf_log.error("cannot open yaml config file [%s]", args.yml[0])
+                return 1
+        else:
+            conf_log.error("YML config file is required.")
+            parser.print_help()
             return 1
 
     if args.asic:
@@ -217,6 +232,7 @@ def getbcol(col=0):
         bcol = 0x700 + col % EPIX10KACOLSPBNK  # default is bank0
 
     return bcol
+
 
 if __name__ == "__main__":
     main()
