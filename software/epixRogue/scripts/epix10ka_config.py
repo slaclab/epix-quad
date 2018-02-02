@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Configure epix10ka ASIC0 pixels/matrix
+Configure/Dump ePix10ka pixels/matrix
 
 :Author: Faisal Abu-Nimeh (abunimeh@slac.stanford.edu)
 :License: https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html
@@ -87,6 +87,7 @@ def main():
                         help="dump yml config for all ASICs.")
     args = parser.parse_args()
 
+    # set logging level
     if args.verbose:
         myloglevel = logging.DEBUG
     else:
@@ -95,8 +96,10 @@ def main():
     conf_log = logging.getLogger("epix10ka.conflog")
     conf_log.setLevel(myloglevel)
 
+    # we can either dump the current config in all asics or set a new config
     if args.write:
         with ePixBoard() as board:
+            # dump all configs regardless if ASICs are physically present or not
             board.Epix10ka.Epix10kaAsic0.enable.set(True)
             board.Epix10ka.Epix10kaAsic1.enable.set(True)
             board.Epix10ka.Epix10kaAsic2.enable.set(True)
@@ -105,6 +108,7 @@ def main():
             conf_log.info("YML config dumped to [%s]", args.write[0])
             return 0
     else:
+        # if we are configuring a new YML then check if it exist
         if args.yml:
             try:
                 with open(args.yml[0]):
@@ -118,14 +122,17 @@ def main():
             return 1
 
     if args.asic:
+        # we will always have a valid ASIC number regardless of what the user inputs
         asic = args.asic[0] % 4
         conf_log.info("Config ASIC %d" % (asic))
     else:
-        asic = 0
+        asic = 0  # default to asic 0 if user doesn't care
         conf_log.info("[DEFAULT] Config ASIC 0")
 
     with ePixBoard() as board:
+        # demand the FPGA to read the YML and config itself
         board.readConfig(args.yml[0])
+        # figure out which ASIC the user wants us to configure
         targetASIC = getattr(board.Epix10ka, 'Epix10kaAsic' + str(asic))
 
         # set entire matrix to a certain value
