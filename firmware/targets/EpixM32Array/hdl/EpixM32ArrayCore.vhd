@@ -407,46 +407,30 @@ begin
    ------------------------------------------
    -- clkIn     : 156.25 MHz PGP
    -- clkOut(0) : 100.00 MHz system clock
+   -- clkOut(1) : 200.00 MHz IDELAYCTRL clock
    U_CoreClockGen : entity work.ClockManager7
    generic map (
       INPUT_BUFG_G         => false,
       FB_BUFG_G            => true,
-      NUM_CLOCKS_G         => 1,
+      NUM_CLOCKS_G         => 2,
       CLKIN_PERIOD_G       => 6.4,
       DIVCLK_DIVIDE_G      => 5,
       CLKFBOUT_MULT_F_G    => 32.0,
       CLKOUT0_DIVIDE_F_G   => 10.0,
       CLKOUT0_PHASE_G      => 0.0,
-      CLKOUT0_DUTY_CYCLE_G => 0.5
+      CLKOUT0_DUTY_CYCLE_G => 0.5,
+      CLKOUT1_DIVIDE_G     => 5,
+      CLKOUT1_PHASE_G      => 0.0,
+      CLKOUT1_DUTY_CYCLE_G => 0.5,
+      CLKOUT1_RST_HOLD_G   => 32
    )
    port map (
       clkIn     => pgpClk,
       rstIn     => sysRst,
       clkOut(0) => coreClk,
+      clkOut(1) => iDelayCtrlClk,
       rstOut(0) => coreClkRst,
-      locked    => open
-   );
-   -- clkIn     : 156.25 MHz PGP
-   -- clkOut(0) : 200.00 MHz IDELAYCTRL clock
-   U_CalClockGen : entity work.ClockManager7
-   generic map (
-      INPUT_BUFG_G         => false,
-      FB_BUFG_G            => true,
-      NUM_CLOCKS_G         => 1,
-      CLKIN_PERIOD_G       => 6.4,
-      DIVCLK_DIVIDE_G      => 1,
-      --CLKFBOUT_MULT_F_G    => 6.0,
-      CLKFBOUT_MULT_F_G    => 4.0,
-      CLKOUT0_DIVIDE_F_G   => 3.125,
-      CLKOUT0_PHASE_G      => 0.0,
-      CLKOUT0_DUTY_CYCLE_G => 0.5,
-      CLKOUT0_RST_HOLD_G   => 32
-   )
-   port map (
-      clkIn     => pgpClk,
-      rstIn     => sysRst,
-      clkOut(0) => iDelayCtrlClk,
-      rstOut(0) => iDelayCtrlRst,
+      rstOut(1) => iDelayCtrlRst,
       locked    => open
    );
    

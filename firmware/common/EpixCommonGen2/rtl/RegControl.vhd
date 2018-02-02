@@ -237,7 +237,6 @@ begin
       axiSlaveRegister (regCon, x"080" & "00",  0, v.epixRegOut.requestStartupCal);
       axiSlaveRegister (regCon, x"080" & "00",  1, v.epixRegOut.startupAck);          -- set by Microblaze
       axiSlaveRegister (regCon, x"080" & "00",  2, v.epixRegOut.startupFail);         -- set by Microblaze
-      axiSlaveRegister (regCon, x"081" & "00",  0, v.epixRegOut.requestConfDump);
       
       axiSlaveRegister (regCon, x"090" & "00",  0, v.epixRegOut.pipelineDelayA0);
       axiSlaveRegister (regCon, x"091" & "00",  0, v.epixRegOut.pipelineDelayA1);
@@ -254,12 +253,6 @@ begin
       axiSlaveRegisterR(regCon, x"146" & "00",  0, epixStatus.envData(6));
       axiSlaveRegisterR(regCon, x"147" & "00",  0, epixStatus.envData(7));
       axiSlaveRegisterR(regCon, x"148" & "00",  0, epixStatus.envData(8));
-      
-      axiSlaveRegister (regCon, x"200" & "00",  0, v.epixRegOut.dbgReg);
-      
-      axiSlaveRegister (regCon, x"201" & "00",   0, v.epixRegOut.syncStartDly);
-      axiSlaveRegister (regCon, x"201" & "00",  16, v.epixRegOut.syncStopDly);
-      axiSlaveRegister (regCon, x"201" & "00",  24, v.epixRegOut.syncCntrl);
       
       axiSlaveDefault(regCon, v.axiWriteSlave, v.axiReadSlave, AXI_ERROR_RESP_G);
 

@@ -423,7 +423,7 @@ class Window(QtGui.QMainWindow, QObject):
         envData = np.zeros((8,1), dtype='int32')
         
         #exits if there is no 
-        if (rawData.isempty()) :        
+        if (len(rawData)==0) :        
             return false
         #removes header before displying the image
         for j in range(0,32):
@@ -532,10 +532,10 @@ class Window(QtGui.QMainWindow, QObject):
         if (self.LinePlot2_RB1.isChecked()):
             if (self.cbScopeCh0.isChecked()):
                 print("channel0")
-                np.savetxt(os.path.splitext(self.filename)[0] + "_scope0" + os.path.splitext(self.filename)[1], self.chAdata, fmt='%d', delimiter=',', newline='\n')
+                np.savetxt(os.path.splitext(self.filename)[0] + "_scope0" + os.path.splitext(self.filename)[1], self.chAdata, fmt='%f', delimiter=',', newline='\n')
             if (self.cbScopeCh1.isChecked()):
                 print("channel1")
-                np.savetxt(os.path.splitext(self.filename)[0] + "_scope1" + os.path.splitext(self.filename)[1], self.chBdata, fmt='%d', delimiter=',', newline='\n')
+                np.savetxt(os.path.splitext(self.filename)[0] + "_scope1" + os.path.splitext(self.filename)[1], self.chBdata, fmt='%f', delimiter=',', newline='\n')
         
     def _paintEvent(self, e):
         qp = QtGui.QPainter()

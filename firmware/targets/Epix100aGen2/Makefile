@@ -7,7 +7,7 @@ target: prom
 export PRJ_PART = XC7A200TSBG484-3
 
 # Define Firmware Version Number
-export PRJ_VERSION = 0xEA020006
+export PRJ_VERSION = 0xEA020007
 
 # Define the Microblaze source path
 export SDK_SRC_PATH = $(PROJ_DIR)/../../common/EpixCommonGen2/src/ePix100a
@@ -30,15 +30,15 @@ include ../../submodules/ruckus/system_vivado.mk
 #--                          Added FPGA flash programming over the PGP
 #--                          Old non AXIL components replaced by the new AXIL components
 #--                          Picoblaze replaced by Microblaze with AXIL log memory
-#-- 07/08/2016 (0xEA020005): New working copy version number (change date when released)
-#--                          Instantiated new SACI controller with AXI lite slave bus
+#-- 07/08/2016 (0xEA020005): Instantiated new SACI controller with AXI lite slave bus
 #--                          Two more AXI lite masters for SACI multi pixel interface and prepare for readout command
 #--                          Added PGP monitoring registers module
 #--                          Prepared DDR AXI controller. The onboard memory verified with Axi memory tester. DDR3 ready to be used.
 #--               
 #-- 08/07/2017 (0xEA020006): Changed it to git
 #--                          Added ssiCmdMaster to VC2 (EuXFEL to separate data and cmd channels) and kept it on VC0 for compatibility with older software
-#--                          
+#-- 02/02/2018 (0xEA020007): Added one more AXIL corssbar and extended registers module to fix the timing issues
+#--                          The register map was changed but the region mapped by the LCLS DAQ was not touched
 #--                          
 #--                          
 #--                          

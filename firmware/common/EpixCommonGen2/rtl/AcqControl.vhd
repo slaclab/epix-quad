@@ -59,6 +59,7 @@ entity AcqControl is
 
       -- Configuration
       epixConfig          : in    EpixConfigType;
+      epixConfigExt       : in    EpixConfigExtType;
 
       -- SACI Command
       saciReadoutReq      : out   std_logic;
@@ -75,7 +76,10 @@ entity AcqControl is
       asicGlblRst         : out   std_logic;
       asicAcq             : out   std_logic;
       asicSync            : out   std_logic;
-      asicRoClk           : out   std_logic
+      asicRoClk           : out   std_logic;
+      
+      -- external pulser output
+      extSync             : out   std_logic
 
    );
 end AcqControl;
@@ -138,9 +142,9 @@ architecture AcqControl of AcqControl is
    --signal asicSyncEndVecCmp : slv(31 downto 0);
    signal syncCntRst        : sl;
    signal asicSyncStart     : sl;
-   signal asicSyncStartCnt  : slv(15 downto 0);
+   signal asicSyncStartCnt  : slv(31 downto 0);
    signal asicSyncStop      : sl;
-   signal asicSyncStopCnt   : slv(7 downto 0);
+   signal asicSyncStopCnt   : slv(31 downto 0);
    
    -- Alternate R0 that can be used for "original" polarity
    -- (i.e., usually low except before ACQ and through readout)
@@ -208,9 +212,10 @@ begin
    asicClk     <= iAsicClk               when ePixConfig.manualPinControl(5) = '0' else
                   ePixConfig.asicPins(5) when ePixConfig.manualPinControl(5) = '1' else
                   'X';
-   asicSync    <= '0'                    when ePixConfig.syncCntrl = '0' else
+   asicSync    <= '0'                    when epixConfigExt.syncCntrl = '0' else
                    asicSyncMuxReg;
    
+   extSync     <= not asicSyncMuxReg;
    
    -- asicSync register
    process(sysClk) begin
@@ -223,9 +228,9 @@ begin
       end if;
    end process; 
    
-   asicSyncMux    <= asicSyncExt when ePixConfig.syncStartDly = 0 else (asicSyncExt and asicSyncStart);
-   asicSyncStart  <= '1' when asicSyncStartCnt = ePixConfig.syncStartDly else '0';
-   asicSyncStop   <= '1' when asicSyncStopCnt < ePixConfig.syncStopDly else '0';
+   asicSyncMux    <= asicSyncExt when epixConfigExt.syncStartDly = 0 else (asicSyncExt and asicSyncStart);
+   asicSyncStart  <= '1' when asicSyncStartCnt = epixConfigExt.syncStartDly else '0';
+   asicSyncStop   <= '1' when asicSyncStopCnt < epixConfigExt.syncStopDly else '0';
    asicSyncExt    <= iAsicSync or asicSyncStop;
    
    -- asicSync start delay counter
@@ -233,7 +238,7 @@ begin
       if rising_edge(sysClk) then
          if sysClkRst = '1' or syncCntRst = '1' then
             asicSyncStartCnt <= (others => '0') after tpd;     
-         elsif asicSyncStartCnt < ePixConfig.syncStartDly then
+         elsif asicSyncStartCnt < epixConfigExt.syncStartDly then
             asicSyncStartCnt <= asicSyncStartCnt + 1 after tpd;
          end if;
       end if;
@@ -244,7 +249,7 @@ begin
       if rising_edge(sysClk) then
          if sysClkRst = '1' or iAsicSync = '1' then
             asicSyncStopCnt <= (others => '0') after tpd;     
-         elsif asicSyncStopCnt < ePixConfig.syncStopDly then
+         elsif asicSyncStopCnt < epixConfigExt.syncStopDly then
             asicSyncStopCnt <= asicSyncStopCnt + 1 after tpd;
          end if;
       end if;

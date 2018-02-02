@@ -41,31 +41,6 @@ void calibReqHandler(void * data) {
    XIntc_Acknowledge(&intc, 0);
 }
 
-void confDumpReqHandler(void * data) {
-   uint32_t * request = (uint32_t *)data;
-   uint32_t asicMask, i, regIndex;
-   
-   Xil_Out32(EPIX_CFG_DUMP_REG, 0x00000000);
-   
-   asicMask = Xil_In32(EPIX_ASIC_MASK_REG);
-   
-   ssi_printf("CFG REQ %d\n", *request);
-   
-   // dump ASICs regs
-   
-   for (regIndex = 0; regIndex <= 21 && asicMask != 0; regIndex++) {
-      for (i = 0; i <= 3; i++) {
-         if (asicMask&(1<<i)) {
-            ssi_printf("A%d 0x%02X:0x%04X ", i, dumpAsicReg[regIndex][0]&0xFF, Xil_In32(BUS_OFFSET+asicOffset[i]+(dumpAsicReg[regIndex][0]<<2))&dumpAsicReg[regIndex][1]);
-         }
-      }
-      ssi_printf("\n");
-   }
-   
-   (*request)++;
-   
-   XIntc_Acknowledge(&intc, 1);
-}
 
 int main() { 
    
@@ -74,14 +49,11 @@ int main() {
    volatile uint32_t cfgReqNo = 0;
    
    Xil_Out32(EPIX_ADC_ALIGN_REG, 0x00000000);
-   Xil_Out32(EPIX_CFG_DUMP_REG, 0x00000000);
    XIntc_Initialize(&intc,XPAR_AXI_INTC_0_DEVICE_ID);
    microblaze_enable_interrupts();
    XIntc_Connect(&intc,0,(XInterruptHandler)calibReqHandler,(void*)&adcReq);
-   XIntc_Connect(&intc,1,(XInterruptHandler)confDumpReqHandler,(void*)&cfgReqNo);
    XIntc_Start(&intc,XIN_REAL_MODE);
    XIntc_Enable(&intc,0);
-   XIntc_Enable(&intc,1);
    
    ssi_printf_init(LOG_MEM_OFFSET, 1024*4);
    

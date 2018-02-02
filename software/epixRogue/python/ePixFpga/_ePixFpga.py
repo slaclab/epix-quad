@@ -503,13 +503,13 @@ class Epix100a(pr.Device):
             epix.Epix100aAsic(name='Epix100aAsic2', offset=0x00A00000*addrSize, hidden=False, enabled=False, expand=False),
             epix.Epix100aAsic(name='Epix100aAsic3', offset=0x00B00000*addrSize, hidden=False, enabled=False, expand=False),
             axi.AxiVersion(name="AxiVersion", description="AXI-Lite Version Module", memBase=None, offset=0x08000000, hidden =  False, expand=False),
-            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[0]', offset=0x14000000, channels=8, enabled=False, expand=False),
-            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[1]', offset=0x18000000, channels=8, enabled=False, expand=False),
-            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[1].Adc[0]', offset=0x1C000000, channels=4, enabled=False, expand=False),
-            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]', offset=0x20000000, enabled=False, expand=False),
-            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]', offset=0x20000800, enabled=False, expand=False),
-            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]', offset=0x20001000, enabled=False, expand=False),
-            MicroblazeLog(name='MicroblazeLog', offset=0x24000000, expand=False)))
+            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[0]', offset=0x14100000, channels=8, enabled=False, expand=False),
+            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[1]', offset=0x14200000, channels=8, enabled=False, expand=False),
+            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[1].Adc[0]', offset=0x14300000, channels=4, enabled=False, expand=False),
+            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]', offset=0x14400000, enabled=False, expand=False),
+            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]', offset=0x14400800, enabled=False, expand=False),
+            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]', offset=0x14401000, enabled=False, expand=False),
+            MicroblazeLog(name='MicroblazeLog', offset=0x18000000, expand=False)))
       
 
 class Epix100aFpgaRegisters(pr.Device):
@@ -589,7 +589,6 @@ class Epix100aFpgaRegisters(pr.Device):
       self.add(pr.Variable(name='RequestStartup',      description='Request startup sequence',                                offset=0x00000080*addrSize, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
       self.add(pr.Variable(name='StartupDone',         description='Startup sequence done',                                   offset=0x00000080*addrSize, bitSize=1,  bitOffset=1, base='bool', mode='RO'))
       self.add(pr.Variable(name='StartupFail',         description='Startup sequence failed',                                 offset=0x00000080*addrSize, bitSize=1,  bitOffset=2, base='bool', mode='RO'))
-      self.add(pr.Variable(name='RequestConfDump',     description='Request Conf. Dump',                                      offset=0x00000081*addrSize, bitSize=1,  bitOffset=0, base='bool', mode='WO'))
       self.add(pr.Variable(name='AdcPipelineDelayA0',  description='Number of samples to delay ADC reads of the ASIC0 chls',  offset=0x00000090*addrSize, bitSize=8,  bitOffset=0, base='hex',  mode='RW'))
       self.add(pr.Variable(name='AdcPipelineDelayA1',  description='Number of samples to delay ADC reads of the ASIC1 chls',  offset=0x00000091*addrSize, bitSize=8,  bitOffset=0, base='hex',  mode='RW'))
       self.add(pr.Variable(name='AdcPipelineDelayA2',  description='Number of samples to delay ADC reads of the ASIC2 chls',  offset=0x00000092*addrSize, bitSize=8,  bitOffset=0, base='hex',  mode='RW'))
@@ -668,7 +667,8 @@ class Epix10ka(pr.Device):
       super(self.__class__, self).__init__(**kwargs)
       self.add((
             Epix10kaFpgaRegisters(name="EpixFpgaRegisters", offset=0x00000000),
-            Epix10kADouts(name="Epix10kADouts", offset=0x28000000, expand=False),
+            Epix10kaFpgaExtRegisters(name="EpixFpgaExtRegisters", offset=0x10000000),
+            Epix10kADouts(name="Epix10kADouts", offset=0x1C000000, expand=False),
             OscilloscopeRegisters(name='Oscilloscope', offset=0x00000140, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum),
             pgp.Pgp2bAxi(name='Pgp2bAxi', offset=0x00300000, expand=False),
             epix.Epix10kaAsic(name='Epix10kaAsic0', offset=0x02000000, enabled=False, expand=False),
@@ -676,13 +676,13 @@ class Epix10ka(pr.Device):
             epix.Epix10kaAsic(name='Epix10kaAsic2', offset=0x02800000, enabled=False, expand=False),
             epix.Epix10kaAsic(name='Epix10kaAsic3', offset=0x02C00000, enabled=False, expand=False),
             axi.AxiVersion(offset=0x08000000),
-            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[0]', offset=0x14000000, channels=8, enabled=False, expand=False),
-            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[1]', offset=0x18000000, channels=8, enabled=False, expand=False),
-            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[1].Adc[0]', offset=0x1C000000, channels=4, enabled=False, expand=False),
-            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]', offset=0x20000000, enabled=False, expand=False),
-            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]', offset=0x20000800, enabled=False, expand=False),
-            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]', offset=0x20001000, enabled=False, expand=False),
-            MicroblazeLog(name='MicroblazeLog', offset=0x24000000, expand=False)))
+            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[0]', offset=0x14100000, channels=8, enabled=False, expand=False),
+            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[1]', offset=0x14200000, channels=8, enabled=False, expand=False),
+            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[1].Adc[0]', offset=0x14300000, channels=4, enabled=False, expand=False),
+            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]', offset=0x14400000, enabled=False, expand=False),
+            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]', offset=0x14400800, enabled=False, expand=False),
+            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]', offset=0x14401000, enabled=False, expand=False),
+            MicroblazeLog(name='MicroblazeLog', offset=0x18000000, expand=False)))
       
 
 class Epix10kaFpgaRegisters(pr.Device):
@@ -763,7 +763,6 @@ class Epix10kaFpgaRegisters(pr.Device):
       self.add(pr.Variable(name='RequestStartup',      description='Request startup sequence',                                offset=0x00000080*addrSize, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
       self.add(pr.Variable(name='StartupDone',         description='Startup sequence done',                                   offset=0x00000080*addrSize, bitSize=1,  bitOffset=1, base='bool', mode='RO'))
       self.add(pr.Variable(name='StartupFail',         description='Startup sequence failed',                                 offset=0x00000080*addrSize, bitSize=1,  bitOffset=2, base='bool', mode='RO'))
-      self.add(pr.Variable(name='RequestConfDump',     description='Request Conf. Dump',                                      offset=0x00000081*addrSize, bitSize=1,  bitOffset=0, base='bool', mode='WO'))
       self.add(pr.Variable(name='AdcPipelineDelayA0',  description='Number of samples to delay ADC reads of the ASIC0 chls',  offset=0x00000090*addrSize, bitSize=8,  bitOffset=0, base='hex',  mode='RW'))
       self.add(pr.Variable(name='AdcPipelineDelayA1',  description='Number of samples to delay ADC reads of the ASIC1 chls',  offset=0x00000091*addrSize, bitSize=8,  bitOffset=0, base='hex',  mode='RW'))
       self.add(pr.Variable(name='AdcPipelineDelayA2',  description='Number of samples to delay ADC reads of the ASIC2 chls',  offset=0x00000092*addrSize, bitSize=8,  bitOffset=0, base='hex',  mode='RW'))
@@ -794,6 +793,43 @@ class Epix10kaFpgaRegisters(pr.Device):
       self.add(pr.Command(name='counterReset',  description='Counter Reset',      function='self.counter.post(0)'))
       self.add(pr.Command(name='testCpsw',      description='Test CPSW',          function=collections.OrderedDict({ 'masterResetVar': 1, 'usleep': 100, 'counter': 1 })))
   
+      # Overwrite reset calls with local functions
+      #self.setResetFunc(self.resetFunc)
+
+   def cmdFpgaReload(dev,cmd,arg):
+      """Example command function"""
+      dev.Version.post(1)
+   
+   def resetFunc(dev,rstType):
+      """Application specific reset function"""
+      if rstType == 'soft':
+         print('AxiVersion countReset')
+      elif rstType == 'hard':
+         dev.masterResetVar.post(1)
+      elif rstType == 'count':
+         print('AxiVersion countReset')
+
+   @staticmethod   
+   def frequencyConverter(self):
+      def func(dev, var):         
+         return '{:.3f} kHz'.format(1/(self.clkPeriod * self._count(var.dependencies)) * 1e-3)
+      return func
+
+
+class Epix10kaFpgaExtRegisters(pr.Device):
+   def __init__(self, **kwargs):
+      """Create the configuration device for Epix"""
+      super().__init__(description='Epix Extended Configuration Registers', **kwargs)
+      
+      #In order to easely compare GedDAQ address map with the eprix rogue address map 
+      #it is defined the addrSize variable
+      addrSize = 4	
+      
+      self.add(pr.Variable(name='DebugOut',            description='DebugOut',         offset=0x00000200*addrSize, bitSize=5,  bitOffset=0, base='uint', mode='RW'))
+      self.add(pr.Variable(name='SyncCntrlEn',         description='SyncCntrlEn',      offset=0x00000201*addrSize, bitSize=1,  bitOffset=0, base='bool', mode='RW'))
+      self.add(pr.Variable(name='syncStopDly',         description='syncStopDly',      offset=0x00000202*addrSize, bitSize=32, bitOffset=0, base='uint', mode='RW'))
+      self.add(pr.Variable(name='syncStartDly',        description='syncStartDly',     offset=0x00000203*addrSize, bitSize=32, bitOffset=0, base='uint', mode='RW'))
+      
       # Overwrite reset calls with local functions
       #self.setResetFunc(self.resetFunc)
 

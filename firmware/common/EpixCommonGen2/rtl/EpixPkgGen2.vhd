@@ -20,7 +20,7 @@ package EpixPkgGen2 is
    type AsicType is (EPIX100A_C, EPIX10KA_C, EPIX10KP_C, EPIXS_C);
 
    -- AXI-Lite Constants
-   constant NUM_AXI_MASTER_SLOTS_C : natural := 14;
+   constant NUM_AXI_MASTER_SLOTS_C : natural := 11;
    constant NUM_AXI_SLAVE_SLOTS_C : natural := 4;
    
    constant EPIXREGS_AXI_INDEX_C    : natural := 0;
@@ -30,14 +30,11 @@ package EpixPkgGen2 is
    constant SACIREGS_AXI_INDEX_C    : natural := 4;
    constant VERSION_AXI_INDEX_C     : natural := 5;
    constant BOOTMEM_AXI_INDEX_C     : natural := 6;
-   constant ADCTEST_AXI_INDEX_C     : natural := 7;
-   constant ADC0_RD_AXI_INDEX_C     : natural := 8;
-   constant ADC1_RD_AXI_INDEX_C     : natural := 9;
-   constant ADC2_RD_AXI_INDEX_C     : natural := 10;
-   constant ADC_CFG_AXI_INDEX_C     : natural := 11;
-   constant MEM_LOG_AXI_INDEX_C     : natural := 12;
-   constant DOUT10KA_AXI_INDEX_C    : natural := 13;
-   constant TESTMEM_AXI_INDEX_C     : natural := 14;
+   constant REGSEXT_AXI_INDEX_C     : natural := 7;
+   constant ADC_AXI_INDEX_C         : natural := 8;
+   constant MEM_LOG_AXI_INDEX_C     : natural := 9;
+   constant DOUT10KA_AXI_INDEX_C    : natural := 10;
+   constant TESTMEM_AXI_INDEX_C     : natural := 11;
    
    constant EPIXREGS_AXI_BASE_ADDR_C  : slv(31 downto 0) := X"00000000";
    constant PREPRDOUT_AXI_BASE_ADDR_C : slv(31 downto 0) := X"00100000";
@@ -46,14 +43,12 @@ package EpixPkgGen2 is
    constant SACIREGS_AXI_BASE_ADDR_C  : slv(31 downto 0) := X"02000000";
    constant VERSION_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"08000000";
    constant BOOTMEM_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"0C000000";
-   constant ADCTEST_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"10000000";
-   constant ADC0_RD_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"14000000";
-   constant ADC1_RD_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"18000000";
-   constant ADC2_RD_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"1C000000";
-   constant ADC_CFG_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"20000000";
-   constant MEM_LOG_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"24000000";
-   constant DOUT10KA_AXI_BASE_ADDR_C  : slv(31 downto 0) := X"28000000";
-   constant TESTMEM_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"2C000000";
+   constant REGSEXT_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"10000000";
+   constant ADC_AXI_BASE_ADDR_C       : slv(31 downto 0) := X"14000000";
+   constant MEM_LOG_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"18000000";
+   constant DOUT10KA_AXI_BASE_ADDR_C  : slv(31 downto 0) := X"1C000000";
+   constant TESTMEM_AXI_BASE_ADDR_C   : slv(31 downto 0) := X"20000000";   
+   
    
    constant AXI_CROSSBAR_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0) := (
       EPIXREGS_AXI_INDEX_C    => (
@@ -84,24 +79,12 @@ package EpixPkgGen2 is
          baseAddr             => BOOTMEM_AXI_BASE_ADDR_C,
          addrBits             => 26,
          connectivity         => x"FFFF"),
-      ADCTEST_AXI_INDEX_C     => (
-         baseAddr             => ADCTEST_AXI_BASE_ADDR_C,
+      REGSEXT_AXI_INDEX_C     => (
+         baseAddr             => REGSEXT_AXI_BASE_ADDR_C,
          addrBits             => 26,
          connectivity         => x"FFFF"),
-      ADC0_RD_AXI_INDEX_C     => (
-         baseAddr             => ADC0_RD_AXI_BASE_ADDR_C,
-         addrBits             => 26,
-         connectivity         => x"FFFF"),
-      ADC1_RD_AXI_INDEX_C      => (
-         baseAddr             => ADC1_RD_AXI_BASE_ADDR_C,
-         addrBits             => 26,
-         connectivity         => x"FFFF"),
-      ADC2_RD_AXI_INDEX_C     => (
-         baseAddr             => ADC2_RD_AXI_BASE_ADDR_C,
-         addrBits             => 26,
-         connectivity         => x"FFFF"),
-      ADC_CFG_AXI_INDEX_C     => (
-         baseAddr             => ADC_CFG_AXI_BASE_ADDR_C,
+      ADC_AXI_INDEX_C         => (
+         baseAddr             => ADC_AXI_BASE_ADDR_C,
          addrBits             => 26,
          connectivity         => x"FFFF"),
       MEM_LOG_AXI_INDEX_C     => (
@@ -118,7 +101,6 @@ package EpixPkgGen2 is
 --         connectivity         => x"FFFF")
    );
    
-   constant NUM_FAST_ADCS_C  : natural := 3;
    constant NUM_ASICS_C      : natural := 4;
    
    type EpixConfigType is record
@@ -162,11 +144,6 @@ package EpixPkgGen2 is
       startupFail        : sl;
       pgpTrigEn          : sl;
       monitorEnable      : sl;
-      requestConfDump    : sl;
-      dbgReg             : slv(4 downto 0);
-      syncCntrl          : sl;
-      syncStopDly        : slv(7 downto 0);
-      syncStartDly       : slv(15 downto 0);
    end record;
    type EpixConfigArray is array (natural range <>) of EpixConfigType;
    constant EPIX_CONFIG_INIT_C : EpixConfigType := (
@@ -209,8 +186,17 @@ package EpixPkgGen2 is
       startupAck         => '0',
       startupFail        => '0',
       pgpTrigEn          => '0',
-      monitorEnable      => '0',
-      requestConfDump    => '0',
+      monitorEnable      => '0'
+   );
+   
+   type EpixConfigExtType is record
+      dbgReg             : slv(4 downto 0);
+      syncCntrl          : sl;
+      syncStopDly        : slv(31 downto 0);
+      syncStartDly       : slv(31 downto 0);
+   end record;
+   type EpixConfigExtArray is array (natural range <>) of EpixConfigExtType;
+   constant EPIX_CONFIG_EXT_INIT_C : EpixConfigExtType := (
       dbgReg             => (others => '0'),
       syncCntrl          => '0',
       syncStopDly        => (others => '0'),
