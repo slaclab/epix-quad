@@ -667,7 +667,7 @@ class Epix10ka(pr.Device):
       super(self.__class__, self).__init__(**kwargs)
       self.add((
             Epix10kaFpgaRegisters(name="EpixFpgaRegisters", offset=0x00000000),
-            Epix10kaFpgaExtRegisters(name="EpixFpgaExtRegisters", offset=0x10000000),
+            Epix10kaFpgaExtRegisters(name="EpixFpgaExtRegisters", offset=0x10000000, enabled=False, expand=False),
             Epix10kADouts(name="Epix10kADouts", offset=0x1C000000, expand=False),
             OscilloscopeRegisters(name='Oscilloscope', offset=0x00000140, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum),
             pgp.Pgp2bAxi(name='Pgp2bAxi', offset=0x00300000, expand=False),
