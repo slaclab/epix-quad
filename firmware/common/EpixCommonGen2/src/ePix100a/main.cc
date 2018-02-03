@@ -46,7 +46,6 @@ int main() {
    
    uint32_t res, i, adcReqNo = 0;
    volatile uint32_t adcReq = 0;
-   volatile uint32_t cfgReqNo = 0;
    
    Xil_Out32(EPIX_ADC_ALIGN_REG, 0x00000000);
    XIntc_Initialize(&intc,XPAR_AXI_INTC_0_DEVICE_ID);
