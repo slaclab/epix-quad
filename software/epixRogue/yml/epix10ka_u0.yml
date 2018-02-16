@@ -76,7 +76,7 @@ ePixBoard:
       TriggerDelay: '0'
     Pgp2bAxi:
       enable: 'True'
-      Loopback: '0x0' 
+      Loopback: 'Off'
       LocData: '0x0'
       LocDataEn: 'False'
       AutoStatus: 'False'

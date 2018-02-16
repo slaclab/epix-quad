@@ -476,6 +476,7 @@ if (TEST_WEIGHTINGFUNCTION):
     #cols = np.arange(0, 5, 1)
     for delayIndex in range(0,numDelays):
         delay = initialDelay + delayIndex * delayStepSize
+        ePixBoard.Epix10ka.EpixFpgaRegisters.RunTriggerDelay.set(delay)
         fullFileName = fileFolders[0][0]+fileNameRoot+str(delay)+FileNameRun
         print(fullFileName)
         #loopIndex = loopIndex + 1 

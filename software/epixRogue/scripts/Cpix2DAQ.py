@@ -131,6 +131,7 @@ class EpixBoard(pyrogue.Root):
         @self.command()
         def Trigger():
             self.Cpix2.Cpix2FpgaRegisters.EnSingleFrame.post(True)
+            self.Cpix2.Cpix2Asic1.Pulser.set(self.Cpix2.Cpix2Asic1.Pulser.get()+1)
 
         self.add(pyrogue.RunControl(name = 'runControl', description='Run Controller cPix2', cmd=self.Trigger, rates={1:'1 Hz', 2:'2 Hz', 4:'4 Hz', 8:'8 Hz', 10:'10 Hz', 30:'30 Hz', 60:'60 Hz', 120:'120 Hz'}))
         #set timeout value
