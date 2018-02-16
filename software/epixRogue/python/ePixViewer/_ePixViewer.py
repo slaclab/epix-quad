@@ -121,6 +121,7 @@ class Window(QtGui.QMainWindow, QObject):
         # weak way to sync frame reader and display
         self.readFileDelay = 0.1
         self.displayBusy = False
+        self.displayBysyCounter = 0
 
         # limits the rate of data to 1/ProcessFramePeriod
         # only single frame images work with this option
@@ -337,11 +338,26 @@ class Window(QtGui.QMainWindow, QObject):
         if (readyForDisplay):
             if (not self.displayBusy): 
                 self.displayImageFromReader(imageData = self.rawImgFrame)
-            else: print("Display busy")
+            else: 
+                print("Display busy (%d)" %(self.displayBysyCounter))
+                self.displayBysyCounter = self.displayBysyCounter + 1
+                if (self.displayBysyCounter> 10):
+                    self.displayBysyCounter = 0
+                    self.displayBusy = False
+                    # frees the memory since it has been used already enabling a new frame logic to start fresh
+                    self.rawImgFrame = []
+                    self.eventReader.frameData = bytearray()
+                    self.frameDataArray = [bytearray(),bytearray(),bytearray(),bytearray()]
+                    newRawData = bytearray()
+                    frameComplete = 0 
+                    readyForDisplay = 0
+                    
+
         if (frameComplete == 0 and readyForDisplay == 1):
         # in this condition we have data about two different images
         # since a new image has been sent and the old one is incomplete
         # the next line preserves the new data to be used with the next frame
+            print("Incomplete frame")
             self.rawImgFrame = newRawData
         if (frameComplete == 1):
         # frees the memory since it has been used alreay enabling a new frame logic to start fresh
@@ -670,7 +686,7 @@ class EventReader(rogue.interfaces.stream.Slave):
         if (self.busy): 
             self.busyTimeout = self.busyTimeout + 1
             if (PRINT_VERBOSE): print("Event Reader Busy: " +  str(self.busyTimeout))
-            if self.busyTimeout == 10:
+            if self.busyTimeout > 10:
                 self.busy = False
         else:
             self.busyTimeout = 0
@@ -839,7 +855,7 @@ class MplCanvas(FigureCanvas):
         if (len(image)>0):
             #self.axes.gray()        
             if (contrast != None):
-                self.cax = self.axes.imshow(image, interpolation='nearest', cmap='gray',vmin=contrast[1], vmax=contrast[0])
+                self.cax = self.axes.imshow(image, interpolation='nearest', cmap='gray',vmin=np.minimum(contrast[0], contrast[1]), vmax=np.maximum(contrast[0], contrast[1]))
             else:
                 self.cax = self.axes.imshow(image, interpolation='nearest', cmap='gray')
 
