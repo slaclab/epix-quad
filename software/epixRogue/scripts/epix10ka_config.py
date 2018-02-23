@@ -85,6 +85,8 @@ def main():
                         help="yml config file.")
     parser.add_argument("-w", "--write", nargs=1, metavar=('YMLFILE'),
                         help="dump yml config for all ASICs.")
+    parser.add_argument("-o", "--loadmatrix", nargs=1, metavar=('CSVFILE'),
+                        help="dump yml config for all ASICs.")
     args = parser.parse_args()
 
     # set logging level
@@ -217,6 +219,36 @@ def main():
                     wr.writerows(configmatrix)
             except IOError as e:
                 conf_log.error("cannot dump to csv file")
+                return 1
+
+        # load matrix from csv file to ASIC
+        if args.loadmatrix:
+            try:
+                with open(args.loadmatrix[0], 'r') as fcsv:
+                    csvreadfile = csv.reader(fcsv)
+                    configmatrix = list(csvreadfile)
+                    crows = len(configmatrix)
+                    ccols = len(configmatrix[0])
+                    if crows != EPIX10KAROWS or ccols != EPIX10KACOLS:
+                        conf_log.error("[%s] has wrong dimensions", args.loadmatrix[0])
+                        return 1
+
+                    conf_log.info("loading csv matrix config...")
+                    # targetASIC.PrepareMultiConfig()
+                    targetASIC._rawWrite(0x00008000*4, 0)
+                    for c in range(EPIX10KACOLS):  # loop column
+                        ibcol = getbcol(c)  # get column word
+                        for r in range(EPIX10KAROWS-1):  # loop row, except last row.
+                            # go thru pixel read sequence
+                            # targetASIC.RowCounter.set(r)
+                            targetASIC._rawWrite(0x00006011*4, r)
+                            # targetASIC.ColCounter.set(ibcol)
+                            targetASIC._rawWrite(0x00006013*4, ibcol)
+                            # targetASIC.WritePixelData.set(config)
+                            targetASIC._rawWrite(0x00005000*4, (int(configmatrix[r][c])))
+                    conf_log.info("csv matrix config is loaded")
+            except IOError as e:
+                conf_log.error("cannot open csv matrix file [%s]", args.loadmatrix[0])
                 return 1
 
 
