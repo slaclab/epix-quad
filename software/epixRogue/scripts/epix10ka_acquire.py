@@ -76,6 +76,8 @@ def main():
                         help="yml config file.", required=True)
     parser.add_argument("-t", "--time", nargs=1, metavar=('DURATION'), type=float,
                         help="total acquisition time.", required=True)
+    parser.add_argument("-r", "--trbit", nargs=1, metavar=('trbit'), type=int,
+                        help="Set trbit.")
     args = parser.parse_args()
 
     if args.verbose:
@@ -114,8 +116,8 @@ def main():
     board = pyrogue.Root(name='ePixBoard', description='ePix 10ka Board')
 
     # open pgpcard file descriptor
-    pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0', 0, 0)  # Data & cmds
-    pgpVc1 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0', 0, 1)  # Registers for ePix board
+    pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_1', 0, 0)  # Data & cmds
+    pgpVc1 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_1', 0, 1)  # Registers for ePix board
     acq_log.debug("PGP Card Version: %x" % (pgpVc0.getInfo().version))
 
     # config path
@@ -186,10 +188,23 @@ def main():
 
     board.dataWriter.dataFile.set(ofilename)  # tell datawriter where to write data
 
+    if args.trbit:
+        ttr = False if args.trbit[0] == 0 else True
+        board.Epix10ka.Epix10kaAsic0.trbit.set(ttr)
+        board.Epix10ka.Epix10kaAsic1.trbit.set(ttr)
+        board.Epix10ka.Epix10kaAsic2.trbit.set(ttr)
+        board.Epix10ka.Epix10kaAsic3.trbit.set(ttr)
+
     # enable test bits if we are doing linearity tests
-    if args.linearitytest and args.asic:
-        targetASIC.test.set(True)
-        targetASIC.atest.set(True)
+    if args.linearitytest:
+        board.Epix10ka.Epix10kaAsic0.test.set(True)
+        board.Epix10ka.Epix10kaAsic1.test.set(True)
+        board.Epix10ka.Epix10kaAsic2.test.set(True)
+        board.Epix10ka.Epix10kaAsic3.test.set(True)
+        board.Epix10ka.Epix10kaAsic0.atest.set(True)
+        board.Epix10ka.Epix10kaAsic1.atest.set(True)
+        board.Epix10ka.Epix10kaAsic2.atest.set(True)
+        board.Epix10ka.Epix10kaAsic3.atest.set(True)
         acq_log.info("Enable Test Bits")
 
     acq_log.info("Finished configuration. Acquiring data ...")
@@ -207,11 +222,17 @@ def main():
     # acquire data for specific duration
     board.Epix10ka.EpixFpgaRegisters.AutoDaqEnable.set(True)
     board.Epix10ka.EpixFpgaRegisters.AutoRunEnable.set(True)
-    if args.linearitytest and args.asic:
+    if args.linearitytest:
         time.sleep(0.5)
-        targetASIC.PulserR.post(True)
+        board.Epix10ka.Epix10kaAsic0.PulserR.post(True)
+        board.Epix10ka.Epix10kaAsic1.PulserR.post(True)
+        board.Epix10ka.Epix10kaAsic2.PulserR.post(True)
+        board.Epix10ka.Epix10kaAsic3.PulserR.post(True)
         time.sleep(0.5)
-        targetASIC.PulserR.post(False)
+        board.Epix10ka.Epix10kaAsic0.PulserR.post(False)
+        board.Epix10ka.Epix10kaAsic1.PulserR.post(False)
+        board.Epix10ka.Epix10kaAsic2.PulserR.post(False)
+        board.Epix10ka.Epix10kaAsic3.PulserR.post(False)
         acq_log.info("Test Pulse Sent")
 
     time.sleep(args.time[0])  # acquisition time
