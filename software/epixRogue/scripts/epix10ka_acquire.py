@@ -78,6 +78,8 @@ def main():
                         help="total acquisition time.", required=True)
     parser.add_argument("-r", "--trbit", nargs=1, metavar=('trbit'), type=int,
                         help="Set trbit.")
+    parser.add_argument("-h", "--hrtest", nargs=1, metavar=('hrtest'), type=int,
+                        help="Set hrtest.")
     args = parser.parse_args()
 
     if args.verbose:
@@ -188,12 +190,23 @@ def main():
 
     board.dataWriter.dataFile.set(ofilename)  # tell datawriter where to write data
 
+    # allow user to override tr_bit
+    # this is useful for automating gain modes
     if args.trbit:
         ttr = False if args.trbit[0] == 0 else True
         board.Epix10ka.Epix10kaAsic0.trbit.set(ttr)
         board.Epix10ka.Epix10kaAsic1.trbit.set(ttr)
         board.Epix10ka.Epix10kaAsic2.trbit.set(ttr)
         board.Epix10ka.Epix10kaAsic3.trbit.set(ttr)
+
+    # allow user to override hrtest
+    # this is useful for automating gain modes
+    if args.hrtest:
+        thr = False if args.hrtest[0] == 0 else True
+        board.Epix10ka.Epix10kaAsic0.hrtest.set(thr)
+        board.Epix10ka.Epix10kaAsic1.hrtest.set(thr)
+        board.Epix10ka.Epix10kaAsic2.hrtest.set(thr)
+        board.Epix10ka.Epix10kaAsic3.hrtest.set(thr)
 
     # enable test bits if we are doing linearity tests
     if args.linearitytest:
