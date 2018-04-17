@@ -78,7 +78,7 @@ def main():
                         help="total acquisition time.", required=True)
     parser.add_argument("-r", "--trbit", nargs=1, metavar=('trbit'), type=int,
                         help="Set trbit.")
-    parser.add_argument("-h", "--hrtest", nargs=1, metavar=('hrtest'), type=int,
+    parser.add_argument("-x", "--hrtest", nargs=1, metavar=('hrtest'), type=int,
                         help="Set hrtest.")
     args = parser.parse_args()
 
