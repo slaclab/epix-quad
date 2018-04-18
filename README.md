@@ -1,5 +1,3 @@
-Development Board Firmware/Software Examples
-
 # Before you clone the GIT repository
 
 1) Create a github account:
