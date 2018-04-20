@@ -68,7 +68,7 @@ pyrogue.streamConnect(pgpVc3, dataWriter.getChannel(0x3))
 #After git hash builds 9ac7dcd (8/4/2017) commands for epix camera can be sent on VC0 or VC2
 #this is to fulfill a request by EUXFEL project.
 cmd = rogue.protocols.srp.Cmd()
-VC_NUM_ID = 2
+VC_NUM_ID = 0
 if (VC_NUM_ID == 0):
    pyrogue.streamConnect(cmd, pgpVc0)
 elif (VC_NUM_ID == 2):
@@ -138,14 +138,14 @@ class MyRunControl(pyrogue.RunControl):
                 self._thread.start() 
             else: 
                 self._thread.join() 
-                self._thread = None
+                self._thread = None 
 
 
     def _run(self):
         self.runCount.set(0) 
         self._last = int(time.time()) 
-
-
+ 
+ 
         while (self.runState.value() == 'Running'): 
             delay = 1.0 / ({value: key for key,value in self.runRate.enum.items()}[self._runRate]) 
             time.sleep(delay) 
@@ -155,6 +155,7 @@ class MyRunControl(pyrogue.RunControl):
             if self._last != int(time.time()): 
                 self._last = int(time.time()) 
                 self.runCount._updated() 
+
 
 
             
@@ -170,7 +171,7 @@ class EpixBoard(pyrogue.Root):
 
         @self.command()
         def Trigger():
-            print("Sending cmd through VC" , VC_NUM_ID)
+            #print("Sending cmd through VC" , VC_NUM_ID)
             cmd.sendCmd(0, 0)
         
         # Add Devices, defined at AxiVersionEpix100a file

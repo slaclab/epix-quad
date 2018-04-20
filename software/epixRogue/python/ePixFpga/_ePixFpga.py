@@ -502,7 +502,7 @@ class Epix100a(pr.Device):
             epix.Epix100aAsic(name='Epix100aAsic1', offset=0x00900000*addrSize, hidden=False, enabled=False, expand=False),
             epix.Epix100aAsic(name='Epix100aAsic2', offset=0x00A00000*addrSize, hidden=False, enabled=False, expand=False),
             epix.Epix100aAsic(name='Epix100aAsic3', offset=0x00B00000*addrSize, hidden=False, enabled=False, expand=False),
-            axi.AxiVersion(name="AxiVersion", description="AXI-Lite Version Module", memBase=None, offset=0x08000000, hidden =  False, expand=False),
+            axi.AxiVersion(name="AxiVersion", description="AXI-Lite Version Module", memBase=None, offset=0x08000000, hidden =  False, expand=False,  enabled=False),
             analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[0]', offset=0x14100000, channels=8, enabled=False, expand=False),
             analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[1]', offset=0x14200000, channels=8, enabled=False, expand=False),
             analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[1].Adc[0]', offset=0x14300000, channels=4, enabled=False, expand=False),
