@@ -40,7 +40,7 @@ entity Deserializer is
       IDELAYCTRL_FREQ_G : real      := 200.0;
       IODELAY_GROUP_G   : string    := "DEFAULT_GROUP";
       INVERT_SDATA_G    : boolean   := false;
-      IDLE_WORDS_SYNC_G : natural   := 128
+      IDLE_WORDS_SYNC_G : natural   := 2048
    );
    port ( 
       -- global signals
@@ -123,6 +123,8 @@ architecture RTL of Deserializer is
    type RegType is record
       resync         : slv(7 downto 0);
       iserdeseOutD   : Slv10Array(63 downto 0);
+      delay          : slv(4 downto 0);
+      delayEn        : sl;
       axilWriteSlave : AxiLiteWriteSlaveType;
       axilReadSlave  : AxiLiteReadSlaveType;
    end record;
@@ -130,6 +132,8 @@ architecture RTL of Deserializer is
    constant REG_INIT_C : RegType := (
       resync         => (others=>'0'),
       iserdeseOutD   => (others=>(others=>'0')),
+      delay          => (others=>'0'),
+      delayEn        => '0',
       axilWriteSlave => AXI_LITE_WRITE_SLAVE_INIT_C,
       axilReadSlave  => AXI_LITE_READ_SLAVE_INIT_C
    );
@@ -305,7 +309,11 @@ begin
       
       v  := serdR;   -- byteClk
       vr := axilR;   -- axilClk
-      
+
+      v.delay   :=  vr.delay;
+      v.delayEn :=  vr.delayEn;
+
+      v.slip    := '0';
       -------------------------------------------------------------------------------------------------
       -- AXIL Interface (axilClk)
       -------------------------------------------------------------------------------------------------
@@ -321,7 +329,8 @@ begin
       axiSlaveRegister (axilEp, X"04", 0, vr.resync);
       axiSlaveRegisterR(axilEp, X"08", 0, serdR.locked);
       axiSlaveRegisterR(axilEp, X"0C", 0, std_logic_vector(to_unsigned(serdR.lockErrCnt,16)));
-      
+      axiSlaveRegister (axilEp, X"10", 0, vr.delay);
+      axiSlaveRegister (axilEp, X"14", 0, vr.delayEn);
       for i in 0 to 63 loop
          axiSlaveRegisterR(axilEp, std_logic_vector(to_unsigned(256+(i*4), 12)), 0, axilR.iserdeseOutD(i));
       end loop;
@@ -341,8 +350,8 @@ begin
       -------------------------------------------------------------------------------------------------
       -- Bit slip state machine (byteClk)
       -------------------------------------------------------------------------------------------------
-      v.slip  := '0';
-      v.delayEn := '0';
+      --v.slip  := '0';
+      -- v.delayEn := '0';
       
       case (serdR.state) is
          when BIT_SLIP_S =>
@@ -372,7 +381,7 @@ begin
                   if serdR.tryCnt /= 31 then
                      v.tryCnt := serdR.tryCnt + 1;
                   else
-                     v.delay := std_logic_vector(unsigned(delayCurr) + to_unsigned(1, 5));
+                     v.delay := std_logic_vector(unsigned(delayCurr));-- + to_unsigned(1, 5));
                      v.delayEn := '1';
                      v.tryCnt := 0;
                   end if;
@@ -393,7 +402,7 @@ begin
                   v.lockErrCnt := serdR.lockErrCnt + 1;  
                end if;
                v.locked := '0';
-               v.delay := std_logic_vector(unsigned(delayCurr) + to_unsigned(1, 5));
+               v.delay := std_logic_vector(unsigned(delayCurr));-- + to_unsigned(1, 5));
                v.delayEn := '1';
                v.state  := BIT_SLIP_S;
             end if;
@@ -430,11 +439,7 @@ begin
       for i in 1 to 63 loop
          v.iserdeseOutD(i) := serdR.iserdeseOutD(i-1);
       end loop;
-      
-      --v.iserdeseOutD1 := iserdeseOut;
-      --v.iserdeseOutD2 := serdR.iserdeseOutD1;
-      --v.iserdeseOutD3 := serdR.iserdeseOutD2;
-      
+           
       -- output register
       v.rxData    := serdR.twoWords(9 downto 0) & serdR.twoWords(19 downto 10);
       if serdR.locked = '1' then
