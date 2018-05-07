@@ -72,6 +72,7 @@ ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[1].U_AXI_Framer/dFifoEof}
 ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[1].U_AXI_Framer/dFifoEofe}
 ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[1].U_AXI_Framer/dFifoValid}
 ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[1].U_AXI_Framer/rxValidCs}
+ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/DecTSMode_U/s[*]}
 ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/dFifoOut[*]}
 ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/dFifoSof}
 ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/dFifoEof}
@@ -79,6 +80,7 @@ ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/dFifoEofe}
 ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/dFifoValid}
 ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/rxDataCs[*]}
 ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/rxValidCs}
+
 
 
 ### Delete the last unused port

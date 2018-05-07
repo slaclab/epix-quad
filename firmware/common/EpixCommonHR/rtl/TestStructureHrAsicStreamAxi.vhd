@@ -141,6 +141,7 @@ architecture RTL of TestStructureHrAsicStreamAxi is
       frmExpSize        : slv(15 downto 0);
       sAxilWriteSlave   : AxiLiteWriteSlaveType;
       sAxilReadSlave    : AxiLiteReadSlaveType;
+      tsMode            : slv(1 downto 0);
    end record RegType;
 
    constant REG_INIT_C : RegType := (
@@ -155,7 +156,8 @@ architecture RTL of TestStructureHrAsicStreamAxi is
       rstCnt            => (others=>'0'),
       frmExpSize        => toSlv(ASIC_DATA_G, 16),
       sAxilWriteSlave   => AXI_LITE_WRITE_SLAVE_INIT_C,
-      sAxilReadSlave    => AXI_LITE_READ_SLAVE_INIT_C
+      sAxilReadSlave    => AXI_LITE_READ_SLAVE_INIT_C,
+      tsMode            => (others=>'0')
    );
    
    signal r   : RegType := REG_INIT_C;
@@ -209,12 +211,24 @@ begin
    );
    
 
-   --bypass decoder
-   decDataOut   <= rxData;
-   decValid     <= iRxValid;
-   decSof       <= '0';
-   decEof       <= '0';
-   decEofe      <= '0';
+    -- test structure data decoder
+   DecTSMode_U : entity work.TSDecoderMode
+   generic map (
+      RST_POLARITY_G => '1'
+   )
+   port map (
+      clk         => rxClk,
+      rst         => rxRst,
+      dataIn      => rxData,
+      validIn     => iRxValid,
+      modeIn      => r.tsMode,
+      dataOut     => decDataOut,
+      validOut    => decValid,
+      sof         => decSof,
+      eof         => decEof,
+      eofe        => decEofe
+   );
+   
 -- disable decoder in test mode (fake ASIC data)
    iRxValid <= rxValid and not testModeSync;
    
@@ -314,7 +328,7 @@ begin
       axiSlaveRegister (regCon, x"1C", 0, rv.testMode);
       axiSlaveRegister (regCon, x"20", 0, rv.rstCnt);
       axiSlaveRegister (regCon, x"24", 0, rv.frmExpSize);
-      
+      axiSlaveRegister (regCon, x"28", 0, rv.tsMode);
       axiSlaveDefault(regCon, rv.sAxilWriteSlave, rv.sAxilReadSlave, AXIL_ERR_RESP_G);
       
       -- axi stream logic

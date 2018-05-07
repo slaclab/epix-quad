@@ -43,15 +43,28 @@ import ePixFpga as fpga
 START_GUI = True
 START_VIEWER = False
 #############################################
+#Define driver used
+#DRIVER = 'pgp-gen3'  
+DRIVER = 'kcu1500'
 
-# Create the PGP interfaces for ePix camera
-pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,0) # Data & cmds
-pgpVc1 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,1) # Registers for ePix board
-pgpVc2 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,2) # PseudoScope
-pgpVc3 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,3) # Monitoring (Slow ADC)
+if ( DRIVER == 'pgp-gen3' ):
+    # Create the PGP interfaces for ePix camera
+    pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,0) # Data & cmds
+    pgpVc1 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,1) # Registers for ePix board
+    pgpVc2 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,2) # PseudoScope
+    pgpVc3 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,3) # Monitoring (Slow ADC)
 
-print("")
-print("PGP Card Version: %x" % (pgpVc0.getInfo().version))
+    print("")
+    print("PGP Card Version: %x" % (pgpVc0.getInfo().version))
+elif ( DRIVER == 'kcu1500' ):
+    # Create the PGP interfaces for ePix hr camera
+    pgpVc0 = rogue.hardware.data.DataCard('/dev/datadev_0',(0*32)+0) # Data & cmds
+    pgpVc1 = rogue.hardware.data.DataCard('/dev/datadev_0',(0*32)+1) # Registers for ePix board
+    pgpVc2 = rogue.hardware.data.DataCard('/dev/datadev_0',(0*32)+2) # PseudoScope
+    pgpVc3 = rogue.hardware.data.DataCard('/dev/datadev_0',(0*32)+3) # Monitoring (Slow ADC)
+else:
+    raise ValueError("Invalid type (%s)" % (args.type) )
+
 
 
 # Add data stream to file as channel 1
