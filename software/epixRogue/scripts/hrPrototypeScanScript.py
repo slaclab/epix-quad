@@ -39,21 +39,51 @@ import ePixViewer as vi
 import ePixFpga as fpga
 import numpy as np
 
+#-----------------------------------------------------------------------------
+# To convert the generated data use
+#-----------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
+# virtualenv /u1/ddoering/localPython/
+# cd /u1/ddoering/localPython/bin/
+# source bin/activate.csh
+# call the datatranslator script, for TEST_SCAN_SDCLK_SD_RST use
+# ipython3 scripts/imgProc/read_read_from_file_HrAdc_ScanScript_SDcleSDrst*.py
+# *change in the script the run number to select the appropriated one
+#-----------------------------------------------------------------------------
+# to run notebooks
+#-----------------------------------------------------------------------------
+# .anaconda/navigator/scripts/notebook.sh &
+
+
 #############################################
 # Define if the GUI is started (1 starts it)
 START_GUI = True
-START_VIEWER = False
-TEST_SCAN_SDCLK_SD_RST = True
+START_VIEWER = True
+TEST_SCAN_SDCLK_SD_RST = False
+TEST_S2D = True
 #############################################
+#Define driver used
+#DRIVER = 'pgp-gen3'  
+DRIVER = 'kcu1500'
+#############################################
+if ( DRIVER == 'pgp-gen3' ):
+    # Create the PGP interfaces for ePix camera
+    pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,0) # Data & cmds
+    pgpVc1 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,1) # Registers for ePix board
+    pgpVc2 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,2) # PseudoScope
+    pgpVc3 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,3) # Monitoring (Slow ADC)
 
-# Create the PGP interfaces for ePix camera
-pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,0) # Data & cmds
-pgpVc1 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,1) # Registers for ePix board
-pgpVc2 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,2) # PseudoScope
-pgpVc3 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,3) # Monitoring (Slow ADC)
+    print("")
+    print("PGP Card Version: %x" % (pgpVc0.getInfo().version))
+elif ( DRIVER == 'kcu1500' ):
+    # Create the PGP interfaces for ePix hr camera
+    pgpVc0 = rogue.hardware.data.DataCard('/dev/datadev_0',(0*32)+0) # Data & cmds
+    pgpVc1 = rogue.hardware.data.DataCard('/dev/datadev_0',(0*32)+1) # Registers for ePix board
+    pgpVc2 = rogue.hardware.data.DataCard('/dev/datadev_0',(0*32)+2) # PseudoScope
+    pgpVc3 = rogue.hardware.data.DataCard('/dev/datadev_0',(0*32)+3) # Monitoring (Slow ADC)
+else:
+    raise ValueError("Invalid type (%s)" % (args.type) )
 
-print("")
-print("PGP Card Version: %x" % (pgpVc0.getInfo().version))
 
 
 # Add data stream to file as channel 1
@@ -216,9 +246,14 @@ if (TEST_SCAN_SDCLK_SD_RST):
     fileFolders = [ ['/u1/ddoering/hrdata/rampData/','/u1/ddoering/hrdata/dark/'] ]
     fileNameRoot = 'ramp_scan_'
     ####
-    FileNameRun = '_run' + str(5) + '.dat'
+    FileNameRun = '_run' + str(10) + '.dat'
     ####
+    
+    # enabling second order bit makes adc to send zeros all the time
+    #ePixBoard.hrFPGA.HrAdcAsic0.SecondOrder.set(True)
 
+    ePixBoard.hrFPGA.HrAdcAsic0.shvc_DAC.set(28) # default is 0x17 or 23
+    
     #config pixels
     for SDclk in range(0,16):
         for SDrst in range(0,16):
@@ -228,6 +263,79 @@ if (TEST_SCAN_SDCLK_SD_RST):
 
             #create current filename
             fullFileName = fileFolders[0][0]+fileNameRoot+'SDclk_'+str(SDclk)+'SDrst_'+str(SDrst)+FileNameRun
+            print(fullFileName)
+            ePixBoard.dataWriter.dataFile.set(fullFileName)
+            ePixBoard.dataWriter.open.set(True)
+
+            time.sleep(1.0 / float(1))
+
+            # gets data
+            for frames in range(0,2048):     
+                ePixBoard.Trigger()
+                time.sleep(1.0 / float(120))
+
+            ePixBoard.dataWriter.open.set(False)
+
+
+if (TEST_S2D):
+    #read config parameters for the fpga and asic
+    ePixBoard.readConfig("yml/epixHR_ADCOnly.yml")
+
+    #set HS dac waveform
+    #ePixBoard.hrFPGA.SetWaveform('ramp.csv')
+    waveform = np.genfromtxt('ramp.csv', delimiter=',', dtype='uint16')
+    if waveform.shape == (1024,):
+        for x in range (0, 1024):
+            ePixBoard.hrFPGA._rawWrite(offset = (0x0E000000 + x * 4),data =  int(waveform[x]))
+        print('Waveform file uploaded')
+    else:
+        print('wrong csv file format')
+
+    ePixBoard.hrFPGA.HighSpeedDAC.enabled.set(True)
+    ePixBoard.hrFPGA.HighSpeedDAC.externalUpdateEn.set(True)
+    ePixBoard.hrFPGA.HighSpeedDAC.run.set(True)
+
+    #Sync deserializers
+    ePixBoard.hrFPGA.Asic0Deserializer.Resync.set(True)
+    ePixBoard.hrFPGA.Asic1Deserializer.Resync.set(True)
+
+    time.sleep(1.0 / float(120))
+
+    print ("ASIC0 locked: ",  ePixBoard.hrFPGA.Asic0Deserializer.Locked.get())
+    print ("ASIC1 locked: ",  ePixBoard.hrFPGA.Asic1Deserializer.Locked.get())
+
+    for reSyncAttempts in range(0,10):
+        if ePixBoard.hrFPGA.Asic0Deserializer.Locked.get() == False:
+            ePixBoard.hrFPGA.Asic0Deserializer.Resync.set(True)
+            time.sleep(1.0 / float(1))
+            print ("ASIC0 locked: ",  ePixBoard.hrFPGA.Asic0Deserializer.Locked.get())
+
+    for reSyncAttempts in range(0,10):
+        if ePixBoard.hrFPGA.Asic1Deserializer.Locked.get() == False:
+            ePixBoard.hrFPGA.Asic1Deserializer.Resync.set(True)
+            time.sleep(1.0 / float(1))
+            print ("ASIC1 locked: ",  ePixBoard.hrFPGA.Asic1Deserializer.Locked.get())
+
+    fileFolders = [ ['/u1/ddoering/hrdata/rampData/','/u1/ddoering/hrdata/dark/'] ]
+    fileNameRoot = 'ramp_scan_'
+    ####
+    FileNameRun = '_run' + str(14) + '.dat'
+    ####
+    
+    # enabling second order bit makes adc to send zeros all the time
+    #ePixBoard.hrFPGA.HrAdcAsic0.SecondOrder.set(True)
+
+    ePixBoard.hrFPGA.HrAdcAsic0.shvc_DAC.set(28) # default is 0x17 or 23
+    
+    #config pixels
+    for SDclk in range(0,16):
+        for S2D_1_b in range(0,8):
+            #set ASIC parameters
+            ePixBoard.hrFPGA.HrAdcAsic0.SDclk_b.set(SDclk)
+            ePixBoard.hrFPGA.HrAdcAsic0.S2D_1_b.set(S2D_1_b)
+
+            #create current filename
+            fullFileName = fileFolders[0][0]+fileNameRoot+'SDclk_'+str(SDclk)+'S2D_1_b_'+str(S2D_1_b)+FileNameRun
             print(fullFileName)
             ePixBoard.dataWriter.dataFile.set(fullFileName)
             ePixBoard.dataWriter.open.set(True)

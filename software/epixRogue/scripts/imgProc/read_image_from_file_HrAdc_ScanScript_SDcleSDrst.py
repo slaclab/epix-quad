@@ -57,7 +57,7 @@ SAVEHDF5              = True
 fileFolders = [ ['/u1/ddoering/hrdata/rampData/','/u1/ddoering/hrdata/dark/'] ]
 fileNameRoot = 'ramp_scan_'
 ####
-FileNameRun = '_run' + str(5) + '.dat'
+FileNameRun = '_run' + str(10) + '.dat'
 ####
 filename = fileFolders[0][0]+fileNameRoot+'SDclk_'+'SDrst_'+FileNameRun
 h5_filename = os.path.splitext(filename)[0]+".hdf5"
