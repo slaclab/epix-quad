@@ -389,7 +389,7 @@ class HrPrototypeFpgaRegisters(pr.Device):
       self.add(pr.RemoteVariable(name='IdAnalogHigh',    description='IdAnalogHigh',      offset=0x00000010, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
       self.add(pr.RemoteVariable(name='IdCarrierLow',    description='IdCarrierLow',      offset=0x00000014, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
       self.add(pr.RemoteVariable(name='IdCarrierHigh',   description='IdCarrierHigh',     offset=0x00000018, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-      self.add(pr.RemoteVariable(name='GlblRstPolarity', description='GlblRstPolarity',   offset=0x0000010C, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='GlblRstPolarity', description='GlblRstPolarity',   offset=0x0000010C, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW', verify = False))
       self.add(pr.RemoteVariable(name='GlblRstDelay',    description='GlblRstDelay',      offset=0x00000110, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
       self.add(pr.RemoteVariable(name='GlblRstWidth',    description='GlblRstWidth',      offset=0x00000114, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
       self.add(pr.RemoteVariable(name='AcqPolarity',     description='AcqPolarity',       offset=0x00000118, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
@@ -1542,6 +1542,7 @@ class AsicTSPktRegisters(pr.Device):
       self.add(pr.RemoteVariable(name='TestMode',        description='TestMode',         offset=0x0000001C, bitSize=1,   bitOffset=0, base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='ResetCounters',   description='ResetCounters',    offset=0x00000020, bitSize=1,   bitOffset=0, base=pr.Bool, mode='RW', verify = False))
       self.add(pr.RemoteVariable(name='NumPixels',       description='Number of Pixels', offset=0x00000024, bitSize=16,  bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
+      self.add(pr.RemoteVariable(name='TSMode',          description='Matches TS ASIC mode', offset=0x00000028, bitSize=2,  bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
 
       
       #####################################

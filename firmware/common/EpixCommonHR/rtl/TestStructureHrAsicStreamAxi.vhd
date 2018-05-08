@@ -35,7 +35,7 @@ entity TestStructureHrAsicStreamAxi is
       VC_NO_G           : slv(3 downto 0)  := "0000";
       LANE_NO_G         : slv(3 downto 0)  := "0000";
       ASIC_NO_G         : slv(2 downto 0)  := "000";
-      ASIC_DATA_G       : natural := (32*32)-1; --workds
+      ASIC_DATA_G       : natural := (32*32)-1+6; --workds + header size
       AXIL_ERR_RESP_G   : slv(1 downto 0)  := AXI_RESP_DECERR_C
    );
    port ( 

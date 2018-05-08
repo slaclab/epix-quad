@@ -7,4 +7,5 @@ loadRuckusTcl $::env(PROJ_DIR)/../../common/EpixCommonGen2
 loadRuckusTcl $::env(PROJ_DIR)/../../common/EpixCommonHR
 
 
-set_property top {AxiDualPortRam_tb} [get_filesets sim_1]
+#set_property top {AxiDualPortRam_tb} [get_filesets sim_1]
+set_property top {TestStructureHrAsicStreamAxi_tb} [get_filesets sim_1]

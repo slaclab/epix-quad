@@ -2,7 +2,7 @@
 -- File       : TSDecoderMode.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2014-07-14
--- Last update: 2018-05-07
+-- Last update: 2018-05-08
 -------------------------------------------------------------------------------
 -- Description: The test structure sends data in different way depending on the
 -- selected mode (using SACI registers). This modules adapts the data from the
@@ -99,19 +99,10 @@ begin
         sv.sof  := '0';
         sv.eof  := '0';
         sv.eofe := '0';
-        -- two types of data are consired for the TS
-        if ((modeIn = "00") or (modeIn = "01")) then
-          if validIn = '0' then
+        sv.frmSize := (others=>'0');
+        -- next state logic
+        if (validIn='1') and (s.dataValid='0') then
             sv.state := SOF_S;
-            else
-              -- overwrite signal due to inverted control logic in the asic
-              sv.dataValid := 0;
-          end if;
-        end if;
-        if ((modeIn = "10") or (modeIn = "11")) then
-          if validIn = '1' then
-            sv.state := SOF_S;
-          end if;
         end if;
       when SOF_S =>
         --sof flag
@@ -162,7 +153,12 @@ begin
     --outputs
     sin <= sv;
     dataOut  <= s.data;
-    validOut <= s.dataValid;
+    -- overwrite signal due to inverted control logic in the asic
+    if s.state = IDLE_S then
+      validOut <= '0';
+    else
+      validOut <= s.dataValid;
+    end if;    
     sof      <= s.sof;
     eof      <= s.eof;
     eofe     <= s.eofe;

@@ -11,11 +11,11 @@ ePixBoard:
     enable: 'True'
     AxiVersion:
       enable: 'True'
-      ScratchPad: '0x0'
+      ScratchPad: '0x000000'
       FpgaReloadHalt: '0x0'
-      FpgaReload: '0x0'
       FpgaReloadAddress: '0x0'
       UserReset: '0x0'
+      GitHashShort: '0000000'
     HrPrototypeFpgaRegisters:
       enable: 'True'
       Version: '0x10001'
@@ -162,7 +162,7 @@ ePixBoard:
       ResetCounters: 'False'
     Pgp2bAxi:
       enable: 'False'
-      Loopback: '0x0'
+      Loopback: 'No'
       LocData: '0x0'
       LocDataEn: 'False'
       AutoStatus: 'False'
