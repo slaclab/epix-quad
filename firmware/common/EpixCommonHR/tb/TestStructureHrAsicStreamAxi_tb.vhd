@@ -6,7 +6,7 @@
 -- Author     : Dionisio Doering  <ddoering@tid-pc94280.slac.stanford.edu>
 -- Company    : 
 -- Created    : 2017-05-22
--- Last update: 2018-05-08
+-- Last update: 2018-05-09
 -- Platform   : 
 -- Standard   : VHDL'87
 -------------------------------------------------------------------------------
@@ -160,7 +160,7 @@ begin  -- _arch
     sAxilWriteMaster.wvalid  <= '0';
     sAxilWriteMaster.bready  <= '1';    
 
-    wait for 1 us;
+    wait for 10 us;
     sysClkRst <= '0';
 
     sAxilWriteMaster.awaddr  <= std_logic_vector(to_unsigned(36, sAxilWriteMaster.awaddr'length)); --x"00000000";
@@ -180,18 +180,33 @@ begin  -- _arch
     sAxilWriteMaster.wstrb   <= x"0";
     sAxilWriteMaster.wvalid  <= '0';
     sAxilWriteMaster.bready  <= '1';
+    wait for 10 us;
 
-
+    axiLiteBusSimWrite (sysClk, sAxilWriteMaster, sAxilWriteSlave, x"00000020", x"00000001", true);
+    wait for 10 us;
+    
     wait for 100 us;
     wait until rising_edge(sysClk);
     testTrig <= '1';
     wait until rising_edge(sysClk);
     testTrig <= '0';
     
-    stimloop : for i in 0 to 2047 loop 
+    wait until rising_edge(sysClk);
+    iasicTsSync <= '0';
+    stimloop : for i in 0 to 1023 loop 
       wait until rising_edge(sysClk);
       iasicTsData <= std_logic_vector(to_unsigned(i, 16));
-      iasicTsSync <= not iasicTsSync;    
+      iasicTsSync <= '1';
+      wait until rising_edge(sysClk);
+      if i < 1023 then
+        iasicTsSync <= '0';  
+      end if;
+      
+      -- simulates the HR adc modes 0,1 where data rate is low
+      delayloop : for i in 0 to 10 loop 
+        wait until rising_edge(sysClk);
+      end loop delayloop;
+      
     end loop stimloop;
 
     wait;

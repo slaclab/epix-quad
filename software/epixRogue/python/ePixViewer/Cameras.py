@@ -689,7 +689,7 @@ class Camera():
         
         #fill the memory with the new data (when acqNums matches)
         if (len(newRawData_DW)==515):
-            if(asicNum_newRawData==0):
+            if(asicNum_newRawData==0 or asicNum_newRawData==2):
                 returnedRawData[0,0]  = 1
                 returnedRawData[0,1:] = newRawData_DW
             if(asicNum_newRawData==1):

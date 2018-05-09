@@ -35,7 +35,7 @@ entity TestStructureHrAsicStreamAxi is
       VC_NO_G           : slv(3 downto 0)  := "0000";
       LANE_NO_G         : slv(3 downto 0)  := "0000";
       ASIC_NO_G         : slv(2 downto 0)  := "000";
-      ASIC_DATA_G       : natural := (32*32)-1+6; --workds + header size
+      ASIC_DATA_G       : natural := (32*32)-1; --workds
       AXIL_ERR_RESP_G   : slv(1 downto 0)  := AXI_RESP_DECERR_C
    );
    port ( 
@@ -352,6 +352,7 @@ begin
                sv.testBitFlip := '0';
                sv.testColCnt := 0;
                sv.testRowCnt := 0;
+               sv.stCnt := 0;
             end if;
          
          -- header is 6 x 16 bit words
@@ -436,6 +437,8 @@ begin
          sv.eofError := (others=>'0');
          sv.sofError := (others=>'0');
          sv.ovError  := (others=>'0');
+         sv.state    := IDLE_S;         -- if SM is in odd state, puts it back
+                                        -- to idle
       end if;
       
       -- reset logic

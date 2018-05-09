@@ -2,7 +2,7 @@
 -- File       : TSDecoderMode.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2014-07-14
--- Last update: 2018-05-08
+-- Last update: 2018-05-09
 -------------------------------------------------------------------------------
 -- Description: The test structure sends data in different way depending on the
 -- selected mode (using SACI registers). This modules adapts the data from the
@@ -47,8 +47,8 @@ end entity TSDecoderMode;
 
 architecture rtl of TSDecoderMode is
 
-  constant FRAME_1_2_SIZE_C : natural := 1024-1;
-  constant FRAME_3_4_SIZE_C : natural := 1024-1;
+  constant FRAME_1_2_SIZE_C : natural := 1024;
+  constant FRAME_3_4_SIZE_C : natural := 1024;
   constant TIMEOUT_C : slv(31 downto 0) := x"02FAF080";  -- 500ms
   
   type StateType is (IDLE_S, SOF_S, VALID_DATA_S, EOF_S, EOFE_S);
@@ -102,11 +102,12 @@ begin
         sv.frmSize := (others=>'0');
         -- next state logic
         if (validIn='1') and (s.dataValid='0') then
+            sv.sof := '1';
             sv.state := SOF_S;
         end if;
       when SOF_S =>
         --sof flag
-        sv.sof := '1';
+        sv.sof := '0';
         --keeps track of how much data has been saved
         if s.dataValid = '1' then
           sv.frmSize := s.frmSize + '1';
@@ -154,10 +155,10 @@ begin
     sin <= sv;
     dataOut  <= s.data;
     -- overwrite signal due to inverted control logic in the asic
-    if s.state = IDLE_S then
-      validOut <= '0';
-    else
+    if (s.state = VALID_DATA_S) then
       validOut <= s.dataValid;
+    else
+      validOut <= '0';
     end if;    
     sof      <= s.sof;
     eof      <= s.eof;
