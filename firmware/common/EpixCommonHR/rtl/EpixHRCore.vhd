@@ -4,7 +4,7 @@
 -- File       : EpixHRCore.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 03/02/2016
--- Last update: 03/02/2016
+-- Last update: 2018-05-14
 -- Platform   : Vivado 2014.4
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -102,7 +102,7 @@ entity EpixHRCore is
       adcSpiClk           : out sl;
       adcSpiData          : inout sl;
       adcSpiCsb           : out slv(2 downto 0);
-      adcPdwn             : out slv(2 downto 0);
+      adcPdwn             : out slv(1 downto 0);
       -- Fast ADC readoutCh
       adcClkP             : out sl;
       adcClkN             : out sl;
@@ -254,7 +254,7 @@ architecture top_level of EpixHRCore is
    signal iSaciCmd         : sl;
    
    signal iAdcSpiCsb : slv(3 downto 0);
-   signal iAdcPdwn   : slv(3 downto 0);
+   signal iAdcPdwn   : slv(1 downto 0);
    
    signal tgOutMux         : sl;
    signal mpsOutMux        : sl;
@@ -946,7 +946,7 @@ begin
       axilWriteMaster   => mAxiWriteMasters(ADC_CFG_AXI_INDEX_C),
       axilWriteSlave    => mAxiWriteSlaves(ADC_CFG_AXI_INDEX_C),
 
-      adcPdwn           => iAdcPdwn(1 downto 0),
+      adcPdwn           => iAdcPdwn,
       adcSclk           => adcSpiClk,
       adcSdio           => adcSpiData,
       adcCsb            => iAdcSpiCsb
@@ -954,7 +954,7 @@ begin
       );
    
    adcSpiCsb <= iAdcSpiCsb(2 downto 0);
-   adcPdwn <= iAdcPdwn(2 downto 0);
+   adcPdwn <= iAdcPdwn;
    
    --------------------------------------------
    --     Slow ADC Readout  --

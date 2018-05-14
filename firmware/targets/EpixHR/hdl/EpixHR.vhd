@@ -4,7 +4,7 @@
 -- File       : EpixHR.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2014-12-11
--- Last update: 2014-12-11
+-- Last update: 2018-05-14
 -- Platform   : Vivado 2014.4
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -178,7 +178,7 @@ architecture RTL of EpixHR is
    signal iSaciCmd  : sl;
    signal iSaciRsp  : sl;
    
-   signal iAdcPdwn       : slv(2 downto 0);
+   signal iAdcPdwn       : slv(1 downto 0);
    signal iAdcSpiCsb     : slv(2 downto 0);
    signal iAdcSpiClk     : sl;   
 
@@ -349,7 +349,7 @@ begin
    adcSpiCsb(1)  <= iAdcSpiCsb(1) when iFpgaOutputEn = '1' else 'Z';
    adcSpiCsb(2)  <= iAdcSpiCsb(2) when iFpgaOutputEn = '1' else 'Z';
    adcPdwn01     <= iAdcPdwn(0)   when iFpgaOutputEn = '1' else '0';
-   adcPdwnMon    <= iAdcPdwn(2)   when iFpgaOutputEn = '1' else '0';
+   adcPdwnMon    <= iAdcPdwn(1)   when iFpgaOutputEn = '1' else '0';
    
    -- ASIC control signals (differential)
    G_ROCLK : for i in 0 to 1 generate

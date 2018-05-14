@@ -2,7 +2,7 @@
 -- File       : TSDecoderMode.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2014-07-14
--- Last update: 2018-05-09
+-- Last update: 2018-05-11
 -------------------------------------------------------------------------------
 -- Description: The test structure sends data in different way depending on the
 -- selected mode (using SACI registers). This modules adapts the data from the
@@ -47,9 +47,9 @@ end entity TSDecoderMode;
 
 architecture rtl of TSDecoderMode is
 
-  constant FRAME_1_2_SIZE_C : natural := 1024;
+  constant FRAME_1_2_SIZE_C : natural := 32;
   constant FRAME_3_4_SIZE_C : natural := 1024;
-  constant TIMEOUT_C : slv(31 downto 0) := x"02FAF080";  -- 500ms
+  constant TIMEOUT_C : slv(31 downto 0) := x"0006A120";  -- 4ms
   
   type StateType is (IDLE_S, SOF_S, VALID_DATA_S, EOF_S, EOFE_S);
   
@@ -78,7 +78,7 @@ architecture rtl of TSDecoderMode is
   signal s   : StrType := STR_INIT_C;
   signal sin : StrType;
   
-  attribute keep : string;                              -- for chipscope
+  attribute keep : string;                    -- for chipscope
   attribute keep of s : signal is "true";     -- for chipscope
 
 begin
@@ -108,12 +108,19 @@ begin
       when SOF_S =>
         --sof flag
         sv.sof := '0';
-        --keeps track of how much data has been saved
-        if s.dataValid = '1' then
-          sv.frmSize := s.frmSize + '1';
+        if ((modeIn = "00") or (modeIn = "01")) then
+          --next state logic
+          if (validIn='0') and (s.dataValid='1') then
+            sv.state := VALID_DATA_S;
+          end if;
+        else
+          --keeps track of how much data has been saved
+          if s.dataValid = '1' then
+            sv.frmSize := s.frmSize + '1';
+          end if;
+          --next state logic
+          sv.state := VALID_DATA_S;
         end if;
-        --next state logic
-        sv.state := VALID_DATA_S; 
       when VALID_DATA_S =>
         --sof flag
         sv.sof := '0';
@@ -131,10 +138,7 @@ begin
           if s.frmSize = FRAME_3_4_SIZE_C then
             sv.state := EOF_S;           
           end if;
-        end if;
-        if s.timeoutCounter = TIMEOUT_C then
-          sv.state := EOFE_S;
-        end if;
+        end if;      
       when EOF_S =>
         sv.eof := '1';
         sv.state := IDLE_S;
@@ -150,6 +154,10 @@ begin
       sv.timeoutCounter := (others => '0');
     else
       sv.timeoutCounter := s.timeoutCounter + '1';
+    end if;
+    --timeout monitor
+    if s.timeoutCounter = TIMEOUT_C then
+          sv.state := EOFE_S;
     end if;
     --outputs
     sin <= sv;

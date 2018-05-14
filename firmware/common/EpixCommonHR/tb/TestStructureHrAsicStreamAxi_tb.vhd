@@ -6,7 +6,7 @@
 -- Author     : Dionisio Doering  <ddoering@tid-pc94280.slac.stanford.edu>
 -- Company    : 
 -- Created    : 2017-05-22
--- Last update: 2018-05-09
+-- Last update: 2018-05-11
 -- Platform   : 
 -- Standard   : VHDL'87
 -------------------------------------------------------------------------------
@@ -185,15 +185,20 @@ begin  -- _arch
     axiLiteBusSimWrite (sysClk, sAxilWriteMaster, sAxilWriteSlave, x"00000020", x"00000001", true);
     wait for 10 us;
     
-    wait for 100 us;
+    wait for 7 ms;
     wait until rising_edge(sysClk);
     testTrig <= '1';
     wait until rising_edge(sysClk);
     testTrig <= '0';
-    
+    --creates odd first pulse
     wait until rising_edge(sysClk);
     iasicTsSync <= '0';
-    stimloop : for i in 0 to 1023 loop 
+    wait until rising_edge(sysClk);
+    iasicTsSync <= '1';
+    wait for 1 us;
+    iasicTsSync <= '0';
+    -- starts nomal pulses
+    stimloop : for i in 0 to 30 loop    -- 31 "normal" pulses last pulse keeps TS_Sync high
       wait until rising_edge(sysClk);
       iasicTsData <= std_logic_vector(to_unsigned(i, 16));
       iasicTsSync <= '1';
@@ -203,11 +208,12 @@ begin  -- _arch
       end if;
       
       -- simulates the HR adc modes 0,1 where data rate is low
-      delayloop : for i in 0 to 10 loop 
+      delayloop : for i in 0 to 63 loop 
         wait until rising_edge(sysClk);
       end loop delayloop;
       
     end loop stimloop;
+    iasicTsSync <= '1';                 -- last pulse keeps TS_Sync high
 
     wait;
   end process WaveGen_Proc;
