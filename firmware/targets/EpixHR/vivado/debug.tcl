@@ -67,11 +67,11 @@ ConfigProbe ${ilaName} {U_EpixHR/byteClk}
 #ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[0].U_AXI_Framer/rxDataCs[*]}
 #ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[0].U_AXI_Framer/rxValidCs}
 #ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[0].U_AXI_Framer/sAxisMaster[*]}
-ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[1].U_AXI_Framer/dFifoSof}
-ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[1].U_AXI_Framer/dFifoEof}
-ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[1].U_AXI_Framer/dFifoEofe}
-ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[1].U_AXI_Framer/dFifoValid}
-ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[1].U_AXI_Framer/rxValidCs}
+#ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[1].U_AXI_Framer/dFifoSof}
+#ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[1].U_AXI_Framer/dFifoEof}
+#ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[1].U_AXI_Framer/dFifoEofe}
+#ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[1].U_AXI_Framer/dFifoValid}
+#ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[1].U_AXI_Framer/rxValidCs}
 ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/DecTSMode_U/s[*]}
 ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/dFifoOut[*]}
 ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/dFifoSof}
@@ -80,11 +80,14 @@ ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/dFifoEofe}
 ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/dFifoValid}
 ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/rxDataCs[*]}
 ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/rxValidCs}
-
-
+ConfigProbe ${ilaName} {U_EpixHR/iAdcPdwn[*]}
+ConfigProbe ${ilaName} {U_EpixHR/iAdcSpiCsb[*]}
+#ConfigProbe ${ilaName} {U_EpixHR/U_MonAdcReadout/axilR[*]}
+#ConfigProbe ${ilaName} {U_EpixHR/U_MonAdcReadout/curDelayData[*]}
+#ConfigProbe ${ilaName} {U_EpixHR/adcSpiClk}
 
 ### Delete the last unused port
-delete_debug_port [get_debug_ports [GetCurrentProbe ${ilaName}]]
+#delete_debug_port [get_debug_ports [GetCurrentProbe ${ilaName}]]
 
 ##########################
 ## Write the port map file

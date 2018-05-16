@@ -12,7 +12,7 @@
 # Rogue interface to ePix 100a board
 #-----------------------------------------------------------------------------
 # This file is part of the rogue_example software. It is subject to 
-# the license terms in the LICENSE.txt file found in the top-level directory 
+# the license terms in the LICENSE.txt file found in the top-level direc3tory 
 # of this distribution and at: 
 #    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
 # No part of the rogue_example software, including this file, may be 
@@ -72,7 +72,7 @@ else:
 dataWriter = pyrogue.utilities.fileio.StreamWriter(name = 'dataWriter')
 pyrogue.streamConnect(pgpVc0, dataWriter.getChannel(0x1))
 # Add pseudoscope to file writer
-pyrogue.streamConnect(pgpVc2, dataWriter.getChannel(0x2))
+#pyrogue.streamConnect(pgpVc2, dataWriter.getChannel(0x2))
 pyrogue.streamConnect(pgpVc3, dataWriter.getChannel(0x3))
 
 cmd = rogue.protocols.srp.Cmd()

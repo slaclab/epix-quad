@@ -314,7 +314,7 @@ class HrPrototype(pr.Device):
         super(self.__class__, self).__init__(**kwargs)
         self.add((
             axi.AxiVersion(                   name="AxiVersion",               description="AXI-Lite Version Module", memBase=None, offset=0x00000000, hidden =  False, expand=False),
-            HrPrototypeFpgaRegisters(         name="HrPrototypeFpgaRegisters", offset=0x01000000),
+            HrPrototypeFpgaRegisters(         name="HrPrototypeFpgaRegisters", offset=0x01000000, expand=False),
             TriggerRegisters(                 name="TriggerRegisters",         offset=0x02000000, expand=False),
             SlowAdcRegisters(                 name="SlowAdcRegisters",         offset=0x03000000, expand=False),
             epix.EpixHrAdcAsic(               name='HrAdcAsic0',               offset=0x04000000, enabled=False, expand=False),
@@ -325,9 +325,9 @@ class HrPrototype(pr.Device):
             AsicPktRegisters(                 name='Asic1PktRegisters',        offset=0x13000000, enabled=False, expand=False),
             pgp.Pgp2bAxi(                     name='Pgp2bAxi',                 offset=0x06000000, enabled=False, expand=False),
             analog_devices.Ad9249ReadoutGroup(name='Ad9249Rdout[1].Adc[0]',    offset=0x09000000, channels=4, enabled=False, expand=False),
-            analog_devices.Ad9249ConfigGroup( name='Ad9249Config[1].Adc[0]',   offset=0x0A001000, enabled=False, expand=False),
+            analog_devices.Ad9249ConfigGroup( name='Ad9249Config[1].Adc[0]',   offset=0x0A000000, enabled=False, expand=False),
             OscilloscopeRegisters(            name='Oscilloscope',             offset=0x0C000000, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum),
-            HighSpeedDacRegisters(            name='HighSpeedDAC',           offset=0x0D000000, enabled=True, expand=False, HsDacEnum = HsDacEnum),
+            HighSpeedDacRegisters(            name='HighSpeedDAC',             offset=0x0D000000, enabled=True, expand=False, HsDacEnum = HsDacEnum),
             pr.MemoryDevice(                  name='WaveformMem',              offset=0x0E000000, wordBitSize=16, stride=4, size=1024*4),
             MicroblazeLog(                    name='MicroblazeLog',            offset=0x0B000000, expand=False),
             MMCM7Registers(                   name='MMCM7Registers',           offset=0x0F000000, enabled=False, expand=False),

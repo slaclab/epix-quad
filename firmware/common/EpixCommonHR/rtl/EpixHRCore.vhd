@@ -173,7 +173,6 @@ architecture top_level of EpixHRCore is
    attribute keep of iAsicTpulse   : signal is "true";
    attribute keep of iasicTsData   : signal is "true";
    attribute keep of iasicTsSync   : signal is "true";
-
    
    signal coreClk     : sl;
    signal coreClkRst  : sl;
@@ -281,18 +280,21 @@ architecture top_level of EpixHRCore is
    attribute IODELAY_GROUP : string;
    attribute IODELAY_GROUP of U_IDelayCtrl : label is IODELAY_GROUP_G;
    
-   attribute keep of coreClk : signal is "true";
-   attribute keep of byteClk : signal is "true";
-   attribute keep of asicRfClk : signal is "true";
-   attribute keep of acqStart : signal is "true";
-   attribute keep of mAxiWriteMasters : signal is "true";
-   attribute keep of sAxiWriteMaster : signal is "true";
-   attribute keep of adcData : signal is "true";
-   attribute keep of adcValid : signal is "true";
-   attribute keep of saciPrepReadoutReq : signal is "true";
-   attribute keep of saciPrepReadoutAck : signal is "true";
-   attribute keep of errInhibit : signal is "true";
-   
+   attribute keep of coreClk           : signal is "true";
+   attribute keep of byteClk           : signal is "true";
+   attribute keep of asicRfClk         : signal is "true";
+   attribute keep of acqStart          : signal is "true";
+   attribute keep of mAxiWriteMasters  : signal is "true";
+   attribute keep of sAxiWriteMaster   : signal is "true";
+   attribute keep of adcData           : signal is "true";
+   attribute keep of adcValid          : signal is "true";
+   attribute keep of saciPrepReadoutReq: signal is "true";
+   attribute keep of saciPrepReadoutAck: signal is "true";
+   attribute keep of errInhibit        : signal is "true";
+   attribute keep of iAdcPdwn          : signal is "true";
+   attribute keep of iAdcSpiCsb        : signal is "true";
+   --attribute keep of adcSpiClk         : signal is "true";
+   --attribute keep of adcSpiData        : signal is "true";
    
 begin
 
@@ -934,7 +936,7 @@ begin
    generic map (
       TPD_G             => TPD_G,
       AXIL_CLK_PERIOD_G => 10.0e-9,
-      NUM_CHIPS_G       => 2,
+      NUM_CHIPS_G       => 1,
       AXIL_ERR_RESP_G   => AXI_RESP_OK_C
    )
    port map (
@@ -946,10 +948,10 @@ begin
       axilWriteMaster   => mAxiWriteMasters(ADC_CFG_AXI_INDEX_C),
       axilWriteSlave    => mAxiWriteSlaves(ADC_CFG_AXI_INDEX_C),
 
-      adcPdwn           => iAdcPdwn,
+      adcPdwn           => iAdcPdwn(1 downto 1),
       adcSclk           => adcSpiClk,
       adcSdio           => adcSpiData,
-      adcCsb            => iAdcSpiCsb
+      adcCsb            => iAdcSpiCsb(3 downto 2)
 
       );
    

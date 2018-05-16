@@ -36,11 +36,11 @@ int main() {
       
       //initialize
       epixInit();
-      asicMask = findAsics();
-      Xil_Out32( EPIX_ASIC_MASK_REG, asicMask);
-      asicInit(asicMask);
+      //asicMask = findAsics();
+      //Xil_Out32( EPIX_ASIC_MASK_REG, asicMask);
+      //asicInit(asicMask);
       
-      ssi_printf("ASIC mask 0x%X\n", asicMask);
+      //ssi_printf("ASIC mask 0x%X\n", asicMask);
       ssi_printf("ADC REQ %d\n", req);
       
       // only monitoring ADC in use with tixel or cpix

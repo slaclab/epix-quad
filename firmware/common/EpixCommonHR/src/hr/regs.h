@@ -15,12 +15,12 @@
 #define ASIC2_OFFSET       (0x04800000)
 #define ASIC3_OFFSET       (0x04C00000)
 #define ADC_TEST_OFFSET    (0x08000000)
-#define ADC0_RDO_OFFSET    (0x09000000)
-#define ADC1_RDO_OFFSET    (0x09000000)
-#define ADC2_RDO_OFFSET    (0x09000000)
-#define ADC0_CFG_OFFSET    (0x0A000000)
-#define ADC1_CFG_OFFSET    (0x0A000800)
-#define ADC2_CFG_OFFSET    (0x0A001000)
+#define ADC0_RDO_OFFSET    (0x09000800)//bogus address to avoid conflict since there is no ADC0
+#define ADC1_RDO_OFFSET    (0x09000800)//bogus address to avoid conflict since there is no ADC1
+#define ADC2_RDO_OFFSET    (0x09001000)
+#define ADC0_CFG_OFFSET    (0x0A000800)//bogus address to avoid conflict since there is no ADC0
+#define ADC1_CFG_OFFSET    (0x0A001000)//bogus address to avoid conflict since there is no ADC1
+#define ADC2_CFG_OFFSET    (0x0A000000)
 
 #define LOG_MEM_OFFSET     (BUS_OFFSET+0x0B000000)
 
