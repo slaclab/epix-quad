@@ -44,8 +44,8 @@ START_GUI = True
 START_VIEWER = False
 #############################################
 #Define driver used
-#DRIVER = 'pgp-gen3'  
-DRIVER = 'kcu1500'
+DRIVER = 'pgp-gen3'  
+#DRIVER = 'kcu1500'
 
 if ( DRIVER == 'pgp-gen3' ):
     # Create the PGP interfaces for ePix camera

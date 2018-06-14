@@ -1,6 +1,5 @@
 ePixBoard:
   enable: 'True'
-  forceWrite: 'False'
   dataWriter:
     enable: 'True'
     dataFile: ''
