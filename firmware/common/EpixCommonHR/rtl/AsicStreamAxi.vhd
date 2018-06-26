@@ -131,6 +131,7 @@ architecture RTL of AsicStreamAxi is
    
    type RegType is record
       testMode          : sl;
+      stopDataTx        : sl;
       frmSize           : slv(15 downto 0);
       frmMax            : slv(15 downto 0);
       frmMin            : slv(15 downto 0);
@@ -145,6 +146,7 @@ architecture RTL of AsicStreamAxi is
 
    constant REG_INIT_C : RegType := (
       testMode          => '0',
+      stopDataTx        => '0',
       frmSize           => (others=>'0'),
       frmMax            => (others=>'0'),
       frmMin            => (others=>'0'),
@@ -336,6 +338,7 @@ begin
       axiSlaveRegisterR(regCon, x"14", 0, r.eofError);
       axiSlaveRegisterR(regCon, x"18", 0, r.ovError);
       axiSlaveRegister (regCon, x"1C", 0, rv.testMode);
+      axiSlaveRegister (regCon, x"1C", 1, rv.stopDataTx);
       axiSlaveRegister (regCon, x"20", 0, rv.rstCnt);
       
       axiSlaveDefault(regCon, rv.sAxilWriteSlave, rv.sAxilReadSlave, AXIL_ERR_RESP_G);
@@ -353,7 +356,7 @@ begin
       
       case s.state is
          when IDLE_S =>
-            if (dFifoValid = '1' and dFifoSof = '1') or (s.testMode = '1' and s.testTrig(1) = '1' and s.testTrig(2) = '0') then
+            if ((dFifoValid = '1' and dFifoSof = '1') or (s.testMode = '1' and s.testTrig(1) = '1' and s.testTrig(2) = '0') and (s.stopDataTx='0'))  then
                -- start sending the header
                -- do not read the fifo yet
                sv.acqNo(1) := s.acqNo(0);
