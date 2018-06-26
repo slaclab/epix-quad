@@ -328,40 +328,14 @@ class HrPrototype(pr.Device):
             analog_devices.Ad9249ConfigGroup( name='Ad9249Config[1].Adc[0]',   offset=0x0A000000, enabled=False, expand=False),
             OscilloscopeRegisters(            name='Oscilloscope',             offset=0x0C000000, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum),
             HighSpeedDacRegisters(            name='HighSpeedDAC',             offset=0x0D000000, enabled=True, expand=False, HsDacEnum = HsDacEnum),
-            pr.MemoryDevice(                  name='WaveformMem',              offset=0x0E000000, wordBitSize=16, stride=4, size=1024*4),
+            #pr.MemoryDevice(                  name='WaveformMem',              offset=0x0E000000, wordBitSize=16, stride=4, size=1024*4),
+            WaveformMemoryDevice(             name='WaveformMem',              offset=0x0E000000, wordBitSize=16, stride=4, size=1025*4),
             MicroblazeLog(                    name='MicroblazeLog',            offset=0x0B000000, expand=False),
             MMCM7Registers(                   name='MMCM7Registers',           offset=0x0F000000, enabled=False, expand=False),
             AsicTSPktRegisters(               name='AsicTSPktRegisters',       offset=0x14000000, enabled=False, expand=False)))
 
-        self.add(pr.Command(name='SetWaveform',description='Set test waveform for high speed DAC', function=self.fnSetWaveform))
-        self.add(pr.Command(name='GetWaveform',description='Get test waveform for high speed DAC', function=self.fnGetWaveform))
 
-    def enableChanged(self,value):
-        if value is True:
-            self.readBlocks(recurse=True, variable=None)
-            self.checkBlocks(recurse=True, variable=None)
-
-    def fnSetWaveform(self, dev,cmd,arg):
-        """SetTestBitmap command function"""
-        self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
-        if os.path.splitext(self.filename)[1] == '.csv':
-            waveform = np.genfromtxt(self.filename, delimiter=',', dtype='uint16')
-            if waveform.shape == (1024,):
-                for x in range (0, 1024):
-                    self._rawWrite(offset = (0x0E000000 + x * 4),data =  int(waveform[x]))
-            else:
-                print('wrong csv file format')
-
-    def fnGetWaveform(self, dev,cmd,arg):
-        """GetTestBitmap command function"""
-        self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
-        if os.path.splitext(self.filename)[1] == '.csv':
-            readBack = np.zeros((1024),dtype='uint16')
-            for x in range (0, 1024):
-                readBack[x] = self._rawRead(offset = (0x0E000000 + x * 4))
-            np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
-      
-
+   
 class HrPrototypeFpgaRegisters(pr.Device):
    def __init__(self, **kwargs):
       """Create the configuration device for HR prototype"""
@@ -1283,10 +1257,10 @@ class MMCM7Registers(pr.Device):
          return '{:.3f} kHz'.format(1/(self.clkPeriod * self._count(var.dependencies)) * 1e-3)
       return func
 
-   def enableChanged(self,value):
-        if value is True:
-            self.readBlocks(recurse=True, variable=None)
-            self.checkBlocks(recurse=True, variable=None)
+   #def enableChanged(self,value):
+   #     if value is True:
+   #         self.readBlocks(recurse=True, variable=None)
+   #         self.checkBlocks(recurse=True, variable=None)
 
 ############################################################################
 ## Deserializers HR
@@ -1636,3 +1610,35 @@ class Epix10kADouts(pr.Device):
       def func(dev, var):         
          return '{:.3f} kHz'.format(1/(self.clkPeriod * self._count(var.dependencies)) * 1e-3)
       return func
+
+
+class WaveformMemoryDevice(pr.MemoryDevice):
+    def __init__(self, **kwargs):
+        if 'description' not in kwargs:
+            kwargs['description'] = "Waveform memory device"    
+     
+        super(self.__class__, self).__init__(**kwargs)
+
+        self.add(pr.Command(name='SetWaveform',description='Set test waveform for high speed DAC', function=self.fnSetWaveform))
+        self.add(pr.Command(name='GetWaveform',description='Get test waveform for high speed DAC', function=self.fnGetWaveform))
+
+
+    def fnSetWaveform(self, dev,cmd,arg):
+        """SetTestBitmap command function"""
+        self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+        if os.path.splitext(self.filename)[1] == '.csv':
+            waveform = np.genfromtxt(self.filename, delimiter=',', dtype='uint16')
+            if waveform.shape == (1024,):
+                for x in range (0, 1024):
+                    self._rawWrite(offset = (x * 4),data =  int(waveform[x]))
+            else:
+                print('wrong csv file format')
+
+    def fnGetWaveform(self, dev,cmd,arg):
+        """GetTestBitmap command function"""
+        self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+        if os.path.splitext(self.filename)[1] == '.csv':
+            readBack = np.zeros((1024),dtype='uint16')
+            for x in range (0, 1024):
+                readBack[x] = self._rawRead(offset = (x * 4))
+            np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')

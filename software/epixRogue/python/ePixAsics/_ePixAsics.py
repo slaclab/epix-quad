@@ -280,10 +280,10 @@ class Epix100aAsic(pr.Device):
         self.add(
             pr.Command(name='GetPixelBitmap',description='Get pixel bitmap of the matrix', function=self.fnGetPixelBitmap))
 
-    def enableChanged(self,value):
-        if value is True:
-            self.readBlocks(recurse=True, variable=None)
-            self.checkBlocks(recurse=True, variable=None)
+#    def enableChanged(self,value):
+#        if value is True:
+#            self.readBlocks(recurse=True, variable=None)
+#            self.checkBlocks(recurse=True, variable=None)
 
     def fnSetPixelBitmap(self, dev,cmd,arg):
         """SetPixelBitmap command function"""
@@ -629,10 +629,10 @@ class Epix10kaAsic(pr.Device):
         self.add(
             pr.Command(name='GetPixelBitmap',description='Get pixel bitmap of the matrix', function=self.fnGetPixelBitmap))
 
-    def enableChanged(self,value):
-        if value is True:
-            self.readBlocks(recurse=True, variable=None)
-            self.checkBlocks(recurse=True, variable=None)
+#    def enableChanged(self,value):
+#        if value is True:
+#            self.readBlocks(recurse=True, variable=None)
+#            self.checkBlocks(recurse=True, variable=None)
 
     def fnSetPixelBitmap(self, dev,cmd,arg):
         """SetPixelBitmap command function"""
@@ -888,10 +888,10 @@ class TixelAsic(pr.Device):
         self.add(
             pr.Command(name='GetPixelBitmap',description='Get pixel bitmap of the matrix', function=self.fnGetPixelBitmap))
 
-    def enableChanged(self,value):
-        if value is True:
-            self.readBlocks(recurse=True, variable=None)
-            self.checkBlocks(recurse=True, variable=None)
+#    def enableChanged(self,value):
+#        if value is True:
+#            self.readBlocks(recurse=True, variable=None)
+#            self.checkBlocks(recurse=True, variable=None)
 
     def fnSetPixelBitmap(self, dev,cmd,arg):
         """SetPixelBitmap command function"""
@@ -1162,10 +1162,10 @@ class Cpix2Asic(pr.Device):
         self.add(
             pr.LocalCommand(name='GetPixelBitmap',description='Get pixel bitmap of the matrix', function=self.fnGetPixelBitmap))
 
-    def enableChanged(self,value):
-        if value is True:
-            self.readBlocks(recurse=True, variable=None)
-            self.checkBlocks(recurse=True, variable=None)
+#    def enableChanged(self,value):
+#        if value is True:
+#            self.readBlocks(recurse=True, variable=None)
+#            self.checkBlocks(recurse=True, variable=None)
 
     def fnSetPixelBitmap(self, dev,cmd,arg):
         """SetPixelBitmap command function"""
@@ -1490,10 +1490,10 @@ class EpixHrAdcAsic(pr.Device):
         self.add(
             pr.Command(name='GetPixelBitmap',description='Get pixel bitmap of the matrix', function=self.fnGetPixelBitmap))
 
-    def enableChanged(self,value):
-        if value is True:
-            self.readBlocks(recurse=True, variable=None)
-            self.checkBlocks(recurse=True, variable=None)
+#    def enableChanged(self,value):
+#        if value is True:
+#            self.readBlocks(recurse=True, variable=None)
+#            self.checkBlocks(recurse=True, variable=None)
 
     def fnSetPixelBitmap(self, dev,cmd,arg):
         """SetPixelBitmap command function"""
