@@ -419,6 +419,9 @@ begin
                   if s.frmMin >= sv.frmSize then
                      sv.frmMin := sv.frmSize;
                   end if;
+                  if dFifoEofe = '1' then
+                     sv.eofError := s.eofError + 1;
+                  end if;
                   sv.frmCnt := s.frmCnt + 1;
                   sv.axisMaster.tLast := '1';
                   sv.state := IDLE_S;

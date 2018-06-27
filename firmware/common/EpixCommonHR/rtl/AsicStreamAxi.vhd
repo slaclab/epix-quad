@@ -90,6 +90,7 @@ architecture RTL of AsicStreamAxi is
       testRowCnt     : natural;
       testTrig       : slv(2 downto 0);
       testMode       : sl;
+      stopDataTx     : sl;
       testBitFlip    : sl;
       frmSize        : slv(15 downto 0);
       frmMax         : slv(15 downto 0);
@@ -113,6 +114,7 @@ architecture RTL of AsicStreamAxi is
       testRowCnt     => 0,
       testTrig       => "000",
       testMode       => '0',
+      stopDataTx     => '0',
       testBitFlip    => '0',
       frmSize        => (others=>'0'),
       frmMax         => (others=>'0'),
@@ -311,14 +313,15 @@ begin
       
       -- cross clock sync
       
-      rv.frmSize := s.frmSize;
-      rv.frmMax  := s.frmMax;
-      rv.frmMin  := s.frmMin;
-      rv.frmCnt   := s.frmCnt;
-      rv.sofError := s.sofError;
-      rv.eofError := s.eofError;
-      rv.ovError  := s.ovError;
-      sv.testMode := r.testMode;
+      rv.frmSize    := s.frmSize;
+      rv.frmMax     := s.frmMax;
+      rv.frmMin     := s.frmMin;
+      rv.frmCnt     := s.frmCnt;
+      rv.sofError   := s.sofError;
+      rv.eofError   := s.eofError;
+      rv.ovError    := s.ovError;
+      sv.testMode   := r.testMode;
+      sv.stopDataTx := r.stopDataTx;
       if r.rstCnt /= "000" then
          sv.rstCnt := '1';
       else
@@ -356,7 +359,7 @@ begin
       
       case s.state is
          when IDLE_S =>
-            if ((dFifoValid = '1' and dFifoSof = '1') or (s.testMode = '1' and s.testTrig(1) = '1' and s.testTrig(2) = '0') and (s.stopDataTx='0'))  then
+            if (((dFifoValid = '1' and dFifoSof = '1') or (s.testMode = '1' and s.testTrig(1) = '1' and s.testTrig(2) = '0')) and (s.stopDataTx='0'))  then
                -- start sending the header
                -- do not read the fifo yet
                sv.acqNo(1) := s.acqNo(0);
