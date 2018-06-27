@@ -321,8 +321,8 @@ class HrPrototype(pr.Device):
             #epix.EpixHrAdcAsic(               name='HrAdcAsic1',               offset=0x04400000, enabled=False, expand=False),
             AsicDeserHrRegisters(             name='Asic0Deserializer',        offset=0x10000000, enabled=False, expand=False),
             AsicDeserHrRegisters(             name='Asic1Deserializer',        offset=0x11000000, enabled=False, expand=False),
-            AsicPktRegisters(                 name='Asic0PktRegisters',        offset=0x12000000, enabled=False, expand=False),
-            AsicPktRegisters(                 name='Asic1PktRegisters',        offset=0x13000000, enabled=False, expand=False),
+            AsicPktRegistersHr(               name='Asic0PktRegisters',        offset=0x12000000, enabled=False, expand=False),
+            AsicPktRegistersHr(               name='Asic1PktRegisters',        offset=0x13000000, enabled=False, expand=False),
             pgp.Pgp2bAxi(                     name='Pgp2bAxi',                 offset=0x06000000, enabled=False, expand=False),
             analog_devices.Ad9249ReadoutGroup(name='Ad9249Rdout[1].Adc[0]',    offset=0x09000000, channels=4, enabled=False, expand=False),
             analog_devices.Ad9249ConfigGroup( name='Ad9249Config[1].Adc[0]',   offset=0x0A000000, enabled=False, expand=False),
@@ -1446,6 +1446,50 @@ class AsicDeserRegisters(pr.Device):
 
 
 class AsicPktRegisters(pr.Device):
+   def __init__(self, **kwargs):
+      super().__init__(description='Asic data packet registers', **kwargs)
+      
+      # Creation. memBase is either the register bus server (srp, rce mapped memory, etc) or the device which
+      # contains this object. In most cases the parent and memBase are the same but they can be 
+      # different in more complex bus structures. They will also be different for the top most node.
+      # The setMemBase call can be used to update the memBase for this Device. All sub-devices and local
+      # blocks will be updated.
+      
+      #############################################
+      # Create block / variable combinations
+      #############################################
+      
+      
+      #Setup registers & variables
+      
+      self.add(pr.RemoteVariable(name='FrameCount',      description='FrameCount',     offset=0x00000000, bitSize=32,  bitOffset=0, base=pr.UInt, disp = '{}', mode='RO'))
+      self.add(pr.RemoteVariable(name='FrameSize',       description='FrameSize',      offset=0x00000004, bitSize=16,  bitOffset=0, base=pr.UInt, disp = '{}', mode='RO'))
+      self.add(pr.RemoteVariable(name='FrameMaxSize',    description='FrameMaxSize',   offset=0x00000008, bitSize=16,  bitOffset=0, base=pr.UInt, disp = '{}', mode='RO'))
+      self.add(pr.RemoteVariable(name='FrameMinSize',    description='FrameMinSize',   offset=0x0000000C, bitSize=16,  bitOffset=0, base=pr.UInt, disp = '{}', mode='RO'))
+      self.add(pr.RemoteVariable(name='SofErrors',       description='SofErrors',      offset=0x00000010, bitSize=16,  bitOffset=0, base=pr.UInt, disp = '{}', mode='RO'))
+      self.add(pr.RemoteVariable(name='EofErrors',       description='EofErrors',      offset=0x00000014, bitSize=16,  bitOffset=0, base=pr.UInt, disp = '{}', mode='RO'))
+      self.add(pr.RemoteVariable(name='OverflowErrors',  description='OverflowErrors', offset=0x00000018, bitSize=16,  bitOffset=0, base=pr.UInt, disp = '{:#x}', mode='RO'))
+      self.add(pr.RemoteVariable(name='TestMode',        description='TestMode',       offset=0x0000001C, bitSize=1,   bitOffset=0, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='ResetCounters',   description='ResetCounters',  offset=0x00000020, bitSize=1,   bitOffset=0, base=pr.Bool, mode='RW', verify = False))
+      
+      #####################################
+      # Create commands
+      #####################################
+      
+      # A command has an associated function. The function can be a series of
+      # python commands in a string. Function calls are executed in the command scope
+      # the passed arg is available as 'arg'. Use 'dev' to get to device scope.
+      # A command can also be a call to a local function with local scope.
+      # The command object and the arg are passed
+
+   @staticmethod   
+   def frequencyConverter(self):
+      def func(dev, var):         
+         return '{:.3f} kHz'.format(1/(self.clkPeriod * self._count(var.dependencies)) * 1e-3)
+      return func
+
+
+class AsicPktRegistersHr(pr.Device):
    def __init__(self, **kwargs):
       super().__init__(description='Asic data packet registers', **kwargs)
       
