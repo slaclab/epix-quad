@@ -2,7 +2,7 @@
 -- File       : TSDecoderMode.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2014-07-14
--- Last update: 2018-05-11
+-- Last update: 2018-06-28
 -------------------------------------------------------------------------------
 -- Description: The test structure sends data in different way depending on the
 -- selected mode (using SACI registers). This modules adapts the data from the
@@ -77,20 +77,40 @@ architecture rtl of TSDecoderMode is
   
   signal s   : StrType := STR_INIT_C;
   signal sin : StrType;
+
+  signal validInSync  : sl;
+  signal dataInSync   : slv(15 downto 0);
   
   attribute keep : string;                    -- for chipscope
   attribute keep of s : signal is "true";     -- for chipscope
 
 begin
-  comb : process (s, dataIn, validIn, modeIn) is
+
+  Sync1_U : entity wrk.Synchronizer
+   port map (
+      clk     => clk,
+      rst     => rst,
+      dataIn  => validIn,
+      dataOut => validInSync
+   );
+
+  Sync2_U : entity wrk.SynchronizerVector
+   port map (
+      clk     => clk,
+      rst     => rst,
+      dataIn  => dataIn,
+      dataOut => dataInSync
+   );
+  
+  comb : process (s, dataInSync, validInSync, modeIn) is
     variable sv       : StrType;
 
   begin
     sv := s;
 
     --saves input signal in local varialble
-    sv.data := dataIn;
-    sv.dataValid := validIn;
+    sv.data := dataInSync;
+    sv.dataValid := validInSync;
 
     -- state machine that creates data packet and SOF, EOF flags
     case s.state is
@@ -101,7 +121,7 @@ begin
         sv.eofe := '0';
         sv.frmSize := (others=>'0');
         -- next state logic
-        if (validIn='1') and (s.dataValid='0') then
+        if (validInSync='1') and (s.dataValid='0') then
             sv.sof := '1';
             sv.state := SOF_S;
         end if;
@@ -110,7 +130,7 @@ begin
         sv.sof := '0';
         if ((modeIn = "00") or (modeIn = "01")) then
           --next state logic
-          if (validIn='0') and (s.dataValid='1') then
+          if (validInSync='0') and (s.dataValid='1') then
             sv.state := VALID_DATA_S;
           end if;
         else
