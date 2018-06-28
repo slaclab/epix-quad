@@ -168,6 +168,10 @@ if PLOT_RAW :
     plt.title('Raw lines :'+filename)
     plt.show()
 
+    plt.plot(allFrames[:,20])
+    plt.title('ADC value vs packet number :'+filename)
+    plt.show()
+
 
 if PLOT_IMAGE_DARK :
     darkImg = np.mean(imgDesc, axis=0)
