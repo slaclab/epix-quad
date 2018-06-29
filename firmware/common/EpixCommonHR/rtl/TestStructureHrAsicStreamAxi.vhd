@@ -204,11 +204,11 @@ begin
    -- synchronizers
    Sync1_U : entity work.Synchronizer
    port map (
-      clk     => rxClk,
+      clk     => axisClk,
       rst     => rxRst,
       dataIn  => s.testMode,
       dataOut => testModeSync
-   );
+   );   
    
 
     -- test structure data decoder
@@ -217,7 +217,7 @@ begin
       RST_POLARITY_G => '1'
    )
    port map (
-      clk         => rxClk,
+      clk         => axisClk,
       rst         => rxRst,
       dataIn      => rxData,
       validIn     => iRxValid,
@@ -245,7 +245,7 @@ begin
    port map (
       -- Resets
       rst               => rxRst,
-      wr_clk            => rxClk,
+      wr_clk            => axisClk,
       wr_en             => decValid,
       din(15 downto 0)  => decDataOut,
       din(16)           => decEofe,
