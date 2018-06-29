@@ -86,7 +86,7 @@ architecture rtl of TSDecoderMode is
 
 begin
 
-  Sync1_U : entity wrk.Synchronizer
+  Sync1_U : entity work.Synchronizer
    port map (
       clk     => clk,
       rst     => rst,
@@ -94,7 +94,7 @@ begin
       dataOut => validInSync
    );
 
-  Sync2_U : entity wrk.SynchronizerVector
+  Sync2_U : entity work.SynchronizerVector
    port map (
       clk     => clk,
       rst     => rst,
