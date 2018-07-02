@@ -204,7 +204,7 @@ begin
    -- synchronizers
    Sync1_U : entity work.Synchronizer
    port map (
-      clk     => axisClk,
+      clk     => rxClk,
       rst     => rxRst,
       dataIn  => s.testMode,
       dataOut => testModeSync
@@ -217,7 +217,7 @@ begin
       RST_POLARITY_G => '1'
    )
    port map (
-      clk         => axisClk,
+      clk         => rxClk,
       rst         => rxRst,
       dataIn      => rxData,
       validIn     => iRxValid,
@@ -245,7 +245,7 @@ begin
    port map (
       -- Resets
       rst               => rxRst,
-      wr_clk            => axisClk,
+      wr_clk            => rxClk,
       wr_en             => decValid,
       din(15 downto 0)  => decDataOut,
       din(16)           => decEofe,

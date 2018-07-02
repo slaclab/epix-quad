@@ -203,6 +203,15 @@ begin  -- _arch
       iasicTsData <= std_logic_vector(to_unsigned(i, 16));
       iasicTsSync <= '1';
       wait until rising_edge(sysClk);
+      wait until rising_edge(sysClk);
+      wait until rising_edge(sysClk);
+      wait until rising_edge(sysClk);
+      wait until rising_edge(sysClk);
+      wait until rising_edge(sysClk);
+      wait until rising_edge(sysClk);
+      wait until rising_edge(sysClk);
+      wait until rising_edge(sysClk);
+      
       if i < 1023 then
         iasicTsSync <= '0';  
       end if;

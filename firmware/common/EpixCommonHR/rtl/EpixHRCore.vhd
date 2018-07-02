@@ -4,7 +4,7 @@
 -- File       : EpixHRCore.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 03/02/2016
--- Last update: 2018-05-14
+-- Last update: 2018-06-29
 -- Platform   : Vivado 2014.4
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -282,6 +282,7 @@ architecture top_level of EpixHRCore is
    
    attribute keep of coreClk           : signal is "true";
    attribute keep of byteClk           : signal is "true";
+   attribute keep of bitClk           : signal is "true";
    attribute keep of asicRfClk         : signal is "true";
    attribute keep of acqStart          : signal is "true";
    attribute keep of mAxiWriteMasters  : signal is "true";
@@ -637,8 +638,8 @@ begin
          ASIC_NO_G   => std_logic_vector(to_unsigned(NUMBER_OF_ASICS_C, 3)) -- TS ID is the next after all ASICs
       )
       port map (
-         rxClk             => byteClk,
-         rxRst             => byteClkRst,
+         rxClk             => bitClk,
+         rxRst             => bitClkRst,
          rxData            => iasicTsData,
          rxValid           => iasicTsSync,
          axilClk           => coreClk,

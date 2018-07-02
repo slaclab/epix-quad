@@ -2,7 +2,7 @@
 -- File       : TSDecoderMode.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2014-07-14
--- Last update: 2018-06-28
+-- Last update: 2018-06-29
 -------------------------------------------------------------------------------
 -- Description: The test structure sends data in different way depending on the
 -- selected mode (using SACI registers). This modules adapts the data from the
@@ -78,14 +78,18 @@ architecture rtl of TSDecoderMode is
   signal s   : StrType := STR_INIT_C;
   signal sin : StrType;
 
-  signal validInSync  : sl;
-  signal dataInSync   : slv(15 downto 0);
+  signal validInSync      : sl;
+  signal dataInSync       : slv(15 downto 0);
+  signal validOutSig      : sl;
+  signal validOutOneShot  : sl;     
   
   attribute keep : string;                    -- for chipscope
   attribute keep of s : signal is "true";     -- for chipscope
 
 begin
 
+  validOut  <= validOutOneShot;
+  
   Sync1_U : entity work.Synchronizer
    port map (
       clk     => clk,
@@ -101,8 +105,16 @@ begin
       dataIn  => dataIn,
       dataOut => dataInSync
    );
+
+   Sync3_U : entity work.SynchronizerOneShot
+   port map (
+      clk     => clk,
+      rst     => rst,
+      dataIn  => validOutSig,
+      dataOut => validOutOneShot
+   );
   
-  comb : process (s, dataInSync, validInSync, modeIn) is
+  comb : process (s, dataInSync, validInSync, validOutOneShot, modeIn) is
     variable sv       : StrType;
 
   begin
@@ -145,7 +157,7 @@ begin
         --sof flag
         sv.sof := '0';
         --keeps track of how much data has been saved
-        if s.dataValid = '1' then
+        if validOutOneShot = '1' then
           sv.frmSize := s.frmSize + '1';
         end if;
         --next state logic
@@ -184,9 +196,9 @@ begin
     dataOut  <= s.data;
     -- overwrite signal due to inverted control logic in the asic
     if (s.state = VALID_DATA_S) then
-      validOut <= s.dataValid;
+      validOutSig <= s.dataValid;
     else
-      validOut <= '0';
+      validOutSig <= '0';
     end if;    
     sof      <= s.sof;
     eof      <= s.eof;
