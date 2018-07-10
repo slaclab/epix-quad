@@ -34,7 +34,7 @@ NUMBER_OF_PACKETS_PER_FRAME = 1
 MAX_NUMBER_OF_FRAMES_PER_BATCH  = -1
 
 PAYLOAD_SERIAL_FRAME = 2064
-PAYLOAD_TS           = 84
+PAYLOAD_TS           = 80
 
 ##################################################
 # Global variables
