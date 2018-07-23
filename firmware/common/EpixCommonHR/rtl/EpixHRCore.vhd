@@ -4,7 +4,7 @@
 -- File       : EpixHRCore.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 03/02/2016
--- Last update: 2018-06-29
+-- Last update: 2018-07-23
 -- Platform   : Vivado 2014.4
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -182,6 +182,8 @@ architecture top_level of EpixHRCore is
    signal heartBeat   : sl;
    signal txLinkReady : sl;
    signal rxLinkReady : sl;
+   signal tsClk0      : sl;
+   signal tsClk1      : sl;
    
    signal asicRfClk     : sl;
    signal asicRfClkRst  : sl;
@@ -476,6 +478,8 @@ begin
    -- clkOut(2) : 8 MHz ASIC readout clock
    -- clkOut(3) : 20 MHz ASIC reference clock
    -- clkOut(4) : 200 MHz Idelaye2 calibration clock
+   -- clkOut(5) : 100.00 MHz system clock TS clocks
+   -- clkOut(6) : 100.00 MHz system clock TS clocks
    U_CoreClockGen : entity work.ClockManager7
    generic map (
       INPUT_BUFG_G         => false,
@@ -503,7 +507,15 @@ begin
       
       CLKOUT4_DIVIDE_G     => 5,
       CLKOUT4_PHASE_G      => 0.0,
-      CLKOUT4_DUTY_CYCLE_G => 0.5
+      CLKOUT4_DUTY_CYCLE_G => 0.5,
+
+      CLKOUT5_DIVIDE_G     => 10,
+      CLKOUT5_PHASE_G      => 0.0,
+      CLKOUT5_DUTY_CYCLE_G => 0.5,
+
+      CLKOUT6_DIVIDE_G     => 10,
+      CLKOUT6_PHASE_G      => 0.0,
+      CLKOUT6_DUTY_CYCLE_G => 0.5
    )
    port map (
       clkIn     => pgpClk,
@@ -513,11 +525,15 @@ begin
       clkOut(2) => asicRdClk,
       clkOut(3) => asicRfClk,
       clkOut(4) => iDelayCtrlClk,
+      clkOut(5) => tsClk0,
+      clkOut(6) => tsClk1,
       rstOut(0) => bitClkRst,
       rstOut(1) => coreClkRst,
       rstOut(2) => asicRdClkRst,
       rstOut(3) => asicRfClkRst,
       rstOut(4) => iDelayCtrlRst,
+      rstOut(5) => open,
+      rstOut(6) => open,
       locked    => open,
       -- AXI-Lite Interface       
       axilClk           => coreClk,
@@ -656,6 +672,27 @@ begin
          testTrig          => iAsicAcq,
          errInhibit        => errInhibit
       );
+
+   U_AXI_TS_ExtClk : entity work.TSWaveCtrlEpixHR 
+     generic map(
+       TPD_G             => TPD_G
+       )
+     port map(
+       -- Global Signals
+       axiClk         => coreClk,
+       sysCLK         => tsClk0,
+       dSysClk        => tsClk1,
+       axiRst         => axiRst,
+       -- AXI-Lite Register Interface (axiClk domain)
+       axiReadMaster  => mAxiReadMasters(TS_AXI_INDEX2_C), 
+       axiReadSlave   => mAxiReadSlaves(TS_AXI_INDEX2_C),
+       axiWriteMaster => mAxiWriteMasters(TS_AXI_INDEX2_C),
+       axiWriteSlave  => mAxiWriteSlaves(TS_AXI_INDEX2_C),
+       -- ASICs acquisition signals
+       asicSDCLk      => asicTsAdcClk,
+       asicSDRst      => asicTsRst,
+       asicSHClk      => asicTsShClk
+       );
 
 
    
