@@ -80,8 +80,9 @@ ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/dFifoEofe}
 ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/dFifoValid}
 ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/rxDataCs[*]}
 ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/rxValidCs}
-ConfigProbe ${ilaName} {U_EpixHR/iAdcPdwn[*]}
-ConfigProbe ${ilaName} {U_EpixHR/iAdcSpiCsb[*]}
+ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_ExtClk/r[*]}
+#ConfigProbe ${ilaName} {U_EpixHR/iAdcPdwn[*]}
+#ConfigProbe ${ilaName} {U_EpixHR/iAdcSpiCsb[*]}
 #ConfigProbe ${ilaName} {U_EpixHR/U_MonAdcReadout/axilR[*]}
 #ConfigProbe ${ilaName} {U_EpixHR/U_MonAdcReadout/curDelayData[*]}
 #ConfigProbe ${ilaName} {U_EpixHR/adcSpiClk}

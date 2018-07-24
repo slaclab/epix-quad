@@ -4,7 +4,7 @@
 -- File       : TSWaveCtrlEpixHR.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 07/20/2018
--- Last update: 2018-07-23
+-- Last update: 2018-07-24
 -- Platform   : Vivado 2017.4
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -95,7 +95,7 @@ architecture rtl of TSWaveCtrlEpixHR is
    
    constant REG_INIT_C : RegType := (
       usrRst            => '0',
-      enWaveforms       => '0',
+      enWaveforms       => '1',
       adcClk            => '1',
       adcCnt            => (others=>'0'),
       adcClkHalfT       => x"00000001",
@@ -109,6 +109,10 @@ architecture rtl of TSWaveCtrlEpixHR is
    signal rin : RegType;
    
    signal axiReset : sl;
+
+   attribute keep : string;                              -- for chipscope
+   attribute keep of r : signal is "true";               -- for chipscope
+
       
 begin
 
@@ -132,8 +136,8 @@ begin
       axiSlaveWaitTxn(regCon, axiWriteMaster, axiReadMaster, v.axiWriteSlave, v.axiReadSlave);
       
       -- Map out standard registers
-      axiSlaveRegister (regCon, x"000000",  0, v.usrRst);
-      axiSlaveRegister (regCon, x"000004",  0, v.enWaveforms);
+      axiSlaveRegister(regCon,  x"000000",  0, v.usrRst);
+      axiSlaveRegister(regCon,  x"000004",  0, v.enWaveforms);
       axiSlaveRegister(regCon,  x"000010",  0, v.adcClkHalfT);
       axiSlaveRegister(regCon,  x"000020",  0, v.asicAcqReg.SDRstPolarity);
       axiSlaveRegister(regCon,  x"000024",  0, v.asicAcqReg.SDRstDelay);
@@ -218,7 +222,7 @@ begin
    delyedLatch : process (dSysClk) is
    begin
       if rising_edge(dSysClk) then
-         asicSDClk <= rin.adcClk after TPD_G;
+         asicSDClk <= r.adcClk after TPD_G;
       end if;
    end process delyedLatch;
    
