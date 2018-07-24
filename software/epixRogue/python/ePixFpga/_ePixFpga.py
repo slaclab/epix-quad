@@ -332,7 +332,8 @@ class HrPrototype(pr.Device):
             WaveformMemoryDevice(             name='WaveformMem',              offset=0x0E000000, wordBitSize=16, stride=4, size=1025*4),
             MicroblazeLog(                    name='MicroblazeLog',            offset=0x0B000000, expand=False),
             MMCM7Registers(                   name='MMCM7Registers',           offset=0x0F000000, enabled=False, expand=False),
-            AsicTSPktRegisters(               name='AsicTSPktRegisters',       offset=0x14000000, enabled=False, expand=False)))
+            AsicTSPktRegisters(               name='AsicTSPktRegisters',       offset=0x14000000, enabled=False, expand=False),
+            TSWaveCtrlEpixHR(                 name='TSExternalClkRegisters',   offset=0x15000000, enabled=False, expand=False)))
 
 
    
@@ -1352,6 +1353,54 @@ class AsicDeserHrRegisters(pr.Device):
       def func(dev, var):         
          return '{:.3f} kHz'.format(1/(self.clkPeriod * self._count(var.dependencies)) * 1e-3)
       return func
+
+class TSWaveCtrlEpixHR(pr.Device):
+   def __init__(self, HsDacEnum, **kwargs):
+      super().__init__(description='HS DAC Registers', **kwargs)
+      
+      #############################################
+      # Create block / variable combinations
+      #############################################
+      
+      
+      #Setup registers & variables
+      
+      self.add((
+         pr.RemoteVariable(name='userReset',     description='Triggers user reset', offset=0x00000000, bitSize=1,   bitOffset=0,   base=pr.Bool, mode='WO'),
+         pr.RemoteVariable(name='enWaveforms',   description='Enable waveform',     offset=0x00000004, bitSize=1,   bitOffset=0,   base=pr.Bool, mode='RW'),
+         pr.RemoteVariable(name='adcClkHalfT',   description='ADC clock period',    offset=0x00000010, bitSize=32,  bitOffset=0,   base=pr.UInt, disp = '{}', mode='RW'),
+         pr.RemoteVariable(name='SDRstPolarity', description='SD polarity',         offset=0x00000020, bitSize=1,   bitOffset=0,   base=pr.Bool, mode='RW'),
+         pr.RemoteVariable(name='SDRstDelay',    description='SD delay',            offset=0x00000024, bitSize=32,  bitOffset=0,   base=pr.UInt, disp = '{}', mode='RW'),
+         pr.RemoteVariable(name='SDRstWidth',    description='SD width',            offset=0x00000028, bitSize=32,  bitOffset=0,   base=pr.UInt, disp = '{}', mode='RW'),
+         pr.RemoteVariable(name='SHClkPolarity', description='SH polarity',         offset=0x00000030, bitSize=1,   bitOffset=0,   base=pr.Bool, mode='RW'),
+         pr.RemoteVariable(name='SHClkDelay',    description='SD delay',            offset=0x00000034, bitSize=32,  bitOffset=0,   base=pr.UInt, disp = '{}', mode='RW'),
+         pr.RemoteVariable(name='SHClkWidth',    description='SD width',            offset=0x00000038, bitSize=32,  bitOffset=0,   base=pr.UInt, disp = '{}', mode='RW')
+))
+      
+      axiSlaveRegister(regCon,  x"000020",  0, v.asicAcqReg.SDRstPolarity);
+      axiSlaveRegister(regCon,  x"000024",  0, v.asicAcqReg.SDRstDelay);
+      axiSlaveRegister(regCon,  x"000028",  0, v.asicAcqReg.SDRstWidth);
+      axiSlaveRegister(regCon,  x"000030",  0, v.asicAcqReg.SHClkPolarity);
+      axiSlaveRegister(regCon,  x"000034",  0, v.asicAcqReg.SHClkDelay);
+      axiSlaveRegister(regCon,  x"000038",  0, v.asicAcqReg.SHClkWidth); 
+
+      
+      #####################################
+      # Create commands
+      #####################################
+      
+      # A command has an associated function. The function can be a series of
+      # python commands in a string. Function calls are executed in the command scope
+      # the passed arg is available as 'arg'. Use 'dev' to get to device scope.
+      # A command can also be a call to a local function with local scope.
+      # The command object and the arg are passed
+   
+   @staticmethod   
+   def frequencyConverter(self):
+      def func(dev, var):         
+         return '{:.3f} kHz'.format(1/(self.clkPeriod * self._count(var.dependencies)) * 1e-3)
+      return func
+
 
 ############################################################################
 ## Deserializers (cpix/Tixel)
