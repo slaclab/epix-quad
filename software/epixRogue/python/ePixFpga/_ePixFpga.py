@@ -313,10 +313,10 @@ class HrPrototype(pr.Device):
       
         super(self.__class__, self).__init__(**kwargs)
         self.add((
-            axi.AxiVersion(                   name="AxiVersion",               description="AXI-Lite Version Module", memBase=None, offset=0x00000000, hidden =  False, expand=False),
-            HrPrototypeFpgaRegisters(         name="HrPrototypeFpgaRegisters", offset=0x01000000, expand=False),
-            TriggerRegisters(                 name="TriggerRegisters",         offset=0x02000000, expand=False),
-            SlowAdcRegisters(                 name="SlowAdcRegisters",         offset=0x03000000, expand=False),
+            axi.AxiVersion(                   name="AxiVersion",               description="AXI-Lite Version Module", enabled=False, memBase=None, offset=0x00000000, hidden =  False, expand=False),
+            HrPrototypeFpgaRegisters(         name="HrPrototypeFpgaRegisters", offset=0x01000000, enabled=False, expand=False),
+            TriggerRegisters(                 name="TriggerRegisters",         offset=0x02000000, enabled=False, expand=False),
+            SlowAdcRegisters(                 name="SlowAdcRegisters",         offset=0x03000000, enabled=False, expand=False),
             epix.EpixHrAdcAsic(               name='HrAdcAsic0',               offset=0x04000000, enabled=False, expand=False),
             #epix.EpixHrAdcAsic(               name='HrAdcAsic1',               offset=0x04400000, enabled=False, expand=False),
             AsicDeserHrRegisters(             name='Asic0Deserializer',        offset=0x10000000, enabled=False, expand=False),
@@ -326,11 +326,11 @@ class HrPrototype(pr.Device):
             pgp.Pgp2bAxi(                     name='Pgp2bAxi',                 offset=0x06000000, enabled=False, expand=False),
             analog_devices.Ad9249ReadoutGroup(name='Ad9249Rdout[1].Adc[0]',    offset=0x09000000, channels=4, enabled=False, expand=False),
             analog_devices.Ad9249ConfigGroup( name='Ad9249Config[1].Adc[0]',   offset=0x0A000000, enabled=False, expand=False),
-            OscilloscopeRegisters(            name='Oscilloscope',             offset=0x0C000000, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum),
-            HighSpeedDacRegisters(            name='HighSpeedDAC',             offset=0x0D000000, enabled=True, expand=False, HsDacEnum = HsDacEnum),
+            OscilloscopeRegisters(            name='Oscilloscope',             offset=0x0C000000, enabled=False, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum),
+            HighSpeedDacRegisters(            name='HighSpeedDAC',             offset=0x0D000000, enabled=False, expand=False, HsDacEnum = HsDacEnum),
             #pr.MemoryDevice(                  name='WaveformMem',              offset=0x0E000000, wordBitSize=16, stride=4, size=1024*4),
-            WaveformMemoryDevice(             name='WaveformMem',              offset=0x0E000000, wordBitSize=16, stride=4, size=1025*4),
-            MicroblazeLog(                    name='MicroblazeLog',            offset=0x0B000000, expand=False),
+            WaveformMemoryDevice(             name='WaveformMem',              offset=0x0E000000, enabled=False, wordBitSize=16, stride=4, size=1025*4),
+            MicroblazeLog(                    name='MicroblazeLog',            offset=0x0B000000, enabled=False, expand=False),
             MMCM7Registers(                   name='MMCM7Registers',           offset=0x0F000000, enabled=False, expand=False),
             AsicTSPktRegisters(               name='AsicTSPktRegisters',       offset=0x14000000, enabled=False, expand=False),
             TSWaveCtrlEpixHR(                 name='TSExternalClkRegisters',   offset=0x15000000, enabled=False, expand=False)))
@@ -1355,7 +1355,7 @@ class AsicDeserHrRegisters(pr.Device):
       return func
 
 class TSWaveCtrlEpixHR(pr.Device):
-   def __init__(self, HsDacEnum, **kwargs):
+   def __init__(self, **kwargs):
       super().__init__(description='HS DAC Registers', **kwargs)
       
       #############################################
@@ -1374,15 +1374,7 @@ class TSWaveCtrlEpixHR(pr.Device):
          pr.RemoteVariable(name='SDRstWidth',    description='SD width',            offset=0x00000028, bitSize=32,  bitOffset=0,   base=pr.UInt, disp = '{}', mode='RW'),
          pr.RemoteVariable(name='SHClkPolarity', description='SH polarity',         offset=0x00000030, bitSize=1,   bitOffset=0,   base=pr.Bool, mode='RW'),
          pr.RemoteVariable(name='SHClkDelay',    description='SD delay',            offset=0x00000034, bitSize=32,  bitOffset=0,   base=pr.UInt, disp = '{}', mode='RW'),
-         pr.RemoteVariable(name='SHClkWidth',    description='SD width',            offset=0x00000038, bitSize=32,  bitOffset=0,   base=pr.UInt, disp = '{}', mode='RW')
-))
-      
-      axiSlaveRegister(regCon,  x"000020",  0, v.asicAcqReg.SDRstPolarity);
-      axiSlaveRegister(regCon,  x"000024",  0, v.asicAcqReg.SDRstDelay);
-      axiSlaveRegister(regCon,  x"000028",  0, v.asicAcqReg.SDRstWidth);
-      axiSlaveRegister(regCon,  x"000030",  0, v.asicAcqReg.SHClkPolarity);
-      axiSlaveRegister(regCon,  x"000034",  0, v.asicAcqReg.SHClkDelay);
-      axiSlaveRegister(regCon,  x"000038",  0, v.asicAcqReg.SHClkWidth); 
+         pr.RemoteVariable(name='SHClkWidth',    description='SD width',            offset=0x00000038, bitSize=32,  bitOffset=0,   base=pr.UInt, disp = '{}', mode='RW')))     
 
       
       #####################################
