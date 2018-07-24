@@ -200,7 +200,8 @@ begin
       --------------------------
       -- Outputs 
       --------------------------
-      
+      axiReadSlave   <= r.axiReadSlave;
+      axiWriteSlave  <= r.axiWriteSlave;
       
    end process comb;
 

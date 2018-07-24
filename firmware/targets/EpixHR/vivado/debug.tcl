@@ -38,7 +38,8 @@ set_property C_DATA_DEPTH 2048 [get_debug_cores ${ilaName}]
 #################################
 ## Set the clock for the ILA core
 #################################
-SetDebugCoreClk ${ilaName} {U_EpixHR/bitClk}
+#SetDebugCoreClk ${ilaName} {U_EpixHR/bitClk}
+SetDebugCoreClk ${ilaName} {U_EpixHR/coreClk}
 
 #######################
 ## Set the debug Probes
@@ -72,14 +73,14 @@ ConfigProbe ${ilaName} {U_EpixHR/byteClk}
 #ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[1].U_AXI_Framer/dFifoEofe}
 #ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[1].U_AXI_Framer/dFifoValid}
 #ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[1].U_AXI_Framer/rxValidCs}
-ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/DecTSMode_U/s[*]}
-ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/dFifoOut[*]}
-ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/dFifoSof}
-ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/dFifoEof}
-ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/dFifoEofe}
-ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/dFifoValid}
-ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/rxDataCs[*]}
-ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/rxValidCs}
+#ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/DecTSMode_U/s[*]}
+#ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/dFifoOut[*]}
+#ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/dFifoSof}
+#ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/dFifoEof}
+#ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/dFifoEofe}
+#ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/dFifoValid}
+#ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/rxDataCs[*]}
+#ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_Framer/rxValidCs}
 ConfigProbe ${ilaName} {U_EpixHR/U_AXI_TS_ExtClk/r[*]}
 #ConfigProbe ${ilaName} {U_EpixHR/iAdcPdwn[*]}
 #ConfigProbe ${ilaName} {U_EpixHR/iAdcSpiCsb[*]}
