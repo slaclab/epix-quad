@@ -95,7 +95,7 @@ architecture rtl of TSWaveCtrlEpixHR is
    
    constant REG_INIT_C : RegType := (
       usrRst            => '0',
-      enWaveforms       => '1',
+      enWaveforms       => '0',
       adcClk            => '1',
       adcCnt            => (others=>'0'),
       adcClkHalfT       => x"00000001",
@@ -155,7 +155,7 @@ begin
       axiSlaveDefault(regCon, v.axiWriteSlave, v.axiReadSlave, AXI_RESP_OK_C);
       
       -- ADC clock counter
-      if r.adcCnt >= r.adcClkHalfT - 1 then
+      if (r.adcCnt >= r.adcClkHalfT - 1) and (r.enWaveforms = '1') then
          v.adcClk := not r.adcClk;
          v.adcCnt := (others => '0');
       else
