@@ -35,7 +35,7 @@ MAX_NUMBER_OF_FRAMES_PER_BATCH  = -1
 
 PAYLOAD_SERIAL_FRAME = 2064
 PAYLOAD_TS           = 2068 #80 internal clock mode 0
-                            #2068 external clock mode 2
+                            #2068 external clock mode 2 
 
 ##################################################
 # Global variables
