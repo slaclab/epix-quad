@@ -43,8 +43,8 @@ START_GUI = True
 START_VIEWER = True
 #############################################
 #Define driver used
-#DRIVER = 'pgp-gen3'  
-DRIVER = 'kcu1500'
+DRIVER = 'pgp-gen3'  
+#DRIVER = 'kcu1500'
 
 if ( DRIVER == 'pgp-gen3' ):
     # Create the PGP interfaces for ePix camera
@@ -141,9 +141,17 @@ class EpixBoard(pyrogue.Root):
         self.add(fpga.Cpix2(name='Cpix2', offset=0, memBase=srp, hidden=False, enabled=True))
 
         @self.command()
-        def Trigger():
+        def Trigger():       
             self.Cpix2.Cpix2FpgaRegisters.EnSingleFrame.post(True)
-            self.Cpix2.Cpix2Asic1.Pulser.set(self.Cpix2.Cpix2Asic1.Pulser.get()+1)
+            pulserAmpliture = self.Cpix2.Cpix2Asic1.Pulser.get()
+            if pulserAmpliture == 1023:
+                pulserAmpliture = 0
+            else:
+                pulserAmpliture += 1
+            self.Cpix2.Cpix2Asic1.Pulser.set(pulserAmpliture)
+            self.runControl.runCount.set(self.runControl.runCount.get()) 
+            #print("run control", self.runControl.runCount.get())
+
 
         self.add(pyrogue.RunControl(name = 'runControl', description='Run Controller cPix2', cmd=self.Trigger, rates={1:'1 Hz', 2:'2 Hz', 4:'4 Hz', 8:'8 Hz', 10:'10 Hz', 30:'30 Hz', 60:'60 Hz', 120:'120 Hz'}))
         #set timeout value
@@ -156,7 +164,7 @@ class EpixBoard(pyrogue.Root):
 appTop = PyQt4.QtGui.QApplication(sys.argv)
 guiTop = pyrogue.gui.GuiTop(group = 'Cpix2Gui')
 ePixBoard = EpixBoard(guiTop, cmd, dataWriter, srp)
-ePixBoard.start(pollEn=False)
+ePixBoard.start(pollEn=False, timeout=3.0)
 guiTop.addTree(ePixBoard)
 guiTop.resize(1000,800)
 

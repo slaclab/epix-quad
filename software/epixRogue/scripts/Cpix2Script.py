@@ -43,8 +43,8 @@ START_GUI = False
 START_VIEWER = False
 #############################################
 # Available tests
-TEST_SERDES_DELAY_TWO_ASICS = True
-TEST_SERDES_DELAY_ASIC_TWO  = False
+TEST_SERDES_DELAY_TWO_ASICS = False
+TEST_SERDES_DELAY_ASIC_TWO  = True
 #############################################
 #############################################
 #print debug info
@@ -190,7 +190,7 @@ def stop():
 
 if (TEST_SERDES_DELAY_TWO_ASICS):
     #read config parameters for the fpga and asic
-    ePixBoard.readConfig("yml/cpix2_test2.yml")
+    ePixBoard._readConfig("yml/cpix_ASIC2_Fe55Test.yml")
 
     #set registers to take dark images
     #ePixBoard.Epix10ka.Epix10kaAsic0.fnSetPixelBitmap(cmd=cmd, dev=ePixBoard.Epix10ka.Epix10kaAsic0, arg='pixelBitMaps/epix10ka_gain_00.csv')
@@ -229,7 +229,7 @@ if (TEST_SERDES_DELAY_TWO_ASICS):
 
 if (TEST_SERDES_DELAY_ASIC_TWO):
     #read config parameters for the fpga and asic
-    ePixBoard.readConfig("yml/cpix2_ASIC1_test2.yml")
+    ePixBoard._readConfig("yml/cpix_ASIC2_Fe55Test.yml")
 
     #set registers to take dark images
     #ePixBoard.Epix10ka.Epix10kaAsic0.fnSetPixelBitmap(cmd=cmd, dev=ePixBoard.Epix10ka.Epix10kaAsic0, arg='pixelBitMaps/epix10ka_gain_00.csv')
@@ -246,7 +246,7 @@ if (TEST_SERDES_DELAY_ASIC_TWO):
 
         ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
 
-        time.sleep(1.0 / float(120))
+        time.sleep(1.0 / float(10))
 
 
         print ("ASIC1 delay: ", delay, "locked: ",  ePixBoard.Cpix2.Asic1Deserializer.Locked.get())

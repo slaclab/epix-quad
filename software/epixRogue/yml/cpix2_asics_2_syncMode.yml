@@ -1,6 +1,5 @@
 ePixBoard:
   enable: 'True'
-  forceWrite: 'False'
   dataWriter:
     enable: 'True'
     dataFile: ''
@@ -23,8 +22,6 @@ ePixBoard:
       R0Delay: '4'
       R0Width: '120'
       GlblRstPolarity: 'True'
-      GlblRstDelay: '0'
-      GlblRstWidth: '0'
       AcqPolarity: 'False'
       AcqDelay1: '60'
       AcqWidth1: '60'
@@ -211,7 +208,7 @@ ePixBoard:
       MSBCompTH2_DAC: '5'
     Pgp2bAxi:
       enable: 'False'
-      Loopback: '0x0'
+      Loopback: 'No'
       LocData: '0x0'
       LocDataEn: 'False'
       AutoStatus: 'False'
