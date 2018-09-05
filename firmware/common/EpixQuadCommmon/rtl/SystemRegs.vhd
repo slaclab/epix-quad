@@ -29,6 +29,7 @@ entity SystemRegs is
       CLK_PERIOD_G      : real            := 10.0e-9;
       USE_DCDC_SYNC_G   : boolean         := false;
       USE_TEMP_FAULT_G  : boolean         := true;
+      SIM_SPEEDUP_G     : boolean         := false;
       AXIL_ERR_RESP_G   : slv(1 downto 0) := AXI_RESP_DECERR_C);
    port (
       -- User reset output
@@ -58,7 +59,8 @@ end SystemRegs;
 -- Define architecture
 architecture RTL of SystemRegs is
    
-   constant LATCH_TEMP_DEF_C : sl := ite(USE_TEMP_FAULT_G, '1', '0');
+   constant LATCH_TEMP_DEF_C  : sl     := ite(USE_TEMP_FAULT_G, '1', '0');
+   constant DEBOUNCE_PERIOD_C : real   := ite(SIM_SPEEDUP_G, 500.0E-9, 500.0E-3);
 
    type RegType is record
       asicAnaEnReg      : sl;
@@ -125,11 +127,11 @@ begin
    U_Debouncer : entity work.Debouncer
       generic map(
          TPD_G             => TPD_G,
-         INPUT_POLARITY_G  => '0',        -- active LOW
-         OUTPUT_POLARITY_G => '1',        -- active HIGH
-         CLK_FREQ_G        => 100.0E+6,   -- units of Hz
-         DEBOUNCE_PERIOD_G => 500.0E-3,   -- units of seconds
-         SYNCHRONIZE_G     => true)       -- Run input through 2 FFs before filtering
+         INPUT_POLARITY_G  => '0',                 -- active LOW
+         OUTPUT_POLARITY_G => '1',                 -- active HIGH
+         CLK_FREQ_G        => 100.0E+6,            -- units of Hz
+         DEBOUNCE_PERIOD_G => DEBOUNCE_PERIOD_C,   -- units of seconds
+         SYNCHRONIZE_G     => true)                -- Run input through 2 FFs before filtering
       port map(
          clk => axilClk,
          i   => tempAlertL,

@@ -27,7 +27,9 @@ use work.SsiCmdMasterPkg.all;
 
 entity PgpVcMapping is
    generic (
-      TPD_G : time := 1 ns);
+      TPD_G          : time      := 1 ns;
+      SIMULATION_G   : boolean   := false
+   );
    port (
       -- PGP Clock and Reset
       pgpClk          : in  sl;
@@ -37,6 +39,8 @@ entity PgpVcMapping is
       txSlaves        : in  AxiStreamSlaveArray(3 downto 0);
       rxMasters       : in  AxiStreamMasterArray(3 downto 0);
       rxCtrl          : out AxiStreamCtrlArray(3 downto 0);
+      -- for simulation only
+      rxSlaves        : out AxiStreamSlaveArray(3 downto 0);
       -- System Clock and Reset
       sysClk          : in  sl;
       sysRst          : in  sl;
@@ -57,7 +61,7 @@ entity PgpVcMapping is
       axilReadSlave   : in  AxiLiteReadSlaveType;
       -- Software trigger interface
       swTrigOut       : out sl
-      );
+   );
 end PgpVcMapping;
 
 architecture mapping of PgpVcMapping is
@@ -80,7 +84,7 @@ begin
          -- FIFO configurations
          BRAM_EN_G           => true,
          USE_BUILT_IN_G      => false,
-         GEN_SYNC_FIFO_G     => true,
+         GEN_SYNC_FIFO_G     => false,
          CASCADE_SIZE_G      => 1,
          FIFO_ADDR_WIDTH_G   => 10,
          FIFO_FIXED_THRESH_G => true,
@@ -104,13 +108,14 @@ begin
    -- VC0 RX, Command processor
    U_VC0_RX : entity work.SsiCmdMaster
       generic map (
+         SLAVE_READY_EN_G    => SIMULATION_G,
          AXI_STREAM_CONFIG_G => SSI_PGP2B_CONFIG_C)
       port map (
          -- Streaming Data Interface
          axisClk     => pgpClk,
          axisRst     => pgpRst,
          sAxisMaster => rxMasters(0),
-         sAxisSlave  => open,
+         sAxisSlave  => rxSlaves(0),
          sAxisCtrl   => rxCtrl(0),
          -- Command signals
          cmdClk      => sysClk,
@@ -138,8 +143,8 @@ begin
    U_VC1 : entity work.SrpV3AxiLite
       generic map (
          TPD_G               => TPD_G,
-         SLAVE_READY_EN_G    => false,
-         GEN_SYNC_FIFO_G     => true,
+         SLAVE_READY_EN_G    => SIMULATION_G,
+         GEN_SYNC_FIFO_G     => false,
          AXI_STREAM_CONFIG_G => SSI_PGP2B_CONFIG_C)
       port map (
          -- Streaming Slave (Rx) Interface (sAxisClk domain) 
@@ -147,6 +152,7 @@ begin
          sAxisRst         => pgpRst,
          sAxisMaster      => rxMasters(1),
          sAxisCtrl        => rxCtrl(1),
+         sAxisSlave       => rxSlaves(1),
          -- Streaming Master (Tx) Data Interface (mAxisClk domain)
          mAxisClk         => pgpClk,
          mAxisRst         => pgpRst,
@@ -162,7 +168,8 @@ begin
    
    
    -- VC2 TX, Scope Data
-   rxCtrl(2) <= AXI_STREAM_CTRL_UNUSED_C;
+   rxCtrl(2)   <= AXI_STREAM_CTRL_UNUSED_C;
+   rxSlaves(2) <= AXI_STREAM_SLAVE_INIT_C;
    U_VC2 : entity work.AxiStreamFifoV2
       generic map (
          -- General Configurations
@@ -173,7 +180,7 @@ begin
          -- FIFO configurations
          BRAM_EN_G           => true,
          USE_BUILT_IN_G      => false,
-         GEN_SYNC_FIFO_G     => true,
+         GEN_SYNC_FIFO_G     => false,
          CASCADE_SIZE_G      => 1,
          FIFO_ADDR_WIDTH_G   => 10,
          FIFO_FIXED_THRESH_G => true,
@@ -204,7 +211,7 @@ begin
          -- FIFO configurations
          BRAM_EN_G           => true,
          USE_BUILT_IN_G      => false,
-         GEN_SYNC_FIFO_G     => true,
+         GEN_SYNC_FIFO_G     => false,
          CASCADE_SIZE_G      => 1,
          FIFO_ADDR_WIDTH_G   => 10,
          FIFO_FIXED_THRESH_G => true,
@@ -227,13 +234,15 @@ begin
    -- VC3 RX, Command processor
    U_VC3_RX : entity work.SsiCmdMaster
       generic map (
-         AXI_STREAM_CONFIG_G => SSI_PGP2B_CONFIG_C)
+         SLAVE_READY_EN_G    => SIMULATION_G,
+         AXI_STREAM_CONFIG_G => SSI_PGP2B_CONFIG_C
+      )
       port map (
          -- Streaming Data Interface
          axisClk     => pgpClk,
          axisRst     => pgpRst,
          sAxisMaster => rxMasters(3),
-         sAxisSlave  => open,
+         sAxisSlave  => rxSlaves(3),
          sAxisCtrl   => rxCtrl(3),
          -- Command signals
          cmdClk      => sysClk,

@@ -30,41 +30,42 @@ use unisim.vcomponents.all;
 
 entity EpixQuadPgpCore is
    generic (
-      TPD_G            : time            := 1 ns;
-      SIM_SPEEDUP_G    : boolean         := false);
+      TPD_G             : time            := 1 ns;
+      SIMULATION_G      : boolean         := false;
+      SIM_SPEEDUP_G     : boolean         := false);
    port (
       -- Clock and Reset
-      sysClk           : out sl;
-      sysRst           : out sl;
+      sysClk            : out sl;
+      sysRst            : out sl;
       -- Image Data Streaming Interface
-      dataTxMaster     : in  AxiStreamMasterType;
-      dataTxSlave      : out AxiStreamSlaveType;
+      dataTxMaster      : in  AxiStreamMasterType;
+      dataTxSlave       : out AxiStreamSlaveType;
       -- Scope Data Interface
-      scopeTxMaster    : in  AxiStreamMasterType;
-      scopeTxSlave     : out AxiStreamSlaveType;
+      scopeTxMaster     : in  AxiStreamMasterType;
+      scopeTxSlave      : out AxiStreamSlaveType;
       -- Monitor Data Interface
-      monitorTxMaster  : in  AxiStreamMasterType;
-      monitorTxSlave   : out AxiStreamSlaveType;
-      monitorEn        : out sl;
+      monitorTxMaster   : in  AxiStreamMasterType;
+      monitorTxSlave    : out AxiStreamSlaveType;
+      monitorEn         : out sl;
       -- AXI-Lite Register Interface
-      mAxilReadMaster  : out AxiLiteReadMasterType;
-      mAxilReadSlave   : in  AxiLiteReadSlaveType;
-      mAxilWriteMaster : out AxiLiteWriteMasterType;
-      mAxilWriteSlave  : in  AxiLiteWriteSlaveType;
+      mAxilReadMaster   : out AxiLiteReadMasterType;
+      mAxilReadSlave    : in  AxiLiteReadSlaveType;
+      mAxilWriteMaster  : out AxiLiteWriteMasterType;
+      mAxilWriteSlave   : in  AxiLiteWriteSlaveType;
       -- Debug AXI-Lite Interface
-      sAxilReadMaster  : in  AxiLiteReadMasterType;
-      sAxilReadSlave   : out AxiLiteReadSlaveType;
-      sAxilWriteMaster : in  AxiLiteWriteMasterType;
-      sAxilWriteSlave  : out AxiLiteWriteSlaveType;
+      sAxilReadMaster   : in  AxiLiteReadMasterType;
+      sAxilReadSlave    : out AxiLiteReadSlaveType;
+      sAxilWriteMaster  : in  AxiLiteWriteMasterType;
+      sAxilWriteSlave   : out AxiLiteWriteSlaveType;
       -- Software trigger interface
-      swTrigOut        : out sl;
+      swTrigOut         : out sl;
       -- PGP Ports
-      pgpClkP          : in  sl;
-      pgpClkN          : in  sl;
-      pgpRxP           : in  sl;
-      pgpRxN           : in  sl;
-      pgpTxP           : out sl;
-      pgpTxN           : out sl);
+      pgpClkP           : in  sl;
+      pgpClkN           : in  sl;
+      pgpRxP            : in  sl;
+      pgpRxN            : in  sl;
+      pgpTxP            : out sl;
+      pgpTxN            : out sl);
 end EpixQuadPgpCore;
 
 architecture top_level of EpixQuadPgpCore is
@@ -73,6 +74,8 @@ architecture top_level of EpixQuadPgpCore is
    signal txSlaves  : AxiStreamSlaveArray(3 downto 0);
    signal rxMasters : AxiStreamMasterArray(3 downto 0);
    signal rxCtrl    : AxiStreamCtrlArray(3 downto 0);
+   -- for simulation only
+   signal rxSlaves  : AxiStreamSlaveArray(3 downto 0);
 
    signal pgpTxIn  : Pgp2bTxInType;
    signal pgpTxOut : Pgp2bTxOutType;
@@ -90,19 +93,7 @@ architecture top_level of EpixQuadPgpCore is
    signal iSysRst       : sl;
 
 begin
-
-   U_IBUFDS_GTE3 : IBUFDS_GTE3
-      generic map (
-         REFCLK_EN_TX_PATH  => '0',
-         REFCLK_HROW_CK_SEL => "00",    -- 2'b00: ODIV2 = O
-         REFCLK_ICNTL_RX    => "00")
-      port map (
-         I     => pgpClkP,
-         IB    => pgpClkN,
-         CEB   => '0',
-         ODIV2 => pgpRefClkDiv2,        -- 156.25MHz (Divide by 1)
-         O     => pgpRefClk);           -- 156.25MHz
-
+   
    U_BUFG_GT : BUFG_GT
       port map (
          I       => pgpRefClkDiv2,
@@ -182,50 +173,93 @@ begin
          clk    => pgpClk,
          rstIn  => pgpReset,
          rstOut => pgpRst);
-
-   U_PGP : entity work.Pgp2bGthUltra
-      generic map (
-         TPD_G             => TPD_G,
-         PAYLOAD_CNT_TOP_G => 7,
-         VC_INTERLEAVE_G   => 0,
-         NUM_VC_EN_G       => 4)
-      port map (
-         stableClk         => pgpClk,
-         stableRst         => pgpRst,
-         gtRefClk          => pgpRefClk,
-         pgpGtTxP          => pgpTxP,
-         pgpGtTxN          => pgpTxN,
-         pgpGtRxP          => pgpRxP,
-         pgpGtRxN          => pgpRxN,
-         pgpTxReset        => pgpRst,
-         pgpTxResetDone    => open,
-         pgpTxOutClk       => open,
-         pgpTxClk          => pgpClk,
-         pgpTxMmcmLocked   => '1',
-         pgpRxReset        => pgpRst,
-         pgpRxResetDone    => open,
-         pgpRxOutClk       => open,
-         pgpRxClk          => pgpClk,
-         pgpRxMmcmLocked   => '1',
-         pgpTxIn           => pgpTxIn,
-         pgpTxOut          => pgpTxOut,
-         pgpRxIn           => pgpRxIn,
-         pgpRxOut          => pgpRxOut,
-         pgpTxMasters      => txMasters,
-         pgpTxSlaves       => txSlaves,
-         pgpRxMasters      => rxMasters,
-         pgpRxMasterMuxed  => open,
-         pgpRxCtrl         => rxCtrl,
-         axilClk           => '0',
-         axilRst           => '0',
-         axilReadMaster    => AXI_LITE_READ_MASTER_INIT_C,
-         axilReadSlave     => open,
-         axilWriteMaster   => AXI_LITE_WRITE_MASTER_INIT_C,
-         axilWriteSlave    => open);
-
+   
+   G_PGP : if SIMULATION_G = false generate
+      
+      U_IBUFDS_GTE3 : IBUFDS_GTE3
+         generic map (
+            REFCLK_EN_TX_PATH  => '0',
+            REFCLK_HROW_CK_SEL => "00",    -- 2'b00: ODIV2 = O
+            REFCLK_ICNTL_RX    => "00")
+         port map (
+            I     => pgpClkP,
+            IB    => pgpClkN,
+            CEB   => '0',
+            ODIV2 => pgpRefClkDiv2,        -- 156.25MHz (Divide by 1)
+            O     => pgpRefClk);           -- 156.25MHz
+      
+      U_PGP : entity work.Pgp2bGthUltra
+         generic map (
+            TPD_G             => TPD_G,
+            PAYLOAD_CNT_TOP_G => 7,
+            VC_INTERLEAVE_G   => 0,
+            NUM_VC_EN_G       => 4
+         )
+         port map (
+            stableClk         => pgpClk,
+            stableRst         => pgpRst,
+            gtRefClk          => pgpRefClk,
+            pgpGtTxP          => pgpTxP,
+            pgpGtTxN          => pgpTxN,
+            pgpGtRxP          => pgpRxP,
+            pgpGtRxN          => pgpRxN,
+            pgpTxReset        => pgpRst,
+            pgpTxResetDone    => open,
+            pgpTxOutClk       => open,
+            pgpTxClk          => pgpClk,
+            pgpTxMmcmLocked   => '1',
+            pgpRxReset        => pgpRst,
+            pgpRxResetDone    => open,
+            pgpRxOutClk       => open,
+            pgpRxClk          => pgpClk,
+            pgpRxMmcmLocked   => '1',
+            pgpTxIn           => pgpTxIn,
+            pgpTxOut          => pgpTxOut,
+            pgpRxIn           => pgpRxIn,
+            pgpRxOut          => pgpRxOut,
+            pgpTxMasters      => txMasters,
+            pgpTxSlaves       => txSlaves,
+            pgpRxMasters      => rxMasters,
+            pgpRxMasterMuxed  => open,
+            pgpRxCtrl         => rxCtrl,
+            axilClk           => '0',
+            axilRst           => '0',
+            axilReadMaster    => AXI_LITE_READ_MASTER_INIT_C,
+            axilReadSlave     => open,
+            axilWriteMaster   => AXI_LITE_WRITE_MASTER_INIT_C,
+            axilWriteSlave    => open
+         );
+   end generate G_PGP;
+   
+   G_PGP_SIM : if SIMULATION_G = true generate
+      U_PGP_SIM : entity work.RoguePgp2bSim
+         generic map (
+            TPD_G           => TPD_G,
+            USER_ID_G       => 1,
+            NUM_VC_EN_G     => 4
+         )
+         port map (
+            refClkP        => pgpClkP,
+            refClkM        => pgpClkN,
+            pgpTxClk       => pgpRefClkDiv2,
+            pgpTxIn        => pgpTxIn,
+            pgpTxOut       => pgpTxOut,
+            pgpTxMasters   => txMasters,
+            pgpTxSlaves    => txSlaves,
+            pgpRxIn        => pgpRxIn,
+            pgpRxOut       => pgpRxOut,
+            pgpRxMasters   => rxMasters,
+            pgpRxSlaves    => rxSlaves
+         );
+      pgpRefClk <= '0';
+   end generate G_PGP_SIM;
+   
+   
    U_VcMapping : entity work.PgpVcMapping
       generic map (
-         TPD_G => TPD_G)
+         TPD_G          => TPD_G,
+         SIMULATION_G   => SIMULATION_G
+      )
       port map (
          -- PGP Clock and Reset
          pgpClk          => pgpClk,
@@ -235,6 +269,8 @@ begin
          txSlaves        => txSlaves,
          rxMasters       => rxMasters,
          rxCtrl          => rxCtrl,
+         -- for simulation only
+         rxSlaves        => rxSlaves,
          -- System Clock and Reset
          sysClk          => iSysClk,
          sysRst          => iSysRst,

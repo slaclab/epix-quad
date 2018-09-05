@@ -31,6 +31,7 @@ entity EpixQuad is
    generic (
       TPD_G             : time            := 1 ns;
       BUILD_INFO_G      : BuildInfoType;
+      SIMULATION_G      : boolean         := false;
       SIM_SPEEDUP_G     : boolean         := false);
    port (
       -- DRR Memory interface ports
@@ -164,41 +165,42 @@ begin
    --------------------------------------------------------
    U_PGP : entity work.EpixQuadPgpCore
       generic map (
-         TPD_G            => TPD_G,
-         SIM_SPEEDUP_G    => SIM_SPEEDUP_G)
+         TPD_G             => TPD_G,
+         SIMULATION_G      => SIMULATION_G,
+         SIM_SPEEDUP_G     => SIM_SPEEDUP_G)
       port map (
          -- Clock and Reset
-         sysClk           => sysClk,
-         sysRst           => sysRst,
+         sysClk            => sysClk,
+         sysRst            => sysRst,
          -- Data Streaming Interface
-         dataTxMaster     => dataTxMaster,
-         dataTxSlave      => dataTxSlave,
+         dataTxMaster      => dataTxMaster,
+         dataTxSlave       => dataTxSlave,
          -- Scope Data Interface
-         scopeTxMaster    => scopeTxMaster,
-         scopeTxSlave     => scopeTxSlave,
+         scopeTxMaster     => scopeTxMaster,
+         scopeTxSlave      => scopeTxSlave,
          -- Monitor Data Interface
-         monitorTxMaster  => monitorTxMaster,
-         monitorTxSlave   => monitorTxSlave,
-         monitorEn        => monitorEn,
+         monitorTxMaster   => monitorTxMaster,
+         monitorTxSlave    => monitorTxSlave,
+         monitorEn         => monitorEn,
          -- AXI-Lite Register Interface
-         mAxilReadMaster  => axilReadMaster,
-         mAxilReadSlave   => axilReadSlave,
-         mAxilWriteMaster => axilWriteMaster,
-         mAxilWriteSlave  => axilWriteSlave,
+         mAxilReadMaster   => axilReadMaster,
+         mAxilReadSlave    => axilReadSlave,
+         mAxilWriteMaster  => axilWriteMaster,
+         mAxilWriteSlave   => axilWriteSlave,
          -- Debug AXI-Lite Interface         
-         sAxilReadMaster  => axilReadMasters(PGP_INDEX_C),
-         sAxilReadSlave   => axilReadSlaves(PGP_INDEX_C),
-         sAxilWriteMaster => axilWriteMasters(PGP_INDEX_C),
-         sAxilWriteSlave  => axilWriteSlaves(PGP_INDEX_C),
+         sAxilReadMaster   => axilReadMasters(PGP_INDEX_C),
+         sAxilReadSlave    => axilReadSlaves(PGP_INDEX_C),
+         sAxilWriteMaster  => axilWriteMasters(PGP_INDEX_C),
+         sAxilWriteSlave   => axilWriteSlaves(PGP_INDEX_C),
          -- Software trigger interface
-         swTrigOut        => swTrigger,
+         swTrigOut         => swTrigger,
          -- PGP Ports
-         pgpClkP          => pgpClkP,
-         pgpClkN          => pgpClkN,
-         pgpRxP           => pgpRxP,
-         pgpRxN           => pgpRxN,
-         pgpTxP           => pgpTxP,
-         pgpTxN           => pgpTxN);
+         pgpClkP           => pgpClkP,
+         pgpClkN           => pgpClkN,
+         pgpRxP            => pgpRxP,
+         pgpRxN            => pgpRxN,
+         pgpTxP            => pgpTxP,
+         pgpTxN            => pgpTxN);
    
    
    --------------------------------
@@ -252,6 +254,8 @@ begin
       generic map (
          TPD_G             => TPD_G,
          BUILD_INFO_G      => BUILD_INFO_G,
+         SIMULATION_G      => SIMULATION_G,
+         SIM_SPEEDUP_G     => SIM_SPEEDUP_G,
          AXI_BASE_ADDR_G   => AXI_CONFIG_C(SYS_INDEX_C).baseAddr
       )
       port map (

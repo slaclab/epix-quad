@@ -35,6 +35,8 @@ entity SystemCore is
    generic (
       TPD_G                : time             := 1 ns;
       BUILD_INFO_G         : BuildInfoType;
+      SIMULATION_G         : boolean          := false;
+      SIM_SPEEDUP_G        : boolean          := false;
       AXI_BASE_ADDR_G      : slv(31 downto 0) := (others => '0')
    );
    port (
@@ -104,7 +106,7 @@ architecture top_level of SystemCore is
       LEN_BITS_C   => 8);
 
    constant START_ADDR_C : slv(DDR_AXI_CONFIG_C.ADDR_WIDTH_C-1 downto 0) := (others => '0');
-   constant STOP_ADDR_C  : slv(DDR_AXI_CONFIG_C.ADDR_WIDTH_C-1 downto 0) := (others => '1');
+   constant STOP_ADDR_C  : slv(DDR_AXI_CONFIG_C.ADDR_WIDTH_C-1 downto 0) := ite(SIM_SPEEDUP_G, toSlv(32*4096, DDR_AXI_CONFIG_C.ADDR_WIDTH_C) ,toSlv(2**DDR_AXI_CONFIG_C.ADDR_WIDTH_C-1, DDR_AXI_CONFIG_C.ADDR_WIDTH_C));
 
    constant I2C_MON_CONFIG_C : I2cAxiLiteDevArray(3 downto 0) := (
       0 => (MakeI2cAxiLiteDevType("0110100", 8, 8, '0')),
@@ -214,7 +216,8 @@ begin
    --------------------------    
    U_SystemRegs : entity work.SystemRegs
    generic map (
-      TPD_G             => TPD_G
+      TPD_G             => TPD_G,
+      SIM_SPEEDUP_G     => SIM_SPEEDUP_G
    )
    port map (
       -- User reset output
@@ -242,22 +245,29 @@ begin
    --------------------------
    -- AXI-Lite: SYSMON Module
    --------------------------
-   U_SysMon : entity work.EpixQuadSysMon
-      generic map (
-         TPD_G            => TPD_G)
-      port map (
-         -- SYSMON Ports
-         vPIn            => vPIn,
-         vNIn            => vNIn,
-         -- AXI-Lite Register Interface
-         axilReadMaster  => axilReadMasters(SYSMON_INDEX_C),
-         axilReadSlave   => axilReadSlaves(SYSMON_INDEX_C),
-         axilWriteMaster => axilWriteMasters(SYSMON_INDEX_C),
-         axilWriteSlave  => axilWriteSlaves(SYSMON_INDEX_C),
-         -- Clocks and Resets
-         axilClk         => sysClk,
-         axilRst         => sysRst);
-
+   G_SYSMON : if SIMULATION_G = false generate
+      U_SysMon : entity work.EpixQuadSysMon
+         generic map (
+            TPD_G            => TPD_G)
+         port map (
+            -- SYSMON Ports
+            vPIn            => vPIn,
+            vNIn            => vNIn,
+            -- AXI-Lite Register Interface
+            axilReadMaster  => axilReadMasters(SYSMON_INDEX_C),
+            axilReadSlave   => axilReadSlaves(SYSMON_INDEX_C),
+            axilWriteMaster => axilWriteMasters(SYSMON_INDEX_C),
+            axilWriteSlave  => axilWriteSlaves(SYSMON_INDEX_C),
+            -- Clocks and Resets
+            axilClk         => sysClk,
+            axilRst         => sysRst);
+   end generate G_SYSMON;
+   
+   G_NO_SYSMON : if SIMULATION_G = true generate
+      axilReadSlaves(SYSMON_INDEX_C)   <= AXI_LITE_READ_SLAVE_INIT_C;
+      axilWriteSlaves(SYSMON_INDEX_C)  <= AXI_LITE_WRITE_SLAVE_INIT_C;
+   end generate G_NO_SYSMON;
+   
    ------------------------------
    -- AXI-Lite: Boot Flash Module
    ------------------------------
