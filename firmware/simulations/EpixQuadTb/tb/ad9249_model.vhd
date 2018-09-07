@@ -28,9 +28,11 @@ use work.StdRtlPkg.all;
 
 entity ad9249_model is 
    generic (
-      NO_INPUT_G        : boolean         := false;
-      NO_INPUT_BASELINE : real            := 0.5;
-      NO_INPUT_NOISE    : real            := 10.0e-3);
+      NO_INPUT_G           : boolean         := false;
+      NO_INPUT_BASELINE_G  : real            := 0.5;
+      NO_INPUT_NOISE_G     : real            := 10.0e-3;
+      INDEX_G              : natural         := 0
+   );
    port (
       -- Analog Signals
       aInP     : in real;
@@ -69,8 +71,8 @@ begin
       variable aIn            : real := 0.0;
       variable digVal         : slv(13 downto 0) := (others=>'0');
       constant digMax         : real := real(2**14-1);
-      variable seed1          : positive := 2342;
-      variable seed2          : positive := 5232;
+      variable seed1          : positive := 2342*(INDEX_G+1);
+      variable seed2          : positive := 5232*(INDEX_G+1);
       variable aInNoise       : real := 0.0;
       
    begin
@@ -98,9 +100,9 @@ begin
             -- random input noise 0.0 to 1.0  
             uniform(seed1, seed2, aInNoise);
             -- scale the noise
-            aInNoise := aInNoise * NO_INPUT_NOISE - NO_INPUT_NOISE/2.0;
+            aInNoise := aInNoise * NO_INPUT_NOISE_G - NO_INPUT_NOISE_G/2.0;
             -- set input to baseline + noise
-            aIn := aInNoise + NO_INPUT_BASELINE;
+            aIn := aInNoise + NO_INPUT_BASELINE_G;
             -- limit to the Vpp span
             if aIn > 2.0 then
                aIn := 2.0;

@@ -66,12 +66,18 @@ architecture testbed of EpixQuadTb is
          c0_ddr4_odt      : in    slv(0 to 0));
    end component;
 
-   signal pgpClkP : sl;
-   signal pgpClkN : sl;
-   signal ddrClkP : sl;
-   signal ddrClkN : sl;
-   signal adcClkP : slv(4 downto 0);
-   signal adcClkN : slv(4 downto 0);
+   signal pgpClkP    : sl;
+   signal pgpClkN    : sl;
+   signal ddrClkP    : sl;
+   signal ddrClkN    : sl;
+   signal adcClkP    : slv(4 downto 0);
+   signal adcClkN    : slv(4 downto 0);
+   signal adcFClkP   : slv(9 downto 0);
+   signal adcFClkN   : slv(9 downto 0);
+   signal adcDClkP   : slv(9 downto 0);
+   signal adcDClkN   : slv(9 downto 0);
+   signal adcChP     : Slv8Array(9 downto 0);
+   signal adcChN     : Slv8Array(9 downto 0);
 
    signal c0_ddr4_dq       : slv(DDR_WIDTH_C-1 downto 0)     := (others => '0');
    signal c0_ddr4_dqs_c    : slv((DDR_WIDTH_C/8)-1 downto 0) := (others => '0');
@@ -202,6 +208,12 @@ begin
       -- Fast ADC Signals
       adcClkP           => adcClkP,
       adcClkN           => adcClkN,
+      adcFClkP          => adcFClkP,
+      adcFClkN          => adcFClkN,
+      adcDClkP          => adcDClkP,
+      adcDClkN          => adcDClkN,
+      adcChP            => adcChP,
+      adcChN            => adcChN,
       acqStart          => acqStart
    );   
    
@@ -225,22 +237,25 @@ begin
          c0_ddr4_ck_t     => c0_ddr4_ck_t);
    
    
-   U_ADC : entity work.ad9249_model
-   generic map (
-      NO_INPUT_G  => true
-   )
-   port map (
-      aInP     => 0.0,
-      aInN     => 0.0,
-      sClk     => adcClkP(0),
-      dClk     => adcDoutClk,
-      fcoP     => open,
-      fcoN     => open,
-      dcoP     => open,
-      dcoN     => open,
-      dP       => open,
-      dN       => open
-   );
+   G_ADC : for i in 0 to 9 generate 
+      U_ADC : entity work.ad9249_group
+      generic map (
+         NO_INPUT_G  => (others=>true),
+         INDEX_G     => i
+      )
+      port map (
+         aInP     => (others=>0.0),
+         aInN     => (others=>0.0),
+         sClk     => adcClkP(0),
+         dClk     => adcDoutClk,
+         fcoP     => adcFClkP(i),
+         fcoN     => adcFClkN(i),
+         dcoP     => adcDClkP(i),
+         dcoN     => adcDClkN(i),
+         dP       => adcChP(i),
+         dN       => adcChN(i)
+      );
+   end generate;
    
    -- need Pll to create ADC readout clock (350 MHz)
    -- must be in phase with adcClk (50 MHz)

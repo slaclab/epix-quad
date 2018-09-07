@@ -99,8 +99,14 @@ entity EpixQuad is
       -- Fast ADC Signals
       adcClkP           : out   slv(4 downto 0);
       adcClkN           : out   slv(4 downto 0);
+      adcFClkP          : in    slv(9 downto 0);
+      adcFClkN          : in    slv(9 downto 0);
+      adcDClkP          : in    slv(9 downto 0);
+      adcDClkN          : in    slv(9 downto 0);
+      adcChP            : in    Slv8Array(9 downto 0);
+      adcChN            : in    Slv8Array(9 downto 0);
       -- temporary
-      acqStart             : in    sl
+      acqStart          : in    sl
    );
 end EpixQuad;
 
@@ -361,6 +367,34 @@ begin
       );
    
    --------------------------------------------------------
+   -- ASIC ADCs Core
+   --------------------------------------------------------
+   U_AdcCore : entity work.AdcCore
+      generic map (
+         TPD_G             => TPD_G,
+         SIMULATION_G      => SIMULATION_G,
+         SIM_SPEEDUP_G     => SIM_SPEEDUP_G,
+         AXI_BASE_ADDR_G   => AXI_CONFIG_C(ADC_INDEX_C).baseAddr
+      )
+      port map (
+         -- Clock and Reset
+         sysClk               => sysClk,
+         sysRst               => sysRst,
+         -- AXI-Lite Register Interface (sysClk domain)
+         mAxilReadMaster      => axilReadMasters(ADC_INDEX_C),
+         mAxilReadSlave       => axilReadSlaves(ADC_INDEX_C),
+         mAxilWriteMaster     => axilWriteMasters(ADC_INDEX_C),
+         mAxilWriteSlave      => axilWriteSlaves(ADC_INDEX_C),
+         -- Fast ADC Signals
+         adcFClkP             => adcFClkP,
+         adcFClkN             => adcFClkN,
+         adcDClkP             => adcDClkP,
+         adcDClkN             => adcDClkN,
+         adcChP               => adcChP,
+         adcChN               => adcChN
+      );
+   
+   --------------------------------------------------------
    -- ASIC Buffers (with tri-state outputs)
    --------------------------------------------------------
    
@@ -422,8 +456,6 @@ begin
    --------------------------------------------------------
    -- Terminate unused busses
    --------------------------------------------------------
-   axilWriteSlaves(ADC_INDEX_C)  <= AXI_LITE_WRITE_SLAVE_INIT_C;
-   axilReadSlaves(ADC_INDEX_C)   <= AXI_LITE_READ_SLAVE_INIT_C;
    
    dataTxMaster                  <= AXI_STREAM_MASTER_INIT_C;
    scopeTxMaster                 <= AXI_STREAM_MASTER_INIT_C;
