@@ -95,7 +95,12 @@ entity EpixQuad is
       asicRoClkP        : out   slv(1 downto 0);
       asicRoClkN        : out   slv(1 downto 0);
       asicDoutP         : in    slv(15 downto 0);
-      asicDoutN         : in    slv(15 downto 0)
+      asicDoutN         : in    slv(15 downto 0);
+      -- Fast ADC Signals
+      adcClkP           : out   slv(4 downto 0);
+      adcClkN           : out   slv(4 downto 0);
+      -- temporary
+      acqStart             : in    sl
    );
 end EpixQuad;
 
@@ -157,6 +162,7 @@ architecture top_level of EpixQuad is
    signal iAsicSaciClk  : slv(3 downto 0);
    signal iAsicSaciCmd  : slv(3 downto 0);
    signal iAsicSaciSelL : slv(15 downto 0);
+   signal iAdcClk       : sl;
    
 begin
 
@@ -311,7 +317,9 @@ begin
          -- FPGA temperature alert
          tempAlertL           => tempAlertL,
          -- ASIC Carrier IDs
-         asicDmSn             => asicDmSn
+         asicDmSn             => asicDmSn,
+         -- ASIC Global Reset
+         asicGr               => iAsicGr
       );
    
    asicDigEn   <= iAsicDigEn;
@@ -341,13 +349,15 @@ begin
          asicSaciCmd          => iAsicSaciCmd,
          asicSaciSelL         => iAsicSaciSelL,
          -- ASIC ACQ signals
+         acqStart             => acqStart,
          asicAcq              => iAsicAcq,
          asicR0               => iAsicR0,
-         asicGr               => iAsicGr,
          asicSync             => iAsicSync,
          asicPpmat            => iAsicPpmat,
          asicRoClk            => iAsicRoClk,
-         asicDout             => iAsicDout
+         asicDout             => iAsicDout,
+         -- ADC Clock Output
+         adcClk               => iAdcClk
       );
    
    --------------------------------------------------------
@@ -392,6 +402,22 @@ begin
       asicSaciSelL(i) <= iAsicSaciSelL(i) when iAsicDigEn = '1' else 'Z';
       
    end generate GEN_VEC16;
+   
+   --------------------------------------------------------
+   -- ADC Clock Output Buffers
+   --------------------------------------------------------
+   GEN_VEC5 : for i in 4 downto 0 generate
+      
+      U_AdcClkOutBufDiff : entity work.ClkOutBufDiff
+      generic map (
+         XIL_DEVICE_G => "ULTRASCALE")
+      port map (
+         clkIn    => iAdcClk,
+         clkOutP  => adcClkP(i),
+         clkOutN  => adcClkN(i)
+      );
+      
+   end generate GEN_VEC5;
    
    --------------------------------------------------------
    -- Terminate unused busses

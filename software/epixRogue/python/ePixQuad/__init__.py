@@ -10,3 +10,4 @@
 ##############################################################################
 from ePixQuad.Top          import *
 from ePixQuad.SystemRegs   import *
+from ePixQuad.AcqCore      import *

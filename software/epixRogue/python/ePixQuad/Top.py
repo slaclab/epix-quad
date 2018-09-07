@@ -85,5 +85,12 @@ class Top(pr.Root):
             expand  = False,
         ))
         
+        self.add(ePixQuad.AcqCore( 
+            name    = 'AcqCore', 
+            memBase = memMap, 
+            offset  = 0x01400000, 
+            expand  = False,
+        ))
+        
         ######################################################################
         

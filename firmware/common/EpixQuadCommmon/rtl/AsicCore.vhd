@@ -48,13 +48,15 @@ entity AsicCore is
       asicSaciCmd          : out   slv(3 downto 0);
       asicSaciSelL         : out   slv(15 downto 0);
       -- ASIC ACQ signals
+      acqStart             : in    sl;
       asicAcq              : out   sl;
       asicR0               : out   sl;
-      asicGr               : out   sl;
       asicSync             : out   sl;
       asicPpmat            : out   sl;
       asicRoClk            : out   sl;
-      asicDout             : in    slv(15 downto 0)
+      asicDout             : in    slv(15 downto 0);
+      -- ADC Clock Output
+      adcClk               : out   sl
    );
 end AsicCore;
 
@@ -62,12 +64,13 @@ architecture rtl of AsicCore is
    
    constant SACI_CLK_PERIOD_C    : real := 1.00E-6;
    
-   constant NUM_AXI_MASTERS_C    : natural := 4;
+   constant NUM_AXI_MASTERS_C    : natural := 5;
 
    constant ASIC_SACI0_INDEX_C   : natural := 0;
    constant ASIC_SACI1_INDEX_C   : natural := 1;
    constant ASIC_SACI2_INDEX_C   : natural := 2;
    constant ASIC_SACI3_INDEX_C   : natural := 3;
+   constant ASIC_ACQ_INDEX_C     : natural := 4;
 
    constant AXI_CONFIG_C   : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := genAxiLiteConfig(NUM_AXI_MASTERS_C, AXI_BASE_ADDR_G, 24, 20);
 
@@ -77,13 +80,6 @@ architecture rtl of AsicCore is
    signal axilReadSlaves   : AxiLiteReadSlaveArray(NUM_AXI_MASTERS_C-1 downto 0);
 
 begin
-   
-   asicAcq              <= '0';
-   asicR0               <= '0';
-   asicGr               <= '0';
-   asicSync             <= '0';
-   asicPpmat            <= '0';
-   asicRoClk            <= '0';
    
    ---------------------
    -- AXI-Lite: Crossbar
@@ -110,7 +106,7 @@ begin
       );
 
    --------------------------
-   -- AXI-Lite Version Module
+   -- 4 x 4 ASICs SACI Interfaces
    --------------------------          
    GEN_VEC4 : for i in 3 downto 0 generate
       U_AxiLiteSaciMaster : entity work.AxiLiteSaciMaster
@@ -136,5 +132,33 @@ begin
             axilWriteSlave    => axilWriteSlaves(ASIC_SACI0_INDEX_C+i)
          );
    end generate GEN_VEC4;
+   
+   U_AcqCore : entity work.AcqCore
+   generic map (
+      TPD_G             => TPD_G
+   )
+   port map (
+      -- System Clock (100 MHz)
+      sysClk            => sysClk,
+      sysRst            => sysRst,
+      -- AXI lite slave port for register access      
+      sAxilWriteMaster  => axilWriteMasters(ASIC_ACQ_INDEX_C),
+      sAxilWriteSlave   => axilWriteSlaves(ASIC_ACQ_INDEX_C),
+      sAxilReadMaster   => axilReadMasters(ASIC_ACQ_INDEX_C),
+      sAxilReadSlave    => axilReadSlaves(ASIC_ACQ_INDEX_C),
+      -- Run control
+      acqStart          => acqStart,
+      acqBusy           => open,
+      readDone          => '1',
+      roClkTail         => toSlv(10, 8),
+      -- ASIC Control Ports
+      asicAcq           => asicAcq,
+      asicR0            => asicR0,
+      asicSync          => asicSync,
+      asicPpmat         => asicPpmat,
+      asicRoClk         => asicRoClk,
+      -- ADC Clock Output
+      adcClk            => adcClk
+   );
 
 end rtl;

@@ -93,7 +93,9 @@ entity SystemCore is
       -- FPGA temperature alert
       tempAlertL           : in  sl;
       -- ASIC Carrier IDs
-      asicDmSn             : inout slv(3 downto 0)
+      asicDmSn             : inout slv(3 downto 0);
+      -- ASIC Global Reset
+      asicGr               : out   sl
    );
 end SystemCore;
 
@@ -239,7 +241,9 @@ begin
       -- FPGA temperature alert
       tempAlertL        => tempAlertL,
       -- ASIC Carrier IDs
-      asicDmSn          => asicDmSn
+      asicDmSn          => asicDmSn,
+      -- ASIC Global Reset
+      asicGr            => asicGr
    );
 
    --------------------------

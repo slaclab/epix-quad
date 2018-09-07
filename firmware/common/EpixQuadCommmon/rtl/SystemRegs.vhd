@@ -29,8 +29,7 @@ entity SystemRegs is
       CLK_PERIOD_G      : real            := 10.0e-9;
       USE_DCDC_SYNC_G   : boolean         := false;
       USE_TEMP_FAULT_G  : boolean         := true;
-      SIM_SPEEDUP_G     : boolean         := false;
-      AXIL_ERR_RESP_G   : slv(1 downto 0) := AXI_RESP_DECERR_C);
+      SIM_SPEEDUP_G     : boolean         := false);
    port (
       -- User reset output
       usrRst            : out sl;
@@ -51,7 +50,9 @@ entity SystemRegs is
       -- FPGA temperature alert
       tempAlertL        : in  sl;
       -- ASIC Carrier IDs
-      asicDmSn          : inout slv(3 downto 0)
+      asicDmSn          : inout slv(3 downto 0);
+      -- ASIC Global Reset
+      asicGr            : out   sl
    );
 end SystemRegs;
 
@@ -59,8 +60,9 @@ end SystemRegs;
 -- Define architecture
 architecture RTL of SystemRegs is
    
-   constant LATCH_TEMP_DEF_C  : sl     := ite(USE_TEMP_FAULT_G, '1', '0');
-   constant DEBOUNCE_PERIOD_C : real   := ite(SIM_SPEEDUP_G, 500.0E-9, 500.0E-3);
+   constant LATCH_TEMP_DEF_C  : sl        := ite(USE_TEMP_FAULT_G, '1', '0');
+   constant DEBOUNCE_PERIOD_C : real      := ite(SIM_SPEEDUP_G, 5.0E-6, 500.0E-3);
+   constant ASIC_GR_INDEX_C   : natural   := ite(SIM_SPEEDUP_G, 5, 25);
 
    type RegType is record
       asicAnaEnReg      : sl;
@@ -86,6 +88,7 @@ architecture RTL of SystemRegs is
       syncOut           : slv(10 downto 0);
       usrRstShift       : slv(7 downto 0);
       usrRst            : sl;
+      asicGrCnt         : slv(25 downto 0);
    end record RegType;
 
    constant REG_INIT_C : RegType := (
@@ -111,7 +114,8 @@ architecture RTL of SystemRegs is
       syncPhase         => (others => (others => '0')),
       syncOut           => (others => '0'),
       usrRstShift       => (others => '0'),
-      usrRst            => '0'
+      usrRst            => '0',
+      asicGrCnt         => (others=>'0')
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -180,6 +184,13 @@ begin
       else
          v.asicDigEn(0) := '0';
       end if;
+      
+      -- ASIC Global Reset Counter
+      if r.asicDigEn(0) = '0' then
+         v.asicGrCnt := (others=>'0');
+      elsif r.asicGrCnt(ASIC_GR_INDEX_C) = '0' then
+         v.asicGrCnt := r.asicGrCnt + 1;
+      end if;
 
       -- Determine the AXI-Lite transaction
       v.sAxilReadSlave.rdata := (others => '0');
@@ -209,7 +220,7 @@ begin
       end loop;
 
       -- Close out the AXI-Lite transaction
-      axiSlaveDefault(regCon, v.sAxilWriteSlave, v.sAxilReadSlave, AXIL_ERR_RESP_G);
+      axiSlaveDefault(regCon, v.sAxilWriteSlave, v.sAxilReadSlave, AXI_RESP_DECERR_C);
 
       -- DCDC sync logic
       for i in 10 downto 0 loop
@@ -283,6 +294,7 @@ begin
       ddrVttEn    <= r.ddrVttEn;
       asicAnaEn   <= r.asicAnaEn;
       asicDigEn   <= r.asicDigEn(0);
+      asicGr      <= r.asicGrCnt(ASIC_GR_INDEX_C);
 
    end process comb;
 

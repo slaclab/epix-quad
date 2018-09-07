@@ -40,6 +40,11 @@ architecture testbed of EpixQuadTb is
    constant PGPCLK_PER_C      : time    := 6.4 ns;
    constant TPD_C             : time    := 1 ns;
    constant SIM_SPEEDUP_C     : boolean := true;
+   
+   constant BUILD_INFO_TB_C : BuildInfoRetType := (
+      buildString =>  (others => (others => '0')),
+      fwVersion => X"EA040000",
+      gitHash => (others => '0'));
 
    component Ddr4ModelWrapper
       generic (
@@ -65,6 +70,8 @@ architecture testbed of EpixQuadTb is
    signal pgpClkN : sl;
    signal ddrClkP : sl;
    signal ddrClkN : sl;
+   signal adcClkP : slv(4 downto 0);
+   signal adcClkN : slv(4 downto 0);
 
    signal c0_ddr4_dq       : slv(DDR_WIDTH_C-1 downto 0)     := (others => '0');
    signal c0_ddr4_dqs_c    : slv((DDR_WIDTH_C/8)-1 downto 0) := (others => '0');
@@ -88,6 +95,11 @@ architecture testbed of EpixQuadTb is
    signal monSda           : sl                 := '0';     
    signal humScl           : sl                 := '0';     
    signal humSda           : sl                 := '0';     
+   
+   signal tempAlertL       : sl                 := '1';
+   signal acqStart         : sl                 := '0';
+   
+   signal adcDoutClk       : sl;
 
 begin
 
@@ -120,7 +132,7 @@ begin
    U_EpixQuad: entity work.EpixQuad
    generic map (
       TPD_G             => TPD_C,
-      BUILD_INFO_G      => toSlv (BUILD_INFO_DEFAULT_C),
+      BUILD_INFO_G      => toSlv (BUILD_INFO_TB_C),
       SIMULATION_G      => true,
       SIM_SPEEDUP_G     => true
    )
@@ -152,7 +164,7 @@ begin
       -- ASIC Carrier IDs
       asicDmSn          => asicDmSn,
       -- FPGA temperature alert
-      tempAlertL        => '1',
+      tempAlertL        => tempAlertL,
       -- I2C busses
       dacScl            => dacScl,
       dacSda            => dacSda,
@@ -186,8 +198,12 @@ begin
       asicRoClkP        => open,
       asicRoClkN        => open,
       asicDoutP         => x"0000",
-      asicDoutN         => x"FFFF"
-   );
+      asicDoutN         => x"FFFF",
+      -- Fast ADC Signals
+      adcClkP           => adcClkP,
+      adcClkN           => adcClkN,
+      acqStart          => acqStart
+   );   
    
    U_ddr4 : Ddr4ModelWrapper
       generic map (
@@ -207,5 +223,71 @@ begin
          c0_ddr4_act_n    => c0_ddr4_act_n,
          c0_ddr4_ck_c     => c0_ddr4_ck_c,
          c0_ddr4_ck_t     => c0_ddr4_ck_t);
+   
+   
+   U_ADC : entity work.ad9249_model
+   generic map (
+      NO_INPUT_G  => true
+   )
+   port map (
+      aInP     => 0.0,
+      aInN     => 0.0,
+      sClk     => adcClkP(0),
+      dClk     => adcDoutClk,
+      fcoP     => open,
+      fcoN     => open,
+      dcoP     => open,
+      dcoN     => open,
+      dP       => open,
+      dN       => open
+   );
+   
+   -- need Pll to create ADC readout clock (350 MHz)
+   -- must be in phase with adcClk (50 MHz)
+   U_PLLAdc : entity work.ClockManagerUltraScale
+   generic map(
+      TYPE_G            => "MMCM",
+      INPUT_BUFG_G      => true,
+      FB_BUFG_G         => true,
+      RST_IN_POLARITY_G => '1',
+      NUM_CLOCKS_G      => 1,
+      -- MMCM attributes
+      BANDWIDTH_G       => "OPTIMIZED",
+      CLKIN_PERIOD_G    => 20.0,
+      DIVCLK_DIVIDE_G   => 1,
+      CLKFBOUT_MULT_G   => 14,
+      CLKOUT0_DIVIDE_G  => 2
+   )
+   port map(
+      -- Clock Input
+      clkIn     => adcClkP(0),
+      -- Clock Outputs
+      clkOut(0) => adcDoutClk
+   );
+   
+   -----------------------------------------------------------------------
+   -- Sim process
+   -----------------------------------------------------------------------
+   process
+   begin
+      --tempAlertL <= '1';
+      --
+      --wait for 100 us;
+      --
+      --tempAlertL <= '0';
+      --
+      --wait for 100 us;
+      --
+      --tempAlertL <= '1';
+      
+      --wait;
+      
+      acqStart <= not acqStart;
+      
+      wait for 500 us;
+         
+      
+   end process;
+   
    
 end testbed;

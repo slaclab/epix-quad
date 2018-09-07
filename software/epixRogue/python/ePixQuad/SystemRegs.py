@@ -23,7 +23,7 @@ import collections
 class SystemRegs(pr.Device):
    def __init__(self, **kwargs):
       """Create SystemRegs"""
-      super().__init__(description='SystemRegs', **kwargs)
+      super().__init__(description='System Regsisters', **kwargs)
       
       # Creation. memBase is either the register bus server (srp, rce mapped memory, etc) or the device which
       # contains this object. In most cases the parent and memBase are the same but they can be 
@@ -38,6 +38,17 @@ class SystemRegs(pr.Device):
       
       #Setup registers & variables
       self.add(pr.RemoteVariable(
+         name       = 'UsrRst',     
+         description= 'User Reset',     
+         offset     = 0x00000000, 
+         bitSize    = 1, 
+         bitOffset  = 0,  
+         base       = pr.UInt, 
+         mode       = 'RW',
+      ))
+      
+      
+      self.add(pr.RemoteVariable(
          name       = 'DcDcEnable',     
          description= 'Enable Analog DCDC Regulators',     
          offset     = 0x00000004, 
@@ -48,24 +59,94 @@ class SystemRegs(pr.Device):
       ))
       
       self.add(pr.RemoteVariable(
-         name       = 'AsicAnaEnReg',     
+         name       = 'AsicAnaEn',     
          description= 'Enable ASIC Analog Voltage',     
          offset     = 0x00000008, 
          bitSize    = 1, 
          bitOffset  = 0,  
-         base       = pr.UInt, 
+         base       = pr.Bool, 
          mode       = 'RW',
       ))   
 
       self.add(pr.RemoteVariable(
-         name       = 'AsicDigEnReg',     
+         name       = 'AsicDigEn',     
          description= 'Enable ASIC Digital Voltage',     
          offset     = 0x0000000C, 
          bitSize    = 1, 
          bitOffset  = 0,  
-         base       = pr.UInt, 
+         base       = pr.Bool, 
          mode       = 'RW',
       ))   
+      
+      self.add(pr.RemoteVariable(
+         name       = 'DdrVttEn',     
+         description= 'Enable DDR VTT Voltage',
+         offset     = 0x00000010, 
+         bitSize    = 1, 
+         bitOffset  = 0,  
+         base       = pr.Bool, 
+         mode       = 'RW',
+      ))
+      
+      self.add(pr.RemoteVariable(
+         name       = 'DdrVttPok',     
+         description= 'DDR VTT Power OK',
+         offset     = 0x00000014, 
+         bitSize    = 1, 
+         bitOffset  = 0,  
+         base       = pr.Bool, 
+         mode       = 'RO',
+      ))
+      
+      self.add(pr.RemoteVariable(
+         name       = 'TempAlert',     
+         description= 'Temperature Alert',
+         offset     = 0x00000018, 
+         bitSize    = 1, 
+         bitOffset  = 0,  
+         base       = pr.Bool, 
+         mode       = 'RO',
+      ))
+      
+      self.add(pr.RemoteVariable(
+         name       = 'TempFault',     
+         description= 'Temperature Fault',
+         offset     = 0x0000001C, 
+         bitSize    = 1, 
+         bitOffset  = 0,  
+         base       = pr.Bool, 
+         mode       = 'RO',
+      ))
+      
+      self.add(pr.RemoteVariable(
+         name       = 'LatchTempFault',     
+         description= 'Latch Temperature Fault',
+         offset     = 0x00000020, 
+         bitSize    = 1, 
+         bitOffset  = 0,  
+         base       = pr.Bool, 
+         mode       = 'RW',
+      ))
+      
+      for i in range(4):      
+         self.add(pr.RemoteVariable(
+            name       = ('Carrier[%d]IdLow'%i),
+            description= ('Carrier[%d] ID Lower Word'%i),
+            offset     = (0x00000030+i*8), 
+            bitSize    = 32, 
+            bitOffset  = 0,  
+            base       = pr.UInt, 
+            mode       = 'RO',
+         ))
+         self.add(pr.RemoteVariable(
+            name       = ('Carrier[%d]IdHigh'%i),
+            description= ('Carrier[%d] ID Upper Word'%i),
+            offset     = (0x00000034+i*8), 
+            bitSize    = 32, 
+            bitOffset  = 0,  
+            base       = pr.UInt, 
+            mode       = 'RO',
+         ))
       
       #####################################
       # Create commands
