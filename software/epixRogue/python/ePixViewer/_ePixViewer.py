@@ -660,6 +660,7 @@ class EventReader(rogue.interfaces.stream.Slave):
         self.readFileDelay = 0.1
         self.busy = False
         self.busyTimeout = 0
+        self.lastTime = time.clock_gettime(0)
         
 
 
@@ -691,16 +692,19 @@ class EventReader(rogue.interfaces.stream.Slave):
         else:
             self.busyTimeout = 0
 
-        if ((VcNum == self.VIEW_PSEUDOSCOPE_ID) and (not self.busy) and ((time.time() - self.lastProcessedFrameTime) > self.ProcessFramePeriod)):
-            self.lastProcessedFrameTime = time.time()
-            self.parent.processPseudoScopeFrameTrigger.emit()
-        elif (VcNum == self.VIEW_MONITORING_DATA_ID and (not self.busy) and ((time.time() - self.lastProcessedFrameTime) > self.ProcessFramePeriod)):
-            self.lastProcessedFrameTime = time.time()
-            self.parent.processMonitoringFrameTrigger.emit()
-        elif (VcNum == 0):
-            if (((self.numAcceptedFrames == self.frameIndex) or (self.frameIndex == 0)) and (self.numAcceptedFrames%self.numSkipFrames==0) and ((time.time() - self.lastProcessedFrameTime) > self.ProcessFramePeriod)): 
+            
+        if (time.clock_gettime(0)-self.lastTime)>1:
+            self.lastTime = time.clock_gettime(0)
+            if ((VcNum == self.VIEW_PSEUDOSCOPE_ID) and (not self.busy)):
                 self.lastProcessedFrameTime = time.time()
-                if (self.parent.cbdisplayImageEn.isChecked()): self.parent.processFrameTrigger.emit()
+                self.parent.processPseudoScopeFrameTrigger.emit()
+            elif (VcNum == self.VIEW_MONITORING_DATA_ID and (not self.busy)):
+                self.lastProcessedFrameTime = time.time()
+                self.parent.processMonitoringFrameTrigger.emit()
+            elif (VcNum == 0):
+                if (((self.numAcceptedFrames == self.frameIndex) or (self.frameIndex == 0)) and (self.numAcceptedFrames%self.numSkipFrames==0)): 
+                    self.lastProcessedFrameTime = time.time()
+                    if (self.parent.cbdisplayImageEn.isChecked()): self.parent.processFrameTrigger.emit()
                 
 
 
