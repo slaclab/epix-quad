@@ -104,9 +104,7 @@ entity EpixQuad is
       adcDClkP          : in    slv(9 downto 0);
       adcDClkN          : in    slv(9 downto 0);
       adcChP            : in    Slv8Array(9 downto 0);
-      adcChN            : in    Slv8Array(9 downto 0);
-      -- temporary
-      acqStart          : in    sl
+      adcChN            : in    Slv8Array(9 downto 0)
    );
 end EpixQuad;
 
@@ -147,12 +145,13 @@ architecture top_level of EpixQuad is
    signal monitorTxSlave   : AxiStreamSlaveType;
    signal monitorEn        : sl;
 
-   signal axiImgWriteMasters : AxiWriteMasterArray(3 downto 0);
-   signal axiImgWriteSlaves  : AxiWriteSlaveArray(3 downto 0);
-   signal axiDoutReadMaster  : AxiReadMasterType;
-   signal axiDoutReadSlave   : AxiReadSlaveType;
+   signal axiWriteMasters    : AxiWriteMasterArray(3 downto 0);
+   signal axiWriteSlaves     : AxiWriteSlaveArray(3 downto 0);
+   signal axiReadMaster      : AxiReadMasterType;
+   signal axiReadSlave       : AxiReadSlaveType;
    
-   signal swTrigger : sl;
+   signal buffersRdy  : sl;
+   signal swTrigger   : sl;
    
    signal iAsicDigEn  : sl;
    signal iAsicDigEnL : sl;
@@ -169,6 +168,8 @@ architecture top_level of EpixQuad is
    signal iAsicSaciCmd  : slv(3 downto 0);
    signal iAsicSaciSelL : slv(15 downto 0);
    signal iAdcClk       : sl;
+   
+   signal adcStream     : AxiStreamMasterArray(79 downto 0);
    
 begin
 
@@ -301,10 +302,11 @@ begin
          c0_ddr4_dm_dbi_n     => c0_ddr4_dm_dbi_n,
          c0_ddr4_odt          => c0_ddr4_odt,
          -- AXI DDR Buffer Interface (sysClk domain)
-         axiImgWriteMasters   => axiImgWriteMasters,
-         axiImgWriteSlaves    => axiImgWriteSlaves,
-         axiDoutReadMaster    => axiDoutReadMaster,
-         axiDoutReadSlave     => axiDoutReadSlave,
+         axiWriteMasters      => axiWriteMasters,
+         axiWriteSlaves       => axiWriteSlaves,
+         axiReadMaster        => axiReadMaster,
+         axiReadSlave         => axiReadSlave,
+         buffersRdy           => buffersRdy,
          -- AXI-Lite Register Interface (sysClk domain)
          mAxilReadMaster      => axilReadMasters(SYS_INDEX_C),
          mAxilReadSlave       => axilReadSlaves(SYS_INDEX_C),
@@ -349,13 +351,21 @@ begin
          mAxilReadSlave       => axilReadSlaves(ASIC_INDEX_C),
          mAxilWriteMaster     => axilWriteMasters(ASIC_INDEX_C),
          mAxilWriteSlave      => axilWriteSlaves(ASIC_INDEX_C),
+         -- AXI DDR Buffer Interface (sysClk domain)
+         axiWriteMasters      => axiWriteMasters,
+         axiWriteSlaves       => axiWriteSlaves,
+         axiReadMaster        => axiReadMaster,
+         axiReadSlave         => axiReadSlave,
+         buffersRdy           => buffersRdy,
+         -- ADC stream input
+         adcStream            => adcStream(63 downto 0),
          -- ASIC SACI signals
          asicSaciResp         => asicSaciResp,
          asicSaciClk          => iAsicSaciClk,
          asicSaciCmd          => iAsicSaciCmd,
          asicSaciSelL         => iAsicSaciSelL,
          -- ASIC ACQ signals
-         acqStart             => acqStart,
+         acqStart             => '0',
          asicAcq              => iAsicAcq,
          asicR0               => iAsicR0,
          asicSync             => iAsicSync,
@@ -391,7 +401,9 @@ begin
          adcDClkP             => adcDClkP,
          adcDClkN             => adcDClkN,
          adcChP               => adcChP,
-         adcChN               => adcChN
+         adcChN               => adcChN,
+         -- ADC Output Streams
+         adcStream            => adcStream
       );
    
    --------------------------------------------------------
@@ -460,8 +472,5 @@ begin
    dataTxMaster                  <= AXI_STREAM_MASTER_INIT_C;
    scopeTxMaster                 <= AXI_STREAM_MASTER_INIT_C;
    monitorTxMaster               <= AXI_STREAM_MASTER_INIT_C;
-   
-   axiImgWriteMasters            <= (others => AXI_WRITE_MASTER_INIT_C);
-   axiDoutReadMaster             <= AXI_READ_MASTER_INIT_C;
 
 end top_level;

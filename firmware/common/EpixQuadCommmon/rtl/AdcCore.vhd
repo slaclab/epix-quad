@@ -118,20 +118,26 @@ begin
       asicAdc(i).chP   <= adcChP(i);
       asicAdc(i).chN   <= adcChN(i);
       
-      U_AdcReadout : entity work.Ad9249ReadoutGroupUS
+      U_AdcReadout : entity work.Ad9249ReadoutGroup
+      generic map (
+         SIM_SPEEDUP_G     => SIM_SPEEDUP_G
+      )
       port map (
          axilClk           => sysClk,
          axilRst           => sysRst,
-         axilReadMaster    => axilReadMasters(ADC0_RDOUT_INDEX_C),
-         axilReadSlave     => axilReadSlaves(ADC0_RDOUT_INDEX_C),
-         axilWriteMaster   => axilWriteMasters(ADC0_RDOUT_INDEX_C),
-         axilWriteSlave    => axilWriteSlaves(ADC0_RDOUT_INDEX_C),
+         axilReadMaster    => axilReadMasters(ADC0_RDOUT_INDEX_C+i),
+         axilReadSlave     => axilReadSlaves(ADC0_RDOUT_INDEX_C+i),
+         axilWriteMaster   => axilWriteMasters(ADC0_RDOUT_INDEX_C+i),
+         axilWriteSlave    => axilWriteSlaves(ADC0_RDOUT_INDEX_C+i),
          adcClkRst         => sysRst,
          adcSerial         => asicAdc(i),
          adcStreamClk      => sysClk,
          adcStreams        => adcStream((i*8)+7 downto i*8)
       );
-   
+      
+      --axilReadSlaves(ADC0_RDOUT_INDEX_C+i)  <= AXI_LITE_READ_SLAVE_INIT_C;
+      --axilWriteSlaves(ADC0_RDOUT_INDEX_C+i) <= AXI_LITE_WRITE_SLAVE_INIT_C;
+      
    end generate;
    
 

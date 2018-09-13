@@ -28,10 +28,12 @@ use work.StdRtlPkg.all;
 
 entity ad9249_model is 
    generic (
-      NO_INPUT_G           : boolean         := false;
-      NO_INPUT_BASELINE_G  : real            := 0.5;
-      NO_INPUT_NOISE_G     : real            := 10.0e-3;
-      INDEX_G              : natural         := 0
+      NO_INPUT_G           : boolean            := false;
+      NO_INPUT_BASELINE_G  : real               := 0.5;
+      NO_INPUT_NOISE_G     : real               := 10.0e-3;
+      USE_PATTERN_G        : boolean            := false;
+      PATTERN_G            : slv(15 downto 0)   := x"2A5A";
+      INDEX_G              : natural            := 0
    );
    port (
       -- Analog Signals
@@ -58,6 +60,7 @@ architecture behav of ad9249_model is
    constant DCLK_C            : time      := 0.7 ns;
    constant SAMPLE_PIPELINE_C : integer   := 16;
    signal digPipe             : Slv14Array(SAMPLE_PIPELINE_C downto 0) := (others=>(others=>'0'));
+   signal digPipeRev          : slv(13 downto 0);
    signal fco                 : sl;
    signal dIndex              : integer   := 13;
    signal pipeEn              : sl        := '0';
@@ -84,36 +87,46 @@ begin
          -- wait until rising edge
          wait until rising_edge(fco);
          
-         if NO_INPUT_G = false then 
-            -- store difference (-1.0 to 1.0)
-            aIn := aInP - aInN;
-            if aIn > 1.0 then
-               aIn := 1.0;
-            elsif aIn < -1.0 then
-               aIn := -1.0;
+         if USE_PATTERN_G = false then
+            
+            if NO_INPUT_G = false then
+               -- store difference (-1.0 to 1.0)
+               aIn := aInP - aInN;
+               if aIn > 1.0 then
+                  aIn := 1.0;
+               elsif aIn < -1.0 then
+                  aIn := -1.0;
+               end if;
+               
+               -- shift input to positive (0.0 to 2.0)
+               aIn := aIn + 1.0;
+               
+            else
+               -- random input noise 0.0 to 1.0  
+               uniform(seed1, seed2, aInNoise);
+               -- scale the noise
+               aInNoise := aInNoise * NO_INPUT_NOISE_G - NO_INPUT_NOISE_G/2.0;
+               -- set input to baseline + noise
+               aIn := aInNoise + NO_INPUT_BASELINE_G;
+               -- limit to the Vpp span
+               if aIn > 2.0 then
+                  aIn := 2.0;
+               elsif aIn < 0.0 then
+                  aIn := 0.0;
+               end if;
+               
             end if;
             
-            -- shift input to positive (0.0 to 2.0)
-            aIn := aIn + 1.0;
+            -- digitize (offset binary mode)
+            digVal := toSlv(integer(aIn*digMax/2.0), 14);
             
          else
-            -- random input noise 0.0 to 1.0  
-            uniform(seed1, seed2, aInNoise);
-            -- scale the noise
-            aInNoise := aInNoise * NO_INPUT_NOISE_G - NO_INPUT_NOISE_G/2.0;
-            -- set input to baseline + noise
-            aIn := aInNoise + NO_INPUT_BASELINE_G;
-            -- limit to the Vpp span
-            if aIn > 2.0 then
-               aIn := 2.0;
-            elsif aIn < 0.0 then
-               aIn := 0.0;
-            end if;
+         
+            digVal := PATTERN_G(13 downto 0);
             
          end if;
          
-         -- digitize (offset binary mode)
-         digVal := toSlv(integer(aIn*digMax/2.0), 14);
+         
          
          -- shift into pipeline
          digPipe <= digPipe(SAMPLE_PIPELINE_C-1 downto 0) & digVal;
@@ -200,6 +213,11 @@ begin
    -- serial data out
    dP <= digPipe(SAMPLE_PIPELINE_C)(dIndex);
    dN <= not digPipe(SAMPLE_PIPELINE_C)(dIndex);
+   
+   --digPipeRev <= bitReverse(digPipe(SAMPLE_PIPELINE_C)(13 downto 7))  & bitReverse(digPipe(SAMPLE_PIPELINE_C)(6 downto 0));
+   
+   --dP <= digPipeRev(dIndex);
+   --dN <= not digPipeRev(dIndex);
    
    
 end behav;

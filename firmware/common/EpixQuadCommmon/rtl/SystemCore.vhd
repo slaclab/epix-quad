@@ -25,7 +25,6 @@ use work.AxiPkg.all;
 use work.AxiLitePkg.all;
 use work.AxiStreamPkg.all;
 use work.I2cPkg.all;
-use work.AxiI2cMasterPkg.all;
 use work.SsiPkg.all;
 
 library unisim;
@@ -70,10 +69,10 @@ entity SystemCore is
       c0_ddr4_dm_dbi_n     : inout slv(3 downto 0);
       c0_ddr4_odt          : out   slv(0 to 0);
       -- AXI DDR Buffer Interface (sysClk domain)
-      axiImgWriteMasters   : in    AxiWriteMasterArray(3 downto 0);
-      axiImgWriteSlaves    : out   AxiWriteSlaveArray(3 downto 0);
-      axiDoutReadMaster    : in    AxiReadMasterType;
-      axiDoutReadSlave     : out   AxiReadSlaveType;
+      axiWriteMasters      : in    AxiWriteMasterArray(3 downto 0);
+      axiWriteSlaves       : out   AxiWriteSlaveArray(3 downto 0);
+      axiReadMaster        : in    AxiReadMasterType;
+      axiReadSlave         : out   AxiReadSlaveType;
       buffersRdy           : out   sl;
       -- AXI-Lite Register Interface (sysClk domain)
       mAxilReadMaster      : in    AxiLiteReadMasterType;
@@ -144,17 +143,17 @@ architecture top_level of SystemCore is
    signal axilReadMasters  : AxiLiteReadMasterArray(NUM_AXI_MASTERS_C-1 downto 0);
    signal axilReadSlaves   : AxiLiteReadSlaveArray(NUM_AXI_MASTERS_C-1 downto 0);
 
-   signal axiClk         : sl;
-   signal axiRst         : sl;
-   signal axiReadMaster  : AxiReadMasterType;
-   signal axiReadSlave   : AxiReadSlaveType;
-   signal axiWriteMaster : AxiWriteMasterType;
-   signal axiWriteSlave  : AxiWriteSlaveType;
+   signal axiClk              : sl;
+   signal axiRst              : sl;
+   signal axiDdrReadMaster    : AxiReadMasterType;
+   signal axiDdrReadSlave     : AxiReadSlaveType;
+   signal axiDdrWriteMaster   : AxiWriteMasterType;
+   signal axiDdrWriteSlave    : AxiWriteSlaveType;
 
-   signal axiBistReadMaster  : AxiReadMasterType;
-   signal axiBistReadSlave   : AxiReadSlaveType;
-   signal axiBistWriteMaster : AxiWriteMasterType;
-   signal axiBistWriteSlave  : AxiWriteSlaveType;
+   signal axiBistReadMaster   : AxiReadMasterType;
+   signal axiBistReadSlave    : AxiReadSlaveType;
+   signal axiBistWriteMaster  : AxiWriteMasterType;
+   signal axiBistWriteSlave   : AxiWriteSlaveType;
 
    signal bootCsL  : sl;
    signal bootSck  : sl;
@@ -361,10 +360,15 @@ begin
          -- AXI Slave
          axiClk           => axiClk,
          axiRst           => axiRst,
-         axiReadMaster    => axiReadMaster,
-         axiReadSlave     => axiReadSlave,
-         axiWriteMaster   => axiWriteMaster,
-         axiWriteSlave    => axiWriteSlave,
+         axiWriteMaster  => axiBistWriteMaster,
+         axiWriteSlave   => axiBistWriteSlave,
+         axiReadMaster   => axiBistReadMaster,
+         axiReadSlave    => axiBistReadSlave,
+         
+         --axiReadMaster    => axiDdrReadMaster,
+         --axiReadSlave     => axiDdrReadSlave,
+         --axiWriteMaster   => axiDdrWriteMaster,
+         --axiWriteSlave    => axiDdrWriteSlave,
          -- DDR PHY Ref clk
          c0_sys_clk_p     => c0_sys_clk_p,
          c0_sys_clk_n     => c0_sys_clk_n,
@@ -377,6 +381,16 @@ begin
          c0_ddr4_dq       => c0_ddr4_dq,
          c0_ddr4_dqs_c    => c0_ddr4_dqs_c,
          c0_ddr4_dqs_t    => c0_ddr4_dqs_t,
+         --c0_ddr4_dm_dbi_n(3 downto 2) => c0_ddr4_dm_dbi_n(1 downto 0),
+         --c0_ddr4_dm_dbi_n(1 downto 0) => c0_ddr4_dm_dbi_n(3 downto 2),
+         --c0_ddr4_dq(31 downto 16)       => c0_ddr4_dq(15 downto  0),
+         --c0_ddr4_dq(15 downto  0)       => c0_ddr4_dq(31 downto 16),
+         --c0_ddr4_dqs_c(3 downto 2)    => c0_ddr4_dqs_c(1 downto 0),
+         --c0_ddr4_dqs_c(1 downto 0)    => c0_ddr4_dqs_c(3 downto 2),
+         --c0_ddr4_dqs_t(3 downto 2)    => c0_ddr4_dqs_t(1 downto 0),
+         --c0_ddr4_dqs_t(1 downto 0)    => c0_ddr4_dqs_t(3 downto 2),
+         
+         
          c0_ddr4_odt      => c0_ddr4_odt,
          c0_ddr4_bg       => c0_ddr4_bg,
          c0_ddr4_reset_n  => c0_ddr4_reset_n,
@@ -390,36 +404,36 @@ begin
    ------------------------------------------------
    -- DDR memory AXI interconnect
    ------------------------------------------------
-   U_AxiIcWrapper : entity work.AxiIcWrapper
-      generic map (
-         TPD_G => TPD_G)
-      port map (
-         -- AXI Slaves for ADC channels
-         -- 128 Bit Data Bus
-         -- 1 burst packet FIFOs
-         axiImgClk          => sysClk,
-         axiImgWriteMasters => axiImgWriteMasters,
-         axiImgWriteSlaves  => axiImgWriteSlaves,
-         -- AXI Slave for data readout
-         -- 32 Bit Data Bus
-         axiDoutClk         => sysClk,
-         axiDoutReadMaster  => axiDoutReadMaster,
-         axiDoutReadSlave   => axiDoutReadSlave,
-         -- AXI Slave for memory tester (aximClk domain)
-         -- 512 Bit Data Bus
-         axiBistReadMaster  => axiBistReadMaster,
-         axiBistReadSlave   => axiBistReadSlave,
-         axiBistWriteMaster => axiBistWriteMaster,
-         axiBistWriteSlave  => axiBistWriteSlave,
-         -- AXI Master
-         -- 512 Bit Data Bus
-         aximClk            => axiClk,
-         aximRst            => axiRst,
-         aximReadMaster     => axiReadMaster,
-         aximReadSlave      => axiReadSlave,
-         aximWriteMaster    => axiWriteMaster,
-         aximWriteSlave     => axiWriteSlave
-      );
+   --U_AxiIcWrapper : entity work.AxiIcWrapper
+   --   generic map (
+   --      TPD_G => TPD_G)
+   --   port map (
+   --      -- AXI Slaves for ADC channels
+   --      -- 128 Bit Data Bus
+   --      -- 1 burst packet FIFOs
+   --      axiImgClk          => sysClk,
+   --      axiImgWriteMasters => axiWriteMasters,
+   --      axiImgWriteSlaves  => axiWriteSlaves,
+   --      -- AXI Slave for data readout
+   --      -- 32 Bit Data Bus
+   --      axiDoutClk         => sysClk,
+   --      axiDoutReadMaster  => axiReadMaster,
+   --      axiDoutReadSlave   => axiReadSlave,
+   --      -- AXI Slave for memory tester (aximClk domain)
+   --      -- 512 Bit Data Bus
+   --      axiBistReadMaster  => axiBistReadMaster,
+   --      axiBistReadSlave   => axiBistReadSlave,
+   --      axiBistWriteMaster => axiBistWriteMaster,
+   --      axiBistWriteSlave  => axiBistWriteSlave,
+   --      -- AXI Master
+   --      -- 512 Bit Data Bus
+   --      aximClk            => axiClk,
+   --      aximRst            => axiRst,
+   --      aximReadMaster     => axiDdrReadMaster,
+   --      aximReadSlave      => axiDdrReadSlave,
+   --      aximWriteMaster    => axiDdrWriteMaster,
+   --      aximWriteSlave     => axiDdrWriteSlave
+   --   );
 
    -- keep memory writers in reset during memory test
    memRst : process (sysClk) is
@@ -436,15 +450,15 @@ begin
    ------------------------------------------------
    -- Power nad temperature monitoring sensors readout
    ------------------------------------------------
-   U_MonI2C : entity work.AxiI2cMasterCore
+   U_MonI2C : entity work.AxiI2cRegMaster
    generic map (
       DEVICE_MAP_G     => I2C_MON_CONFIG_C,
       AXI_CLK_FREQ_G   => 156.25E+6,
       I2C_SCL_FREQ_G   => 50.0E+3
    )
    port map (
-      i2cInOut.scl   => monScl,
-      i2cInOut.sda   => monSda,
+      scl            => monScl,
+      sda            => monSda,
       axiReadMaster  => axilReadMasters(MON_SNS_INDEX_C),
       axiReadSlave   => axilReadSlaves(MON_SNS_INDEX_C),
       axiWriteMaster => axilWriteMasters(MON_SNS_INDEX_C),
@@ -456,15 +470,15 @@ begin
    ------------------------------------------------
    -- Humidity and temp sensors readout
    ------------------------------------------------
-   U_HumI2C : entity work.AxiI2cMasterCore
+   U_HumI2C : entity work.AxiI2cRegMaster
    generic map (
       DEVICE_MAP_G     => I2C_HUM_CONFIG_C,
       AXI_CLK_FREQ_G   => 156.25E+6,
       I2C_SCL_FREQ_G   => 50.0E+3
    )
    port map (
-      i2cInOut.scl   => humScl,
-      i2cInOut.sda   => humSda,
+      scl            => humScl,
+      sda            => humSda,
       axiReadMaster  => axilReadMasters(HUM_SNS_INDEX_C),
       axiReadSlave   => axilReadSlaves(HUM_SNS_INDEX_C),
       axiWriteMaster => axilWriteMasters(HUM_SNS_INDEX_C),
@@ -479,15 +493,15 @@ begin
    ------------------------------------------------
    -- Vguard DAC interface
    ------------------------------------------------
-   U_VdacI2C : entity work.AxiI2cMasterCore
+   U_VdacI2C : entity work.AxiI2cRegMaster
    generic map (
       DEVICE_MAP_G     => I2C_DAC_CONFIG_C,
       AXI_CLK_FREQ_G   => 156.25E+6,
       I2C_SCL_FREQ_G   => 50.0E+3
    )
    port map (
-      i2cInOut.scl   => dacScl,
-      i2cInOut.sda   => dacSda,
+      scl            => dacScl,
+      sda            => dacSda,
       axiReadMaster  => axilReadMasters(VDAC_INDEX_C),
       axiReadSlave   => axilReadSlaves(VDAC_INDEX_C),
       axiWriteMaster => axilWriteMasters(VDAC_INDEX_C),

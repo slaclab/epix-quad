@@ -24,8 +24,8 @@ loadSource -dir "$::DIR_PATH/rtl"
 loadSource -path "$::DIR_PATH/ip/SysMonCore/SysMonCore.dcp"
 # loadIpCore -path "$::DIR_PATH/ip/SysMonCore/SysMonCore.xci"
 
-loadSource -path "$::DIR_PATH/ip/AxiInterconnnect/AxiInterconnect.dcp"
-# loadIpCore -path "$::DIR_PATH/ip/AxiInterconnnect/AxiInterconnect.xci"
+##loadSource -path "$::DIR_PATH/ip/AxiInterconnnect/AxiInterconnect.dcp"
+loadIpCore -path "$::DIR_PATH/ip/AxiInterconnnect/AxiInterconnect.xci"
 loadSource -path "$::DIR_PATH/ip/AxiInterconnnect/AxiIcWrapper.vhd"
 
 # Load Constraints
@@ -40,7 +40,8 @@ if { $::env(BUILD_MIG_CORE)  != 0 } {
    if { $::env(BUILD_MB_CORE)  == 0 } {
 
       # Add the pre-built .DCP file 
-      loadSource -path "$::DIR_PATH/ip/MigCore/MigCore.dcp"
+      # loadSource -path "$::DIR_PATH/ip/MigCore/MigCore.dcp"
+      loadIpCore -path "$::DIR_PATH/ip/MigCore/MigCore.xci"
       
       ## Add the Microblaze Calibration Code
       add_files -norecurse $::DIR_PATH/ip/MigCore/MigCoreMicroblazeCalibration.elf

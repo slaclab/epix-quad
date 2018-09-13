@@ -19,7 +19,7 @@ import pyrogue.protocols
 import pyrogue.utilities.fileio
 import pyrogue.interfaces.simulation
 
-import surf.axi as axiVer
+import surf.axi as axi
 import surf.xilinx as xil
 import surf.devices.micron as prom
 import surf.devices.linear as linear
@@ -71,7 +71,7 @@ class Top(pr.Root):
         ######################################################################
         
         # Add devices
-        self.add(axiVer.AxiVersion( 
+        self.add(axi.AxiVersion( 
             name    = 'AxiVersion', 
             memBase = memMap, 
             offset  = 0x00000000, 
@@ -89,6 +89,13 @@ class Top(pr.Root):
             name    = 'AcqCore', 
             memBase = memMap, 
             offset  = 0x01400000, 
+            expand  = False,
+        ))
+        
+        self.add(axi.AxiMemTester( 
+            name    = 'AxiMemTester', 
+            memBase = memMap, 
+            offset  = 0x00400000, 
             expand  = False,
         ))
         

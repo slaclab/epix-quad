@@ -10,7 +10,7 @@
 
 # PROM Configurations
 set format     "mcs"
-set inteface   "SPIx1"
+set inteface   "SPIx2"
 set size       "1024"
 
 # BIT file locations

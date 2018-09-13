@@ -21,6 +21,7 @@ use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 
 use work.StdRtlPkg.all;
+use work.AxiPkg.all;
 use work.AxiLitePkg.all;
 use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
@@ -42,6 +43,14 @@ entity AsicCore is
       mAxilReadSlave       : out   AxiLiteReadSlaveType;
       mAxilWriteMaster     : in    AxiLiteWriteMasterType;
       mAxilWriteSlave      : out   AxiLiteWriteSlaveType;
+      -- AXI DDR Buffer Interface (sysClk domain)
+      axiWriteMasters      : out   AxiWriteMasterArray(3 downto 0);
+      axiWriteSlaves       : in    AxiWriteSlaveArray(3 downto 0);
+      axiReadMaster        : out   AxiReadMasterType;
+      axiReadSlave         : in    AxiReadSlaveType;
+      buffersRdy           : in    sl;
+      -- ADC stream input
+      adcStream            : in    AxiStreamMasterArray(63 downto 0);
       -- ASIC SACI signals
       asicSaciResp         : in    slv(3 downto 0);
       asicSaciClk          : out   slv(3 downto 0);
@@ -64,13 +73,14 @@ architecture rtl of AsicCore is
    
    constant SACI_CLK_PERIOD_C    : real := 1.00E-6;
    
-   constant NUM_AXI_MASTERS_C    : natural := 5;
+   constant NUM_AXI_MASTERS_C    : natural := 6;
 
    constant ASIC_SACI0_INDEX_C   : natural := 0;
    constant ASIC_SACI1_INDEX_C   : natural := 1;
    constant ASIC_SACI2_INDEX_C   : natural := 2;
    constant ASIC_SACI3_INDEX_C   : natural := 3;
    constant ASIC_ACQ_INDEX_C     : natural := 4;
+   constant ASIC_RDOUT_INDEX_C   : natural := 5;
 
    constant AXI_CONFIG_C   : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := genAxiLiteConfig(NUM_AXI_MASTERS_C, AXI_BASE_ADDR_G, 24, 20);
 
@@ -78,6 +88,11 @@ architecture rtl of AsicCore is
    signal axilWriteSlaves  : AxiLiteWriteSlaveArray(NUM_AXI_MASTERS_C-1 downto 0);
    signal axilReadMasters  : AxiLiteReadMasterArray(NUM_AXI_MASTERS_C-1 downto 0);
    signal axilReadSlaves   : AxiLiteReadSlaveArray(NUM_AXI_MASTERS_C-1 downto 0);
+   
+   signal acqBusy          : sl;
+   signal acqCount         : slv(31 downto 0);
+   signal acqSample        : sl;
+   signal readDone         : sl;
 
 begin
    
@@ -148,8 +163,10 @@ begin
       sAxilReadSlave    => axilReadSlaves(ASIC_ACQ_INDEX_C),
       -- Run control
       acqStart          => acqStart,
-      acqBusy           => open,
-      readDone          => '1',
+      acqBusy           => acqBusy,
+      acqCount          => acqCount,
+      acqSample         => acqSample,
+      readDone          => readDone,
       roClkTail         => toSlv(10, 8),
       -- ASIC Control Ports
       asicAcq           => asicAcq,
@@ -160,5 +177,47 @@ begin
       -- ADC Clock Output
       adcClk            => adcClk
    );
+   
+   --U_RdoutCore : entity work.RdoutCore
+   --generic map (
+   --   TPD_G             => TPD_G,
+   --   BANK_COLS_G       => 48,
+   --   BANK_ROWS_G       => 178,
+   --   LINE_REVERSE_G    => "1010"
+   --)
+   --port map (
+   --   -- ADC interface
+   --   sysClk               => sysClk,
+   --   sysRst               => sysRst,
+   --   -- AXI-Lite Interface for local registers 
+   --   sAxilReadMaster      => axilReadMasters(ASIC_RDOUT_INDEX_C),
+   --   sAxilReadSlave       => axilReadSlaves(ASIC_RDOUT_INDEX_C),
+   --   sAxilWriteMaster     => axilWriteMasters(ASIC_RDOUT_INDEX_C),
+   --   sAxilWriteSlave      => axilWriteSlaves(ASIC_RDOUT_INDEX_C),
+   --   -- AXI DDR Buffer Interface (sysClk domain)
+   --   axiWriteMasters      => axiWriteMasters,
+   --   axiWriteSlaves       => axiWriteSlaves,
+   --   axiReadMaster        => axiReadMaster,
+   --   axiReadSlave         => axiReadSlave,
+   --   buffersRdy           => buffersRdy,
+   --   -- Run control
+   --   acqStart             => acqStart,
+   --   acqBusy              => acqBusy,
+   --   acqCount             => acqCount,
+   --   acqSample            => acqSample,
+   --   readDone             => readDone,
+   --   -- ADC stream input
+   --   adcStream            => adcStream,
+   --   -- Frame stream output (axisClk domain)
+   --   axisClk              => sysClk,
+   --   axisRst              => sysRst,
+   --   axisMaster           => open,
+   --   axisSlave            => AXI_STREAM_SLAVE_INIT_C
+   --);
+   
+   axiWriteMasters <= (others => AXI_WRITE_MASTER_INIT_C);
+   axiReadMaster <= AXI_READ_MASTER_INIT_C;
+   axilReadSlaves(ASIC_RDOUT_INDEX_C)  <= AXI_LITE_READ_SLAVE_INIT_C;
+   axilWriteSlaves(ASIC_RDOUT_INDEX_C) <= AXI_LITE_WRITE_SLAVE_INIT_C;
 
 end rtl;

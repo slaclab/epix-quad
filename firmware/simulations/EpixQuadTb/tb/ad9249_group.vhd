@@ -31,6 +31,8 @@ entity ad9249_group is
       NO_INPUT_G           : BooleanArray(7 downto 0) := (others=>false);
       NO_INPUT_BASELINE_G  : RealArray(7 downto 0)    := (others=>0.5);
       NO_INPUT_NOISE_G     : RealArray(7 downto 0)    := (others=>10.0e-3);
+      USE_PATTERN_G        : BooleanArray(7 downto 0) := (others=>false);
+      PATTERN_G            : Slv16Array(7 downto 0)   := (others=>x"2A5A");
       INDEX_G              : natural                  := 0
    );
    port (
@@ -62,6 +64,8 @@ begin
             NO_INPUT_G           => NO_INPUT_G(i),
             NO_INPUT_BASELINE_G  => NO_INPUT_BASELINE_G(i),
             NO_INPUT_NOISE_G     => NO_INPUT_NOISE_G(i),
+            USE_PATTERN_G        => USE_PATTERN_G(i),
+            PATTERN_G            => PATTERN_G(i),
             INDEX_G              => INDEX_G*8+i
          )
          port map (
