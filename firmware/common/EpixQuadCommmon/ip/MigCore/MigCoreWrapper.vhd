@@ -40,9 +40,9 @@ entity MigCoreWrapper is
       -- DRR Memory interface ports
       sys_rst          : in    sl := '0';
       c0_ddr4_aresetn  : in    sl := '1';
-      c0_ddr4_dq       : inout slv(31 downto 0);
-      c0_ddr4_dqs_c    : inout slv(3 downto 0);
-      c0_ddr4_dqs_t    : inout slv(3 downto 0);
+      c0_ddr4_dq       : inout slv(15 downto 0);
+      c0_ddr4_dqs_c    : inout slv(1 downto 0);
+      c0_ddr4_dqs_t    : inout slv(1 downto 0);
       c0_ddr4_adr      : out   slv(16 downto 0);
       c0_ddr4_ba       : out   slv(1 downto 0);
       c0_ddr4_bg       : out   slv(0 to 0);
@@ -52,7 +52,7 @@ entity MigCoreWrapper is
       c0_ddr4_ck_c     : out   slv(0 to 0);
       c0_ddr4_cke      : out   slv(0 to 0);
       c0_ddr4_cs_n     : out   slv(0 to 0);
-      c0_ddr4_dm_dbi_n : inout slv(3 downto 0);
+      c0_ddr4_dm_dbi_n : inout slv(1 downto 0);
       c0_ddr4_odt      : out   slv(0 to 0);
       calibComplete    : out   sl);
 end MigCoreWrapper;
@@ -70,10 +70,10 @@ architecture mapping of MigCoreWrapper is
          c0_ddr4_ba : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
          c0_ddr4_cke : OUT STD_LOGIC_VECTOR(0 DOWNTO 0);
          c0_ddr4_cs_n : OUT STD_LOGIC_VECTOR(0 DOWNTO 0);
-         c0_ddr4_dm_dbi_n : INOUT STD_LOGIC_VECTOR(3 DOWNTO 0);
-         c0_ddr4_dq : INOUT STD_LOGIC_VECTOR(31 DOWNTO 0);
-         c0_ddr4_dqs_c : INOUT STD_LOGIC_VECTOR(3 DOWNTO 0);
-         c0_ddr4_dqs_t : INOUT STD_LOGIC_VECTOR(3 DOWNTO 0);
+         c0_ddr4_dm_dbi_n : INOUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+         c0_ddr4_dq : INOUT STD_LOGIC_VECTOR(15 DOWNTO 0);
+         c0_ddr4_dqs_c : INOUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+         c0_ddr4_dqs_t : INOUT STD_LOGIC_VECTOR(1 DOWNTO 0);
          c0_ddr4_odt : OUT STD_LOGIC_VECTOR(0 DOWNTO 0);
          c0_ddr4_bg : OUT STD_LOGIC_VECTOR(0 DOWNTO 0);
          c0_ddr4_reset_n : OUT STD_LOGIC;
@@ -84,7 +84,7 @@ architecture mapping of MigCoreWrapper is
          c0_ddr4_ui_clk_sync_rst : OUT STD_LOGIC;
          c0_ddr4_aresetn : IN STD_LOGIC;
          c0_ddr4_s_axi_awid : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
-         c0_ddr4_s_axi_awaddr : IN STD_LOGIC_VECTOR(29 DOWNTO 0);
+         c0_ddr4_s_axi_awaddr : IN STD_LOGIC_VECTOR(28 DOWNTO 0);
          c0_ddr4_s_axi_awlen : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
          c0_ddr4_s_axi_awsize : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
          c0_ddr4_s_axi_awburst : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
@@ -94,8 +94,8 @@ architecture mapping of MigCoreWrapper is
          c0_ddr4_s_axi_awqos : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
          c0_ddr4_s_axi_awvalid : IN STD_LOGIC;
          c0_ddr4_s_axi_awready : OUT STD_LOGIC;
-         c0_ddr4_s_axi_wdata : IN STD_LOGIC_VECTOR(255 DOWNTO 0);
-         c0_ddr4_s_axi_wstrb : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
+         c0_ddr4_s_axi_wdata : IN STD_LOGIC_VECTOR(127 DOWNTO 0);
+         c0_ddr4_s_axi_wstrb : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
          c0_ddr4_s_axi_wlast : IN STD_LOGIC;
          c0_ddr4_s_axi_wvalid : IN STD_LOGIC;
          c0_ddr4_s_axi_wready : OUT STD_LOGIC;
@@ -104,7 +104,7 @@ architecture mapping of MigCoreWrapper is
          c0_ddr4_s_axi_bresp : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
          c0_ddr4_s_axi_bvalid : OUT STD_LOGIC;
          c0_ddr4_s_axi_arid : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
-         c0_ddr4_s_axi_araddr : IN STD_LOGIC_VECTOR(29 DOWNTO 0);
+         c0_ddr4_s_axi_araddr : IN STD_LOGIC_VECTOR(28 DOWNTO 0);
          c0_ddr4_s_axi_arlen : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
          c0_ddr4_s_axi_arsize : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
          c0_ddr4_s_axi_arburst : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
@@ -119,7 +119,7 @@ architecture mapping of MigCoreWrapper is
          c0_ddr4_s_axi_rvalid : OUT STD_LOGIC;
          c0_ddr4_s_axi_rresp : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
          c0_ddr4_s_axi_rid : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
-         c0_ddr4_s_axi_rdata : OUT STD_LOGIC_VECTOR(255 DOWNTO 0);
+         c0_ddr4_s_axi_rdata : OUT STD_LOGIC_VECTOR(127 DOWNTO 0);
          sys_rst : IN STD_LOGIC
       );
    END COMPONENT;
@@ -181,7 +181,7 @@ begin
          c0_ddr4_ck_t            => c0_ddr4_ck_t,
          -- Slave Interface Write Address Ports
          c0_ddr4_s_axi_awid      => ddrWriteMaster.awid(3 downto 0),
-         c0_ddr4_s_axi_awaddr    => ddrWriteMaster.awaddr(29 downto 0),
+         c0_ddr4_s_axi_awaddr    => ddrWriteMaster.awaddr(28 downto 0),
          c0_ddr4_s_axi_awlen     => ddrWriteMaster.awlen,
          c0_ddr4_s_axi_awsize    => ddrWriteMaster.awsize,
          c0_ddr4_s_axi_awburst   => ddrWriteMaster.awburst,
@@ -192,8 +192,8 @@ begin
          c0_ddr4_s_axi_awvalid   => ddrWriteMaster.awvalid,
          c0_ddr4_s_axi_awready   => ddrWriteSlave.awready,
          -- Slave Interface Write Data Ports
-         c0_ddr4_s_axi_wdata     => ddrWriteMaster.wdata(255 downto 0),
-         c0_ddr4_s_axi_wstrb     => ddrWriteMaster.wstrb(31 downto 0),
+         c0_ddr4_s_axi_wdata     => ddrWriteMaster.wdata(127 downto 0),
+         c0_ddr4_s_axi_wstrb     => ddrWriteMaster.wstrb(15 downto 0),
          c0_ddr4_s_axi_wlast     => ddrWriteMaster.wlast,
          c0_ddr4_s_axi_wvalid    => ddrWriteMaster.wvalid,
          c0_ddr4_s_axi_wready    => ddrWriteSlave.wready,
@@ -204,7 +204,7 @@ begin
          c0_ddr4_s_axi_bready    => ddrWriteMaster.bready,
          -- Slave Interface Read Address Ports
          c0_ddr4_s_axi_arid      => ddrReadMaster.arid(3 downto 0),
-         c0_ddr4_s_axi_araddr    => ddrReadMaster.araddr(29 downto 0),
+         c0_ddr4_s_axi_araddr    => ddrReadMaster.araddr(28 downto 0),
          c0_ddr4_s_axi_arlen     => ddrReadMaster.arlen,
          c0_ddr4_s_axi_arsize    => ddrReadMaster.arsize,
          c0_ddr4_s_axi_arburst   => ddrReadMaster.arburst,
@@ -216,7 +216,7 @@ begin
          c0_ddr4_s_axi_arready   => ddrReadSlave.arready,
          -- Slave Interface Read Data Ports
          c0_ddr4_s_axi_rid       => ddrReadSlave.rid(3 downto 0),
-         c0_ddr4_s_axi_rdata     => ddrReadSlave.rdata(255 downto 0),
+         c0_ddr4_s_axi_rdata     => ddrReadSlave.rdata(127 downto 0),
          c0_ddr4_s_axi_rresp     => ddrReadSlave.rresp,
          c0_ddr4_s_axi_rlast     => ddrReadSlave.rlast,
          c0_ddr4_s_axi_rvalid    => ddrReadSlave.rvalid,

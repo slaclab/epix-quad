@@ -36,20 +36,20 @@ entity AxiIcWrapper is
       axiImgWriteSlaves    : out AxiWriteSlaveArray(3 downto 0);
       
       -- AXI Slave for data readout
-      -- 32 Bit Data Bus
+      -- 128 Bit Data Bus
       axiDoutClk           : in  sl;
       axiDoutReadMaster    : in  AxiReadMasterType;
       axiDoutReadSlave     : out AxiReadSlaveType;
       
       -- AXI Slave for memory tester (aximClk domain)
-      -- 512 Bit Data Bus
+      -- 128 Bit Data Bus
       axiBistReadMaster    : in  AxiReadMasterType;
       axiBistReadSlave     : out AxiReadSlaveType;
       axiBistWriteMaster   : in  AxiWriteMasterType;
       axiBistWriteSlave    : out AxiWriteSlaveType;
       
       -- AXI Master
-      -- 512 Bit Data Bus
+      -- 128 Bit Data Bus
       aximClk              : in  sl;
       aximRst              : in  sl;
       aximReadMaster       : out AxiReadMasterType;
@@ -68,7 +68,7 @@ architecture mapping of AxiIcWrapper is
          S00_AXI_ARESET_OUT_N : OUT STD_LOGIC;
          S00_AXI_ACLK : IN STD_LOGIC;
          S00_AXI_AWID : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
-         S00_AXI_AWADDR : IN STD_LOGIC_VECTOR(29 DOWNTO 0);
+         S00_AXI_AWADDR : IN STD_LOGIC_VECTOR(28 DOWNTO 0);
          S00_AXI_AWLEN : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
          S00_AXI_AWSIZE : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
          S00_AXI_AWBURST : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
@@ -88,7 +88,7 @@ architecture mapping of AxiIcWrapper is
          S00_AXI_BVALID : OUT STD_LOGIC;
          S00_AXI_BREADY : IN STD_LOGIC;
          S00_AXI_ARID : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
-         S00_AXI_ARADDR : IN STD_LOGIC_VECTOR(29 DOWNTO 0);
+         S00_AXI_ARADDR : IN STD_LOGIC_VECTOR(28 DOWNTO 0);
          S00_AXI_ARLEN : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
          S00_AXI_ARSIZE : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
          S00_AXI_ARBURST : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
@@ -107,7 +107,7 @@ architecture mapping of AxiIcWrapper is
          S01_AXI_ARESET_OUT_N : OUT STD_LOGIC;
          S01_AXI_ACLK : IN STD_LOGIC;
          S01_AXI_AWID : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
-         S01_AXI_AWADDR : IN STD_LOGIC_VECTOR(29 DOWNTO 0);
+         S01_AXI_AWADDR : IN STD_LOGIC_VECTOR(28 DOWNTO 0);
          S01_AXI_AWLEN : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
          S01_AXI_AWSIZE : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
          S01_AXI_AWBURST : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
@@ -127,7 +127,7 @@ architecture mapping of AxiIcWrapper is
          S01_AXI_BVALID : OUT STD_LOGIC;
          S01_AXI_BREADY : IN STD_LOGIC;
          S01_AXI_ARID : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
-         S01_AXI_ARADDR : IN STD_LOGIC_VECTOR(29 DOWNTO 0);
+         S01_AXI_ARADDR : IN STD_LOGIC_VECTOR(28 DOWNTO 0);
          S01_AXI_ARLEN : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
          S01_AXI_ARSIZE : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
          S01_AXI_ARBURST : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
@@ -146,7 +146,7 @@ architecture mapping of AxiIcWrapper is
          S02_AXI_ARESET_OUT_N : OUT STD_LOGIC;
          S02_AXI_ACLK : IN STD_LOGIC;
          S02_AXI_AWID : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
-         S02_AXI_AWADDR : IN STD_LOGIC_VECTOR(29 DOWNTO 0);
+         S02_AXI_AWADDR : IN STD_LOGIC_VECTOR(28 DOWNTO 0);
          S02_AXI_AWLEN : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
          S02_AXI_AWSIZE : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
          S02_AXI_AWBURST : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
@@ -166,7 +166,7 @@ architecture mapping of AxiIcWrapper is
          S02_AXI_BVALID : OUT STD_LOGIC;
          S02_AXI_BREADY : IN STD_LOGIC;
          S02_AXI_ARID : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
-         S02_AXI_ARADDR : IN STD_LOGIC_VECTOR(29 DOWNTO 0);
+         S02_AXI_ARADDR : IN STD_LOGIC_VECTOR(28 DOWNTO 0);
          S02_AXI_ARLEN : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
          S02_AXI_ARSIZE : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
          S02_AXI_ARBURST : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
@@ -185,7 +185,7 @@ architecture mapping of AxiIcWrapper is
          S03_AXI_ARESET_OUT_N : OUT STD_LOGIC;
          S03_AXI_ACLK : IN STD_LOGIC;
          S03_AXI_AWID : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
-         S03_AXI_AWADDR : IN STD_LOGIC_VECTOR(29 DOWNTO 0);
+         S03_AXI_AWADDR : IN STD_LOGIC_VECTOR(28 DOWNTO 0);
          S03_AXI_AWLEN : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
          S03_AXI_AWSIZE : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
          S03_AXI_AWBURST : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
@@ -205,7 +205,7 @@ architecture mapping of AxiIcWrapper is
          S03_AXI_BVALID : OUT STD_LOGIC;
          S03_AXI_BREADY : IN STD_LOGIC;
          S03_AXI_ARID : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
-         S03_AXI_ARADDR : IN STD_LOGIC_VECTOR(29 DOWNTO 0);
+         S03_AXI_ARADDR : IN STD_LOGIC_VECTOR(28 DOWNTO 0);
          S03_AXI_ARLEN : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
          S03_AXI_ARSIZE : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
          S03_AXI_ARBURST : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
@@ -224,7 +224,7 @@ architecture mapping of AxiIcWrapper is
          S04_AXI_ARESET_OUT_N : OUT STD_LOGIC;
          S04_AXI_ACLK : IN STD_LOGIC;
          S04_AXI_AWID : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
-         S04_AXI_AWADDR : IN STD_LOGIC_VECTOR(29 DOWNTO 0);
+         S04_AXI_AWADDR : IN STD_LOGIC_VECTOR(28 DOWNTO 0);
          S04_AXI_AWLEN : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
          S04_AXI_AWSIZE : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
          S04_AXI_AWBURST : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
@@ -234,8 +234,8 @@ architecture mapping of AxiIcWrapper is
          S04_AXI_AWQOS : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
          S04_AXI_AWVALID : IN STD_LOGIC;
          S04_AXI_AWREADY : OUT STD_LOGIC;
-         S04_AXI_WDATA : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
-         S04_AXI_WSTRB : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
+         S04_AXI_WDATA : IN STD_LOGIC_VECTOR(127 DOWNTO 0);
+         S04_AXI_WSTRB : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
          S04_AXI_WLAST : IN STD_LOGIC;
          S04_AXI_WVALID : IN STD_LOGIC;
          S04_AXI_WREADY : OUT STD_LOGIC;
@@ -244,7 +244,7 @@ architecture mapping of AxiIcWrapper is
          S04_AXI_BVALID : OUT STD_LOGIC;
          S04_AXI_BREADY : IN STD_LOGIC;
          S04_AXI_ARID : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
-         S04_AXI_ARADDR : IN STD_LOGIC_VECTOR(29 DOWNTO 0);
+         S04_AXI_ARADDR : IN STD_LOGIC_VECTOR(28 DOWNTO 0);
          S04_AXI_ARLEN : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
          S04_AXI_ARSIZE : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
          S04_AXI_ARBURST : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
@@ -255,7 +255,7 @@ architecture mapping of AxiIcWrapper is
          S04_AXI_ARVALID : IN STD_LOGIC;
          S04_AXI_ARREADY : OUT STD_LOGIC;
          S04_AXI_RID : OUT STD_LOGIC_VECTOR(0 DOWNTO 0);
-         S04_AXI_RDATA : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
+         S04_AXI_RDATA : OUT STD_LOGIC_VECTOR(127 DOWNTO 0);
          S04_AXI_RRESP : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
          S04_AXI_RLAST : OUT STD_LOGIC;
          S04_AXI_RVALID : OUT STD_LOGIC;
@@ -263,7 +263,7 @@ architecture mapping of AxiIcWrapper is
          S05_AXI_ARESET_OUT_N : OUT STD_LOGIC;
          S05_AXI_ACLK : IN STD_LOGIC;
          S05_AXI_AWID : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
-         S05_AXI_AWADDR : IN STD_LOGIC_VECTOR(29 DOWNTO 0);
+         S05_AXI_AWADDR : IN STD_LOGIC_VECTOR(28 DOWNTO 0);
          S05_AXI_AWLEN : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
          S05_AXI_AWSIZE : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
          S05_AXI_AWBURST : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
@@ -273,8 +273,8 @@ architecture mapping of AxiIcWrapper is
          S05_AXI_AWQOS : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
          S05_AXI_AWVALID : IN STD_LOGIC;
          S05_AXI_AWREADY : OUT STD_LOGIC;
-         S05_AXI_WDATA : IN STD_LOGIC_VECTOR(255 DOWNTO 0);
-         S05_AXI_WSTRB : IN STD_LOGIC_VECTOR(31 DOWNTO 0);
+         S05_AXI_WDATA : IN STD_LOGIC_VECTOR(127 DOWNTO 0);
+         S05_AXI_WSTRB : IN STD_LOGIC_VECTOR(15 DOWNTO 0);
          S05_AXI_WLAST : IN STD_LOGIC;
          S05_AXI_WVALID : IN STD_LOGIC;
          S05_AXI_WREADY : OUT STD_LOGIC;
@@ -283,7 +283,7 @@ architecture mapping of AxiIcWrapper is
          S05_AXI_BVALID : OUT STD_LOGIC;
          S05_AXI_BREADY : IN STD_LOGIC;
          S05_AXI_ARID : IN STD_LOGIC_VECTOR(0 DOWNTO 0);
-         S05_AXI_ARADDR : IN STD_LOGIC_VECTOR(29 DOWNTO 0);
+         S05_AXI_ARADDR : IN STD_LOGIC_VECTOR(28 DOWNTO 0);
          S05_AXI_ARLEN : IN STD_LOGIC_VECTOR(7 DOWNTO 0);
          S05_AXI_ARSIZE : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
          S05_AXI_ARBURST : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
@@ -294,7 +294,7 @@ architecture mapping of AxiIcWrapper is
          S05_AXI_ARVALID : IN STD_LOGIC;
          S05_AXI_ARREADY : OUT STD_LOGIC;
          S05_AXI_RID : OUT STD_LOGIC_VECTOR(0 DOWNTO 0);
-         S05_AXI_RDATA : OUT STD_LOGIC_VECTOR(255 DOWNTO 0);
+         S05_AXI_RDATA : OUT STD_LOGIC_VECTOR(127 DOWNTO 0);
          S05_AXI_RRESP : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
          S05_AXI_RLAST : OUT STD_LOGIC;
          S05_AXI_RVALID : OUT STD_LOGIC;
@@ -302,7 +302,7 @@ architecture mapping of AxiIcWrapper is
          M00_AXI_ARESET_OUT_N : OUT STD_LOGIC;
          M00_AXI_ACLK : IN STD_LOGIC;
          M00_AXI_AWID : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
-         M00_AXI_AWADDR : OUT STD_LOGIC_VECTOR(29 DOWNTO 0);
+         M00_AXI_AWADDR : OUT STD_LOGIC_VECTOR(28 DOWNTO 0);
          M00_AXI_AWLEN : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
          M00_AXI_AWSIZE : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
          M00_AXI_AWBURST : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
@@ -312,8 +312,8 @@ architecture mapping of AxiIcWrapper is
          M00_AXI_AWQOS : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
          M00_AXI_AWVALID : OUT STD_LOGIC;
          M00_AXI_AWREADY : IN STD_LOGIC;
-         M00_AXI_WDATA : OUT STD_LOGIC_VECTOR(255 DOWNTO 0);
-         M00_AXI_WSTRB : OUT STD_LOGIC_VECTOR(31 DOWNTO 0);
+         M00_AXI_WDATA : OUT STD_LOGIC_VECTOR(127 DOWNTO 0);
+         M00_AXI_WSTRB : OUT STD_LOGIC_VECTOR(15 DOWNTO 0);
          M00_AXI_WLAST : OUT STD_LOGIC;
          M00_AXI_WVALID : OUT STD_LOGIC;
          M00_AXI_WREADY : IN STD_LOGIC;
@@ -322,7 +322,7 @@ architecture mapping of AxiIcWrapper is
          M00_AXI_BVALID : IN STD_LOGIC;
          M00_AXI_BREADY : OUT STD_LOGIC;
          M00_AXI_ARID : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
-         M00_AXI_ARADDR : OUT STD_LOGIC_VECTOR(29 DOWNTO 0);
+         M00_AXI_ARADDR : OUT STD_LOGIC_VECTOR(28 DOWNTO 0);
          M00_AXI_ARLEN : OUT STD_LOGIC_VECTOR(7 DOWNTO 0);
          M00_AXI_ARSIZE : OUT STD_LOGIC_VECTOR(2 DOWNTO 0);
          M00_AXI_ARBURST : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
@@ -333,7 +333,7 @@ architecture mapping of AxiIcWrapper is
          M00_AXI_ARVALID : OUT STD_LOGIC;
          M00_AXI_ARREADY : IN STD_LOGIC;
          M00_AXI_RID : IN STD_LOGIC_VECTOR(3 DOWNTO 0);
-         M00_AXI_RDATA : IN STD_LOGIC_VECTOR(255 DOWNTO 0);
+         M00_AXI_RDATA : IN STD_LOGIC_VECTOR(127 DOWNTO 0);
          M00_AXI_RRESP : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
          M00_AXI_RLAST : IN STD_LOGIC;
          M00_AXI_RVALID : IN STD_LOGIC;
@@ -369,7 +369,7 @@ begin
       S00_AXI_ARESET_OUT_N    => open,
       S00_AXI_ACLK            => axiImgClk,
       S00_AXI_AWID            => axiImgWriteMasters(0).awid(0 downto 0),
-      S00_AXI_AWADDR          => axiImgWriteMasters(0).awaddr(29 downto 0),
+      S00_AXI_AWADDR          => axiImgWriteMasters(0).awaddr(28 downto 0),
       S00_AXI_AWLEN           => axiImgWriteMasters(0).awlen,
       S00_AXI_AWSIZE          => axiImgWriteMasters(0).awsize,
       S00_AXI_AWBURST         => axiImgWriteMasters(0).awburst,
@@ -389,7 +389,7 @@ begin
       S00_AXI_BVALID          => axiImgWriteSlaves(0).bvalid,
       S00_AXI_BREADY          => axiImgWriteMasters(0).bready,
       S00_AXI_ARID            => axiImgReadMasters(0).arid(0 downto 0),
-      S00_AXI_ARADDR          => axiImgReadMasters(0).araddr(29 downto 0),
+      S00_AXI_ARADDR          => axiImgReadMasters(0).araddr(28 downto 0),
       S00_AXI_ARLEN           => axiImgReadMasters(0).arlen,
       S00_AXI_ARSIZE          => axiImgReadMasters(0).arsize,
       S00_AXI_ARBURST         => axiImgReadMasters(0).arburst,
@@ -409,7 +409,7 @@ begin
       S01_AXI_ARESET_OUT_N    => open,
       S01_AXI_ACLK            => axiImgClk,
       S01_AXI_AWID            => axiImgWriteMasters(1).awid(0 downto 0),
-      S01_AXI_AWADDR          => axiImgWriteMasters(1).awaddr(29 downto 0),
+      S01_AXI_AWADDR          => axiImgWriteMasters(1).awaddr(28 downto 0),
       S01_AXI_AWLEN           => axiImgWriteMasters(1).awlen,
       S01_AXI_AWSIZE          => axiImgWriteMasters(1).awsize,
       S01_AXI_AWBURST         => axiImgWriteMasters(1).awburst,
@@ -429,7 +429,7 @@ begin
       S01_AXI_BVALID          => axiImgWriteSlaves(1).bvalid,
       S01_AXI_BREADY          => axiImgWriteMasters(1).bready,
       S01_AXI_ARID            => axiImgReadMasters(1).arid(0 downto 0),
-      S01_AXI_ARADDR          => axiImgReadMasters(1).araddr(29 downto 0),
+      S01_AXI_ARADDR          => axiImgReadMasters(1).araddr(28 downto 0),
       S01_AXI_ARLEN           => axiImgReadMasters(1).arlen,
       S01_AXI_ARSIZE          => axiImgReadMasters(1).arsize,
       S01_AXI_ARBURST         => axiImgReadMasters(1).arburst,
@@ -449,7 +449,7 @@ begin
       S02_AXI_ARESET_OUT_N    => open,
       S02_AXI_ACLK            => axiImgClk,
       S02_AXI_AWID            => axiImgWriteMasters(2).awid(0 downto 0),
-      S02_AXI_AWADDR          => axiImgWriteMasters(2).awaddr(29 downto 0),
+      S02_AXI_AWADDR          => axiImgWriteMasters(2).awaddr(28 downto 0),
       S02_AXI_AWLEN           => axiImgWriteMasters(2).awlen,
       S02_AXI_AWSIZE          => axiImgWriteMasters(2).awsize,
       S02_AXI_AWBURST         => axiImgWriteMasters(2).awburst,
@@ -469,7 +469,7 @@ begin
       S02_AXI_BVALID          => axiImgWriteSlaves(2).bvalid,
       S02_AXI_BREADY          => axiImgWriteMasters(2).bready,
       S02_AXI_ARID            => axiImgReadMasters(2).arid(0 downto 0),
-      S02_AXI_ARADDR          => axiImgReadMasters(2).araddr(29 downto 0),
+      S02_AXI_ARADDR          => axiImgReadMasters(2).araddr(28 downto 0),
       S02_AXI_ARLEN           => axiImgReadMasters(2).arlen,
       S02_AXI_ARSIZE          => axiImgReadMasters(2).arsize,
       S02_AXI_ARBURST         => axiImgReadMasters(2).arburst,
@@ -489,7 +489,7 @@ begin
       S03_AXI_ARESET_OUT_N    => open,
       S03_AXI_ACLK            => axiImgClk,
       S03_AXI_AWID            => axiImgWriteMasters(3).awid(0 downto 0),
-      S03_AXI_AWADDR          => axiImgWriteMasters(3).awaddr(29 downto 0),
+      S03_AXI_AWADDR          => axiImgWriteMasters(3).awaddr(28 downto 0),
       S03_AXI_AWLEN           => axiImgWriteMasters(3).awlen,
       S03_AXI_AWSIZE          => axiImgWriteMasters(3).awsize,
       S03_AXI_AWBURST         => axiImgWriteMasters(3).awburst,
@@ -509,7 +509,7 @@ begin
       S03_AXI_BVALID          => axiImgWriteSlaves(3).bvalid,
       S03_AXI_BREADY          => axiImgWriteMasters(3).bready,
       S03_AXI_ARID            => axiImgReadMasters(3).arid(0 downto 0),
-      S03_AXI_ARADDR          => axiImgReadMasters(3).araddr(29 downto 0),
+      S03_AXI_ARADDR          => axiImgReadMasters(3).araddr(28 downto 0),
       S03_AXI_ARLEN           => axiImgReadMasters(3).arlen,
       S03_AXI_ARSIZE          => axiImgReadMasters(3).arsize,
       S03_AXI_ARBURST         => axiImgReadMasters(3).arburst,
@@ -529,7 +529,7 @@ begin
       S04_AXI_ARESET_OUT_N    => open,
       S04_AXI_ACLK            => axiDoutClk,
       S04_AXI_AWID            => axiDoutWriteMaster.awid(0 downto 0),
-      S04_AXI_AWADDR          => axiDoutWriteMaster.awaddr(29 downto 0),
+      S04_AXI_AWADDR          => axiDoutWriteMaster.awaddr(28 downto 0),
       S04_AXI_AWLEN           => axiDoutWriteMaster.awlen,
       S04_AXI_AWSIZE          => axiDoutWriteMaster.awsize,
       S04_AXI_AWBURST         => axiDoutWriteMaster.awburst,
@@ -539,8 +539,8 @@ begin
       S04_AXI_AWQOS           => axiDoutWriteMaster.awqos,
       S04_AXI_AWVALID         => axiDoutWriteMaster.awvalid,
       S04_AXI_AWREADY         => axiDoutWriteSlave.awready,
-      S04_AXI_WDATA           => axiDoutWriteMaster.wdata(31 downto 0),
-      S04_AXI_WSTRB           => axiDoutWriteMaster.wstrb(3 downto 0),
+      S04_AXI_WDATA           => axiDoutWriteMaster.wdata(127 downto 0),
+      S04_AXI_WSTRB           => axiDoutWriteMaster.wstrb(15 downto 0),
       S04_AXI_WLAST           => axiDoutWriteMaster.wlast,
       S04_AXI_WVALID          => axiDoutWriteMaster.wvalid,
       S04_AXI_WREADY          => axiDoutWriteSlave.wready,
@@ -549,7 +549,7 @@ begin
       S04_AXI_BVALID          => axiDoutWriteSlave.bvalid,
       S04_AXI_BREADY          => axiDoutWriteMaster.bready,
       S04_AXI_ARID            => axiDoutReadMaster.arid(0 downto 0),
-      S04_AXI_ARADDR          => axiDoutReadMaster.araddr(29 downto 0),
+      S04_AXI_ARADDR          => axiDoutReadMaster.araddr(28 downto 0),
       S04_AXI_ARLEN           => axiDoutReadMaster.arlen,
       S04_AXI_ARSIZE          => axiDoutReadMaster.arsize,
       S04_AXI_ARBURST         => axiDoutReadMaster.arburst,
@@ -560,7 +560,7 @@ begin
       S04_AXI_ARVALID         => axiDoutReadMaster.arvalid,
       S04_AXI_ARREADY         => axiDoutReadSlave.arready,
       S04_AXI_RID             => axiDoutReadSlave.rid(0 downto 0),
-      S04_AXI_RDATA           => axiDoutReadSlave.rdata(31 downto 0),
+      S04_AXI_RDATA           => axiDoutReadSlave.rdata(127 downto 0),
       S04_AXI_RRESP           => axiDoutReadSlave.rresp,
       S04_AXI_RLAST           => axiDoutReadSlave.rlast,
       S04_AXI_RVALID          => axiDoutReadSlave.rvalid,
@@ -569,7 +569,7 @@ begin
       S05_AXI_ARESET_OUT_N    => open,
       S05_AXI_ACLK            => aximClk,
       S05_AXI_AWID            => axiBistWriteMaster.awid(0 downto 0),
-      S05_AXI_AWADDR          => axiBistWriteMaster.awaddr(29 downto 0),
+      S05_AXI_AWADDR          => axiBistWriteMaster.awaddr(28 downto 0),
       S05_AXI_AWLEN           => axiBistWriteMaster.awlen,
       S05_AXI_AWSIZE          => axiBistWriteMaster.awsize,
       S05_AXI_AWBURST         => axiBistWriteMaster.awburst,
@@ -579,8 +579,8 @@ begin
       S05_AXI_AWQOS           => axiBistWriteMaster.awqos,
       S05_AXI_AWVALID         => axiBistWriteMaster.awvalid,
       S05_AXI_AWREADY         => axiBistWriteSlave.awready,
-      S05_AXI_WDATA           => axiBistWriteMaster.wdata(255 downto 0),
-      S05_AXI_WSTRB           => axiBistWriteMaster.wstrb(31 downto 0),
+      S05_AXI_WDATA           => axiBistWriteMaster.wdata(127 downto 0),
+      S05_AXI_WSTRB           => axiBistWriteMaster.wstrb(15 downto 0),
       S05_AXI_WLAST           => axiBistWriteMaster.wlast,
       S05_AXI_WVALID          => axiBistWriteMaster.wvalid,
       S05_AXI_WREADY          => axiBistWriteSlave.wready,
@@ -589,7 +589,7 @@ begin
       S05_AXI_BVALID          => axiBistWriteSlave.bvalid,
       S05_AXI_BREADY          => axiBistWriteMaster.bready,
       S05_AXI_ARID            => axiBistReadMaster.arid(0 downto 0),
-      S05_AXI_ARADDR          => axiBistReadMaster.araddr(29 downto 0),
+      S05_AXI_ARADDR          => axiBistReadMaster.araddr(28 downto 0),
       S05_AXI_ARLEN           => axiBistReadMaster.arlen,
       S05_AXI_ARSIZE          => axiBistReadMaster.arsize,
       S05_AXI_ARBURST         => axiBistReadMaster.arburst,
@@ -600,7 +600,7 @@ begin
       S05_AXI_ARVALID         => axiBistReadMaster.arvalid,
       S05_AXI_ARREADY         => axiBistReadSlave.arready,
       S05_AXI_RID             => axiBistReadSlave.rid(0 downto 0),
-      S05_AXI_RDATA           => axiBistReadSlave.rdata(255 downto 0),
+      S05_AXI_RDATA           => axiBistReadSlave.rdata(127 downto 0),
       S05_AXI_RRESP           => axiBistReadSlave.rresp,
       S05_AXI_RLAST           => axiBistReadSlave.rlast,
       S05_AXI_RVALID          => axiBistReadSlave.rvalid,
@@ -609,7 +609,7 @@ begin
       M00_AXI_ARESET_OUT_N    => open,
       M00_AXI_ACLK            => aximClk,
       M00_AXI_AWID            => aximWriteMaster.awid(3 downto 0),
-      M00_AXI_AWADDR          => aximWriteMaster.awaddr(29 downto 0),
+      M00_AXI_AWADDR          => aximWriteMaster.awaddr(28 downto 0),
       M00_AXI_AWLEN           => aximWriteMaster.awlen,
       M00_AXI_AWSIZE          => aximWriteMaster.awsize,
       M00_AXI_AWBURST         => aximWriteMaster.awburst,
@@ -619,8 +619,8 @@ begin
       M00_AXI_AWQOS           => aximWriteMaster.awqos,
       M00_AXI_AWVALID         => aximWriteMaster.awvalid,
       M00_AXI_AWREADY         => aximWriteSlave.awready,
-      M00_AXI_WDATA           => aximWriteMaster.wdata(255 downto 0),
-      M00_AXI_WSTRB           => aximWriteMaster.wstrb(31 downto 0),
+      M00_AXI_WDATA           => aximWriteMaster.wdata(127 downto 0),
+      M00_AXI_WSTRB           => aximWriteMaster.wstrb(15 downto 0),
       M00_AXI_WLAST           => aximWriteMaster.wlast,
       M00_AXI_WVALID          => aximWriteMaster.wvalid,
       M00_AXI_WREADY          => aximWriteSlave.wready,
@@ -629,7 +629,7 @@ begin
       M00_AXI_BVALID          => aximWriteSlave.bvalid,
       M00_AXI_BREADY          => aximWriteMaster.bready,
       M00_AXI_ARID            => aximReadMaster.arid(3 downto 0),
-      M00_AXI_ARADDR          => aximReadMaster.araddr(29 downto 0),
+      M00_AXI_ARADDR          => aximReadMaster.araddr(28 downto 0),
       M00_AXI_ARLEN           => aximReadMaster.arlen,
       M00_AXI_ARSIZE          => aximReadMaster.arsize,
       M00_AXI_ARBURST         => aximReadMaster.arburst,
@@ -640,7 +640,7 @@ begin
       M00_AXI_ARVALID         => aximReadMaster.arvalid,
       M00_AXI_ARREADY         => aximReadSlave.arready,
       M00_AXI_RID             => aximReadSlave.rid(3 downto 0),
-      M00_AXI_RDATA           => aximReadSlave.rdata(255 downto 0),
+      M00_AXI_RDATA           => aximReadSlave.rdata(127 downto 0),
       M00_AXI_RRESP           => aximReadSlave.rresp,
       M00_AXI_RLAST           => aximReadSlave.rlast,
       M00_AXI_RVALID          => aximReadSlave.rvalid,
