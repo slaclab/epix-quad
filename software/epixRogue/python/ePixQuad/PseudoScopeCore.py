@@ -20,10 +20,10 @@
 import pyrogue as pr
 import collections
 
-class SystemRegs(pr.Device):
+class PseudoScopeCore(pr.Device):
    def __init__(self, **kwargs):
-      """Create SystemRegs"""
-      super().__init__(description='System Regsisters', **kwargs)
+      """Create PseudoScopeCore"""
+      super().__init__(description='Pseudo Scope Regsisters', **kwargs)
       
       # Creation. memBase is either the register bus server (srp, rce mapped memory, etc) or the device which
       # contains this object. In most cases the parent and memBase are the same but they can be 
@@ -38,29 +38,59 @@ class SystemRegs(pr.Device):
       
       #Setup registers & variables
       self.add(pr.RemoteVariable(
-         name       = 'UsrRst',     
-         description= 'User Reset',     
+         name       = 'Arm',     
+         description= 'Pseudo Scope Arm',     
          offset     = 0x00000000, 
          bitSize    = 1, 
+         bitOffset  = 0,  
+         base       = pr.Bool, 
+         mode       = 'RW',
+      ))
+      
+      self.add(pr.RemoteVariable(
+         name       = 'Trig',     
+         description= 'Pseudo Scope Trig',     
+         offset     = 0x00000004, 
+         bitSize    = 1, 
+         bitOffset  = 0,  
+         base       = pr.Bool, 
+         mode       = 'RW',
+      ))
+      
+      self.add(pr.RemoteVariable(
+         name       = 'ScopeEn',     
+         description= 'Pseudo Scope Enable',     
+         offset     = 0x00000008, 
+         bitSize    = 1, 
+         bitOffset  = 0,  
+         base       = pr.Bool, 
+         mode       = 'RW',
+      ))
+      
+      self.add(pr.RemoteVariable(
+         name       = 'TrigEdge',     
+         description= 'Trigger Edge Select',     
+         offset     = 0x0000000C, 
+         bitSize    = 1, 
+         bitOffset  = 0,  
+         base       = pr.Bool, 
+         mode       = 'RW',
+      ))
+      
+      self.add(pr.RemoteVariable(
+         name       = 'TrigChannel',     
+         description= 'Trigger Channel Select',     
+         offset     = 0x00000010, 
+         bitSize    = 5, 
          bitOffset  = 0,  
          base       = pr.UInt, 
          mode       = 'RW',
       ))
       
       self.add(pr.RemoteVariable(
-         name       = 'TrigEn',     
-         description= 'Global Trigger Enable',     
-         offset     = 0x00000400, 
-         bitSize    = 1, 
-         bitOffset  = 0,  
-         base       = pr.Bool, 
-         mode       = 'RW',
-      ))   
-      
-      self.add(pr.RemoteVariable(
-         name       = 'TrigSrcSel',     
-         description= 'Trigger Source Select',     
-         offset     = 0x00000404, 
+         name       = 'TrigMode',     
+         description= 'Trigger Mode Select',     
+         offset     = 0x00000014, 
          bitSize    = 2, 
          bitOffset  = 0,  
          base       = pr.UInt, 
@@ -68,125 +98,85 @@ class SystemRegs(pr.Device):
       ))
       
       self.add(pr.RemoteVariable(
-         name       = 'AutoTrigEn',     
-         description= 'Auto Trigger Enable',     
-         offset     = 0x00000408, 
-         bitSize    = 1, 
-         bitOffset  = 0,  
-         base       = pr.Bool, 
-         mode       = 'RW',
-      ))   
-      
-      self.add(pr.RemoteVariable(
-         name       = 'AutoTrigPer',     
-         description= 'Auto Trigger Period',     
-         offset     = 0x0000040C, 
-         bitSize    = 32, 
-         bitOffset  = 0,  
-         base       = pr.UInt, 
-         mode       = 'RW',
-      ))
-      
-      
-      self.add(pr.RemoteVariable(
-         name       = 'DcDcEnable',     
-         description= 'Enable Analog DCDC Regulators',     
-         offset     = 0x00000004, 
-         bitSize    = 4, 
-         bitOffset  = 0,  
-         base       = pr.UInt, 
-         mode       = 'RW',
-      ))
-      
-      self.add(pr.RemoteVariable(
-         name       = 'AsicAnaEn',     
-         description= 'Enable ASIC Analog Voltage',     
-         offset     = 0x00000008, 
-         bitSize    = 1, 
-         bitOffset  = 0,  
-         base       = pr.Bool, 
-         mode       = 'RW',
-      ))   
-
-      self.add(pr.RemoteVariable(
-         name       = 'AsicDigEn',     
-         description= 'Enable ASIC Digital Voltage',     
-         offset     = 0x0000000C, 
-         bitSize    = 1, 
-         bitOffset  = 0,  
-         base       = pr.Bool, 
-         mode       = 'RW',
-      ))   
-      
-      self.add(pr.RemoteVariable(
-         name       = 'DdrVttEn',     
-         description= 'Enable DDR VTT Voltage',
-         offset     = 0x00000010, 
-         bitSize    = 1, 
-         bitOffset  = 0,  
-         base       = pr.Bool, 
-         mode       = 'RW',
-      ))
-      
-      self.add(pr.RemoteVariable(
-         name       = 'DdrVttPok',     
-         description= 'DDR VTT Power OK',
-         offset     = 0x00000014, 
-         bitSize    = 1, 
-         bitOffset  = 0,  
-         base       = pr.Bool, 
-         mode       = 'RO',
-      ))
-      
-      self.add(pr.RemoteVariable(
-         name       = 'TempAlert',     
-         description= 'Temperature Alert',
+         name       = 'TrigAdcThreshold',     
+         description= 'ADC Threshold for Over Threshold Channel',     
          offset     = 0x00000018, 
-         bitSize    = 1, 
+         bitSize    = 16, 
          bitOffset  = 0,  
-         base       = pr.Bool, 
-         mode       = 'RO',
-      ))
-      
-      self.add(pr.RemoteVariable(
-         name       = 'TempFault',     
-         description= 'Temperature Fault',
-         offset     = 0x0000001C, 
-         bitSize    = 1, 
-         bitOffset  = 0,  
-         base       = pr.Bool, 
-         mode       = 'RO',
-      ))
-      
-      self.add(pr.RemoteVariable(
-         name       = 'LatchTempFault',     
-         description= 'Latch Temperature Fault',
-         offset     = 0x00000020, 
-         bitSize    = 1, 
-         bitOffset  = 0,  
-         base       = pr.Bool, 
+         base       = pr.UInt, 
          mode       = 'RW',
       ))
       
-      for i in range(4):      
-         self.add(pr.RemoteVariable(
-            name       = ('Carrier[%d]IdLow'%i),
-            description= ('Carrier[%d] ID Lower Word'%i),
-            offset     = (0x00000030+i*8), 
-            bitSize    = 32, 
-            bitOffset  = 0,  
-            base       = pr.UInt, 
-            mode       = 'RO',
-         ))
-         self.add(pr.RemoteVariable(
-            name       = ('Carrier[%d]IdHigh'%i),
-            description= ('Carrier[%d] ID Upper Word'%i),
-            offset     = (0x00000034+i*8), 
-            bitSize    = 32, 
-            bitOffset  = 0,  
-            base       = pr.UInt, 
-            mode       = 'RO',
-         ))
+      self.add(pr.RemoteVariable(
+         name       = 'TrigHoldoff',     
+         description= 'Trigger Holdoff',     
+         offset     = 0x0000001C, 
+         bitSize    = 13, 
+         bitOffset  = 0,  
+         base       = pr.UInt, 
+         mode       = 'RW',
+      ))
+      
+      self.add(pr.RemoteVariable(
+         name       = 'TrigOffset',     
+         description= 'Trigger Offset',     
+         offset     = 0x00000020, 
+         bitSize    = 13, 
+         bitOffset  = 0,  
+         base       = pr.UInt, 
+         mode       = 'RW',
+      ))
+      
+      self.add(pr.RemoteVariable(
+         name       = 'TraceLength',     
+         description= 'Trigger Data Size',     
+         offset     = 0x00000024, 
+         bitSize    = 13, 
+         bitOffset  = 0,  
+         base       = pr.UInt, 
+         mode       = 'RW',
+      ))
+      
+      self.add(pr.RemoteVariable(
+         name       = 'SkipSamples',     
+         description= 'Skip Samples',     
+         offset     = 0x00000028, 
+         bitSize    = 13, 
+         bitOffset  = 0,  
+         base       = pr.UInt, 
+         mode       = 'RW',
+      ))
+      
+      self.add(pr.RemoteVariable(
+         name       = 'InChannelA',     
+         description= 'Input Channel A Select',     
+         offset     = 0x0000002C, 
+         bitSize    = 7, 
+         bitOffset  = 0,  
+         base       = pr.UInt, 
+         mode       = 'RW',
+      ))
+      
+      self.add(pr.RemoteVariable(
+         name       = 'InChannelB',     
+         description= 'Input Channel B Select',     
+         offset     = 0x00000030, 
+         bitSize    = 7, 
+         bitOffset  = 0,  
+         base       = pr.UInt, 
+         mode       = 'RW',
+      ))
+      
+      self.add(pr.RemoteVariable(
+         name       = 'TrigDelay',     
+         description= 'Trigger Delay',     
+         offset     = 0x00000034, 
+         bitSize    = 13, 
+         bitOffset  = 0,  
+         base       = pr.UInt, 
+         mode       = 'RW',
+      ))
+      
       
       #####################################
       # Create commands

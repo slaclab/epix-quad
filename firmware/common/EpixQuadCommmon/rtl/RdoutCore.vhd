@@ -85,7 +85,7 @@ architecture rtl of RdoutCore is
    -- AXI settings
    
    constant AXI_CONFIG_C : AxiConfigType := axiConfig(
-      ADDR_WIDTH_C => 30,
+      ADDR_WIDTH_C => 29,
       DATA_BYTES_C => 16,
       ID_BITS_C    => 1,
       LEN_BITS_C   => 8

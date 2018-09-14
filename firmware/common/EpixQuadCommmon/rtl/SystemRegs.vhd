@@ -31,11 +31,12 @@ entity SystemRegs is
       USE_TEMP_FAULT_G  : boolean         := true;
       SIM_SPEEDUP_G     : boolean         := false);
    port (
+      -- System Clock
+      sysClk            : in  sl;
+      sysRst            : in  sl;
       -- User reset output
       usrRst            : out sl;
       -- AXI lite slave port for register access
-      axilClk           : in  sl;
-      axilRst           : in  sl;
       sAxilWriteMaster  : in  AxiLiteWriteMasterType;
       sAxilWriteSlave   : out AxiLiteWriteSlaveType;
       sAxilReadMaster   : in  AxiLiteReadMasterType;
@@ -52,7 +53,13 @@ entity SystemRegs is
       -- ASIC Carrier IDs
       asicDmSn          : inout slv(3 downto 0);
       -- ASIC Global Reset
-      asicGr            : out   sl
+      asicGr            : out sl;
+      -- trigger inputs
+      trigPgp           : in  sl := '0';
+      trigTtl           : in  sl := '0';
+      trigCmd           : in  sl := '0';
+      -- trigger output
+      acqStart          : out sl
    );
 end SystemRegs;
 
@@ -89,6 +96,13 @@ architecture RTL of SystemRegs is
       usrRstShift       : slv(7 downto 0);
       usrRst            : sl;
       asicGrCnt         : slv(25 downto 0);
+      trigEn            : sl;
+      trigSrcSel        : slv(1 downto 0);
+      autoTrigEn        : sl;
+      autoTrig          : sl;
+      autoTrigReg       : slv(31 downto 0);
+      autoTrigPer       : slv(31 downto 0);
+      autoTrigCnt       : slv(31 downto 0);
    end record RegType;
 
    constant REG_INIT_C : RegType := (
@@ -115,7 +129,14 @@ architecture RTL of SystemRegs is
       syncOut           => (others => '0'),
       usrRstShift       => (others => '0'),
       usrRst            => '0',
-      asicGrCnt         => (others=>'0')
+      asicGrCnt         => (others=>'0'),
+      trigEn            => '0',
+      trigSrcSel        => (others=>'0'),
+      autoTrigEn        => '0',
+      autoTrig          => '0',
+      autoTrigReg       => (others=>'0'),
+      autoTrigPer       => (others=>'0'),
+      autoTrigCnt       => (others=>'0')
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -125,9 +146,14 @@ architecture RTL of SystemRegs is
    signal idValids   : slv(3 downto 0);
    
    signal tempAlert  : sl;
+   
+   signal extTrig    : slv(2 downto 0);
 
 begin
-
+   
+   --------------------------------------------------
+   -- TempAlert Filter
+   --------------------------------------------------
    U_Debouncer : entity work.Debouncer
       generic map(
          TPD_G             => TPD_G,
@@ -137,17 +163,45 @@ begin
          DEBOUNCE_PERIOD_G => DEBOUNCE_PERIOD_C,   -- units of seconds
          SYNCHRONIZE_G     => true)                -- Run input through 2 FFs before filtering
       port map(
-         clk => axilClk,
+         clk => sysClk,
          i   => tempAlertL,
          o   => tempAlert
+      );
+   
+   
+   --------------------------------------------------
+   -- External Trigger Synchronizers
+   --------------------------------------------------
+   U_TrigPgpEdge : entity work.SynchronizerEdge
+      port map (
+         clk        => sysClk,
+         rst        => sysRst,
+         dataIn     => trigPgp,
+         risingEdge => extTrig(0)
+      );
+   
+   U_TrigTtlEdge : entity work.SynchronizerEdge
+      port map (
+         clk        => sysClk,
+         rst        => sysRst,
+         dataIn     => trigTtl,
+         risingEdge => extTrig(1)
+      );
+   
+   U_TrigCmdEdge : entity work.SynchronizerEdge
+      port map (
+         clk        => sysClk,
+         rst        => sysRst,
+         dataIn     => trigCmd,
+         risingEdge => extTrig(2)
       );
 
    --------------------------------------------------
    -- AXI Lite register logic
    --------------------------------------------------
 
-   comb : process (axilRst, ddrVttPok, r, sAxilReadMaster, sAxilWriteMaster,
-                   tempAlert, idValids, idValues) is
+   comb : process (sysRst, ddrVttPok, r, sAxilReadMaster, sAxilWriteMaster,
+                   tempAlert, idValids, idValues, extTrig) is
       variable v      : RegType;
       variable regCon : AxiLiteEndPointType;
    begin
@@ -191,6 +245,22 @@ begin
       elsif r.asicGrCnt(ASIC_GR_INDEX_C) = '0' then
          v.asicGrCnt := r.asicGrCnt + 1;
       end if;
+      
+      -- Auto Trigger Counter and Pulse
+      v.autoTrig := '0';
+      if r.autoTrigReg > 0 then
+         v.autoTrigPer := r.autoTrigReg - 1;
+      else
+         v.autoTrigPer := (others=>'0');
+      end if;
+      if r.autoTrigEn = '0' then
+         v.autoTrigCnt  := (others=>'0');
+      elsif r.autoTrigCnt < r.autoTrigPer then
+         v.autoTrigCnt  := r.autoTrigCnt + 1;
+      elsif r.autoTrigCnt /= 0 then
+         v.autoTrig     := '1';
+         v.autoTrigCnt  := (others=>'0');
+      end if;
 
       -- Determine the AXI-Lite transaction
       v.sAxilReadSlave.rdata := (others => '0');
@@ -218,6 +288,11 @@ begin
          axiSlaveRegister(regCon, x"200"+toSlv(i*4, 12), 0, v.syncHalfClk(i));
          axiSlaveRegister(regCon, x"300"+toSlv(i*4, 12), 0, v.syncPhase(i));
       end loop;
+      
+      axiSlaveRegister (regCon, x"400", 0, v.trigEn);
+      axiSlaveRegister (regCon, x"404", 0, v.trigSrcSel);
+      axiSlaveRegister (regCon, x"408", 0, v.autoTrigEn);
+      axiSlaveRegister (regCon, x"40C", 0, v.autoTrigReg);
 
       -- Close out the AXI-Lite transaction
       axiSlaveDefault(regCon, v.sAxilWriteSlave, v.sAxilReadSlave, AXI_RESP_DECERR_C);
@@ -279,7 +354,7 @@ begin
          v.idRst := '0';
       end if;
 
-      if (axilRst = '1') then
+      if (sysRst = '1') then
          v := REG_INIT_C;
       end if;
 
@@ -295,12 +370,27 @@ begin
       asicAnaEn   <= r.asicAnaEn;
       asicDigEn   <= r.asicDigEn(0);
       asicGr      <= r.asicGrCnt(ASIC_GR_INDEX_C);
+      if r.trigEn = '1' then
+         if r.trigSrcSel = 0 then
+            acqStart <= extTrig(0);
+         elsif r.trigSrcSel = 1 then
+            acqStart <= extTrig(1);
+         elsif r.trigSrcSel = 2 then
+            acqStart <= extTrig(2);
+         elsif r.trigSrcSel = 3 then
+            acqStart <= r.autoTrig;
+         else
+            acqStart <= '0';
+         end if;
+      else
+         acqStart <= '0';
+      end if;
 
    end process comb;
 
-   seq : process (axilClk) is
+   seq : process (sysClk) is
    begin
-      if (rising_edge(axilClk)) then
+      if (rising_edge(sysClk)) then
          r <= rin after TPD_G;
       end if;
    end process seq;
@@ -315,7 +405,7 @@ begin
          CLK_PERIOD_G => CLK_PERIOD_G
       )
       port map (
-         clk       => axilClk,
+         clk       => sysClk,
          rst       => r.idRst,
          fdSerSdio => asicDmSn(i),
          fdValue   => idValues(i),

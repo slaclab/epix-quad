@@ -21,10 +21,8 @@ import pyrogue.interfaces.simulation
 
 import surf.axi as axi
 import surf.xilinx as xil
-import surf.devices.micron as prom
-import surf.devices.linear as linear
-import surf.devices.nxp as nxp
-
+import surf.devices.analog_devices as analog_devices
+import ePixAsics as epix
 
 import ePixQuad
 
@@ -88,7 +86,21 @@ class Top(pr.Root):
         self.add(ePixQuad.AcqCore( 
             name    = 'AcqCore', 
             memBase = memMap, 
-            offset  = 0x01400000, 
+            offset  = 0x01000000, 
+            expand  = False,
+        ))
+        
+        self.add(ePixQuad.RdoutCore( 
+            name    = 'RdoutCore', 
+            memBase = memMap, 
+            offset  = 0x01100000, 
+            expand  = False,
+        ))
+        
+        self.add(ePixQuad.PseudoScopeCore( 
+            name    = 'PseudoScopeCore', 
+            memBase = memMap, 
+            offset  = 0x01200000, 
             expand  = False,
         ))
         
@@ -96,6 +108,46 @@ class Top(pr.Root):
             name    = 'AxiMemTester', 
             memBase = memMap, 
             offset  = 0x00400000, 
+            expand  = False,
+        ))
+        
+        for i in range(16):
+            asicSaciAddr = [
+                0x04000000, 0x04400000, 0x04800000, 0x04C00000,
+                0x05000000, 0x05400000, 0x05800000, 0x05C00000,
+                0x06000000, 0x06400000, 0x06800000, 0x06C00000,
+                0x07000000, 0x07400000, 0x07800000, 0x07C00000
+            ]
+            self.add(epix.Epix10kaAsic(
+                  name    = ('Epix10kaSaci[%d]'%i),
+                  memBase = memMap, 
+                  offset  = asicSaciAddr[i], 
+                  enabled = False,
+                  expand  = False,
+            ))
+        
+        if (hwType != 'simulation'):
+            confAddr = [0x02A00000, 0x02A00800, 0x02B00000, 0x02B00800, 0x02C00000]
+            for i in range(5):      
+                self.add(analog_devices.Ad9249ConfigGroup(
+                    name    = ('Ad9249Config[%d]'%i),
+                    memBase = memMap, 
+                    offset  = confAddr[i], 
+                    expand  = False,
+                ))
+        
+        for i in range(10):      
+            self.add(analog_devices.Ad9249ReadoutGroup(
+                  name    = ('Ad9249Readout[%d]'%i),
+                  memBase = memMap, 
+                  offset  = (0x02000000+i*0x00100000), 
+                  expand  = False,
+            ))
+        
+        self.add(ePixQuad.AdcTester( 
+            name    = 'Ad9249Tester', 
+            memBase = memMap, 
+            offset  = 0x02D00000, 
             expand  = False,
         ))
         

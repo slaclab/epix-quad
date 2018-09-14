@@ -37,9 +37,9 @@ entity EpixQuad is
       -- DRR Memory interface ports
       c0_sys_clk_p      : in    sl;
       c0_sys_clk_n      : in    sl;
-      c0_ddr4_dq        : inout slv(31 downto 0);
-      c0_ddr4_dqs_c     : inout slv(3 downto 0);
-      c0_ddr4_dqs_t     : inout slv(3 downto 0);
+      c0_ddr4_dq        : inout slv(15 downto 0);
+      c0_ddr4_dqs_c     : inout slv(1 downto 0);
+      c0_ddr4_dqs_t     : inout slv(1 downto 0);
       c0_ddr4_adr       : out   slv(16 downto 0);
       c0_ddr4_ba        : out   slv(1 downto 0);
       c0_ddr4_bg        : out   slv(0 to 0);
@@ -49,7 +49,7 @@ entity EpixQuad is
       c0_ddr4_ck_c      : out   slv(0 to 0);
       c0_ddr4_cke       : out   slv(0 to 0);
       c0_ddr4_cs_n      : out   slv(0 to 0);
-      c0_ddr4_dm_dbi_n  : inout slv(3 downto 0);
+      c0_ddr4_dm_dbi_n  : inout slv(1 downto 0);
       c0_ddr4_odt       : out   slv(0 to 0);
       -- Power Supply Cntrl Ports
       asicAnaEn         : out   sl;
@@ -104,20 +104,30 @@ entity EpixQuad is
       adcDClkP          : in    slv(9 downto 0);
       adcDClkN          : in    slv(9 downto 0);
       adcChP            : in    Slv8Array(9 downto 0);
-      adcChN            : in    Slv8Array(9 downto 0)
+      adcChN            : in    Slv8Array(9 downto 0);
+      -- Fast ADC Config SPI
+      adcSclk           : out   slv(2 downto 0);
+      adcSdio           : inout slv(2 downto 0);
+      adcCsb            : out   slv(9 downto 0)
    );
 end EpixQuad;
 
 architecture top_level of EpixQuad is
 
-   constant NUM_AXI_MASTERS_C    : natural := 4;
+   constant NUM_AXI_MASTERS_C    : natural := 8;
 
    constant SYS_INDEX_C          : natural := 0;
    constant ASIC_INDEX_C         : natural := 1;
    constant ADC_INDEX_C          : natural := 2;
    constant PGP_INDEX_C          : natural := 3;
+   constant ASIC_SACI0_INDEX_C   : natural := 4;
+   constant ASIC_SACI1_INDEX_C   : natural := 5;
+   constant ASIC_SACI2_INDEX_C   : natural := 6;
+   constant ASIC_SACI3_INDEX_C   : natural := 7;
 
    constant AXI_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := genAxiLiteConfig(NUM_AXI_MASTERS_C, x"00000000", 31, 24);
+   
+   constant SACI_CLK_PERIOD_C    : real := 1.00E-6;
 
    signal axilWriteMasters : AxiLiteWriteMasterArray(NUM_AXI_MASTERS_C-1 downto 0);
    signal axilWriteSlaves  : AxiLiteWriteSlaveArray(NUM_AXI_MASTERS_C-1 downto 0);
@@ -170,6 +180,8 @@ architecture top_level of EpixQuad is
    signal iAdcClk       : sl;
    
    signal adcStream     : AxiStreamMasterArray(79 downto 0);
+   
+   signal acqStart      : sl;
    
 begin
 
@@ -327,7 +339,8 @@ begin
          -- ASIC Carrier IDs
          asicDmSn             => asicDmSn,
          -- ASIC Global Reset
-         asicGr               => iAsicGr
+         asicGr               => iAsicGr,
+         acqStart             => acqStart
       );
    
    asicDigEn   <= iAsicDigEn;
@@ -358,14 +371,9 @@ begin
          axiReadSlave         => axiReadSlave,
          buffersRdy           => buffersRdy,
          -- ADC stream input
-         adcStream            => adcStream(63 downto 0),
-         -- ASIC SACI signals
-         asicSaciResp         => asicSaciResp,
-         asicSaciClk          => iAsicSaciClk,
-         asicSaciCmd          => iAsicSaciCmd,
-         asicSaciSelL         => iAsicSaciSelL,
+         adcStream            => adcStream,
          -- ASIC ACQ signals
-         acqStart             => '0',
+         acqStart             => acqStart,
          asicAcq              => iAsicAcq,
          asicR0               => iAsicR0,
          asicSync             => iAsicSync,
@@ -373,8 +381,43 @@ begin
          asicRoClk            => iAsicRoClk,
          asicDout             => iAsicDout,
          -- ADC Clock Output
-         adcClk               => iAdcClk
+         adcClk               => iAdcClk,
+         -- Image Data Stream
+         dataTxMaster         => dataTxMaster,
+         dataTxSlave          => dataTxSlave,
+         -- Scope Data Stream
+         scopeTxMaster        => scopeTxMaster,
+         scopeTxSlave         => scopeTxSlave
       );
+   
+   ----------------------------------------------------
+   -- 4 x 4 ASICs SACI Interfaces
+   -- Wide address space (has to be at the top level)
+   ----------------------------------------------------          
+   GEN_SACI : for i in 3 downto 0 generate
+      U_AxiLiteSaciMaster : entity work.AxiLiteSaciMaster
+         generic map (
+            AXIL_CLK_PERIOD_G  => 10.0E-9, -- In units of seconds
+            AXIL_TIMEOUT_G     => 1.0E-3,  -- In units of seconds
+            SACI_CLK_PERIOD_G  => SACI_CLK_PERIOD_C, -- In units of seconds
+            SACI_CLK_FREERUN_G => false,
+            SACI_RSP_BUSSED_G  => true,
+            SACI_NUM_CHIPS_G   => 4)
+         port map (
+            -- SACI interface
+            saciClk           => iAsicSaciClk(i),
+            saciCmd           => iAsicSaciCmd(i),
+            saciSelL          => iAsicSaciSelL(i*4+3 downto i*4),
+            saciRsp(0)        => asicSaciResp(i),
+            -- AXI-Lite Register Interface
+            axilClk           => sysClk,
+            axilRst           => sysRst,
+            axilReadMaster    => axilReadMasters(ASIC_SACI0_INDEX_C+i),
+            axilReadSlave     => axilReadSlaves(ASIC_SACI0_INDEX_C+i),
+            axilWriteMaster   => axilWriteMasters(ASIC_SACI0_INDEX_C+i),
+            axilWriteSlave    => axilWriteSlaves(ASIC_SACI0_INDEX_C+i)
+         );
+   end generate GEN_SACI;
    
    --------------------------------------------------------
    -- ASIC ADCs Core
@@ -395,6 +438,10 @@ begin
          mAxilReadSlave       => axilReadSlaves(ADC_INDEX_C),
          mAxilWriteMaster     => axilWriteMasters(ADC_INDEX_C),
          mAxilWriteSlave      => axilWriteSlaves(ADC_INDEX_C),
+         -- Fast ADC Config SPI
+         adcSclk              => adcSclk,
+         adcSdio              => adcSdio,
+         adcCsb               => adcCsb,
          -- Fast ADC Signals
          adcFClkP             => adcFClkP,
          adcFClkN             => adcFClkN,
@@ -469,8 +516,6 @@ begin
    -- Terminate unused busses
    --------------------------------------------------------
    
-   dataTxMaster                  <= AXI_STREAM_MASTER_INIT_C;
-   scopeTxMaster                 <= AXI_STREAM_MASTER_INIT_C;
    monitorTxMaster               <= AXI_STREAM_MASTER_INIT_C;
 
 end top_level;

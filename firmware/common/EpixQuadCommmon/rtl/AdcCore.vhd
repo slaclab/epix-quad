@@ -45,6 +45,10 @@ entity AdcCore is
       mAxilReadSlave       : out   AxiLiteReadSlaveType;
       mAxilWriteMaster     : in    AxiLiteWriteMasterType;
       mAxilWriteSlave      : out   AxiLiteWriteSlaveType;
+      -- Fast ADC Config SPI
+      adcSclk              : out   slv(2 downto 0);
+      adcSdio              : inout slv(2 downto 0);
+      adcCsb               : out   slv(9 downto 0);
       -- Fast ADC Signals
       adcFClkP             : in    slv(9 downto 0);
       adcFClkN             : in    slv(9 downto 0);
@@ -59,7 +63,7 @@ end AdcCore;
 
 architecture top_level of AdcCore is
 
-   constant NUM_AXI_MASTERS_C    : natural := 10;
+   constant NUM_AXI_MASTERS_C    : natural := 14;
 
    constant ADC0_RDOUT_INDEX_C   : natural := 0;
    constant ADC1_RDOUT_INDEX_C   : natural := 1;
@@ -71,6 +75,10 @@ architecture top_level of AdcCore is
    constant ADC7_RDOUT_INDEX_C   : natural := 7;
    constant ADC8_RDOUT_INDEX_C   : natural := 8;
    constant ADC9_RDOUT_INDEX_C   : natural := 9;
+   constant ADC0_CFG_INDEX_C     : natural := 10;
+   constant ADC1_CFG_INDEX_C     : natural := 11;
+   constant MON_CFG_INDEX_C      : natural := 12;
+   constant ADC_TEST_INDEX_C     : natural := 13;
 
    constant AXI_CONFIG_C   : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := genAxiLiteConfig(NUM_AXI_MASTERS_C, AXI_BASE_ADDR_G, 24, 20);
 
@@ -80,6 +88,7 @@ architecture top_level of AdcCore is
    signal axilReadSlaves   : AxiLiteReadSlaveArray(NUM_AXI_MASTERS_C-1 downto 0);
 
    signal asicAdc          : Ad9249SerialGroupArray(9 downto 0);
+   signal iAdcStream       : AxiStreamMasterArray(79 downto 0);
 
 begin
    
@@ -99,11 +108,10 @@ begin
          sAxiWriteSlaves(0)  => mAxilWriteSlave,
          sAxiReadMasters(0)  => mAxilReadMaster,
          sAxiReadSlaves(0)   => mAxilReadSlave,
-
-         mAxiWriteMasters => axilWriteMasters,
-         mAxiWriteSlaves  => axilWriteSlaves,
-         mAxiReadMasters  => axilReadMasters,
-         mAxiReadSlaves   => axilReadSlaves);
+         mAxiWriteMasters    => axilWriteMasters,
+         mAxiWriteSlaves     => axilWriteSlaves,
+         mAxiReadMasters     => axilReadMasters,
+         mAxiReadSlaves      => axilReadSlaves);
    
    
    ------------------------------------------------
@@ -132,13 +140,72 @@ begin
          adcClkRst         => sysRst,
          adcSerial         => asicAdc(i),
          adcStreamClk      => sysClk,
-         adcStreams        => adcStream((i*8)+7 downto i*8)
+         adcStreams        => iAdcStream((i*8)+7 downto i*8)
       );
       
-      --axilReadSlaves(ADC0_RDOUT_INDEX_C+i)  <= AXI_LITE_READ_SLAVE_INIT_C;
-      --axilWriteSlaves(ADC0_RDOUT_INDEX_C+i) <= AXI_LITE_WRITE_SLAVE_INIT_C;
-      
    end generate;
+   
+   G_AdcConf : for i in 0 to 1 generate 
+      U_AdcConf : entity work.Ad9249Config
+         generic map (
+            TPD_G             => TPD_G,
+            AXIL_CLK_PERIOD_G => 10.0e-9,
+            SCLK_PERIOD_G     => 1.0e-6,
+            NUM_CHIPS_G       => 2
+         )
+         port map (
+            axilClk           => sysClk,
+            axilRst           => sysRst,
+            axilReadMaster    => axilReadMasters(ADC0_CFG_INDEX_C+i),
+            axilReadSlave     => axilReadSlaves(ADC0_CFG_INDEX_C+i),
+            axilWriteMaster   => axilWriteMasters(ADC0_CFG_INDEX_C+i),
+            axilWriteSlave    => axilWriteSlaves(ADC0_CFG_INDEX_C+i),
+            adcPdwn           => open,
+            adcSclk           => adcSclk(i),
+            adcSdio           => adcSdio(i),
+            adcCsb            => adcCsb(3+i*4 downto i*4)
+         );
+   end generate;
+   
+   U_MonConf : entity work.Ad9249Config
+      generic map (
+         TPD_G             => TPD_G,
+         AXIL_CLK_PERIOD_G => 10.0e-9,
+         SCLK_PERIOD_G     => 1.0e-6,
+         NUM_CHIPS_G       => 1
+      )
+      port map (
+         axilClk           => sysClk,
+         axilRst           => sysRst,
+         axilReadMaster    => axilReadMasters(MON_CFG_INDEX_C),
+         axilReadSlave     => axilReadSlaves(MON_CFG_INDEX_C),
+         axilWriteMaster   => axilWriteMasters(MON_CFG_INDEX_C),
+         axilWriteSlave    => axilWriteSlaves(MON_CFG_INDEX_C),
+         adcPdwn           => open,
+         adcSclk           => adcSclk(2),
+         adcSdio           => adcSdio(2),
+         adcCsb            => adcCsb(9 downto 8)
+      );
+      
+   U_AdcTester : entity work.StreamPatternTester
+   generic map (
+      TPD_G             => TPD_G,
+      NUM_CHANNELS_G    => 80
+   )
+   port map ( 
+      -- Master system clock
+      clk               => sysClk,
+      rst               => sysRst,
+      -- ADC data stream inputs
+      adcStreams        => iAdcStream,
+      -- Axi Interface
+      axilReadMaster    => axilReadMasters(ADC_TEST_INDEX_C),
+      axilReadSlave     => axilReadSlaves(ADC_TEST_INDEX_C),
+      axilWriteMaster   => axilWriteMasters(ADC_TEST_INDEX_C),
+      axilWriteSlave    => axilWriteSlaves(ADC_TEST_INDEX_C)
+   );
+   
+   adcStream <= iAdcStream;
    
 
 end top_level;

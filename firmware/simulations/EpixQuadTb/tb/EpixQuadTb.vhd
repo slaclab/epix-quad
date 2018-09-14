@@ -34,7 +34,7 @@ entity EpixQuadTb is end EpixQuadTb;
 
 architecture testbed of EpixQuadTb is
    
-   constant DDR_WIDTH_C : integer := 32;
+   constant DDR_WIDTH_C : integer := 16;
    
    constant DDRCLK_PER_C      : time    := 5 ns;
    constant PGPCLK_PER_C      : time    := 6.4 ns;
@@ -158,7 +158,7 @@ begin
       -- DRR Memory interface ports
       c0_sys_clk_p      => ddrClkP,
       c0_sys_clk_n      => ddrClkN,
-      c0_ddr4_dq(31 downto 16)        => c0_ddr4_dq(31 downto 16)      ,
+      c0_ddr4_dq        => c0_ddr4_dq      ,
       c0_ddr4_dqs_c     => c0_ddr4_dqs_c   ,
       c0_ddr4_dqs_t     => c0_ddr4_dqs_t   ,
       c0_ddr4_adr       => c0_ddr4_adr     ,

@@ -54,9 +54,9 @@ entity SystemCore is
       -- DDR PHY Ref clk
       c0_sys_clk_p         : in    sl;
       c0_sys_clk_n         : in    sl;
-      c0_ddr4_dq           : inout slv(31 downto 0);
-      c0_ddr4_dqs_c        : inout slv(3 downto 0);
-      c0_ddr4_dqs_t        : inout slv(3 downto 0);
+      c0_ddr4_dq           : inout slv(15 downto 0);
+      c0_ddr4_dqs_c        : inout slv(1 downto 0);
+      c0_ddr4_dqs_t        : inout slv(1 downto 0);
       c0_ddr4_adr          : out   slv(16 downto 0);
       c0_ddr4_ba           : out   slv(1 downto 0);
       c0_ddr4_bg           : out   slv(0 to 0);
@@ -66,7 +66,7 @@ entity SystemCore is
       c0_ddr4_ck_c         : out   slv(0 to 0);
       c0_ddr4_cke          : out   slv(0 to 0);
       c0_ddr4_cs_n         : out   slv(0 to 0);
-      c0_ddr4_dm_dbi_n     : inout slv(3 downto 0);
+      c0_ddr4_dm_dbi_n     : inout slv(1 downto 0);
       c0_ddr4_odt          : out   slv(0 to 0);
       -- AXI DDR Buffer Interface (sysClk domain)
       axiWriteMasters      : in    AxiWriteMasterArray(3 downto 0);
@@ -94,21 +94,27 @@ entity SystemCore is
       -- ASIC Carrier IDs
       asicDmSn             : inout slv(3 downto 0);
       -- ASIC Global Reset
-      asicGr               : out   sl
+      asicGr               : out   sl;
+      -- trigger inputs
+      trigPgp              : in  sl := '0';
+      trigTtl              : in  sl := '0';
+      trigCmd              : in  sl := '0';
+      -- trigger output
+      acqStart             : out sl
    );
 end SystemCore;
 
 architecture top_level of SystemCore is
    
    constant DDR_AXI_CONFIG_C : AxiConfigType := axiConfig(
-      ADDR_WIDTH_C => 30,
-      DATA_BYTES_C => 32,
+      ADDR_WIDTH_C => 29,
+      DATA_BYTES_C => 16,
       ID_BITS_C    => 4,
       LEN_BITS_C   => 8);
 
    constant START_ADDR_C : slv(DDR_AXI_CONFIG_C.ADDR_WIDTH_C-1 downto 0) := (others => '0');
    constant STOP_ADDR_C  : slv(DDR_AXI_CONFIG_C.ADDR_WIDTH_C-1 downto 0) := ite(SIM_SPEEDUP_G, toSlv(32*4096, DDR_AXI_CONFIG_C.ADDR_WIDTH_C) ,toSlv(2**DDR_AXI_CONFIG_C.ADDR_WIDTH_C-1, DDR_AXI_CONFIG_C.ADDR_WIDTH_C));
-
+   
    constant I2C_MON_CONFIG_C : I2cAxiLiteDevArray(3 downto 0) := (
       0 => (MakeI2cAxiLiteDevType("0110100", 8, 8, '0')),
       1 => (MakeI2cAxiLiteDevType("1100111", 8, 8, '0', '1')),
@@ -221,11 +227,12 @@ begin
       SIM_SPEEDUP_G     => SIM_SPEEDUP_G
    )
    port map (
+      -- System Clock
+      sysClk            => sysClk,
+      sysRst            => sysRst,
       -- User reset output
       usrRst            => open,
       -- AXI lite slave port for register access
-      axilClk           => sysClk,
-      axilRst           => sysRst,
       sAxilReadMaster   => axilReadMasters(SYSREG_INDEX_C),
       sAxilReadSlave    => axilReadSlaves(SYSREG_INDEX_C),
       sAxilWriteMaster  => axilWriteMasters(SYSREG_INDEX_C),
@@ -242,7 +249,13 @@ begin
       -- ASIC Carrier IDs
       asicDmSn          => asicDmSn,
       -- ASIC Global Reset
-      asicGr            => asicGr
+      asicGr            => asicGr,
+      -- trigger inputs
+      trigPgp           => trigPgp,
+      trigTtl           => trigTtl,
+      trigCmd           => trigCmd,
+      -- trigger output
+      acqStart          => acqStart
    );
 
    --------------------------
@@ -360,15 +373,10 @@ begin
          -- AXI Slave
          axiClk           => axiClk,
          axiRst           => axiRst,
-         axiWriteMaster  => axiBistWriteMaster,
-         axiWriteSlave   => axiBistWriteSlave,
-         axiReadMaster   => axiBistReadMaster,
-         axiReadSlave    => axiBistReadSlave,
-         
-         --axiReadMaster    => axiDdrReadMaster,
-         --axiReadSlave     => axiDdrReadSlave,
-         --axiWriteMaster   => axiDdrWriteMaster,
-         --axiWriteSlave    => axiDdrWriteSlave,
+         axiReadMaster    => axiDdrReadMaster,
+         axiReadSlave     => axiDdrReadSlave,
+         axiWriteMaster   => axiDdrWriteMaster,
+         axiWriteSlave    => axiDdrWriteSlave,
          -- DDR PHY Ref clk
          c0_sys_clk_p     => c0_sys_clk_p,
          c0_sys_clk_n     => c0_sys_clk_n,
@@ -381,16 +389,6 @@ begin
          c0_ddr4_dq       => c0_ddr4_dq,
          c0_ddr4_dqs_c    => c0_ddr4_dqs_c,
          c0_ddr4_dqs_t    => c0_ddr4_dqs_t,
-         --c0_ddr4_dm_dbi_n(3 downto 2) => c0_ddr4_dm_dbi_n(1 downto 0),
-         --c0_ddr4_dm_dbi_n(1 downto 0) => c0_ddr4_dm_dbi_n(3 downto 2),
-         --c0_ddr4_dq(31 downto 16)       => c0_ddr4_dq(15 downto  0),
-         --c0_ddr4_dq(15 downto  0)       => c0_ddr4_dq(31 downto 16),
-         --c0_ddr4_dqs_c(3 downto 2)    => c0_ddr4_dqs_c(1 downto 0),
-         --c0_ddr4_dqs_c(1 downto 0)    => c0_ddr4_dqs_c(3 downto 2),
-         --c0_ddr4_dqs_t(3 downto 2)    => c0_ddr4_dqs_t(1 downto 0),
-         --c0_ddr4_dqs_t(1 downto 0)    => c0_ddr4_dqs_t(3 downto 2),
-         
-         
          c0_ddr4_odt      => c0_ddr4_odt,
          c0_ddr4_bg       => c0_ddr4_bg,
          c0_ddr4_reset_n  => c0_ddr4_reset_n,
@@ -400,40 +398,40 @@ begin
          calibComplete    => calibComplete,
          c0_ddr4_aresetn  => '1'
       );
-
+   
    ------------------------------------------------
    -- DDR memory AXI interconnect
    ------------------------------------------------
-   --U_AxiIcWrapper : entity work.AxiIcWrapper
-   --   generic map (
-   --      TPD_G => TPD_G)
-   --   port map (
-   --      -- AXI Slaves for ADC channels
-   --      -- 128 Bit Data Bus
-   --      -- 1 burst packet FIFOs
-   --      axiImgClk          => sysClk,
-   --      axiImgWriteMasters => axiWriteMasters,
-   --      axiImgWriteSlaves  => axiWriteSlaves,
-   --      -- AXI Slave for data readout
-   --      -- 32 Bit Data Bus
-   --      axiDoutClk         => sysClk,
-   --      axiDoutReadMaster  => axiReadMaster,
-   --      axiDoutReadSlave   => axiReadSlave,
-   --      -- AXI Slave for memory tester (aximClk domain)
-   --      -- 512 Bit Data Bus
-   --      axiBistReadMaster  => axiBistReadMaster,
-   --      axiBistReadSlave   => axiBistReadSlave,
-   --      axiBistWriteMaster => axiBistWriteMaster,
-   --      axiBistWriteSlave  => axiBistWriteSlave,
-   --      -- AXI Master
-   --      -- 512 Bit Data Bus
-   --      aximClk            => axiClk,
-   --      aximRst            => axiRst,
-   --      aximReadMaster     => axiDdrReadMaster,
-   --      aximReadSlave      => axiDdrReadSlave,
-   --      aximWriteMaster    => axiDdrWriteMaster,
-   --      aximWriteSlave     => axiDdrWriteSlave
-   --   );
+   U_AxiIcWrapper : entity work.AxiIcWrapper
+      generic map (
+         TPD_G => TPD_G)
+      port map (
+         -- AXI Slaves for ADC channels
+         -- 128 Bit Data Bus
+         -- 1 burst packet FIFOs
+         axiImgClk          => sysClk,
+         axiImgWriteMasters => axiWriteMasters,
+         axiImgWriteSlaves  => axiWriteSlaves,
+         -- AXI Slave for data readout
+         -- 128 Bit Data Bus
+         axiDoutClk         => sysClk,
+         axiDoutReadMaster  => axiReadMaster,
+         axiDoutReadSlave   => axiReadSlave,
+         -- AXI Slave for memory tester (aximClk domain)
+         -- 128 Bit Data Bus
+         axiBistReadMaster  => axiBistReadMaster,
+         axiBistReadSlave   => axiBistReadSlave,
+         axiBistWriteMaster => axiBistWriteMaster,
+         axiBistWriteSlave  => axiBistWriteSlave,
+         -- AXI Master
+         -- 128 Bit Data Bus
+         aximClk            => axiClk,
+         aximRst            => axiRst,
+         aximReadMaster     => axiDdrReadMaster,
+         aximReadSlave      => axiDdrReadSlave,
+         aximWriteMaster    => axiDdrWriteMaster,
+         aximWriteSlave     => axiDdrWriteSlave
+      );
 
    -- keep memory writers in reset during memory test
    memRst : process (sysClk) is

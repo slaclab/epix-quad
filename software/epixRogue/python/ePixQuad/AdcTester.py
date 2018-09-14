@@ -20,10 +20,10 @@
 import pyrogue as pr
 import collections
 
-class SystemRegs(pr.Device):
+class AdcTester(pr.Device):
    def __init__(self, **kwargs):
-      """Create SystemRegs"""
-      super().__init__(description='System Regsisters', **kwargs)
+      """Create AdcTester"""
+      super().__init__(description='ADC Pattern Tester Regsisters', **kwargs)
       
       # Creation. memBase is either the register bus server (srp, rce mapped memory, etc) or the device which
       # contains this object. In most cases the parent and memBase are the same but they can be 
@@ -38,155 +38,84 @@ class SystemRegs(pr.Device):
       
       #Setup registers & variables
       self.add(pr.RemoteVariable(
-         name       = 'UsrRst',     
-         description= 'User Reset',     
+         name       = 'TestChannel',     
+         description= 'Test Channel Select',     
          offset     = 0x00000000, 
-         bitSize    = 1, 
-         bitOffset  = 0,  
-         base       = pr.UInt, 
-         mode       = 'RW',
-      ))
-      
-      self.add(pr.RemoteVariable(
-         name       = 'TrigEn',     
-         description= 'Global Trigger Enable',     
-         offset     = 0x00000400, 
-         bitSize    = 1, 
-         bitOffset  = 0,  
-         base       = pr.Bool, 
-         mode       = 'RW',
-      ))   
-      
-      self.add(pr.RemoteVariable(
-         name       = 'TrigSrcSel',     
-         description= 'Trigger Source Select',     
-         offset     = 0x00000404, 
-         bitSize    = 2, 
-         bitOffset  = 0,  
-         base       = pr.UInt, 
-         mode       = 'RW',
-      ))
-      
-      self.add(pr.RemoteVariable(
-         name       = 'AutoTrigEn',     
-         description= 'Auto Trigger Enable',     
-         offset     = 0x00000408, 
-         bitSize    = 1, 
-         bitOffset  = 0,  
-         base       = pr.Bool, 
-         mode       = 'RW',
-      ))   
-      
-      self.add(pr.RemoteVariable(
-         name       = 'AutoTrigPer',     
-         description= 'Auto Trigger Period',     
-         offset     = 0x0000040C, 
          bitSize    = 32, 
          bitOffset  = 0,  
          base       = pr.UInt, 
          mode       = 'RW',
       ))
       
-      
       self.add(pr.RemoteVariable(
-         name       = 'DcDcEnable',     
-         description= 'Enable Analog DCDC Regulators',     
+         name       = 'TestDataMask',     
+         description= 'Test Data Mask',     
          offset     = 0x00000004, 
-         bitSize    = 4, 
+         bitSize    = 32, 
          bitOffset  = 0,  
          base       = pr.UInt, 
          mode       = 'RW',
       ))
       
       self.add(pr.RemoteVariable(
-         name       = 'AsicAnaEn',     
-         description= 'Enable ASIC Analog Voltage',     
+         name       = 'TestPattern',     
+         description= 'Test Pattern',     
          offset     = 0x00000008, 
-         bitSize    = 1, 
+         bitSize    = 32, 
          bitOffset  = 0,  
-         base       = pr.Bool, 
-         mode       = 'RW',
-      ))   
-
-      self.add(pr.RemoteVariable(
-         name       = 'AsicDigEn',     
-         description= 'Enable ASIC Digital Voltage',     
-         offset     = 0x0000000C, 
-         bitSize    = 1, 
-         bitOffset  = 0,  
-         base       = pr.Bool, 
-         mode       = 'RW',
-      ))   
-      
-      self.add(pr.RemoteVariable(
-         name       = 'DdrVttEn',     
-         description= 'Enable DDR VTT Voltage',
-         offset     = 0x00000010, 
-         bitSize    = 1, 
-         bitOffset  = 0,  
-         base       = pr.Bool, 
+         base       = pr.UInt, 
          mode       = 'RW',
       ))
       
       self.add(pr.RemoteVariable(
-         name       = 'DdrVttPok',     
-         description= 'DDR VTT Power OK',
+         name       = 'TestSamples',     
+         description= 'Test Samples Number',     
+         offset     = 0x0000000C, 
+         bitSize    = 32, 
+         bitOffset  = 0,  
+         base       = pr.UInt, 
+         mode       = 'RW',
+      ))
+      
+      self.add(pr.RemoteVariable(
+         name       = 'TestTimeout',     
+         description= 'Test Timeout',     
+         offset     = 0x00000010, 
+         bitSize    = 32, 
+         bitOffset  = 0,  
+         base       = pr.UInt, 
+         mode       = 'RW',
+      ))
+      
+      self.add(pr.RemoteVariable(
+         name       = 'TestRequest',     
+         description= 'Test Request',     
          offset     = 0x00000014, 
          bitSize    = 1, 
          bitOffset  = 0,  
          base       = pr.Bool, 
-         mode       = 'RO',
-      ))
+         mode       = 'RW',
+      ))   
       
       self.add(pr.RemoteVariable(
-         name       = 'TempAlert',     
-         description= 'Temperature Alert',
+         name       = 'TestPassed',     
+         description= 'Test Passed Flag',     
          offset     = 0x00000018, 
          bitSize    = 1, 
          bitOffset  = 0,  
          base       = pr.Bool, 
          mode       = 'RO',
-      ))
+      ))   
       
       self.add(pr.RemoteVariable(
-         name       = 'TempFault',     
-         description= 'Temperature Fault',
+         name       = 'TestFailed',     
+         description= 'Test Failed Flag',     
          offset     = 0x0000001C, 
          bitSize    = 1, 
          bitOffset  = 0,  
          base       = pr.Bool, 
          mode       = 'RO',
-      ))
-      
-      self.add(pr.RemoteVariable(
-         name       = 'LatchTempFault',     
-         description= 'Latch Temperature Fault',
-         offset     = 0x00000020, 
-         bitSize    = 1, 
-         bitOffset  = 0,  
-         base       = pr.Bool, 
-         mode       = 'RW',
-      ))
-      
-      for i in range(4):      
-         self.add(pr.RemoteVariable(
-            name       = ('Carrier[%d]IdLow'%i),
-            description= ('Carrier[%d] ID Lower Word'%i),
-            offset     = (0x00000030+i*8), 
-            bitSize    = 32, 
-            bitOffset  = 0,  
-            base       = pr.UInt, 
-            mode       = 'RO',
-         ))
-         self.add(pr.RemoteVariable(
-            name       = ('Carrier[%d]IdHigh'%i),
-            description= ('Carrier[%d] ID Upper Word'%i),
-            offset     = (0x00000034+i*8), 
-            bitSize    = 32, 
-            bitOffset  = 0,  
-            base       = pr.UInt, 
-            mode       = 'RO',
-         ))
+      ))   
       
       #####################################
       # Create commands

@@ -51,6 +51,60 @@ set_clock_groups -asynchronous \
 set_clock_groups -asynchronous -group [get_clocks {ddrIntClk0}] -group [get_clocks {ddrClkP}]
 set_clock_groups -asynchronous -group [get_clocks {ddrIntClk1}] -group [get_clocks {ddrClkP}]
 
+create_generated_clock -name adcBitClk0R    [get_pins {U_AdcCore/G_AdcReadout[0].U_AdcReadout/U_AdcBitClkR/O}]
+create_generated_clock -name adcBitClk0RD4  [get_pins {U_AdcCore/G_AdcReadout[0].U_AdcReadout/U_AdcBitClkRD4/O}]
+create_generated_clock -name adcBitClk1R    [get_pins {U_AdcCore/G_AdcReadout[1].U_AdcReadout/U_AdcBitClkR/O}]
+create_generated_clock -name adcBitClk1RD4  [get_pins {U_AdcCore/G_AdcReadout[1].U_AdcReadout/U_AdcBitClkRD4/O}]
+create_generated_clock -name adcBitClk2R    [get_pins {U_AdcCore/G_AdcReadout[2].U_AdcReadout/U_AdcBitClkR/O}]
+create_generated_clock -name adcBitClk2RD4  [get_pins {U_AdcCore/G_AdcReadout[2].U_AdcReadout/U_AdcBitClkRD4/O}]
+create_generated_clock -name adcBitClk3R    [get_pins {U_AdcCore/G_AdcReadout[3].U_AdcReadout/U_AdcBitClkR/O}]
+create_generated_clock -name adcBitClk3RD4  [get_pins {U_AdcCore/G_AdcReadout[3].U_AdcReadout/U_AdcBitClkRD4/O}]
+create_generated_clock -name adcBitClk4R    [get_pins {U_AdcCore/G_AdcReadout[4].U_AdcReadout/U_AdcBitClkR/O}]
+create_generated_clock -name adcBitClk4RD4  [get_pins {U_AdcCore/G_AdcReadout[4].U_AdcReadout/U_AdcBitClkRD4/O}]
+create_generated_clock -name adcBitClk5R    [get_pins {U_AdcCore/G_AdcReadout[5].U_AdcReadout/U_AdcBitClkR/O}]
+create_generated_clock -name adcBitClk5RD4  [get_pins {U_AdcCore/G_AdcReadout[5].U_AdcReadout/U_AdcBitClkRD4/O}]
+create_generated_clock -name adcBitClk6R    [get_pins {U_AdcCore/G_AdcReadout[6].U_AdcReadout/U_AdcBitClkR/O}]
+create_generated_clock -name adcBitClk6RD4  [get_pins {U_AdcCore/G_AdcReadout[6].U_AdcReadout/U_AdcBitClkRD4/O}]
+create_generated_clock -name adcBitClk7R    [get_pins {U_AdcCore/G_AdcReadout[7].U_AdcReadout/U_AdcBitClkR/O}]
+create_generated_clock -name adcBitClk7RD4  [get_pins {U_AdcCore/G_AdcReadout[7].U_AdcReadout/U_AdcBitClkRD4/O}]
+create_generated_clock -name adcBitClk8R    [get_pins {U_AdcCore/G_AdcReadout[8].U_AdcReadout/U_AdcBitClkR/O}]
+create_generated_clock -name adcBitClk8RD4  [get_pins {U_AdcCore/G_AdcReadout[8].U_AdcReadout/U_AdcBitClkRD4/O}]
+create_generated_clock -name adcBitClk9R    [get_pins {U_AdcCore/G_AdcReadout[9].U_AdcReadout/U_AdcBitClkR/O}]
+create_generated_clock -name adcBitClk9RD4  [get_pins {U_AdcCore/G_AdcReadout[9].U_AdcReadout/U_AdcBitClkRD4/O}]
+
+set_clock_groups -asynchronous \
+   -group [get_clocks -include_generated_clocks {adcBitClk0R}] \
+   -group [get_clocks -include_generated_clocks {adcBitClk0RD4}] 
+set_clock_groups -asynchronous \
+   -group [get_clocks -include_generated_clocks {adcBitClk1R}] \
+   -group [get_clocks -include_generated_clocks {adcBitClk1RD4}] 
+set_clock_groups -asynchronous \
+   -group [get_clocks -include_generated_clocks {adcBitClk2R}] \
+   -group [get_clocks -include_generated_clocks {adcBitClk2RD4}] 
+set_clock_groups -asynchronous \
+   -group [get_clocks -include_generated_clocks {adcBitClk3R}] \
+   -group [get_clocks -include_generated_clocks {adcBitClk3RD4}] 
+set_clock_groups -asynchronous \
+   -group [get_clocks -include_generated_clocks {adcBitClk4R}] \
+   -group [get_clocks -include_generated_clocks {adcBitClk4RD4}] 
+set_clock_groups -asynchronous \
+   -group [get_clocks -include_generated_clocks {adcBitClk5R}] \
+   -group [get_clocks -include_generated_clocks {adcBitClk5RD4}] 
+set_clock_groups -asynchronous \
+   -group [get_clocks -include_generated_clocks {adcBitClk6R}] \
+   -group [get_clocks -include_generated_clocks {adcBitClk6RD4}] 
+set_clock_groups -asynchronous \
+   -group [get_clocks -include_generated_clocks {adcBitClk7R}] \
+   -group [get_clocks -include_generated_clocks {adcBitClk7RD4}] 
+set_clock_groups -asynchronous \
+   -group [get_clocks -include_generated_clocks {adcBitClk8R}] \
+   -group [get_clocks -include_generated_clocks {adcBitClk8RD4}] 
+set_clock_groups -asynchronous \
+   -group [get_clocks -include_generated_clocks {adcBitClk9R}] \
+   -group [get_clocks -include_generated_clocks {adcBitClk9RD4}] 
+
+
+
 ############################
 ## Pinout Configuration   ##
 ############################
@@ -295,6 +349,25 @@ set_property PACKAGE_PIN C22   [get_ports {adcClkP[2]}]
 set_property PACKAGE_PIN F28   [get_ports {adcClkP[3]}]
 set_property PACKAGE_PIN B6    [get_ports {adcClkP[4]}]
 set_property -dict { IOSTANDARD LVDS } [get_ports {adcClkP[*]}]
+
+set_property -dict { PACKAGE_PIN C7   IOSTANDARD LVCMOS18 } [get_ports {adcSclk[2]}]
+set_property -dict { PACKAGE_PIN B20  IOSTANDARD LVCMOS18 } [get_ports {adcSclk[1]}]
+set_property -dict { PACKAGE_PIN L9   IOSTANDARD LVCMOS18 } [get_ports {adcSclk[0]}]
+
+set_property -dict { PACKAGE_PIN B7   IOSTANDARD LVCMOS18 } [get_ports {adcSdio[2]}]
+set_property -dict { PACKAGE_PIN B21  IOSTANDARD LVCMOS18 } [get_ports {adcSdio[1]}]
+set_property -dict { PACKAGE_PIN K9   IOSTANDARD LVCMOS18 } [get_ports {adcSdio[0]}]
+
+set_property -dict { PACKAGE_PIN H2   IOSTANDARD LVCMOS18 } [get_ports {adcCsb[9]}]
+set_property -dict { PACKAGE_PIN G2   IOSTANDARD LVCMOS18 } [get_ports {adcCsb[8]}]
+set_property -dict { PACKAGE_PIN H19  IOSTANDARD LVCMOS18 } [get_ports {adcCsb[7]}]
+set_property -dict { PACKAGE_PIN G19  IOSTANDARD LVCMOS18 } [get_ports {adcCsb[6]}]
+set_property -dict { PACKAGE_PIN H17  IOSTANDARD LVCMOS18 } [get_ports {adcCsb[5]}]
+set_property -dict { PACKAGE_PIN H18  IOSTANDARD LVCMOS18 } [get_ports {adcCsb[4]}]
+set_property -dict { PACKAGE_PIN W9   IOSTANDARD LVCMOS18 } [get_ports {adcCsb[3]}]
+set_property -dict { PACKAGE_PIN W8   IOSTANDARD LVCMOS18 } [get_ports {adcCsb[2]}]
+set_property -dict { PACKAGE_PIN AA8  IOSTANDARD LVCMOS18 } [get_ports {adcCsb[1]}]
+set_property -dict { PACKAGE_PIN Y8   IOSTANDARD LVCMOS18 } [get_ports {adcCsb[0]}]
 
 ##########################
 ## Misc. Configurations ##

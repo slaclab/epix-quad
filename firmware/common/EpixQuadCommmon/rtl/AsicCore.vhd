@@ -50,12 +50,7 @@ entity AsicCore is
       axiReadSlave         : in    AxiReadSlaveType;
       buffersRdy           : in    sl;
       -- ADC stream input
-      adcStream            : in    AxiStreamMasterArray(63 downto 0);
-      -- ASIC SACI signals
-      asicSaciResp         : in    slv(3 downto 0);
-      asicSaciClk          : out   slv(3 downto 0);
-      asicSaciCmd          : out   slv(3 downto 0);
-      asicSaciSelL         : out   slv(15 downto 0);
+      adcStream            : in    AxiStreamMasterArray(79 downto 0);
       -- ASIC ACQ signals
       acqStart             : in    sl;
       asicAcq              : out   sl;
@@ -65,22 +60,23 @@ entity AsicCore is
       asicRoClk            : out   sl;
       asicDout             : in    slv(15 downto 0);
       -- ADC Clock Output
-      adcClk               : out   sl
+      adcClk               : out   sl;
+      -- Image Data Stream
+      dataTxMaster         : out   AxiStreamMasterType;
+      dataTxSlave          : in    AxiStreamSlaveType;
+      -- Scope Data Stream
+      scopeTxMaster        : out   AxiStreamMasterType;
+      scopeTxSlave         : in    AxiStreamSlaveType
    );
 end AsicCore;
 
 architecture rtl of AsicCore is
    
-   constant SACI_CLK_PERIOD_C    : real := 1.00E-6;
-   
-   constant NUM_AXI_MASTERS_C    : natural := 6;
+   constant NUM_AXI_MASTERS_C    : natural := 3;
 
-   constant ASIC_SACI0_INDEX_C   : natural := 0;
-   constant ASIC_SACI1_INDEX_C   : natural := 1;
-   constant ASIC_SACI2_INDEX_C   : natural := 2;
-   constant ASIC_SACI3_INDEX_C   : natural := 3;
-   constant ASIC_ACQ_INDEX_C     : natural := 4;
-   constant ASIC_RDOUT_INDEX_C   : natural := 5;
+   constant ASIC_ACQ_INDEX_C     : natural := 0;
+   constant ASIC_RDOUT_INDEX_C   : natural := 1;
+   constant SCOPE_INDEX_C        : natural := 2;
 
    constant AXI_CONFIG_C   : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := genAxiLiteConfig(NUM_AXI_MASTERS_C, AXI_BASE_ADDR_G, 24, 20);
 
@@ -93,6 +89,13 @@ architecture rtl of AsicCore is
    signal acqCount         : slv(31 downto 0);
    signal acqSample        : sl;
    signal readDone         : sl;
+   
+   signal iAsicAcq         : sl;
+   signal iAsicR0          : sl;
+   signal iAsicSync        : sl;
+   signal iAsicPpmat       : sl;
+   signal iAsicRoClk       : sl;
+   
 
 begin
    
@@ -119,34 +122,6 @@ begin
          mAxiReadMasters  => axilReadMasters,
          mAxiReadSlaves   => axilReadSlaves
       );
-
-   --------------------------
-   -- 4 x 4 ASICs SACI Interfaces
-   --------------------------          
-   GEN_VEC4 : for i in 3 downto 0 generate
-      U_AxiLiteSaciMaster : entity work.AxiLiteSaciMaster
-         generic map (
-            AXIL_CLK_PERIOD_G  => 10.0E-9, -- In units of seconds
-            AXIL_TIMEOUT_G     => 1.0E-3,  -- In units of seconds
-            SACI_CLK_PERIOD_G  => SACI_CLK_PERIOD_C, -- In units of seconds
-            SACI_CLK_FREERUN_G => false,
-            SACI_RSP_BUSSED_G  => true,
-            SACI_NUM_CHIPS_G   => 4)
-         port map (
-            -- SACI interface
-            saciClk           => asicSaciClk(i),
-            saciCmd           => asicSaciCmd(i),
-            saciSelL          => asicSaciSelL(i*4+3 downto i*4),
-            saciRsp(0)        => asicSaciResp(i),
-            -- AXI-Lite Register Interface
-            axilClk           => sysClk,
-            axilRst           => sysRst,
-            axilReadMaster    => axilReadMasters(ASIC_SACI0_INDEX_C+i),
-            axilReadSlave     => axilReadSlaves(ASIC_SACI0_INDEX_C+i),
-            axilWriteMaster   => axilWriteMasters(ASIC_SACI0_INDEX_C+i),
-            axilWriteSlave    => axilWriteSlaves(ASIC_SACI0_INDEX_C+i)
-         );
-   end generate GEN_VEC4;
    
    U_AcqCore : entity work.AcqCore
    generic map (
@@ -169,55 +144,82 @@ begin
       readDone          => readDone,
       roClkTail         => toSlv(10, 8),
       -- ASIC Control Ports
-      asicAcq           => asicAcq,
-      asicR0            => asicR0,
-      asicSync          => asicSync,
-      asicPpmat         => asicPpmat,
-      asicRoClk         => asicRoClk,
+      asicAcq           => iAsicAcq,
+      asicR0            => iAsicR0,
+      asicSync          => iAsicSync,
+      asicPpmat         => iAsicPpmat,
+      asicRoClk         => iAsicRoClk,
       -- ADC Clock Output
       adcClk            => adcClk
    );
+   asicAcq     <=  iAsicAcq;
+   asicR0      <=  iAsicR0;
+   asicSync    <=  iAsicSync;
+   asicPpmat   <=  iAsicPpmat;
+   asicRoClk   <=  iAsicRoClk;
    
-   --U_RdoutCore : entity work.RdoutCore
-   --generic map (
-   --   TPD_G             => TPD_G,
-   --   BANK_COLS_G       => 48,
-   --   BANK_ROWS_G       => 178,
-   --   LINE_REVERSE_G    => "1010"
-   --)
-   --port map (
-   --   -- ADC interface
-   --   sysClk               => sysClk,
-   --   sysRst               => sysRst,
-   --   -- AXI-Lite Interface for local registers 
-   --   sAxilReadMaster      => axilReadMasters(ASIC_RDOUT_INDEX_C),
-   --   sAxilReadSlave       => axilReadSlaves(ASIC_RDOUT_INDEX_C),
-   --   sAxilWriteMaster     => axilWriteMasters(ASIC_RDOUT_INDEX_C),
-   --   sAxilWriteSlave      => axilWriteSlaves(ASIC_RDOUT_INDEX_C),
-   --   -- AXI DDR Buffer Interface (sysClk domain)
-   --   axiWriteMasters      => axiWriteMasters,
-   --   axiWriteSlaves       => axiWriteSlaves,
-   --   axiReadMaster        => axiReadMaster,
-   --   axiReadSlave         => axiReadSlave,
-   --   buffersRdy           => buffersRdy,
-   --   -- Run control
-   --   acqStart             => acqStart,
-   --   acqBusy              => acqBusy,
-   --   acqCount             => acqCount,
-   --   acqSample            => acqSample,
-   --   readDone             => readDone,
-   --   -- ADC stream input
-   --   adcStream            => adcStream,
-   --   -- Frame stream output (axisClk domain)
-   --   axisClk              => sysClk,
-   --   axisRst              => sysRst,
-   --   axisMaster           => open,
-   --   axisSlave            => AXI_STREAM_SLAVE_INIT_C
-   --);
+   U_RdoutCore : entity work.RdoutCore
+   generic map (
+      TPD_G             => TPD_G,
+      BANK_COLS_G       => 48,
+      BANK_ROWS_G       => 178,
+      LINE_REVERSE_G    => "1010"
+   )
+   port map (
+      -- ADC interface
+      sysClk               => sysClk,
+      sysRst               => sysRst,
+      -- AXI-Lite Interface for local registers 
+      sAxilReadMaster      => axilReadMasters(ASIC_RDOUT_INDEX_C),
+      sAxilReadSlave       => axilReadSlaves(ASIC_RDOUT_INDEX_C),
+      sAxilWriteMaster     => axilWriteMasters(ASIC_RDOUT_INDEX_C),
+      sAxilWriteSlave      => axilWriteSlaves(ASIC_RDOUT_INDEX_C),
+      -- AXI DDR Buffer Interface (sysClk domain)
+      axiWriteMasters      => axiWriteMasters,
+      axiWriteSlaves       => axiWriteSlaves,
+      axiReadMaster        => axiReadMaster,
+      axiReadSlave         => axiReadSlave,
+      buffersRdy           => buffersRdy,
+      -- Run control
+      acqStart             => acqStart,
+      acqBusy              => acqBusy,
+      acqCount             => acqCount,
+      acqSample            => acqSample,
+      readDone             => readDone,
+      -- ADC stream input
+      adcStream            => adcStream(63 downto 0),
+      -- Frame stream output (axisClk domain)
+      axisClk              => sysClk,
+      axisRst              => sysRst,
+      axisMaster           => dataTxMaster,
+      axisSlave            => dataTxSlave 
+   );
    
-   axiWriteMasters <= (others => AXI_WRITE_MASTER_INIT_C);
-   axiReadMaster <= AXI_READ_MASTER_INIT_C;
-   axilReadSlaves(ASIC_RDOUT_INDEX_C)  <= AXI_LITE_READ_SLAVE_INIT_C;
-   axilWriteSlaves(ASIC_RDOUT_INDEX_C) <= AXI_LITE_WRITE_SLAVE_INIT_C;
+   U_PseudoScopeCore : entity work.PseudoScopeCore
+   generic map (
+      TPD_G             => TPD_G,
+      INPUT_CHANNELS_G  => 80,
+      EXTTRIG_IN_G      => 6
+   )
+   port map ( 
+      sysClk            => sysClk,
+      sysClkRst         => sysRst,
+      adcStream         => adcStream,
+      arm               => acqStart,
+      trigIn(0)         => acqStart,
+      trigIn(1)         => iAsicAcq,
+      trigIn(2)         => iAsicR0,
+      trigIn(3)         => iAsicSync,
+      trigIn(4)         => iAsicPpmat,
+      trigIn(5)         => iAsicRoClk,
+      mAxisMaster       => scopeTxMaster,
+      mAxisSlave        => scopeTxSlave,
+      axilClk           => sysClk,
+      axilRst           => sysRst,
+      sAxilWriteMaster  => axilWriteMasters(SCOPE_INDEX_C),
+      sAxilWriteSlave   => axilWriteSlaves(SCOPE_INDEX_C),
+      sAxilReadMaster   => axilReadMasters(SCOPE_INDEX_C),
+      sAxilReadSlave    => axilReadSlaves(SCOPE_INDEX_C)
+   );
 
 end rtl;
