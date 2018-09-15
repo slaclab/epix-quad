@@ -127,8 +127,11 @@ class Top(pr.Root):
             ))
         
         if (hwType != 'simulation'):
-            confAddr = [0x02A00000, 0x02A00800, 0x02B00000, 0x02B00800, 0x02C00000]
-            for i in range(5):      
+            confAddr = [
+               0x02A00000, 0x02A00800, 0x02A01000, 0x02A01800, 0x02B00000, 
+               0x02B00800, 0x02B01000, 0x02B01800, 0x02C00000, 0x02C00800
+            ]
+            for i in range(10):      
                 self.add(analog_devices.Ad9249ConfigGroup(
                     name    = ('Ad9249Config[%d]'%i),
                     memBase = memMap, 
@@ -142,6 +145,7 @@ class Top(pr.Root):
                   memBase = memMap, 
                   offset  = (0x02000000+i*0x00100000), 
                   expand  = False,
+                  fpga    = 'ultrascale',
             ))
         
         self.add(ePixQuad.AdcTester( 

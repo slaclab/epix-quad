@@ -47,6 +47,14 @@ parser.add_argument(
     help     = "Enable read all variables at start",
 )  
 
+parser.add_argument(
+    "--ver", 
+    type     = argBool,
+    required = False,
+    default  = False,
+    help     = "Verbose output",
+)  
+
 # Get the arguments
 args = parser.parse_args()
 
@@ -69,23 +77,23 @@ QuadTop.SystemRegs.DcDcEnable.set(0xF)
 time.sleep(1.0)
 
 # Train frame delay in all ADCs
-for i in range(10):
+for adc in range(10):
    lockData = pd.DataFrame(columns=['Start', 'Count'])
    lockStart = 0
    lockCounter = 0
    lockIndex = 0
    locked = 0
-   #test = [0] * 512
+   test = [0] * 512
    for delay in range(512):
       # Set frame delay
-      QuadTop.Ad9249Readout[i].FrameDelay.set(0x200+delay)
+      QuadTop.Ad9249Readout[adc].FrameDelay.set(0x200+delay)
       # Reset lost lock counter
-      QuadTop.Ad9249Readout[i].LostLockCountReset()
+      QuadTop.Ad9249Readout[adc].LostLockCountReset()
       # Wait 1 ms
       time.sleep(0.001)
       # Check lock status
-      lostLockCountReg = QuadTop.Ad9249Readout[i].LostLockCount.get()
-      lockedReg = QuadTop.Ad9249Readout[i].Locked.get()
+      lostLockCountReg = QuadTop.Ad9249Readout[adc].LostLockCount.get()
+      lockedReg = QuadTop.Ad9249Readout[adc].Locked.get()
       
       # Find and save lock intervals (start index and length count)
       if (lostLockCountReg == 0) and (lockedReg == 1) and (locked == 0):
@@ -101,18 +109,80 @@ for i in range(10):
       if locked == 1:
          lockCounter = lockCounter + 1
       
-      #if (lostLockCountReg == 0) and (lockedReg == 1):
-      #   test[delay] = 1
+      if (lostLockCountReg == 0) and (lockedReg == 1):
+         test[delay] = 1
    
-   print(lockData)
-   #print(test)
+   if args.ver:
+      print(lockData)
+      print(test)
    
-   maxCount = lockData['Count'].max()
-   maxIndex = lockData['Count'].idxmax()
-   frameDlySet = lockData.loc[maxIndex]['Start'] + round(maxCount/2)
-   print('set %d'%(frameDlySet))
+   if len(lockData) > 0:
+      maxCount = lockData['Count'].max()
+      maxIndex = lockData['Count'].idxmax()
+      frameDlySet = lockData.loc[maxIndex]['Start'] + round(maxCount/2)
+      QuadTop.Ad9249Readout[adc].FrameDelay.set(0x200+frameDlySet)
+      print('ADC[%d] frame delay set to %d'%(adc, frameDlySet))
+   else:
+      print('ADC[%d] frame delay failed %x'%(adc,  QuadTop.Ad9249Readout[adc].AdcFrame.get()))
+      
    
-
+   
+   channel = 0
+   
+   # enable mixed bit frequency pattern
+   QuadTop.Ad9249Config[adc].OutputTestMode.set(12)
+   # set the pattern tester
+   QuadTop.Ad9249Tester.TestDataMask.set(0x3FFF)
+   QuadTop.Ad9249Tester.TestPattern.set(0x2867)
+   QuadTop.Ad9249Tester.TestSamples.set(10000)
+   QuadTop.Ad9249Tester.TestTimeout.set(10000)
+   for channel in range(8):
+      passData = pd.DataFrame(columns=['Start', 'Count'])
+      passStart = 0
+      passCounter = 0
+      passIndex = 0
+      passed = 0
+      test = [0] * 512
+      for delay in range(512):
+         # Set channel delay
+         QuadTop.Ad9249Readout[adc].ChannelDelay[channel].set(0x200+delay)
+         # sSet tester channel and start testing
+         QuadTop.Ad9249Tester.TestChannel.set(adc*10+channel)
+         QuadTop.Ad9249Tester.TestRequest.set(True)
+         QuadTop.Ad9249Tester.TestRequest.set(False)
+         # Check result
+         while (QuadTop.Ad9249Tester.TestPassed.get() != True) and (QuadTop.Ad9249Tester.TestFailed.get() != True):
+            pass
+         testPassed = QuadTop.Ad9249Tester.TestPassed.get()
+         if testPassed == True:
+            test[delay] = 1
+         
+         # Find and save pass intervals (start index and length count)
+         if (testPassed == True) and (passed == 0):
+            passed = 1
+            passStart = delay
+            
+         if ((testPassed == False) or (delay == 511)) and (passed == 1):
+            passed = 0
+            passData.loc[passIndex] = [passStart, passCounter]
+            passCounter = 0
+            passIndex = passIndex + 1
+         
+         if passed == 1:
+            passCounter = passCounter + 1
+      
+      if args.ver:
+         print(passData)
+         print(test)
+      if len(passData) > 0:
+         maxCount = passData['Count'].max()
+         maxIndex = passData['Count'].idxmax()
+         chanDlySet = passData.loc[maxIndex]['Start'] + round(maxCount/2)
+         QuadTop.Ad9249Readout[adc].ChannelDelay[channel].set(0x200+chanDlySet)
+         print('ADC[%d] Ch[%d] delay set to %d'%(adc, channel, chanDlySet))
+      else:
+         print('ADC[%d] Ch[%d] failed %x'%(adc, channel,  QuadTop.Ad9249Readout[adc].AdcChannel[channel].get()))
+   
 #f.write('\n')
 #f.close()
    
