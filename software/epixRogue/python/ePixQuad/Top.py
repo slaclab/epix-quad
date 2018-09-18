@@ -136,6 +136,7 @@ class Top(pr.Root):
                     name    = ('Ad9249Config[%d]'%i),
                     memBase = memMap, 
                     offset  = confAddr[i], 
+                    enabled = False,
                     expand  = False,
                 ))
         

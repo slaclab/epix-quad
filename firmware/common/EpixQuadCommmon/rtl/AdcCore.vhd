@@ -40,6 +40,8 @@ entity AdcCore is
       -- Clock and Reset
       sysClk               : in    sl;
       sysRst               : in    sl;
+      -- ADC ISERDESE reset
+      adcClkRst            : in    sl;
       -- AXI-Lite Register Interface (sysClk domain)
       mAxilReadMaster      : in    AxiLiteReadMasterType;
       mAxilReadSlave       : out   AxiLiteReadSlaveType;
@@ -128,7 +130,9 @@ begin
       
       U_AdcReadout : entity work.Ad9249ReadoutGroup
       generic map (
-         SIM_SPEEDUP_G     => SIM_SPEEDUP_G
+         SIM_SPEEDUP_G     => SIM_SPEEDUP_G,
+         F_DELAY_CASCADE_G => false,
+         D_DELAY_CASCADE_G => false
       )
       port map (
          axilClk           => sysClk,
@@ -137,7 +141,7 @@ begin
          axilReadSlave     => axilReadSlaves(ADC0_RDOUT_INDEX_C+i),
          axilWriteMaster   => axilWriteMasters(ADC0_RDOUT_INDEX_C+i),
          axilWriteSlave    => axilWriteSlaves(ADC0_RDOUT_INDEX_C+i),
-         adcClkRst         => sysRst,
+         adcClkRst         => adcClkRst,
          adcSerial         => asicAdc(i),
          adcStreamClk      => sysClk,
          adcStreams        => iAdcStream((i*8)+7 downto i*8)

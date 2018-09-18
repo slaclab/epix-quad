@@ -16,6 +16,7 @@ import rogue
 import argparse
 import ePixQuad as quad
 import time
+from time import gmtime, strftime
 import pandas as pd
 
 # rogue.Logging.setLevel(rogue.Logging.Warning)
@@ -70,20 +71,51 @@ QuadTop.start(
     timeout  = 5.0,    
 )
 
-#fileName = 'ADC_Frame_Delays_DeviceDna' + hex(QuadTop.AxiVersion.DeviceDna.get()) + '.csv'
-#f = open(fileName, 'a')
+QuadTop.SystemRegs.enable.set(True)
+QuadTop.Ad9249Tester.enable.set(True)
+for adc in range(10):
+   QuadTop.Ad9249Readout[adc].enable.set(True)
+   QuadTop.Ad9249Config[adc].enable.set(True)
 
+fileName = strftime("%Y%m%d%H%M%S", time.gmtime()) + '_adcDelays.h'
+f = open(fileName, 'w')
+
+f.write('static int adcDelays[10][9] = {\n')
+
+print('Initializing ADCs ...')
+
+print('Enable DCDCs')
 QuadTop.SystemRegs.DcDcEnable.set(0xF)
 time.sleep(1.0)
 
+print('Assert digital reset')
+# Reset ADCs
+for adc in range(10):
+   QuadTop.Ad9249Config[adc].InternalPdwnMode.set(3)
+   time.sleep(0.01)
+   QuadTop.Ad9249Config[adc].InternalPdwnMode.set(0)
+time.sleep(1.0)
+
+print('Reset ISERDESE3')
+# Reset deserializers
+QuadTop.SystemRegs.AdcClkRst.set(True)
+QuadTop.SystemRegs.AdcClkRst.set(False)
+time.sleep(1.0)
+
+print('Initialization done')
+
 # Train frame delay in all ADCs
 for adc in range(10):
+   
+   f.write('    {')
+   
    lockData = pd.DataFrame(columns=['Start', 'Count'])
    lockStart = 0
    lockCounter = 0
    lockIndex = 0
    locked = 0
    test = [0] * 512
+   frameDlySet = -1
    for delay in range(512):
       # Set frame delay
       QuadTop.Ad9249Readout[adc].FrameDelay.set(0x200+delay)
@@ -125,7 +157,7 @@ for adc in range(10):
    else:
       print('ADC[%d] frame delay failed %x'%(adc,  QuadTop.Ad9249Readout[adc].AdcFrame.get()))
       
-   
+   f.write('%d, ' %(frameDlySet))
    
    channel = 0
    
@@ -143,11 +175,12 @@ for adc in range(10):
       passIndex = 0
       passed = 0
       test = [0] * 512
+      chanDlySet = -1
       for delay in range(512):
          # Set channel delay
          QuadTop.Ad9249Readout[adc].ChannelDelay[channel].set(0x200+delay)
          # sSet tester channel and start testing
-         QuadTop.Ad9249Tester.TestChannel.set(adc*10+channel)
+         QuadTop.Ad9249Tester.TestChannel.set(adc*8+channel)
          QuadTop.Ad9249Tester.TestRequest.set(True)
          QuadTop.Ad9249Tester.TestRequest.set(False)
          # Check result
@@ -182,11 +215,19 @@ for adc in range(10):
          print('ADC[%d] Ch[%d] delay set to %d'%(adc, channel, chanDlySet))
       else:
          print('ADC[%d] Ch[%d] failed %x'%(adc, channel,  QuadTop.Ad9249Readout[adc].AdcChannel[channel].get()))
+      
+      if channel == 7 and adc == 9:
+         f.write('%d}\n' %(chanDlySet))
+      elif channel == 7:
+         f.write('%d},\n' %(chanDlySet))
+      else:
+         f.write('%d, ' %(chanDlySet))
+
+f.write('};')
+f.write('\n')
+f.close()
    
-#f.write('\n')
-#f.close()
-   
-QuadTop.SystemRegs.DcDcEnable.set(0x0)
+#QuadTop.SystemRegs.DcDcEnable.set(0x0)
 
 
 QuadTop.stop()

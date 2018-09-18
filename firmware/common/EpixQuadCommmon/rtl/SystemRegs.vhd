@@ -36,6 +36,8 @@ entity SystemRegs is
       sysRst            : in  sl;
       -- User reset output
       usrRst            : out sl;
+      -- ADC ISERDESE reset
+      adcClkRst         : out   sl;
       -- AXI lite slave port for register access
       sAxilWriteMaster  : in  AxiLiteWriteMasterType;
       sAxilWriteSlave   : out AxiLiteWriteSlaveType;
@@ -95,6 +97,7 @@ architecture RTL of SystemRegs is
       syncOut           : slv(10 downto 0);
       usrRstShift       : slv(7 downto 0);
       usrRst            : sl;
+      adcClkRst         : sl;
       asicGrCnt         : slv(25 downto 0);
       trigEn            : sl;
       trigSrcSel        : slv(1 downto 0);
@@ -129,6 +132,7 @@ architecture RTL of SystemRegs is
       syncOut           => (others => '0'),
       usrRstShift       => (others => '0'),
       usrRst            => '0',
+      adcClkRst         => '0',
       asicGrCnt         => (others=>'0'),
       trigEn            => '0',
       trigSrcSel        => (others=>'0'),
@@ -276,6 +280,7 @@ begin
       axiSlaveRegisterR(regCon, x"018", 0, tempAlert);
       axiSlaveRegisterR(regCon, x"01C", 0, r.tempFault);
       axiSlaveRegister (regCon, x"020", 0, v.latchTempFault);
+      axiSlaveRegister (regCon, x"024", 0, v.adcClkRst);
       
       for i in 3 downto 0 loop
          axiSlaveRegisterR(regCon, x"030"+toSlv(i*8, 12), 0, ite(idValids(i) = '1',idValues(i)(31 downto  0), x"00000000")); --ASIC carrier ID low
@@ -364,6 +369,7 @@ begin
       sAxilReadSlave <= r.sAxilReadSlave;
       
       usrRst      <= r.usrRst;
+      adcClkRst   <= r.adcClkRst;
       dcdcEn      <= r.dcdcEn;
       dcdcSync    <= r.syncOut;
       ddrVttEn    <= r.ddrVttEn;

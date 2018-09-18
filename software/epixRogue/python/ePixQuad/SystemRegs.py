@@ -48,6 +48,16 @@ class SystemRegs(pr.Device):
       ))
       
       self.add(pr.RemoteVariable(
+         name       = 'AdcClkRst',     
+         description= 'Reset ADC Deserializers',
+         offset     = 0x00000024, 
+         bitSize    = 1, 
+         bitOffset  = 0,  
+         base       = pr.Bool, 
+         mode       = 'RW',
+      ))
+      
+      self.add(pr.RemoteVariable(
          name       = 'TrigEn',     
          description= 'Global Trigger Enable',     
          offset     = 0x00000400, 

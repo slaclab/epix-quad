@@ -42,6 +42,8 @@ entity SystemCore is
       -- Clock and Reset
       sysClk               : in    sl;
       sysRst               : in    sl;
+      -- ADC ISERDESE reset
+      adcClkRst            : out   sl;
       -- I2C busses
       dacScl               : inout sl;
       dacSda               : inout sl;
@@ -232,6 +234,8 @@ begin
       sysRst            => sysRst,
       -- User reset output
       usrRst            => open,
+      -- ADC ISERDESE reset
+      adcClkRst         => adcClkRst,
       -- AXI lite slave port for register access
       sAxilReadMaster   => axilReadMasters(SYSREG_INDEX_C),
       sAxilReadSlave    => axilReadSlaves(SYSREG_INDEX_C),

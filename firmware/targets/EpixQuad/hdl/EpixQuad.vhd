@@ -182,6 +182,7 @@ architecture top_level of EpixQuad is
    signal adcStream     : AxiStreamMasterArray(79 downto 0);
    
    signal acqStart      : sl;
+   signal adcClkRst     : sl;
    
 begin
 
@@ -287,6 +288,8 @@ begin
          -- Clock and Reset
          sysClk               => sysClk,
          sysRst               => sysRst,
+         -- ADC ISERDESE reset
+         adcClkRst            => adcClkRst,
          -- I2C busses
          dacScl               => dacScl,
          dacSda               => dacSda,
@@ -433,6 +436,8 @@ begin
          -- Clock and Reset
          sysClk               => sysClk,
          sysRst               => sysRst,
+         -- ADC ISERDESE reset
+         adcClkRst            => adcClkRst,
          -- AXI-Lite Register Interface (sysClk domain)
          mAxilReadMaster      => axilReadMasters(ADC_INDEX_C),
          mAxilReadSlave       => axilReadSlaves(ADC_INDEX_C),
