@@ -37,7 +37,10 @@ entity SystemRegs is
       -- User reset output
       usrRst            : out sl;
       -- ADC ISERDESE reset
-      adcClkRst         : out   sl;
+      adcClkRst         : out sl;
+      -- ADC Startup Signals
+      adcReqStart       : out sl;
+      adcReqTest        : out sl;
       -- AXI lite slave port for register access
       sAxilWriteMaster  : in  AxiLiteWriteMasterType;
       sAxilWriteSlave   : out AxiLiteWriteSlaveType;
@@ -98,6 +101,10 @@ architecture RTL of SystemRegs is
       usrRstShift       : slv(7 downto 0);
       usrRst            : sl;
       adcClkRst         : sl;
+      adcReqStart       : sl;
+      adcReqTest        : sl;
+      adcTestDone       : sl;
+      adcTestFailed     : sl;
       asicGrCnt         : slv(25 downto 0);
       trigEn            : sl;
       trigSrcSel        : slv(1 downto 0);
@@ -133,6 +140,10 @@ architecture RTL of SystemRegs is
       usrRstShift       => (others => '0'),
       usrRst            => '0',
       adcClkRst         => '0',
+      adcReqStart       => '0',
+      adcReqTest        => '0',
+      adcTestDone       => '0',
+      adcTestFailed     => '0',
       asicGrCnt         => (others=>'0'),
       trigEn            => '0',
       trigSrcSel        => (others=>'0'),
@@ -280,7 +291,6 @@ begin
       axiSlaveRegisterR(regCon, x"018", 0, tempAlert);
       axiSlaveRegisterR(regCon, x"01C", 0, r.tempFault);
       axiSlaveRegister (regCon, x"020", 0, v.latchTempFault);
-      axiSlaveRegister (regCon, x"024", 0, v.adcClkRst);
       
       for i in 3 downto 0 loop
          axiSlaveRegisterR(regCon, x"030"+toSlv(i*8, 12), 0, ite(idValids(i) = '1',idValues(i)(31 downto  0), x"00000000")); --ASIC carrier ID low
@@ -298,6 +308,12 @@ begin
       axiSlaveRegister (regCon, x"404", 0, v.trigSrcSel);
       axiSlaveRegister (regCon, x"408", 0, v.autoTrigEn);
       axiSlaveRegister (regCon, x"40C", 0, v.autoTrigReg);
+      
+      axiSlaveRegister (regCon, x"500", 0, v.adcClkRst);
+      axiSlaveRegister (regCon, x"504", 0, v.adcReqStart);
+      axiSlaveRegister (regCon, x"508", 0, v.adcReqTest);
+      axiSlaveRegister (regCon, x"50C", 0, v.adcTestDone);
+      axiSlaveRegister (regCon, x"510", 0, v.adcTestFailed);
 
       -- Close out the AXI-Lite transaction
       axiSlaveDefault(regCon, v.sAxilWriteSlave, v.sAxilReadSlave, AXI_RESP_DECERR_C);
@@ -370,6 +386,8 @@ begin
       
       usrRst      <= r.usrRst;
       adcClkRst   <= r.adcClkRst;
+      adcReqStart <= r.adcReqStart;
+      adcReqTest  <= r.adcReqTest;
       dcdcEn      <= r.dcdcEn;
       dcdcSync    <= r.syncOut;
       ddrVttEn    <= r.ddrVttEn;

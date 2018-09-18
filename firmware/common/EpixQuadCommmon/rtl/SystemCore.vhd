@@ -44,6 +44,9 @@ entity SystemCore is
       sysRst               : in    sl;
       -- ADC ISERDESE reset
       adcClkRst            : out   sl;
+      -- ADC Startup Signals
+      adcReqStart          : out   sl;
+      adcReqTest           : out   sl;
       -- I2C busses
       dacScl               : inout sl;
       dacSda               : inout sl;
@@ -236,6 +239,9 @@ begin
       usrRst            => open,
       -- ADC ISERDESE reset
       adcClkRst         => adcClkRst,
+      -- ADC Startup Signals
+      adcReqStart       => adcReqStart,
+      adcReqTest        => adcReqTest,
       -- AXI lite slave port for register access
       sAxilReadMaster   => axilReadMasters(SYSREG_INDEX_C),
       sAxilReadSlave    => axilReadSlaves(SYSREG_INDEX_C),

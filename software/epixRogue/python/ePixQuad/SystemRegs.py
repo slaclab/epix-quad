@@ -48,16 +48,6 @@ class SystemRegs(pr.Device):
       ))
       
       self.add(pr.RemoteVariable(
-         name       = 'AdcClkRst',     
-         description= 'Reset ADC Deserializers',
-         offset     = 0x00000024, 
-         bitSize    = 1, 
-         bitOffset  = 0,  
-         base       = pr.Bool, 
-         mode       = 'RW',
-      ))
-      
-      self.add(pr.RemoteVariable(
          name       = 'TrigEn',     
          description= 'Global Trigger Enable',     
          offset     = 0x00000400, 
@@ -127,6 +117,56 @@ class SystemRegs(pr.Device):
          base       = pr.Bool, 
          mode       = 'RW',
       ))   
+      
+      self.add(pr.RemoteVariable(
+         name       = 'AdcClkRst',     
+         description= 'Reset ADC Deserializers',
+         offset     = 0x00000500, 
+         bitSize    = 1, 
+         bitOffset  = 0,  
+         base       = pr.Bool, 
+         mode       = 'RW',
+      ))
+      
+      self.add(pr.RemoteVariable(
+         name       = 'AdcReqStart',     
+         description= 'Request ADC Startup',
+         offset     = 0x00000504, 
+         bitSize    = 1, 
+         bitOffset  = 0,  
+         base       = pr.Bool, 
+         mode       = 'RW',
+      ))
+      
+      self.add(pr.RemoteVariable(
+         name       = 'AdcReqTest',     
+         description= 'Request ADC Test',
+         offset     = 0x00000508, 
+         bitSize    = 1, 
+         bitOffset  = 0,  
+         base       = pr.Bool, 
+         mode       = 'RW',
+      ))
+      
+      self.add(pr.RemoteVariable(
+         name       = 'AdcTestDone',     
+         description= 'ADC Test Done Flag',
+         offset     = 0x0000050C, 
+         bitSize    = 1, 
+         bitOffset  = 0,  
+         base       = pr.Bool, 
+         mode       = 'RW',
+      ))
+      
+      self.add(pr.RemoteVariable(
+         name       = 'AdcTestFailed',     
+         description= 'ADC Test Failed Flag',
+         offset     = 0x00000510, 
+         bitSize    = 1, 
+         bitOffset  = 0,  
+         base       = pr.Bool, 
+         mode       = 'RW',
+      ))
       
       self.add(pr.RemoteVariable(
          name       = 'DdrVttEn',     

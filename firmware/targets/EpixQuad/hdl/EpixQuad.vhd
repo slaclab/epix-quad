@@ -183,6 +183,12 @@ architecture top_level of EpixQuad is
    
    signal acqStart      : sl;
    signal adcClkRst     : sl;
+   signal adcReqStart   : sl;
+   signal iAdcReqStart  : sl;
+   signal adcReqTest    : sl;
+   
+   signal iDcdcEn       : slv(3 downto 0);
+   signal mbIrq         : slv(7 downto 0) := (others => '0'); 
    
 begin
 
@@ -243,10 +249,25 @@ begin
          mAxilReadMaster  => mbReadMaster,
          mAxilReadSlave   => mbReadSlave,
          -- IRQ
-         interrupt        => "00000000",
+         interrupt        => mbIrq,
          -- Clock and Reset
          clk              => sysClk,
          rst              => sysRst);
+   
+   iAdcReqStart <= adcReqStart or iDcdcEn(2);
+   U_AdcStartEdge : entity work.SynchronizerEdge
+      port map (
+         clk         => sysClk,
+         rst         => sysRst,
+         dataIn      => iAdcReqStart,
+         risingEdge  => mbIrq(0));
+   
+   U_AdcTestEdge : entity work.SynchronizerEdge
+      port map (
+         clk         => sysClk,
+         rst         => sysRst,
+         dataIn      => adcReqTest,
+         risingEdge  => mbIrq(1));
    
    --------------------------------------------------------
    -- AXI-Lite: Crossbar
@@ -290,6 +311,9 @@ begin
          sysRst               => sysRst,
          -- ADC ISERDESE reset
          adcClkRst            => adcClkRst,
+         -- ADC Startup Signals
+         adcReqStart          => adcReqStart,
+         adcReqTest           => adcReqTest,
          -- I2C busses
          dacScl               => dacScl,
          dacSda               => dacSda,
@@ -334,7 +358,7 @@ begin
          asicAnaEn            => asicAnaEn,
          asicDigEn            => iAsicDigEn,
          dcdcSync             => dcdcSync,
-         dcdcEn               => dcdcEn,
+         dcdcEn               => iDcdcEn,
          ddrVttEn             => ddrVttEn,
          ddrVttPok            => ddrVttPok,
          -- FPGA temperature alert
@@ -346,6 +370,7 @@ begin
          acqStart             => acqStart
       );
    
+   dcdcEn      <= iDcdcEn;
    asicDigEn   <= iAsicDigEn;
    iAsicDigEnL <= not iAsicDigEn;
    
