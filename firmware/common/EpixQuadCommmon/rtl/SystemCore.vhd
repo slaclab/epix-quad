@@ -173,9 +173,12 @@ architecture top_level of SystemCore is
    signal di       : slv(3 downto 0);
    signal do       : slv(3 downto 0);
 
-   signal calibComplete : sl;
-   signal memReady      : sl;
-   signal memFailed     : sl;
+   signal calibComplete    : sl;
+   signal memReady         : sl;
+   signal memFailed        : sl;
+   signal userRst          : sl;
+   signal memTestRst       : sl;
+   signal memTestRstSync   : sl;
 
 begin
    
@@ -236,7 +239,7 @@ begin
       sysClk            => sysClk,
       sysRst            => sysRst,
       -- User reset output
-      usrRst            => open,
+      usrRst            => userRst,
       -- ADC ISERDESE reset
       adcClkRst         => adcClkRst,
       -- ADC Startup Signals
@@ -345,9 +348,9 @@ begin
    do       <= "111" & bootMosi;
    bootMiso <= di(1);
 
-   --------------------
+   ----------------------------------------
    -- DDR memory tester
-   --------------------
+   ----------------------------------------
    U_AxiMemTester : entity work.AxiMemTester
       generic map (
          TPD_G        => TPD_G,
@@ -366,13 +369,23 @@ begin
          memError        => memFailed,
          -- DDR Memory Interface
          axiClk          => axiClk,
-         axiRst          => axiRst,
+         axiRst          => memTestRst,
          start           => calibComplete,
          axiWriteMaster  => axiBistWriteMaster,
          axiWriteSlave   => axiBistWriteSlave,
          axiReadMaster   => axiBistReadMaster,
          axiReadSlave    => axiBistReadSlave);
-
+   
+   Sync_0 : entity work.Synchronizer
+      generic map (
+         TPD_G => TPD_G)
+      port map (
+         clk     => axiClk,
+         dataIn  => userRst,
+         dataOut => memTestRstSync);
+   
+   memTestRst <= axiRst or memTestRstSync;
+   
    ------------------------------------------------
    -- DDR memory controller
    ------------------------------------------------
@@ -447,10 +460,10 @@ begin
    memRst : process (sysClk) is
    begin
       if rising_edge(sysClk) then
-         if sysRst = '1' then
-            buffersRdy <= '0' after TPD_G;
-         elsif memReady = '1' and memFailed = '0' then
+         if memReady = '1' and memFailed = '0' then
             buffersRdy <= '1' after TPD_G;
+         else
+            buffersRdy <= '0' after TPD_G;
          end if;
       end if;
    end process memRst;

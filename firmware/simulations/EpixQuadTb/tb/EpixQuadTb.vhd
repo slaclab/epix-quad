@@ -251,8 +251,8 @@ begin
    G_ADC : for i in 0 to 9 generate 
       U_ADC : entity work.ad9249_group
       generic map (
-         PATTERN_G            => (others=>x"2F7C"),
-         USE_PATTERN_G        => (others=>true),
+         --PATTERN_G            => (others=>x"2F7C"),
+         --USE_PATTERN_G        => (others=>true),
          NO_INPUT_G           => (others=>true),
          NO_INPUT_BASELINE_G  => ADC_BASELINE_C(7+i*8 downto 0+i*8),
          NO_INPUT_NOISE_G     => (others=> 5.0e-3),

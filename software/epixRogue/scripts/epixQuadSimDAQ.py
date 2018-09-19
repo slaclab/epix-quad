@@ -15,6 +15,7 @@ import pyrogue.gui
 import rogue
 import argparse
 import ePixQuad as quad
+import ePixViewer as vi
 
 # rogue.Logging.setLevel(rogue.Logging.Warning)
 # rogue.Logging.setFilter("pyrogue.SrpV3",rogue.Logging.Debug)
@@ -45,6 +46,14 @@ parser.add_argument(
     help     = "Enable read all variables at start",
 )  
 
+parser.add_argument(
+    "--viewer", 
+    type     = argBool,
+    required = False,
+    default  = False,
+    help     = "Start viewer",
+) 
+
 # Get the arguments
 args = parser.parse_args()
 
@@ -66,6 +75,17 @@ guiTop = pr.gui.GuiTop(group='rootMesh')
 appTop.setStyle('Fusion')
 guiTop.addTree(base)
 guiTop.resize(600, 800)
+
+# Viewer gui
+if args.viewer:
+   gui = vi.Window(cameraType = 'ePix10ka')
+   gui.eventReader.frameIndex = 0
+   #gui.eventReaderImage.VIEW_DATA_CHANNEL_ID = 0
+   gui.setReadDelay(0)
+   pyrogue.streamTap(base.pgpVc0, gui.eventReader) 
+   pyrogue.streamTap(base.pgpVc2, gui.eventReaderScope)# PseudoScope
+   pyrogue.streamTap(base.pgpVc3, gui.eventReaderMonitoring) # Slow Monitoring
+
 
 print("Starting GUI...\n");
 
