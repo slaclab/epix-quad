@@ -147,12 +147,13 @@ begin
    ------------------------------------------------
    -- Buffer Reader UUT
    ------------------------------------------------
-   U_EpixQuad: entity work.EpixQuad
+   U_EpixQuad: entity work.EpixQuadCore
    generic map (
       TPD_G             => TPD_C,
       BUILD_INFO_G      => toSlv (BUILD_INFO_TB_C),
       SIMULATION_G      => true,
-      SIM_SPEEDUP_G     => true
+      SIM_SPEEDUP_G     => true,
+      COM_TYPE_G        => "PGPv2b"
    )
    port map (
       -- DRR Memory interface ports

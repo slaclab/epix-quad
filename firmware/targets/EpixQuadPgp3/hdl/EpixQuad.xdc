@@ -26,15 +26,18 @@ create_clock -name adc7DClk -period 2.850 [get_ports {adcDClkP[7]}]
 create_clock -name adc8DClk -period 2.850 [get_ports {adcDClkP[8]}]
 create_clock -name adc9DClk -period 2.850 [get_ports {adcDClkP[9]}]
 
-create_generated_clock -name pgpClk    [get_pins {U_CORE/U_PGP/G_PGPv2b.U_PGP/U_PLL0/PllGen.U_Pll/CLKOUT0}]
-create_generated_clock -name sysClk    [get_pins {U_CORE/U_PGP/G_PGPv2b.U_PGP/U_PLL1/MmcmGen.U_Mmcm/CLKOUT0}]
+create_clock -name pgp3PhyRxClk0 -period 5.280 [get_pins {U_CORE/U_PGP/G_PGPv3.U_PGP/G_PGP.U_PGP/U_Pgp3GthUsIpWrapper_1/GEN_6G.U_Pgp3GthUsIp/inst/gen_gtwizard_gthe3_top.Pgp3GthUsIp_gtwizard_gthe3_inst/gen_gtwizard_gthe3.gen_channel_container[2].gen_enabled_channel.gthe3_channel_wrapper_inst/channel_inst/gthe3_channel_gen.gen_gthe3_channel_inst[0].GTHE3_CHANNEL_PRIM_INST/RXOUTCLK}]
+create_clock -name pgp3PhyTxClk0 -period 5.280 [get_pins {U_CORE/U_PGP/G_PGPv3.U_PGP/G_PGP.U_PGP/U_Pgp3GthUsIpWrapper_1/GEN_6G.U_Pgp3GthUsIp/inst/gen_gtwizard_gthe3_top.Pgp3GthUsIp_gtwizard_gthe3_inst/gen_gtwizard_gthe3.gen_channel_container[2].gen_enabled_channel.gthe3_channel_wrapper_inst/channel_inst/gthe3_channel_gen.gen_gthe3_channel_inst[0].GTHE3_CHANNEL_PRIM_INST/TXOUTCLK}]
+
+set_clock_groups -asynchronous -group [get_clocks -include_generated_clocks {pgp3PhyRxClk0}] -group [get_clocks -include_generated_clocks {pgp3PhyTxClk0}] -group [get_clocks -include_generated_clocks {pgpClkP}]
+
+create_generated_clock -name sysClk    [get_pins {U_CORE/U_PGP/G_PGPv3.U_PGP/U_PLL1/MmcmGen.U_Mmcm/CLKOUT0}]
 create_generated_clock -name ddrIntClk0 [get_pins {U_CORE/U_SystemCore/U_DDR/U_MigCore/inst/u_ddr4_infrastructure/gen_mmcme3.u_mmcme_adv_inst/CLKOUT0}]
 create_generated_clock -name ddrIntClk1 [get_pins {U_CORE/U_SystemCore/U_DDR/U_MigCore/inst/u_ddr4_infrastructure/gen_mmcme3.u_mmcme_adv_inst/CLKOUT6}]
 
 set_clock_groups -asynchronous \
    -group [get_clocks -include_generated_clocks {pgpClkP}] \
    -group [get_clocks -include_generated_clocks {ddrClkP}] \
-   -group [get_clocks -include_generated_clocks {pgpClk}] \
    -group [get_clocks -include_generated_clocks {sysClk}] \
    -group [get_clocks -include_generated_clocks {adc0DClk}] \
    -group [get_clocks -include_generated_clocks {adc1DClk}] \

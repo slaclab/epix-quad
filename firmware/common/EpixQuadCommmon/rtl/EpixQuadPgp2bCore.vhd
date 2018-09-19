@@ -1,10 +1,10 @@
 -------------------------------------------------------------------------------
--- File       : EpixQuadPgpCore.vhd
+-- File       : EpixQuadPgp2bCore.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2018-02-04
 -- Last update: 2018-10-05
 -------------------------------------------------------------------------------
--- Description: EPIX EpixQuadPgpCore Target's Top Level
+-- Description: EPIX EpixQuadPgp2bCore Target's Top Level
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
@@ -28,7 +28,7 @@ use work.Pgp2bPkg.all;
 library unisim;
 use unisim.vcomponents.all;
 
-entity EpixQuadPgpCore is
+entity EpixQuadPgp2bCore is
    generic (
       TPD_G             : time            := 1 ns;
       SIMULATION_G      : boolean         := false;
@@ -66,9 +66,9 @@ entity EpixQuadPgpCore is
       pgpRxN            : in  sl;
       pgpTxP            : out sl;
       pgpTxN            : out sl);
-end EpixQuadPgpCore;
+end EpixQuadPgp2bCore;
 
-architecture top_level of EpixQuadPgpCore is
+architecture top_level of EpixQuadPgp2bCore is
 
    signal txMasters : AxiStreamMasterArray(3 downto 0);
    signal txSlaves  : AxiStreamSlaveArray(3 downto 0);

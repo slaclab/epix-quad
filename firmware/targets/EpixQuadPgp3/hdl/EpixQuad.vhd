@@ -122,7 +122,8 @@ begin
          BUILD_INFO_G      => BUILD_INFO_G,
          SIMULATION_G      => SIMULATION_G,
          SIM_SPEEDUP_G     => SIM_SPEEDUP_G,
-         COM_TYPE_G        => "PGPv2b"
+         COM_TYPE_G        => "PGPv3",
+         RATE_G            => "6.25Gbps"
       )
       port map (
          -- DRR Memory interface ports
