@@ -31,11 +31,14 @@ static XIntc    intc;
 static XTmrCtr  tmrctr;
 
 
+
 typedef struct timerStruct {
    uint32_t counter;
    uint32_t flag;
 } timerStructType;
 
+
+volatile timerStructType timer = {0, 0};
 
 void adcStartupIntHandler(void * data) {
    uint32_t * request = (uint32_t *)data;
@@ -77,25 +80,26 @@ void waitTimer(u32 timerInterval) {
 int adcStartup() {
    
    int i, j;
+   uint32_t regIn = 0;
    
    // Enable DCDCs
    Xil_Out32(SYSTEM_DCDCEN, 0xf);
-   waitTimer(TIMER_500MS_INTEVAL)
+   waitTimer(TIMER_500MS_INTEVAL);
    
    // Reset ADCs
    for (i=0; i<10; i++) {
       Xil_Out32(adcPdwnModeAddr[i], 0x3);
    }
-   waitTimer(TIMER_500MS_INTEVAL)
+   waitTimer(TIMER_500MS_INTEVAL);
    for (i=0; i<10; i++) {
       Xil_Out32(adcPdwnModeAddr[i], 0x0);
    }
-   waitTimer(TIMER_500MS_INTEVAL)
+   waitTimer(TIMER_500MS_INTEVAL);
    
    // Reset FPGA deserializers
    Xil_Out32(SYSTEM_ADCCLKRST, 0x1);
    Xil_Out32(SYSTEM_ADCCLKRST, 0x0);
-   waitTimer(TIMER_500MS_INTEVAL)
+   waitTimer(TIMER_500MS_INTEVAL);
    
    // Apply pre-trained delays
    for (i=0; i<10; i++) {
@@ -103,17 +107,23 @@ int adcStartup() {
          Xil_Out32(adcDelayAddr[i][j], (512+adcDelays[i][j]));
       }
    }
+   
+   // Enable offset binary output
+   for (i=0; i<10; i++) {
+      regIn = Xil_In32(adcOutModeAddr[i]);
+      regIn &= ~(0x1);
+      Xil_Out32(adcOutModeAddr[i], regIn);
+   }
 }
 
 int main() { 
    
    volatile uint32_t adcStartupInt = 0;
    volatile uint32_t adcTestInt = 0;
-   volatile timerStructType timer = {0, 0};
    
    XTmrCtr_Initialize(&tmrctr,0);   
    
-   XIntc_Initialize(&intc,XPAR_U_CORE_U_CPU_U_MICROBLAZE_AXI_INTC_0_DEVICE_ID);
+   XIntc_Initialize(&intc,XPAR_U_CPU_U_MICROBLAZE_AXI_INTC_0_DEVICE_ID);
    microblaze_enable_interrupts();
    XIntc_Connect(&intc,0,(XInterruptHandler)adcStartupIntHandler,(void*)&adcStartupInt);
    XIntc_Connect(&intc,1,(XInterruptHandler)adcTestIntHandler,(void*)&adcTestInt);
@@ -126,9 +136,14 @@ int main() {
    XTmrCtr_SetHandler(&tmrctr,timerIntHandler,(void*)&timer);
    XTmrCtr_SetOptions(&tmrctr,0,XTC_DOWN_COUNT_OPTION | XTC_INT_MODE_OPTION );
    
+   // wait for power to settle
+   waitTimer(TIMER_1SEC_INTEVAL);
+   // do the initial ADC startup
+   adcStartup();
    
    while (1) {
       
+      // redo ADC startup when power is toggled or requested by user
       // poll ADC startup interrupt flag
       if (adcStartupInt) {
          // clear interrupt flag
