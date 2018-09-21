@@ -138,7 +138,7 @@ architecture RTL of AcqCore is
    
    signal acqStartEdge       : std_logic             := '0';
    
-   constant ROCLK_COUNT_C : natural := 4 * BANK_COLS_G * BANK_ROWS_G * 16 * 4;   -- roClk is divided by 4, there are 16 banks and 4 super rows are read simultaneously
+   constant ROCLK_COUNT_C : natural := 4 * BANK_COLS_G * BANK_ROWS_G;   -- roClk is divided by 4, (data is read out from 64 banks simultaneously)
    
 begin
    
@@ -286,11 +286,11 @@ begin
             if r.stateCnt >= r.asicRoClkHalfT-1 or r.asicRoClkHalfT = 0 then
                v.stateCnt  := (others=>'0');
                v.roClkCnt  := r.roClkCnt + 1;
+               if r.roClkCnt(1 downto 0) = "11" then
+                  v.acqSmplEn := '1';
+               end if;
                if r.roClkCnt < ROCLK_COUNT_C-1 then
                   v.acqState  := NEXT_CELL_S;
-                  if r.roClkCnt(1 downto 0) = "11" then
-                     v.acqSmplEn := '1';
-                  end if;
                else
                   v.roClkCnt := (others=>'0');
                   -- roClkTail is equal to roClk delay needed to output

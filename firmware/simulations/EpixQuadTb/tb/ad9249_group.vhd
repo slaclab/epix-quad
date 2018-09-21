@@ -25,14 +25,18 @@ use ieee.std_logic_arith.all;
 use ieee.math_real.all;
 
 use work.StdRtlPkg.all;
+use work.ad9249_pkg.all;
 
 entity ad9249_group is 
    generic (
-      NO_INPUT_G           : BooleanArray(7 downto 0) := (others=>false);
-      NO_INPUT_BASELINE_G  : RealArray(7 downto 0)    := (others=>0.5);
-      NO_INPUT_NOISE_G     : RealArray(7 downto 0)    := (others=>10.0e-3);
-      USE_PATTERN_G        : BooleanArray(7 downto 0) := (others=>false);
+      OUTPUT_TYPE_G        : OutTypeArray(7 downto 0) := (others=>AIN_OUT);
+      NOISE_BASELINE_G     : RealArray(7 downto 0)    := (others=>0.5);
+      NOISE_VPP_G          : RealArray(7 downto 0)    := (others=>10.0e-3);
       PATTERN_G            : Slv16Array(7 downto 0)   := (others=>x"2A5A");
+      COUNT_UP             : BooleanArray(7 downto 0) := (others=>true);
+      COUNT_MIN_G          : Slv16Array(7 downto 0)   := (others=>x"0000");
+      COUNT_MAX_G          : Slv16Array(7 downto 0)   := (others=>x"3FFF");
+      COUNT_MASK_G         : Slv16Array(7 downto 0)   := (others=>x"0000");
       INDEX_G              : natural                  := 0
    );
    port (
@@ -61,12 +65,15 @@ begin
    G_AdcModel : for i in 0 to 7 generate 
       U_ADC : entity work.ad9249_model
          generic map (
-            NO_INPUT_G           => NO_INPUT_G(i),
-            NO_INPUT_BASELINE_G  => NO_INPUT_BASELINE_G(i),
-            NO_INPUT_NOISE_G     => NO_INPUT_NOISE_G(i),
-            USE_PATTERN_G        => USE_PATTERN_G(i),
-            PATTERN_G            => PATTERN_G(i),
-            INDEX_G              => INDEX_G*8+i
+            OUTPUT_TYPE_G     => OUTPUT_TYPE_G(i),
+            NOISE_BASELINE_G  => NOISE_BASELINE_G(i),
+            NOISE_VPP_G       => NOISE_VPP_G(i),
+            PATTERN_G         => PATTERN_G(i),
+            COUNT_UP          => COUNT_UP(i),
+            COUNT_MIN_G       => COUNT_MIN_G(i),
+            COUNT_MAX_G       => COUNT_MAX_G(i),
+            COUNT_MASK_G      => COUNT_MASK_G(i),
+            INDEX_G           => INDEX_G*8+i
          )
          port map (
             aInP     => aInP(i),

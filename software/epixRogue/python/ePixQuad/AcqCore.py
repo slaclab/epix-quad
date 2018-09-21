@@ -135,7 +135,7 @@ class AcqCore(pr.Device):
          bitSize    = 32, 
          bitOffset  = 0,  
          base       = pr.UInt, 
-         mode       = 'RW',
+         mode       = 'RO',
       ))
       
       self.add(pr.RemoteVariable(

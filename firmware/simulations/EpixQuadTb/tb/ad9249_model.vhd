@@ -25,14 +25,18 @@ use ieee.std_logic_arith.all;
 use ieee.math_real.all;
 
 use work.StdRtlPkg.all;
+use work.ad9249_pkg.all;
 
 entity ad9249_model is 
    generic (
-      NO_INPUT_G           : boolean            := false;
-      NO_INPUT_BASELINE_G  : real               := 0.5;
-      NO_INPUT_NOISE_G     : real               := 10.0e-3;
-      USE_PATTERN_G        : boolean            := false;
+      OUTPUT_TYPE_G        : OutType            := AIN_OUT;   -- AIN_OUT, NOISE_OUT, PATTERN_OUT, COUNT_OUT
+      NOISE_BASELINE_G     : real               := 0.5;
+      NOISE_VPP_G          : real               := 10.0e-3;
       PATTERN_G            : slv(15 downto 0)   := x"2A5A";
+      COUNT_UP             : boolean            := true;
+      COUNT_MIN_G          : slv(15 downto 0)   := x"0000";
+      COUNT_MAX_G          : slv(15 downto 0)   := x"3FFF";
+      COUNT_MASK_G         : slv(15 downto 0)   := x"0000";
       INDEX_G              : natural            := 0
    );
    port (
@@ -77,7 +81,7 @@ begin
       variable seed1          : positive := 2342*(INDEX_G+1);
       variable seed2          : positive := 5232*(INDEX_G+1);
       variable aInNoise       : real := 0.0;
-      
+      variable count          : slv(13 downto 0) := (others=>'0');
    begin
       
       wait until pipeEn = '1';
@@ -87,9 +91,29 @@ begin
          -- wait until rising edge
          wait until rising_edge(fco);
          
-         if USE_PATTERN_G = false then
-            
-            if NO_INPUT_G = false then
+         case OUTPUT_TYPE_G is
+         
+            when PATTERN_OUT =>
+               digVal := PATTERN_G(13 downto 0);
+               
+            when COUNT_OUT =>
+               if COUNT_UP then
+                  if count < COUNT_MAX_G(13 downto 0) then
+                     count := count + 1;
+                  else
+                     count := COUNT_MIN_G(13 downto 0);
+                  end if;
+               else
+                  if count > COUNT_MIN_G(13 downto 0) then
+                     count := count - 1;
+                  else
+                     count := COUNT_MAX_G(13 downto 0);
+                  end if;
+               end if;
+               
+               digVal := count or COUNT_MASK_G(13 downto 0);
+               
+            when AIN_OUT =>
                -- store difference (-1.0 to 1.0)
                aIn := aInP - aInN;
                if aIn > 1.0 then
@@ -101,13 +125,16 @@ begin
                -- shift input to positive (0.0 to 2.0)
                aIn := aIn + 1.0;
                
-            else
+               -- digitize (offset binary mode)
+               digVal := toSlv(integer(aIn*digMax/2.0), 14);
+               
+            when NOISE_OUT =>
                -- random input noise 0.0 to 1.0  
                uniform(seed1, seed2, aInNoise);
                -- scale the noise
-               aInNoise := aInNoise * NO_INPUT_NOISE_G - NO_INPUT_NOISE_G/2.0;
+               aInNoise := aInNoise * NOISE_VPP_G - NOISE_VPP_G/2.0;
                -- set input to baseline + noise
-               aIn := aInNoise + NO_INPUT_BASELINE_G;
+               aIn := aInNoise + NOISE_BASELINE_G;
                -- limit to the Vpp span
                if aIn > 2.0 then
                   aIn := 2.0;
@@ -115,25 +142,20 @@ begin
                   aIn := 0.0;
                end if;
                
-            end if;
+               -- digitize (offset binary mode)
+               digVal := toSlv(integer(aIn*digMax/2.0), 14);
+               
+            when others =>
+               digVal := (others=>'0');
             
-            -- digitize (offset binary mode)
-            digVal := toSlv(integer(aIn*digMax/2.0), 14);
-            
-         else
-         
-            digVal := PATTERN_G(13 downto 0);
-            
-         end if;
-         
-         
+         end case;
          
          -- shift into pipeline
          digPipe <= digPipe(SAMPLE_PIPELINE_C-1 downto 0) & digVal;
          
          -- wait until falling edge 
          wait until falling_edge(fco);
-      
+         
       end loop;
       
    end process;

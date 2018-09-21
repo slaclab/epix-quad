@@ -61,6 +61,9 @@ entity EpixQuadPgpTop is
       sAxilWriteSlave   : out AxiLiteWriteSlaveType;
       -- Software trigger interface
       swTrigOut         : out sl;
+      -- Fiber trigger interface
+      opCode            : out slv(7 downto 0);
+      opCodeEn          : out sl;
       -- PGP Ports
       pgpClkP           : in  sl;
       pgpClkN           : in  sl;
@@ -115,6 +118,9 @@ begin
             sAxilWriteSlave   => sAxilWriteSlave ,
             -- Software trigger interface
             swTrigOut         => swTrigOut,
+            -- Fiber trigger interface
+            opCode            => opCode,
+            opCodeEn          => opCodeEn,
             -- PGP Ports
             pgpClkP           => pgpClkP,
             pgpClkN           => pgpClkN,
@@ -159,6 +165,9 @@ begin
             sAxilWriteSlave   => sAxilWriteSlave ,
             -- Software trigger interface
             swTrigOut         => swTrigOut,
+            -- Fiber trigger interface
+            opCode            => opCode,
+            opCodeEn          => opCodeEn,
             -- PGP Ports
             pgpClkP           => pgpClkP,
             pgpClkN           => pgpClkN,

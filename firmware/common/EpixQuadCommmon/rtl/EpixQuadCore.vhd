@@ -192,6 +192,9 @@ architecture rtl of EpixQuadCore is
    signal iAdcReqStart  : sl;
    signal adcReqTest    : sl;
    
+   signal opCode        : slv(7 downto 0);
+   signal opCodeEn      : sl;
+   
    signal iDcdcEn       : slv(3 downto 0);
    signal mbIrq         : slv(7 downto 0) := (others => '0'); 
    
@@ -234,6 +237,9 @@ begin
          sAxilWriteSlave   => axilWriteSlaves(PGP_INDEX_C),
          -- Software trigger interface
          swTrigOut         => swTrigger,
+         -- Fiber trigger interface
+         opCode            => opCode,
+         opCodeEn          => opCodeEn,
          -- PGP Ports
          pgpClkP           => pgpClkP,
          pgpClkN           => pgpClkN,
@@ -375,6 +381,10 @@ begin
          asicDmSn             => asicDmSn,
          -- ASIC Global Reset
          asicGr               => iAsicGr,
+         -- trigger inputs
+         trigPgp              => opCodeEn,
+         trigTtl              => '0',
+         trigCmd              => swTrigger,
          acqStart             => acqStart
       );
    
@@ -411,7 +421,7 @@ begin
          -- ADC stream input
          adcStream            => adcStream,
          -- Opcode to insert into frame
-         opCode               => x"00",      -- REPLACE WITH EVR INFO ---------------------------------------------------------
+         opCode               => opCode,
          -- ASIC ACQ signals
          acqStart             => acqStart,
          asicAcq              => iAsicAcq,

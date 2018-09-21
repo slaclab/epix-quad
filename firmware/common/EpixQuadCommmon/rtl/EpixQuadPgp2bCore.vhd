@@ -59,6 +59,9 @@ entity EpixQuadPgp2bCore is
       sAxilWriteSlave   : out AxiLiteWriteSlaveType;
       -- Software trigger interface
       swTrigOut         : out sl;
+      -- Fiber trigger interface
+      opCode            : out slv(7 downto 0);
+      opCodeEn          : out sl;
       -- PGP Ports
       pgpClkP           : in  sl;
       pgpClkN           : in  sl;
@@ -91,6 +94,9 @@ architecture top_level of EpixQuadPgp2bCore is
    signal pgpReset      : sl;
    signal iSysClk       : sl;
    signal iSysRst       : sl;
+   
+   signal iOpCode       : slv(7 downto 0);
+   signal iOpCodeEn     : sl;
 
 begin
    
@@ -320,5 +326,38 @@ begin
          axilReadSlave   => sAxilReadSlave,
          axilWriteMaster => sAxilWriteMaster,
          axilWriteSlave  => sAxilWriteSlave);
+   
+   -----------------------------------------
+   -- PGP Sideband Triggers:
+   -- Any op code is a trigger, actual op
+   -- code is the fiducial.
+   -----------------------------------------
+   U_PgpSideBandTrigger : entity work.SynchronizerFifo
+      generic map (
+         TPD_G        => TPD_G,
+         DATA_WIDTH_G => 8
+      )
+      port map (
+         rst    => pgpRst,
+         wr_clk => pgpClk,
+         wr_en  => pgpRxOut.opCodeEn,
+         din    => pgpRxOut.opCode,
+         rd_clk => iSysClk,
+         rd_en  => '1',
+         valid  => iOpCodeEn,
+         dout   => iOpCode
+      );
+   
+   -- register opCode
+   process(iSysClk) begin
+      if rising_edge(iSysClk) then
+         if iSysRst = '1' then
+            opCode <= (others => '0') after TPD_G;
+         elsif iOpCodeEn = '1' then
+            opCode <= iOpCode after TPD_G;
+         end if;
+      end if;
+   end process;
+   opCodeEn <= iOpCodeEn;
 
 end top_level;
