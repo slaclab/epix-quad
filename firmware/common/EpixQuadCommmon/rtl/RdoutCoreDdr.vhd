@@ -51,7 +51,6 @@ entity RdoutCoreDdr is
       -- Opcode to insert into frame
       opCode               : in  slv(7 downto 0);
       -- Run control
-      acqStart             : in  sl;
       acqBusy              : in  sl;
       acqCount             : in  slv(31 downto 0);
       acqSmplEn            : in  sl;
@@ -187,7 +186,7 @@ architecture rtl of RdoutCoreDdr is
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
    
-   signal acqStartEdge     : std_logic             := '0';
+   signal acqBusyEdge     : std_logic             := '0';
    signal txSlave          : AxiStreamSlaveType;
    
    signal memWrEn          : sl;
@@ -217,25 +216,25 @@ begin
       port map (
          clk        => sysClk,
          rst        => sysRst,
-         dataIn     => acqStart,
-         risingEdge => acqStartEdge
+         dataIn     => acqBusy,
+         risingEdge => acqBusyEdge
       );
    
    comb : process (sysRst, axiReadSlave, axiWriteSlaves, sAxilReadMaster, sAxilWriteMaster, txSlave, r,
-      buffersRdy, acqStartEdge, acqBusy, acqCount, acqSmplEn, memRdData, opCode) is
+      buffersRdy, acqBusyEdge, acqBusy, acqCount, acqSmplEn, memRdData, opCode) is
       variable v      : RegType;
       variable regCon : AxiLiteEndPointType;
    begin
       v := r;
       
-      if r.readPend = "0000" and acqStartEdge = '0' then
+      if r.readPend = "0000" and acqBusyEdge = '0' then
          v.rdoutEn := r.rdoutEnReg;
       end if;
       
       -- count readouts
       if r.seqCountReset = '1' then
          v.seqCount := (others=>'0');
-      elsif acqStartEdge = '1' and r.rdoutEn = '1' and buffersRdy = '1' then
+      elsif acqBusyEdge = '1' and r.rdoutEn = '1' and buffersRdy = '1' then
          v.seqCount := r.seqCount + 1;
       end if;
       
@@ -333,7 +332,7 @@ begin
                v.rowCount(i)     := 0;
                v.colCount(i)     := 0;
                v.readPend(i)     := '0';
-               if acqStartEdge = '1' and r.rdoutEn = '1' and buffersRdy = '1' then
+               if acqBusyEdge = '1' and r.rdoutEn = '1' and buffersRdy = '1' then
                   v.readPend(i)  := '1';
                   v.wrState(i)   := ADDR_S;
                end if;

@@ -52,7 +52,6 @@ entity RdoutCoreTop is
       -- Opcode to insert into frame
       opCode               : in  slv(7 downto 0);
       -- Run control
-      acqStart             : in  sl;
       acqBusy              : in  sl;
       acqCount             : in  slv(31 downto 0);
       acqSmplEn            : in  sl;
@@ -92,13 +91,13 @@ begin
             -- Opcode to insert into frame
             opCode               => opCode,
             -- Run control
-            acqStart             => acqStart,
             acqBusy              => acqBusy,
             acqCount             => acqCount,
             acqSmplEn            => acqSmplEn,
             readDone             => readDone,
             -- ADC stream input
             adcStream            => adcStream,
+            tpsStream            => tpsStream,
             -- Frame stream output (axisClk domain)
             axisClk              => axisClk   ,
             axisRst              => axisRst   ,
@@ -135,13 +134,13 @@ begin
             -- Opcode to insert into frame
             opCode               => opCode,
             -- Run control
-            acqStart             => acqStart,
             acqBusy              => acqBusy,
             acqCount             => acqCount,
             acqSmplEn            => acqSmplEn,
             readDone             => readDone,
             -- ADC stream input
             adcStream            => adcStream,
+            tpsStream            => tpsStream,
             -- Frame stream output (axisClk domain)
             axisClk              => axisClk   ,
             axisRst              => axisRst   ,

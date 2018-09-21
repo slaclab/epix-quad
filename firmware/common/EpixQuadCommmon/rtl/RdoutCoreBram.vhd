@@ -44,7 +44,6 @@ entity RdoutCoreBram is
       -- Opcode to insert into frame
       opCode               : in  slv(7 downto 0);
       -- Run control
-      acqStart             : in  sl;
       acqBusy              : in  sl;
       acqCount             : in  slv(31 downto 0);
       acqSmplEn            : in  sl;
@@ -70,7 +69,7 @@ architecture rtl of RdoutCoreBram is
    
    -- Buffer settings
    constant BUFF_BITS_C    : integer range 1 to 5 := 3;
-   constant BUFF_MAX_C     : slv(BUFF_BITS_C-1 downto 0) := (others=>'1');
+   constant BUFF_MAX_C     : slv(2**BUFF_BITS_C-1 downto 0) := (others=>'1');
    constant TIMEOUT_C      : integer := 10000;  -- 100us
    
    -- Stream settings
@@ -153,7 +152,7 @@ architecture rtl of RdoutCoreBram is
    signal r                : RegType := REG_INIT_C;
    signal rin              : RegType;
    
-   signal acqStartEdge     : std_logic             := '0';
+   signal acqBusyEdge     : std_logic             := '0';
    signal txSlave          : AxiStreamSlaveType;
    
    signal memWrEn          : sl;
@@ -180,25 +179,25 @@ begin
       port map (
          clk        => sysClk,
          rst        => sysRst,
-         dataIn     => acqStart,
-         risingEdge => acqStartEdge
+         dataIn     => acqBusy,
+         risingEdge => acqBusyEdge
       );
    
    comb : process (sysRst, sAxilReadMaster, sAxilWriteMaster, txSlave, r,
-      acqStartEdge, acqBusy, acqCount, acqSmplEn, memRdData, opCode, adcStream, tpsStream) is
+      acqBusyEdge, acqBusy, acqCount, acqSmplEn, memRdData, opCode, adcStream, tpsStream) is
       variable v      : RegType;
       variable regCon : AxiLiteEndPointType;
    begin
       v := r;
       
-      if r.readPend = '0' and acqStartEdge = '0' then
+      if r.readPend = '0' and acqBusyEdge = '0' then
          v.rdoutEn := r.rdoutEnReg;
       end if;
       
       -- count readouts
       if r.seqCountReset = '1' then
          v.seqCount := (others=>'0');
-      elsif acqStartEdge = '1' and r.rdoutEn = '1' then
+      elsif acqBusyEdge = '1' and r.rdoutEn = '1' then
          v.seqCount := r.seqCount + 1;
       end if;
       
@@ -261,6 +260,7 @@ begin
             for i in 3 downto 0 loop
                if r.lineBufValid(i) = BUFF_MAX_C then
                   v.lineBufErr(i) := r.lineBufErr(i) + 1;
+                  v.error := '1';
                end if;
             end loop;
             
@@ -302,7 +302,7 @@ begin
             v.rowCount     := (others=>'0');
             v.readPend     := '0';
             v.error        := '0';
-            if acqStartEdge = '1' and r.rdoutEn = '1' then
+            if acqBusyEdge = '1' and r.rdoutEn = '1' then
                v.readPend  := '1';
                v.rdState   := HDR_S;
             end if;

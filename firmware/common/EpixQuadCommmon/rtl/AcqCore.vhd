@@ -166,7 +166,7 @@ begin
       -- count acquisitions
       if r.acqCountReset = '1' then
          v.acqCount := (others=>'0');
-      elsif acqStartEdge = '1' then
+      elsif acqStartEdge = '1' and r.acqBusy = '0' then
          v.acqCount := r.acqCount + 1;
       end if;
       

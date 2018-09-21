@@ -189,7 +189,6 @@ begin
       -- Opcode to insert into frame
       opCode               => opCode,
       -- Run control
-      acqStart             => acqStart,
       acqBusy              => acqBusy,
       acqCount             => acqCount,
       acqSmplEn            => acqSmplEn,
