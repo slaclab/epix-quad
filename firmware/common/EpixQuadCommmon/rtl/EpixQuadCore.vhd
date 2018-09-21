@@ -383,7 +383,7 @@ begin
    --------------------------------------------------------
    -- ASIC Acquisition Core
    --------------------------------------------------------
-   U_AsicCore : entity work.AsicCore
+   U_AsicCore : entity work.AsicCoreTop
       generic map (
          TPD_G             => TPD_G,
          AXI_BASE_ADDR_G   => AXI_CONFIG_C(ASIC_INDEX_C).baseAddr

@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
--- File       : RdoutCore.vhd
+-- File       : RdoutCoreDdr.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2017-07-07
 -- Last update: 2017-07-14
@@ -26,7 +26,7 @@ use work.AxiStreamPkg.all;
 use work.AxiPkg.all;
 use work.SsiPkg.all;
 
-entity RdoutCore is
+entity RdoutCoreDdr is
    generic (
       TPD_G             : time            := 1 ns;
       BANK_COLS_G       : natural         := 48;
@@ -48,11 +48,13 @@ entity RdoutCore is
       axiReadMaster        : out AxiReadMasterType;
       axiReadSlave         : in  AxiReadSlaveType;
       buffersRdy           : in  sl;
+      -- Opcode to insert into frame
+      opCode               : in  slv(7 downto 0);
       -- Run control
       acqStart             : in  sl;
       acqBusy              : in  sl;
       acqCount             : in  slv(31 downto 0);
-      acqSample            : in  sl;
+      acqSmplEn            : in  sl;
       readDone             : out sl;
       -- ADC stream input
       adcStream            : in  AxiStreamMasterArray(63 downto 0);
@@ -62,9 +64,9 @@ entity RdoutCore is
       axisMaster           : out AxiStreamMasterType;
       axisSlave            : in  AxiStreamSlaveType
    );
-end RdoutCore;
+end RdoutCoreDdr;
 
-architecture rtl of RdoutCore is
+architecture rtl of RdoutCoreDdr is
    
    -- ASIC settings
    
@@ -131,7 +133,7 @@ architecture rtl of RdoutCore is
       seqCount             : slv(31 downto 0);
       seqCountReset        : sl;
       adcPipelineDly       : slv(6 downto 0);
-      acqSample            : slv(127 downto 0);
+      acqSmplEn            : slv(127 downto 0);
       readPend             : slv(3 downto 0);
       bankCount            : BankIntArray(3 downto 0);
       rowCount             : RowIntArray(3 downto 0);
@@ -159,7 +161,7 @@ architecture rtl of RdoutCore is
       seqCount             => (others=>'0'),
       seqCountReset        => '0',
       adcPipelineDly       => (others=>'0'),
-      acqSample            => (others=>'0'),
+      acqSmplEn            => (others=>'0'),
       readPend             => (others=>'0'),
       bankCount            => (others=>0),
       rowCount             => (others=>0),
@@ -219,7 +221,7 @@ begin
       );
    
    comb : process (sysRst, axiReadSlave, axiWriteSlaves, sAxilReadMaster, sAxilWriteMaster, txSlave, r,
-      buffersRdy, acqStartEdge, acqBusy, acqCount, acqSample, memRdData) is
+      buffersRdy, acqStartEdge, acqBusy, acqCount, acqSmplEn, memRdData, opCode) is
       variable v      : RegType;
       variable regCon : AxiLiteEndPointType;
    begin
@@ -265,10 +267,10 @@ begin
       if r.rdoutEn = '1' and buffersRdy = '1' then
          
          -- shift the sample strobe
-         v.acqSample := r.acqSample(126 downto 0) & acqSample;
+         v.acqSmplEn := r.acqSmplEn(126 downto 0) & acqSmplEn;
          
          -- line write pointer
-         if r.acqSample(conv_integer(r.adcPipelineDly)) = '1' then
+         if r.acqSmplEn(conv_integer(r.adcPipelineDly)) = '1' then
             if r.lineWrAddr = BANK_COLS_C then
                -- move to next line buffer
                v.lineWrAddr := (others=>'0');
@@ -286,7 +288,7 @@ begin
          -- check for line buffer overflow
          -- all 4 line FSMs should finish before writing again
          for i in 3 downto 0 loop
-            if r.lineBufValid(i)(conv_integer(r.lineWrBuff)) = '1' and r.acqSample(conv_integer(r.adcPipelineDly)) = '1' then
+            if r.lineBufValid(i)(conv_integer(r.lineWrBuff)) = '1' and r.acqSmplEn(conv_integer(r.adcPipelineDly)) = '1' then
                v.lineBufErr(i) := r.lineBufErr(i) + 1;
             end if;
          end loop;
@@ -450,7 +452,7 @@ begin
       sAxilWriteSlave   <= r.sAxilWriteSlave;
       sAxilReadSlave    <= r.sAxilReadSlave;
       
-      memWrEn           <= r.acqSample(conv_integer(r.adcPipelineDly));
+      memWrEn           <= r.acqSmplEn(conv_integer(r.adcPipelineDly));
       memWrAddr         <= r.lineWrBuff & r.lineWrAddr;
       
       readDone <= not (r.readPend(3) or r.readPend(2) or r.readPend(1) or r.readPend(0));

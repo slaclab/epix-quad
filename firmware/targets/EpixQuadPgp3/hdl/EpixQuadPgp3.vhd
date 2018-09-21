@@ -1,9 +1,9 @@
 -------------------------------------------------------------------------------
--- File       : EpixQuad.vhd
+-- File       : EpixQuadPgp3.vhd
 -- Created    : 2017-06-09
 -- Last update: 2017-10-13
 -------------------------------------------------------------------------------
--- Description: EpixQuad Target's Top Level
+-- Description: EpixQuadPgp3 Target's Top Level
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
@@ -27,7 +27,7 @@ use work.AxiStreamPkg.all;
 library unisim;
 use unisim.vcomponents.all;
 
-entity EpixQuad is
+entity EpixQuadPgp3 is
    generic (
       TPD_G             : time            := 1 ns;
       BUILD_INFO_G      : BuildInfoType;
@@ -110,9 +110,9 @@ entity EpixQuad is
       adcSdio           : inout slv(2 downto 0);
       adcCsb            : out   slv(9 downto 0)
    );
-end EpixQuad;
+end EpixQuadPgp3;
 
-architecture top_level of EpixQuad is
+architecture top_level of EpixQuadPgp3 is
    
 begin
 

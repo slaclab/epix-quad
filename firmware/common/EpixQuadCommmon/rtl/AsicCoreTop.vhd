@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
--- File       : AsicCore.vhd
+-- File       : AsicCoreTop.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2017-02-04
 -- Last update: 2017-10-10
@@ -29,7 +29,7 @@ use work.SsiPkg.all;
 library unisim;
 use unisim.vcomponents.all;
 
-entity AsicCore is
+entity AsicCoreTop is
    generic (
       TPD_G                : time             := 1 ns;
       AXI_BASE_ADDR_G      : slv(31 downto 0) := (others => '0')
@@ -68,9 +68,9 @@ entity AsicCore is
       scopeTxMaster        : out   AxiStreamMasterType;
       scopeTxSlave         : in    AxiStreamSlaveType
    );
-end AsicCore;
+end AsicCoreTop;
 
-architecture rtl of AsicCore is
+architecture rtl of AsicCoreTop is
    
    constant NUM_AXI_MASTERS_C    : natural := 3;
 
@@ -87,7 +87,7 @@ architecture rtl of AsicCore is
    
    signal acqBusy          : sl;
    signal acqCount         : slv(31 downto 0);
-   signal acqSample        : sl;
+   signal acqSmplEn        : sl;
    signal readDone         : sl;
    
    signal iAsicAcq         : sl;
@@ -140,7 +140,7 @@ begin
       acqStart          => acqStart,
       acqBusy           => acqBusy,
       acqCount          => acqCount,
-      acqSample         => acqSample,
+      acqSmplEn         => acqSmplEn,
       readDone          => readDone,
       roClkTail         => toSlv(10, 8),
       -- ASIC Control Ports
@@ -158,7 +158,7 @@ begin
    asicPpmat   <=  iAsicPpmat;
    asicRoClk   <=  iAsicRoClk;
    
-   U_RdoutCore : entity work.RdoutCore
+   U_RdoutCore : entity work.RdoutCoreTop
    generic map (
       TPD_G             => TPD_G,
       BANK_COLS_G       => 48,
@@ -184,7 +184,7 @@ begin
       acqStart             => acqStart,
       acqBusy              => acqBusy,
       acqCount             => acqCount,
-      acqSample            => acqSample,
+      acqSmplEn            => acqSmplEn,
       readDone             => readDone,
       -- ADC stream input
       adcStream            => adcStream(63 downto 0),

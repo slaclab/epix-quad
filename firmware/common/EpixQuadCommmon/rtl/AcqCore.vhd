@@ -39,7 +39,7 @@ entity AcqCore is
       acqStart          : in    sl;
       acqBusy           : out   sl;
       acqCount          : out   slv(31 downto 0);
-      acqSample         : out   sl;
+      acqSmplEn         : out   sl;
       readDone          : in    sl;
       roClkTail         : in    slv(7 downto 0);
       -- ASIC Control Ports
@@ -93,7 +93,7 @@ architecture RTL of AcqCore is
       asicSync             : sl;
       asicPpmat            : sl;
       asicRoClk            : sl;
-      acqSample            : sl;
+      acqSmplEn            : sl;
       roClkCnt             : slv(31 downto 0);
       acqBusy              : sl;
       adcClk               : sl;
@@ -122,7 +122,7 @@ architecture RTL of AcqCore is
       asicSync             => '0',
       asicPpmat            => '0',
       asicRoClk            => '0',
-      acqSample            => '0',
+      acqSmplEn            => '0',
       roClkCnt             => (others=>'0'),
       acqBusy              => '0',
       adcClk               => '0',
@@ -204,7 +204,7 @@ begin
       v.asicSync  := '0';
       v.asicPpmat := '0';
       v.asicRoClk := '0';
-      v.acqSample := '0';
+      v.acqSmplEn := '0';
       
       -- sum all delay leading to ACQ pulse
       v.asicPreAcqTime := r.acqToAsicR0Delay + r.asicR0Width + r.asicR0ToAsicAcq;
@@ -286,7 +286,7 @@ begin
                if r.roClkCnt < r.asicRoClkCount-1 and r.asicRoClkCount /= 0 then
                   v.acqState  := NEXT_CELL_S;
                   if r.roClkCnt(1 downto 0) = "11" then
-                     v.acqSample := '1';
+                     v.acqSmplEn := '1';
                   end if;
                else
                   v.roClkCnt := (others=>'0');
@@ -364,7 +364,7 @@ begin
       acqBusy           <= r.acqBusy;
       adcClk            <= r.adcClk;
       acqCount          <= r.acqCount;
-      acqSample         <= r.acqSample;
+      acqSmplEn         <= r.acqSmplEn;
 
    end process comb;
    
