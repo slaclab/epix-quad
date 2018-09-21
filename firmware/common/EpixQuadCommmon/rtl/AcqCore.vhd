@@ -25,7 +25,10 @@ use work.AxiLitePkg.all;
 
 entity AcqCore is
    generic (
-      TPD_G             : time := 1 ns);
+      TPD_G             : time         := 1 ns;
+      BANK_COLS_G       : natural      := 48;
+      BANK_ROWS_G       : natural      := 178
+   );
    port (
       -- System Clock (100 MHz)
       sysClk            : in  sl;
@@ -85,7 +88,6 @@ architecture RTL of AcqCore is
       asicRoClkHalfT       : slv(31 downto 0);
       asicPreAcqTime       : slv(31 downto 0);
       asicPpmatToReadout   : slv(31 downto 0);
-      asicRoClkCount       : slv(31 downto 0);
       asicPinForce         : slv(4 downto 0);
       asicPinValue         : slv(4 downto 0);
       asicAcq              : sl;
@@ -107,14 +109,13 @@ architecture RTL of AcqCore is
       acqCount             => (others=>'0'),
       acqCountReset        => '0',
       acqToAsicR0Delay     => (others=>'0'),
-      asicR0Width          => (others=>'0'),
-      asicR0ToAsicAcq      => (others=>'0'),
-      asicAcqWidth         => (others=>'0'),
+      asicR0Width          => toSlv(100, 32),
+      asicR0ToAsicAcq      => toSlv(100, 32),
+      asicAcqWidth         => toSlv(100, 32),
       asicAcqLToPPmatL     => (others=>'0'),
-      asicRoClkHalfT       => (others=>'0'),
+      asicRoClkHalfT       => toSlv(3, 32),
       asicPreAcqTime       => (others=>'0'),
       asicPpmatToReadout   => (others=>'0'),
-      asicRoClkCount       => (others=>'0'),
       asicPinForce         => (others=>'0'),
       asicPinValue         => (others=>'0'),
       asicAcq              => '0',
@@ -136,6 +137,8 @@ architecture RTL of AcqCore is
    signal rin : RegType;
    
    signal acqStartEdge       : std_logic             := '0';
+   
+   constant ROCLK_COUNT_C : natural := 4 * BANK_COLS_G * BANK_ROWS_G * 16 * 4;   -- roClk is divided by 4, there are 16 banks and 4 super rows are read simultaneously
    
 begin
    
@@ -184,7 +187,7 @@ begin
       axiSlaveRegister (regCon, x"018", 0, v.asicAcqLToPPmatL  );
       axiSlaveRegister (regCon, x"01C", 0, v.asicPpmatToReadout);
       axiSlaveRegister (regCon, x"020", 0, v.asicRoClkHalfT    );
-      axiSlaveRegister (regCon, x"024", 0, v.asicRoClkCount    );
+      axiSlaveRegisterR(regCon, x"024", 0, toSlv(ROCLK_COUNT_C, 32));
       axiSlaveRegisterR(regCon, x"028", 0, r.asicPreAcqTime    );
       axiSlaveRegister (regCon, x"02C", 0, v.asicPinForce      );
       axiSlaveRegister (regCon, x"030", 0, v.asicPinValue      );
@@ -283,7 +286,7 @@ begin
             if r.stateCnt >= r.asicRoClkHalfT-1 or r.asicRoClkHalfT = 0 then
                v.stateCnt  := (others=>'0');
                v.roClkCnt  := r.roClkCnt + 1;
-               if r.roClkCnt < r.asicRoClkCount-1 and r.asicRoClkCount /= 0 then
+               if r.roClkCnt < ROCLK_COUNT_C-1 then
                   v.acqState  := NEXT_CELL_S;
                   if r.roClkCnt(1 downto 0) = "11" then
                      v.acqSmplEn := '1';

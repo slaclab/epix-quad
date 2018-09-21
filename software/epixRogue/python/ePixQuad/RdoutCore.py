@@ -88,15 +88,6 @@ class RdoutCore(pr.Device):
                  mode       = 'RO',
               ))
       
-      self.add(pr.RemoteVariable(
-         name       = 'BuffersReady',     
-         description= 'DDR Buffers Reay Flag',     
-         offset     = 0x00000020, 
-         bitSize    = 1, 
-         bitOffset  = 0,  
-         base       = pr.Bool, 
-         mode       = 'RO',
-      ))   
       
       #####################################
       # Create commands

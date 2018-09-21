@@ -69,7 +69,7 @@ architecture rtl of RdoutCoreBram is
    constant ROWS_BITS_C    : natural := log2(BANK_ROWS_G);
    
    -- Buffer settings
-   constant BUFF_BITS_C    : integer range 1 to 4 := 1;
+   constant BUFF_BITS_C    : integer range 1 to 5 := 3;
    constant BUFF_MAX_C     : slv(BUFF_BITS_C-1 downto 0) := (others=>'1');
    constant TIMEOUT_C      : integer := 10000;  -- 100us
    
@@ -112,6 +112,7 @@ architecture rtl of RdoutCoreBram is
       rowCount             : slv(ROWS_BITS_C-1 downto 0);      -- generic row count
       lineBufErr           : Slv32Array(3 downto 0);
       lineBufValid         : LineValidArray(3 downto 0);
+      memWrEn              : sl;
       lineWrAddr           : slv(COLS_BITS_C-1 downto 0);
       lineWrBuff           : slv(BUFF_BITS_C-1 downto 0);
       lineRdAddr           : slv(COLS_BITS_C-1 downto 0);
@@ -139,6 +140,7 @@ architecture rtl of RdoutCoreBram is
       rowCount             => (others=>'0'),
       lineBufErr           => (others=>(others=>'0')),
       lineBufValid         => (others=>(others=>'0')),
+      memWrEn              => '0',
       lineWrAddr           => (others=>'0'),
       lineWrBuff           => (others=>'0'),
       lineRdAddr           => (others=>'0'),
@@ -161,6 +163,10 @@ architecture rtl of RdoutCoreBram is
    signal memWrData        : Slv32Array(63 downto 0);
    
 begin
+   --r.rowCount(BUFF_BITS_C-1 downto 0)
+   assert ROWS_BITS_C >= BUFF_BITS_C
+      report "ROWS_BITS_C must be >= BUFF_BITS_C"
+      severity failure;
    
    assert BANK_COLS_G mod 2 = 0
       report "BANK_COLS_G must be even number"
@@ -235,7 +241,7 @@ begin
                v.adcDataDly(i) := adcStream(i).tData(13 downto 0);
             end loop;
             
-            if r.lineWrAddr = BANK_COLS_C then
+            if r.lineWrAddr = BANK_COLS_C and r.memWrEn = '1' then
                -- move to next buffer
                v.lineWrAddr := (others=>'0');
                v.lineWrBuff := r.lineWrBuff + 1;
@@ -243,10 +249,13 @@ begin
                for i in 3 downto 0 loop
                   v.lineBufValid(i)(conv_integer(r.lineWrBuff)) := '1';
                end loop;
-            else
-               -- move buffer write pointer
+            elsif r.memWrEn = '1' then
+               -- every 2 sample strobes move buffer write pointer
                v.lineWrAddr := r.lineWrAddr + 1;
             end if;
+            
+            -- increase write address every 2 sample strobes
+            v.memWrEn := not r.memWrEn;
             
             -- check for buffer overflow
             for i in 3 downto 0 loop
@@ -258,6 +267,7 @@ begin
          end if;
          
       else
+         v.memWrEn := '0';
          v.acqSmplEn    := (others=>'0');
          v.lineWrAddr   := (others=>'0');
          v.lineWrBuff   := (others=>'0');
@@ -364,6 +374,7 @@ begin
                   v.colCount     := 0;
                   v.bankCount    := 0;
                   v.sRowCount    := 0;
+                  v.lineBufValid(r.sRowCount)(conv_integer(r.rowCount(BUFF_BITS_C-1 downto 0))) := '0'; -- invalidate the buffer
                   v.rowCount     := r.rowCount + 1;
                   if LINE_REVERSE_G(r.sRowCount) = '0' then
                      v.lineRdAddr := (others=>'0');
@@ -376,6 +387,7 @@ begin
                   v.colCount     := 0;
                   v.bankCount    := 0;
                   v.sRowCount    := 0;
+                  v.lineBufValid(r.sRowCount)(conv_integer(r.rowCount(BUFF_BITS_C-1 downto 0))) := '0'; -- invalidate the buffer
                   v.rowCount     := (others=>'0');
                   if LINE_REVERSE_G(r.sRowCount) = '0' then
                      v.lineRdAddr := (others=>'0');
@@ -456,7 +468,7 @@ begin
       sAxilWriteSlave   <= r.sAxilWriteSlave;
       sAxilReadSlave    <= r.sAxilReadSlave;
       
-      if r.lineWrAddr(0) = '1' then
+      if r.memWrEn = '1' then
          memWrEn <= r.acqSmplEn(conv_integer(r.adcPipelineDly));
       else
          memWrEn <= '0';

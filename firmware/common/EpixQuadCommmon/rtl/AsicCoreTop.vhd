@@ -32,6 +32,8 @@ use unisim.vcomponents.all;
 entity AsicCoreTop is
    generic (
       TPD_G                : time             := 1 ns;
+      BANK_COLS_G          : natural          := 48;
+      BANK_ROWS_G          : natural          := 178;
       AXI_BASE_ADDR_G      : slv(31 downto 0) := (others => '0')
    );
    port (
@@ -51,6 +53,8 @@ entity AsicCoreTop is
       buffersRdy           : in    sl;
       -- ADC stream input
       adcStream            : in    AxiStreamMasterArray(79 downto 0);
+      -- Opcode to insert into frame
+      opCode               : in  slv(7 downto 0);
       -- ASIC ACQ signals
       acqStart             : in    sl;
       asicAcq              : out   sl;
@@ -125,7 +129,9 @@ begin
    
    U_AcqCore : entity work.AcqCore
    generic map (
-      TPD_G             => TPD_G
+      TPD_G             => TPD_G,
+      BANK_COLS_G       => BANK_COLS_G,
+      BANK_ROWS_G       => BANK_ROWS_G
    )
    port map (
       -- System Clock (100 MHz)
@@ -161,8 +167,8 @@ begin
    U_RdoutCore : entity work.RdoutCoreTop
    generic map (
       TPD_G             => TPD_G,
-      BANK_COLS_G       => 48,
-      BANK_ROWS_G       => 178,
+      BANK_COLS_G       => BANK_COLS_G,
+      BANK_ROWS_G       => BANK_ROWS_G,
       LINE_REVERSE_G    => "1010"
    )
    port map (
@@ -180,6 +186,8 @@ begin
       axiReadMaster        => axiReadMaster,
       axiReadSlave         => axiReadSlave,
       buffersRdy           => buffersRdy,
+      -- Opcode to insert into frame
+      opCode               => opCode,
       -- Run control
       acqStart             => acqStart,
       acqBusy              => acqBusy,
@@ -188,6 +196,7 @@ begin
       readDone             => readDone,
       -- ADC stream input
       adcStream            => adcStream(63 downto 0),
+      tpsStream            => adcStream(79 downto 64),
       -- Frame stream output (axisClk domain)
       axisClk              => sysClk,
       axisRst              => sysRst,

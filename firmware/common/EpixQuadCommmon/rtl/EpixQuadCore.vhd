@@ -115,7 +115,10 @@ entity EpixQuadCore is
 end EpixQuadCore;
 
 architecture rtl of EpixQuadCore is
-
+   
+   constant BANK_COLS_C          : natural      := ite(SIM_SPEEDUP_G, 24, 48);
+   constant BANK_ROWS_C          : natural      := ite(SIM_SPEEDUP_G, 48, 178);
+   
    constant NUM_AXI_MASTERS_C    : natural := 8;
 
    constant SYS_INDEX_C          : natural := 0;
@@ -386,6 +389,8 @@ begin
    U_AsicCore : entity work.AsicCoreTop
       generic map (
          TPD_G             => TPD_G,
+         BANK_COLS_G       => BANK_COLS_C,
+         BANK_ROWS_G       => BANK_ROWS_C,
          AXI_BASE_ADDR_G   => AXI_CONFIG_C(ASIC_INDEX_C).baseAddr
       )
       port map (
@@ -405,6 +410,8 @@ begin
          buffersRdy           => buffersRdy,
          -- ADC stream input
          adcStream            => adcStream,
+         -- Opcode to insert into frame
+         opCode               => x"00",      -- REPLACE WITH EVR INFO ---------------------------------------------------------
          -- ASIC ACQ signals
          acqStart             => acqStart,
          asicAcq              => iAsicAcq,

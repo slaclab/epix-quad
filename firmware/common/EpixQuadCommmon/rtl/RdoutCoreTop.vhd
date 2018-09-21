@@ -59,6 +59,7 @@ entity RdoutCoreTop is
       readDone             : out sl;
       -- ADC stream input
       adcStream            : in  AxiStreamMasterArray(63 downto 0);
+      tpsStream            : in  AxiStreamMasterArray(15 downto 0);
       -- Frame stream output (axisClk domain)
       axisClk              : in  sl;
       axisRst              : in  sl;

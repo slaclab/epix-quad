@@ -146,6 +146,7 @@ class Top(pr.Root):
                   name    = ('Ad9249Readout[%d]'%i),
                   memBase = memMap, 
                   offset  = (0x02000000+i*0x00100000), 
+                  enabled = False,
                   expand  = False,
                   fpga    = 'ultrascale',
             ))
@@ -154,6 +155,7 @@ class Top(pr.Root):
             name    = 'Ad9249Tester', 
             memBase = memMap, 
             offset  = 0x02D00000, 
+            enabled = False,
             expand  = False,
         ))
         
