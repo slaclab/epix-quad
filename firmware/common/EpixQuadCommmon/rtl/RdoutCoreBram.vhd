@@ -365,7 +365,7 @@ begin
                   v.bankCount    := 0;
                   v.sRowCount    := r.sRowCount + 1;
                   v.lineBufValid(r.sRowCount)(conv_integer(r.rowCount(BUFF_BITS_C-1 downto 0))) := '0'; -- invalidate the buffer
-                  if LINE_REVERSE_G(r.sRowCount) = '0' then
+                  if LINE_REVERSE_G(v.sRowCount) = '0' then
                      v.lineRdAddr := (others=>'0');
                   else
                      v.lineRdAddr := toSlv(BANK_COLS_C, COLS_BITS_C);
@@ -376,7 +376,7 @@ begin
                   v.sRowCount    := 0;
                   v.lineBufValid(r.sRowCount)(conv_integer(r.rowCount(BUFF_BITS_C-1 downto 0))) := '0'; -- invalidate the buffer
                   v.rowCount     := r.rowCount + 1;
-                  if LINE_REVERSE_G(r.sRowCount) = '0' then
+                  if LINE_REVERSE_G(v.sRowCount) = '0' then
                      v.lineRdAddr := (others=>'0');
                   else
                      v.lineRdAddr := toSlv(BANK_COLS_C, COLS_BITS_C);
@@ -389,11 +389,7 @@ begin
                   v.sRowCount    := 0;
                   v.lineBufValid(r.sRowCount)(conv_integer(r.rowCount(BUFF_BITS_C-1 downto 0))) := '0'; -- invalidate the buffer
                   v.rowCount     := (others=>'0');
-                  if LINE_REVERSE_G(r.sRowCount) = '0' then
-                     v.lineRdAddr := (others=>'0');
-                  else
-                     v.lineRdAddr := toSlv(BANK_COLS_C, COLS_BITS_C);
-                  end if;
+                  v.lineRdAddr   := (others=>'0');
                   v.rdState      := FOOTER_S;
                end if;
                
@@ -493,9 +489,9 @@ begin
    G_sRowBuf : for i in 3 downto 0 generate
       G_BankBuf : for j in 15 downto 0 generate
          
-         memWrData(i*j) <= 
-            "00" & adcStream(i*j).tData(13 downto 0) &
-            "00" & r.adcDataDly(i*j);
+         memWrData(i*16+j) <= 
+            "00" & adcStream(i*16+j).tData(13 downto 0) &
+            "00" & r.adcDataDly(i*16+j);
          
          U_BankBufRam: entity work.DualPortRam
          generic map (
@@ -509,7 +505,7 @@ begin
             wea     => memWrEn,
             rsta    => sysRst,
             addra   => memWrAddr,
-            dina    => memWrData(i*j),
+            dina    => memWrData(i*16+j),
             -- Port B
             clkb    => sysClk,
             rstb    => sysRst,
