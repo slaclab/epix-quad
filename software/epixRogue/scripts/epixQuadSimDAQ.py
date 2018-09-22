@@ -78,7 +78,7 @@ guiTop.resize(600, 800)
 
 # Viewer gui
 if args.viewer:
-   gui = vi.Window(cameraType = 'ePix10ka')
+   gui = vi.Window(cameraType = 'ePixQuadSim')
    gui.eventReader.frameIndex = 0
    #gui.eventReaderImage.VIEW_DATA_CHANNEL_ID = 0
    gui.setReadDelay(0)

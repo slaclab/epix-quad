@@ -37,14 +37,17 @@ import ePixViewer.imgProcessing as imgPr
 PRINT_VERBOSE = 0
 
 # define global constants
-NOCAMERA   = 0
-EPIX100A   = 1
-EPIX100P   = 2
-TIXEL48X48 = 3
-EPIX10KA   = 4
-CPIX2      = 5
-EPIXM32    = 6
-HRADC32x32 = 7
+NOCAMERA    = 0
+EPIX100A    = 1
+EPIX100P    = 2
+TIXEL48X48  = 3
+EPIX10KA    = 4
+CPIX2       = 5
+EPIXM32     = 6
+HRADC32x32  = 7
+EPIXQUAD    = 8
+EPIXQUADSIM = 9
+
 
 ################################################################################
 ################################################################################
@@ -62,7 +65,7 @@ class Camera():
     sensorWidth = 0
     sensorHeight = 0
     pixelDepth = 0
-    availableCameras = {  'ePix100a':  EPIX100A, 'ePix100p' : EPIX100P, 'Tixel48x48' : TIXEL48X48, 'ePix10ka' : EPIX10KA,  'Cpix2' : CPIX2, 'ePixM32Array' : EPIXM32, 'HrAdc32x32': HRADC32x32 }
+    availableCameras = {  'ePix100a':  EPIX100A, 'ePix100p' : EPIX100P, 'Tixel48x48' : TIXEL48X48, 'ePix10ka' : EPIX10KA,  'Cpix2' : CPIX2, 'ePixM32Array' : EPIXM32, 'HrAdc32x32': HRADC32x32, 'ePixQuad' : EPIXQUAD, 'ePixQuadSim' : EPIXQUADSIM }
     
 
     def __init__(self, cameraType = 'ePix100a') :
@@ -91,6 +94,10 @@ class Camera():
             self._initEpixM32()
         if (camID == HRADC32x32):
             self._initEpixHRADC32x32()
+        if (camID == EPIXQUAD):
+            self._initEpix10kaQuad()
+        if (camID == EPIXQUADSIM):
+            self._initEpix10kaQuadSim()
 
         #creates a image processing tool for local use
         self.imgTool = imgPr.ImageProcessing(self)
@@ -113,6 +120,9 @@ class Camera():
             return self.imgTool.applyBitMask(descImg, mask = self.bitMask)
         if (camID == EPIX10KA):
             descImg = self._descrambleEPix100aImage(rawData)
+            return self.imgTool.applyBitMask(descImg, mask = self.bitMask)
+        if (camID == EPIXQUAD or camID == EPIXQUADSIM):
+            descImg = self._descrambleEPixQuadImage(rawData)
             return self.imgTool.applyBitMask(descImg, mask = self.bitMask)
         if (camID == CPIX2):
             descImg = self._descrambleCpix2Image(rawData)
@@ -149,6 +159,11 @@ class Camera():
             [frameComplete, readyForDisplay, newRawData]  = self._buildFrameTixel48x48Image(currentRawData, newRawData)
             return [frameComplete, readyForDisplay, newRawData]
         if (camID == EPIX10KA):
+            # The flags are always true since each frame holds an entire image
+            frameComplete = 1
+            readyForDisplay = 1
+            return [frameComplete, readyForDisplay, newRawData]
+        if (camID == EPIXQUAD or camID == EPIXQUADSIM):
             # The flags are always true since each frame holds an entire image
             frameComplete = 1
             readyForDisplay = 1
@@ -214,6 +229,32 @@ class Camera():
         self.sensorHeight = 356#706
         self.pixelDepth = 16
         self.cameraModule = "Standard ePix10ka"
+        self.bitMask = np.uint16(0x3FFF)
+    
+    def _initEpix10kaQuad(self):
+        self._superRowSize = int(768/2)
+        self._NumAsicsPerSide = 4
+        self._NumAdcChPerAsic = 4
+        self._NumColPerAdcCh = int(96/2)
+        self._superRowSizeInBytes = self._superRowSize * 4
+        self.sensorWidth = self._calcImgWidth()
+        self.sensorHeight = 712
+        self.pixelDepth = 16
+        self.cameraModule = "ePix10ka Quad"
+        self.bitMask = np.uint16(0x3FFF)
+    
+    
+    def _initEpix10kaQuadSim(self):
+        # this is for simulation image size (smaller for sim speed-up)
+        self._superRowSize = int(384/2)
+        self._NumAsicsPerSide = 4
+        self._NumAdcChPerAsic = 4
+        self._NumColPerAdcCh = int(24)
+        self._superRowSizeInBytes = self._superRowSize * 4
+        self.sensorWidth = self._calcImgWidth()
+        self.sensorHeight = 192
+        self.pixelDepth = 16
+        self.cameraModule = "ePix10ka Quad"
         self.bitMask = np.uint16(0x3FFF)
 
     def _initCpix2(self):
@@ -777,7 +818,50 @@ class Camera():
            imgDesc = imgDesc.reshape(self.sensorHeight, self.sensorWidth)
         # returns final image
         return imgDesc
+    
+    def _descrambleEPixQuadImageAsByteArray(self, rawData):
+        """performs the ePix Quad image descrambling (this is a place holder only)"""
+        
+        #removes header before displying the image
+        for j in range(0,32):
+            rawData.pop(0)
+        
+        imgTopBot = bytearray()
+        imgTopTop = bytearray()
+        imgBotBot = bytearray()
+        imgBotTop = bytearray()
+        for j in range(0,self.sensorHeight):
+            if (j%4 == 3):
+                imgTopTop.extend(rawData[((self.sensorHeight-j)*self._superRowSizeInBytes):((self.sensorHeight-j+1)*self._superRowSizeInBytes)])
+            elif (j%4 == 2):
+                imgTopBot.extend(rawData[(j*self._superRowSizeInBytes):((j+1)*self._superRowSizeInBytes)]) 
+            elif (j%4 == 1):
+                imgBotTop.extend(rawData[((self.sensorHeight-j)*self._superRowSizeInBytes):((self.sensorHeight-j+1)*self._superRowSizeInBytes)])
+            else:
+                imgBotBot.extend(rawData[(j*self._superRowSizeInBytes):((j+1)*self._superRowSizeInBytes)]) 
+        
+        imgDesc = imgTopTop
+        imgDesc.extend(imgTopBot)
+        imgDesc.extend(imgBotTop)
+        imgDesc.extend(imgBotBot)
 
+        # returns final image
+        return imgDesc
+    
+    def _descrambleEPixQuadImage(self, rawData):
+        """performs the ePix Quad image descrambling """
+        
+        imgDescBA = self._descrambleEPixQuadImageAsByteArray(rawData)
+
+        imgDesc = np.frombuffer(imgDescBA,dtype='int16')
+        if self.sensorHeight*self.sensorWidth != len(imgDesc):
+           print("Got wrong pixel number ", len(imgDesc))
+        else:
+           if (PRINT_VERBOSE): print("Got pixel number ", len(imgDesc))
+           imgDesc = imgDesc.reshape(self.sensorHeight, self.sensorWidth)
+        # returns final image
+        return imgDesc
+    
     def _descrambleTixel48x48Image(self, rawData):
         """performs the Tixel image descrambling """
         if (len(rawData)==4):
