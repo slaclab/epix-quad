@@ -105,6 +105,7 @@ architecture RTL of SystemRegs is
       adcReqTest        : sl;
       adcTestDone       : sl;
       adcTestFailed     : sl;
+      adcChanFailed     : Slv32Array(9 downto 0);
       asicGrCnt         : slv(25 downto 0);
       trigEn            : sl;
       trigSrcSel        : slv(1 downto 0);
@@ -144,6 +145,7 @@ architecture RTL of SystemRegs is
       adcReqTest        => '0',
       adcTestDone       => '0',
       adcTestFailed     => '0',
+      adcChanFailed     => (others => (others => '0')),
       asicGrCnt         => (others=>'0'),
       trigEn            => '0',
       trigSrcSel        => (others=>'0'),
@@ -314,6 +316,10 @@ begin
       axiSlaveRegister (regCon, x"508", 0, v.adcReqTest);
       axiSlaveRegister (regCon, x"50C", 0, v.adcTestDone);
       axiSlaveRegister (regCon, x"510", 0, v.adcTestFailed);
+      for i in 9 downto 0 loop
+         axiSlaveRegister(regCon, x"514"+toSlv(i*4, 12), 0, v.adcChanFailed(i));
+      end loop;
+      
 
       -- Close out the AXI-Lite transaction
       axiSlaveDefault(regCon, v.sAxilWriteSlave, v.sAxilReadSlave, AXI_RESP_DECERR_C);

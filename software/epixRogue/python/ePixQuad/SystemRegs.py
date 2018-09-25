@@ -169,6 +169,17 @@ class SystemRegs(pr.Device):
          mode       = 'RW',
       ))
       
+      for i in range(10):      
+         self.add(pr.RemoteVariable(
+            name       = ('Adc[%d]ChannelFail'%i),
+            description= ('ADC[%d] Failed Channel Flags'%i),
+            offset     = (0x00000514+i*4), 
+            bitSize    = 32, 
+            bitOffset  = 0,  
+            base       = pr.UInt, 
+            mode       = 'RW',
+         ))
+      
       self.add(pr.RemoteVariable(
          name       = 'DdrVttEn',     
          description= 'Enable DDR VTT Voltage',

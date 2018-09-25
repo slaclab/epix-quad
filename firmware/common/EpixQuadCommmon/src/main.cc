@@ -77,7 +77,7 @@ void waitTimer(u32 timerInterval) {
    while (timer.flag == 0);
 }
 
-int adcStartup() {
+void adcStartup() {
    
    int i, j;
    uint32_t regIn = 0;
@@ -114,6 +114,62 @@ int adcStartup() {
       regIn &= ~(0x1);
       Xil_Out32(adcOutModeAddr[i], regIn);
    }
+   
+}
+
+void adcTest() {
+   int adc, channel;
+   uint32_t failed = 0;
+   uint32_t failedCh = 0;
+   uint32_t regIn = 0;
+   
+   // clear test status flags
+   Xil_Out32(SYSTEM_ADCTESTDONE, 0x0);
+   Xil_Out32(SYSTEM_ADCTESTFAIL, 0x0);
+   
+   // set up ADC tester
+   Xil_Out32(ADC_TEST_MASK, 0x3FFF);
+   Xil_Out32(ADC_TEST_PATT, 0x2867);
+   Xil_Out32(ADC_TEST_SMPL, 10000);
+   Xil_Out32(ADC_TEST_TOUT, 10000);
+   
+   for (adc=0; adc<10; adc++) {
+      
+      // Enable mixed frequency test pattern
+      regIn = Xil_In32(adcOutTestModeAddr[adc]);
+      regIn |= 0x0C;
+      Xil_Out32(adcOutTestModeAddr[adc], regIn);
+      
+      // test all channels
+      failedCh = 0;
+      for (channel=0; channel<8; channel++) {
+         // request channel test
+         Xil_Out32(ADC_TEST_CHAN, adc*8+channel);
+         Xil_Out32(ADC_TEST_REQ, 0x1);
+         Xil_Out32(ADC_TEST_REQ, 0x0);
+         // wait completed
+         while (Xil_In32(ADC_TEST_PASS) != 0x1 && Xil_In32(ADC_TEST_FAIL) != 0x1);
+         // set flag
+         if (Xil_In32(ADC_TEST_FAIL) == 0x1) {
+            failed |= 1;
+            failedCh |= (0x1<<channel);
+         }
+         
+      }
+      // set test status for channel
+      Xil_Out32(SYSTEM_ADCCHANFAIL+adc*4, failedCh);
+      
+      // Disable mixed frequency test pattern
+      regIn = Xil_In32(adcOutTestModeAddr[adc]);
+      regIn &= ~(0x0F);
+      Xil_Out32(adcOutTestModeAddr[adc], regIn);
+      
+   }
+   
+   // set test status flags
+   Xil_Out32(SYSTEM_ADCTESTDONE, 0x1);
+   Xil_Out32(SYSTEM_ADCTESTFAIL, failed);
+   
 }
 
 int main() { 
@@ -140,6 +196,8 @@ int main() {
    waitTimer(TIMER_1SEC_INTEVAL);
    // do the initial ADC startup
    adcStartup();
+   // do the initial ADC test
+   adcTest();
    
    while (1) {
       
@@ -157,7 +215,7 @@ int main() {
          // clear interrupt flag
          adcTestInt = 0;
          // call ADC test routine
-         
+         adcTest();
       }
       
    }
