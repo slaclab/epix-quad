@@ -190,6 +190,7 @@ architecture rtl of EpixQuadCore is
    signal adcClkRst     : sl;
    signal adcReqStart   : sl;
    signal iAdcReqStart  : sl;
+   signal iDcDcEn2      : sl;
    signal adcReqTest    : sl;
    
    signal opCode        : slv(7 downto 0);
@@ -268,13 +269,20 @@ begin
          clk              => sysClk,
          rst              => sysRst);
    
-   iAdcReqStart <= adcReqStart or iDcdcEn(2);
    U_AdcStartEdge : entity work.SynchronizerEdge
       port map (
          clk         => sysClk,
          rst         => sysRst,
-         dataIn      => iAdcReqStart,
-         risingEdge  => mbIrq(0));
+         dataIn      => adcReqStart,
+         risingEdge  => iAdcReqStart);
+         
+   U_DcdcEnEdge : entity work.SynchronizerEdge
+      port map (
+         clk         => sysClk,
+         rst         => sysRst,
+         dataIn      => iDcdcEn(2),
+         risingEdge  => iDcDcEn2);
+   mbIrq(0) <= iDcDcEn2 or iAdcReqStart;
    
    U_AdcTestEdge : entity work.SynchronizerEdge
       port map (
