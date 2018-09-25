@@ -840,9 +840,14 @@ class Camera():
             else:
                 imgBotBot.extend(rawData[(j*self._superRowSizeInBytes):((j+1)*self._superRowSizeInBytes)]) 
         
-        imgDesc = imgTopTop
+        #imgDesc = imgTopTop
+        #imgDesc.extend(imgTopBot)
+        #imgDesc.extend(imgBotTop)
+        #imgDesc.extend(imgBotBot)
+        
+        imgDesc = imgBotTop
         imgDesc.extend(imgTopBot)
-        imgDesc.extend(imgBotTop)
+        imgDesc.extend(imgTopTop)
         imgDesc.extend(imgBotBot)
 
         # returns final image

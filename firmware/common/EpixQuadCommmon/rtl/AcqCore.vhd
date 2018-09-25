@@ -286,9 +286,6 @@ begin
             if r.stateCnt >= r.asicRoClkHalfT-1 or r.asicRoClkHalfT = 0 then
                v.stateCnt  := (others=>'0');
                v.roClkCnt  := r.roClkCnt + 1;
-               if r.roClkCnt(1 downto 0) = "11" then
-                  v.acqSmplEn := '1';
-               end if;
                if r.roClkCnt < ROCLK_COUNT_C-1 then
                   v.acqState  := NEXT_CELL_S;
                else
@@ -309,6 +306,9 @@ begin
             if r.stateCnt >= r.asicRoClkHalfT-1 or r.asicRoClkHalfT = 0 then
                v.stateCnt := (others=>'0');
                v.acqState := WAIT_ADC_S;
+            end if;
+            if r.roClkCnt(1 downto 0) = "11" and r.stateCnt = 0 then
+               v.acqSmplEn := '1';
             end if;
          
          -- asicRoClk low

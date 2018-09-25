@@ -21,7 +21,6 @@ use ieee.std_logic_arith.all;
 
 use work.StdRtlPkg.all;
 use work.AxiPkg.all;
-use work.AppPkg.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -43,9 +42,9 @@ entity MigCoreWrapper is
       -- DRR Memory interface ports
       sys_rst          : in    sl := '0';
       c0_ddr4_aresetn  : in    sl := '1';
-      c0_ddr4_dq       : inout slv(31 downto 0);
-      c0_ddr4_dqs_c    : inout slv(3 downto 0);
-      c0_ddr4_dqs_t    : inout slv(3 downto 0);
+      c0_ddr4_dq       : inout slv(15 downto 0);
+      c0_ddr4_dqs_c    : inout slv(1 downto 0);
+      c0_ddr4_dqs_t    : inout slv(1 downto 0);
       c0_ddr4_adr      : out   slv(16 downto 0);
       c0_ddr4_ba       : out   slv(1 downto 0);
       c0_ddr4_bg       : out   slv(0 to 0);
@@ -55,7 +54,7 @@ entity MigCoreWrapper is
       c0_ddr4_ck_c     : out   slv(0 to 0);
       c0_ddr4_cke      : out   slv(0 to 0);
       c0_ddr4_cs_n     : out   slv(0 to 0);
-      c0_ddr4_dm_dbi_n : inout slv(3 downto 0);
+      c0_ddr4_dm_dbi_n : inout slv(1 downto 0);
       c0_ddr4_odt      : out   slv(0 to 0);
       calibComplete    : out   sl);
 end MigCoreWrapper;

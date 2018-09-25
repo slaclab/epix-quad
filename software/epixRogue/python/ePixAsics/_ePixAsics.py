@@ -714,7 +714,7 @@ class Epix10kaAsic(pr.Device):
     def fnClearMatrix(self, dev,cmd,arg):
         """ClearMatrix command function"""
         #set r0mode in order to have saci cmd to work properly on legacy firmware
-        self.root.Epix10ka.EpixFpgaRegisters.AsicR0Mode.set(True)
+        #self.root.Epix10ka.EpixFpgaRegisters.AsicR0Mode.set(True)
 
         if (self.enable.get()):
             self.reportCmd(dev,cmd,arg)

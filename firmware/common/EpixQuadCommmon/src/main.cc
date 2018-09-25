@@ -179,7 +179,7 @@ int main() {
    
    XTmrCtr_Initialize(&tmrctr,0);   
    
-   XIntc_Initialize(&intc,XPAR_U_CORE_U_CPU_U_MICROBLAZE_AXI_INTC_0_DEVICE_ID);
+   XIntc_Initialize(&intc,XPAR_AXI_INTC_0_DEVICE_ID);
    microblaze_enable_interrupts();
    XIntc_Connect(&intc,0,(XInterruptHandler)adcStartupIntHandler,(void*)&adcStartupInt);
    XIntc_Connect(&intc,1,(XInterruptHandler)adcTestIntHandler,(void*)&adcTestInt);
