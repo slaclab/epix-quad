@@ -56,6 +56,14 @@ parser.add_argument(
     help     = "Verbose output",
 )  
 
+parser.add_argument(
+    "--diff", 
+    type     = argBool,
+    required = False,
+    default  = True,
+    help     = "Report difference to last training",
+)  
+
 # Get the arguments
 args = parser.parse_args()
 
@@ -71,11 +79,17 @@ QuadTop.start(
     timeout  = 5.0,    
 )
 
+prevDly = QuadTop.Ad9249Readout[0].FrameDelay.get()
+print(prevDly)
+
 QuadTop.SystemRegs.enable.set(True)
 QuadTop.Ad9249Tester.enable.set(True)
 for adc in range(10):
    QuadTop.Ad9249Readout[adc].enable.set(True)
    QuadTop.Ad9249Config[adc].enable.set(True)
+
+prevDly = QuadTop.Ad9249Readout[0].FrameDelay.get()
+print(prevDly)
 
 fileName = strftime("%Y%m%d%H%M%S", time.gmtime()) + '_adcDelays.h'
 f = open(fileName, 'w')
@@ -88,6 +102,9 @@ print('Enable DCDCs')
 QuadTop.SystemRegs.DcDcEnable.set(0xF)
 time.sleep(1.0)
 
+prevDly = QuadTop.Ad9249Readout[0].FrameDelay.get()
+print(prevDly)
+
 print('Assert digital reset')
 # Reset ADCs
 for adc in range(10):
@@ -96,13 +113,39 @@ for adc in range(10):
    QuadTop.Ad9249Config[adc].InternalPdwnMode.set(0)
 time.sleep(1.0)
 
+prevDly = QuadTop.Ad9249Readout[0].FrameDelay.get()
+print(prevDly)
+
 print('Reset ISERDESE3')
 # Reset deserializers
 QuadTop.SystemRegs.AdcClkRst.set(True)
 QuadTop.SystemRegs.AdcClkRst.set(False)
 time.sleep(1.0)
 
+prevDly = QuadTop.Ad9249Readout[0].FrameDelay.get()
+print(prevDly)
+
 print('Initialization done')
+
+if args.diff:
+   
+   print('Enable DCDCs')
+   QuadTop.SystemRegs.DcDcEnable.set(0x0)
+   print('Disable DCDCs')
+   QuadTop.SystemRegs.DcDcEnable.set(0xF)
+   time.sleep(1.0)
+   
+   print('Reset microblaze startup for diff')
+   # Reset deserializers
+   QuadTop.SystemRegs.AdcReqStart.set(True)
+   QuadTop.SystemRegs.AdcReqStart.set(False)
+   time.sleep(5.0)
+   print('startup done')
+
+prevDly = QuadTop.Ad9249Readout[0].FrameDelay.get()
+print(prevDly)
+
+prevDly = 0
 
 # Train frame delay in all ADCs
 for adc in range(10):
@@ -116,6 +159,9 @@ for adc in range(10):
    locked = 0
    test = [0] * 512
    frameDlySet = -1
+   if args.diff:
+      prevDly = QuadTop.Ad9249Readout[adc].FrameDelay.get()
+      print(prevDly)
    for delay in range(512):
       # Set frame delay
       QuadTop.Ad9249Readout[adc].FrameDelay.set(0x200+delay)
@@ -153,7 +199,11 @@ for adc in range(10):
       maxIndex = lockData['Count'].idxmax()
       frameDlySet = lockData.loc[maxIndex]['Start'] + round(maxCount/2)
       QuadTop.Ad9249Readout[adc].FrameDelay.set(0x200+frameDlySet)
-      print('ADC[%d] frame delay set to %d'%(adc, frameDlySet))
+      
+      if args.diff:
+         print('ADC[%d] frame delay set to %d (diff %d)'%(adc, frameDlySet, frameDlySet-prevDly))
+      else:
+         print('ADC[%d] frame delay set to %d'%(adc, frameDlySet))
    else:
       print('ADC[%d] frame delay failed %x'%(adc,  QuadTop.Ad9249Readout[adc].AdcFrame.get()))
       
@@ -176,6 +226,9 @@ for adc in range(10):
       passed = 0
       test = [0] * 512
       chanDlySet = -1
+      if args.diff:
+         prevDly = QuadTop.Ad9249Readout[adc].ChannelDelay[channel].get()
+         print(prevDly)
       for delay in range(512):
          # Set channel delay
          QuadTop.Ad9249Readout[adc].ChannelDelay[channel].set(0x200+delay)
@@ -212,7 +265,10 @@ for adc in range(10):
          maxIndex = passData['Count'].idxmax()
          chanDlySet = passData.loc[maxIndex]['Start'] + round(maxCount/2)
          QuadTop.Ad9249Readout[adc].ChannelDelay[channel].set(0x200+chanDlySet)
-         print('ADC[%d] Ch[%d] delay set to %d'%(adc, channel, chanDlySet))
+         if args.diff:
+            print('ADC[%d] Ch[%d] delay set to %d (diff %d)'%(adc, channel, chanDlySet, chanDlySet-prevDly))
+         else:
+            print('ADC[%d] Ch[%d] delay set to %d'%(adc, channel, chanDlySet))
       else:
          print('ADC[%d] Ch[%d] failed %x'%(adc, channel,  QuadTop.Ad9249Readout[adc].AdcChannel[channel].get()))
       
