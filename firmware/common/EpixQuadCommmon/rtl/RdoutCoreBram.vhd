@@ -51,6 +51,8 @@ entity RdoutCoreBram is
       -- ADC stream input
       adcStream            : in  AxiStreamMasterArray(63 downto 0);
       tpsStream            : in  AxiStreamMasterArray(15 downto 0);
+      -- Test stream input
+      testStream           : in  AxiStreamMasterArray(63 downto 0);
       -- Frame stream output (axisClk domain)
       axisClk              : in  sl;
       axisRst              : in  sl;
@@ -96,6 +98,7 @@ architecture rtl of RdoutCoreBram is
    type RegType is record
       rdoutEn              : sl;
       rdoutEnReg           : sl;
+      testData             : sl;
       adcDataDly           : Slv14Array(63 downto 0);
       seqCount             : slv(31 downto 0);
       seqCountReset        : sl;
@@ -124,6 +127,7 @@ architecture rtl of RdoutCoreBram is
    constant REG_INIT_C : RegType := (
       rdoutEn              => '0',
       rdoutEnReg           => '0',
+      testData             => '0',
       adcDataDly           => (others=>(others=>'0')),
       seqCount             => (others=>'0'),
       seqCountReset        => '0',
@@ -161,7 +165,8 @@ architecture rtl of RdoutCoreBram is
    signal memRdData        : Slv32VectorArray(3 downto 0, 15 downto 0);
    signal memWrData        : Slv32Array(63 downto 0);
    
-   signal adcStrMap        : AxiStreamMasterArray(63 downto 0);
+   signal muxStrMap        : AxiStreamMasterArray(63 downto 0);
+   signal muxStream        : AxiStreamMasterArray(63 downto 0);
    
 begin
    --r.rowCount(BUFF_BITS_C-1 downto 0)
@@ -173,97 +178,99 @@ begin
       report "BANK_COLS_G must be even number"
       severity failure;
    
+   muxStream <= adcStream when r.testData = '0' else testStream;
+   
    --------------------------------------------------
-   -- Map ADC channels
+   -- Map ADC/Test channels
    --------------------------------------------------
    
    -- sRow 0 (bottom, bottom)
    -- ASIC 9, ASIC 10 (left)
-   adcStrMap( 0) <= adcStream(40);
-   adcStrMap( 1) <= adcStream(41);
-   adcStrMap( 2) <= adcStream(42);
-   adcStrMap( 3) <= adcStream(43);
-   adcStrMap( 4) <= adcStream(44);
-   adcStrMap( 5) <= adcStream(45);
-   adcStrMap( 6) <= adcStream(46);
-   adcStrMap( 7) <= adcStream(47);
+   muxStrMap( 0) <= muxStream(40);
+   muxStrMap( 1) <= muxStream(41);
+   muxStrMap( 2) <= muxStream(42);
+   muxStrMap( 3) <= muxStream(43);
+   muxStrMap( 4) <= muxStream(44);
+   muxStrMap( 5) <= muxStream(45);
+   muxStrMap( 6) <= muxStream(46);
+   muxStrMap( 7) <= muxStream(47);
    
    -- sRow 0 (bottom, bottom)
    -- ASIC 13, ASIC 14 (right)
-   adcStrMap( 8) <= adcStream(56);
-   adcStrMap( 9) <= adcStream(57);
-   adcStrMap(10) <= adcStream(58);
-   adcStrMap(11) <= adcStream(59);
-   adcStrMap(12) <= adcStream(60);
-   adcStrMap(13) <= adcStream(61);
-   adcStrMap(14) <= adcStream(62);
-   adcStrMap(15) <= adcStream(63);
+   muxStrMap( 8) <= muxStream(56);
+   muxStrMap( 9) <= muxStream(57);
+   muxStrMap(10) <= muxStream(58);
+   muxStrMap(11) <= muxStream(59);
+   muxStrMap(12) <= muxStream(60);
+   muxStrMap(13) <= muxStream(61);
+   muxStrMap(14) <= muxStream(62);
+   muxStrMap(15) <= muxStream(63);
    
    -- sRow 1 (bottom, up)
    -- ASIC 8, ASIC 11  (left)
-   adcStrMap(16) <= adcStream(32);
-   adcStrMap(17) <= adcStream(33);
-   adcStrMap(18) <= adcStream(34);
-   adcStrMap(19) <= adcStream(35);
-   adcStrMap(20) <= adcStream(36);
-   adcStrMap(21) <= adcStream(37);
-   adcStrMap(22) <= adcStream(38);
-   adcStrMap(23) <= adcStream(39);
+   muxStrMap(16) <= muxStream(32);
+   muxStrMap(17) <= muxStream(33);
+   muxStrMap(18) <= muxStream(34);
+   muxStrMap(19) <= muxStream(35);
+   muxStrMap(20) <= muxStream(36);
+   muxStrMap(21) <= muxStream(37);
+   muxStrMap(22) <= muxStream(38);
+   muxStrMap(23) <= muxStream(39);
    
    -- sRow 1 (bottom, up)
    -- ASIC 12, ASIC 15  (right)
-   adcStrMap(24) <= adcStream(48);
-   adcStrMap(25) <= adcStream(49);
-   adcStrMap(26) <= adcStream(50);
-   adcStrMap(27) <= adcStream(51);
-   adcStrMap(28) <= adcStream(52);
-   adcStrMap(29) <= adcStream(53);
-   adcStrMap(30) <= adcStream(54);
-   adcStrMap(31) <= adcStream(55);
+   muxStrMap(24) <= muxStream(48);
+   muxStrMap(25) <= muxStream(49);
+   muxStrMap(26) <= muxStream(50);
+   muxStrMap(27) <= muxStream(51);
+   muxStrMap(28) <= muxStream(52);
+   muxStrMap(29) <= muxStream(53);
+   muxStrMap(30) <= muxStream(54);
+   muxStrMap(31) <= muxStream(55);
    
    -- sRow 2 (bottom, bottom)
    -- ASIC 1, ASIC 2 (left)
-   adcStrMap(32) <= adcStream( 8);
-   adcStrMap(33) <= adcStream( 9);
-   adcStrMap(34) <= adcStream(10);
-   adcStrMap(35) <= adcStream(11);
-   adcStrMap(36) <= adcStream(12);
-   adcStrMap(37) <= adcStream(13);
-   adcStrMap(38) <= adcStream(14);
-   adcStrMap(39) <= adcStream(15);
+   muxStrMap(32) <= muxStream( 8);
+   muxStrMap(33) <= muxStream( 9);
+   muxStrMap(34) <= muxStream(10);
+   muxStrMap(35) <= muxStream(11);
+   muxStrMap(36) <= muxStream(12);
+   muxStrMap(37) <= muxStream(13);
+   muxStrMap(38) <= muxStream(14);
+   muxStrMap(39) <= muxStream(15);
    
    -- sRow 2 (bottom, bottom)
    -- ASIC 5, ASIC 6 (right)
-   adcStrMap(40) <= adcStream(24);
-   adcStrMap(41) <= adcStream(25);
-   adcStrMap(42) <= adcStream(26);
-   adcStrMap(43) <= adcStream(27);
-   adcStrMap(44) <= adcStream(28);
-   adcStrMap(45) <= adcStream(29);
-   adcStrMap(46) <= adcStream(30);
-   adcStrMap(47) <= adcStream(31);
+   muxStrMap(40) <= muxStream(24);
+   muxStrMap(41) <= muxStream(25);
+   muxStrMap(42) <= muxStream(26);
+   muxStrMap(43) <= muxStream(27);
+   muxStrMap(44) <= muxStream(28);
+   muxStrMap(45) <= muxStream(29);
+   muxStrMap(46) <= muxStream(30);
+   muxStrMap(47) <= muxStream(31);
    
    -- sRow 3 (bottom, up)
    -- ASIC 0, ASIC 3  (left)
-   adcStrMap(48) <= adcStream(0);
-   adcStrMap(49) <= adcStream(1);
-   adcStrMap(50) <= adcStream(2);
-   adcStrMap(51) <= adcStream(3);
-   adcStrMap(52) <= adcStream(4);
-   adcStrMap(53) <= adcStream(5);
-   adcStrMap(54) <= adcStream(6);
-   adcStrMap(55) <= adcStream(7);
+   muxStrMap(48) <= muxStream(0);
+   muxStrMap(49) <= muxStream(1);
+   muxStrMap(50) <= muxStream(2);
+   muxStrMap(51) <= muxStream(3);
+   muxStrMap(52) <= muxStream(4);
+   muxStrMap(53) <= muxStream(5);
+   muxStrMap(54) <= muxStream(6);
+   muxStrMap(55) <= muxStream(7);
    
    -- sRow 3 (bottom, up)
    -- ASIC 4, ASIC 7  (right)
-   adcStrMap(56) <= adcStream(16);
-   adcStrMap(57) <= adcStream(17);
-   adcStrMap(58) <= adcStream(18);
-   adcStrMap(59) <= adcStream(19);
-   adcStrMap(60) <= adcStream(20);
-   adcStrMap(61) <= adcStream(21);
-   adcStrMap(62) <= adcStream(22);
-   adcStrMap(63) <= adcStream(23);
+   muxStrMap(56) <= muxStream(16);
+   muxStrMap(57) <= muxStream(17);
+   muxStrMap(58) <= muxStream(18);
+   muxStrMap(59) <= muxStream(19);
+   muxStrMap(60) <= muxStream(20);
+   muxStrMap(61) <= muxStream(21);
+   muxStrMap(62) <= muxStream(22);
+   muxStrMap(63) <= muxStream(23);
    
    --------------------------------------------------
    -- Data storage and readout FSMs
@@ -278,7 +285,7 @@ begin
       );
    
    comb : process (sysRst, sAxilReadMaster, sAxilWriteMaster, txSlave, r,
-      acqBusyEdge, acqBusy, acqCount, acqSmplEn, memRdData, opCode, adcStrMap, tpsStream) is
+      acqBusyEdge, acqBusy, acqCount, acqSmplEn, memRdData, opCode, muxStrMap, tpsStream) is
       variable v      : RegType;
       variable regCon : AxiLiteEndPointType;
    begin
@@ -311,6 +318,7 @@ begin
       axiSlaveRegisterR(regCon, x"014", 0, r.lineBufErr(1)     );
       axiSlaveRegisterR(regCon, x"018", 0, r.lineBufErr(2)     );
       axiSlaveRegisterR(regCon, x"01C", 0, r.lineBufErr(3)     );
+      axiSlaveRegister (regCon, x"020", 0, v.testData          );
       
       
       -- Close out the AXI-Lite transaction
@@ -331,7 +339,7 @@ begin
             
             -- buffer incoming samples for 32 bit data packing
             for i in 63 downto 0 loop
-               v.adcDataDly(i) := adcStrMap(i).tData(13 downto 0);
+               v.adcDataDly(i) := muxStrMap(i).tData(13 downto 0);
             end loop;
             
             if r.lineWrAddr = BANK_COLS_C and r.memWrEn = '1' then
@@ -366,6 +374,11 @@ begin
          v.lineWrAddr   := (others=>'0');
          v.lineWrBuff   := (others=>'0');
          v.lineBufValid := (others=>(others=>'0'));
+      end if;
+      
+      -- clear error counters when readout is disabled
+      if r.rdoutEn = '0' then
+         v.lineBufErr   := (others=>(others=>'0'));
       end if;
       
       --------------------------------------------------
@@ -584,7 +597,7 @@ begin
       G_BankBuf : for j in 15 downto 0 generate
          
          memWrData(i*16+j) <= 
-            "00" & adcStrMap(i*16+j).tData(13 downto 0) &
+            "00" & muxStrMap(i*16+j).tData(13 downto 0) &
             "00" & r.adcDataDly(i*16+j);
          
          U_BankBufRam: entity work.DualPortRam

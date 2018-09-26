@@ -88,6 +88,15 @@ class RdoutCore(pr.Device):
                  mode       = 'RO',
               ))
       
+      self.add(pr.RemoteVariable(
+         name       = 'TestData',     
+         description= 'Enable Test Data',
+         offset     = 0x00000020, 
+         bitSize    = 1, 
+         bitOffset  = 0,  
+         base       = pr.Bool, 
+         mode       = 'RW',
+      ))   
       
       #####################################
       # Create commands

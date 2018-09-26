@@ -100,6 +100,7 @@ architecture rtl of AsicCoreTop is
    signal iAsicPpmat       : sl;
    signal iAsicRoClk       : sl;
    
+   signal testStream       : AxiStreamMasterArray(63 downto 0);
 
 begin
    
@@ -196,6 +197,8 @@ begin
       -- ADC stream input
       adcStream            => adcStream(63 downto 0),
       tpsStream            => adcStream(79 downto 64),
+      -- Test stream input
+      testStream           => testStream,
       -- Frame stream output (axisClk domain)
       axisClk              => sysClk,
       axisRst              => sysRst,
@@ -229,5 +232,26 @@ begin
       sAxilReadMaster   => axilReadMasters(SCOPE_INDEX_C),
       sAxilReadSlave    => axilReadSlaves(SCOPE_INDEX_C)
    );
+   
+   
+   G_AsicEmuRdout : for i in 0 to 63 generate 
+      
+      U_AsicEmuRdout : entity work.AsicEmuRdout
+         generic map (
+            TPD_G       => TPD_G,
+            INDEX_G     => i
+         )
+         port map (
+            -- System Clock (100 MHz)
+            sysClk      => sysClk,
+            sysRst      => sysRst,
+            -- Run control
+            acqBusy     => acqBusy,
+            asicRoClk   => iAsicRoClk,
+            -- Test data output
+            testStream  => testStream(i)
+         );
+      
+   end generate;
 
 end rtl;

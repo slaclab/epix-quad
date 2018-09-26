@@ -59,6 +59,8 @@ entity RdoutCoreTop is
       -- ADC stream input
       adcStream            : in  AxiStreamMasterArray(63 downto 0);
       tpsStream            : in  AxiStreamMasterArray(15 downto 0);
+      -- Test stream input
+      testStream           : in  AxiStreamMasterArray(63 downto 0);
       -- Frame stream output (axisClk domain)
       axisClk              : in  sl;
       axisRst              : in  sl;
@@ -98,6 +100,8 @@ begin
             -- ADC stream input
             adcStream            => adcStream,
             tpsStream            => tpsStream,
+            -- Test stream input
+            testStream           => testStream,
             -- Frame stream output (axisClk domain)
             axisClk              => axisClk   ,
             axisRst              => axisRst   ,
@@ -141,6 +145,8 @@ begin
             -- ADC stream input
             adcStream            => adcStream,
             tpsStream            => tpsStream,
+            -- Test stream input
+            testStream           => testStream,
             -- Frame stream output (axisClk domain)
             axisClk              => axisClk   ,
             axisRst              => axisRst   ,
