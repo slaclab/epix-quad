@@ -596,9 +596,13 @@ begin
    G_sRowBuf : for i in 3 downto 0 generate
       G_BankBuf : for j in 15 downto 0 generate
          
+         -- stage two 16 bit words for write into 32 bit memory
+         -- swap words if line readout is reversed
          memWrData(i*16+j) <= 
             "00" & muxStrMap(i*16+j).tData(13 downto 0) &
-            "00" & r.adcDataDly(i*16+j);
+            "00" & r.adcDataDly(i*16+j) when LINE_REVERSE_G(i) = '0' else
+            "00" & r.adcDataDly(i*16+j) &
+            "00" & muxStrMap(i*16+j).tData(13 downto 0);
          
          U_BankBufRam: entity work.DualPortRam
          generic map (
