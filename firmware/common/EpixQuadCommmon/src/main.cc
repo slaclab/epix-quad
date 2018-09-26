@@ -26,6 +26,8 @@
 #define TIMER_750MS_INTEVAL 75000000
 #define TIMER_1SEC_INTEVAL 100000000
 
+#define ADC_STARTUP_RETRY 5
+
 
 static XIntc    intc;
 static XTmrCtr  tmrctr;
@@ -84,7 +86,8 @@ void adcStartup() {
    
    // Enable DCDCs
    Xil_Out32(SYSTEM_DCDCEN, 0xf);
-   waitTimer(TIMER_500MS_INTEVAL);
+   // wait for power to settle
+   waitTimer(TIMER_500MS_INTEVAL);   
    
    // Reset ADCs
    for (i=0; i<10; i++) {
@@ -117,7 +120,7 @@ void adcStartup() {
    
 }
 
-void adcTest() {
+uint32_t adcTest() {
    int adc, channel;
    uint32_t failed = 0;
    uint32_t failedCh = 0;
@@ -170,12 +173,16 @@ void adcTest() {
    Xil_Out32(SYSTEM_ADCTESTDONE, 0x1);
    Xil_Out32(SYSTEM_ADCTESTFAIL, failed);
    
+   return failed;
+   
 }
 
 int main() { 
    
    volatile uint32_t adcStartupInt = 0;
    volatile uint32_t adcTestInt = 0;
+   uint32_t failed = 0;
+   uint32_t tryCnt = 0;
    
    XTmrCtr_Initialize(&tmrctr,0);   
    
@@ -192,12 +199,21 @@ int main() {
    XTmrCtr_SetHandler(&tmrctr,timerIntHandler,(void*)&timer);
    XTmrCtr_SetOptions(&tmrctr,0,XTC_DOWN_COUNT_OPTION | XTC_INT_MODE_OPTION );
    
-   // wait for power to settle
-   waitTimer(TIMER_1SEC_INTEVAL);
-   // do the initial ADC startup
-   adcStartup();
-   // do the initial ADC test
-   adcTest();
+   tryCnt = 0;
+   do {
+      // do the initial ADC startup
+      adcStartup();
+      // do the initial ADC test
+      failed = adcTest();
+      // retry N times
+      tryCnt++;
+   } while (failed != 0 and tryCnt < ADC_STARTUP_RETRY);
+   
+   // pre-configure (enable ASIC power)
+   Xil_Out32(SYSTEM_ANAEN, 0x1);
+   Xil_Out32(SYSTEM_DIGEN, 0x1);
+   // pre-configure (disable DDR memory power and clock)
+   Xil_Out32(SYSTEM_VTTEN, 0x0);
    
    while (1) {
       
@@ -207,7 +223,13 @@ int main() {
          // clear interrupt flag
          adcStartupInt = 0;
          // call ADC startup routine
-         adcStartup();
+         // retry N times
+         tryCnt = 0;
+         do {
+            adcStartup();
+            failed = adcTest();
+            tryCnt++;
+         } while (failed != 0 and tryCnt < ADC_STARTUP_RETRY);
       }
       
       // poll ADC test interrupt flag
