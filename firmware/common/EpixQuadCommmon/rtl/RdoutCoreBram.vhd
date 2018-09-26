@@ -85,8 +85,13 @@ architecture rtl of RdoutCoreBram is
    -- Custom data types
    type LineValidArray is array (natural range <>) of slv(2**BUFF_BITS_C-1 downto 0);
    
+   type WrStateType is (
+      IDLE_S,
+      BUFFER_S,
+      WRITE_S
+   );
    
-   type StateType is (
+   type RdStateType is (
       IDLE_S,
       HDR_S,
       WAIT_LINE_S,
@@ -99,7 +104,7 @@ architecture rtl of RdoutCoreBram is
       rdoutEn              : sl;
       rdoutEnReg           : sl;
       testData             : sl;
-      adcDataDly           : Slv14Array(63 downto 0);
+      adcDataBuf           : Slv14Array(63 downto 0);
       seqCount             : slv(31 downto 0);
       seqCountReset        : sl;
       adcPipelineDly       : slv(6 downto 0);
@@ -118,7 +123,9 @@ architecture rtl of RdoutCoreBram is
       lineWrAddr           : slv(COLS_BITS_C-1 downto 0);
       lineWrBuff           : slv(BUFF_BITS_C-1 downto 0);
       lineRdAddr           : slv(COLS_BITS_C-1 downto 0);
-      rdState              : StateType;
+      memWrAddr            : slv(BUFF_BITS_C+COLS_BITS_C-1 downto 0);
+      wrState              : WrStateType;
+      rdState              : RdStateType;
       txMaster             : AxiStreamMasterType;
       sAxilWriteSlave      : AxiLiteWriteSlaveType;
       sAxilReadSlave       : AxiLiteReadSlaveType;
@@ -128,7 +135,7 @@ architecture rtl of RdoutCoreBram is
       rdoutEn              => '0',
       rdoutEnReg           => '0',
       testData             => '0',
-      adcDataDly           => (others=>(others=>'0')),
+      adcDataBuf           => (others=>(others=>'0')),
       seqCount             => (others=>'0'),
       seqCountReset        => '0',
       adcPipelineDly       => (others=>'0'),
@@ -147,6 +154,8 @@ architecture rtl of RdoutCoreBram is
       lineWrAddr           => (others=>'0'),
       lineWrBuff           => (others=>'0'),
       lineRdAddr           => (others=>'0'),
+      memWrAddr            => (others=>'0'),
+      wrState              => IDLE_S,
       rdState              => IDLE_S,
       txMaster             => AXI_STREAM_MASTER_INIT_C,
       sAxilWriteSlave      => AXI_LITE_WRITE_SLAVE_INIT_C,
@@ -325,56 +334,80 @@ begin
       axiSlaveDefault(regCon, v.sAxilWriteSlave, v.sAxilReadSlave, AXI_RESP_DECERR_C);
       
       --------------------------------------------------
-      -- Line buffers (64 bank channels)
-      -- one pipeline delay to allow common DPRAM write control
+      -- Line buffers write FSM (64 bank channels)
+      -- one ADC pipeline delay to allow common DPRAM write control
       --------------------------------------------------
       
-      if r.readPend = '1' then
+      v.memWrEn   := '0';
+      
+      case r.wrState is
          
-         -- shift the sample strobe
-         v.acqSmplEn := r.acqSmplEn(126 downto 0) & acqSmplEn;
+         -- write samples to RAM when readout is pending
+         when IDLE_S =>
+            if r.readPend = '1' then
+               v.wrState := BUFFER_S;
+            end if;
+            v.lineWrAddr   := (others=>'0');
+            v.lineWrBuff   := (others=>'0');
+            v.lineBufValid := (others=>(others=>'0'));
          
-         -- drive the buffer logic on delayed strobe
-         if r.acqSmplEn(conv_integer(r.adcPipelineDly)) = '1' then
-            
-            -- buffer incoming samples for 32 bit data packing
-            for i in 63 downto 0 loop
-               v.adcDataDly(i) := muxStrMap(i).tData(13 downto 0);
-            end loop;
-            
-            if r.lineWrAddr = BANK_COLS_C and r.memWrEn = '1' then
-               -- move to next buffer
-               v.lineWrAddr := (others=>'0');
-               v.lineWrBuff := r.lineWrBuff + 1;
-               -- set valid flag (all finish simultaneously)
-               for i in 3 downto 0 loop
-                  v.lineBufValid(i)(conv_integer(r.lineWrBuff)) := '1';
+         -- buffer first sample for 32 bit write
+         when BUFFER_S =>
+            -- drive the buffer logic on delayed strobe
+            if r.acqSmplEn(conv_integer(r.adcPipelineDly)) = '1' then
+               -- buffer incoming samples for 32 bit data packing
+               for i in 63 downto 0 loop
+                  v.adcDataBuf(i) := muxStrMap(i).tData(13 downto 0);
                end loop;
-            elsif r.memWrEn = '1' then
-               -- every 2 sample strobes move buffer write pointer
-               v.lineWrAddr := r.lineWrAddr + 1;
+               v.wrState := WRITE_S;
+            end if;
+            if r.readPend = '0' then
+               v.wrState := IDLE_S;
             end if;
             
-            -- increase write address every 2 sample strobes
-            v.memWrEn := not r.memWrEn;
-            
-            -- check for buffer overflow
-            for i in 3 downto 0 loop
-               if r.lineBufValid(i) = BUFF_MAX_C then
-                  v.lineBufErr(i) := r.lineBufErr(i) + 1;
-                  v.error := '1';
+         -- write to memory
+         when WRITE_S =>
+            v.memWrAddr := r.lineWrBuff & r.lineWrAddr;
+            -- drive the buffer logic on delayed strobe
+            if r.acqSmplEn(conv_integer(r.adcPipelineDly)) = '1' then
+               if r.lineWrAddr = BANK_COLS_C then
+                  -- move to next buffer
+                  v.lineWrAddr := (others=>'0');
+                  v.lineWrBuff := r.lineWrBuff + 1;
+                  -- set valid flag (all finish simultaneously)
+                  for i in 3 downto 0 loop
+                     v.lineBufValid(i)(conv_integer(r.lineWrBuff)) := '1';
+                  end loop;
+               else
+                  -- every 2 sample strobes move buffer write pointer
+                  v.lineWrAddr := r.lineWrAddr + 1;
                end if;
-            end loop;
+               v.memWrEn   := '1';
+               v.wrState   := BUFFER_S;
+            end if;
+            if r.readPend = '0' then
+               v.wrState   := IDLE_S;
+            end if;
             
-         end if;
-         
+         when others =>
+            v.wrState := IDLE_S;
+            
+      end case;
+      
+      -- shift the sample strobe
+      if r.readPend = '1' then
+         v.acqSmplEn := r.acqSmplEn(126 downto 0) & acqSmplEn;
       else
-         v.memWrEn := '0';
-         v.acqSmplEn    := (others=>'0');
-         v.lineWrAddr   := (others=>'0');
-         v.lineWrBuff   := (others=>'0');
-         v.lineBufValid := (others=>(others=>'0'));
+         v.acqSmplEn := (others=>'0');
       end if;
+      
+      -- check for buffer overflow
+      for i in 3 downto 0 loop
+         if r.acqSmplEn(conv_integer(r.adcPipelineDly)) = '1' and r.lineBufValid(i) = BUFF_MAX_C then
+            v.lineBufErr(i) := r.lineBufErr(i) + 1;
+            v.error := '1';
+         end if;
+      end loop;
       
       -- clear error counters when readout is disabled
       if r.rdoutEn = '0' then
@@ -571,13 +604,15 @@ begin
       sAxilWriteSlave   <= r.sAxilWriteSlave;
       sAxilReadSlave    <= r.sAxilReadSlave;
       
-      if r.memWrEn = '1' then
-         memWrEn <= r.acqSmplEn(conv_integer(r.adcPipelineDly));
-      else
-         memWrEn <= '0';
-      end if;
-      memWrAddr         <= r.lineWrBuff & r.lineWrAddr;
-      memRdAddr         <= r.rowCount(BUFF_BITS_C-1 downto 0) & r.lineRdAddr;
+      --if v.memWrEn = '1' then
+      --   memWrEn <= r.acqSmplEn(conv_integer(r.adcPipelineDly));
+      --else
+      --   memWrEn <= '0';
+      --end if;
+      --memWrAddr         <= r.lineWrBuff & r.lineWrAddr;
+      memWrEn     <= v.memWrEn;
+      memWrAddr   <= r.memWrAddr;
+      memRdAddr   <= r.rowCount(BUFF_BITS_C-1 downto 0) & r.lineRdAddr;
       
       readDone <= not r.readPend;
 
@@ -600,8 +635,8 @@ begin
          -- swap words if line readout is reversed
          memWrData(i*16+j) <= 
             "00" & muxStrMap(i*16+j).tData(13 downto 0) &
-            "00" & r.adcDataDly(i*16+j) when LINE_REVERSE_G(i) = '0' else
-            "00" & r.adcDataDly(i*16+j) &
+            "00" & r.adcDataBuf(i*16+j) when LINE_REVERSE_G(i) = '0' else
+            "00" & r.adcDataBuf(i*16+j) &
             "00" & muxStrMap(i*16+j).tData(13 downto 0);
          
          U_BankBufRam: entity work.DualPortRam
