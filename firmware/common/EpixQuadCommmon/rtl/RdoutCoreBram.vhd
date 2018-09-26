@@ -604,12 +604,6 @@ begin
       sAxilWriteSlave   <= r.sAxilWriteSlave;
       sAxilReadSlave    <= r.sAxilReadSlave;
       
-      --if v.memWrEn = '1' then
-      --   memWrEn <= r.acqSmplEn(conv_integer(r.adcPipelineDly));
-      --else
-      --   memWrEn <= '0';
-      --end if;
-      --memWrAddr         <= r.lineWrBuff & r.lineWrAddr;
       memWrEn     <= v.memWrEn;
       memWrAddr   <= r.memWrAddr;
       memRdAddr   <= r.rowCount(BUFF_BITS_C-1 downto 0) & r.lineRdAddr;
