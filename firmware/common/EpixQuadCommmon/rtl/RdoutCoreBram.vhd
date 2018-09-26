@@ -107,8 +107,9 @@ architecture rtl of RdoutCoreBram is
       adcDataBuf           : Slv14Array(63 downto 0);
       seqCount             : slv(31 downto 0);
       seqCountReset        : sl;
-      adcPipelineDly       : slv(6 downto 0);
-      acqSmplEn            : slv(127 downto 0);
+      adcPipelineDly       : slv(7 downto 0);
+      adcPipelineDlyReg    : slv(7 downto 0);
+      acqSmplEn            : slv(255 downto 0);
       readPend             : sl;
       error                : sl;
       wordCnt              : integer range 0 to 7;
@@ -139,6 +140,7 @@ architecture rtl of RdoutCoreBram is
       seqCount             => (others=>'0'),
       seqCountReset        => '0',
       adcPipelineDly       => (others=>'0'),
+      adcPipelineDlyReg    => (others=>'0'),
       acqSmplEn            => (others=>'0'),
       readPend             => '0',
       error                => '0',
@@ -297,11 +299,14 @@ begin
       acqBusyEdge, acqBusy, acqCount, acqSmplEn, memRdData, opCode, muxStrMap, tpsStream) is
       variable v      : RegType;
       variable regCon : AxiLiteEndPointType;
+      variable sRowCountVar : integer;
    begin
       v := r;
       
+      -- settings that chan change when no readout is pending
       if r.readPend = '0' and acqBusyEdge = '0' then
-         v.rdoutEn := r.rdoutEnReg;
+         v.rdoutEn         := r.rdoutEnReg;
+         v.adcPipelineDly  := r.adcPipelineDlyReg;
       end if;
       
       -- count readouts
@@ -322,7 +327,7 @@ begin
       axiSlaveRegister (regCon, x"000", 0, v.rdoutEnReg        );
       axiSlaveRegisterR(regCon, x"004", 0, r.seqCount          );
       axiSlaveRegister (regCon, x"008", 0, v.seqCountReset     );
-      axiSlaveRegister (regCon, x"00C", 0, v.adcPipelineDly    );
+      axiSlaveRegister (regCon, x"00C", 0, v.adcPipelineDlyReg );
       axiSlaveRegisterR(regCon, x"010", 0, r.lineBufErr(0)     );
       axiSlaveRegisterR(regCon, x"014", 0, r.lineBufErr(1)     );
       axiSlaveRegisterR(regCon, x"018", 0, r.lineBufErr(2)     );
@@ -396,7 +401,7 @@ begin
       
       -- shift the sample strobe
       if r.readPend = '1' then
-         v.acqSmplEn := r.acqSmplEn(126 downto 0) & acqSmplEn;
+         v.acqSmplEn := r.acqSmplEn(254 downto 0) & acqSmplEn;
       else
          v.acqSmplEn := (others=>'0');
       end if;
@@ -471,6 +476,11 @@ begin
             
          when WAIT_LINE_S =>
             if v.lineBufValid(r.sRowCount)(conv_integer(r.rowCount(BUFF_BITS_C-1 downto 0))) = '1' then
+               if LINE_REVERSE_G(r.sRowCount) = '0' then
+                  v.lineRdAddr := r.lineRdAddr + 1;
+               else
+                  v.lineRdAddr := r.lineRdAddr - 1;
+               end if;
                v.rdState   := MOVE_LINE_S;
             elsif r.timeCnt = TIMEOUT_C then
                v.error     := '1';
@@ -487,40 +497,20 @@ begin
                
                if r.colCount < BANK_COLS_C then    -- next column in bank
                   v.colCount := r.colCount + 1;
-                  if LINE_REVERSE_G(r.sRowCount) = '0' then
-                     v.lineRdAddr := r.lineRdAddr + 1;
-                  else
-                     v.lineRdAddr := r.lineRdAddr - 1;
-                  end if;
                elsif r.bankCount < 15 then         -- next bank (out of 16)
                   v.colCount  := 0;
                   v.bankCount := r.bankCount + 1;
-                  if LINE_REVERSE_G(r.sRowCount) = '0' then
-                     v.lineRdAddr := (others=>'0');
-                  else
-                     v.lineRdAddr := toSlv(BANK_COLS_C, COLS_BITS_C);
-                  end if;
-               elsif v.sRowCount < 3 then          -- next super row (out of 4)
+               elsif r.sRowCount < 3 then          -- next super row (out of 4)
                   v.colCount     := 0;
                   v.bankCount    := 0;
                   v.sRowCount    := r.sRowCount + 1;
                   v.lineBufValid(r.sRowCount)(conv_integer(r.rowCount(BUFF_BITS_C-1 downto 0))) := '0'; -- invalidate the buffer
-                  if LINE_REVERSE_G(v.sRowCount) = '0' then
-                     v.lineRdAddr := (others=>'0');
-                  else
-                     v.lineRdAddr := toSlv(BANK_COLS_C, COLS_BITS_C);
-                  end if;
                elsif r.rowCount < BANK_ROWS_C then -- next row (go to wait for line state)
                   v.colCount     := 0;
                   v.bankCount    := 0;
                   v.sRowCount    := 0;
                   v.lineBufValid(r.sRowCount)(conv_integer(r.rowCount(BUFF_BITS_C-1 downto 0))) := '0'; -- invalidate the buffer
                   v.rowCount     := r.rowCount + 1;
-                  if LINE_REVERSE_G(v.sRowCount) = '0' then
-                     v.lineRdAddr := (others=>'0');
-                  else
-                     v.lineRdAddr := toSlv(BANK_COLS_C, COLS_BITS_C);
-                  end if;
                   v.timeCnt      := 0;
                   v.rdState      := WAIT_LINE_S;
                else                                -- image done (go to footer state)
@@ -529,8 +519,35 @@ begin
                   v.sRowCount    := 0;
                   v.lineBufValid(r.sRowCount)(conv_integer(r.rowCount(BUFF_BITS_C-1 downto 0))) := '0'; -- invalidate the buffer
                   v.rowCount     := (others=>'0');
-                  v.lineRdAddr   := (others=>'0');
                   v.rdState      := FOOTER_S;
+               end if;
+               
+               -- move the read address 1 cycle ahead of the pixel counters
+               if r.colCount = BANK_COLS_C and r.bankCount = 15 and r.sRowCount = 3 then
+                  if LINE_REVERSE_G(0) = '0' then
+                     v.lineRdAddr := (others=>'0');
+                  else
+                     v.lineRdAddr := toSlv(BANK_COLS_C, COLS_BITS_C);
+                  end if;
+               elsif r.colCount = BANK_COLS_C-1 and r.bankCount = 15 then
+                  sRowCountVar := conv_integer(toSlv(v.sRowCount+1,2));
+                  if LINE_REVERSE_G(sRowCountVar) = '0' then
+                     v.lineRdAddr := (others=>'0');
+                  else
+                     v.lineRdAddr := toSlv(BANK_COLS_C, COLS_BITS_C);
+                  end if;
+               elsif r.colCount = BANK_COLS_C-1 then
+                  if LINE_REVERSE_G(v.sRowCount) = '0' then
+                     v.lineRdAddr := (others=>'0');
+                  else
+                     v.lineRdAddr := toSlv(BANK_COLS_C, COLS_BITS_C);
+                  end if;
+               else
+                  if LINE_REVERSE_G(v.sRowCount) = '0' then
+                     v.lineRdAddr := r.lineRdAddr + 1;
+                  else
+                     v.lineRdAddr := r.lineRdAddr - 1;
+                  end if;
                end if;
                
             end if;
