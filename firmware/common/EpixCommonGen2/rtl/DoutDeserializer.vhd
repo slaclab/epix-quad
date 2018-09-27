@@ -50,9 +50,10 @@ use work.AxiLitePkg.all;
 
 entity DoutDeserializer is 
    generic (
-      TPD_G             : time            := 1 ns;
-      AXIL_ERR_RESP_G   : slv(1 downto 0) := AXI_RESP_DECERR_C;
-      BANK_COLS_G       : natural         := 48
+      TPD_G             : time             := 1 ns;
+      AXIL_ERR_RESP_G   : slv(1 downto 0)  := AXI_RESP_DECERR_C;
+      BANK_COLS_G       : natural          := 48;
+      RD_ORDER_INIT_G   : slv(15 downto 0) := x"0FF0"
    );
    port ( 
       clk         : in  sl;
@@ -62,6 +63,7 @@ entity DoutDeserializer is
       doutOut     : out Slv2Array(15 downto 0);
       doutRd      : in  slv(15 downto 0);
       doutValid   : out slv(15 downto 0);
+      doutCount   : out Slv8Array(15 downto 0);
       
       -- Acquisition state machine handshake
       acqBusy     : in  sl;
@@ -125,7 +127,7 @@ architecture RTL of DoutDeserializer is
       rowBuffAct        => 0,
       copyReq           => '0',
       copyCnt           => 0,
-      rdOrder           => x"0FF0",
+      rdOrder           => RD_ORDER_INIT_G,
       rdoClkDelay       => x"0A",
       sysClkDelay       => (others=>'0'),
       roClkRising       => (others=>'0'),
@@ -305,14 +307,15 @@ begin
          LITTLE_ENDIAN_G   => true
       )
       port map (
-         rst      => f.fifoRst,
-         wr_clk   => clk,
-         wr_en    => f.fifoWrDly(i),
-         din      => f.fifoIn(i),
-         rd_clk   => clk,
-         rd_en    => doutRd(i),
-         dout     => doutOut(i),
-         valid    => doutValid(i)
+         rst               => f.fifoRst,
+         wr_clk            => clk,
+         wr_en             => f.fifoWrDly(i),
+         din               => f.fifoIn(i),
+         rd_clk            => clk,
+         rd_en             => doutRd(i),
+         dout              => doutOut(i),
+         valid             => doutValid(i),
+         rd_data_count     => doutCount(i)
       );
    end generate;
 
