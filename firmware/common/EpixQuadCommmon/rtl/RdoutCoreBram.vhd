@@ -53,6 +53,11 @@ entity RdoutCoreBram is
       tpsStream            : in  AxiStreamMasterArray(15 downto 0);
       -- Test stream input
       testStream           : in  AxiStreamMasterArray(63 downto 0);
+      -- ASIC digital data signals to/from deserializer
+      asicDout             : in  slv(15 downto 0);
+      asicDoutTest         : in  slv(15 downto 0);
+      asicRoClk            : in  sl;
+      roClkTail            : out slv(7 downto 0);
       -- Frame stream output (axisClk domain)
       axisClk              : in  sl;
       axisRst              : in  sl;
@@ -125,6 +130,7 @@ architecture rtl of RdoutCoreBram is
       lineWrBuff           : slv(BUFF_BITS_C-1 downto 0);
       lineRdAddr           : slv(COLS_BITS_C-1 downto 0);
       memWrAddr            : slv(BUFF_BITS_C+COLS_BITS_C-1 downto 0);
+      doutRd               : slv(63 downto 0);
       wrState              : WrStateType;
       rdState              : RdStateType;
       txMaster             : AxiStreamMasterType;
@@ -157,6 +163,7 @@ architecture rtl of RdoutCoreBram is
       lineWrBuff           => (others=>'0'),
       lineRdAddr           => (others=>'0'),
       memWrAddr            => (others=>'0'),
+      doutRd               => (others=>'0'),
       wrState              => IDLE_S,
       rdState              => IDLE_S,
       txMaster             => AXI_STREAM_MASTER_INIT_C,
@@ -179,6 +186,12 @@ architecture rtl of RdoutCoreBram is
    signal muxStrMap        : AxiStreamMasterArray(63 downto 0);
    signal muxStream        : AxiStreamMasterArray(63 downto 0);
    
+   signal iRoClkTail       : Slv8Array(3 downto 0);
+   signal doutOut          : Slv2Array(63 downto 0);
+   signal doutValid        : slv(63 downto 0);
+   
+   signal muxAsicDout      : slv(15 downto 0);
+   
 begin
    --r.rowCount(BUFF_BITS_C-1 downto 0)
    assert ROWS_BITS_C >= BUFF_BITS_C
@@ -189,7 +202,8 @@ begin
       report "BANK_COLS_G must be even number"
       severity failure;
    
-   muxStream <= adcStream when r.testData = '0' else testStream;
+   muxStream   <= adcStream when r.testData = '0' else testStream;
+   muxAsicDout <= asicDout  when r.testData = '0' else asicDoutTest;
    
    --------------------------------------------------
    -- Map ADC/Test channels
@@ -296,7 +310,8 @@ begin
       );
    
    comb : process (sysRst, sAxilReadMaster, sAxilWriteMaster, txSlave, r,
-      acqBusyEdge, acqBusy, acqCount, acqSmplEn, memRdData, opCode, muxStrMap, tpsStream) is
+      acqBusyEdge, acqBusy, acqCount, acqSmplEn, memRdData, opCode, muxStrMap, tpsStream,
+      doutValid, doutOut) is
       variable v      : RegType;
       variable regCon : AxiLiteEndPointType;
       variable sRowCountVar : integer;
@@ -422,6 +437,15 @@ begin
       --------------------------------------------------
       -- FSM to assemble and stream 4 lines (16 banks per line)
       --------------------------------------------------
+      
+      -- temporary
+      for i in 63 downto 0 loop
+         if doutValid(i) = '1' then
+            v.doutRd(i) := '1';
+         else
+            v.doutRd(i) := '0';
+         end if;
+      end loop;
       
       -- Reset strobing Signals
       if (txSlave.tReady = '1') then
@@ -672,6 +696,36 @@ begin
          
       end generate G_BankBuf;
    end generate G_sRowBuf;
+   
+   ---------------------------------------------------------------
+   -- Digital output deserializer 
+   --------------------- ------------------------------------------
+   G_DOUT_EPIX10KA : for i in 3 downto 0 generate
+      
+      U_DoutAsic : entity work.DoutDeserializer
+      generic map (
+         TPD_G             => TPD_G,
+         BANK_COLS_G       => BANK_COLS_G
+      )
+      port map ( 
+         clk               => sysClk,
+         rst               => sysRst,
+         acqBusy           => acqBusy,
+         roClkTail         => iRoClkTail(i),
+         asicDout          => muxAsicDout(3+i*4 downto 0+i*4),
+         asicRoClk         => asicRoClk,
+         doutOut           => doutOut(15+i*16 downto 0+i*16),
+         doutRd            => r.doutRd(15+i*16 downto 0+i*16),
+         doutValid         => doutValid(15+i*16 downto 0+i*16),
+         sAxilWriteMaster  => AXI_LITE_WRITE_MASTER_INIT_C,
+         sAxilWriteSlave   => open,
+         sAxilReadMaster   => AXI_LITE_READ_MASTER_INIT_C,
+         sAxilReadSlave    => open
+      );
+   
+   end generate;
+   
+   roClkTail <= iRoClkTail(0);
    
    ----------------------------------------------------------------------
    -- Streaming out FIFO

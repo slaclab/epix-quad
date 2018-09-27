@@ -60,6 +60,11 @@ entity RdoutCoreDdr is
       tpsStream            : in  AxiStreamMasterArray(15 downto 0);
       -- Test stream input
       testStream           : in  AxiStreamMasterArray(63 downto 0);
+      -- ASIC digital data signals to/from deserializer
+      asicDout             : in  slv(15 downto 0);
+      asicDoutTest         : in  slv(15 downto 0);
+      asicRoClk            : in  sl;
+      roClkTail            : out slv(7 downto 0);
       -- Frame stream output (axisClk domain)
       axisClk              : in  sl;
       axisRst              : in  sl;

@@ -1,10 +1,10 @@
 -------------------------------------------------------------------------------
--- File       : AsicEmuRdout.vhd
+-- File       : AsicEmuAout.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2017-06-09
 -- Last update: 2018-03-13
 -------------------------------------------------------------------------------
--- Description: Emulate ASIC Output for Readout Testing
+-- Description: Emulate ASIC Analog Output for Readout Testing
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
@@ -23,10 +23,10 @@ use ieee.std_logic_unsigned.all;
 use work.StdRtlPkg.all;
 use work.AxiStreamPkg.all;
 
-entity AsicEmuRdout is
+entity AsicEmuAout is
    generic (
-      TPD_G             : time         := 1 ns;
-      INDEX_G           : natural      := 0
+      TPD_G             : time                  := 1 ns;
+      INDEX_G           : natural               := 0
    );
    port (
       -- System Clock (100 MHz)
@@ -38,11 +38,11 @@ entity AsicEmuRdout is
       -- Test data output
       testStream        : out AxiStreamMasterType
    );
-end AsicEmuRdout;
+end AsicEmuAout;
 
 
 -- Define architecture
-architecture RTL of AsicEmuRdout is
+architecture RTL of AsicEmuAout is
    
    type RegType is record
       clkCount             : slv(31 downto 0);
@@ -109,4 +109,3 @@ begin
    end process seq;
    
 end RTL;
-

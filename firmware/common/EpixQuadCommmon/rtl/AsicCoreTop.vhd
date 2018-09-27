@@ -76,6 +76,8 @@ end AsicCoreTop;
 
 architecture rtl of AsicCoreTop is
    
+   constant LINE_REVERSE_C       : slv(3 downto 0) := "1010";
+   
    constant NUM_AXI_MASTERS_C    : natural := 3;
 
    constant ASIC_ACQ_INDEX_C     : natural := 0;
@@ -101,7 +103,10 @@ architecture rtl of AsicCoreTop is
    signal iAsicRoClk       : sl;
    
    signal testStream       : AxiStreamMasterArray(63 downto 0);
-
+   
+   signal roClkTail        : slv(7 downto 0);
+   signal asicDoutTest     : slv(15 downto 0);
+   
 begin
    
    ---------------------
@@ -128,6 +133,9 @@ begin
          mAxiReadSlaves   => axilReadSlaves
       );
    
+   ---------------------------------------------------------------
+   -- Acquisition core
+   --------------------- ------------------------------------------
    U_AcqCore : entity work.AcqCore
    generic map (
       TPD_G             => TPD_G,
@@ -149,7 +157,7 @@ begin
       acqCount          => acqCount,
       acqSmplEn         => acqSmplEn,
       readDone          => readDone,
-      roClkTail         => toSlv(10, 8),
+      roClkTail         => roClkTail,
       -- ASIC Control Ports
       asicAcq           => iAsicAcq,
       asicR0            => iAsicR0,
@@ -165,12 +173,15 @@ begin
    asicPpmat   <=  iAsicPpmat;
    asicRoClk   <=  iAsicRoClk;
    
+   ---------------------------------------------------------------
+   -- Readout core 
+   --------------------- ------------------------------------------
    U_RdoutCore : entity work.RdoutCoreTop
    generic map (
       TPD_G             => TPD_G,
       BANK_COLS_G       => BANK_COLS_G,
       BANK_ROWS_G       => BANK_ROWS_G,
-      LINE_REVERSE_G    => "1010"
+      LINE_REVERSE_G    => LINE_REVERSE_C
    )
    port map (
       -- ADC interface
@@ -199,6 +210,11 @@ begin
       tpsStream            => adcStream(79 downto 64),
       -- Test stream input
       testStream           => testStream,
+      -- ASIC digital data signals to/from deserializer
+      asicDout             => asicDout,
+      asicDoutTest         => asicDoutTest,
+      asicRoClk            => iAsicRoClk,
+      roClkTail            => roClkTail,
       -- Frame stream output (axisClk domain)
       axisClk              => sysClk,
       axisRst              => sysRst,
@@ -206,6 +222,10 @@ begin
       axisSlave            => dataTxSlave 
    );
    
+   
+   ---------------------------------------------------------------
+   -- PseudoScope Core
+   --------------------- ------------------------------------------
    U_PseudoScopeCore : entity work.PseudoScopeCore
    generic map (
       TPD_G             => TPD_G,
@@ -233,10 +253,12 @@ begin
       sAxilReadSlave    => axilReadSlaves(SCOPE_INDEX_C)
    );
    
-   
-   G_AsicEmuRdout : for i in 0 to 63 generate 
+   ---------------------------------------------------------------
+   -- ASIC Analog Test Data Generator
+   --------------------- ------------------------------------------
+   G_AsicEmuAout : for i in 0 to 63 generate 
       
-      U_AsicEmuRdout : entity work.AsicEmuRdout
+      U_AsicEmuAout : entity work.AsicEmuAout
          generic map (
             TPD_G       => TPD_G,
             INDEX_G     => i
@@ -251,6 +273,35 @@ begin
             -- Test data output
             testStream  => testStream(i)
          );
+      
+   end generate;
+   
+   ---------------------------------------------------------------
+   -- ASIC Digital Test Data Generator
+   --------------------- ------------------------------------------
+   G_AsicEmuDout : for i in 0 to 15 generate 
+      
+      U_AsicEmuDout : entity work.AsicEmuDout
+      generic map (
+         TPD_G             => TPD_G,
+         BANK_COLS_G       => BANK_COLS_G,
+         BANK_REVERSE_G    => LINE_REVERSE_C(i/4),
+         BANK_ROW_PAT_G(0) => x"0000000000008001",
+         BANK_ROW_PAT_G(1) => x"0000000000004002",
+         BANK_ROW_PAT_G(2) => x"0000000000002004",
+         BANK_ROW_PAT_G(3) => x"0000000000001008"
+      )
+      port map (
+         -- System Clock (100 MHz)
+         sysClk            => sysClk,
+         sysRst            => sysRst,
+         -- Run control
+         acqBusy           => acqBusy,
+         asicRoClk         => iAsicRoClk,
+         roClkTail         => roClkTail,
+         -- Test data output
+         asicDoutTest      => asicDoutTest(i)
+      );
       
    end generate;
 
