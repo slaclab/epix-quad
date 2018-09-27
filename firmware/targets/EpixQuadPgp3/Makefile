@@ -1,4 +1,4 @@
-export GIT_BYPASS = 1
+export GIT_BYPASS = 0
 
 # Use the PGPv3 6G core
 export INCLUDE_PGP3_6G = 1
@@ -13,7 +13,7 @@ export SDK_SRC_PATH = $(PROJ_DIR)/../../common/EpixQuadCommmon/src/
 export BUILD_MB_CORE = 1
 
 # Define if you want to build the DDR MIG core
-export BUILD_MIG_CORE = 1
+export BUILD_MIG_CORE = 0
 
 # Define if this is FSBL PROM address
 export PROM_FSBL = 1
@@ -34,5 +34,5 @@ include ../../submodules/ruckus/system_vivado.mk
 
 #-------------------------------------------------------------------------------
 #-- Revision History:
-#-- 07/30/2018 (0xEA040000): First revision
+#-- 07/30/2018 (0xEA050000): First revision
 #-------------------------------------------------------------------------------
