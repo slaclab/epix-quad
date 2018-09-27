@@ -280,16 +280,23 @@ begin
    -- ASIC Digital Test Data Generator
    --------------------- ------------------------------------------
    G_AsicEmuDout : for i in 0 to 15 generate 
+      constant BANK_ROW_PAT_C : Slv64Array(15 downto 0) := (
+         0  => toSlv( 1, 64), 1  => toSlv( 2, 64), 2  => toSlv( 3, 64), 3  => toSlv( 4, 64),
+         4  => toSlv( 5, 64), 5  => toSlv( 6, 64), 6  => toSlv( 7, 64), 7  => toSlv( 8, 64),
+         8  => toSlv( 9, 64), 9  => toSlv(11, 64), 10 => toSlv(11, 64), 11 => toSlv(12, 64),
+         12 => toSlv(13, 64), 13 => toSlv(14, 64), 14 => toSlv(15, 64), 15 => toSlv(16, 64)
+      );
+   begin
       
       U_AsicEmuDout : entity work.AsicEmuDout
       generic map (
          TPD_G             => TPD_G,
          BANK_COLS_G       => BANK_COLS_G,
          BANK_REVERSE_G    => LINE_REVERSE_C(i/4),
-         BANK_ROW_PAT_G(0) => x"0000000000008001",
-         BANK_ROW_PAT_G(1) => x"0000000000004002",
-         BANK_ROW_PAT_G(2) => x"0000000000002004",
-         BANK_ROW_PAT_G(3) => x"0000000000001008"
+         BANK_ROW_PAT_G(0) => BANK_ROW_PAT_C((i*4+0) mod 16),
+         BANK_ROW_PAT_G(1) => BANK_ROW_PAT_C((i*4+1) mod 16),
+         BANK_ROW_PAT_G(2) => BANK_ROW_PAT_C((i*4+2) mod 16),
+         BANK_ROW_PAT_G(3) => BANK_ROW_PAT_C((i*4+3) mod 16)
       )
       port map (
          -- System Clock (100 MHz)
