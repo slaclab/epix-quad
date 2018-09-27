@@ -188,9 +188,11 @@ architecture rtl of RdoutCoreBram is
    
    signal iRoClkTail       : Slv8Array(3 downto 0);
    signal doutOut          : Slv2VectorArray(3 downto 0, 15 downto 0);
+   signal doutCount        : Slv8VectorArray(3 downto 0, 15 downto 0);
    signal doutValid        : Slv16Array(3 downto 0);
    
    signal muxAsicDout      : slv(15 downto 0);
+   signal muxDoutMap       : slv(15 downto 0);
    
 begin
    --r.rowCount(BUFF_BITS_C-1 downto 0)
@@ -220,6 +222,9 @@ begin
    muxStrMap( 6) <= muxStream(46);
    muxStrMap( 7) <= muxStream(47);
    
+   muxDoutMap( 0) <= muxAsicDout( 9);
+   muxDoutMap( 1) <= muxAsicDout(10);
+   
    -- sRow 0 (bottom, bottom)
    -- ASIC 13, ASIC 14 (right)
    muxStrMap( 8) <= muxStream(56);
@@ -230,6 +235,9 @@ begin
    muxStrMap(13) <= muxStream(61);
    muxStrMap(14) <= muxStream(62);
    muxStrMap(15) <= muxStream(63);
+   
+   muxDoutMap( 2) <= muxAsicDout(13);
+   muxDoutMap( 3) <= muxAsicDout(14);
    
    -- sRow 1 (bottom, up)
    -- ASIC 8, ASIC 11  (left)
@@ -242,6 +250,9 @@ begin
    muxStrMap(22) <= muxStream(38);
    muxStrMap(23) <= muxStream(39);
    
+   muxDoutMap( 4) <= muxAsicDout( 8);
+   muxDoutMap( 5) <= muxAsicDout(11);
+   
    -- sRow 1 (bottom, up)
    -- ASIC 12, ASIC 15  (right)
    muxStrMap(24) <= muxStream(48);
@@ -252,6 +263,9 @@ begin
    muxStrMap(29) <= muxStream(53);
    muxStrMap(30) <= muxStream(54);
    muxStrMap(31) <= muxStream(55);
+   
+   muxDoutMap( 6) <= muxAsicDout(12);
+   muxDoutMap( 7) <= muxAsicDout(15);
    
    -- sRow 2 (bottom, bottom)
    -- ASIC 1, ASIC 2 (left)
@@ -264,6 +278,9 @@ begin
    muxStrMap(38) <= muxStream(14);
    muxStrMap(39) <= muxStream(15);
    
+   muxDoutMap( 8) <= muxAsicDout( 1);
+   muxDoutMap( 9) <= muxAsicDout( 2);
+   
    -- sRow 2 (bottom, bottom)
    -- ASIC 5, ASIC 6 (right)
    muxStrMap(40) <= muxStream(24);
@@ -274,6 +291,9 @@ begin
    muxStrMap(45) <= muxStream(29);
    muxStrMap(46) <= muxStream(30);
    muxStrMap(47) <= muxStream(31);
+   
+   muxDoutMap(10) <= muxAsicDout( 5);
+   muxDoutMap(11) <= muxAsicDout( 6);
    
    -- sRow 3 (bottom, up)
    -- ASIC 0, ASIC 3  (left)
@@ -286,6 +306,9 @@ begin
    muxStrMap(54) <= muxStream(6);
    muxStrMap(55) <= muxStream(7);
    
+   muxDoutMap(12) <= muxAsicDout( 0);
+   muxDoutMap(13) <= muxAsicDout( 3);
+   
    -- sRow 3 (bottom, up)
    -- ASIC 4, ASIC 7  (right)
    muxStrMap(56) <= muxStream(16);
@@ -296,6 +319,9 @@ begin
    muxStrMap(61) <= muxStream(21);
    muxStrMap(62) <= muxStream(22);
    muxStrMap(63) <= muxStream(23);
+   
+   muxDoutMap(14) <= muxAsicDout( 4);
+   muxDoutMap(15) <= muxAsicDout( 7);
    
    --------------------------------------------------
    -- Data storage and readout FSMs
@@ -311,7 +337,7 @@ begin
    
    comb : process (sysRst, sAxilReadMaster, sAxilWriteMaster, txSlave, r,
       acqBusyEdge, acqBusy, acqCount, acqSmplEn, memRdData, opCode, muxStrMap, tpsStream,
-      doutValid, doutOut) is
+      doutValid, doutOut, doutCount) is
       variable v      : RegType;
       variable regCon : AxiLiteEndPointType;
       variable sRowCountVar : integer;
@@ -492,7 +518,7 @@ begin
             end if;
             
          when WAIT_LINE_S =>
-            if v.lineBufValid(r.sRowCount)(conv_integer(r.rowCount(BUFF_BITS_C-1 downto 0))) = '1' and doutValid(r.sRowCount)(r.bankCount) = '1' then
+            if v.lineBufValid(r.sRowCount)(conv_integer(r.rowCount(BUFF_BITS_C-1 downto 0))) = '1' and doutValid(r.sRowCount)(r.bankCount) = '1' and doutCount(r.sRowCount, r.bankCount) = BANK_COLS_C then
                if LINE_REVERSE_G(r.sRowCount) = '0' then
                   v.lineRdAddr := r.lineRdAddr + 1;
                else
@@ -698,24 +724,27 @@ begin
    -- Digital output deserializer 
    --------------------- ------------------------------------------
    G_DOUT_EPIX10KA : for i in 3 downto 0 generate
-      signal iDoutOut : Slv2Array(63 downto 0);
+      signal iDoutOut   : Slv2Array(63 downto 0);
+      signal iDoutCount : Slv8Array(63 downto 0);
    begin
       
       U_DoutAsic : entity work.DoutDeserializer
       generic map (
          TPD_G             => TPD_G,
-         BANK_COLS_G       => BANK_COLS_G
+         BANK_COLS_G       => BANK_COLS_G,
+         RD_ORDER_INIT_G   => (others=>LINE_REVERSE_G(i))
       )
       port map ( 
          clk               => sysClk,
          rst               => sysRst,
          acqBusy           => acqBusy,
          roClkTail         => iRoClkTail(i),
-         asicDout          => muxAsicDout(3+i*4 downto 0+i*4),
+         asicDout          => muxDoutMap(3+i*4 downto 0+i*4),
          asicRoClk         => asicRoClk,
          doutOut           => iDoutOut(15+i*16 downto 0+i*16),
          doutRd            => r.doutRd(i),
          doutValid         => doutValid(i),
+         doutCount         => iDoutCount(15+i*16 downto 0+i*16),
          sAxilWriteMaster  => AXI_LITE_WRITE_MASTER_INIT_C,
          sAxilWriteSlave   => open,
          sAxilReadMaster   => AXI_LITE_READ_MASTER_INIT_C,
@@ -723,7 +752,8 @@ begin
       );
       
       G_VEC16 : for j in 15 downto 0 generate
-         doutOut(i, j) <= iDoutOut(j+i*16);
+         doutOut(i, j)     <= iDoutOut(j+i*16);
+         doutCount(i, j)   <= iDoutCount(j+i*16);
       end generate;
    
    end generate;
