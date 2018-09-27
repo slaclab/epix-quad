@@ -638,10 +638,12 @@ class Epix10kaAsic(pr.Device):
         """SetPixelBitmap command function"""
         addrSize = 4
         #set r0mode in order to have saci cmd to work properly on legacy firmware
-        self.root.Epix10ka.EpixFpgaRegisters.AsicR0Mode.set(True)
+        #self.root.Epix10ka.EpixFpgaRegisters.AsicR0Mode.set(True)
 
         if (self.enable.get()):
             self.reportCmd(dev,cmd,arg)
+            if not isinstance(arg, str):
+               arg = ''
             if len(arg) > 0:
                self.filename = arg
             else:
@@ -679,7 +681,7 @@ class Epix10kaAsic(pr.Device):
         """GetPixelBitmap command function"""
         addrSize = 4
         #set r0mode in order to have saci cmd to work properly on legacy firmware
-        self.root.Epix10ka.EpixFpgaRegisters.AsicR0Mode.set(True)
+        #self.root.Epix10ka.EpixFpgaRegisters.AsicR0Mode.set(True)
 
         if (self.enable.get()):
             self.reportCmd(dev,cmd,arg)
