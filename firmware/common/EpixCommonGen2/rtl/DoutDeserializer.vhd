@@ -51,7 +51,8 @@ use work.AxiLitePkg.all;
 entity DoutDeserializer is 
    generic (
       TPD_G             : time            := 1 ns;
-      AXIL_ERR_RESP_G   : slv(1 downto 0) := AXI_RESP_DECERR_C
+      AXIL_ERR_RESP_G   : slv(1 downto 0) := AXI_RESP_DECERR_C;
+      BANK_COLS_G       : natural         := 48
    );
    port ( 
       clk         : in  sl;
@@ -79,6 +80,11 @@ end DoutDeserializer;
 -- Define architecture
 architecture RTL of DoutDeserializer is
    
+   constant BANK_COLS_C    : natural   := BANK_COLS_G - 1;
+   constant COLS_BITS_C    : natural   := log2(BANK_COLS_G);
+   
+   type BuffVectorArray is array (natural range<>, natural range<>) of slv(BANK_COLS_G-1 downto 0);
+   
    type StateType is (IDLE_S, WAIT_S, STORE_S);
    
    type FsmType is record
@@ -91,11 +97,11 @@ architecture RTL of DoutDeserializer is
       fifoWr            : slv(15 downto 0);
       fifoWrDly         : slv(15 downto 0);
       fifoRst           : sl;
-      rowBuff           : Slv48VectorArray(1 downto 0, 15 downto 0);
+      rowBuff           : BuffVectorArray(1 downto 0, 15 downto 0);
       rowBuffRdy        : sl;
       rowBuffAct        : natural;
       copyReq           : sl;
-      copyCnt           : natural;
+      copyCnt           : natural range 0 to BANK_COLS_C;
       rdOrder           : slv(15 downto 0);
       rdoClkDelay       : slv(7 downto 0);
       sysClkDelay       : slv(7 downto 0);
@@ -206,16 +212,16 @@ begin
             fv.rowBuffRdy := '0';
             if f.roClkRising(conv_integer(f.sysClkDelay)) = '1' then
                -- write douts to appropriate row buffer on every roClkRising edge
-               fv.rowBuff(f.rowBuffAct, 0 +conv_integer(f.stCnt(1 downto 0)))(conv_integer(f.stCnt(7 downto 2))) := f.asicDout(0);
-               fv.rowBuff(f.rowBuffAct, 4 +conv_integer(f.stCnt(1 downto 0)))(conv_integer(f.stCnt(7 downto 2))) := f.asicDout(1);
-               fv.rowBuff(f.rowBuffAct, 8 +conv_integer(f.stCnt(1 downto 0)))(conv_integer(f.stCnt(7 downto 2))) := f.asicDout(2);
-               fv.rowBuff(f.rowBuffAct, 12+conv_integer(f.stCnt(1 downto 0)))(conv_integer(f.stCnt(7 downto 2))) := f.asicDout(3);
+               fv.rowBuff(f.rowBuffAct, 0 +conv_integer(f.stCnt(1 downto 0)))(conv_integer(f.stCnt(COLS_BITS_C+1 downto 2))) := f.asicDout(0);
+               fv.rowBuff(f.rowBuffAct, 4 +conv_integer(f.stCnt(1 downto 0)))(conv_integer(f.stCnt(COLS_BITS_C+1 downto 2))) := f.asicDout(1);
+               fv.rowBuff(f.rowBuffAct, 8 +conv_integer(f.stCnt(1 downto 0)))(conv_integer(f.stCnt(COLS_BITS_C+1 downto 2))) := f.asicDout(2);
+               fv.rowBuff(f.rowBuffAct, 12+conv_integer(f.stCnt(1 downto 0)))(conv_integer(f.stCnt(COLS_BITS_C+1 downto 2))) := f.asicDout(3);
 
                -- count rising edges of roClk
                fv.stCnt := f.stCnt + 1;
                
                -- change row buffer and trigger copy logic
-               if conv_integer(f.stCnt(7 downto 2)) = 47 and f.stCnt(1 downto 0) = "11" then
+               if conv_integer(f.stCnt(COLS_BITS_C+1 downto 2)) = BANK_COLS_C and f.stCnt(1 downto 0) = "11" then
                   fv.rowBuffRdy := '1';
                   fv.stCnt := (others=>'0');
                   fv.fifoWr := (others=>'1');
@@ -239,7 +245,7 @@ begin
          fv.copyCnt := f.copyCnt + 1;
          
          -- copy done
-         if f.copyCnt = 47 then
+         if f.copyCnt = BANK_COLS_C then
             fv.copyReq := '0';
             fv.copyCnt := 0;
             fv.fifoWr := (others=>'0');
@@ -256,7 +262,7 @@ begin
          if f.rdOrder(i) = '0' then
             fv.fifoIn(i)(0) := f.rowBuff(rowBuffCopy, i)(f.copyCnt);
          else
-            fv.fifoIn(i)(0) := f.rowBuff(rowBuffCopy, i)(47 - f.copyCnt);
+            fv.fifoIn(i)(0) := f.rowBuff(rowBuffCopy, i)(BANK_COLS_C - f.copyCnt);
          end if;
       end loop;
       
