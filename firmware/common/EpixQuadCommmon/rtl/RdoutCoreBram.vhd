@@ -130,7 +130,7 @@ architecture rtl of RdoutCoreBram is
       lineWrBuff           : slv(BUFF_BITS_C-1 downto 0);
       lineRdAddr           : slv(COLS_BITS_C-1 downto 0);
       memWrAddr            : slv(BUFF_BITS_C+COLS_BITS_C-1 downto 0);
-      doutRd               : slv(63 downto 0);
+      doutRd               : Slv16Array(3 downto 0);
       wrState              : WrStateType;
       rdState              : RdStateType;
       txMaster             : AxiStreamMasterType;
@@ -163,7 +163,7 @@ architecture rtl of RdoutCoreBram is
       lineWrBuff           => (others=>'0'),
       lineRdAddr           => (others=>'0'),
       memWrAddr            => (others=>'0'),
-      doutRd               => (others=>'0'),
+      doutRd               => (others=>(others=>'0')),
       wrState              => IDLE_S,
       rdState              => IDLE_S,
       txMaster             => AXI_STREAM_MASTER_INIT_C,
@@ -187,8 +187,8 @@ architecture rtl of RdoutCoreBram is
    signal muxStream        : AxiStreamMasterArray(63 downto 0);
    
    signal iRoClkTail       : Slv8Array(3 downto 0);
-   signal doutOut          : Slv2Array(63 downto 0);
-   signal doutValid        : slv(63 downto 0);
+   signal doutOut          : Slv2VectorArray(3 downto 0, 15 downto 0);
+   signal doutValid        : Slv16Array(3 downto 0);
    
    signal muxAsicDout      : slv(15 downto 0);
    
@@ -438,15 +438,6 @@ begin
       -- FSM to assemble and stream 4 lines (16 banks per line)
       --------------------------------------------------
       
-      -- temporary
-      for i in 63 downto 0 loop
-         if doutValid(i) = '1' then
-            v.doutRd(i) := '1';
-         else
-            v.doutRd(i) := '0';
-         end if;
-      end loop;
-      
       -- Reset strobing Signals
       if (txSlave.tReady = '1') then
          v.txMaster.tValid := '0';
@@ -455,6 +446,8 @@ begin
          v.txMaster.tKeep  := (others => '1');
          v.txMaster.tStrb  := (others => '1');
       end if;
+      
+      v.doutRd := (others=>(others=>'0'));
       
       case r.rdState is
          
@@ -499,7 +492,7 @@ begin
             end if;
             
          when WAIT_LINE_S =>
-            if v.lineBufValid(r.sRowCount)(conv_integer(r.rowCount(BUFF_BITS_C-1 downto 0))) = '1' then
+            if v.lineBufValid(r.sRowCount)(conv_integer(r.rowCount(BUFF_BITS_C-1 downto 0))) = '1' and doutValid(r.sRowCount)(r.bankCount) = '1' then
                if LINE_REVERSE_G(r.sRowCount) = '0' then
                   v.lineRdAddr := r.lineRdAddr + 1;
                else
@@ -518,6 +511,10 @@ begin
                
                v.txMaster.tValid := '1';
                v.txMaster.tData(31 downto 0) := memRdData(r.sRowCount, r.bankCount);  -- super row 0-3, bank 0-15 = 64 memory channels
+               -- insert (overwrite) dout bits
+               v.txMaster.tData(30) := doutOut(r.sRowCount, r.bankCount)(1);
+               v.txMaster.tData(14) := doutOut(r.sRowCount, r.bankCount)(0);
+               v.doutRd(r.sRowCount)(r.bankCount) := '1';
                
                if r.colCount < BANK_COLS_C then    -- next column in bank
                   v.colCount := r.colCount + 1;
@@ -701,6 +698,8 @@ begin
    -- Digital output deserializer 
    --------------------- ------------------------------------------
    G_DOUT_EPIX10KA : for i in 3 downto 0 generate
+      signal iDoutOut : Slv2Array(63 downto 0);
+   begin
       
       U_DoutAsic : entity work.DoutDeserializer
       generic map (
@@ -714,14 +713,18 @@ begin
          roClkTail         => iRoClkTail(i),
          asicDout          => muxAsicDout(3+i*4 downto 0+i*4),
          asicRoClk         => asicRoClk,
-         doutOut           => doutOut(15+i*16 downto 0+i*16),
-         doutRd            => r.doutRd(15+i*16 downto 0+i*16),
-         doutValid         => doutValid(15+i*16 downto 0+i*16),
+         doutOut           => iDoutOut(15+i*16 downto 0+i*16),
+         doutRd            => r.doutRd(i),
+         doutValid         => doutValid(i),
          sAxilWriteMaster  => AXI_LITE_WRITE_MASTER_INIT_C,
          sAxilWriteSlave   => open,
          sAxilReadMaster   => AXI_LITE_READ_MASTER_INIT_C,
          sAxilReadSlave    => open
       );
+      
+      G_VEC16 : for j in 15 downto 0 generate
+         doutOut(i, j) <= iDoutOut(j+i*16);
+      end generate;
    
    end generate;
    
