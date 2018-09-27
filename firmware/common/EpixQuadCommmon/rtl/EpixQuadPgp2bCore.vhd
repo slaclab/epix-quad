@@ -263,8 +263,9 @@ begin
    
    U_VcMapping : entity work.PgpVcMapping
       generic map (
-         TPD_G          => TPD_G,
-         SIMULATION_G   => SIMULATION_G
+         TPD_G                => TPD_G,
+         SIMULATION_G         => SIMULATION_G,
+         AXI_STREAM_CONFIG_G  => SSI_PGP2B_CONFIG_C
       )
       port map (
          -- PGP Clock and Reset

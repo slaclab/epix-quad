@@ -27,8 +27,9 @@ use work.SsiCmdMasterPkg.all;
 
 entity PgpVcMapping is
    generic (
-      TPD_G          : time      := 1 ns;
-      SIMULATION_G   : boolean   := false
+      TPD_G                : time                  := 1 ns;
+      SIMULATION_G         : boolean               := false;
+      AXI_STREAM_CONFIG_G  : AxiStreamConfigType   := SSI_PGP2B_CONFIG_C
    );
    port (
       -- PGP Clock and Reset
@@ -91,7 +92,7 @@ begin
          FIFO_PAUSE_THRESH_G => 128,
          -- AXI Stream Port Configurations
          SLAVE_AXI_CONFIG_G  => ssiAxiStreamConfig(4),
-         MASTER_AXI_CONFIG_G => SSI_PGP2B_CONFIG_C)
+         MASTER_AXI_CONFIG_G => AXI_STREAM_CONFIG_G)
       port map (
          -- Slave Port
          sAxisClk    => sysClk,
@@ -109,7 +110,7 @@ begin
    U_VC0_RX : entity work.SsiCmdMaster
       generic map (
          SLAVE_READY_EN_G    => SIMULATION_G,
-         AXI_STREAM_CONFIG_G => SSI_PGP2B_CONFIG_C)
+         AXI_STREAM_CONFIG_G => AXI_STREAM_CONFIG_G)
       port map (
          -- Streaming Data Interface
          axisClk     => pgpClk,
@@ -145,7 +146,7 @@ begin
          TPD_G               => TPD_G,
          SLAVE_READY_EN_G    => SIMULATION_G,
          GEN_SYNC_FIFO_G     => false,
-         AXI_STREAM_CONFIG_G => SSI_PGP2B_CONFIG_C)
+         AXI_STREAM_CONFIG_G => AXI_STREAM_CONFIG_G)
       port map (
          -- Streaming Slave (Rx) Interface (sAxisClk domain) 
          sAxisClk         => pgpClk,
@@ -187,7 +188,7 @@ begin
          FIFO_PAUSE_THRESH_G => 128,
          -- AXI Stream Port Configurations
          SLAVE_AXI_CONFIG_G  => ssiAxiStreamConfig(4, TKEEP_COMP_C),
-         MASTER_AXI_CONFIG_G => SSI_PGP2B_CONFIG_C)
+         MASTER_AXI_CONFIG_G => AXI_STREAM_CONFIG_G)
       port map (
          -- Slave Port
          sAxisClk    => sysClk,
@@ -218,7 +219,7 @@ begin
          FIFO_PAUSE_THRESH_G => 128,
          -- AXI Stream Port Configurations
          SLAVE_AXI_CONFIG_G  => ssiAxiStreamConfig(4, TKEEP_COMP_C),
-         MASTER_AXI_CONFIG_G => SSI_PGP2B_CONFIG_C)
+         MASTER_AXI_CONFIG_G => AXI_STREAM_CONFIG_G)
       port map (
          -- Slave Port
          sAxisClk    => sysClk,
@@ -235,7 +236,7 @@ begin
    U_VC3_RX : entity work.SsiCmdMaster
       generic map (
          SLAVE_READY_EN_G    => SIMULATION_G,
-         AXI_STREAM_CONFIG_G => SSI_PGP2B_CONFIG_C
+         AXI_STREAM_CONFIG_G => AXI_STREAM_CONFIG_G
       )
       port map (
          -- Streaming Data Interface
