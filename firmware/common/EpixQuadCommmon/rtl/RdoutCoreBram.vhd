@@ -69,9 +69,9 @@ end RdoutCoreBram;
 architecture rtl of RdoutCoreBram is
    
    -- ASIC settings
-   constant BANK_COLS_C    : natural := BANK_COLS_G/2 - 1;
+   constant BANK_COLS_C    : natural := BANK_COLS_G/4 - 1;
    constant BANK_ROWS_C    : natural := BANK_ROWS_G - 1;
-   constant COLS_BITS_C    : natural := log2(BANK_COLS_G/2);   -- div by 2 for 32 bit packed 2 pixels
+   constant COLS_BITS_C    : natural := log2(BANK_COLS_G/4);   -- div by 4 for 64 bit packed 4 pixels
    constant ROWS_BITS_C    : natural := log2(BANK_ROWS_G);
    
    -- Buffer settings
@@ -80,8 +80,8 @@ architecture rtl of RdoutCoreBram is
    constant TIMEOUT_C      : integer := 10000;  -- 100us
    
    -- Stream settings
-   constant SLAVE_AXI_CONFIG_C   : AxiStreamConfigType := ssiAxiStreamConfig(4);
-   constant MASTER_AXI_CONFIG_C  : AxiStreamConfigType := ssiAxiStreamConfig(4);
+   constant SLAVE_AXI_CONFIG_C   : AxiStreamConfigType := ssiAxiStreamConfig(8);
+   constant MASTER_AXI_CONFIG_C  : AxiStreamConfigType := ssiAxiStreamConfig(8);
    
    constant LANE_C         : slv( 1 downto 0) := "00";
    constant VC_C           : slv( 1 downto 0) := "00";
@@ -109,7 +109,10 @@ architecture rtl of RdoutCoreBram is
       rdoutEn              : sl;
       rdoutEnReg           : sl;
       testData             : sl;
-      adcDataBuf           : Slv14Array(63 downto 0);
+      adcDataBuf0          : Slv14Array(63 downto 0);
+      adcDataBuf1          : Slv14Array(63 downto 0);
+      adcDataBuf2          : Slv14Array(63 downto 0);
+      adcDataBufCnt        : integer range 0 to 2;
       seqCount             : slv(31 downto 0);
       seqCountReset        : sl;
       adcPipelineDly       : slv(7 downto 0);
@@ -117,7 +120,7 @@ architecture rtl of RdoutCoreBram is
       acqSmplEn            : slv(255 downto 0);
       readPend             : sl;
       error                : sl;
-      wordCnt              : integer range 0 to 7;
+      wordCnt              : integer range 0 to 3;
       timeCnt              : integer range 0 to TIMEOUT_C;
       sRowCount            : integer range 0 to 3;             -- 4 lines
       bankCount            : integer range 0 to 15;            -- 16 banks per line
@@ -142,7 +145,10 @@ architecture rtl of RdoutCoreBram is
       rdoutEn              => '0',
       rdoutEnReg           => '0',
       testData             => '0',
-      adcDataBuf           => (others=>(others=>'0')),
+      adcDataBuf0          => (others=>(others=>'0')),
+      adcDataBuf1          => (others=>(others=>'0')),
+      adcDataBuf2          => (others=>(others=>'0')),
+      adcDataBufCnt        => 0,
       seqCount             => (others=>'0'),
       seqCountReset        => '0',
       adcPipelineDly       => (others=>'0'),
@@ -180,14 +186,14 @@ architecture rtl of RdoutCoreBram is
    signal memWrEn          : sl;
    signal memWrAddr        : slv(BUFF_BITS_C+COLS_BITS_C-1 downto 0);
    signal memRdAddr        : slv(BUFF_BITS_C+COLS_BITS_C-1 downto 0);
-   signal memRdData        : Slv32VectorArray(3 downto 0, 15 downto 0);
-   signal memWrData        : Slv32Array(63 downto 0);
+   signal memRdData        : Slv64VectorArray(3 downto 0, 15 downto 0);
+   signal memWrData        : Slv64Array(63 downto 0);
    
    signal muxStrMap        : AxiStreamMasterArray(63 downto 0);
    signal muxStream        : AxiStreamMasterArray(63 downto 0);
    
    signal iRoClkTail       : Slv8Array(3 downto 0);
-   signal doutOut          : Slv2VectorArray(3 downto 0, 15 downto 0);
+   signal doutOut          : Slv4VectorArray(3 downto 0, 15 downto 0);
    signal doutCount        : Slv8VectorArray(3 downto 0, 15 downto 0);
    signal doutValid        : Slv16Array(3 downto 0);
    
@@ -200,8 +206,8 @@ begin
       report "ROWS_BITS_C must be >= BUFF_BITS_C"
       severity failure;
    
-   assert BANK_COLS_G mod 2 = 0
-      report "BANK_COLS_G must be even number"
+   assert BANK_COLS_G mod 4 = 0
+      report "BANK_COLS_G must be multiple of 4"
       severity failure;
    
    muxStream   <= adcStream when r.testData = '0' else testStream;
@@ -391,11 +397,12 @@ begin
          -- write samples to RAM when readout is pending
          when IDLE_S =>
             if r.readPend = '1' then
-               v.wrState := BUFFER_S;
+               v.wrState      := BUFFER_S;
             end if;
-            v.lineWrAddr   := (others=>'0');
-            v.lineWrBuff   := (others=>'0');
-            v.lineBufValid := (others=>(others=>'0'));
+            v.lineWrAddr      := (others=>'0');
+            v.lineWrBuff      := (others=>'0');
+            v.lineBufValid    := (others=>(others=>'0'));
+            v.adcDataBufCnt   := 0;
          
          -- buffer first sample for 32 bit write
          when BUFFER_S =>
@@ -403,9 +410,16 @@ begin
             if r.acqSmplEn(conv_integer(r.adcPipelineDly)) = '1' then
                -- buffer incoming samples for 32 bit data packing
                for i in 63 downto 0 loop
-                  v.adcDataBuf(i) := muxStrMap(i).tData(13 downto 0);
+                  v.adcDataBuf0(i) := muxStrMap(i).tData(13 downto 0);
+                  v.adcDataBuf1(i) := r.adcDataBuf0(i);
+                  v.adcDataBuf2(i) := r.adcDataBuf1(i);
                end loop;
-               v.wrState := WRITE_S;
+               if r.adcDataBufCnt < 2 then
+                  v.adcDataBufCnt := r.adcDataBufCnt + 1;
+               else
+                  v.adcDataBufCnt := 0;
+                  v.wrState       := WRITE_S;
+               end if;
             end if;
             if r.readPend = '0' then
                v.wrState := IDLE_S;
@@ -500,15 +514,16 @@ begin
                v.txMaster.tValid := '1';
                if r.wordCnt = 0 then
                   ssiSetUserSof(SLAVE_AXI_CONFIG_C, v.txMaster, '1');
-                  v.txMaster.tData(31 downto 0) := x"000000" & "00" & LANE_C & "00" & VC_C;
+                  v.txMaster.tData(31 downto  0) := x"000000" & "00" & LANE_C & "00" & VC_C;
+                  v.txMaster.tData(63 downto 32) := x"0" & "00" & QUAD_C & opCode & acqCount(15 downto 0);
                elsif r.wordCnt = 1 then
-                  v.txMaster.tData(31 downto 0) := x"0" & "00" & QUAD_C & opCode & acqCount(15 downto 0);
-               elsif r.wordCnt = 2 then
-                  v.txMaster.tData(31 downto 0) := r.seqCount;
+                  v.txMaster.tData(31 downto  0) := r.seqCount;
+                  v.txMaster.tData(63 downto 32) := x"00000000";
                else
-                  v.txMaster.tData(31 downto 0) := x"00000000";
+                  v.txMaster.tData(31 downto  0) := x"00000000";
+                  v.txMaster.tData(63 downto 32) := x"00000000";
                end if;
-               if (r.wordCnt = 7) then
+               if (r.wordCnt = 3) then
                   v.wordCnt   := 0;
                   v.timeCnt   := 0;
                   v.rdState   := WAIT_LINE_S;
@@ -536,8 +551,10 @@ begin
             if v.txMaster.tValid = '0' then
                
                v.txMaster.tValid := '1';
-               v.txMaster.tData(31 downto 0) := memRdData(r.sRowCount, r.bankCount);  -- super row 0-3, bank 0-15 = 64 memory channels
+               v.txMaster.tData(63 downto 0) := memRdData(r.sRowCount, r.bankCount);  -- super row 0-3, bank 0-15 = 64 memory channels
                -- insert (overwrite) dout bits
+               v.txMaster.tData(62) := doutOut(r.sRowCount, r.bankCount)(3);
+               v.txMaster.tData(46) := doutOut(r.sRowCount, r.bankCount)(2);
                v.txMaster.tData(30) := doutOut(r.sRowCount, r.bankCount)(1);
                v.txMaster.tData(14) := doutOut(r.sRowCount, r.bankCount)(0);
                v.doutRd(r.sRowCount)(r.bankCount) := '1';
@@ -605,7 +622,8 @@ begin
             if v.txMaster.tValid = '0' then
                
                v.txMaster.tValid := '1';
-               v.txMaster.tData(31 downto 0) := x"00000000";
+               v.txMaster.tData(31 downto  0) := x"00000000";
+               v.txMaster.tData(63 downto 32) := x"00000000";
                
                if r.colCount < BANK_COLS_C then    -- next column in bank
                   v.colCount := r.colCount + 1;
@@ -624,24 +642,20 @@ begin
             if v.txMaster.tValid = '0' then
                v.txMaster.tValid := '1';
                if r.wordCnt = 0 then
-                  v.txMaster.tData(31 downto 0) := "00" & tpsStream(1).tData(13 downto 0) & "00" & tpsStream(0).tData(13 downto 0);
+                  v.txMaster.tData(31 downto  0) := "00" & tpsStream( 1).tData(13 downto 0) & "00" & tpsStream( 0).tData(13 downto 0);
+                  v.txMaster.tData(63 downto 32) := "00" & tpsStream( 3).tData(13 downto 0) & "00" & tpsStream( 2).tData(13 downto 0);
                elsif r.wordCnt = 1 then
-                  v.txMaster.tData(31 downto 0) := "00" & tpsStream(3).tData(13 downto 0) & "00" & tpsStream(2).tData(13 downto 0);
+                  v.txMaster.tData(31 downto  0) := "00" & tpsStream( 5).tData(13 downto 0) & "00" & tpsStream( 4).tData(13 downto 0);
+                  v.txMaster.tData(63 downto 32) := "00" & tpsStream( 7).tData(13 downto 0) & "00" & tpsStream( 6).tData(13 downto 0);
                elsif r.wordCnt = 2 then
-                  v.txMaster.tData(31 downto 0) := "00" & tpsStream(5).tData(13 downto 0) & "00" & tpsStream(4).tData(13 downto 0);
-               elsif r.wordCnt = 3 then
-                  v.txMaster.tData(31 downto 0) := "00" & tpsStream(7).tData(13 downto 0) & "00" & tpsStream(6).tData(13 downto 0);
-               elsif r.wordCnt = 4 then
-                  v.txMaster.tData(31 downto 0) := "00" & tpsStream(9).tData(13 downto 0) & "00" & tpsStream(8).tData(13 downto 0);
-               elsif r.wordCnt = 5 then
-                  v.txMaster.tData(31 downto 0) := "00" & tpsStream(11).tData(13 downto 0) & "00" & tpsStream(10).tData(13 downto 0);
-               elsif r.wordCnt = 6 then
-                  v.txMaster.tData(31 downto 0) := "00" & tpsStream(13).tData(13 downto 0) & "00" & tpsStream(12).tData(13 downto 0);
+                  v.txMaster.tData(31 downto  0) := "00" & tpsStream( 9).tData(13 downto 0) & "00" & tpsStream( 8).tData(13 downto 0);
+                  v.txMaster.tData(63 downto 32) := "00" & tpsStream(11).tData(13 downto 0) & "00" & tpsStream(10).tData(13 downto 0);
                else
-                  v.txMaster.tData(31 downto 0) := "00" & tpsStream(15).tData(13 downto 0) & "00" & tpsStream(14).tData(13 downto 0);
+                  v.txMaster.tData(31 downto  0) := "00" & tpsStream(13).tData(13 downto 0) & "00" & tpsStream(12).tData(13 downto 0);
+                  v.txMaster.tData(63 downto 32) := "00" & tpsStream(15).tData(13 downto 0) & "00" & tpsStream(14).tData(13 downto 0);
                end if;
                
-               if (r.wordCnt = 7) then
+               if (r.wordCnt = 3) then
                   v.wordCnt   := 0;
                   v.readPend  := '0';
                   v.txMaster.tLast  := '1';
@@ -689,18 +703,24 @@ begin
    G_sRowBuf : for i in 3 downto 0 generate
       G_BankBuf : for j in 15 downto 0 generate
          
-         -- stage two 16 bit words for write into 32 bit memory
+         -- stage four 16 bit words for write into 64 bit memory
          -- swap words if line readout is reversed
          memWrData(i*16+j) <= 
+            
             "00" & muxStrMap(i*16+j).tData(13 downto 0) &
-            "00" & r.adcDataBuf(i*16+j) when LINE_REVERSE_G(i) = '0' else
-            "00" & r.adcDataBuf(i*16+j) &
+            "00" & r.adcDataBuf0(i*16+j) &
+            "00" & r.adcDataBuf1(i*16+j) &
+            "00" & r.adcDataBuf2(i*16+j) when LINE_REVERSE_G(i) = '0' else
+            
+            "00" & r.adcDataBuf2(i*16+j) &
+            "00" & r.adcDataBuf1(i*16+j) &
+            "00" & r.adcDataBuf0(i*16+j) &
             "00" & muxStrMap(i*16+j).tData(13 downto 0);
          
          U_BankBufRam: entity work.DualPortRam
          generic map (
             TPD_G          => TPD_G,
-            DATA_WIDTH_G   => 32,
+            DATA_WIDTH_G   => 64,
             ADDR_WIDTH_G   => BUFF_BITS_C+COLS_BITS_C
          )
          port map (
@@ -724,7 +744,7 @@ begin
    -- Digital output deserializer 
    --------------------- ------------------------------------------
    G_DOUT_EPIX10KA : for i in 3 downto 0 generate
-      signal iDoutOut   : Slv2Array(63 downto 0);
+      signal iDoutOut   : Slv4Array(63 downto 0);
       signal iDoutCount : Slv8Array(63 downto 0);
    begin
       
@@ -732,7 +752,8 @@ begin
       generic map (
          TPD_G             => TPD_G,
          BANK_COLS_G       => BANK_COLS_G,
-         RD_ORDER_INIT_G   => (others=>LINE_REVERSE_G(i))
+         RD_ORDER_INIT_G   => (others=>LINE_REVERSE_G(i)),
+         FOUR_BIT_OUT_G    => true
       )
       port map ( 
          clk               => sysClk,
@@ -741,7 +762,7 @@ begin
          roClkTail         => iRoClkTail(i),
          asicDout          => muxDoutMap(3+i*4 downto 0+i*4),
          asicRoClk         => asicRoClk,
-         doutOut           => iDoutOut(15+i*16 downto 0+i*16),
+         doutOut4          => iDoutOut(15+i*16 downto 0+i*16),
          doutRd            => r.doutRd(i),
          doutValid         => doutValid(i),
          doutCount         => iDoutCount(15+i*16 downto 0+i*16),
