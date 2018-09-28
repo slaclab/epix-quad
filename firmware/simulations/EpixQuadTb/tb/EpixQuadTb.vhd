@@ -167,7 +167,8 @@ begin
       BUILD_INFO_G      => toSlv (BUILD_INFO_TB_C),
       SIMULATION_G      => true,
       SIM_SPEEDUP_G     => true,
-      COM_TYPE_G        => "PGPv2b"
+      COM_TYPE_G        => "PGPv3",
+      RATE_G            => "6.25Gbps"
    )
    port map (
       -- DRR Memory interface ports
