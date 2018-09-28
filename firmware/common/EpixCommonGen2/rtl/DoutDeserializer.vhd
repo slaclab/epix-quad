@@ -53,14 +53,16 @@ entity DoutDeserializer is
       TPD_G             : time             := 1 ns;
       AXIL_ERR_RESP_G   : slv(1 downto 0)  := AXI_RESP_DECERR_C;
       BANK_COLS_G       : natural          := 48;
-      RD_ORDER_INIT_G   : slv(15 downto 0) := x"0FF0"
+      RD_ORDER_INIT_G   : slv(15 downto 0) := x"0FF0";
+      FOUR_BIT_OUT_G      : boolean          := false
    );
    port ( 
       clk         : in  sl;
       rst         : in  sl;
       asicDout    : in  slv(3 downto 0);
       asicRoClk   : in  sl;
-      doutOut     : out Slv2Array(15 downto 0);
+      doutOut     : out Slv2Array(15 downto 0); -- must keep this for backward compatibility
+      doutOut4    : out Slv4Array(15 downto 0);
       doutRd      : in  slv(15 downto 0);
       doutValid   : out slv(15 downto 0);
       doutCount   : out Slv8Array(15 downto 0);
@@ -84,6 +86,8 @@ architecture RTL of DoutDeserializer is
    
    constant BANK_COLS_C    : natural   := BANK_COLS_G - 1;
    constant COLS_BITS_C    : natural   := log2(BANK_COLS_G);
+   
+   constant FIFO_OUT_WIDTH : natural := ite(FOUR_BIT_OUT_G, 4, 2);
    
    type BuffVectorArray is array (natural range<>, natural range<>) of slv(BANK_COLS_G-1 downto 0);
    
@@ -295,28 +299,59 @@ begin
       end if;
    end process seq;
    
-   -- data out FIFOs
-   G_DoutFifos : for i in 0 to 15 generate
-      DoutFifo_U : entity work.FifoMux
-      generic map (
-         WR_DATA_WIDTH_G   => 1,
-         RD_DATA_WIDTH_G   => 2,
-         GEN_SYNC_FIFO_G   => true,
-         ADDR_WIDTH_G      => 8,
-         FWFT_EN_G         => true,
-         LITTLE_ENDIAN_G   => true
-      )
-      port map (
-         rst               => f.fifoRst,
-         wr_clk            => clk,
-         wr_en             => f.fifoWrDly(i),
-         din               => f.fifoIn(i),
-         rd_clk            => clk,
-         rd_en             => doutRd(i),
-         dout              => doutOut(i),
-         valid             => doutValid(i),
-         rd_data_count     => doutCount(i)
-      );
+   
+   G_TWO_BIT_OUT : if FOUR_BIT_OUT_G = false generate
+      -- data out FIFOs
+      G_DoutFifos : for i in 0 to 15 generate
+         DoutFifo_U : entity work.FifoMux
+         generic map (
+            WR_DATA_WIDTH_G   => 1,
+            RD_DATA_WIDTH_G   => FIFO_OUT_WIDTH,
+            GEN_SYNC_FIFO_G   => true,
+            ADDR_WIDTH_G      => 8,
+            FWFT_EN_G         => true,
+            LITTLE_ENDIAN_G   => true
+         )
+         port map (
+            rst               => f.fifoRst,
+            wr_clk            => clk,
+            wr_en             => f.fifoWrDly(i),
+            din               => f.fifoIn(i),
+            rd_clk            => clk,
+            rd_en             => doutRd(i),
+            dout              => doutOut(i),
+            valid             => doutValid(i),
+            rd_data_count     => doutCount(i)
+         );
+      end generate;
+      doutOut4    <= (others=>(others=>'0'));
+   end generate;
+   
+   G_FOUR_BIT_OUT : if FOUR_BIT_OUT_G = true generate
+      -- data out FIFOs
+      G_DoutFifos : for i in 0 to 15 generate
+         DoutFifo_U : entity work.FifoMux
+         generic map (
+            WR_DATA_WIDTH_G   => 1,
+            RD_DATA_WIDTH_G   => FIFO_OUT_WIDTH,
+            GEN_SYNC_FIFO_G   => true,
+            ADDR_WIDTH_G      => 8,
+            FWFT_EN_G         => true,
+            LITTLE_ENDIAN_G   => true
+         )
+         port map (
+            rst               => f.fifoRst,
+            wr_clk            => clk,
+            wr_en             => f.fifoWrDly(i),
+            din               => f.fifoIn(i),
+            rd_clk            => clk,
+            rd_en             => doutRd(i),
+            dout              => doutOut4(i),
+            valid             => doutValid(i),
+            rd_data_count     => doutCount(i)
+         );
+      end generate;
+      doutOut     <= (others=>(others=>'0'));
    end generate;
 
 end RTL;
