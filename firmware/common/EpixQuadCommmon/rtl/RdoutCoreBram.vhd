@@ -75,7 +75,7 @@ architecture rtl of RdoutCoreBram is
    constant ROWS_BITS_C    : natural := log2(BANK_ROWS_G);
    
    -- Buffer settings
-   constant BUFF_BITS_C    : integer range 1 to 5 := 3;
+   constant BUFF_BITS_C    : integer range 1 to 5 := 1;
    constant BUFF_MAX_C     : slv(2**BUFF_BITS_C-1 downto 0) := (others=>'1');
    constant TIMEOUT_C      : integer := 10000;  -- 100us
    
@@ -794,7 +794,7 @@ begin
       VALID_THOLD_G       => 1,     -- =0 = only when frame ready
       -- FIFO configurations
       GEN_SYNC_FIFO_G     => false,
-      CASCADE_SIZE_G      => 1,
+      CASCADE_SIZE_G      => 7,
       FIFO_ADDR_WIDTH_G   => 10,
       -- AXI Stream Port Configurations
       SLAVE_AXI_CONFIG_G  => SLAVE_AXI_CONFIG_C,
