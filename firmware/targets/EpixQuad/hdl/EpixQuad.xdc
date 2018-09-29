@@ -73,33 +73,43 @@ create_generated_clock -name adcBitClk9R    [get_pins {U_CORE/U_AdcCore/G_AdcRea
 create_generated_clock -name adcBitClk9RD4  [get_pins {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/U_AdcBitClkRD4/O}]
 
 set_clock_groups -asynchronous \
+   -group [get_clocks -include_generated_clocks {adc0DClk}] \
    -group [get_clocks -include_generated_clocks {adcBitClk0R}] \
    -group [get_clocks -include_generated_clocks {adcBitClk0RD4}] 
 set_clock_groups -asynchronous \
+   -group [get_clocks -include_generated_clocks {adc1DClk}] \
    -group [get_clocks -include_generated_clocks {adcBitClk1R}] \
    -group [get_clocks -include_generated_clocks {adcBitClk1RD4}] 
 set_clock_groups -asynchronous \
+   -group [get_clocks -include_generated_clocks {adc2DClk}] \
    -group [get_clocks -include_generated_clocks {adcBitClk2R}] \
    -group [get_clocks -include_generated_clocks {adcBitClk2RD4}] 
 set_clock_groups -asynchronous \
+   -group [get_clocks -include_generated_clocks {adc3DClk}] \
    -group [get_clocks -include_generated_clocks {adcBitClk3R}] \
    -group [get_clocks -include_generated_clocks {adcBitClk3RD4}] 
 set_clock_groups -asynchronous \
+   -group [get_clocks -include_generated_clocks {adc4DClk}] \
    -group [get_clocks -include_generated_clocks {adcBitClk4R}] \
    -group [get_clocks -include_generated_clocks {adcBitClk4RD4}] 
 set_clock_groups -asynchronous \
+   -group [get_clocks -include_generated_clocks {adc5DClk}] \
    -group [get_clocks -include_generated_clocks {adcBitClk5R}] \
    -group [get_clocks -include_generated_clocks {adcBitClk5RD4}] 
 set_clock_groups -asynchronous \
+   -group [get_clocks -include_generated_clocks {adc6DClk}] \
    -group [get_clocks -include_generated_clocks {adcBitClk6R}] \
    -group [get_clocks -include_generated_clocks {adcBitClk6RD4}] 
 set_clock_groups -asynchronous \
+   -group [get_clocks -include_generated_clocks {adc7DClk}] \
    -group [get_clocks -include_generated_clocks {adcBitClk7R}] \
    -group [get_clocks -include_generated_clocks {adcBitClk7RD4}] 
 set_clock_groups -asynchronous \
+   -group [get_clocks -include_generated_clocks {adc8DClk}] \
    -group [get_clocks -include_generated_clocks {adcBitClk8R}] \
    -group [get_clocks -include_generated_clocks {adcBitClk8RD4}] 
 set_clock_groups -asynchronous \
+   -group [get_clocks -include_generated_clocks {adc9DClk}] \
    -group [get_clocks -include_generated_clocks {adcBitClk9R}] \
    -group [get_clocks -include_generated_clocks {adcBitClk9RD4}] 
 
