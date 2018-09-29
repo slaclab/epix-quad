@@ -98,6 +98,13 @@ class Top(pr.Root):
             expand  = False,
         ))
         
+        self.add(axi.AxiStreamMonitoring( 
+            name    = 'RdoutStreamMonitoring', 
+            memBase = memMap, 
+            offset  = 0x01300000, 
+            expand  = False,
+        ))
+        
         self.add(ePixQuad.PseudoScopeCore( 
             name    = 'PseudoScopeCore', 
             memBase = memMap, 

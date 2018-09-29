@@ -78,11 +78,12 @@ architecture rtl of AsicCoreTop is
    
    constant LINE_REVERSE_C       : slv(3 downto 0) := "1010";
    
-   constant NUM_AXI_MASTERS_C    : natural := 3;
+   constant NUM_AXI_MASTERS_C    : natural := 4;
 
    constant ASIC_ACQ_INDEX_C     : natural := 0;
    constant ASIC_RDOUT_INDEX_C   : natural := 1;
    constant SCOPE_INDEX_C        : natural := 2;
+   constant AXIS_MON_INDEX_C     : natural := 3;
 
    constant AXI_CONFIG_C   : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := genAxiLiteConfig(NUM_AXI_MASTERS_C, AXI_BASE_ADDR_G, 24, 20);
 
@@ -106,6 +107,8 @@ architecture rtl of AsicCoreTop is
    
    signal roClkTail        : slv(7 downto 0);
    signal asicDoutTest     : slv(15 downto 0);
+   
+   signal iDataTxMaster     : AxiStreamMasterType;
    
 begin
    
@@ -218,9 +221,11 @@ begin
       -- Frame stream output (axisClk domain)
       axisClk              => sysClk,
       axisRst              => sysRst,
-      axisMaster           => dataTxMaster,
+      axisMaster           => iDataTxMaster,
       axisSlave            => dataTxSlave 
    );
+   
+   dataTxMaster   <= iDataTxMaster;
    
    
    ---------------------------------------------------------------
@@ -311,5 +316,32 @@ begin
       );
       
    end generate;
-
+   
+   ---------------------------------------------------------------
+   -- ASIC Stream Monitor
+   --------------------- ------------------------------------------
+   U_AXIS_MON : entity work.AxiStreamMonAxiL
+      generic map(
+         TPD_G             => TPD_G,
+         COMMON_CLK_G      => true,
+         AXIS_CLK_FREQ_G   => 100.0E+6, -- Units of Hz
+         AXIS_NUM_SLOTS_G  => 1,
+         AXIS_CONFIG_G     => ssiAxiStreamConfig(8) -- 64-bits
+      ) 
+      port map(
+         -- AXIS Stream Interface
+         axisClk           => sysClk,
+         axisRst           => sysRst,
+         axisMaster(0)     => iDataTxMaster,
+         axisSlave(0)      => dataTxSlave,
+         -- AXI lite slave port for register access
+         axilClk           => sysClk,
+         axilRst           => sysRst,
+         sAxilReadMaster   => axilReadMasters(AXIS_MON_INDEX_C),
+         sAxilReadSlave    => axilReadSlaves(AXIS_MON_INDEX_C),
+         sAxilWriteMaster  => axilWriteMasters(AXIS_MON_INDEX_C),
+         sAxilWriteSlave   => axilWriteSlaves(AXIS_MON_INDEX_C)
+      );
+   
+   
 end rtl;
