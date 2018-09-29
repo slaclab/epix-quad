@@ -31,6 +31,29 @@ class SystemRegs(pr.Device):
       # The setMemBase call can be used to update the memBase for this Device. All sub-devices and local
       # blocks will be updated.
       
+      def getPerMs(var):
+         x = var.dependencies[0].value()
+         return x / 100000.0
+            
+      def setPerMs(deps):
+         def setMsValue(var, value, write):
+            rawVal = int(round(value*100000))
+            deps[0].set(rawVal,write)            
+         return setMsValue
+      
+      def getFreqHz(var):
+         x = var.dependencies[0].value()
+         if x != 0:
+            return 100000000.0 / x
+         else:
+            return 0.0
+            
+      def setFreqHz(deps):
+         def setHzValue(var, value, write):
+            rawVal = int(round((1.0/value)*100000000))
+            deps[0].set(rawVal,write)            
+         return setHzValue
+      
       #############################################
       # Create block / variable combinations
       #############################################
@@ -88,6 +111,25 @@ class SystemRegs(pr.Device):
          mode       = 'RW',
       ))
       
+      self.add(pr.LinkVariable(
+         name         = 'AutoTrigPerMs', 
+         mode         = 'RW', 
+         units        = 'ms',
+         linkedGet    = getPerMs,
+         linkedSet    = setPerMs([self.AutoTrigPer]),
+         disp         = '{:1.5f}',
+         dependencies = [self.AutoTrigPer],
+      )) 
+
+      self.add(pr.LinkVariable(
+         name         = 'AutoTrigFreqHz', 
+         mode         = 'RW', 
+         units        = 'Hz',
+         linkedGet    = getFreqHz,
+         linkedSet    = setFreqHz([self.AutoTrigPer]),
+         disp         = '{:1.1f}',
+         dependencies = [self.AutoTrigPer],
+      )) 
       
       self.add(pr.RemoteVariable(
          name       = 'DcDcEnable',     
