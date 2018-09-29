@@ -119,7 +119,8 @@ architecture rtl of RdoutCoreBram is
       adcPipelineDlyReg    : slv(7 downto 0);
       acqSmplEn            : slv(255 downto 0);
       readPend             : sl;
-      error                : sl;
+      buffErr              : sl;
+      timeErr              : sl;
       wordCnt              : integer range 0 to 3;
       timeCnt              : integer range 0 to TIMEOUT_C;
       sRowCount            : integer range 0 to 3;             -- 4 lines
@@ -156,7 +157,8 @@ architecture rtl of RdoutCoreBram is
       adcPipelineDlyReg    => (others=>'0'),
       acqSmplEn            => (others=>'0'),
       readPend             => '0',
-      error                => '0',
+      buffErr              => '0',
+      timeErr              => '0',
       wordCnt              => 0,
       timeCnt              => 0,
       sRowCount            => 0,
@@ -467,12 +469,12 @@ begin
       for i in 3 downto 0 loop
          if r.acqSmplEn(conv_integer(r.adcPipelineDly)) = '1' and r.lineBufValid(i) = BUFF_MAX_C then
             v.lineBufErrEn(i) := '1';
-            v.error           := '1';
+            v.buffErr         := '1';
          end if;
       end loop;
       
-      -- clear error counters when readout is disabled
-      if r.rdoutEn = '0' then
+      -- clear error counters when readout is starting
+      if r.rdoutEnReg = '1' and r.rdoutEn = '0' then
          v.lineBufErr   := (others=>(others=>'0'));
       end if;
       
@@ -505,7 +507,8 @@ begin
             v.colCount     := 0;
             v.rowCount     := (others=>'0');
             v.readPend     := '0';
-            v.error        := '0';
+            v.buffErr      := '0';
+            v.timeErr      := '0';
             v.lineBufErrEn := (others=>'0');
             if acqBusyEdge = '1' and r.rdoutEn = '1' then
                v.readPend  := '1';
@@ -536,15 +539,21 @@ begin
             end if;
             
          when WAIT_LINE_S =>
-            if v.lineBufValid(r.sRowCount)(conv_integer(r.rowCount(BUFF_BITS_C-1 downto 0))) = '1' and doutValid(r.sRowCount)(r.bankCount) = '1' and doutCount(r.sRowCount, r.bankCount) >= BANK_COLS_C then
+            if r.buffErr = '1' then
+               v.colCount  := 0;
+               v.bankCount := 0;
+               v.rdState   := FOOTER_S;
+            elsif v.lineBufValid(r.sRowCount)(conv_integer(r.rowCount(BUFF_BITS_C-1 downto 0))) = '1' and doutValid(r.sRowCount)(r.bankCount) = '1' and doutCount(r.sRowCount, r.bankCount) >= BANK_COLS_C then
                if LINE_REVERSE_G(r.sRowCount) = '0' then
                   v.lineRdAddr := r.lineRdAddr + 1;
                else
                   v.lineRdAddr := r.lineRdAddr - 1;
                end if;
                v.rdState   := MOVE_LINE_S;
-            elsif r.timeCnt = TIMEOUT_C or r.error = '1' then
-               v.error     := '1';
+            elsif r.timeCnt = TIMEOUT_C then
+               v.timeErr   := '1';
+               v.colCount  := 0;
+               v.bankCount := 0;
                v.rdState   := FOOTER_S;
             else
                v.timeCnt   := r.timeCnt + 1;
@@ -662,7 +671,7 @@ begin
                   v.wordCnt   := 0;
                   v.readPend  := '0';
                   v.txMaster.tLast  := '1';
-                  ssiSetUserEofe(SLAVE_AXI_CONFIG_C, v.txMaster, r.error);
+                  ssiSetUserEofe(SLAVE_AXI_CONFIG_C, v.txMaster, r.buffErr or r.timeErr);
                   for i in 3 downto 0 loop
                      if r.lineBufErrEn(i) = '1' then
                         v.lineBufErr(i) := r.lineBufErr(i) + 1;
