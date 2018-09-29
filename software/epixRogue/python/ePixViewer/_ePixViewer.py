@@ -678,7 +678,7 @@ class EventReader(rogue.interfaces.stream.Slave):
         # reads entire frame
         p = bytearray(self.lastFrame.getPayload())
         self.lastFrame.read(p,0)
-        if (PRINT_VERBOSE): print('_accepted p[',self.numAcceptedFrames, '] len: ', len(p))
+        if (PRINT_VERBOSE): print('_accepted p[',self.numAcceptedFrames, '] flags: ',self.lastFrame.getFlags(),' len: ', len(p))
         if (PRINT_VERBOSE): print('_accepted p[',self.numAcceptedFrames, ']: ', p[0:40])
         ##if (PRINT_VERBOSE): print('_accepted type' , type(p)) 
         self.frameDataArray[self.numAcceptedFrames%4][:] = p#bytearray(self.lastFrame.getPayload())
