@@ -36,7 +36,8 @@ entity SystemCore is
       BUILD_INFO_G         : BuildInfoType;
       SIMULATION_G         : boolean          := false;
       SIM_SPEEDUP_G        : boolean          := false;
-      AXI_BASE_ADDR_G      : slv(31 downto 0) := (others => '0')
+      AXI_BASE_ADDR_G      : slv(31 downto 0) := (others => '0');
+      MIG_CORE_EN          : boolean          := true
    );
    port (
       -- Clock and Reset
@@ -179,6 +180,7 @@ architecture top_level of SystemCore is
    signal userRst          : sl;
    signal memTestRst       : sl;
    signal memTestRstSync   : sl;
+   signal iDdrVttEn        : sl;
 
 begin
    
@@ -255,7 +257,7 @@ begin
       asicDigEn         => asicDigEn,
       dcdcSync          => dcdcSync,
       dcdcEn            => dcdcEn,
-      ddrVttEn          => ddrVttEn,
+      ddrVttEn          => iDdrVttEn,
       ddrVttPok         => ddrVttPok,
       -- FPGA temperature alert
       tempAlertL        => tempAlertL,
@@ -376,97 +378,115 @@ begin
          axiReadMaster   => axiBistReadMaster,
          axiReadSlave    => axiBistReadSlave);
    
-   Sync_0 : entity work.Synchronizer
-      generic map (
-         TPD_G => TPD_G)
-      port map (
-         clk     => axiClk,
-         dataIn  => userRst,
-         dataOut => memTestRstSync);
+   G_MIG_CORE : if MIG_CORE_EN = true generate
    
-   memTestRst <= axiRst or memTestRstSync;
-   
-   ------------------------------------------------
-   -- DDR memory controller
-   ------------------------------------------------
-   U_DDR : entity work.MigCoreWrapper
-      generic map (
-         TPD_G => TPD_G)
-      port map (
-         -- AXI Slave
-         axiClk           => axiClk,
-         axiRst           => axiRst,
-         axiReadMaster    => axiDdrReadMaster,
-         axiReadSlave     => axiDdrReadSlave,
-         axiWriteMaster   => axiDdrWriteMaster,
-         axiWriteSlave    => axiDdrWriteSlave,
-         -- DDR PHY Ref clk
-         c0_sys_clk_p     => c0_sys_clk_p,
-         c0_sys_clk_n     => c0_sys_clk_n,
-         -- DRR Memory interface ports
-         c0_ddr4_adr      => c0_ddr4_adr,
-         c0_ddr4_ba       => c0_ddr4_ba,
-         c0_ddr4_cke      => c0_ddr4_cke,
-         c0_ddr4_cs_n     => c0_ddr4_cs_n,
-         c0_ddr4_dm_dbi_n => c0_ddr4_dm_dbi_n,
-         c0_ddr4_dq       => c0_ddr4_dq,
-         c0_ddr4_dqs_c    => c0_ddr4_dqs_c,
-         c0_ddr4_dqs_t    => c0_ddr4_dqs_t,
-         c0_ddr4_odt      => c0_ddr4_odt,
-         c0_ddr4_bg       => c0_ddr4_bg,
-         c0_ddr4_reset_n  => c0_ddr4_reset_n,
-         c0_ddr4_act_n    => c0_ddr4_act_n,
-         c0_ddr4_ck_c     => c0_ddr4_ck_c,
-         c0_ddr4_ck_t     => c0_ddr4_ck_t,
-         calibComplete    => calibComplete,
-         c0_ddr4_aresetn  => '1'
-      );
-   
-   ------------------------------------------------
-   -- DDR memory AXI interconnect
-   ------------------------------------------------
-   U_AxiIcWrapper : entity work.AxiIcWrapper
-      generic map (
-         TPD_G => TPD_G)
-      port map (
-         -- AXI Slaves for ADC channels
-         -- 128 Bit Data Bus
-         -- 1 burst packet FIFOs
-         axiImgClk          => sysClk,
-         axiImgWriteMasters => axiWriteMasters,
-         axiImgWriteSlaves  => axiWriteSlaves,
-         -- AXI Slave for data readout
-         -- 128 Bit Data Bus
-         axiDoutClk         => sysClk,
-         axiDoutReadMaster  => axiReadMaster,
-         axiDoutReadSlave   => axiReadSlave,
-         -- AXI Slave for memory tester (aximClk domain)
-         -- 128 Bit Data Bus
-         axiBistReadMaster  => axiBistReadMaster,
-         axiBistReadSlave   => axiBistReadSlave,
-         axiBistWriteMaster => axiBistWriteMaster,
-         axiBistWriteSlave  => axiBistWriteSlave,
-         -- AXI Master
-         -- 128 Bit Data Bus
-         aximClk            => axiClk,
-         aximRst            => axiRst,
-         aximReadMaster     => axiDdrReadMaster,
-         aximReadSlave      => axiDdrReadSlave,
-         aximWriteMaster    => axiDdrWriteMaster,
-         aximWriteSlave     => axiDdrWriteSlave
-      );
+      Sync_0 : entity work.Synchronizer
+         generic map (
+            TPD_G => TPD_G)
+         port map (
+            clk     => axiClk,
+            dataIn  => userRst,
+            dataOut => memTestRstSync);
+      
+      memTestRst <= axiRst or memTestRstSync;
+      
+      ------------------------------------------------
+      -- DDR memory controller
+      ------------------------------------------------
+      U_DDR : entity work.MigCoreWrapper
+         generic map (
+            TPD_G => TPD_G)
+         port map (
+            -- AXI Slave
+            axiClk           => axiClk,
+            axiRst           => axiRst,
+            axiReadMaster    => axiDdrReadMaster,
+            axiReadSlave     => axiDdrReadSlave,
+            axiWriteMaster   => axiDdrWriteMaster,
+            axiWriteSlave    => axiDdrWriteSlave,
+            -- DDR PHY Ref clk
+            c0_sys_clk_p     => c0_sys_clk_p,
+            c0_sys_clk_n     => c0_sys_clk_n,
+            -- DRR Memory interface ports
+            c0_ddr4_adr      => c0_ddr4_adr,
+            c0_ddr4_ba       => c0_ddr4_ba,
+            c0_ddr4_cke      => c0_ddr4_cke,
+            c0_ddr4_cs_n     => c0_ddr4_cs_n,
+            c0_ddr4_dm_dbi_n => c0_ddr4_dm_dbi_n,
+            c0_ddr4_dq       => c0_ddr4_dq,
+            c0_ddr4_dqs_c    => c0_ddr4_dqs_c,
+            c0_ddr4_dqs_t    => c0_ddr4_dqs_t,
+            c0_ddr4_odt      => c0_ddr4_odt,
+            c0_ddr4_bg       => c0_ddr4_bg,
+            c0_ddr4_reset_n  => c0_ddr4_reset_n,
+            c0_ddr4_act_n    => c0_ddr4_act_n,
+            c0_ddr4_ck_c     => c0_ddr4_ck_c,
+            c0_ddr4_ck_t     => c0_ddr4_ck_t,
+            calibComplete    => calibComplete,
+            c0_ddr4_aresetn  => '1'
+         );
+      
+      ------------------------------------------------
+      -- DDR memory AXI interconnect
+      ------------------------------------------------
+      U_AxiIcWrapper : entity work.AxiIcWrapper
+         generic map (
+            TPD_G => TPD_G)
+         port map (
+            -- AXI Slaves for ADC channels
+            -- 128 Bit Data Bus
+            -- 1 burst packet FIFOs
+            axiImgClk          => sysClk,
+            axiImgWriteMasters => axiWriteMasters,
+            axiImgWriteSlaves  => axiWriteSlaves,
+            -- AXI Slave for data readout
+            -- 128 Bit Data Bus
+            axiDoutClk         => sysClk,
+            axiDoutReadMaster  => axiReadMaster,
+            axiDoutReadSlave   => axiReadSlave,
+            -- AXI Slave for memory tester (aximClk domain)
+            -- 128 Bit Data Bus
+            axiBistReadMaster  => axiBistReadMaster,
+            axiBistReadSlave   => axiBistReadSlave,
+            axiBistWriteMaster => axiBistWriteMaster,
+            axiBistWriteSlave  => axiBistWriteSlave,
+            -- AXI Master
+            -- 128 Bit Data Bus
+            aximClk            => axiClk,
+            aximRst            => axiRst,
+            aximReadMaster     => axiDdrReadMaster,
+            aximReadSlave      => axiDdrReadSlave,
+            aximWriteMaster    => axiDdrWriteMaster,
+            aximWriteSlave     => axiDdrWriteSlave
+         );
 
-   -- keep memory writers in reset during memory test
-   memRst : process (sysClk) is
-   begin
-      if rising_edge(sysClk) then
-         if memReady = '1' and memFailed = '0' then
-            buffersRdy <= '1' after TPD_G;
-         else
-            buffersRdy <= '0' after TPD_G;
+      -- keep memory writers in reset during memory test
+      memRst : process (sysClk) is
+      begin
+         if rising_edge(sysClk) then
+            if memReady = '1' and memFailed = '0' then
+               buffersRdy <= '1' after TPD_G;
+            else
+               buffersRdy <= '0' after TPD_G;
+            end if;
          end if;
-      end if;
-   end process memRst;
+      end process memRst;
+      
+      ddrVttEn <= iDdrVttEn;
+      
+   end generate;
+   
+   G_NO_MIG_CORE : if MIG_CORE_EN = false generate
+      memTestRst        <= '1';
+      c0_ddr4_reset_n   <= '0';
+      ddrVttEn          <= '0';
+      axiBistWriteSlave <= AXI_WRITE_SLAVE_INIT_C;
+      axiBistReadSlave  <= AXI_READ_SLAVE_INIT_C;
+      axiWriteSlaves    <= (others=>AXI_WRITE_SLAVE_INIT_C);
+      axiReadSlave      <= AXI_READ_SLAVE_INIT_C;
+      calibComplete     <= '0';
+      buffersRdy        <= '0';
+   end generate;
    
    ------------------------------------------------
    -- Power nad temperature monitoring sensors readout

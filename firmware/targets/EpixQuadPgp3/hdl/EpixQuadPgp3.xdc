@@ -32,8 +32,6 @@ create_clock -name pgp3PhyTxClk0 -period 5.280 [get_pins {U_CORE/U_PGP/G_PGPv3.U
 set_clock_groups -asynchronous -group [get_clocks -include_generated_clocks {pgp3PhyRxClk0}] -group [get_clocks -include_generated_clocks {pgp3PhyTxClk0}] -group [get_clocks -include_generated_clocks {pgpClkP}]
 
 create_generated_clock -name sysClk    [get_pins {U_CORE/U_PGP/G_PGPv3.U_PGP/U_PLL1/MmcmGen.U_Mmcm/CLKOUT0}]
-create_generated_clock -name ddrIntClk0 [get_pins {U_CORE/U_SystemCore/U_DDR/U_MigCore/inst/u_ddr4_infrastructure/gen_mmcme3.u_mmcme_adv_inst/CLKOUT0}]
-create_generated_clock -name ddrIntClk1 [get_pins {U_CORE/U_SystemCore/U_DDR/U_MigCore/inst/u_ddr4_infrastructure/gen_mmcme3.u_mmcme_adv_inst/CLKOUT6}]
 
 set_clock_groups -asynchronous \
    -group [get_clocks -include_generated_clocks {pgpClkP}] \
@@ -49,10 +47,6 @@ set_clock_groups -asynchronous \
    -group [get_clocks -include_generated_clocks {adc7DClk}] \
    -group [get_clocks -include_generated_clocks {adc8DClk}] \
    -group [get_clocks -include_generated_clocks {adc9DClk}]
-
-
-set_clock_groups -asynchronous -group [get_clocks {ddrIntClk0}] -group [get_clocks {ddrClkP}]
-set_clock_groups -asynchronous -group [get_clocks {ddrIntClk1}] -group [get_clocks {ddrClkP}]
 
 create_generated_clock -name adcBitClk0R    [get_pins {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/U_AdcBitClkR/O}]
 create_generated_clock -name adcBitClk0R    [get_pins {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/U_AdcBitClkR/O}]

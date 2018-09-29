@@ -122,6 +122,7 @@ begin
          BUILD_INFO_G      => BUILD_INFO_G,
          SIMULATION_G      => SIMULATION_G,
          SIM_SPEEDUP_G     => SIM_SPEEDUP_G,
+         MIG_CORE_EN       => false,
          COM_TYPE_G        => "PGPv3",
          RATE_G            => "6.25Gbps"
       )

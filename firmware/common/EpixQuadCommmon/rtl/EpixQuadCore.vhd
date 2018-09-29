@@ -33,6 +33,7 @@ entity EpixQuadCore is
       BUILD_INFO_G      : BuildInfoType;
       SIMULATION_G      : boolean         := false;
       SIM_SPEEDUP_G     : boolean         := false;
+      MIG_CORE_EN       : boolean         := true;
       COM_TYPE_G        : string          := "PGPv2b";
       RATE_G            : string          := "6.25Gbps");
    port (
@@ -325,7 +326,8 @@ begin
          BUILD_INFO_G      => BUILD_INFO_G,
          SIMULATION_G      => SIMULATION_G,
          SIM_SPEEDUP_G     => SIM_SPEEDUP_G,
-         AXI_BASE_ADDR_G   => AXI_CONFIG_C(SYS_INDEX_C).baseAddr
+         AXI_BASE_ADDR_G   => AXI_CONFIG_C(SYS_INDEX_C).baseAddr,
+         MIG_CORE_EN       => MIG_CORE_EN
       )
       port map (
          -- Clock and Reset
