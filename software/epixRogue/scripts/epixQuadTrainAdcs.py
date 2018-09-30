@@ -98,8 +98,6 @@ print('Enable DCDCs')
 QuadTop.SystemRegs.DcDcEnable.set(0xF)
 time.sleep(1.0)
 
-prevDly = QuadTop.Ad9249Readout[0].FrameDelay.get()
-print(prevDly)
 
 print('Assert digital reset')
 # Reset ADCs
@@ -109,8 +107,6 @@ for adc in range(10):
    QuadTop.Ad9249Config[adc].InternalPdwnMode.set(0)
 time.sleep(1.0)
 
-prevDly = QuadTop.Ad9249Readout[0].FrameDelay.get()
-print(prevDly)
 
 print('Reset ISERDESE3')
 # Reset deserializers
@@ -118,8 +114,6 @@ QuadTop.SystemRegs.AdcClkRst.set(True)
 QuadTop.SystemRegs.AdcClkRst.set(False)
 time.sleep(1.0)
 
-prevDly = QuadTop.Ad9249Readout[0].FrameDelay.get()
-print(prevDly)
 
 print('Initialization done')
 
@@ -138,8 +132,6 @@ if args.diff:
    time.sleep(15.0)
    print('startup done')
 
-#prevDly = QuadTop.Ad9249Readout[0].FrameDelay.get()
-#print(prevDly)
 
 prevDly = 0
 
