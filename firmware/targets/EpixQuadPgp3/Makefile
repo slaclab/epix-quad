@@ -35,4 +35,5 @@ include ../../submodules/ruckus/system_vivado.mk
 #-------------------------------------------------------------------------------
 #-- Revision History:
 #-- 07/30/2018 (0xEA050000): First revision
+#-- 07/30/2018 (0xEA050001): fit whole image in the output stream FIFO
 #-------------------------------------------------------------------------------
