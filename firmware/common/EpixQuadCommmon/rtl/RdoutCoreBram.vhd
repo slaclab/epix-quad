@@ -802,6 +802,10 @@ begin
    -- Streaming out FIFO
    ----------------------------------------------------------------------
    
+   -- the cascade of 34 * 2^12 * 8 bytes = 1114112 bytes
+   -- the frame size 48*178*64*2bytes    = 1093632 bytes
+   -- the FIFO will fit whole image
+   
    U_AxisOut : entity work.AxiStreamFifoV2
    generic map (
       -- General Configurations
@@ -811,7 +815,7 @@ begin
       VALID_THOLD_G       => 1,     -- =0 = only when frame ready
       -- FIFO configurations
       GEN_SYNC_FIFO_G     => false,
-      CASCADE_SIZE_G      => 32,
+      CASCADE_SIZE_G      => 34,
       FIFO_ADDR_WIDTH_G   => 12,
       -- AXI Stream Port Configurations
       SLAVE_AXI_CONFIG_G  => SLAVE_AXI_CONFIG_C,
