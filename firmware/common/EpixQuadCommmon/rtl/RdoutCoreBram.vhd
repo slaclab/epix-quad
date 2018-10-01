@@ -811,8 +811,8 @@ begin
       VALID_THOLD_G       => 1,     -- =0 = only when frame ready
       -- FIFO configurations
       GEN_SYNC_FIFO_G     => false,
-      CASCADE_SIZE_G      => 7,
-      FIFO_ADDR_WIDTH_G   => 10,
+      CASCADE_SIZE_G      => 32,
+      FIFO_ADDR_WIDTH_G   => 12,
       -- AXI Stream Port Configurations
       SLAVE_AXI_CONFIG_G  => SLAVE_AXI_CONFIG_C,
       MASTER_AXI_CONFIG_G => MASTER_AXI_CONFIG_C
