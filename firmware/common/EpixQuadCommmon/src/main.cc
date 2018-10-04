@@ -26,7 +26,7 @@
 #define TIMER_750MS_INTEVAL 75000000
 #define TIMER_1SEC_INTEVAL 100000000
 
-#define ADC_STARTUP_RETRY 5
+#define ADC_STARTUP_RETRY 5000000
 
 
 static XIntc    intc;
@@ -126,10 +126,6 @@ uint32_t adcTest() {
    uint32_t failedCh = 0;
    uint32_t regIn = 0;
    
-   // clear test status flags
-   Xil_Out32(SYSTEM_ADCTESTDONE, 0x0);
-   Xil_Out32(SYSTEM_ADCTESTFAIL, 0x0);
-   
    // set up ADC tester
    Xil_Out32(ADC_TEST_MASK, 0x3FFF);
    Xil_Out32(ADC_TEST_PATT, 0x2867);
@@ -169,12 +165,20 @@ uint32_t adcTest() {
       
    }
    
+   return failed;
+   
+}
+
+void clearTestResult() {
+   // clear test status flags
+   Xil_Out32(SYSTEM_ADCTESTDONE, 0x0);
+   Xil_Out32(SYSTEM_ADCTESTFAIL, 0x0);
+}
+
+void setTestResult(uint32_t failed) {
    // set test status flags
    Xil_Out32(SYSTEM_ADCTESTDONE, 0x1);
    Xil_Out32(SYSTEM_ADCTESTFAIL, failed);
-   
-   return failed;
-   
 }
 
 int main() { 
@@ -199,7 +203,11 @@ int main() {
    XTmrCtr_SetHandler(&tmrctr,timerIntHandler,(void*)&timer);
    XTmrCtr_SetOptions(&tmrctr,0,XTC_DOWN_COUNT_OPTION | XTC_INT_MODE_OPTION );
    
+   // pre-configure (disable DDR memory power and clock)
+   Xil_Out32(SYSTEM_VTTEN, 0x0);
+   
    tryCnt = 0;
+   clearTestResult();
    do {
       // do the initial ADC startup
       adcStartup();
@@ -208,12 +216,11 @@ int main() {
       // retry N times
       tryCnt++;
    } while (failed != 0 and tryCnt < ADC_STARTUP_RETRY);
+   setTestResult(failed);
    
    // pre-configure (enable ASIC power)
-   Xil_Out32(SYSTEM_ANAEN, 0x1);
    Xil_Out32(SYSTEM_DIGEN, 0x1);
-   // pre-configure (disable DDR memory power and clock)
-   Xil_Out32(SYSTEM_VTTEN, 0x0);
+   Xil_Out32(SYSTEM_ANAEN, 0x1);
    
    while (1) {
       
@@ -225,11 +232,13 @@ int main() {
          // call ADC startup routine
          // retry N times
          tryCnt = 0;
+         clearTestResult();
          do {
             adcStartup();
             failed = adcTest();
             tryCnt++;
          } while (failed != 0 and tryCnt < ADC_STARTUP_RETRY);
+         setTestResult(failed);
       }
       
       // poll ADC test interrupt flag
@@ -237,7 +246,9 @@ int main() {
          // clear interrupt flag
          adcTestInt = 0;
          // call ADC test routine
+         clearTestResult();
          adcTest();
+         setTestResult(failed);
       }
       
    }
