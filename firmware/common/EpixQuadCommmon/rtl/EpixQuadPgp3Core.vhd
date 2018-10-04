@@ -197,6 +197,7 @@ begin
             TPD_G             => TPD_G,
             RATE_G            => RATE_G,
             NUM_VC_G          => 4,
+            PGP_RX_ENABLE_G   => false,
             EN_DRP_G          => false,
             EN_PGP_MON_G      => true,
             AXIL_CLK_FREQ_G   => 100.0E+6
