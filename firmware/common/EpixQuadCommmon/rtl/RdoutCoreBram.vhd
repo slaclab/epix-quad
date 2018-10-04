@@ -184,8 +184,12 @@ architecture rtl of RdoutCoreBram is
    signal r                : RegType := REG_INIT_C;
    signal rin              : RegType;
    
-   signal acqBusyEdge     : std_logic             := '0';
+   signal acqBusyEdge      : std_logic             := '0';
    signal txSlave          : AxiStreamSlaveType;
+   signal axisCascMaster   : AxiStreamMasterType;
+   signal axisCascSlave    : AxiStreamSlaveType;
+   --signal axisCascMaster   : AxiStreamMasterArray(4 downto 0);
+   --signal axisCascSlave    : AxiStreamSlaveArray(4 downto 0);
    
    signal memWrEn          : sl;
    signal memWrAddr        : slv(BUFF_BITS_C+COLS_BITS_C-1 downto 0);
@@ -802,11 +806,12 @@ begin
    -- Streaming out FIFO
    ----------------------------------------------------------------------
    
-   -- the cascade of 34 * 2^12 * 8 bytes = 1114112 bytes
-   -- the frame size 48*178*64*2bytes    = 1093632 bytes
+   -- the cascade of 4 * 2^15 + 2^13 * 8 bytes               = 1114112 bytes
+   -- the frame size 48 cols * 178 rows * 64 banks * 2 bytes = 1093632 bytes
    -- the FIFO will fit whole image
    
-   U_AxisOut : entity work.AxiStreamFifoV2
+   
+   U_AxisOut0 : entity work.AxiStreamFifoV2
    generic map (
       -- General Configurations
       TPD_G               => TPD_G,
@@ -814,9 +819,9 @@ begin
       SLAVE_READY_EN_G    => true,
       VALID_THOLD_G       => 1,     -- =0 = only when frame ready
       -- FIFO configurations
-      GEN_SYNC_FIFO_G     => false,
-      CASCADE_SIZE_G      => 34,
-      FIFO_ADDR_WIDTH_G   => 12,
+      GEN_SYNC_FIFO_G     => true,
+      CASCADE_SIZE_G      => 4,
+      FIFO_ADDR_WIDTH_G   => 15,
       -- AXI Stream Port Configurations
       SLAVE_AXI_CONFIG_G  => SLAVE_AXI_CONFIG_C,
       MASTER_AXI_CONFIG_G => MASTER_AXI_CONFIG_C
@@ -828,10 +833,95 @@ begin
       sAxisMaster => r.txMaster,
       sAxisSlave  => txSlave,
       -- Master Port
+      mAxisClk    => sysClk,
+      mAxisRst    => sysRst,
+      mAxisMaster => axisCascMaster,
+      mAxisSlave  => axisCascSlave
+   );
+   
+   
+   
+   U_AxisOut1 : entity work.AxiStreamFifoV2
+   generic map (
+      -- General Configurations
+      TPD_G               => TPD_G,
+      PIPE_STAGES_G       => 1,
+      SLAVE_READY_EN_G    => true,
+      VALID_THOLD_G       => 1,     -- =0 = only when frame ready
+      -- FIFO configurations
+      GEN_SYNC_FIFO_G     => false,
+      CASCADE_SIZE_G      => 1,
+      FIFO_ADDR_WIDTH_G   => 13,
+      -- AXI Stream Port Configurations
+      SLAVE_AXI_CONFIG_G  => SLAVE_AXI_CONFIG_C,
+      MASTER_AXI_CONFIG_G => MASTER_AXI_CONFIG_C
+   )
+   port map (
+      -- Slave Port
+      sAxisClk    => sysClk,
+      sAxisRst    => sysRst,
+      sAxisMaster => axisCascMaster,
+      sAxisSlave  => axisCascSlave,
+      -- Master Port
       mAxisClk    => axisClk,
       mAxisRst    => axisRst,
       mAxisMaster => axisMaster,
       mAxisSlave  => axisSlave
    );
+   
+   
+   ---------------------------------------------------------------------------
+   
+   -- the cascade of 4 * 32768 * 8 bytes + 2^13 * 8 bytes    = 1114112 bytes
+   -- the frame size 48 cols * 178 rows * 64 banks * 2 bytes = 1093632 bytes
+   -- the FIFO will fit whole image
+   
+   --axisCascMaster(0) <= r.txMaster;
+   --txSlave           <= axisCascSlave(0);
+   --
+   --G_AxisFifoCasc: for i in 0 to 3 generate
+   --
+   --   U_AxisFifo32k64b : entity work.AxisFifo32k64b
+   --      port map (
+   --         -- Common clock
+   --         axisClk     => sysClk,
+   --         axisRst     => sysRst,
+   --         -- Slave Port
+   --         sAxisMaster => axisCascMaster(i),
+   --         sAxisSlave  => axisCascSlave(i),
+   --         -- Master Port
+   --         mAxisMaster => axisCascMaster(i+1),
+   --         mAxisSlave  => axisCascSlave(i+1)
+   --      );
+   --
+   --end generate;
+   --
+   --U_AxisOut : entity work.AxiStreamFifoV2
+   --generic map (
+   --   -- General Configurations
+   --   TPD_G               => TPD_G,
+   --   PIPE_STAGES_G       => 1,
+   --   SLAVE_READY_EN_G    => true,
+   --   VALID_THOLD_G       => 1,     -- =0 = only when frame ready
+   --   -- FIFO configurations
+   --   GEN_SYNC_FIFO_G     => false,
+   --   CASCADE_SIZE_G      => 1,
+   --   FIFO_ADDR_WIDTH_G   => 13,
+   --   -- AXI Stream Port Configurations
+   --   SLAVE_AXI_CONFIG_G  => SLAVE_AXI_CONFIG_C,
+   --   MASTER_AXI_CONFIG_G => MASTER_AXI_CONFIG_C
+   --)
+   --port map (
+   --   -- Slave Port
+   --   sAxisClk    => sysClk,
+   --   sAxisRst    => sysRst,
+   --   sAxisMaster => axisCascMaster(4),
+   --   sAxisSlave  => axisCascSlave(4),
+   --   -- Master Port
+   --   mAxisClk    => axisClk,
+   --   mAxisRst    => axisRst,
+   --   mAxisMaster => axisMaster,
+   --   mAxisSlave  => axisSlave
+   --);
    
 end rtl;

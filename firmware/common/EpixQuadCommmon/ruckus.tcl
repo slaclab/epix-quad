@@ -28,6 +28,10 @@ loadSource -path "$::DIR_PATH/ip/SysMonCore/SysMonCore.dcp"
 loadIpCore -path "$::DIR_PATH/ip/AxiInterconnnect/AxiInterconnect.xci"
 loadSource -path "$::DIR_PATH/ip/AxiInterconnnect/AxiIcWrapper.vhd"
 
+#loadSource -path "$::DIR_PATH/ip/AxisFifo32k64b/axis_32k_64b_fifo.dcp"
+#loadIpCore -path "$::DIR_PATH/ip/AxisFifo32k64b/axis_32k_64b_fifo.xci"
+#loadSource -path "$::DIR_PATH/ip/AxisFifo32k64b/AxisFifo32k64b.vhd"
+
 # Load Constraints
 loadConstraints -path "$::DIR_PATH/ip/MigCore/MigCorePinout.xdc" 
 
