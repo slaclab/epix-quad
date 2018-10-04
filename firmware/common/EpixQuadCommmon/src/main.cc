@@ -181,6 +181,18 @@ void setTestResult(uint32_t failed) {
    Xil_Out32(SYSTEM_ADCTESTFAIL, failed);
 }
 
+void asicPwrOff() {
+   // pre-configure (disable ASIC power)
+   Xil_Out32(SYSTEM_ANAEN, 0x0);
+   Xil_Out32(SYSTEM_DIGEN, 0x0);
+}
+
+void asicPwrOn() {
+   // pre-configure (enable ASIC power)
+   Xil_Out32(SYSTEM_DIGEN, 0x1);
+   Xil_Out32(SYSTEM_ANAEN, 0x1);
+}
+
 int main() { 
    
    volatile uint32_t adcStartupInt = 0;
@@ -206,6 +218,8 @@ int main() {
    // pre-configure (disable DDR memory power and clock)
    Xil_Out32(SYSTEM_VTTEN, 0x0);
    
+   asicPwrOff();
+   
    tryCnt = 0;
    clearTestResult();
    do {
@@ -218,9 +232,7 @@ int main() {
    } while (failed != 0 and tryCnt < ADC_STARTUP_RETRY);
    setTestResult(failed);
    
-   // pre-configure (enable ASIC power)
-   Xil_Out32(SYSTEM_DIGEN, 0x1);
-   Xil_Out32(SYSTEM_ANAEN, 0x1);
+   asicPwrOn();
    
    while (1) {
       
@@ -231,6 +243,7 @@ int main() {
          adcStartupInt = 0;
          // call ADC startup routine
          // retry N times
+         asicPwrOff();
          tryCnt = 0;
          clearTestResult();
          do {
@@ -239,6 +252,7 @@ int main() {
             tryCnt++;
          } while (failed != 0 and tryCnt < ADC_STARTUP_RETRY);
          setTestResult(failed);
+         asicPwrOn();
       }
       
       // poll ADC test interrupt flag
