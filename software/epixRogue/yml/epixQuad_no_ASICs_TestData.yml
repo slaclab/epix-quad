@@ -47,7 +47,7 @@ Top:
     AsicAcqWidth: '0x64'
     AsicAcqLToPPmatL: '0x0'
     AsicPpmatToReadout: '0x0'
-    AsicRoClkHalfT: '0x7'
+    AsicRoClkHalfT: '0x03'
     AsicAcqForce: 'False'
     AsicR0Force: 'False'
     AsicPpmatForce: 'True'
