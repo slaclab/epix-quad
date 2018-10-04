@@ -70,7 +70,7 @@ args = parser.parse_args()
 #################################################################
 
 # Set base
-QuadTop = quad.Top(hwType='pgp2b')    
+QuadTop = quad.Top(hwType='pgp3_cardG3')    
 
 # Start the system
 QuadTop.start(

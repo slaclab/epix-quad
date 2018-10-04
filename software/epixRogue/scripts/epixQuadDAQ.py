@@ -60,7 +60,7 @@ args = parser.parse_args()
 #################################################################
 
 # Set base
-base = quad.Top(hwType='pgp2b')    
+base = quad.Top(hwType='pgp3_cardG3')    
 
 # Start the system
 base.start(

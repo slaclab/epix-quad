@@ -306,8 +306,8 @@ begin
       generic map (
          TPD_G            => TPD_G,
          MEM_ADDR_MASK_G  => x"00000000",  -- Using hardware write protection
-         AXI_CLK_FREQ_G   => 156.25E+6,    -- units of Hz
-         SPI_CLK_FREQ_G   => (156.25E+6/4.0))  -- units of Hz
+         AXI_CLK_FREQ_G   => 100.00E+6,    -- units of Hz
+         SPI_CLK_FREQ_G   => (100.00E+6/4.0))  -- units of Hz
       port map (
          -- FLASH Memory Ports
          csL            => bootCsL,

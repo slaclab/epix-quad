@@ -23,6 +23,7 @@ import time
 import surf.axi as axi
 import surf.xilinx as xil
 import surf.devices.analog_devices as analog_devices
+from surf.devices.micron._AxiMicronN25Q import *
 import ePixAsics as epix
 
 import ePixQuad
@@ -32,7 +33,8 @@ class Top(pr.Root):
             name        = "Top",
             description = "Container for EpixQuad",
             dev         = '/dev/pgpcard_0',
-            hwType      = 'pgp2b',
+            hwType      = 'pgp3_cardG3',
+            lane        = 0,
             **kwargs):
         super().__init__(name=name, description=description, **kwargs)
         
@@ -48,10 +50,10 @@ class Top(pr.Root):
             self.pgpVc2 = pr.interfaces.simulation.StreamSim(host='localhost', dest=2, uid=1, ssi=True)
             self.pgpVc3 = pr.interfaces.simulation.StreamSim(host='localhost', dest=3, uid=1, ssi=True)      
         else:
-            self.pgpVc0 = rogue.hardware.pgp.PgpCard(dev,0,0) # Data & cmds
-            self.pgpVc1 = rogue.hardware.pgp.PgpCard(dev,0,1) # Registers for ePix board
-            self.pgpVc2 = rogue.hardware.pgp.PgpCard(dev,0,2) # PseudoScope
-            self.pgpVc3 = rogue.hardware.pgp.PgpCard(dev,0,3) # Monitoring (Slow ADC)
+            self.pgpVc0 = rogue.hardware.pgp.PgpCard(dev,lane,0) # Data & cmds
+            self.pgpVc1 = rogue.hardware.pgp.PgpCard(dev,lane,1) # Registers for ePix board
+            self.pgpVc2 = rogue.hardware.pgp.PgpCard(dev,lane,2) # PseudoScope
+            self.pgpVc3 = rogue.hardware.pgp.PgpCard(dev,lane,3) # Monitoring (Slow ADC)
                 
         ######################################################################
         
@@ -165,6 +167,14 @@ class Top(pr.Root):
             enabled = False,
             expand  = False,
         ))
+        
+        #self.add(AxiMicronN25Q(
+        #    name='MicronN25Q', 
+        #    offset=0x00300000, 
+        #    expand=False, 
+        #    hidden=False, 
+        #    addrMode=True, 
+        #))
         
         ######################################################################
         
