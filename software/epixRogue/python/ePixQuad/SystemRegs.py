@@ -99,6 +99,7 @@ class SystemRegs(pr.Device):
          bitOffset  = 0,  
          base       = pr.Bool, 
          mode       = 'RW',
+         verify     = False,
       ))
       
       self.add(pr.RemoteVariable(
