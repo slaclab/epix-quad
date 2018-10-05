@@ -21,6 +21,7 @@
 #include "regs.h"
 #include "adcDelays.h"
 
+#define TIMER_10MS_INTEVAL  1000000
 #define TIMER_250MS_INTEVAL 25000000
 #define TIMER_500MS_INTEVAL 50000000
 #define TIMER_750MS_INTEVAL 75000000
@@ -92,12 +93,9 @@ void adcStartup() {
    // Reset ADCs
    for (i=0; i<10; i++) {
       Xil_Out32(adcPdwnModeAddr[i], 0x3);
-   }
-   waitTimer(TIMER_500MS_INTEVAL);
-   for (i=0; i<10; i++) {
+      waitTimer(TIMER_10MS_INTEVAL);
       Xil_Out32(adcPdwnModeAddr[i], 0x0);
    }
-   waitTimer(TIMER_500MS_INTEVAL);
    
    // Reset FPGA deserializers
    Xil_Out32(SYSTEM_ADCCLKRST, 0x1);
