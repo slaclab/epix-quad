@@ -297,11 +297,8 @@ begin
       generic map (
          TPD_G             => TPD_G,
          BANK_COLS_G       => BANK_COLS_G,
-         BANK_REVERSE_G    => LINE_REVERSE_C(i/4),
-         BANK_ROW_PAT_G(0) => BANK_ROW_PAT_C((i*4+0) mod 16),
-         BANK_ROW_PAT_G(1) => BANK_ROW_PAT_C((i*4+1) mod 16),
-         BANK_ROW_PAT_G(2) => BANK_ROW_PAT_C((i*4+2) mod 16),
-         BANK_ROW_PAT_G(3) => BANK_ROW_PAT_C((i*4+3) mod 16)
+         BANK_REVERSE_G    => '0',
+         BANK_ROW_PAT_G    => (others=>x"0000000000000002")
       )
       port map (
          -- System Clock (100 MHz)

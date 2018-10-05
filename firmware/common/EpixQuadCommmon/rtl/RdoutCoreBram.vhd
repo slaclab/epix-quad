@@ -208,6 +208,8 @@ architecture rtl of RdoutCoreBram is
    signal muxAsicDout      : slv(15 downto 0);
    signal muxDoutMap       : slv(15 downto 0);
    
+   signal doutRd           : Slv16Array(3 downto 0);
+   
 begin
    --r.rowCount(BUFF_BITS_C-1 downto 0)
    assert ROWS_BITS_C >= BUFF_BITS_C
@@ -707,7 +709,21 @@ begin
       memWrAddr   <= r.memWrAddr;
       memRdAddr   <= r.rowCount(BUFF_BITS_C-1 downto 0) & r.lineRdAddr;
       
-      readDone <= not r.readPend;
+      -- read strobe for the dout FIFOs
+      -- swap ASIC banks in reversed super rows
+      for i in 3 downto 0 loop
+         if LINE_REVERSE_G(i) = '0' then
+            doutRd(i) <= v.doutRd(i);
+         else
+            for j in 3 downto 0 loop
+               for k in 3 downto 0 loop
+                  doutRd(i)(j*4+k) <= v.doutRd(i)(j*4+(3-k));
+               end loop;
+            end loop;
+         end if;
+      end loop;
+      
+      readDone    <= not r.readPend;
 
    end process comb;
 
@@ -784,7 +800,7 @@ begin
          asicDout          => muxDoutMap(3+i*4 downto 0+i*4),
          asicRoClk         => asicRoClk,
          doutOut4          => iDoutOut(15+i*16 downto 0+i*16),
-         doutRd            => r.doutRd(i),
+         doutRd            => doutRd(i),
          doutValid         => doutValid(i),
          doutCount         => iDoutCount(15+i*16 downto 0+i*16),
          sAxilWriteMaster  => AXI_LITE_WRITE_MASTER_INIT_C,
@@ -800,12 +816,12 @@ begin
          end generate;
       end generate;
       
-      
+      -- swap ASIC banks in reversed super rows
       G_REV  : if LINE_REVERSE_G(i) = '1' generate
          G_VEC1_4 : for j in 3 downto 0 generate
             G_VEC2_4 : for k in 3 downto 0 generate
-               doutOut(i, j*4+(3-k))   <= iDoutOut(j*4+k+i*16);
-               doutCount(i, j*4+(3-k)) <= iDoutCount(j*4+k+i*16);
+               doutOut(i, j*4+k)   <= iDoutOut(j*4+(3-k)+i*16);
+               doutCount(i, j*4+k) <= iDoutCount(j*4+(3-k)+i*16);
             end generate;
          end generate;
       end generate;
