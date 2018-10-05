@@ -77,6 +77,7 @@ architecture RTL of SystemRegs is
    constant ASIC_GR_INDEX_C   : natural   := ite(SIM_SPEEDUP_G, 5, 25);
 
    type RegType is record
+      acqStart          : sl;
       asicAnaEnReg      : sl;
       asicDigEnReg      : sl;
       asicAnaEn         : sl;
@@ -114,9 +115,16 @@ architecture RTL of SystemRegs is
       autoTrigReg       : slv(31 downto 0);
       autoTrigPer       : slv(31 downto 0);
       autoTrigCnt       : slv(31 downto 0);
+      trigPerRst        : sl;
+      trigPerRdy        : slv(1 downto 0);
+      trigPerCnt        : slv(31 downto 0);
+      trigPer           : slv(31 downto 0);
+      trigPerMin        : slv(31 downto 0);
+      trigPerMax        : slv(31 downto 0);
    end record RegType;
 
    constant REG_INIT_C : RegType := (
+      acqStart          => '0',
       asicAnaEnReg      => '0',
       asicDigEnReg      => '0',
       asicAnaEn         => '0',
@@ -153,7 +161,13 @@ architecture RTL of SystemRegs is
       autoTrig          => '0',
       autoTrigReg       => (others=>'0'),
       autoTrigPer       => (others=>'0'),
-      autoTrigCnt       => (others=>'0')
+      autoTrigCnt       => (others=>'0'),
+      trigPerRst        => '0',
+      trigPerRdy        => (others=>'0'),
+      trigPerCnt        => (others=>'0'),
+      trigPer           => (others=>'0'),
+      trigPerMin        => (others=>'1'),
+      trigPerMax        => (others=>'0')
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -226,6 +240,7 @@ begin
 
       -- reset strobes
       v.syncAll := '0';
+      v.trigPerRst := '0';
 
       -- sync inputs
       v.ddrVttPok := ddrVttPok;
@@ -278,6 +293,51 @@ begin
          v.autoTrig     := '1';
          v.autoTrigCnt  := (others=>'0');
       end if;
+      
+      -- trigger source select
+      if r.trigEn = '1' then
+         if r.trigSrcSel = 0 then
+            v.acqStart := extTrig(0);
+         elsif r.trigSrcSel = 1 then
+            v.acqStart := extTrig(1);
+         elsif r.trigSrcSel = 2 then
+            v.acqStart := extTrig(2);
+         elsif r.trigSrcSel = 3 then
+            v.acqStart := r.autoTrig;
+         else
+            v.acqStart := '0';
+         end if;
+      else
+         v.acqStart := '0';
+      end if;
+      
+      -- trigger rate monitoring
+      if r.trigPerRst = '1' then
+         v.trigPerMin := (others=>'1');
+         v.trigPerMax := (others=>'0');
+         v.trigPer    := (others=>'0');
+         v.trigPerRdy := (others=>'0');
+         v.trigPerCnt := (others=>'0');
+      else
+         -- after min 2 triggers latch counter, min and max
+         if r.acqStart = '1' and r.trigPerRdy = 2 then
+            v.trigPer    := r.trigPerCnt+1;
+            if r.trigPerMax < r.trigPerCnt+1 then
+               v.trigPerMax := r.trigPerCnt+1;
+            end if;
+            if r.trigPerMin > r.trigPerCnt+1 then
+               v.trigPerMin := r.trigPerCnt+1;
+            end if;
+         elsif r.acqStart = '1' and r.trigPerRdy < 2 then
+            v.trigPerRdy := r.trigPerRdy + 1;
+         end if;
+         -- count in between triggers
+         if r.acqStart = '1' then
+            v.trigPerCnt := (others=>'0');
+         elsif r.trigPerCnt /= x"FFFFFFFF" then
+            v.trigPerCnt := r.trigPerCnt + 1;
+         end if;
+      end if;
 
       -- Determine the AXI-Lite transaction
       v.sAxilReadSlave.rdata := (others => '0');
@@ -310,6 +370,10 @@ begin
       axiSlaveRegister (regCon, x"404", 0, v.trigSrcSel);
       axiSlaveRegister (regCon, x"408", 0, v.autoTrigEn);
       axiSlaveRegister (regCon, x"40C", 0, v.autoTrigReg);
+      axiSlaveRegister (regCon, x"410", 0, v.trigPerRst);
+      axiSlaveRegisterR(regCon, x"414", 0, r.trigPer);
+      axiSlaveRegisterR(regCon, x"418", 0, r.trigPerMin);
+      axiSlaveRegisterR(regCon, x"41C", 0, r.trigPerMax);
       
       axiSlaveRegister (regCon, x"500", 0, v.adcClkRst);
       axiSlaveRegister (regCon, x"504", 0, v.adcReqStart);
@@ -400,21 +464,7 @@ begin
       asicAnaEn   <= r.asicAnaEn;
       asicDigEn   <= r.asicDigEn(0);
       asicGr      <= r.asicGrCnt(ASIC_GR_INDEX_C);
-      if r.trigEn = '1' then
-         if r.trigSrcSel = 0 then
-            acqStart <= extTrig(0);
-         elsif r.trigSrcSel = 1 then
-            acqStart <= extTrig(1);
-         elsif r.trigSrcSel = 2 then
-            acqStart <= extTrig(2);
-         elsif r.trigSrcSel = 3 then
-            acqStart <= r.autoTrig;
-         else
-            acqStart <= '0';
-         end if;
-      else
-         acqStart <= '0';
-      end if;
+      acqStart    <= r.acqStart;
 
    end process comb;
 

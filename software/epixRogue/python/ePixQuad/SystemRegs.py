@@ -92,6 +92,46 @@ class SystemRegs(pr.Device):
       ))
       
       self.add(pr.RemoteVariable(
+         name       = 'TrigPeriodRst',     
+         description= 'Reset Trigger Period Counters',     
+         offset     = 0x00000410, 
+         bitSize    = 1, 
+         bitOffset  = 0,  
+         base       = pr.Bool, 
+         mode       = 'RW',
+      ))
+      
+      self.add(pr.RemoteVariable(
+         name       = 'TrigPeriod',     
+         description= 'Current Trigger Period',     
+         offset     = 0x00000414, 
+         bitSize    = 32, 
+         bitOffset  = 0,  
+         base       = pr.UInt, 
+         mode       = 'RO',
+      ))
+      
+      self.add(pr.RemoteVariable(
+         name       = 'TrigPeriodMin',     
+         description= 'Minimum Trigger Period',     
+         offset     = 0x00000418, 
+         bitSize    = 32, 
+         bitOffset  = 0,  
+         base       = pr.UInt, 
+         mode       = 'RO',
+      ))
+      
+      self.add(pr.RemoteVariable(
+         name       = 'TrigPeriodMax',     
+         description= 'Maximum Trigger Period',     
+         offset     = 0x0000041C, 
+         bitSize    = 32, 
+         bitOffset  = 0,  
+         base       = pr.UInt, 
+         mode       = 'RO',
+      ))
+      
+      self.add(pr.RemoteVariable(
          name       = 'AutoTrigEn',     
          description= 'Auto Trigger Enable',     
          offset     = 0x00000408, 
