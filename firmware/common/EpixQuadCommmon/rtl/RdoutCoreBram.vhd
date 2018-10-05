@@ -793,9 +793,21 @@ begin
          sAxilReadSlave    => open
       );
       
-      G_VEC16 : for j in 15 downto 0 generate
-         doutOut(i, j)     <= iDoutOut(j+i*16);
-         doutCount(i, j)   <= iDoutCount(j+i*16);
+      G_NORM : if LINE_REVERSE_G(i) = '0' generate
+         G_VEC16 : for j in 15 downto 0 generate
+            doutOut(i, j)     <= iDoutOut(j+i*16);
+            doutCount(i, j)   <= iDoutCount(j+i*16);
+         end generate;
+      end generate;
+      
+      
+      G_REV  : if LINE_REVERSE_G(i) = '1' generate
+         G_VEC1_4 : for j in 3 downto 0 generate
+            G_VEC2_4 : for k in 3 downto 0 generate
+               doutOut(i, j*4+(3-k))   <= iDoutOut(j*4+k+i*16);
+               doutCount(i, j*4+(3-k)) <= iDoutCount(j*4+k+i*16);
+            end generate;
+         end generate;
       end generate;
    
    end generate;
