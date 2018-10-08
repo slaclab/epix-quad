@@ -238,7 +238,8 @@ begin
    U_SystemRegs : entity work.SystemRegs
    generic map (
       TPD_G             => TPD_G,
-      SIM_SPEEDUP_G     => SIM_SPEEDUP_G
+      SIM_SPEEDUP_G     => SIM_SPEEDUP_G,
+      CLK_PERIOD_G      => (1.0/AXI_CLK_FREQ_G)
    )
    port map (
       -- System Clock
