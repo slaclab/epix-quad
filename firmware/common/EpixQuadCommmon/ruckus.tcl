@@ -24,10 +24,6 @@ loadSource -dir "$::DIR_PATH/rtl"
 loadSource -path "$::DIR_PATH/ip/SysMonCore/SysMonCore.dcp"
 # loadIpCore -path "$::DIR_PATH/ip/SysMonCore/SysMonCore.xci"
 
-##loadSource -path "$::DIR_PATH/ip/AxiInterconnnect/AxiInterconnect.dcp"
-loadIpCore -path "$::DIR_PATH/ip/AxiInterconnnect/AxiInterconnect.xci"
-loadSource -path "$::DIR_PATH/ip/AxiInterconnnect/AxiIcWrapper.vhd"
-
 #loadSource -path "$::DIR_PATH/ip/AxisFifo32k64b/axis_32k_64b_fifo.dcp"
 #loadIpCore -path "$::DIR_PATH/ip/AxisFifo32k64b/axis_32k_64b_fifo.xci"
 #loadSource -path "$::DIR_PATH/ip/AxisFifo32k64b/AxisFifo32k64b.vhd"
@@ -38,6 +34,9 @@ loadConstraints -path "$::DIR_PATH/ip/MigCore/MigCorePinout.xdc"
 # Check if building MIG Core
 if { $::env(BUILD_MIG_CORE)  != 0 } {
    # Load Source Code and Constraints
+   ##loadSource -path "$::DIR_PATH/ip/AxiInterconnnect/AxiInterconnect.dcp"
+   loadIpCore      -path "$::DIR_PATH/ip/AxiInterconnnect/AxiInterconnect.xci"
+   loadSource      -path "$::DIR_PATH/ip/AxiInterconnnect/AxiIcWrapper.vhd"
    loadSource      -path "$::DIR_PATH/ip/MigCore/MigCoreWrapper.vhd"
    loadConstraints -path "$::DIR_PATH/ip/MigCore/MigCoreWrapper.xdc" 
    # Check for no Application Microblaze build (MIG core only)
