@@ -181,6 +181,8 @@ architecture RTL of SystemRegs is
    signal tempAlert  : sl;
    
    signal extTrig    : slv(2 downto 0);
+   
+   signal idRstSync  : sl;
 
 begin
    
@@ -480,6 +482,14 @@ begin
    -----------------------------------------------
    -- ASIC carrier serial IDs
    ----------------------------------------------- 
+   U_IdRstSync: entity work.Synchronizer
+   port map (
+      clk     => sysClk,
+      rst     => sysRst,
+      dataIn  => r.idRst,
+      dataOut => idRstSync,
+   );
+   
    G_DS2411 : for i in 0 to 3 generate
       U_DS2411 : entity work.DS2411Core
       generic map (
@@ -488,7 +498,7 @@ begin
       )
       port map (
          clk       => sysClk,
-         rst       => r.idRst,
+         rst       => idRstSync,
          fdSerSdio => asicDmSn(i),
          fdValue   => idValues(i),
          fdValid   => idValids(i)
