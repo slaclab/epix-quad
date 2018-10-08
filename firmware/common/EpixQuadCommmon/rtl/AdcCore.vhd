@@ -32,6 +32,7 @@ use unisim.vcomponents.all;
 entity AdcCore is
    generic (
       TPD_G                : time             := 1 ns;
+      AXI_CLK_FREQ_G       : real             := 100.00E+6;
       SIMULATION_G         : boolean          := false;
       SIM_SPEEDUP_G        : boolean          := false;
       AXI_BASE_ADDR_G      : slv(31 downto 0) := (others => '0')
@@ -153,7 +154,7 @@ begin
       U_AdcConf : entity work.Ad9249Config
          generic map (
             TPD_G             => TPD_G,
-            AXIL_CLK_PERIOD_G => 10.0e-9,
+            AXIL_CLK_PERIOD_G => (1.0/AXI_CLK_FREQ_G),
             SCLK_PERIOD_G     => 1.0e-6,
             NUM_CHIPS_G       => 2
          )
@@ -174,7 +175,7 @@ begin
    U_MonConf : entity work.Ad9249Config
       generic map (
          TPD_G             => TPD_G,
-         AXIL_CLK_PERIOD_G => 10.0e-9,
+         AXIL_CLK_PERIOD_G => (1.0/AXI_CLK_FREQ_G),
          SCLK_PERIOD_G     => 1.0e-6,
          NUM_CHIPS_G       => 1
       )

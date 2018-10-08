@@ -34,6 +34,7 @@ entity SystemCore is
    generic (
       TPD_G                : time             := 1 ns;
       BUILD_INFO_G         : BuildInfoType;
+      AXI_CLK_FREQ_G       : real             := 100.00E+6;
       SIMULATION_G         : boolean          := false;
       SIM_SPEEDUP_G        : boolean          := false;
       AXI_BASE_ADDR_G      : slv(31 downto 0) := (others => '0');
@@ -215,8 +216,11 @@ begin
          BUILD_INFO_G    => BUILD_INFO_G,
          XIL_DEVICE_G    => "ULTRASCALE",
          EN_ICAP_G       => true,
-         EN_DEVICE_DNA_G => true)
-      port map (
+         EN_DEVICE_DNA_G => true,
+         CLK_PERIOD_G    => (1.0/AXI_CLK_FREQ_G)
+      )
+      port map 
+      (
          -- AXI-Lite Register Interface
          axiReadMaster  => axilReadMasters(VERSION_INDEX_C),
          axiReadSlave   => axilReadSlaves(VERSION_INDEX_C),
@@ -306,7 +310,7 @@ begin
       generic map (
          TPD_G            => TPD_G,
          MEM_ADDR_MASK_G  => x"00000000",  -- Using hardware write protection
-         AXI_CLK_FREQ_G   => 100.00E+6,    -- units of Hz
+         AXI_CLK_FREQ_G   => AXI_CLK_FREQ_G,   -- units of Hz
          SPI_CLK_FREQ_G   => (100.00E+6/4.0))  -- units of Hz
       port map (
          -- FLASH Memory Ports
@@ -494,7 +498,7 @@ begin
    U_MonI2C : entity work.AxiI2cRegMaster
    generic map (
       DEVICE_MAP_G     => I2C_MON_CONFIG_C,
-      AXI_CLK_FREQ_G   => 156.25E+6,
+      AXI_CLK_FREQ_G   => AXI_CLK_FREQ_G,
       I2C_SCL_FREQ_G   => 50.0E+3
    )
    port map (
@@ -514,7 +518,7 @@ begin
    U_HumI2C : entity work.AxiI2cRegMaster
    generic map (
       DEVICE_MAP_G     => I2C_HUM_CONFIG_C,
-      AXI_CLK_FREQ_G   => 156.25E+6,
+      AXI_CLK_FREQ_G   => AXI_CLK_FREQ_G,
       I2C_SCL_FREQ_G   => 50.0E+3
    )
    port map (
@@ -537,7 +541,7 @@ begin
    U_VdacI2C : entity work.AxiI2cRegMaster
    generic map (
       DEVICE_MAP_G     => I2C_DAC_CONFIG_C,
-      AXI_CLK_FREQ_G   => 156.25E+6,
+      AXI_CLK_FREQ_G   => AXI_CLK_FREQ_G,
       I2C_SCL_FREQ_G   => 50.0E+3
    )
    port map (

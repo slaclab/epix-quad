@@ -31,6 +31,7 @@ entity EpixQuadCore is
    generic (
       TPD_G             : time            := 1 ns;
       BUILD_INFO_G      : BuildInfoType;
+      AXI_CLK_FREQ_G    : real            := 100.00E+6;
       SIMULATION_G      : boolean         := false;
       SIM_SPEEDUP_G     : boolean         := false;
       MIG_CORE_EN       : boolean         := true;
@@ -324,6 +325,7 @@ begin
       generic map (
          TPD_G             => TPD_G,
          BUILD_INFO_G      => BUILD_INFO_G,
+         AXI_CLK_FREQ_G    => AXI_CLK_FREQ_G,
          SIMULATION_G      => SIMULATION_G,
          SIM_SPEEDUP_G     => SIM_SPEEDUP_G,
          AXI_BASE_ADDR_G   => AXI_CONFIG_C(SYS_INDEX_C).baseAddr,
@@ -409,6 +411,7 @@ begin
    U_AsicCore : entity work.AsicCoreTop
       generic map (
          TPD_G             => TPD_G,
+         AXI_CLK_FREQ_G    => AXI_CLK_FREQ_G,
          BANK_COLS_G       => BANK_COLS_C,
          BANK_ROWS_G       => BANK_ROWS_C,
          AXI_BASE_ADDR_G   => AXI_CONFIG_C(ASIC_INDEX_C).baseAddr
@@ -457,7 +460,7 @@ begin
    GEN_SACI : for i in 3 downto 0 generate
       U_AxiLiteSaciMaster : entity work.AxiLiteSaciMaster
          generic map (
-            AXIL_CLK_PERIOD_G  => 10.0E-9, -- In units of seconds
+            AXIL_CLK_PERIOD_G  => (1.0/AXI_CLK_FREQ_G), -- In units of seconds
             AXIL_TIMEOUT_G     => 1.0E-3,  -- In units of seconds
             SACI_CLK_PERIOD_G  => SACI_CLK_PERIOD_C, -- In units of seconds
             SACI_CLK_FREERUN_G => false,
@@ -485,6 +488,7 @@ begin
    U_AdcCore : entity work.AdcCore
       generic map (
          TPD_G             => TPD_G,
+         AXI_CLK_FREQ_G    => AXI_CLK_FREQ_G,
          SIMULATION_G      => SIMULATION_G,
          SIM_SPEEDUP_G     => SIM_SPEEDUP_G,
          AXI_BASE_ADDR_G   => AXI_CONFIG_C(ADC_INDEX_C).baseAddr

@@ -32,6 +32,7 @@ use unisim.vcomponents.all;
 entity AsicCoreTop is
    generic (
       TPD_G                : time             := 1 ns;
+      AXI_CLK_FREQ_G       : real             := 100.00E+6;
       BANK_COLS_G          : natural          := 48;
       BANK_ROWS_G          : natural          := 178;
       AXI_BASE_ADDR_G      : slv(31 downto 0) := (others => '0')
@@ -321,7 +322,7 @@ begin
       generic map(
          TPD_G             => TPD_G,
          COMMON_CLK_G      => true,
-         AXIS_CLK_FREQ_G   => 100.0E+6, -- Units of Hz
+         AXIS_CLK_FREQ_G   => AXI_CLK_FREQ_G, -- Units of Hz
          AXIS_NUM_SLOTS_G  => 1,
          AXIS_CONFIG_G     => ssiAxiStreamConfig(8) -- 64-bits
       ) 
