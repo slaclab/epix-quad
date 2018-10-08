@@ -206,10 +206,11 @@ class SystemRegs(pr.Device):
          name       = 'AdcClkRst',     
          description= 'Reset ADC Deserializers',
          offset     = 0x00000500, 
-         bitSize    = 1, 
+         bitSize    = 10, 
          bitOffset  = 0,  
          base       = pr.Bool, 
          mode       = 'RW',
+         verify     = False,
       ))
       
       self.add(pr.RemoteVariable(
