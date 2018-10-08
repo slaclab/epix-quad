@@ -333,6 +333,27 @@ class SystemRegs(pr.Device):
             mode       = 'RO',
          ))
       
+      self.add(pr.RemoteVariable(
+         name       = 'CarrierIdRst',     
+         description= 'Reset Carrier ID Readout',
+         offset     = 0x00000024, 
+         bitSize    = 1, 
+         bitOffset  = 0,  
+         base       = pr.Bool, 
+         mode       = 'RW',
+         verify     = False,
+      ))
+      
+      self.add(pr.RemoteVariable(
+         name       = 'AsicMask',     
+         description= 'Asic Bit Mask. Set by Microblaze ASIC Auto-detect Function.',
+         offset     = 0x00000028, 
+         bitSize    = 16, 
+         bitOffset  = 0,  
+         base       = pr.UInt, 
+         mode       = 'RO',
+      ))
+      
       #####################################
       # Create commands
       #####################################
