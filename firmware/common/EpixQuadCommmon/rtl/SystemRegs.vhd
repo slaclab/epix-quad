@@ -487,7 +487,7 @@ begin
       clk     => sysClk,
       rst     => sysRst,
       dataIn  => r.idRst,
-      dataOut => idRstSync,
+      dataOut => idRstSync
    );
    
    G_DS2411 : for i in 0 to 3 generate
