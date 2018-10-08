@@ -120,6 +120,8 @@ architecture RTL of SystemRegs is
       trigPer           : slv(31 downto 0);
       trigPerMin        : slv(31 downto 0);
       trigPerMax        : slv(31 downto 0);
+      asicMaskReg       : slv(31 downto 0);
+      asicMask          : slv(15 downto 0);
    end record RegType;
 
    constant REG_INIT_C : RegType := (
@@ -165,7 +167,9 @@ architecture RTL of SystemRegs is
       trigPerCnt        => (others=>'0'),
       trigPer           => (others=>'0'),
       trigPerMin        => (others=>'1'),
-      trigPerMax        => (others=>'0')
+      trigPerMax        => (others=>'0'),
+      asicMaskReg       => (others=>'0'),
+      asicMask          => (others=>'0')
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -237,9 +241,10 @@ begin
       v := r;
 
       -- reset strobes
-      v.syncAll := '0';
-      v.trigPerRst := '0';
-      v.idRst := '0';
+      v.syncAll      := '0';
+      v.trigPerRst   := '0';
+      v.idRst        := '0';
+      v.asicMaskReg  := (others=>'0');
 
       -- sync inputs
       v.ddrVttPok := ddrVttPok;
@@ -356,6 +361,8 @@ begin
       axiSlaveRegister (regCon, x"020", 0, v.latchTempFault);
       
       axiSlaveRegister (regCon, x"024", 0, v.idRst);
+      axiSlaveRegister (regCon, x"028", 0, v.asicMaskReg);
+      axiSlaveRegisterR(regCon, x"028", 0, r.asicMask);
       
       for i in 3 downto 0 loop
          axiSlaveRegisterR(regCon, x"030"+toSlv(i*8, 12), 0, ite(idValids(i) = '1',idValues(i)(31 downto  0), x"00000000")); --ASIC carrier ID low
@@ -390,7 +397,12 @@ begin
 
       -- Close out the AXI-Lite transaction
       axiSlaveDefault(regCon, v.sAxilWriteSlave, v.sAxilReadSlave, AXI_RESP_DECERR_C);
-
+      
+      -- ASIC mask with a key to only allow MB to write
+      if r.asicMaskReg(31 downto 16) = x"AAAA" then
+         v.asicMask := r.asicMaskReg(15 downto 0);
+      end if;
+      
       -- DCDC sync logic
       for i in 10 downto 0 loop
          if USE_DCDC_SYNC_G = true then
