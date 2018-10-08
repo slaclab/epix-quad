@@ -37,7 +37,7 @@ entity SystemRegs is
       -- User reset output
       usrRst            : out sl;
       -- ADC ISERDESE reset
-      adcClkRst         : out sl;
+      adcClkRst         : out slv(9 downto 0);
       -- ADC Startup Signals
       adcReqStart       : out sl;
       adcReqTest        : out sl;
@@ -100,7 +100,7 @@ architecture RTL of SystemRegs is
       syncOut           : slv(10 downto 0);
       usrRstShift       : slv(7 downto 0);
       usrRst            : sl;
-      adcClkRst         : sl;
+      adcClkRst         : slv(9 downto 0);
       adcReqStart       : sl;
       adcReqTest        : sl;
       adcTestDone       : sl;
@@ -148,7 +148,7 @@ architecture RTL of SystemRegs is
       syncOut           => (others => '0'),
       usrRstShift       => (others => '0'),
       usrRst            => '0',
-      adcClkRst         => '0',
+      adcClkRst         => (others=>'0'),
       adcReqStart       => '0',
       adcReqTest        => '0',
       adcTestDone       => '0',
@@ -245,6 +245,7 @@ begin
       v.trigPerRst   := '0';
       v.idRst        := '0';
       v.asicMaskReg  := (others=>'0');
+      v.adcClkRst    := (others=>'0');
 
       -- sync inputs
       v.ddrVttPok := ddrVttPok;

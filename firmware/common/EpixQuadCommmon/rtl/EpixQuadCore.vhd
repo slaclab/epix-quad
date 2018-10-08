@@ -189,7 +189,7 @@ architecture rtl of EpixQuadCore is
    signal adcStream     : AxiStreamMasterArray(79 downto 0);
    
    signal acqStart      : sl;
-   signal adcClkRst     : sl;
+   signal adcClkRst     : slv(9 downto 0);
    signal adcReqStart   : sl;
    signal iAdcReqStart  : sl;
    signal iDcDcEn2      : sl;

@@ -42,7 +42,7 @@ entity AdcCore is
       sysClk               : in    sl;
       sysRst               : in    sl;
       -- ADC ISERDESE reset
-      adcClkRst            : in    sl;
+      adcClkRst            : in    slv(9 downto 0);
       -- AXI-Lite Register Interface (sysClk domain)
       mAxilReadMaster      : in    AxiLiteReadMasterType;
       mAxilReadSlave       : out   AxiLiteReadSlaveType;
@@ -142,7 +142,7 @@ begin
          axilReadSlave     => axilReadSlaves(ADC0_RDOUT_INDEX_C+i),
          axilWriteMaster   => axilWriteMasters(ADC0_RDOUT_INDEX_C+i),
          axilWriteSlave    => axilWriteSlaves(ADC0_RDOUT_INDEX_C+i),
-         adcClkRst         => adcClkRst,
+         adcClkRst         => adcClkRst(i),
          adcSerial         => asicAdc(i),
          adcStreamClk      => sysClk,
          adcStreams        => iAdcStream((i*8)+7 downto i*8)

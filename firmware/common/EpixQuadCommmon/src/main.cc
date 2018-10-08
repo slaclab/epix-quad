@@ -98,8 +98,7 @@ void adcStartup() {
    }
    
    // Reset FPGA deserializers
-   Xil_Out32(SYSTEM_ADCCLKRST, 0x1);
-   Xil_Out32(SYSTEM_ADCCLKRST, 0x0);
+   Xil_Out32(SYSTEM_ADCCLKRST, 0x3FF);
    waitTimer(TIMER_500MS_INTEVAL);
    
    // Apply pre-trained delays

@@ -45,7 +45,7 @@ entity SystemCore is
       sysClk               : in    sl;
       sysRst               : in    sl;
       -- ADC ISERDESE reset
-      adcClkRst            : out   sl;
+      adcClkRst            : out   slv(9 downto 0);
       -- ADC Startup Signals
       adcReqStart          : out   sl;
       adcReqTest           : out   sl;
