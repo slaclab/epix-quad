@@ -81,8 +81,7 @@ architecture RTL of SystemRegs is
       asicAnaEnReg      : sl;
       asicDigEnReg      : sl;
       asicAnaEn         : sl;
-      asicDigEn         : slv(1 downto 0);
-      asicDigEnShift    : slv(15 downto 0);
+      asicDigEn         : sl;
       idRst             : sl;
       tempFault         : sl;
       latchTempFault    : sl;
@@ -128,8 +127,7 @@ architecture RTL of SystemRegs is
       asicAnaEnReg      => '0',
       asicDigEnReg      => '0',
       asicAnaEn         => '0',
-      asicDigEn         => "00",
-      asicDigEnShift    => x"0000",
+      asicDigEn         => '0',
       idRst             => '0',
       tempFault         => '0',
       latchTempFault    => LATCH_TEMP_DEF_C,
@@ -241,6 +239,7 @@ begin
       -- reset strobes
       v.syncAll := '0';
       v.trigPerRst := '0';
+      v.idRst := '0';
 
       -- sync inputs
       v.ddrVttPok := ddrVttPok;
@@ -260,19 +259,21 @@ begin
       end if;
       
       -- enable ASIC LDOs only after its DCDC is already turned on
-      if r.asicAnaEnReg = '1' and r.dcdcEn(1 downto 0) = "11" then
+      -- digital has to be enabled first or same time with analog (enforced)
+      if r.asicDigEnReg = '1' and r.dcdcEn(3) = '1' then
+         v.asicDigEn := '1';
+      else
+         v.asicDigEn := '0';
+      end if;
+      -- do not allow to turn on analog when digital is off
+      if r.asicAnaEnReg = '1' and r.dcdcEn(1 downto 0) = "11" and r.asicDigEn = '1' then
          v.asicAnaEn := '1';
       else
          v.asicAnaEn := '0';
       end if;
-      if r.asicDigEnReg = '1' and r.dcdcEn(3) = '1' then
-         v.asicDigEn(0) := '1';
-      else
-         v.asicDigEn(0) := '0';
-      end if;
       
       -- ASIC Global Reset Counter
-      if r.asicDigEn(0) = '0' then
+      if r.asicDigEn = '0' then
          v.asicGrCnt := (others=>'0');
       elsif r.asicGrCnt(ASIC_GR_INDEX_C) = '0' then
          v.asicGrCnt := r.asicGrCnt + 1;
@@ -354,6 +355,8 @@ begin
       axiSlaveRegisterR(regCon, x"01C", 0, r.tempFault);
       axiSlaveRegister (regCon, x"020", 0, v.latchTempFault);
       
+      axiSlaveRegister (regCon, x"024", 0, v.idRst);
+      
       for i in 3 downto 0 loop
          axiSlaveRegisterR(regCon, x"030"+toSlv(i*8, 12), 0, ite(idValids(i) = '1',idValues(i)(31 downto  0), x"00000000")); --ASIC carrier ID low
          axiSlaveRegisterR(regCon, x"034"+toSlv(i*8, 12), 0, ite(idValids(i) = '1',idValues(i)(63 downto 32), x"00000000")); --ASIC carrier ID high
@@ -430,20 +433,6 @@ begin
       else
          v.usrRst := '0';
       end if;
-      
-      -- ID chip reset
-      -- ASIC carrier ID chip is on ASIC's DVDD
-      v.asicDigEn(1) := r.asicDigEn(0);
-      if r.asicDigEn(0) = '1' and r.asicDigEn(1) = '0' then
-         v.asicDigEnShift(0)  := '1';
-      else
-         v.asicDigEnShift     := r.asicDigEnShift(14 downto 0) & '0';
-      end if;
-      if r.asicDigEnShift /= 0 then
-         v.idRst := '1';
-      else
-         v.idRst := '0';
-      end if;
 
       if (sysRst = '1') then
          v := REG_INIT_C;
@@ -462,7 +451,7 @@ begin
       dcdcSync    <= r.syncOut;
       ddrVttEn    <= r.ddrVttEn;
       asicAnaEn   <= r.asicAnaEn;
-      asicDigEn   <= r.asicDigEn(0);
+      asicDigEn   <= r.asicDigEn;
       asicGr      <= r.asicGrCnt(ASIC_GR_INDEX_C);
       acqStart    <= r.acqStart;
 
