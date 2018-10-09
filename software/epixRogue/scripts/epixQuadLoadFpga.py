@@ -40,7 +40,15 @@ parser.add_argument(
     type     = str,
     required = False,
     default  = 'pgp3_cardG3',
-    help     = "define the PCIe card type (either pgp-gen3 or datadev-pgp2b)",
+    help     = "define the PCIe card type (either pgp-gen3 or datadev)",
+)  
+
+parser.add_argument(
+    "--dev", 
+    type     = str,
+    required = False,
+    default  = '/dev/pgpcard_0',
+    help     = "path to device",
 )  
 
 parser.add_argument(
@@ -63,13 +71,16 @@ args = parser.parse_args()
 #################################################################
 
 # Set base
-base = quad.Top(hwType=args.type, lane=args.l)    
+base = quad.Top(
+    hwType = args.type, 
+    dev    = args.dev, 
+    lane   = args.l,
+)    
 
 # Start the system
 base.start(
     pollEn   = False,
     initRead = False,
-    timeout  = 5.0,    
 )
     
 # Create useful pointers
