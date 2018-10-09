@@ -27,7 +27,7 @@
 #define TIMER_750MS_INTEVAL 75000000
 #define TIMER_1SEC_INTEVAL 100000000
 
-#define ADC_STARTUP_RETRY 5000000
+#define ADC_STARTUP_RETRY 500
 
 
 static XIntc    intc;
@@ -80,45 +80,34 @@ void waitTimer(u32 timerInterval) {
    while (timer.flag == 0);
 }
 
-void adcStartup() {
+void adcStartup(int adc) {
    
-   int i, j;
+   int j;
    uint32_t regIn = 0;
    
-   // Enable DCDCs
-   Xil_Out32(SYSTEM_DCDCEN, 0xf);
-   // wait for power to settle
-   waitTimer(TIMER_500MS_INTEVAL);   
-   
-   // Reset ADCs
-   for (i=0; i<10; i++) {
-      Xil_Out32(adcPdwnModeAddr[i], 0x3);
-      waitTimer(TIMER_10MS_INTEVAL);
-      Xil_Out32(adcPdwnModeAddr[i], 0x0);
-   }
+   // Reset ADC
+   Xil_Out32(adcPdwnModeAddr[adc], 0x3);
+   waitTimer(TIMER_10MS_INTEVAL);
+   Xil_Out32(adcPdwnModeAddr[adc], 0x0);
    
    // Reset FPGA deserializers
-   Xil_Out32(SYSTEM_ADCCLKRST, 0x3FF);
-   waitTimer(TIMER_500MS_INTEVAL);
+   Xil_Out32(SYSTEM_ADCCLKRST, 1<<adc);
+   waitTimer(TIMER_250MS_INTEVAL);
    
    // Apply pre-trained delays
-   for (i=0; i<10; i++) {
-      for (j=0; j<9; j++) {
-         Xil_Out32(adcDelayAddr[i][j], (512+adcDelays[i][j]));
-      }
+   for (j=0; j<9; j++) {
+      Xil_Out32(adcDelayAddr[adc][j], (512+adcDelays[adc][j]));
    }
    
    // Enable offset binary output
-   for (i=0; i<10; i++) {
-      regIn = Xil_In32(adcOutModeAddr[i]);
-      regIn &= ~(0x1);
-      Xil_Out32(adcOutModeAddr[i], regIn);
-   }
+   regIn = Xil_In32(adcOutModeAddr[adc]);
+   regIn &= ~(0x1);
+   Xil_Out32(adcOutModeAddr[adc], regIn);
    
 }
 
-uint32_t adcTest() {
-   int adc, channel;
+uint32_t adcTest(int adc) {
+   int channel;
    uint32_t failed = 0;
    uint32_t failedCh = 0;
    uint32_t regIn = 0;
@@ -129,38 +118,34 @@ uint32_t adcTest() {
    Xil_Out32(ADC_TEST_SMPL, 10000);
    Xil_Out32(ADC_TEST_TOUT, 10000);
    
-   for (adc=0; adc<10; adc++) {
-      
-      // Enable mixed frequency test pattern
-      regIn = Xil_In32(adcOutTestModeAddr[adc]);
-      regIn |= 0x0C;
-      Xil_Out32(adcOutTestModeAddr[adc], regIn);
-      
-      // test all channels
-      failedCh = 0;
-      for (channel=0; channel<8; channel++) {
-         // request channel test
-         Xil_Out32(ADC_TEST_CHAN, adc*8+channel);
-         Xil_Out32(ADC_TEST_REQ, 0x1);
-         Xil_Out32(ADC_TEST_REQ, 0x0);
-         // wait completed
-         while (Xil_In32(ADC_TEST_PASS) != 0x1 && Xil_In32(ADC_TEST_FAIL) != 0x1);
-         // set flag
-         if (Xil_In32(ADC_TEST_FAIL) == 0x1) {
-            failed |= 1;
-            failedCh |= (0x1<<channel);
-         }
-         
+   // Enable mixed frequency test pattern
+   regIn = Xil_In32(adcOutTestModeAddr[adc]);
+   regIn |= 0x0C;
+   Xil_Out32(adcOutTestModeAddr[adc], regIn);
+   
+   // test all channels
+   failedCh = 0;
+   for (channel=0; channel<8; channel++) {
+      // request channel test
+      Xil_Out32(ADC_TEST_CHAN, adc*8+channel);
+      Xil_Out32(ADC_TEST_REQ, 0x1);
+      Xil_Out32(ADC_TEST_REQ, 0x0);
+      // wait completed
+      while (Xil_In32(ADC_TEST_PASS) != 0x1 && Xil_In32(ADC_TEST_FAIL) != 0x1);
+      // set flag
+      if (Xil_In32(ADC_TEST_FAIL) == 0x1) {
+         failed |= 1;
+         failedCh |= (0x1<<channel);
       }
-      // set test status for channel
-      Xil_Out32(SYSTEM_ADCCHANFAIL+adc*4, failedCh);
-      
-      // Disable mixed frequency test pattern
-      regIn = Xil_In32(adcOutTestModeAddr[adc]);
-      regIn &= ~(0x0F);
-      Xil_Out32(adcOutTestModeAddr[adc], regIn);
       
    }
+   // set test status for channel
+   Xil_Out32(SYSTEM_ADCCHANFAIL+adc*4, failedCh);
+   
+   // Disable mixed frequency test pattern
+   regIn = Xil_In32(adcOutTestModeAddr[adc]);
+   regIn &= ~(0x0F);
+   Xil_Out32(adcOutTestModeAddr[adc], regIn);
    
    return failed;
    
@@ -174,8 +159,12 @@ void clearTestResult() {
 
 void setTestResult(uint32_t failed) {
    // set test status flags
+   if (failed != 0)
+      Xil_Out32(SYSTEM_ADCTESTFAIL, 0x1);
+   else
+      Xil_Out32(SYSTEM_ADCTESTFAIL, 0x0);
    Xil_Out32(SYSTEM_ADCTESTDONE, 0x1);
-   Xil_Out32(SYSTEM_ADCTESTFAIL, failed);
+   
 }
 
 void asicPwrOff() {
@@ -196,6 +185,7 @@ int main() {
    volatile uint32_t adcTestInt = 0;
    uint32_t failed = 0;
    uint32_t tryCnt = 0;
+   int i;
    
    XTmrCtr_Initialize(&tmrctr,0);   
    
@@ -212,21 +202,30 @@ int main() {
    XTmrCtr_SetHandler(&tmrctr,timerIntHandler,(void*)&timer);
    XTmrCtr_SetOptions(&tmrctr,0,XTC_DOWN_COUNT_OPTION | XTC_INT_MODE_OPTION );
    
+   // Enable DCDCs
+   Xil_Out32(SYSTEM_DCDCEN, 0xf);
+   // wait for power to settle
+   waitTimer(TIMER_500MS_INTEVAL);   
+   
    // pre-configure (disable DDR memory power and clock)
    Xil_Out32(SYSTEM_VTTEN, 0x0);
    
    asicPwrOff();
    
-   tryCnt = 0;
    clearTestResult();
-   do {
-      // do the initial ADC startup
-      adcStartup();
-      // do the initial ADC test
-      failed = adcTest();
-      // retry N times
-      tryCnt++;
-   } while (failed != 0 and tryCnt < ADC_STARTUP_RETRY);
+   failed = 0;
+   for (i=0; i<10; i++) {
+      tryCnt = 0;
+      do {
+         // do the initial ADC startup
+         adcStartup(i);
+         // do the initial ADC test
+         failed &= ~(1<<i);
+         failed |= (adcTest(i))<<i;
+         // retry N times
+         tryCnt++;
+      } while ((failed & (1<<i)) != 0 and tryCnt < ADC_STARTUP_RETRY);
+   }
    setTestResult(failed);
    
    asicPwrOn();
@@ -241,13 +240,20 @@ int main() {
          // call ADC startup routine
          // retry N times
          asicPwrOff();
-         tryCnt = 0;
          clearTestResult();
-         do {
-            adcStartup();
-            failed = adcTest();
-            tryCnt++;
-         } while (failed != 0 and tryCnt < ADC_STARTUP_RETRY);
+         failed = 0;
+         for (i=0; i<10; i++) {
+            tryCnt = 0;
+            do {
+               // do the initial ADC startup
+               adcStartup(i);
+               // do the initial ADC test
+               failed &= ~(1<<i);
+               failed |= (adcTest(i))<<i;
+               // retry N times
+               tryCnt++;
+            } while ((failed & (1<<i)) != 0 and tryCnt < ADC_STARTUP_RETRY);
+         }
          setTestResult(failed);
          asicPwrOn();
       }
@@ -258,7 +264,9 @@ int main() {
          adcTestInt = 0;
          // call ADC test routine
          clearTestResult();
-         adcTest();
+         failed = 0;
+         for (i=0; i<10; i++)
+            failed |= adcTest(i);
          setTestResult(failed);
       }
       

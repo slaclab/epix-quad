@@ -208,7 +208,7 @@ class SystemRegs(pr.Device):
          offset     = 0x00000500, 
          bitSize    = 10, 
          bitOffset  = 0,  
-         base       = pr.Bool, 
+         base       = pr.UInt, 
          mode       = 'RW',
          verify     = False,
       ))
