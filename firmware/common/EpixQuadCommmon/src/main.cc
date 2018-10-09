@@ -92,7 +92,7 @@ void adcStartup(int adc) {
    
    // Reset FPGA deserializers
    Xil_Out32(SYSTEM_ADCCLKRST, 1<<adc);
-   waitTimer(TIMER_250MS_INTEVAL);
+   waitTimer(TIMER_500MS_INTEVAL);
    
    // Apply pre-trained delays
    for (j=0; j<9; j++) {
@@ -210,8 +210,11 @@ int main() {
    // pre-configure (disable DDR memory power and clock)
    Xil_Out32(SYSTEM_VTTEN, 0x0);
    
-   asicPwrOff();
+   //enable ASIC power
+   asicPwrOn();
    
+   
+   // do initial power on ADC startup
    clearTestResult();
    failed = 0;
    for (i=0; i<10; i++) {
@@ -228,7 +231,7 @@ int main() {
    }
    setTestResult(failed);
    
-   asicPwrOn();
+   
    
    while (1) {
       
@@ -239,7 +242,6 @@ int main() {
          adcStartupInt = 0;
          // call ADC startup routine
          // retry N times
-         asicPwrOff();
          clearTestResult();
          failed = 0;
          for (i=0; i<10; i++) {
@@ -255,7 +257,6 @@ int main() {
             } while ((failed & (1<<i)) != 0 and tryCnt < ADC_STARTUP_RETRY);
          }
          setTestResult(failed);
-         asicPwrOn();
       }
       
       // poll ADC test interrupt flag
