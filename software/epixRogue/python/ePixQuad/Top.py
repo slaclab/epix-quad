@@ -174,6 +174,7 @@ class Top(pr.Root):
         
             self.add(cypress.CypressS25Fl(
                offset   = 0x00300000, 
+               memBase  = memMap,
                expand   = False, 
                addrMode = True, 
                hidden   = True, 
