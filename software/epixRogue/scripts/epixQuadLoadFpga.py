@@ -74,7 +74,7 @@ base.start(
     
 # Create useful pointers
 AxiVersion = base.AxiVersion
-PROM       = base.MicronN25Q
+PROM       = base.CypressS25Fl
 
 print ( '###################################################')
 print ( '#                 Old Firmware                    #')

@@ -20,10 +20,11 @@ import pyrogue.utilities.fileio
 import pyrogue.interfaces.simulation
 import time
 
-import surf.axi as axi
-import surf.xilinx as xil
-import surf.devices.analog_devices as analog_devices
-from surf.devices.micron._AxiMicronN25Q import *
+import surf.axi                     as axi
+import surf.devices.analog_devices  as analog_devices
+import surf.devices.cypress         as cypress
+import surf.xilinx                  as xil
+
 import ePixAsics as epix
 
 import ePixQuad
@@ -136,7 +137,8 @@ class Top(pr.Root):
                   expand  = False,
             ))
         
-        if (hwType != 'simulation'):
+        if (hwType != 'simulation'):     
+        
             confAddr = [
                0x02A00000, 0x02A00800, 0x02A01000, 0x02A01800, 0x02B00000, 
                0x02B00800, 0x02B01000, 0x02B01800, 0x02C00000, 0x02C00800
@@ -167,15 +169,17 @@ class Top(pr.Root):
             enabled = False,
             expand  = False,
         ))
+                
+        if (hwType != 'simulation'):
         
-        #self.add(AxiMicronN25Q(
-        #    name='MicronN25Q', 
-        #    offset=0x00300000, 
-        #    expand=False, 
-        #    hidden=False, 
-        #    addrMode=True, 
-        #))
-        
+            self.add(cypress.CypressS25Fl(
+               offset   = 0x00300000, 
+               memBase  = memMap,
+               expand   = False, 
+               addrMode = True, 
+               hidden   = True, 
+            ))                   
+                
         ######################################################################
         
         @self.command(description="ADC Initialization",)
