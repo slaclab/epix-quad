@@ -61,7 +61,7 @@ class Epix100aAsic(pr.Device):
         # CMD = 1, Addr = 1  : Bits 2:0 - Pulser monostable bits
         #                      Bit  7   - Pulser sync bit
         self.add((pr.RemoteVariable(name='MonostPulser', description='MonoSt Pulser bits',   offset=0x00001001*addrSize, bitSize=3, bitOffset=0, base=pr.UInt, mode='RW'),
-                 pr.Command( name='PulserSync',   description='Pulse on SYNC signal', offset=0x00001001*addrSize, bitSize=1, bitOffset=7, function=pr.Command.touch)))
+                 pr.RemoteVariable( name='PulserSync',   description='Pulse on SYNC signal', offset=0x00001001*addrSize, bitSize=1, bitOffset=7, base=pr.UInt, mode='RW')))
         # CMD = 1, Addr = 2  : Pixel dummy, write data
         #                    : Bit 0 = Test
         #                    : Bit 1 = Test
@@ -91,14 +91,10 @@ class Epix100aAsic(pr.Device):
         #                    : Bits 7:4 = DM2[3:0]
         
         self.add(
-            pr.RemoteVariable(name='DigMon1', offset=0x00001004*addrSize, bitSize=4, bitOffset=0, base='enum', mode='RW', enum={0:'Clk', 1:'Exec', 2:'RoRst', 3:'Ack',
-            4:'IsEn', 5:'RoWClk', 6:'Addr0', 7:'Addr1', 8:'Addr2', 9:'Addr3', 10:'Addr4', 11:'Cmd0', 12:'Cmd1',
-            13:'Cmd2', 14:'Cmd3', 15:'Config'}, description='Run rate of the system.'))         
+            pr.RemoteVariable(name='DigMon1', offset=0x00001004*addrSize, bitSize=4, bitOffset=0, base=pr.UInt, mode='RW'))         
 
         self.add(
-            pr.RemoteVariable(name='DigMon2', offset=0x00001004*addrSize, bitSize=4, bitOffset=4, base='enum', mode='RW', enum={0:'Clk', 1:'Exec', 2:'RoRst', 3:'Ack',
-            4:'IsEn', 5:'RoWClk', 6:'Db0', 7:'Db1', 8:'Db2', 9:'Db3', 10:'Db4', 11:'Db5', 12:'Db6', 13:'Db7',
-            14:'AddrMot', 15:'Config'}, description='Run rate of the system.'))         
+            pr.RemoteVariable(name='DigMon2', offset=0x00001004*addrSize, bitSize=4, bitOffset=4, base=pr.UInt, mode='RW'))         
  
         # CMD = 1, Addr = 5  : Bits 2:0 = Pulser DAC[2:0]
         #                      Bits 7:4 = TPS_GR[3:0]
@@ -125,10 +121,7 @@ class Epix100aAsic(pr.Device):
         #                    : Bit  7:5 = RO_Monost[2:0]
         self.add((
             pr.RemoteVariable(name='TPS_tcomp',  description='', offset=0x00001008*addrSize, bitSize=1, bitOffset=0, base=pr.Bool, mode='RW'),
-            pr.RemoteVariable(name='TPS_MUX',    description='', offset=0x00001008*addrSize, bitSize=4, bitOffset=1, base='enum',  mode='RW',
-            enum={0:'in', 1:'fin', 2:'fo', 3:'abus', 4:'cdso3', 5:'bgr_2V', 
-             6:'bgr_2vd', 7:'vc_comp', 8:'vcmi', 9:'Pix_Vref', 10:'VtestBE', 11:'Pix_Vctrl', 12:'testline', 
-             13:'Unused13', 14:'Unused14', 15:'Unused15'}),
+            pr.RemoteVariable(name='TPS_MUX',    description='', offset=0x00001008*addrSize, bitSize=4, bitOffset=1, base=pr.UInt, mode='RW'),
             pr.RemoteVariable(name='TPS_Monost', description='', offset=0x00001008*addrSize, bitSize=3, bitOffset=5, base=pr.UInt,  mode='RW')))
 
         # CMD = 1, Addr = 9  : Bit  3:0 = S2D0_GR[3:0]
