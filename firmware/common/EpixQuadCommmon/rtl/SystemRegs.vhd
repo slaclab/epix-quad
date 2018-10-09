@@ -122,6 +122,7 @@ architecture RTL of SystemRegs is
       trigPerMax        : slv(31 downto 0);
       asicMaskReg       : slv(31 downto 0);
       asicMask          : slv(15 downto 0);
+      idValues          : Slv64Array(3 downto 0);
    end record RegType;
 
    constant REG_INIT_C : RegType := (
@@ -169,7 +170,8 @@ architecture RTL of SystemRegs is
       trigPerMin        => (others=>'1'),
       trigPerMax        => (others=>'0'),
       asicMaskReg       => (others=>'0'),
-      asicMask          => (others=>'0')
+      asicMask          => (others=>'0'),
+      idValues          => (others => (others => '0'))
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -251,6 +253,12 @@ begin
 
       -- sync inputs
       v.ddrVttPok := ddrVttPok;
+      
+      for i in 3 downto 0 loop
+         if idValids(i) = '1' then
+            v.idValues(i) := idValues(i);
+         end if;
+      end loop;
 
       -- Generate the tempFault
       if r.latchTempFault = '0' then
@@ -368,8 +376,8 @@ begin
       axiSlaveRegisterR(regCon, x"028", 0, r.asicMask);
       
       for i in 3 downto 0 loop
-         axiSlaveRegisterR(regCon, x"030"+toSlv(i*8, 12), 0, ite(idValids(i) = '1',idValues(i)(31 downto  0), x"00000000")); --ASIC carrier ID low
-         axiSlaveRegisterR(regCon, x"034"+toSlv(i*8, 12), 0, ite(idValids(i) = '1',idValues(i)(63 downto 32), x"00000000")); --ASIC carrier ID high
+         axiSlaveRegisterR(regCon, x"030"+toSlv(i*8, 12), 0, r.idValues(i)(31 downto  0)); --ASIC carrier ID low
+         axiSlaveRegisterR(regCon, x"034"+toSlv(i*8, 12), 0, r.idValues(i)(63 downto 32)); --ASIC carrier ID high
       end loop;
 
       -- DCDC sync registers
