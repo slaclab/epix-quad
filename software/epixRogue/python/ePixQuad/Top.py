@@ -115,13 +115,6 @@ class Top(pr.Root):
             expand  = False,
         ))
         
-        self.add(ePixQuad.Sht31DisB( 
-            name    = 'HumidityTempSensor', 
-            memBase = memMap, 
-            offset  = 0x00700000, 
-            expand  = False,
-        ))
-        
         self.add(axi.AxiMemTester( 
             name    = 'AxiMemTester', 
             memBase = memMap, 
