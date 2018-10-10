@@ -92,47 +92,20 @@ f = open(fileName, 'w')
 
 f.write('static int adcDelays[10][9] = {\n')
 
-print('Initializing ADCs ...')
-
-print('Enable DCDCs')
-QuadTop.SystemRegs.DcDcEnable.set(0xF)
-time.sleep(1.0)
-
-
-print('Assert digital reset')
-# Reset ADCs
-for adc in range(10):
-   QuadTop.Ad9249Config[adc].InternalPdwnMode.set(3)
-   time.sleep(0.01)
-   QuadTop.Ad9249Config[adc].InternalPdwnMode.set(0)
-time.sleep(1.0)
-
-
-print('Reset ISERDESE3')
+print('Request ADC startup')
 # Reset deserializers
-QuadTop.SystemRegs.AdcClkRst.set(True)
-QuadTop.SystemRegs.AdcClkRst.set(False)
-time.sleep(1.0)
+QuadTop.SystemRegs.AdcReqStart.set(True)
+QuadTop.SystemRegs.AdcReqStart.set(False)
 
+while(QuadTop.SystemRegs.AdcTestDone.get() != True):
+   pass
 
-print('Initialization done')
-
-if args.diff:
+if(QuadTop.SystemRegs.AdcTestFailed.get() != False):
+   print('ADC startup failed')
+   exit()
+else:
+   print('ADC startup success')
    
-   print('Enable DCDCs')
-   QuadTop.SystemRegs.DcDcEnable.set(0x0)
-   print('Disable DCDCs')
-   QuadTop.SystemRegs.DcDcEnable.set(0xF)
-   time.sleep(1.0)
-   
-   print('Reset microblaze startup for diff')
-   # Reset deserializers
-   QuadTop.SystemRegs.AdcReqStart.set(True)
-   QuadTop.SystemRegs.AdcReqStart.set(False)
-   time.sleep(15.0)
-   print('startup done')
-
-
 prevDly = 0
 
 # Train frame delay in all ADCs
