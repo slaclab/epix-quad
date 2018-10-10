@@ -130,7 +130,7 @@ architecture top_level of SystemCore is
    );
    
    constant I2C_HUM_CONFIG_C : I2cAxiLiteDevArray(1 downto 0) := (
-      0 => (MakeI2cAxiLiteDevType("1000100", 8, 8, '0')),
+      0 => (MakeI2cAxiLiteDevType("1000100", 32, 16, '0')),
       1 => (MakeI2cAxiLiteDevType("1001100", 8, 8, '0'))
    );   
    
