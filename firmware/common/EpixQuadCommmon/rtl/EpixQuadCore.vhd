@@ -525,14 +525,17 @@ begin
    
    GEN_VEC2 : for i in 1 downto 0 generate
       
-      U_RoClkOutBufDiff : entity work.ClkOutBufDiff
+      U_RoClkOutBufDiff : entity work.OutputBufferReg
       generic map (
-         XIL_DEVICE_G => "ULTRASCALE")
+         TPD_G       => TPD_G,
+         DIFF_PAIR_G => true
+      )
       port map (
-         clkIn    => iAsicRoClk,
-         outEnL   => iAsicDigEnL,
-         clkOutP  => asicRoClkP(i),
-         clkOutN  => asicRoClkN(i)
+         I     => iAsicRoClk,
+         C     => sysClk,
+         T     => iAsicDigEnL,
+         O     => asicRoClkP(i),
+         OB    => asicRoClkN(i)
       );
       
    end generate GEN_VEC2;
@@ -565,15 +568,19 @@ begin
    --------------------------------------------------------
    -- ADC Clock Output Buffers
    --------------------------------------------------------
+   
    GEN_VEC5 : for i in 4 downto 0 generate
       
-      U_AdcClkOutBufDiff : entity work.ClkOutBufDiff
+      U_AdcClkOutBufDiff : entity work.OutputBufferReg
       generic map (
-         XIL_DEVICE_G => "ULTRASCALE")
+         TPD_G       => TPD_G,
+         DIFF_PAIR_G => true
+      )
       port map (
-         clkIn    => iAdcClk,
-         clkOutP  => adcClkP(i),
-         clkOutN  => adcClkN(i)
+         I     => iAdcClk,
+         C     => sysClk,
+         O     => adcClkP(i),
+         OB    => adcClkN(i)
       );
       
    end generate GEN_VEC5;
