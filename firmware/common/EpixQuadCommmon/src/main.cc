@@ -22,6 +22,7 @@
 #include "adcDelays.h"
 
 #define TIMER_10MS_INTEVAL  1000000
+#define TIMER_50MS_INTEVAL  5000000
 #define TIMER_250MS_INTEVAL 25000000
 #define TIMER_500MS_INTEVAL 50000000
 #define TIMER_750MS_INTEVAL 75000000
@@ -85,6 +86,11 @@ void adcStartup(int adc) {
    int j;
    uint32_t regIn = 0;
    
+   // Apply pre-trained delays
+   for (j=0; j<9; j++) {
+      Xil_Out32(adcDelayAddr[adc][j], (512+adcDelays[adc][j]));
+   }
+   
    // Reset ADC
    Xil_Out32(adcPdwnModeAddr[adc], 0x3);
    waitTimer(TIMER_10MS_INTEVAL);
@@ -92,12 +98,7 @@ void adcStartup(int adc) {
    
    // Reset FPGA deserializers
    Xil_Out32(SYSTEM_ADCCLKRST, 1<<adc);
-   waitTimer(TIMER_500MS_INTEVAL);
-   
-   // Apply pre-trained delays
-   for (j=0; j<9; j++) {
-      Xil_Out32(adcDelayAddr[adc][j], (512+adcDelays[adc][j]));
-   }
+   waitTimer(TIMER_10MS_INTEVAL);
    
    // Enable offset binary output
    regIn = Xil_In32(adcOutModeAddr[adc]);
@@ -179,6 +180,45 @@ void asicPwrOn() {
    Xil_Out32(SYSTEM_ANAEN, 0x1);
 }
 
+void findAsics(void) {
+   
+   uint32_t i, dm, test, mask;
+   mask = 0;
+   
+   //find installed ASICs by testing the digital monitor register
+   for (i = 0; i <= 15; i++) {
+      dm = Xil_In32( cfg4Asic[i]);
+      Xil_Out32( cfg4Asic[i], 0x5A);
+      test = Xil_In32( cfg4Asic[i]);
+      if ((test&0xFF) == 0x5A) 
+         mask |= (1<<i);
+      Xil_Out32( cfg4Asic[i], dm);
+   }
+   mask |= 0xAAAA0000;
+   Xil_Out32( SYSTEM_ASICMASK, mask);
+   
+}
+
+void initAsics(void) {
+   
+   uint32_t mask, reg, i;
+   
+   mask = Xil_In32(SYSTEM_ASICMASK);
+   
+   for (i = 0; i <= 15; i++) {
+      if (mask&(1<<i)) {
+         //Disable digital monitors to let the carrier ID readout
+         reg = Xil_In32( cfg6Asic[i]);
+         reg &= ~(0x3);
+         Xil_Out32( cfg6Asic[i], reg);
+         //Enable SLVDS termination resistors and rset on Sync pin
+         reg = Xil_In32( cfg10Asic[i]);
+         reg |= 0x30;
+         Xil_Out32( cfg10Asic[i], reg);
+      }
+   }
+}
+
 int main() { 
    
    volatile uint32_t adcStartupInt = 0;
@@ -204,8 +244,6 @@ int main() {
    
    // Enable DCDCs
    Xil_Out32(SYSTEM_DCDCEN, 0xf);
-   // wait for power to settle
-   waitTimer(TIMER_500MS_INTEVAL);   
    
    // pre-configure (disable DDR memory power and clock)
    Xil_Out32(SYSTEM_VTTEN, 0x0);
@@ -213,6 +251,17 @@ int main() {
    //enable ASIC power
    asicPwrOn();
    
+   // wait for power to settle
+   waitTimer(TIMER_500MS_INTEVAL);   
+   
+   // detect ASICs
+   findAsics();
+   
+   // initialize ASIC core settings
+   initAsics();
+   
+   // re-read carrier ID after ASIC's DMs are disabled
+   Xil_Out32( SYSTEM_IDRST, 0x1);
    
    // do initial power on ADC startup
    clearTestResult();
