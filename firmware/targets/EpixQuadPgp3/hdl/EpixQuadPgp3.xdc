@@ -378,16 +378,45 @@ set_property -dict { PACKAGE_PIN AA8  IOSTANDARD LVCMOS18 } [get_ports {adcCsb[1
 set_property -dict { PACKAGE_PIN Y8   IOSTANDARD LVCMOS18 } [get_ports {adcCsb[0]}]
 
 
-set_property LOC BUFGCE_X1Y74  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/U_bitClkBufG}]
-set_property LOC BUFGCE_X1Y81  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/U_bitClkBufG}]
-set_property LOC BUFGCE_X1Y61  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/U_bitClkBufG}]
-set_property LOC BUFGCE_X1Y58  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/U_bitClkBufG}]
-set_property LOC BUFGCE_X0Y87  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/U_bitClkBufG}]
-set_property LOC BUFGCE_X0Y86  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/U_bitClkBufG}]
-set_property LOC BUFGCE_X0Y51  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/U_bitClkBufG}]
-set_property LOC BUFGCE_X0Y56  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/U_bitClkBufG}]
-set_property LOC BUFGCE_X1Y116 [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/U_bitClkBufG}]
-set_property LOC BUFGCE_X1Y96  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/U_bitClkBufG}]
+set_property LOC BUFGCE_X1Y74  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
+set_property LOC BUFGCE_DIV_X0Y11  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/U_AdcBitClkR}]
+set_property LOC BUFGCE_DIV_X0Y10  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/U_AdcBitClkRD4}]
+
+set_property LOC BUFGCE_X1Y81  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
+set_property LOC BUFGCE_DIV_X0Y9   [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/U_AdcBitClkR}]
+set_property LOC BUFGCE_DIV_X0Y8   [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/U_AdcBitClkRD4}]
+
+set_property LOC BUFGCE_X1Y61  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
+set_property LOC BUFGCE_DIV_X1Y15  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/U_AdcBitClkR}]
+set_property LOC BUFGCE_DIV_X1Y14  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/U_AdcBitClkRD4}]
+
+set_property LOC BUFGCE_X1Y58  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
+set_property LOC BUFGCE_DIV_X1Y13  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/U_AdcBitClkR}]
+set_property LOC BUFGCE_DIV_X1Y12  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/U_AdcBitClkRD4}]
+
+set_property LOC BUFGCE_X0Y87  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
+set_property LOC BUFGCE_DIV_X0Y15  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/U_AdcBitClkR}]
+set_property LOC BUFGCE_DIV_X0Y14  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/U_AdcBitClkRD4}]
+
+set_property LOC BUFGCE_X0Y86  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
+set_property LOC BUFGCE_DIV_X0Y13  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/U_AdcBitClkR}]
+set_property LOC BUFGCE_DIV_X0Y12  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/U_AdcBitClkRD4}]
+
+set_property LOC BUFGCE_X0Y51  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
+set_property LOC BUFGCE_DIV_X1Y19  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/U_AdcBitClkR}]
+set_property LOC BUFGCE_DIV_X1Y18  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/U_AdcBitClkRD4}]
+
+set_property LOC BUFGCE_X0Y56  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
+set_property LOC BUFGCE_DIV_X1Y17  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/U_AdcBitClkR}]
+set_property LOC BUFGCE_DIV_X1Y16  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/U_AdcBitClkRD4}]
+
+set_property LOC BUFGCE_X1Y116 [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
+set_property LOC BUFGCE_DIV_X0Y19  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/U_AdcBitClkR}]
+set_property LOC BUFGCE_DIV_X0Y18  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/U_AdcBitClkRD4}]
+
+set_property LOC BUFGCE_X1Y96  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
+set_property LOC BUFGCE_DIV_X1Y11  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/U_AdcBitClkR}]
+set_property LOC BUFGCE_DIV_X1Y1   [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/U_AdcBitClkRD4}]
 
 
 # ADC0 CH0
