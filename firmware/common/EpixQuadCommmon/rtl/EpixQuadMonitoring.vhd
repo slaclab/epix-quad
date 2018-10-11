@@ -464,7 +464,7 @@ begin
             -- clock stretching disabled 0x24
             -- Medium repeatability 0x0B
             v.regDataSize  := toSlv(wordCount(16, 8) - 1, 3);
-            v.regWrData(15 downto 0) := x"240B";
+            v.regWrData(15 downto 0) := x"0B24";
             v.repeatStart  := '0';
             v.regOp        := '1';  -- Write
             v.regReq       := '1';
