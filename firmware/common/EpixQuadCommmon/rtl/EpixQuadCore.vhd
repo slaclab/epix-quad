@@ -397,7 +397,11 @@ begin
          trigPgp              => opCodeEn,
          trigTtl              => '0',
          trigCmd              => swTrigger,
-         acqStart             => acqStart
+         acqStart             => acqStart,
+         -- Monitor Data Interface
+         monitorTxMaster      => monitorTxMaster,
+         monitorTxSlave       => monitorTxSlave,
+         monitorEn            => monitorEn
       );
    
    dcdcEn      <= iDcdcEn;
@@ -585,10 +589,5 @@ begin
       
    end generate GEN_VEC5;
    
-   --------------------------------------------------------
-   -- Terminate unused busses
-   --------------------------------------------------------
-   
-   monitorTxMaster               <= AXI_STREAM_MASTER_INIT_C;
 
 end rtl;

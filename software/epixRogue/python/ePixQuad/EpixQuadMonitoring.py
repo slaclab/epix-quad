@@ -20,9 +20,9 @@
 import pyrogue as pr
 import collections
 
-class Sht31DisB(pr.Device):
+class EpixQuadMonitor(pr.Device):
    def __init__(self, **kwargs):
-      """Create the configuration device for Himidity/Temperature Sensor SHT-31-DIS-B"""
+      """Create the configuration device for Monitoring Core data readout"""
       super().__init__(description='Temperature Sensors Registers', **kwargs)
       
       # Creation. memBase is either the register bus server (srp, rce mapped memory, etc) or the device which
@@ -37,7 +37,16 @@ class Sht31DisB(pr.Device):
       
       
       #Setup registers & variables
-      self.add((pr.RemoteVariable(name='Temperature',   description='Temperature',   offset=0x00000000, bitSize=8, bitOffset=0,  base=pr.Int, mode='RO')))
+      self.add((pr.RemoteVariable(name='MonitorEn',      description='Enable Monitor',              offset=0x00000000, bitSize=1,  bitOffset=0,  base=pr.Bool, mode='RW')))
+      self.add((pr.RemoteVariable(name='MonitorStrEn',   description='Monitor Stream Enabled',      offset=0x00000004, bitSize=1,  bitOffset=0,  base=pr.Bool, mode='RO')))
+      self.add((pr.RemoteVariable(name='TrigPrescaler',  description='Monitor Triggger Prescaler',  offset=0x00000008, bitSize=16, bitOffset=0,  base=pr.UInt, mode='RW')))
+      self.add((pr.RemoteVariable(name='ShtError',       description='SHT31 Humidity Sensor Error', offset=0x0000000C, bitSize=16, bitOffset=0,  base=pr.UInt, mode='RO')))
+      self.add((pr.RemoteVariable(name='ShtHum',         description='SHT31 Humidity Value',        offset=0x00000010, bitSize=16, bitOffset=0,  base=pr.UInt, mode='RO')))
+      self.add((pr.RemoteVariable(name='ShtTemp',        description='SHT31 Temperature Value',     offset=0x00000014, bitSize=16, bitOffset=0,  base=pr.UInt, mode='RO')))
+      self.add((pr.RemoteVariable(name='NctError',       description='NCT218 Temp. Sensor Error',   offset=0x00000018, bitSize=16, bitOffset=0,  base=pr.UInt, mode='RO')))
+      self.add((pr.RemoteVariable(name='NctLocTemp',     description='NCT218 Local Temp.',          offset=0x0000001C, bitSize=8,  bitOffset=0,  base=pr.UInt, mode='RO')))
+      self.add((pr.RemoteVariable(name='NctRemTempH',    description='NCT218 Remote Temp. H Byte',  offset=0x00000020, bitSize=8,  bitOffset=0,  base=pr.UInt, mode='RO')))
+      self.add((pr.RemoteVariable(name='NctRemTempL',    description='NCT218 Remote Temp. L Byte',  offset=0x00000024, bitSize=8,  bitOffset=0,  base=pr.UInt, mode='RO')))
       
       #####################################
       # Create commands

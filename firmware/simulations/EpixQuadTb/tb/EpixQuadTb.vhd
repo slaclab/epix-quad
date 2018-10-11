@@ -318,6 +318,7 @@ begin
    -----------------------------------------------------------------------
    process
    begin
+      
       --tempAlertL <= '1';
       --
       --wait for 100 us;
@@ -333,6 +334,255 @@ begin
       --acqStart <= not acqStart;
       
       wait for 100 us;
+         
+      
+   end process;
+   
+   
+   -----------------------------------------------------------------------
+   -- I2C verification process
+   -----------------------------------------------------------------------
+   process
+   begin
+   
+      wait for 100 ns;
+      
+      humScl <= 'H';
+      humSda <= 'H';
+      
+      loop 
+         -----------------------------------------------------------------------
+         -- send sht31 command
+         -----------------------------------------------------------------------
+         
+         -- wait for start
+         wait until falling_edge(humScl) and humSda = '0';
+         
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         
+         -- ACK
+         humSda <= 'L';
+         wait until falling_edge(humScl);
+         humSda <= 'H';
+         
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         
+         -- ACK
+         humSda <= 'L';
+         wait until falling_edge(humScl);
+         humSda <= 'H';
+         
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         
+         -- ACK
+         humSda <= 'L';
+         wait until falling_edge(humScl);
+         humSda <= 'H';
+         
+         
+         -----------------------------------------------------------------------
+         -- read sht31 data
+         -----------------------------------------------------------------------
+         
+         -- wait for start
+         wait until falling_edge(humScl) and humSda = '0';
+         
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         
+         -- ACK
+         humSda <= 'L';
+         wait until falling_edge(humScl);
+         humSda <= 'H';
+         
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         
+         -- ACK
+         humSda <= 'L';
+         wait until falling_edge(humScl);
+         humSda <= 'H';
+         
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         
+         -- ACK
+         humSda <= 'L';
+         wait until falling_edge(humScl);
+         humSda <= 'H';
+         
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         
+         -- ACK
+         humSda <= 'L';
+         wait until falling_edge(humScl);
+         humSda <= 'H';
+         
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         
+         -- ACK
+         humSda <= 'L';
+         wait until falling_edge(humScl);
+         humSda <= 'H';
+         
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         
+         -- ACK
+         humSda <= 'L';
+         wait until falling_edge(humScl);
+         humSda <= 'H';
+         
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         wait until falling_edge(humScl);
+         
+         -- NACK
+         humSda <= 'H';
+         wait until falling_edge(humScl);
+         humSda <= 'H';
+         
+         for i in 2 downto 0 loop
+         
+            -----------------------------------------------------------------------
+            -- write nct218 pointer
+            -----------------------------------------------------------------------
+            
+            -- wait for start
+            wait until falling_edge(humScl) and humSda = '0';
+            
+            wait until falling_edge(humScl);
+            wait until falling_edge(humScl);
+            wait until falling_edge(humScl);
+            wait until falling_edge(humScl);
+            wait until falling_edge(humScl);
+            wait until falling_edge(humScl);
+            wait until falling_edge(humScl);
+            wait until falling_edge(humScl);
+            
+            -- ACK
+            humSda <= 'L';
+            wait until falling_edge(humScl);
+            humSda <= 'H';
+            
+            wait until falling_edge(humScl);
+            wait until falling_edge(humScl);
+            wait until falling_edge(humScl);
+            wait until falling_edge(humScl);
+            wait until falling_edge(humScl);
+            wait until falling_edge(humScl);
+            wait until falling_edge(humScl);
+            wait until falling_edge(humScl);
+            
+            -- ACK
+            humSda <= 'L';
+            wait until falling_edge(humScl);
+            humSda <= 'H';
+            
+            -----------------------------------------------------------------------
+            -- read nct218 data
+            -----------------------------------------------------------------------
+            
+            -- wait for start
+            wait until falling_edge(humScl) and humSda = '0';
+            
+            wait until falling_edge(humScl);
+            wait until falling_edge(humScl);
+            wait until falling_edge(humScl);
+            wait until falling_edge(humScl);
+            wait until falling_edge(humScl);
+            wait until falling_edge(humScl);
+            wait until falling_edge(humScl);
+            wait until falling_edge(humScl);
+            
+            -- ACK
+            humSda <= 'L';
+            wait until falling_edge(humScl);
+            humSda <= 'H';
+            
+            wait until falling_edge(humScl);
+            wait until falling_edge(humScl);
+            wait until falling_edge(humScl);
+            wait until falling_edge(humScl);
+            wait until falling_edge(humScl);
+            wait until falling_edge(humScl);
+            wait until falling_edge(humScl);
+            wait until falling_edge(humScl);
+            
+            -- NACK
+            humSda <= 'H';
+            wait until falling_edge(humScl);
+            humSda <= 'H';
+         
+         end loop;
+      
+      end loop;
+      
+      wait;
          
       
    end process;

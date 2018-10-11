@@ -8,9 +8,10 @@
 ## may be copied, modified, propagated, or distributed except according to 
 ## the terms contained in the LICENSE.txt file.
 ##############################################################################
-from ePixQuad.Top             import *
-from ePixQuad.SystemRegs      import *
-from ePixQuad.AcqCore         import *
-from ePixQuad.RdoutCore       import *
-from ePixQuad.PseudoScopeCore import *
-from ePixQuad.AdcTester       import *
+from ePixQuad.Top                import *
+from ePixQuad.SystemRegs         import *
+from ePixQuad.AcqCore            import *
+from ePixQuad.RdoutCore          import *
+from ePixQuad.PseudoScopeCore    import *
+from ePixQuad.AdcTester          import *
+from ePixQuad.EpixQuadMonitoring import *

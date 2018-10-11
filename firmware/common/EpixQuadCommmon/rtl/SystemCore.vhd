@@ -107,7 +107,11 @@ entity SystemCore is
       trigTtl              : in  sl := '0';
       trigCmd              : in  sl := '0';
       -- trigger output
-      acqStart             : out sl
+      acqStart             : out sl;
+      -- Monitor Data Interface
+      monitorTxMaster      : out  AxiStreamMasterType;
+      monitorTxSlave       : in   AxiStreamSlaveType;
+      monitorEn            : in   sl
    );
 end SystemCore;
 
@@ -128,11 +132,6 @@ architecture top_level of SystemCore is
       2 => (MakeI2cAxiLiteDevType("1101111", 8, 8, '0', '1')),
       3 => (MakeI2cAxiLiteDevType("1010001", 8, 8, '0'))
    );
-   
-   constant I2C_HUM_CONFIG_C : I2cAxiLiteDevArray(1 downto 0) := (
-      0 => (MakeI2cAxiLiteDevType("1000100", 32, 16, '0')),
-      1 => (MakeI2cAxiLiteDevType("1001100", 8, 8, '0'))
-   );   
    
    constant I2C_DAC_CONFIG_C : I2cAxiLiteDevArray(0 downto 0) := (
       0 => (MakeI2cAxiLiteDevType("1001110", 8, 8, '0'))
@@ -182,6 +181,8 @@ architecture top_level of SystemCore is
    signal memTestRst       : sl;
    signal memTestRstSync   : sl;
    signal iDdrVttEn        : sl;
+   
+   signal iAcqStart        : sl;
 
 begin
    
@@ -275,8 +276,10 @@ begin
       trigTtl           => trigTtl,
       trigCmd           => trigCmd,
       -- trigger output
-      acqStart          => acqStart
+      acqStart          => iAcqStart
    );
+   
+   acqStart <= iAcqStart;
 
    --------------------------
    -- AXI-Lite: SYSMON Module
@@ -516,22 +519,36 @@ begin
    ------------------------------------------------
    -- Humidity and temp sensors readout
    ------------------------------------------------
-   U_HumI2C : entity work.AxiI2cRegMaster
+   U_HumI2C : entity work.EpixQuadMonitoring
    generic map (
-      DEVICE_MAP_G     => I2C_HUM_CONFIG_C,
-      AXI_CLK_FREQ_G   => AXI_CLK_FREQ_G,
-      I2C_SCL_FREQ_G   => 50.0E+3
+      AXI_CLK_FREQ_G    => AXI_CLK_FREQ_G,
+      I2C_SCL_FREQ_G    => 50.0E+3,
+      SIM_SPEEDUP_G     => SIM_SPEEDUP_G
    )
    port map (
-      scl            => humScl,
-      sda            => humSda,
-      axiReadMaster  => axilReadMasters(HUM_SNS_INDEX_C),
-      axiReadSlave   => axilReadSlaves(HUM_SNS_INDEX_C),
-      axiWriteMaster => axilWriteMasters(HUM_SNS_INDEX_C),
-      axiWriteSlave  => axilWriteSlaves(HUM_SNS_INDEX_C),
-      axiClk         => sysClk,
-      axiRst         => sysRst
-   );   
+      -- Clocks and Resets
+      sysClk            => sysClk,
+      sysRst            => sysRst,
+      -- Trigger inputs
+      acqStart          => iAcqStart,
+      ---- monitor ADC bus
+      --envSck            : out   sl;
+      --envCnv            : out   sl;
+      --envDin            : out   sl;
+      --envSdo            : in    sl;
+      -- humidity I2C bus (2 devices)
+      humScl            => humScl,
+      humSda            => humSda,
+      -- AXI-Lite Register Interface
+      axilReadMaster    => axilReadMasters(HUM_SNS_INDEX_C),
+      axilReadSlave     => axilReadSlaves(HUM_SNS_INDEX_C),
+      axilWriteMaster   => axilWriteMasters(HUM_SNS_INDEX_C),
+      axilWriteSlave    => axilWriteSlaves(HUM_SNS_INDEX_C),
+      -- Monitor Data Interface
+      monitorTxMaster   => monitorTxMaster,
+      monitorTxSlave    => monitorTxSlave,
+      monitorEn         => monitorEn
+   );
    
    -- humRstN and humAlert are currently not supported
    humRstN <= '1';
