@@ -55,7 +55,9 @@ entity AsicCoreTop is
       -- ADC stream input
       adcStream            : in    AxiStreamMasterArray(79 downto 0);
       -- Opcode to insert into frame
-      opCode               : in  slv(7 downto 0);
+      opCode               : in    slv(7 downto 0);
+      -- Monitor data for the image stream
+      monData              : in    Slv16Array(15 downto 0);
       -- ASIC ACQ signals
       acqStart             : in    sl;
       asicAcq              : out   sl;
@@ -209,6 +211,8 @@ begin
       acqCount             => acqCount,
       acqSmplEn            => acqSmplEn,
       readDone             => readDone,
+      -- Monitor data for the image stream
+      monData              => monData,
       -- ADC stream input
       adcStream            => adcStream(63 downto 0),
       tpsStream            => adcStream(79 downto 64),

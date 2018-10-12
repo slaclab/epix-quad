@@ -206,6 +206,8 @@ architecture rtl of EpixQuadCore is
    signal iDcdcEn       : slv(3 downto 0);
    signal mbIrq         : slv(7 downto 0) := (others => '0'); 
    
+   signal monData       : Slv16Array(15 downto 0);
+   
 begin
 
    --------------------------------------------------------
@@ -408,6 +410,8 @@ begin
          trigTtl              => '0',
          trigCmd              => swTrigger,
          acqStart             => acqStart,
+         -- Monitor data for the image stream
+         monData              => monData,
          -- Monitor Data Interface
          monitorTxMaster      => monitorTxMaster,
          monitorTxSlave       => monitorTxSlave,
@@ -449,6 +453,8 @@ begin
          adcStream            => adcStream,
          -- Opcode to insert into frame
          opCode               => opCode,
+         -- Monitor data for the image stream
+         monData              => monData,
          -- ASIC ACQ signals
          acqStart             => acqStart,
          asicAcq              => iAsicAcq,

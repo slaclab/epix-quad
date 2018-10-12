@@ -55,6 +55,8 @@ entity RdoutCoreDdr is
       acqCount             : in  slv(31 downto 0);
       acqSmplEn            : in  sl;
       readDone             : out sl;
+      -- Monitor data for the image stream
+      monData              : in  Slv16Array(15 downto 0);
       -- ADC stream input
       adcStream            : in  AxiStreamMasterArray(63 downto 0);
       tpsStream            : in  AxiStreamMasterArray(15 downto 0);

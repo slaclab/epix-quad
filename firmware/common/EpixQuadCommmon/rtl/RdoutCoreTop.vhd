@@ -56,6 +56,8 @@ entity RdoutCoreTop is
       acqCount             : in  slv(31 downto 0);
       acqSmplEn            : in  sl;
       readDone             : out sl;
+      -- Monitor data for the image stream
+      monData              : in  Slv16Array(15 downto 0);
       -- ADC stream input
       adcStream            : in  AxiStreamMasterArray(63 downto 0);
       tpsStream            : in  AxiStreamMasterArray(15 downto 0);
@@ -102,6 +104,8 @@ begin
             acqCount             => acqCount,
             acqSmplEn            => acqSmplEn,
             readDone             => readDone,
+            -- Monitor data for the image stream
+            monData              => monData,
             -- ADC stream input
             adcStream            => adcStream,
             tpsStream            => tpsStream,
@@ -152,6 +156,8 @@ begin
             acqCount             => acqCount,
             acqSmplEn            => acqSmplEn,
             readDone             => readDone,
+            -- Monitor data for the image stream
+            monData              => monData,
             -- ADC stream input
             adcStream            => adcStream,
             tpsStream            => tpsStream,

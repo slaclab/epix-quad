@@ -113,6 +113,8 @@ entity SystemCore is
       trigCmd              : in  sl := '0';
       -- trigger output
       acqStart             : out sl;
+      -- Monitor data for the image stream
+      monData              : out  Slv16Array(15 downto 0);
       -- Monitor Data Interface
       monitorTxMaster      : out  AxiStreamMasterType;
       monitorTxSlave       : in   AxiStreamSlaveType;
@@ -549,6 +551,8 @@ begin
       axilReadSlave     => axilReadSlaves(HUM_SNS_INDEX_C),
       axilWriteMaster   => axilWriteMasters(HUM_SNS_INDEX_C),
       axilWriteSlave    => axilWriteSlaves(HUM_SNS_INDEX_C),
+      -- Monitor data for the image stream
+      monData           => monData,
       -- Monitor Data Interface
       monitorTxMaster   => monitorTxMaster,
       monitorTxSlave    => monitorTxSlave,

@@ -55,6 +55,8 @@ entity EpixQuadMonitoring is
       axilReadSlave     : out   AxiLiteReadSlaveType;
       axilWriteMaster   : in    AxiLiteWriteMasterType;
       axilWriteSlave    : out   AxiLiteWriteSlaveType;
+      -- Monitor data for the image stream
+      monData           : out   Slv16Array(15 downto 0);
       -- Monitor Data Interface
       monitorTxMaster   : out  AxiStreamMasterType;
       monitorTxSlave    : in   AxiStreamSlaveType;
@@ -161,7 +163,7 @@ architecture rtl of EpixQuadMonitoring is
       spiWrdCnt         : slv(3 downto 0);
       spiCycCnt         : integer range 0 to AD7949_CYC_PER_C;
       spiState          : SpiStateType;
-      adDataReg         : Slv14Array(7 downto 0);
+      adDataReg         : Slv16Array(7 downto 0);
       --
       txMaster          : AxiStreamMasterType;
       sAxilWriteSlave   : AxiLiteWriteSlaveType;
@@ -709,7 +711,7 @@ begin
             if spiRdEn = '1' and r.spiRdEn = '0' then
                -- skip first 2 samples (ADC pipeline)
                if r.spiWrdCnt >= 2 then
-                  v.adDataReg(conv_integer(r.spiWrdCnt)-2) := spiRdData;
+                  v.adDataReg(conv_integer(r.spiWrdCnt)-2) := "00" & spiRdData;
                end if;
                v.spiState := WAIT_TCYC_S;
             end if;
@@ -745,24 +747,31 @@ begin
       
       rin <= v;
 
-      axilWriteSlave       <= r.sAxilWriteSlave;
-      axilReadSlave        <= r.sAxilReadSlave;
+      axilWriteSlave          <= r.sAxilWriteSlave;
+      axilReadSlave           <= r.sAxilReadSlave;
       
       -- Internal signals
-      i2cMasterIn.enable   <= '1';
-      i2cMasterIn.prescale <= toSlv(PRESCALE_C, 16);
-      i2cMasterIn.filter   <= (others => '0');  -- Not using dynamic filtering
-      i2cMasterIn.addr     <= r.i2cAddr;
-      i2cMasterIn.tenbit   <= r.tenbit;
-      i2cMasterIn.txnReq   <= r.i2cMasterIn.txnReq;
-      i2cMasterIn.stop     <= r.i2cMasterIn.stop;
-      i2cMasterIn.op       <= r.i2cMasterIn.op;
-      i2cMasterIn.wrValid  <= r.i2cMasterIn.wrValid;
-      i2cMasterIn.wrData   <= r.i2cMasterIn.wrData;
-      i2cMasterIn.rdAck    <= r.i2cMasterIn.rdAck;
-      i2cMasterIn.busReq   <= r.i2cMasterIn.busReq;
+      i2cMasterIn.enable      <= '1';
+      i2cMasterIn.prescale    <= toSlv(PRESCALE_C, 16);
+      i2cMasterIn.filter      <= (others => '0');  -- Not using dynamic filtering
+      i2cMasterIn.addr        <= r.i2cAddr;
+      i2cMasterIn.tenbit      <= r.tenbit;
+      i2cMasterIn.txnReq      <= r.i2cMasterIn.txnReq;
+      i2cMasterIn.stop        <= r.i2cMasterIn.stop;
+      i2cMasterIn.op          <= r.i2cMasterIn.op;
+      i2cMasterIn.wrValid     <= r.i2cMasterIn.wrValid;
+      i2cMasterIn.wrData      <= r.i2cMasterIn.wrData;
+      i2cMasterIn.rdAck       <= r.i2cMasterIn.rdAck;
+      i2cMasterIn.busReq      <= r.i2cMasterIn.busReq;
       
-      monitorTxMaster      <= r.txMaster;
+      monitorTxMaster         <= r.txMaster;
+      
+      monData( 0)             <= r.shtHumReg;
+      monData( 1)             <= r.shtTempReg;
+      monData( 2)             <= x"00" & r.nctRegs(0);
+      monData( 3)             <= r.nctRegs(2) & r.nctRegs(1);
+      monData(11 downto  4)   <= r.adDataReg;
+      monData(15 downto 12)   <= (others=>(others=>'0'));
 
    end process comb;
 

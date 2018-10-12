@@ -48,6 +48,8 @@ entity RdoutCoreBram is
       acqCount             : in  slv(31 downto 0);
       acqSmplEn            : in  sl;
       readDone             : out sl;
+      -- Monitor data for the image stream
+      monData              : in  Slv16Array(15 downto 0);
       -- ADC stream input
       adcStream            : in  AxiStreamMasterArray(63 downto 0);
       tpsStream            : in  AxiStreamMasterArray(15 downto 0);
@@ -121,7 +123,7 @@ architecture rtl of RdoutCoreBram is
       readPend             : sl;
       buffErr              : sl;
       timeErr              : sl;
-      wordCnt              : integer range 0 to 3;
+      wordCnt              : integer range 0 to 7;
       timeCnt              : integer range 0 to TIMEOUT_C;
       sRowCount            : integer range 0 to 3;             -- 4 lines
       bankCount            : integer range 0 to 15;            -- 16 banks per line
@@ -141,6 +143,7 @@ architecture rtl of RdoutCoreBram is
       txMaster             : AxiStreamMasterType;
       sAxilWriteSlave      : AxiLiteWriteSlaveType;
       sAxilReadSlave       : AxiLiteReadSlaveType;
+      monData              : Slv16Array(15 downto 0);
    end record RegType;
 
    constant REG_INIT_C : RegType := (
@@ -178,7 +181,8 @@ architecture rtl of RdoutCoreBram is
       rdState              => IDLE_S,
       txMaster             => AXI_STREAM_MASTER_INIT_C,
       sAxilWriteSlave      => AXI_LITE_WRITE_SLAVE_INIT_C,
-      sAxilReadSlave       => AXI_LITE_READ_SLAVE_INIT_C
+      sAxilReadSlave       => AXI_LITE_READ_SLAVE_INIT_C,
+      monData              => (others=>(others=>'0'))
    );
 
    signal r                : RegType := REG_INIT_C;
@@ -353,7 +357,7 @@ begin
    
    comb : process (sysRst, sAxilReadMaster, sAxilWriteMaster, txSlave, r,
       acqBusyEdge, acqBusy, acqCount, acqSmplEn, memRdData, opCode, muxStrMap, tpsStream,
-      doutValid, doutOut, doutCount) is
+      doutValid, doutOut, doutCount, monData) is
       variable v      : RegType;
       variable regCon : AxiLiteEndPointType;
       variable sRowCountVar : integer;
@@ -516,6 +520,7 @@ begin
             v.buffErr      := '0';
             v.timeErr      := '0';
             v.lineBufErrEn := (others=>'0');
+            v.monData      := monData;
             if acqBusyEdge = '1' and r.rdoutEn = '1' then
                v.readPend  := '1';
                v.rdState   := HDR_S;
@@ -638,10 +643,28 @@ begin
             -- reserved footer space similar to small epix data frame
             -- length of 1 super row
             if v.txMaster.tValid = '0' then
-               
+            
                v.txMaster.tValid := '1';
-               v.txMaster.tData(31 downto  0) := x"00000000";
-               v.txMaster.tData(63 downto 32) := x"00000000";
+               
+               if r.wordCnt = 0 then
+                  v.txMaster.tData(31 downto  0) := r.monData( 1) & r.monData( 0);
+                  v.txMaster.tData(63 downto 32) := r.monData( 3) & r.monData( 2);
+               elsif r.wordCnt = 1 then
+                  v.txMaster.tData(31 downto  0) := r.monData( 5) & r.monData( 4);
+                  v.txMaster.tData(63 downto 32) := r.monData( 7) & r.monData( 6);
+               elsif r.wordCnt = 2 then
+                  v.txMaster.tData(31 downto  0) := r.monData( 9) & r.monData( 8);
+                  v.txMaster.tData(63 downto 32) := r.monData(11) & r.monData(10);
+               elsif r.wordCnt = 3 then
+                  v.txMaster.tData(31 downto  0) := r.monData(13) & r.monData(12);
+                  v.txMaster.tData(63 downto 32) := r.monData(15) & r.monData(14);
+               else
+                  v.txMaster.tData(31 downto  0) := x"00000000";
+                  v.txMaster.tData(63 downto 32) := x"00000000";
+               end if;
+               if (r.wordCnt < 7) then
+                  v.wordCnt := r.wordCnt + 1;
+               end if;
                
                if r.colCount < BANK_COLS_C then    -- next column in bank
                   v.colCount := r.colCount + 1;
@@ -651,6 +674,7 @@ begin
                else
                   v.colCount  := 0;
                   v.bankCount := 0;
+                  v.wordCnt   := 0;
                   v.rdState   := TPS_DATA_S;
                end if;
                
