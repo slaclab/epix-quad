@@ -19,6 +19,7 @@
 #-----------------------------------------------------------------------------
 import pyrogue as pr
 import collections
+import numpy as np
 
 class EpixQuadMonitor(pr.Device):
    def __init__(self, **kwargs):
@@ -41,6 +42,38 @@ class EpixQuadMonitor(pr.Device):
       def getNctTempLoc(var):
          x = var.dependencies[0].value()
          return x * 1.0 
+      
+      def getLt3086DoubleCurr(var):
+         x = var.dependencies[0].value()
+         # Imon = Iin / 1000
+         # Rload = 330 ohm
+         # ADC buffer gain x 2
+         # Two parallel LDOs current x 2
+         # returns current in A
+         return x / 16383.0 * 2.5 / 330.0 * 1000
+      
+      def getLt3086SingleCurr(var):
+         x = var.dependencies[0].value()
+         # Imon = Iin / 1000
+         # Rload = 330 ohm
+         # ADC buffer gain x 2
+         # One LDO current x 1
+         # returns current in mA
+         return x / 16383.0 * 2.5 / 330.0 * 1000000 / 2.0
+      
+      def getThermistorTemp(var):
+         # resistor divider 100k and MC65F103B (Rt25=10k)
+         # Vref 2.5V
+         x = var.dependencies[0].value()
+         if x != 0:
+            Umeas = x / 16383.0 * 2.5
+            Itherm = Umeas / 100000;
+            Rtherm = (2.5 - Umeas) / Itherm;
+            LnRtR25 = np.log(Rtherm/10000.0)
+            TthermK = 1.0 / (3.3538646E-03 + 2.5654090E-04 * LnRtR25 + 1.9243889E-06 * (LnRtR25**2) + 1.0969244E-07 * (LnRtR25**3))
+            return TthermK - 273.15
+         else:
+            return 0.0
          
       # Creation. memBase is either the register bus server (srp, rce mapped memory, etc) or the device which
       # contains this object. In most cases the parent and memBase are the same but they can be 
@@ -97,6 +130,47 @@ class EpixQuadMonitor(pr.Device):
          dependencies = [self.NctRemTempHRaw, self.NctRemTempLRaw],
       )) 
       
+      for i in range(8):      
+         self.add(pr.RemoteVariable(
+            name       = ('AD7949DataRaw[%d]'%i),
+            description= ('AD7949 Raw Data Channel [%d]'%i),
+            offset     = (0x00000100+i*4), 
+            bitSize    = 14, 
+            bitOffset  = 0,  
+            base       = pr.UInt, 
+            mode       = 'RO',
+         ))
+      
+      for i in range(4):
+         self.add(pr.LinkVariable(
+            name         = ('ASIC_A%d_2V5_Current'%i), 
+            mode         = 'RO', 
+            units        = 'A',
+            linkedGet    = getLt3086DoubleCurr,
+            disp         = '{:1.3f}',
+            dependencies = [self.AD7949DataRaw[i]],
+         )) 
+      
+      for i in range(2):
+         self.add(pr.LinkVariable(
+            name         = ('ASIC_D%d_2V5_Current'%i), 
+            mode         = 'RO', 
+            units        = 'mA',
+            linkedGet    = getLt3086SingleCurr,
+            disp         = '{:1.3f}',
+            dependencies = [self.AD7949DataRaw[4+i]],
+         )) 
+      
+      for i in range(2):
+         self.add(pr.LinkVariable(
+            name         = ('ASIC_Therm%d_Temp'%i), 
+            mode         = 'RO', 
+            units        = 'deg C',
+            linkedGet    = getThermistorTemp,
+            disp         = '{:1.3f}',
+            dependencies = [self.AD7949DataRaw[6+i]],
+         )) 
+         
       #####################################
       # Create commands
       #####################################
