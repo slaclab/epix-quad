@@ -163,7 +163,7 @@ class EpixQuadMonitor(pr.Device):
       
       for i in range(2):
          self.add(pr.LinkVariable(
-            name         = ('ASIC_Therm%d_Temp'%i), 
+            name         = ('Therm%d_Temp'%i), 
             mode         = 'RO', 
             units        = 'deg C',
             linkedGet    = getThermistorTemp,
