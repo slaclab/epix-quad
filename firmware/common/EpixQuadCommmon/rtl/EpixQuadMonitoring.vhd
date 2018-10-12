@@ -526,8 +526,8 @@ begin
                if r.regFail = '0' then
                   -- save measurements
                   -- skip CRC
-                  v.shtTempReg   := r.regRdData(15 downto 0);
-                  v.shtHumReg    := r.regRdData(39 downto 24);
+                  v.shtTempReg   := r.regRdData(7 downto 0)   & r.regRdData(15 downto 8);
+                  v.shtHumReg    := r.regRdData(31 downto 24) & r.regRdData(39 downto 32);
                else
                   -- SHT31 command failed 
                   if r.shtError < x"FFFF" then
