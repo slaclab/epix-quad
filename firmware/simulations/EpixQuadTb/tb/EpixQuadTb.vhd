@@ -208,6 +208,11 @@ begin
       humSda            => humSda,
       humRstN           => open,
       humAlert          => '0',
+      -- monitor ADC bus
+      envSck            => open,
+      envCnv            => open,
+      envDin            => open,
+      envSdo            => '1',
       -- PGP Ports
       pgpClkP           => pgpClkP,
       pgpClkN           => pgpClkN,

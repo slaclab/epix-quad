@@ -71,6 +71,11 @@ entity EpixQuadPgp3 is
       humSda            : inout sl;
       humRstN           : out   sl;
       humAlert          : in    sl;
+      -- monitor ADC bus
+      envSck            : out   sl;
+      envCnv            : out   sl;
+      envDin            : out   sl;
+      envSdo            : in    sl;
       -- PGP Ports
       pgpClkP           : in    sl;
       pgpClkN           : in    sl;
@@ -164,6 +169,11 @@ begin
          humSda            => humSda  ,
          humRstN           => humRstN ,
          humAlert          => humAlert,
+         -- monitor ADC bus
+         envSck            => envSck,
+         envCnv            => envCnv,
+         envDin            => envDin,
+         envSdo            => envSdo,
          -- PGP Ports
          pgpClkP           => pgpClkP,
          pgpClkN           => pgpClkN,

@@ -75,6 +75,11 @@ entity EpixQuadCore is
       humSda            : inout sl;
       humRstN           : out   sl;
       humAlert          : in    sl;
+      -- monitor ADC bus
+      envSck            : out   sl;
+      envCnv            : out   sl;
+      envDin            : out   sl;
+      envSdo            : in    sl;
       -- PGP Ports
       pgpClkP           : in    sl;
       pgpClkN           : in    sl;
@@ -349,6 +354,11 @@ begin
          humSda               => humSda,
          humRstN              => humRstN,
          humAlert             => humAlert,
+         -- monitor ADC bus
+         envSck               => envSck,
+         envCnv               => envCnv,
+         envDin               => envDin,
+         envSdo               => envSdo,
          -- DRR Memory interface ports
          c0_sys_clk_p         => c0_sys_clk_p,
          c0_sys_clk_n         => c0_sys_clk_n,

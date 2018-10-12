@@ -135,6 +135,11 @@ set_property -dict { PACKAGE_PIN AF15 IOSTANDARD LVCMOS25 } [get_ports {humSda}]
 set_property -dict { PACKAGE_PIN AH13 IOSTANDARD LVCMOS25 } [get_ports {humRstN}]
 set_property -dict { PACKAGE_PIN AE15 IOSTANDARD LVCMOS25 } [get_ports {humAlert}]
 
+set_property -dict { PACKAGE_PIN J10  IOSTANDARD LVCMOS18 } [get_ports {envSck}]
+set_property -dict { PACKAGE_PIN J11  IOSTANDARD LVCMOS18 } [get_ports {envCnv}]
+set_property -dict { PACKAGE_PIN H12  IOSTANDARD LVCMOS18 } [get_ports {envDin}]
+set_property -dict { PACKAGE_PIN H13  IOSTANDARD LVCMOS18 } [get_ports {envSdo}]
+
 set_property -dict { PACKAGE_PIN AD8  IOSTANDARD LVCMOS25 PULLTYPE PULLUP } [get_ports {asicDmSn[3]}]
 set_property -dict { PACKAGE_PIN AE13 IOSTANDARD LVCMOS25 PULLTYPE PULLUP } [get_ports {asicDmSn[2]}]
 set_property -dict { PACKAGE_PIN AE12 IOSTANDARD LVCMOS25 PULLTYPE PULLUP } [get_ports {asicDmSn[1]}]

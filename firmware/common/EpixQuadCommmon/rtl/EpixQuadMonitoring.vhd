@@ -43,10 +43,10 @@ entity EpixQuadMonitoring is
       -- Trigger inputs
       acqStart          : in    sl;
       -- monitor ADC bus
-      --envSck            : out   sl;
-      --envCnv            : out   sl;
-      --envDin            : out   sl;
-      --envSdo            : in    sl;
+      envSck            : out   sl;
+      envCnv            : out   sl;
+      envDin            : out   sl;
+      envSdo            : in    sl;
       -- humidity I2C bus (2 devices)
       humScl            : inout sl;
       humSda            : inout sl;
@@ -84,6 +84,12 @@ architecture rtl of EpixQuadMonitoring is
       2 => x"01"  -- external temperature high byte
    );
    
+   -- minimum clock period at 1.8VIO is 50 ns
+   constant AD7949_SPI_SCLK_C : real := 1.0E+6;
+   -- maximum sampling (cycle) frequency is 250kHz
+   constant AD7949_CYC_CLK_C  : real := 250.0E+3;
+   constant AD7949_CYC_PER_C  : natural := getTimeRatio(AXI_CLK_FREQ_G, AD7949_CYC_CLK_C)-1;
+   
    type StateType is (
       WAIT_REQ_S, 
       ADDR_S, 
@@ -105,6 +111,13 @@ architecture rtl of EpixQuadMonitoring is
       TBUS_WAIT1_S,
       TBUS_READ_S,
       TBUS_WAIT2_S
+   );
+   
+   type SpiStateType is (
+      IDLE_S, 
+      BUS_EN_S,
+      BUS_WAIT_S,
+      WAIT_TCYC_S
    );
    
    type RegType is record
@@ -142,6 +155,13 @@ architecture rtl of EpixQuadMonitoring is
       nctRegCnt         : integer range 0 to NCT218_REGS_NUM_C-1;
       nctError          : slv(15 downto 0);
       nctRegs           : Slv8Array(NCT218_REGS_NUM_C-1 downto 0);
+      spiRdEn           : sl;
+      spiWrEn           : sl;
+      spiWrData         : slv(13 downto 0);
+      spiWrdCnt         : slv(3 downto 0);
+      spiCycCnt         : integer range 0 to AD7949_CYC_PER_C;
+      spiState          : SpiStateType;
+      adDataReg         : Slv14Array(7 downto 0);
       --
       txMaster          : AxiStreamMasterType;
       sAxilWriteSlave   : AxiLiteWriteSlaveType;
@@ -195,6 +215,13 @@ architecture rtl of EpixQuadMonitoring is
       nctRegCnt         => 0,
       nctError          => (others=>'0'),
       nctRegs           => (others=>(others=>'0')),
+      spiRdEn           => '0',
+      spiWrEn           => '0',
+      spiWrData         => (others=>'0'),
+      spiWrdCnt         => (others=>'0'),
+      spiCycCnt         => 0,
+      spiState          => IDLE_S,
+      adDataReg         => (others=>(others=>'0')),
       --
       txMaster          => AXI_STREAM_MASTER_INIT_C,
       sAxilWriteSlave   => AXI_LITE_WRITE_SLAVE_INIT_C,
@@ -208,6 +235,9 @@ architecture rtl of EpixQuadMonitoring is
    
    signal i2ci : i2c_in_type;
    signal i2co : i2c_out_type;
+   
+   signal spiRdEn       : sl;
+   signal spiRdData     : slv(13 downto 0);
 
    function getIndex (
       endianness : sl;
@@ -260,11 +290,42 @@ begin
          T  => i2co.sdaoen);            -- 3-state enable input, high=input, low=output  
    
    --------------------------------------------------
+   -- Basic SPI Master
+   --------------------------------------------------
+   
+   U_SpiMaster : entity work.SpiMaster
+   generic map (
+      TPD_G             => TPD_G,
+      NUM_CHIPS_G       => 1,
+      DATA_SIZE_G       => 14,
+      CPHA_G            => '0',
+      CPOL_G            => '0',
+      CLK_PERIOD_G      => (1.0/AXI_CLK_FREQ_G),
+      SPI_SCLK_PERIOD_G => (1.0/AD7949_SPI_SCLK_C)
+   )
+   port map (
+      --Global Signals
+      clk         => sysClk,
+      sRst        => sysRst,
+      -- Parallel interface
+      chipSel     => "0",
+      wrEn        => r.spiWrEn,
+      wrData      => r.spiWrData,
+      rdEn        => spiRdEn,
+      rdData      => spiRdData,
+      --SPI interface
+      spiCsL(0)   => envCnv,
+      spiSclk     => envSck,
+      spiSdi      => envDin,
+      spiSdo      => envSdo
+   );
+   
+   --------------------------------------------------
    -- Combinational logic
    --------------------------------------------------
 
    comb : process (sysRst, r, axilReadMaster, axilWriteMaster,
-      i2cMasterOut, acqStart, monitorEn, monitorTxSlave) is
+      i2cMasterOut, acqStart, monitorEn, monitorTxSlave, spiRdData, spiRdEn) is
       variable v            : RegType;
       variable addrIndexVar : integer;
       variable dataIndexVar : integer;
@@ -303,6 +364,9 @@ begin
       axiSlaveRegisterR(regCon, x"018", 0, r.nctError);
       for i in NCT218_REGS_NUM_C - 1 downto 0 loop
          axiSlaveRegisterR(regCon, x"01C"+toSlv(i*4,12), 0, r.nctRegs(i));
+      end loop;
+      for i in 7 downto 0 loop
+         axiSlaveRegisterR(regCon, x"100"+toSlv(i*4,12), 0, r.adDataReg(i));
       end loop;
 
       
@@ -446,10 +510,7 @@ begin
                v.humState := HSTART_S;
             end if;
          
-         ------------------------------------------------------------
          -- conduct measurement and readout of SHT31-DIS-B
-         ------------------------------------------------------------
-         
          -- send single shot command
          when HSTART_S =>
             -- start humidity and temperature measurement
@@ -538,6 +599,7 @@ begin
                v.humState  := TSTART_S;
             end if;
          
+         -- read out NCT218 FPGA junction temperature sensor
          when TSTART_S =>
             -- send NTC218 pionter value
             v.i2cAddr      := I2C_HUM_CONFIG_C(1).i2cAddress;
@@ -620,8 +682,53 @@ begin
                end if;
             end if;
             
+      end case;
+      
+      ------------------------------------------------------------------------------------------------
+      -- AD7949 readout state machine
+      ------------------------------------------------------------------------------------------------
+      
+      v.spiWrEn := '0';
+      v.spiRdEn := spiRdEn;
+      
+      case r.spiState is
+         
+         -- wait for trigger
+         when IDLE_S =>
+            if r.trigger = '1' then
+               v.spiState := BUS_EN_S;
+            end if;
+         
+         -- write config and read the measurement
+         when BUS_EN_S =>
+            v.spiWrData := "1111" & r.spiWrdCnt(2 downto 0) & "0000001"; 
+            v.spiWrEn   := '1';
+            v.spiState := BUS_WAIT_S;
+         
+         when BUS_WAIT_S =>
+            if spiRdEn = '1' and r.spiRdEn = '0' then
+               -- skip first 2 samples (ADC pipeline)
+               if r.spiWrdCnt >= 2 then
+                  v.adDataReg(conv_integer(r.spiWrdCnt)-2) := spiRdData;
+               end if;
+               v.spiState := WAIT_TCYC_S;
+            end if;
+         
+         -- wait Tcyc for next measurement
+         when WAIT_TCYC_S =>
+            if r.spiCycCnt >= AD7949_CYC_PER_C then
+               v.spiCycCnt := 0;
+               if r.spiWrdCnt >= 9 then
+                  v.spiWrdCnt := (others=>'0');
+                  v.spiState  := IDLE_S;
+               else
+                  v.spiWrdCnt := r.spiWrdCnt + 1;
+                  v.spiState  := BUS_EN_S;
+               end if;
+            else
+               v.spiCycCnt := r.spiCycCnt + 1;
+            end if;
             
-
       end case;
       
       ------------------------------------------------------------------------------------------------

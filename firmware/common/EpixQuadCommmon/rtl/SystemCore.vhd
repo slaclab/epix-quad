@@ -58,6 +58,11 @@ entity SystemCore is
       humSda               : inout sl;
       humRstN              : out   sl;
       humAlert             : in    sl;
+      -- monitor ADC bus
+      envSck               : out   sl;
+      envCnv               : out   sl;
+      envDin               : out   sl;
+      envSdo               : in    sl;
       -- DDR PHY Ref clk
       c0_sys_clk_p         : in    sl;
       c0_sys_clk_n         : in    sl;
@@ -532,10 +537,10 @@ begin
       -- Trigger inputs
       acqStart          => iAcqStart,
       ---- monitor ADC bus
-      --envSck            : out   sl;
-      --envCnv            : out   sl;
-      --envDin            : out   sl;
-      --envSdo            : in    sl;
+      envSck            => envSck,
+      envCnv            => envCnv,
+      envDin            => envDin,
+      envSdo            => envSdo,
       -- humidity I2C bus (2 devices)
       humScl            => humScl,
       humSda            => humSda,
