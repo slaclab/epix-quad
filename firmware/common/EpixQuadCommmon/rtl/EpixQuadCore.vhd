@@ -213,7 +213,7 @@ begin
          SIMULATION_G      => SIMULATION_G,
          SIM_SPEEDUP_G     => SIM_SPEEDUP_G,
          COM_TYPE_G        => COM_TYPE_G,
-         RATE_G            => "6.25Gbps")
+         RATE_G            => RATE_G)
       port map (
          -- Clock and Reset
          sysClk            => sysClk,

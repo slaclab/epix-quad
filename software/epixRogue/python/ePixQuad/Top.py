@@ -11,6 +11,7 @@
 
 import rogue
 import rogue.hardware.pgp
+import rogue.hardware.axi
 import rogue.utilities.fileio
 
 import pyrogue
@@ -50,6 +51,11 @@ class Top(pr.Root):
             self.pgpVc1 = pr.interfaces.simulation.StreamSim(host='localhost', dest=1, uid=1, ssi=True)
             self.pgpVc2 = pr.interfaces.simulation.StreamSim(host='localhost', dest=2, uid=1, ssi=True)
             self.pgpVc3 = pr.interfaces.simulation.StreamSim(host='localhost', dest=3, uid=1, ssi=True)      
+        elif (hwType == 'datadev'):
+            self.pgpVc0 = rogue.hardware.axi.AxiStreamDma(dev,32*lane+0,True) # Data & cmds
+            self.pgpVc1 = rogue.hardware.axi.AxiStreamDma(dev,32*lane+1,True) # Registers for ePix board
+            self.pgpVc2 = rogue.hardware.axi.AxiStreamDma(dev,32*lane+2,True) # PseudoScope
+            self.pgpVc3 = rogue.hardware.axi.AxiStreamDma(dev,32*lane+3,True) # Monitoring (Slow ADC)        
         else:
             self.pgpVc0 = rogue.hardware.pgp.PgpCard(dev,lane,0) # Data & cmds
             self.pgpVc1 = rogue.hardware.pgp.PgpCard(dev,lane,1) # Registers for ePix board

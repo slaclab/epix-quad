@@ -28,10 +28,10 @@ create_clock -name adc9DClk -period 2.850 [get_ports {adcDClkP[9]}]
 
 create_generated_clock -name sysClk    [get_pins {U_CORE/U_PGP/G_PGPv3.U_PGP/U_PLL1/MmcmGen.U_Mmcm/CLKOUT0}]
 
-create_clock -name pgp3PhyRxClk -period 5.280 [get_pins {U_CORE/U_PGP/G_PGPv3.U_PGP/G_PGP.U_PGP/U_Pgp3GthUsIpWrapper_1/GEN_6G.U_Pgp3GthUsIp/inst/gen_gtwizard_gthe3_top.Pgp3GthUsIp6G_gtwizard_gthe3_inst/gen_gtwizard_gthe3.gen_channel_container[2].gen_enabled_channel.gthe3_channel_wrapper_inst/channel_inst/gthe3_channel_gen.gen_gthe3_channel_inst[0].GTHE3_CHANNEL_PRIM_INST/RXOUTCLK}]
-create_clock -name pgp3PhyTxClk -period 5.280 [get_pins {U_CORE/U_PGP/G_PGPv3.U_PGP/G_PGP.U_PGP/U_Pgp3GthUsIpWrapper_1/GEN_6G.U_Pgp3GthUsIp/inst/gen_gtwizard_gthe3_top.Pgp3GthUsIp6G_gtwizard_gthe3_inst/gen_gtwizard_gthe3.gen_channel_container[2].gen_enabled_channel.gthe3_channel_wrapper_inst/channel_inst/gthe3_channel_gen.gen_gthe3_channel_inst[0].GTHE3_CHANNEL_PRIM_INST/TXOUTCLK}]
+create_clock -name pgp3PhyRxClk -period 3.200 [get_pins {U_CORE/U_PGP/G_PGPv3.U_PGP/G_PGP.U_PGP/U_Pgp3GthUsIpWrapper_1/GEN_10G.U_Pgp3GthUsIp/inst/gen_gtwizard_gthe3_top.Pgp3GthUsIp10G_gtwizard_gthe3_inst/gen_gtwizard_gthe3.gen_channel_container[2].gen_enabled_channel.gthe3_channel_wrapper_inst/channel_inst/gthe3_channel_gen.gen_gthe3_channel_inst[0].GTHE3_CHANNEL_PRIM_INST/RXOUTCLK}]
+create_clock -name pgp3PhyTxClk -period 3.200 [get_pins {U_CORE/U_PGP/G_PGPv3.U_PGP/G_PGP.U_PGP/U_Pgp3GthUsIpWrapper_1/GEN_10G.U_Pgp3GthUsIp/inst/gen_gtwizard_gthe3_top.Pgp3GthUsIp10G_gtwizard_gthe3_inst/gen_gtwizard_gthe3.gen_channel_container[2].gen_enabled_channel.gthe3_channel_wrapper_inst/channel_inst/gthe3_channel_gen.gen_gthe3_channel_inst[0].GTHE3_CHANNEL_PRIM_INST/TXOUTCLK}]
 set_clock_groups -asynchronous -group [get_clocks -include_generated_clocks {pgpClkP}] -group [get_clocks -include_generated_clocks {pgp3PhyTxClk}] -group [get_clocks -include_generated_clocks {pgp3PhyRxClk}]
-set_clock_groups -asynchronous -group [get_clocks -of_objects [get_pins U_CORE/U_PGP/G_PGPv3.U_PGP/G_PGP.U_PGP/U_Pgp3GthUsIpWrapper_1/GEN_6G.U_Pgp3GthUsIp/inst/gen_gtwizard_gthe3_top.Pgp3GthUsIp6G_gtwizard_gthe3_inst/gen_gtwizard_gthe3.gen_tx_user_clocking_internal.gen_single_instance.gtwiz_userclk_tx_inst/gen_gtwiz_userclk_tx_main.bufg_gt_usrclk2_inst/O]] -group [get_clocks -of_objects [get_pins U_CORE/U_PGP/G_PGPv3.U_PGP/G_PGP.U_PGP/U_Pgp3GthUsIpWrapper_1/GEN_6G.U_Pgp3GthUsIp/inst/gen_gtwizard_gthe3_top.Pgp3GthUsIp6G_gtwizard_gthe3_inst/gen_gtwizard_gthe3.gen_rx_user_clocking_internal.gen_single_instance.gtwiz_userclk_rx_inst/gen_gtwiz_userclk_rx_main.bufg_gt_usrclk2_inst/O]]
+set_clock_groups -asynchronous -group [get_clocks -of_objects [get_pins U_CORE/U_PGP/G_PGPv3.U_PGP/G_PGP.U_PGP/U_Pgp3GthUsIpWrapper_1/GEN_10G.U_Pgp3GthUsIp/inst/gen_gtwizard_gthe3_top.Pgp3GthUsIp10G_gtwizard_gthe3_inst/gen_gtwizard_gthe3.gen_tx_user_clocking_internal.gen_single_instance.gtwiz_userclk_tx_inst/gen_gtwiz_userclk_tx_main.bufg_gt_usrclk2_inst/O]] -group [get_clocks -of_objects [get_pins U_CORE/U_PGP/G_PGPv3.U_PGP/G_PGP.U_PGP/U_Pgp3GthUsIpWrapper_1/GEN_10G.U_Pgp3GthUsIp/inst/gen_gtwizard_gthe3_top.Pgp3GthUsIp10G_gtwizard_gthe3_inst/gen_gtwizard_gthe3.gen_rx_user_clocking_internal.gen_single_instance.gtwiz_userclk_rx_inst/gen_gtwiz_userclk_rx_main.bufg_gt_usrclk2_inst/O]]
 
 set_clock_groups -asynchronous \
    -group [get_clocks -include_generated_clocks {pgpClkP}] \
@@ -379,44 +379,15 @@ set_property -dict { PACKAGE_PIN Y8   IOSTANDARD LVCMOS18 } [get_ports {adcCsb[0
 
 
 set_property LOC BUFGCE_X1Y74  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
-set_property LOC BUFGCE_DIV_X0Y11  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/U_AdcBitClkR}]
-set_property LOC BUFGCE_DIV_X0Y10  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/U_AdcBitClkRD4}]
-
 set_property LOC BUFGCE_X1Y81  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
-set_property LOC BUFGCE_DIV_X0Y9   [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/U_AdcBitClkR}]
-set_property LOC BUFGCE_DIV_X0Y8   [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/U_AdcBitClkRD4}]
-
 set_property LOC BUFGCE_X1Y61  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
-set_property LOC BUFGCE_DIV_X1Y15  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/U_AdcBitClkR}]
-set_property LOC BUFGCE_DIV_X1Y14  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/U_AdcBitClkRD4}]
-
 set_property LOC BUFGCE_X1Y58  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
-set_property LOC BUFGCE_DIV_X1Y13  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/U_AdcBitClkR}]
-set_property LOC BUFGCE_DIV_X1Y12  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/U_AdcBitClkRD4}]
-
 set_property LOC BUFGCE_X0Y87  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
-set_property LOC BUFGCE_DIV_X0Y15  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/U_AdcBitClkR}]
-set_property LOC BUFGCE_DIV_X0Y14  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/U_AdcBitClkRD4}]
-
 set_property LOC BUFGCE_X0Y86  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
-set_property LOC BUFGCE_DIV_X0Y13  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/U_AdcBitClkR}]
-set_property LOC BUFGCE_DIV_X0Y12  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/U_AdcBitClkRD4}]
-
 set_property LOC BUFGCE_X0Y51  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
-set_property LOC BUFGCE_DIV_X1Y19  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/U_AdcBitClkR}]
-set_property LOC BUFGCE_DIV_X1Y18  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/U_AdcBitClkRD4}]
-
 set_property LOC BUFGCE_X0Y56  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
-set_property LOC BUFGCE_DIV_X1Y17  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/U_AdcBitClkR}]
-set_property LOC BUFGCE_DIV_X1Y16  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/U_AdcBitClkRD4}]
-
 set_property LOC BUFGCE_X1Y116 [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
-set_property LOC BUFGCE_DIV_X0Y19  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/U_AdcBitClkR}]
-set_property LOC BUFGCE_DIV_X0Y18  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/U_AdcBitClkRD4}]
-
 set_property LOC BUFGCE_X1Y96  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
-set_property LOC BUFGCE_DIV_X1Y11  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/U_AdcBitClkR}]
-set_property LOC BUFGCE_DIV_X1Y1   [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/U_AdcBitClkRD4}]
 
 
 # ADC0 CH0

@@ -1,5 +1,5 @@
-# Use the PGPv3 6G core
-export INCLUDE_PGP3_6G = 1
+# Use the PGPv3 10G core
+export INCLUDE_PGP3_10G = 1
 
 # Define Firmware Version Number
 export PRJ_VERSION = 0xEA050001
