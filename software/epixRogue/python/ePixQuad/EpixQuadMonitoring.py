@@ -45,8 +45,8 @@ class EpixQuadMonitor(pr.Device):
       self.add((pr.RemoteVariable(name='ShtTemp',        description='SHT31 Temperature Value',     offset=0x00000014, bitSize=16, bitOffset=0,  base=pr.UInt, mode='RO')))
       self.add((pr.RemoteVariable(name='NctError',       description='NCT218 Temp. Sensor Error',   offset=0x00000018, bitSize=16, bitOffset=0,  base=pr.UInt, mode='RO')))
       self.add((pr.RemoteVariable(name='NctLocTemp',     description='NCT218 Local Temp.',          offset=0x0000001C, bitSize=8,  bitOffset=0,  base=pr.UInt, mode='RO')))
-      self.add((pr.RemoteVariable(name='NctRemTempH',    description='NCT218 Remote Temp. H Byte',  offset=0x00000020, bitSize=8,  bitOffset=0,  base=pr.UInt, mode='RO')))
-      self.add((pr.RemoteVariable(name='NctRemTempL',    description='NCT218 Remote Temp. L Byte',  offset=0x00000024, bitSize=8,  bitOffset=0,  base=pr.UInt, mode='RO')))
+      self.add((pr.RemoteVariable(name='NctRemTempL',    description='NCT218 Remote Temp. L Byte',  offset=0x00000020, bitSize=8,  bitOffset=0,  base=pr.UInt, mode='RO')))
+      self.add((pr.RemoteVariable(name='NctRemTempH',    description='NCT218 Remote Temp. H Byte',  offset=0x00000024, bitSize=8,  bitOffset=0,  base=pr.UInt, mode='RO')))
       
       #####################################
       # Create commands

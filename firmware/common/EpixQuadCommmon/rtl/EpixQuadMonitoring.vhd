@@ -80,8 +80,8 @@ architecture rtl of EpixQuadMonitoring is
    -- register addresses to read from NCT218
    constant NCT218_REGS_C     : Slv8Array(NCT218_REGS_NUM_C-1 downto 0) := (
       0 => x"00", -- local temperature register
-      1 => x"01", -- external temperature high byte
-      2 => x"10"  -- external temperature low byte
+      1 => x"10", -- external temperature low byte
+      2 => x"01"  -- external temperature high byte
    );
    
    type StateType is (
