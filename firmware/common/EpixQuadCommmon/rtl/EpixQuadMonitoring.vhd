@@ -164,6 +164,7 @@ architecture rtl of EpixQuadMonitoring is
       spiCycCnt         : integer range 0 to AD7949_CYC_PER_C;
       spiState          : SpiStateType;
       adDataReg         : Slv16Array(7 downto 0);
+      emptyDataReg      : Slv32Array(31 downto 0);
       --
       txMaster          : AxiStreamMasterType;
       sAxilWriteSlave   : AxiLiteWriteSlaveType;
@@ -224,6 +225,7 @@ architecture rtl of EpixQuadMonitoring is
       spiCycCnt         => 0,
       spiState          => IDLE_S,
       adDataReg         => (others=>(others=>'0')),
+      emptyDataReg      => (others=>(others=>'0')),
       --
       txMaster          => AXI_STREAM_MASTER_INIT_C,
       sAxilWriteSlave   => AXI_LITE_WRITE_SLAVE_INIT_C,
@@ -369,6 +371,9 @@ begin
       end loop;
       for i in 7 downto 0 loop
          axiSlaveRegisterR(regCon, x"100"+toSlv(i*4,12), 0, r.adDataReg(i));
+      end loop;
+      for i in 31 downto 0 loop
+         axiSlaveRegister (regCon, x"200"+toSlv(i*4,12), 0, r.emptyDataReg(i));
       end loop;
 
       
