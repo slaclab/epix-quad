@@ -60,6 +60,69 @@ void adcTestIntHandler(void * data) {
    XIntc_Acknowledge(&intc, 1);
 }
 
+enum PwrState {PWR_IDLE_S, PWR_WAIT_S, PWR_DONE_S};
+
+void sensorsHandler(void * data) {
+   uint32_t * request = (uint32_t *)data;
+   static enum PwrState pwrState = PWR_IDLE_S;
+   static uint8_t pwrReg = 0;
+   uint32_t regIn, regIn1;
+   uint8_t snapCmd;
+   (*request) = 0; 
+   
+   
+   // wait for measurement
+   if (pwrState == PWR_WAIT_S) {
+      // poll ADC busy flag
+      // change state if ADC done
+      regIn  = Xil_In32(MON_I2C_BUS_PWR1);
+      regIn1 = Xil_In32(MON_I2C_BUS_PWR2);
+      if( (regIn&0x8) == 0 && (regIn1&0x8) == 0 )
+         pwrState = PWR_DONE_S;
+   }
+   
+   // get results 
+   if (pwrState == PWR_DONE_S) {
+      
+      // save results
+      regIn = Xil_In32(MON_I2C_BUS_PWR1+pwrRegAddr[pwrReg]*4);
+      regIn <<= 8;
+      regIn |= Xil_In32(MON_I2C_BUS_PWR1+pwrRegAddr[pwrReg]*4+4);
+      regIn >>= 4;
+      Xil_Out32(QUADMON_EMPTY_REG+pwrReg*4, regIn);
+      
+      regIn = Xil_In32(MON_I2C_BUS_PWR2+pwrRegAddr[pwrReg]*4);
+      regIn <<= 8;
+      regIn |= Xil_In32(MON_I2C_BUS_PWR2+pwrRegAddr[pwrReg]*4+4);
+      regIn >>= 4;
+      Xil_Out32(QUADMON_EMPTY_REG+(pwrReg+3)*4, regIn);
+      
+      // switch to channel
+      if (pwrReg < 2)
+         pwrReg++;
+      else
+         pwrReg=0;
+      
+      // change state to IDLE
+      pwrState = PWR_IDLE_S;
+   }
+   
+   // send snapshot command
+   if (pwrState == PWR_IDLE_S) {
+      // send snapshot commands to two power monitors
+      snapCmd = 0x85 | (pwrReg << 5);
+      Xil_Out32(MON_I2C_BUS_PWR1, snapCmd);
+      Xil_Out32(MON_I2C_BUS_PWR2, snapCmd);
+      
+      // change state
+      pwrState = PWR_WAIT_S;
+   }
+   
+   
+   XIntc_Acknowledge(&intc, 2);
+}
+
+
 void timerIntHandler(void * data, unsigned char num ) {
    timerStructType * timer = (timerStructType *)data;
    
@@ -223,6 +286,7 @@ int main() {
    
    volatile uint32_t adcStartupInt = 0;
    volatile uint32_t adcTestInt = 0;
+   volatile uint32_t sensorsInt = 0;
    uint32_t failed = 0;
    uint32_t tryCnt = 0;
    int i;
@@ -233,6 +297,7 @@ int main() {
    microblaze_enable_interrupts();
    XIntc_Connect(&intc,0,(XInterruptHandler)adcStartupIntHandler,(void*)&adcStartupInt);
    XIntc_Connect(&intc,1,(XInterruptHandler)adcTestIntHandler,(void*)&adcTestInt);
+   XIntc_Connect(&intc,2,(XInterruptHandler)sensorsHandler,(void*)&sensorsInt);
    XIntc_Connect(&intc,8,XTmrCtr_InterruptHandler,&tmrctr);
    XIntc_Start(&intc,XIN_REAL_MODE);
    XIntc_Enable(&intc,0);
@@ -280,7 +345,8 @@ int main() {
    }
    setTestResult(failed);
    
-   
+   // enable sensors interrupt after initial startup
+   XIntc_Enable(&intc,2);
    
    while (1) {
       

@@ -181,3 +181,21 @@ static unsigned int  cfg10Asic[16] = {
 #define ADC_TEST_REQ       (ADC_TEST_OFFSET+0x14)
 #define ADC_TEST_PASS      (ADC_TEST_OFFSET+0x18)
 #define ADC_TEST_FAIL      (ADC_TEST_OFFSET+0x1C)
+
+
+#define MON_I2C_BUS        (BUS_OFFSET+0x00600000)
+#define MON_I2C_BUS_ADC    (MON_I2C_BUS+0x000)
+#define MON_I2C_BUS_PWR1   (MON_I2C_BUS+0x400)
+#define MON_I2C_BUS_PWR2   (MON_I2C_BUS+0x800)
+#define MON_I2C_BUS_OPT    (MON_I2C_BUS+0xC00)
+
+static unsigned int pwrRegAddr[3] = {
+   0x14,    // Sense MSB
+   0x1E,    // Vin MSB
+   0x28     // ADIN MSB
+};
+
+#define QUADMON           (BUS_OFFSET+0x00700000)
+#define QUADMON_EMPTY_REG (QUADMON+0x200)
+#define QUADMON_EMPTY_CNT (QUADMON+0x300)
+
