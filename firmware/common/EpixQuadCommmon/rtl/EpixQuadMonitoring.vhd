@@ -165,6 +165,7 @@ architecture rtl of EpixQuadMonitoring is
       spiState          : SpiStateType;
       adDataReg         : Slv16Array(7 downto 0);
       emptyDataReg      : Slv32Array(31 downto 0);
+      emptyCount        : Slv32Array(1 downto 0);
       --
       txMaster          : AxiStreamMasterType;
       sAxilWriteSlave   : AxiLiteWriteSlaveType;
@@ -226,6 +227,7 @@ architecture rtl of EpixQuadMonitoring is
       spiState          => IDLE_S,
       adDataReg         => (others=>(others=>'0')),
       emptyDataReg      => (others=>(others=>'0')),
+      emptyCount        => (others=>(others=>'0')),
       --
       txMaster          => AXI_STREAM_MASTER_INIT_C,
       sAxilWriteSlave   => AXI_LITE_WRITE_SLAVE_INIT_C,
@@ -375,6 +377,13 @@ begin
       for i in 31 downto 0 loop
          axiSlaveRegister (regCon, x"200"+toSlv(i*4,12), 0, v.emptyDataReg(i));
       end loop;
+      for i in 1 downto 0 loop
+         axiSlaveRegister (regCon, x"300"+toSlv(i*4,12), 0, v.emptyCount(i));
+         if r.emptyCount(i) > 0 then
+            v.emptyCount(i) := r.emptyCount(i) - 1;
+         end if;
+      end loop;
+      
 
       
       -- Close out the AXI-Lite transaction
