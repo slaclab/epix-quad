@@ -373,7 +373,7 @@ begin
          axiSlaveRegisterR(regCon, x"100"+toSlv(i*4,12), 0, r.adDataReg(i));
       end loop;
       for i in 31 downto 0 loop
-         axiSlaveRegister (regCon, x"200"+toSlv(i*4,12), 0, r.emptyDataReg(i));
+         axiSlaveRegister (regCon, x"200"+toSlv(i*4,12), 0, v.emptyDataReg(i));
       end loop;
 
       
