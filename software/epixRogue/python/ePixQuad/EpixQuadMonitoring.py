@@ -26,6 +26,20 @@ class EpixQuadMonitor(pr.Device):
       """Create the configuration device for Monitoring Core data readout"""
       super().__init__(description='Temperature Sensors Registers', **kwargs)
       
+      def getPwrCurr(var):
+         x = var.dependencies[0].value()
+         return x * 0.1024 / 4095 / 0.02
+      
+      def getPwrVin(var):
+         x = var.dependencies[0].value()
+         return x * 102.4 / 4095
+      
+      def getPwrTemp(var):
+         x = var.dependencies[0].value()
+         a = 130.0/(0.882-1.951)
+         b = (0.882/0.0082)+100
+         return x * 2.048 / 4095 * a + b
+         
       def getShtHum(var):
          x = var.dependencies[0].value()
          return x / 65535.0 * 100.0
@@ -170,6 +184,73 @@ class EpixQuadMonitor(pr.Device):
             disp         = '{:1.3f}',
             dependencies = [self.AD7949DataRaw[6+i]],
          )) 
+      
+      
+      for i in range(8):      
+         self.add(pr.RemoteVariable(
+            name       = ('SensorRegRaw[%d]'%i),
+            description= ('Sensor Raw Data Register [%d]'%i),
+            offset     = (0x00000200+i*4), 
+            bitSize    = 32, 
+            bitOffset  = 0,  
+            base       = pr.UInt, 
+            mode       = 'RO',
+            verify     = False,
+         ))
+      
+      self.add(pr.LinkVariable(
+         name         = 'PwrDigCurr', 
+         mode         = 'RO', 
+         units        = 'A',
+         linkedGet    = getPwrCurr,
+         disp         = '{:1.3f}',
+         dependencies = [self.SensorRegRaw[0]],
+      )) 
+      
+      self.add(pr.LinkVariable(
+         name         = 'PwrAnaCurr', 
+         mode         = 'RO', 
+         units        = 'A',
+         linkedGet    = getPwrCurr,
+         disp         = '{:1.3f}',
+         dependencies = [self.SensorRegRaw[3]],
+      )) 
+      
+      self.add(pr.LinkVariable(
+         name         = 'PwrDigVin', 
+         mode         = 'RO', 
+         units        = 'V',
+         linkedGet    = getPwrVin,
+         disp         = '{:1.3f}',
+         dependencies = [self.SensorRegRaw[1]],
+      )) 
+      
+      self.add(pr.LinkVariable(
+         name         = 'PwrAnaVin', 
+         mode         = 'RO', 
+         units        = 'V',
+         linkedGet    = getPwrVin,
+         disp         = '{:1.3f}',
+         dependencies = [self.SensorRegRaw[4]],
+      )) 
+      
+      self.add(pr.LinkVariable(
+         name         = 'PwrDigTemp', 
+         mode         = 'RO', 
+         units        = 'deg C',
+         linkedGet    = getPwrTemp,
+         disp         = '{:3.1f}',
+         dependencies = [self.SensorRegRaw[2]],
+      )) 
+      
+      self.add(pr.LinkVariable(
+         name         = 'PwrAnaTemp', 
+         mode         = 'RO', 
+         units        = 'deg C',
+         linkedGet    = getPwrTemp,
+         disp         = '{:3.1f}',
+         dependencies = [self.SensorRegRaw[5]],
+      )) 
          
       #####################################
       # Create commands
