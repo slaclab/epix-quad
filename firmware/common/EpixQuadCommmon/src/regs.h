@@ -195,8 +195,8 @@ static unsigned int pwrRegAddr[3] = {
    0x28     // ADIN MSB
 };
 
-#define QUADMON           (BUS_OFFSET+0x00700000)
-#define QUADMON_ENABLE    (QUADMON+0x000)
-#define QUADMON_EMPTY_REG (QUADMON+0x200)
-#define QUADMON_EMPTY_CNT (QUADMON+0x300)
+#define QUADMON            (BUS_OFFSET+0x00700000)
+#define QUADMON_ENABLE     (QUADMON+0x000)
+#define QUADMON_SENSOR_REG (QUADMON+0x200)
+#define QUADMON_SENSOR_CNT (QUADMON+0x300)
 

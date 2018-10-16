@@ -98,13 +98,13 @@ void sensorsHandler(void * data) {
          regIn <<= 8;
          regIn |= (Xil_In32(MON_I2C_BUS_PWR1+pwrRegAddr[pwrReg]*4+4) & 0xFF);
          regIn >>= 4;
-         Xil_Out32(QUADMON_EMPTY_REG+pwrReg*4, regIn);
+         Xil_Out32(QUADMON_SENSOR_REG+pwrReg*4, regIn);
          
          regIn = (Xil_In32(MON_I2C_BUS_PWR2+pwrRegAddr[pwrReg]*4) & 0xFF);
          regIn <<= 8;
          regIn |= (Xil_In32(MON_I2C_BUS_PWR2+pwrRegAddr[pwrReg]*4+4) & 0xFF);
          regIn >>= 4;
-         Xil_Out32(QUADMON_EMPTY_REG+(pwrReg+3)*4, regIn);
+         Xil_Out32(QUADMON_SENSOR_REG+(pwrReg+3)*4, regIn);
          
          // switch to channel
          if (pwrReg < 2)
@@ -135,7 +135,7 @@ void sensorsHandler(void * data) {
       if (adcState == ADC_WAIT_S) {
          // poll the FPGA fabric counter
          // change state if ADC done
-         if( Xil_In32(QUADMON_EMPTY_CNT) == 0 )
+         if( Xil_In32(QUADMON_SENSOR_CNT) == 0 )
             adcState = ADC_DONE_S;
       }
       
@@ -144,7 +144,7 @@ void sensorsHandler(void * data) {
          
          // save results
          regIn = (Xil_In32(MON_I2C_BUS_ADC) & 0xFFFF);
-         Xil_Out32(QUADMON_EMPTY_REG+(adcChn+6)*4, regIn);
+         Xil_Out32(QUADMON_SENSOR_REG+(adcChn+6)*4, regIn);
          
          // switch to channel
          if (adcChn < 15)
@@ -164,7 +164,7 @@ void sensorsHandler(void * data) {
          Xil_Out32(MON_I2C_BUS_ADC, convCmd);
          
          // start FPGA fabric timer (150 ms conversion cycle)
-         Xil_Out32(QUADMON_EMPTY_CNT, 20000000);
+         Xil_Out32(QUADMON_SENSOR_CNT, 20000000);
          
          // change state
          adcState = ADC_WAIT_S;
