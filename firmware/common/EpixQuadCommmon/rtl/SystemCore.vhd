@@ -506,11 +506,12 @@ begin
    ------------------------------------------------
    -- Power nad temperature monitoring sensors readout
    ------------------------------------------------
-   U_MonI2C : entity work.AxiI2cRegMaster
+   --U_MonI2C : entity work.AxiI2cRegMaster
+   U_MonI2C : entity work.AxiI2cMaster
    generic map (
-      DEVICE_MAP_G     => I2C_MON_CONFIG_C,
+      --DEVICE_MAP_G     => I2C_MON_CONFIG_C,
       AXI_CLK_FREQ_G   => AXI_CLK_FREQ_G,
-      I2C_SCL_FREQ_G   => 50.0E+3
+      I2C_SCL_FREQ_G   => ite(SIM_SPEEDUP_G, 500.0E+3, 50.0E+3)
    )
    port map (
       scl            => monScl,

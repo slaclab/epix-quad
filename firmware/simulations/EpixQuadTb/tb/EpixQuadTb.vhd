@@ -347,6 +347,9 @@ begin
    -----------------------------------------------------------------------
    -- I2C verification process
    -----------------------------------------------------------------------
+   
+   
+   
    process
    begin
    
@@ -586,6 +589,142 @@ begin
          end loop;
       
       end loop;
+      
+      wait;
+         
+      
+   end process;
+   
+   
+   
+   
+   
+   
+   process
+   begin
+   
+      wait for 100 ns;
+      
+      monScl <= 'H';
+      monSda <= 'H';
+      
+         
+      -- wait for start
+      wait until falling_edge(monScl) and monSda = '0';
+      
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      
+      -- ACK
+      monSda <= 'L';
+      wait until falling_edge(monScl);
+      monSda <= 'H';
+      
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      
+      -- ACK
+      monSda <= 'L';
+      wait until falling_edge(monScl);
+      monSda <= 'H';
+      
+      
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      
+      -- ACK
+      monSda <= 'L';
+      wait until falling_edge(monScl);
+      monSda <= 'H';
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      -- wait for start
+      wait until falling_edge(monScl) and monSda = '0';
+      
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      
+      -- ACK
+      monSda <= 'L';
+      wait until falling_edge(monScl);
+      monSda <= 'H';
+      
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      
+      -- ACK
+      monSda <= 'L';
+      wait until falling_edge(monScl);
+      monSda <= 'H';
+      
+      
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      
+      -- ACK
+      monSda <= 'L';
+      wait until falling_edge(monScl);
+      monSda <= 'H';
+      
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      wait until falling_edge(monScl);
+      
+      -- NACK
+      monSda <= 'H';
+      wait until falling_edge(monScl);
+      monSda <= 'H';
+         
       
       wait;
          

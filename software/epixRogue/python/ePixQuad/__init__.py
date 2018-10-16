@@ -15,3 +15,4 @@ from ePixQuad.RdoutCore          import *
 from ePixQuad.PseudoScopeCore    import *
 from ePixQuad.AdcTester          import *
 from ePixQuad.EpixQuadMonitoring import *
+from ePixQuad.AxiI2cMaster       import *

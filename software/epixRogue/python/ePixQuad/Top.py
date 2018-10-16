@@ -128,6 +128,13 @@ class Top(pr.Root):
             expand  = False,
         ))
         
+        self.add(ePixQuad.AxiI2cMaster( 
+            name    = 'AxiI2cMaster', 
+            memBase = memMap, 
+            offset  = 0x00600000, 
+            expand  = False,
+        ))
+        
         self.add(axi.AxiMemTester( 
             name    = 'AxiMemTester', 
             memBase = memMap, 
