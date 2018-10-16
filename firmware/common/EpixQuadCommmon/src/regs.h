@@ -196,6 +196,7 @@ static unsigned int pwrRegAddr[3] = {
 };
 
 #define QUADMON           (BUS_OFFSET+0x00700000)
+#define QUADMON_ENABLE    (QUADMON+0x000)
 #define QUADMON_EMPTY_REG (QUADMON+0x200)
 #define QUADMON_EMPTY_CNT (QUADMON+0x300)
 

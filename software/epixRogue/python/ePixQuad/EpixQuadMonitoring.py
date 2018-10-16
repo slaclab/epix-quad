@@ -186,7 +186,7 @@ class EpixQuadMonitor(pr.Device):
          )) 
       
       
-      for i in range(8):      
+      for i in range(6):      
          self.add(pr.RemoteVariable(
             name       = ('SensorRegRaw[%d]'%i),
             description= ('Sensor Raw Data Register [%d]'%i),
@@ -208,30 +208,12 @@ class EpixQuadMonitor(pr.Device):
       )) 
       
       self.add(pr.LinkVariable(
-         name         = 'PwrAnaCurr', 
-         mode         = 'RO', 
-         units        = 'A',
-         linkedGet    = getPwrCurr,
-         disp         = '{:1.3f}',
-         dependencies = [self.SensorRegRaw[3]],
-      )) 
-      
-      self.add(pr.LinkVariable(
          name         = 'PwrDigVin', 
          mode         = 'RO', 
          units        = 'V',
          linkedGet    = getPwrVin,
          disp         = '{:1.3f}',
          dependencies = [self.SensorRegRaw[1]],
-      )) 
-      
-      self.add(pr.LinkVariable(
-         name         = 'PwrAnaVin', 
-         mode         = 'RO', 
-         units        = 'V',
-         linkedGet    = getPwrVin,
-         disp         = '{:1.3f}',
-         dependencies = [self.SensorRegRaw[4]],
       )) 
       
       self.add(pr.LinkVariable(
@@ -244,6 +226,24 @@ class EpixQuadMonitor(pr.Device):
       )) 
       
       self.add(pr.LinkVariable(
+         name         = 'PwrAnaCurr', 
+         mode         = 'RO', 
+         units        = 'A',
+         linkedGet    = getPwrCurr,
+         disp         = '{:1.3f}',
+         dependencies = [self.SensorRegRaw[3]],
+      )) 
+      
+      self.add(pr.LinkVariable(
+         name         = 'PwrAnaVin', 
+         mode         = 'RO', 
+         units        = 'V',
+         linkedGet    = getPwrVin,
+         disp         = '{:1.3f}',
+         dependencies = [self.SensorRegRaw[4]],
+      )) 
+      
+      self.add(pr.LinkVariable(
          name         = 'PwrAnaTemp', 
          mode         = 'RO', 
          units        = 'deg C',
@@ -251,6 +251,19 @@ class EpixQuadMonitor(pr.Device):
          disp         = '{:3.1f}',
          dependencies = [self.SensorRegRaw[5]],
       )) 
+      
+      for i in range(16):      
+         i = i + 6
+         self.add(pr.RemoteVariable(
+            name       = ('SensorRegRaw[%d]'%i),
+            description= ('Sensor Raw Data Register [%d]'%i),
+            offset     = (0x00000200+i*4), 
+            bitSize    = 32, 
+            bitOffset  = 0,  
+            base       = pr.UInt, 
+            mode       = 'RO',
+            verify     = False,
+         ))
          
       #####################################
       # Create commands

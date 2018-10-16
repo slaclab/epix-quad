@@ -61,61 +61,115 @@ void adcTestIntHandler(void * data) {
 }
 
 enum PwrState {PWR_IDLE_S, PWR_WAIT_S, PWR_DONE_S};
+enum AdcState {ADC_IDLE_S, ADC_WAIT_S, ADC_DONE_S};
 
 void sensorsHandler(void * data) {
    uint32_t * request = (uint32_t *)data;
    static enum PwrState pwrState = PWR_IDLE_S;
+   static enum AdcState adcState = ADC_IDLE_S;
    static uint8_t pwrReg = 0;
+   static uint8_t adcChn = 0;
    uint32_t regIn, regIn1;
    uint8_t snapCmd;
+   uint32_t convCmd;
    (*request) = 0; 
    
-   
-   // wait for measurement
-   if (pwrState == PWR_WAIT_S) {
-      // poll ADC busy flag
-      // change state if ADC done
-      regIn  = Xil_In32(MON_I2C_BUS_PWR1);
-      regIn1 = Xil_In32(MON_I2C_BUS_PWR2);
-      if( (regIn&0x8) == 0 && (regIn1&0x8) == 0 )
-         pwrState = PWR_DONE_S;
-   }
-   
-   // get results 
-   if (pwrState == PWR_DONE_S) {
+   if (Xil_In32(QUADMON_ENABLE) != 0) {
       
-      // save results
-      regIn = Xil_In32(MON_I2C_BUS_PWR1+pwrRegAddr[pwrReg]*4);
-      regIn <<= 8;
-      regIn |= Xil_In32(MON_I2C_BUS_PWR1+pwrRegAddr[pwrReg]*4+4);
-      regIn >>= 4;
-      Xil_Out32(QUADMON_EMPTY_REG+pwrReg*4, regIn);
+      /* ----------------------------------------------------------
+       * ASIC Acq synchronous readout of LTC2945 power monitors
+       * ---------------------------------------------------------*/
       
-      regIn = Xil_In32(MON_I2C_BUS_PWR2+pwrRegAddr[pwrReg]*4);
-      regIn <<= 8;
-      regIn |= Xil_In32(MON_I2C_BUS_PWR2+pwrRegAddr[pwrReg]*4+4);
-      regIn >>= 4;
-      Xil_Out32(QUADMON_EMPTY_REG+(pwrReg+3)*4, regIn);
+      // wait for measurement
+      if (pwrState == PWR_WAIT_S) {
+         // poll ADC busy flag
+         // change state if ADC done
+         regIn  = Xil_In32(MON_I2C_BUS_PWR1);
+         regIn1 = Xil_In32(MON_I2C_BUS_PWR2);
+         if( (regIn&0x8) == 0 && (regIn1&0x8) == 0 )
+            pwrState = PWR_DONE_S;
+      }
       
-      // switch to channel
-      if (pwrReg < 2)
-         pwrReg++;
-      else
-         pwrReg=0;
+      // get results 
+      if (pwrState == PWR_DONE_S) {
+         
+         // save results
+         regIn = (Xil_In32(MON_I2C_BUS_PWR1+pwrRegAddr[pwrReg]*4) & 0xFF);
+         regIn <<= 8;
+         regIn |= (Xil_In32(MON_I2C_BUS_PWR1+pwrRegAddr[pwrReg]*4+4) & 0xFF);
+         regIn >>= 4;
+         Xil_Out32(QUADMON_EMPTY_REG+pwrReg*4, regIn);
+         
+         regIn = (Xil_In32(MON_I2C_BUS_PWR2+pwrRegAddr[pwrReg]*4) & 0xFF);
+         regIn <<= 8;
+         regIn |= (Xil_In32(MON_I2C_BUS_PWR2+pwrRegAddr[pwrReg]*4+4) & 0xFF);
+         regIn >>= 4;
+         Xil_Out32(QUADMON_EMPTY_REG+(pwrReg+3)*4, regIn);
+         
+         // switch to channel
+         if (pwrReg < 2)
+            pwrReg++;
+         else
+            pwrReg=0;
+         
+         // change state to IDLE
+         pwrState = PWR_IDLE_S;
+      }
       
-      // change state to IDLE
-      pwrState = PWR_IDLE_S;
-   }
-   
-   // send snapshot command
-   if (pwrState == PWR_IDLE_S) {
-      // send snapshot commands to two power monitors
-      snapCmd = 0x85 | (pwrReg << 5);
-      Xil_Out32(MON_I2C_BUS_PWR1, snapCmd);
-      Xil_Out32(MON_I2C_BUS_PWR2, snapCmd);
+      // send snapshot command
+      if (pwrState == PWR_IDLE_S) {
+         // send snapshot commands to two power monitors
+         snapCmd = 0x85 | (pwrReg << 5);
+         Xil_Out32(MON_I2C_BUS_PWR1, snapCmd);
+         Xil_Out32(MON_I2C_BUS_PWR2, snapCmd);
+         
+         // change state
+         pwrState = PWR_WAIT_S;
+      }
       
-      // change state
-      pwrState = PWR_WAIT_S;
+      /* ----------------------------------------------------------
+       * ASIC Acq synchronous readout of LTC2497 ADC (LDO temperatures)
+       * ---------------------------------------------------------*/
+      
+      // wait for measurement
+      if (adcState == ADC_WAIT_S) {
+         // poll the FPGA fabric counter
+         // change state if ADC done
+         if( Xil_In32(QUADMON_EMPTY_CNT) == 0 )
+            adcState = ADC_DONE_S;
+      }
+      
+      // get results 
+      if (adcState == ADC_DONE_S) {
+         
+         // save results
+         regIn = (Xil_In32(MON_I2C_BUS_ADC) & 0xFFFF);
+         Xil_Out32(QUADMON_EMPTY_REG+(adcChn+6)*4, regIn);
+         
+         // switch to channel
+         if (adcChn < 15)
+            adcChn++;
+         else
+            adcChn=0;
+         
+         // change state to IDLE
+         adcState = ADC_IDLE_S;
+      }
+      
+      // send channel conversion command
+      if (adcState == ADC_IDLE_S) {
+         // send snapshot commands to two power monitors
+         convCmd = 0xB0 | (adcChn & 0xF);
+         convCmd |= ((convCmd<<8) | (convCmd<<16) | (convCmd<<24));
+         Xil_Out32(MON_I2C_BUS_ADC, convCmd);
+         
+         // start FPGA fabric timer (150 ms conversion cycle)
+         Xil_Out32(QUADMON_EMPTY_CNT, 20000000);
+         
+         // change state
+         adcState = ADC_WAIT_S;
+      }
+      
    }
    
    
