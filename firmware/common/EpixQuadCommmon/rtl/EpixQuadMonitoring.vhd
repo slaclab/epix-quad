@@ -56,7 +56,7 @@ entity EpixQuadMonitoring is
       axilWriteMaster   : in    AxiLiteWriteMasterType;
       axilWriteSlave    : out   AxiLiteWriteSlaveType;
       -- Monitor data for the image stream
-      monData           : out   Slv16Array(33 downto 0);
+      monData           : out   Slv16Array(37 downto 0);
       -- Monitor Data Interface
       monitorTxMaster   : out  AxiStreamMasterType;
       monitorTxSlave    : in   AxiStreamSlaveType;
@@ -164,7 +164,7 @@ architecture rtl of EpixQuadMonitoring is
       spiCycCnt         : integer range 0 to AD7949_CYC_PER_C;
       spiState          : SpiStateType;
       adDataReg         : Slv16Array(7 downto 0);
-      sensorReg         : Slv16Array(21 downto 0);
+      sensorReg         : Slv16Array(25 downto 0);
       sensorCnt         : slv(31 downto 0);
       --
       txMaster          : AxiStreamMasterType;
@@ -374,7 +374,7 @@ begin
       for i in 7 downto 0 loop
          axiSlaveRegisterR(regCon, x"100"+toSlv(i*4,12), 0, r.adDataReg(i));
       end loop;
-      for i in 21 downto 0 loop
+      for i in 25 downto 0 loop
          axiSlaveRegister (regCon, x"200"+toSlv(i*4,12), 0, v.sensorReg(i));
       end loop;
       axiSlaveRegister (regCon, x"300", 0, v.sensorCnt);
@@ -783,7 +783,7 @@ begin
       monData( 2)             <= x"00" & r.nctRegs(0);
       monData( 3)             <= r.nctRegs(2) & r.nctRegs(1);
       monData(11 downto  4)   <= r.adDataReg;
-      monData(33 downto 12)   <= r.sensorReg;
+      monData(37 downto 12)   <= r.sensorReg;
 
    end process comb;
 

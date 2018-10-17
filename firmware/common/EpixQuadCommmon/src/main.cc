@@ -122,6 +122,22 @@ void ltc2497TrigAdcChannel(uint8_t i2cAddr, uint16_t adcChannel) {
    while(Xil_In32(MON_I2C_REGREQ) == 0x1);
 }
 
+uint8_t finisarReadWord(uint8_t i2cAddr, uint8_t regAddr, uint16_t * regData) {
+   Xil_Out32(MON_I2C_I2CADDR, i2cAddr);
+   Xil_Out32(MON_I2C_ENDIANNESS, 0x1);
+   Xil_Out32(MON_I2C_REPSTART, 0x0);
+   Xil_Out32(MON_I2C_REGADDR, regAddr);    // reg addr
+   Xil_Out32(MON_I2C_REGADDRSIZE, 0x0);   // 1 byte address
+   Xil_Out32(MON_I2C_REGADDRSKIP, 0x0);   // do not skip address
+   Xil_Out32(MON_I2C_REGDATASIZE, 0x1);   // 2 bytes to read
+   Xil_Out32(MON_I2C_REGOP, 0x0);         // 0 - read op
+   Xil_Out32(MON_I2C_REGREQ, 0x1);        // 1 - request
+   // poll request
+   while(Xil_In32(MON_I2C_REGREQ) == 0x1);
+   *regData = Xil_In32(MON_I2C_REGRDDATA) & 0xFFFF;
+   return Xil_In32(MON_I2C_REGFAIL);
+}
+
 void sensorsHandler(void * data) {
    uint32_t * request = (uint32_t *)data;
    static enum PwrState pwrState = PWR_IDLE_S;
@@ -129,6 +145,7 @@ void sensorsHandler(void * data) {
    static uint8_t pwrReg = 0;
    static uint8_t adcChn = 0;
    uint32_t regIn, regIn1;
+   uint16_t regIn2;
    uint8_t snapCmd;
    uint16_t convCmd;
    (*request) = 0; 
@@ -246,6 +263,17 @@ void sensorsHandler(void * data) {
          adcState = ADC_WAIT1_S;
       }
       
+      /* ----------------------------------------------------------
+       * Read Finisar Optical Transceiver Diagnostics
+       * ---------------------------------------------------------*/
+      finisarReadWord(0x51, 96, &regIn2); // temperature
+      Xil_Out32(QUADMON_SENSOR_REG+22*4, regIn2);
+      finisarReadWord(0x51, 98, &regIn2); // voltage
+      Xil_Out32(QUADMON_SENSOR_REG+23*4, regIn2);
+      finisarReadWord(0x51, 102, &regIn2);// TX power
+      Xil_Out32(QUADMON_SENSOR_REG+24*4, regIn2);
+      finisarReadWord(0x51, 104, &regIn2);// RX power
+      Xil_Out32(QUADMON_SENSOR_REG+25*4, regIn2);
    }
    
    

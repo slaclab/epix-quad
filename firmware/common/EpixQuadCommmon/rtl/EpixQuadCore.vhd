@@ -206,7 +206,7 @@ architecture rtl of EpixQuadCore is
    signal iDcdcEn       : slv(3 downto 0);
    signal mbIrq         : slv(7 downto 0) := (others => '0'); 
    
-   signal monData       : Slv16Array(33 downto 0);
+   signal monData       : Slv16Array(37 downto 0);
    
 begin
 

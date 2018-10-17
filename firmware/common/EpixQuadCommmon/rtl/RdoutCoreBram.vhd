@@ -49,7 +49,7 @@ entity RdoutCoreBram is
       acqSmplEn            : in  sl;
       readDone             : out sl;
       -- Monitor data for the image stream
-      monData              : in  Slv16Array(33 downto 0);
+      monData              : in  Slv16Array(37 downto 0);
       -- ADC stream input
       adcStream            : in  AxiStreamMasterArray(63 downto 0);
       tpsStream            : in  AxiStreamMasterArray(15 downto 0);
@@ -123,7 +123,7 @@ architecture rtl of RdoutCoreBram is
       readPend             : sl;
       buffErr              : sl;
       timeErr              : sl;
-      wordCnt              : integer range 0 to 9;
+      wordCnt              : integer range 0 to 10;
       timeCnt              : integer range 0 to TIMEOUT_C;
       sRowCount            : integer range 0 to 3;             -- 4 lines
       bankCount            : integer range 0 to 15;            -- 16 banks per line
@@ -143,7 +143,7 @@ architecture rtl of RdoutCoreBram is
       txMaster             : AxiStreamMasterType;
       sAxilWriteSlave      : AxiLiteWriteSlaveType;
       sAxilReadSlave       : AxiLiteReadSlaveType;
-      monData              : Slv16Array(33 downto 0);
+      monData              : Slv16Array(37 downto 0);
    end record RegType;
 
    constant REG_INIT_C : RegType := (
@@ -672,12 +672,15 @@ begin
                   v.txMaster.tData(63 downto 32) := r.monData(31) & r.monData(30);
                elsif r.wordCnt = 8 then
                   v.txMaster.tData(31 downto  0) := r.monData(33) & r.monData(32);
+                  v.txMaster.tData(63 downto 32) := r.monData(35) & r.monData(34);
+               elsif r.wordCnt = 9 then
+                  v.txMaster.tData(31 downto  0) := r.monData(37) & r.monData(36);
                   v.txMaster.tData(63 downto 32) := x"00000000";
                else
                   v.txMaster.tData(31 downto  0) := x"00000000";
                   v.txMaster.tData(63 downto 32) := x"00000000";
                end if;
-               if (r.wordCnt < 9) then
+               if (r.wordCnt < 10) then
                   v.wordCnt := r.wordCnt + 1;
                end if;
                
