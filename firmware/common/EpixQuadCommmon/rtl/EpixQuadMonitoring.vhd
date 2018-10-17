@@ -355,8 +355,8 @@ begin
    -- Combinational logic
    --------------------------------------------------
 
-   comb : process (sysRst, r, axilReadMaster, axilWriteMaster,
-      i2cMasterOut, acqStart, monitorEn, monitorTxSlave, spiRdData, spiRdEn, iMonData) is
+   comb : process (sysRst, r, axilReadMaster, axilWriteMaster, iMonData,
+      i2cMasterOut, acqStart, monitorEn, monitorTxSlave, spiRdData, spiRdEn) is
       variable v            : RegType;
       variable addrIndexVar : integer;
       variable dataIndexVar : integer;
