@@ -2,7 +2,7 @@
 export INCLUDE_PGP3_6G = 1
 
 # Define Firmware Version Number
-export PRJ_VERSION = 0xEA050001
+export PRJ_VERSION = 0xEA050002
 
 # Define the Microblaze source path
 export SDK_SRC_PATH = $(PROJ_DIR)/../../common/EpixQuadCommmon/src/
@@ -34,4 +34,5 @@ include ../../submodules/ruckus/system_vivado.mk
 #-- Revision History:
 #-- 07/30/2018 (0xEA050000): First revision
 #-- 07/30/2018 (0xEA050001): fit whole image in the output stream FIFO
+#-- 10/17/2018 (0xEA050002): added monitoring data readout and streams
 #-------------------------------------------------------------------------------
