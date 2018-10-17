@@ -56,7 +56,7 @@ entity EpixQuadMonitoring is
       axilWriteMaster   : in    AxiLiteWriteMasterType;
       axilWriteSlave    : out   AxiLiteWriteSlaveType;
       -- Monitor data for the image stream
-      monData           : out   Slv16Array(15 downto 0);
+      monData           : out   Slv16Array(33 downto 0);
       -- Monitor Data Interface
       monitorTxMaster   : out  AxiStreamMasterType;
       monitorTxSlave    : in   AxiStreamSlaveType;
@@ -783,7 +783,7 @@ begin
       monData( 2)             <= x"00" & r.nctRegs(0);
       monData( 3)             <= r.nctRegs(2) & r.nctRegs(1);
       monData(11 downto  4)   <= r.adDataReg;
-      monData(15 downto 12)   <= (others=>(others=>'0'));
+      monData(33 downto 12)   <= r.sensorReg;
 
    end process comb;
 

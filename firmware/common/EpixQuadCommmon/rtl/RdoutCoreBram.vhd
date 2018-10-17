@@ -49,7 +49,7 @@ entity RdoutCoreBram is
       acqSmplEn            : in  sl;
       readDone             : out sl;
       -- Monitor data for the image stream
-      monData              : in  Slv16Array(15 downto 0);
+      monData              : in  Slv16Array(33 downto 0);
       -- ADC stream input
       adcStream            : in  AxiStreamMasterArray(63 downto 0);
       tpsStream            : in  AxiStreamMasterArray(15 downto 0);
@@ -123,7 +123,7 @@ architecture rtl of RdoutCoreBram is
       readPend             : sl;
       buffErr              : sl;
       timeErr              : sl;
-      wordCnt              : integer range 0 to 7;
+      wordCnt              : integer range 0 to 9;
       timeCnt              : integer range 0 to TIMEOUT_C;
       sRowCount            : integer range 0 to 3;             -- 4 lines
       bankCount            : integer range 0 to 15;            -- 16 banks per line
@@ -143,7 +143,7 @@ architecture rtl of RdoutCoreBram is
       txMaster             : AxiStreamMasterType;
       sAxilWriteSlave      : AxiLiteWriteSlaveType;
       sAxilReadSlave       : AxiLiteReadSlaveType;
-      monData              : Slv16Array(15 downto 0);
+      monData              : Slv16Array(33 downto 0);
    end record RegType;
 
    constant REG_INIT_C : RegType := (
@@ -658,11 +658,26 @@ begin
                elsif r.wordCnt = 3 then
                   v.txMaster.tData(31 downto  0) := r.monData(13) & r.monData(12);
                   v.txMaster.tData(63 downto 32) := r.monData(15) & r.monData(14);
+               elsif r.wordCnt = 4 then
+                  v.txMaster.tData(31 downto  0) := r.monData(17) & r.monData(16);
+                  v.txMaster.tData(63 downto 32) := r.monData(19) & r.monData(18);
+               elsif r.wordCnt = 5 then
+                  v.txMaster.tData(31 downto  0) := r.monData(21) & r.monData(20);
+                  v.txMaster.tData(63 downto 32) := r.monData(23) & r.monData(22);
+               elsif r.wordCnt = 6 then
+                  v.txMaster.tData(31 downto  0) := r.monData(25) & r.monData(24);
+                  v.txMaster.tData(63 downto 32) := r.monData(27) & r.monData(26);
+               elsif r.wordCnt = 7 then
+                  v.txMaster.tData(31 downto  0) := r.monData(29) & r.monData(28);
+                  v.txMaster.tData(63 downto 32) := r.monData(31) & r.monData(30);
+               elsif r.wordCnt = 8 then
+                  v.txMaster.tData(31 downto  0) := r.monData(33) & r.monData(32);
+                  v.txMaster.tData(63 downto 32) := x"00000000";
                else
                   v.txMaster.tData(31 downto  0) := x"00000000";
                   v.txMaster.tData(63 downto 32) := x"00000000";
                end if;
-               if (r.wordCnt < 7) then
+               if (r.wordCnt < 9) then
                   v.wordCnt := r.wordCnt + 1;
                end if;
                
@@ -920,60 +935,5 @@ begin
       mAxisMaster => axisMaster,
       mAxisSlave  => axisSlave
    );
-   
-   
-   ---------------------------------------------------------------------------
-   
-   -- the cascade of 4 * 32768 * 8 bytes + 2^13 * 8 bytes    = 1114112 bytes
-   -- the frame size 48 cols * 178 rows * 64 banks * 2 bytes = 1093632 bytes
-   -- the FIFO will fit whole image
-   
-   --axisCascMaster(0) <= r.txMaster;
-   --txSlave           <= axisCascSlave(0);
-   --
-   --G_AxisFifoCasc: for i in 0 to 3 generate
-   --
-   --   U_AxisFifo32k64b : entity work.AxisFifo32k64b
-   --      port map (
-   --         -- Common clock
-   --         axisClk     => sysClk,
-   --         axisRst     => sysRst,
-   --         -- Slave Port
-   --         sAxisMaster => axisCascMaster(i),
-   --         sAxisSlave  => axisCascSlave(i),
-   --         -- Master Port
-   --         mAxisMaster => axisCascMaster(i+1),
-   --         mAxisSlave  => axisCascSlave(i+1)
-   --      );
-   --
-   --end generate;
-   --
-   --U_AxisOut : entity work.AxiStreamFifoV2
-   --generic map (
-   --   -- General Configurations
-   --   TPD_G               => TPD_G,
-   --   PIPE_STAGES_G       => 1,
-   --   SLAVE_READY_EN_G    => true,
-   --   VALID_THOLD_G       => 1,     -- =0 = only when frame ready
-   --   -- FIFO configurations
-   --   GEN_SYNC_FIFO_G     => false,
-   --   CASCADE_SIZE_G      => 1,
-   --   FIFO_ADDR_WIDTH_G   => 13,
-   --   -- AXI Stream Port Configurations
-   --   SLAVE_AXI_CONFIG_G  => SLAVE_AXI_CONFIG_C,
-   --   MASTER_AXI_CONFIG_G => MASTER_AXI_CONFIG_C
-   --)
-   --port map (
-   --   -- Slave Port
-   --   sAxisClk    => sysClk,
-   --   sAxisRst    => sysRst,
-   --   sAxisMaster => axisCascMaster(4),
-   --   sAxisSlave  => axisCascSlave(4),
-   --   -- Master Port
-   --   mAxisClk    => axisClk,
-   --   mAxisRst    => axisRst,
-   --   mAxisMaster => axisMaster,
-   --   mAxisSlave  => axisSlave
-   --);
    
 end rtl;

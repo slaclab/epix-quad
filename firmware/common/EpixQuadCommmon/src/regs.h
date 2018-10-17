@@ -183,11 +183,23 @@ static unsigned int  cfg10Asic[16] = {
 #define ADC_TEST_FAIL      (ADC_TEST_OFFSET+0x1C)
 
 
-#define MON_I2C_BUS        (BUS_OFFSET+0x00600000)
-#define MON_I2C_BUS_ADC    (MON_I2C_BUS+0x000)
-#define MON_I2C_BUS_PWR1   (MON_I2C_BUS+0x400)
-#define MON_I2C_BUS_PWR2   (MON_I2C_BUS+0x800)
-#define MON_I2C_BUS_OPT    (MON_I2C_BUS+0xC00)
+#define MON_I2C_BUS           (BUS_OFFSET+0x00600000)
+#define MON_I2C_I2CADDR       (MON_I2C_BUS+0x00)
+#define MON_I2C_REGADDR       (MON_I2C_BUS+0x08)
+#define MON_I2C_REGWRDATA     (MON_I2C_BUS+0x0C)
+#define MON_I2C_REGADDRSIZE   (MON_I2C_BUS+0x10)
+#define MON_I2C_REGADDRSKIP   (MON_I2C_BUS+0x14)
+#define MON_I2C_REGDATASIZE   (MON_I2C_BUS+0x18)
+#define MON_I2C_ENDIANNESS    (MON_I2C_BUS+0x1C)
+#define MON_I2C_REPSTART      (MON_I2C_BUS+0x20)
+#define MON_I2C_REGOP         (MON_I2C_BUS+0x24)
+#define MON_I2C_REGREQ        (MON_I2C_BUS+0x28)
+#define MON_I2C_REGRDDATA     (MON_I2C_BUS+0x2C)
+#define MON_I2C_REGFAIL       (MON_I2C_BUS+0x30)
+
+#define I2CADDR_LTC2945_DIG   (0x67)
+#define I2CADDR_LTC2945_ANA   (0x6F)
+#define I2CADDR_LTC2497       (0x34)
 
 static unsigned int pwrRegAddr[3] = {
    0x14,    // Sense MSB
@@ -199,4 +211,11 @@ static unsigned int pwrRegAddr[3] = {
 #define QUADMON_ENABLE     (QUADMON+0x000)
 #define QUADMON_SENSOR_REG (QUADMON+0x200)
 #define QUADMON_SENSOR_CNT (QUADMON+0x300)
+
+enum PwrState {PWR_IDLE_S, PWR_WAIT_S, PWR_DONE_S};
+enum AdcState {ADC_IDLE_S, ADC_WAIT1_S, ADC_READ_S, ADC_WAIT2_S};
+static uint8_t adcChMap[16] = {
+   0x00, 0x08, 0x01, 0x09, 0x02, 0x0A, 0x03, 0x0B,
+   0x04, 0x0C, 0x05, 0x0D, 0x06, 0x0E, 0x07, 0x0F
+};
 

@@ -114,7 +114,7 @@ entity SystemCore is
       -- trigger output
       acqStart             : out sl;
       -- Monitor data for the image stream
-      monData              : out  Slv16Array(15 downto 0);
+      monData              : out   Slv16Array(33 downto 0);
       -- Monitor Data Interface
       monitorTxMaster      : out  AxiStreamMasterType;
       monitorTxSlave       : in   AxiStreamSlaveType;

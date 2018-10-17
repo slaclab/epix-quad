@@ -60,8 +60,67 @@ void adcTestIntHandler(void * data) {
    XIntc_Acknowledge(&intc, 1);
 }
 
-enum PwrState {PWR_IDLE_S, PWR_WAIT_S, PWR_DONE_S};
-enum AdcState {ADC_IDLE_S, ADC_WAIT_S, ADC_DONE_S};
+uint8_t ltc2945ReadByte(uint8_t i2cAddr, uint8_t regAddr) {
+   Xil_Out32(MON_I2C_I2CADDR, i2cAddr);
+   Xil_Out32(MON_I2C_ENDIANNESS, 0x0);
+   Xil_Out32(MON_I2C_REPSTART, 0x1);
+   Xil_Out32(MON_I2C_REGADDR, regAddr);   // reg addr
+   Xil_Out32(MON_I2C_REGADDRSIZE, 0x0);   // 1 byte address
+   Xil_Out32(MON_I2C_REGADDRSKIP, 0x0);   // do not skip address
+   Xil_Out32(MON_I2C_REGDATASIZE, 0x0);   // 1 byte to read
+   Xil_Out32(MON_I2C_REGOP, 0x0);         // 0 - read op
+   Xil_Out32(MON_I2C_REGREQ, 0x1);        // 1 - request
+   // poll request
+   while(Xil_In32(MON_I2C_REGREQ) == 0x1);
+   return Xil_In32(MON_I2C_REGRDDATA);
+}
+
+uint8_t ltc2945WriteByte(uint8_t i2cAddr, uint8_t regAddr, uint8_t regData) {
+   Xil_Out32(MON_I2C_I2CADDR, i2cAddr);
+   Xil_Out32(MON_I2C_ENDIANNESS, 0x0);
+   Xil_Out32(MON_I2C_REPSTART, 0x1);
+   Xil_Out32(MON_I2C_REGADDR, regAddr);   // reg addr
+   Xil_Out32(MON_I2C_REGADDRSIZE, 0x0);   // 1 byte address
+   Xil_Out32(MON_I2C_REGADDRSKIP, 0x0);   // do not skip address
+   Xil_Out32(MON_I2C_REGDATASIZE, 0x0);   // 1 byte to write
+   Xil_Out32(MON_I2C_REGWRDATA, regData); // byte to write
+   Xil_Out32(MON_I2C_REGOP, 0x1);         // 1 - write op
+   Xil_Out32(MON_I2C_REGREQ, 0x1);        // 1 - request
+   // poll request
+   while(Xil_In32(MON_I2C_REGREQ) == 0x1);
+   return Xil_In32(MON_I2C_REGFAIL);
+}
+
+uint8_t ltc2497ReadAdcChannel(uint8_t i2cAddr, uint32_t * adcData) {
+   Xil_Out32(MON_I2C_I2CADDR, i2cAddr);
+   Xil_Out32(MON_I2C_ENDIANNESS, 0x1);
+   Xil_Out32(MON_I2C_REPSTART, 0x0);
+   Xil_Out32(MON_I2C_REGADDR, 0x0);       // reg addr
+   Xil_Out32(MON_I2C_REGADDRSIZE, 0x0);   // 1 byte address
+   Xil_Out32(MON_I2C_REGADDRSKIP, 0x1);   // skip address
+   Xil_Out32(MON_I2C_REGDATASIZE, 0x2);   // 3 bytes to read
+   Xil_Out32(MON_I2C_REGOP, 0x0);         // 0 - read op
+   Xil_Out32(MON_I2C_REGREQ, 0x1);        // 1 - request
+   // poll request
+   while(Xil_In32(MON_I2C_REGREQ) == 0x1);
+   *adcData = Xil_In32(MON_I2C_REGRDDATA) & 0xFFFFFF;
+   return Xil_In32(MON_I2C_REGFAIL);
+}
+
+void ltc2497TrigAdcChannel(uint8_t i2cAddr, uint16_t adcChannel) {
+   Xil_Out32(MON_I2C_I2CADDR, i2cAddr);
+   Xil_Out32(MON_I2C_ENDIANNESS, 0x1);
+   Xil_Out32(MON_I2C_REPSTART, 0x0);
+   Xil_Out32(MON_I2C_REGADDR, 0x0);       // reg addr
+   Xil_Out32(MON_I2C_REGADDRSIZE, 0x0);   // 1 byte address
+   Xil_Out32(MON_I2C_REGADDRSKIP, 0x1);   // skip address
+   Xil_Out32(MON_I2C_REGDATASIZE, 0x1);   // 2 bytes to write
+   Xil_Out32(MON_I2C_REGWRDATA, adcChannel); // bytes to write
+   Xil_Out32(MON_I2C_REGOP, 0x1);         // 1 - write op
+   Xil_Out32(MON_I2C_REGREQ, 0x1);        // 1 - request
+   // poll request
+   while(Xil_In32(MON_I2C_REGREQ) == 0x1);
+}
 
 void sensorsHandler(void * data) {
    uint32_t * request = (uint32_t *)data;
@@ -71,7 +130,7 @@ void sensorsHandler(void * data) {
    static uint8_t adcChn = 0;
    uint32_t regIn, regIn1;
    uint8_t snapCmd;
-   uint32_t convCmd;
+   uint16_t convCmd;
    (*request) = 0; 
    
    if (Xil_In32(QUADMON_ENABLE) != 0) {
@@ -84,8 +143,8 @@ void sensorsHandler(void * data) {
       if (pwrState == PWR_WAIT_S) {
          // poll ADC busy flag
          // change state if ADC done
-         regIn  = Xil_In32(MON_I2C_BUS_PWR1);
-         regIn1 = Xil_In32(MON_I2C_BUS_PWR2);
+         regIn = ltc2945ReadByte(I2CADDR_LTC2945_DIG, 0x0);    // 0x0 is control reg
+         regIn1 = ltc2945ReadByte(I2CADDR_LTC2945_ANA, 0x0);   // 0x0 is control reg
          if( (regIn&0x8) == 0 && (regIn1&0x8) == 0 )
             pwrState = PWR_DONE_S;
       }
@@ -94,15 +153,15 @@ void sensorsHandler(void * data) {
       if (pwrState == PWR_DONE_S) {
          
          // save results
-         regIn = (Xil_In32(MON_I2C_BUS_PWR1+pwrRegAddr[pwrReg]*4) & 0xFF);
+         regIn = ltc2945ReadByte(I2CADDR_LTC2945_DIG, pwrRegAddr[pwrReg]);
          regIn <<= 8;
-         regIn |= (Xil_In32(MON_I2C_BUS_PWR1+pwrRegAddr[pwrReg]*4+4) & 0xFF);
+         regIn |= ltc2945ReadByte(I2CADDR_LTC2945_DIG, pwrRegAddr[pwrReg]+1);
          regIn >>= 4;
          Xil_Out32(QUADMON_SENSOR_REG+pwrReg*4, regIn);
          
-         regIn = (Xil_In32(MON_I2C_BUS_PWR2+pwrRegAddr[pwrReg]*4) & 0xFF);
+         regIn = ltc2945ReadByte(I2CADDR_LTC2945_ANA, pwrRegAddr[pwrReg]);
          regIn <<= 8;
-         regIn |= (Xil_In32(MON_I2C_BUS_PWR2+pwrRegAddr[pwrReg]*4+4) & 0xFF);
+         regIn |= ltc2945ReadByte(I2CADDR_LTC2945_ANA, pwrRegAddr[pwrReg]+1);
          regIn >>= 4;
          Xil_Out32(QUADMON_SENSOR_REG+(pwrReg+3)*4, regIn);
          
@@ -120,8 +179,8 @@ void sensorsHandler(void * data) {
       if (pwrState == PWR_IDLE_S) {
          // send snapshot commands to two power monitors
          snapCmd = 0x85 | (pwrReg << 5);
-         Xil_Out32(MON_I2C_BUS_PWR1, snapCmd);
-         Xil_Out32(MON_I2C_BUS_PWR2, snapCmd);
+         ltc2945WriteByte(I2CADDR_LTC2945_DIG, 0x0, snapCmd);
+         ltc2945WriteByte(I2CADDR_LTC2945_ANA, 0x0, snapCmd);
          
          // change state
          pwrState = PWR_WAIT_S;
@@ -132,42 +191,59 @@ void sensorsHandler(void * data) {
        * ---------------------------------------------------------*/
       
       // wait for measurement
-      if (adcState == ADC_WAIT_S) {
+      if (adcState == ADC_WAIT1_S) {
          // poll the FPGA fabric counter
          // change state if ADC done
-         if( Xil_In32(QUADMON_SENSOR_CNT) == 0 )
-            adcState = ADC_DONE_S;
+         regIn = Xil_In32(QUADMON_SENSOR_CNT);
+         if( regIn == 0 )
+            adcState = ADC_READ_S;
       }
       
       // get results 
-      if (adcState == ADC_DONE_S) {
+      if (adcState == ADC_READ_S) {
          
          // save results
-         regIn = (Xil_In32(MON_I2C_BUS_ADC) & 0xFFFF);
-         Xil_Out32(QUADMON_SENSOR_REG+(adcChn+6)*4, regIn);
+         if(ltc2497ReadAdcChannel(I2CADDR_LTC2497, &regIn) == 0) {
+            Xil_Out32(QUADMON_SENSOR_REG+(adcChn+6)*4, (regIn>>6));
+            
+            // switch to channel
+            if (adcChn < 15)
+               adcChn++;
+            else
+               adcChn=0;
+            
+            // start FPGA fabric timer (150 ms conversion cycle)
+            Xil_Out32(QUADMON_SENSOR_CNT, 15000000);
+            
+            // change state to ADC_WAIT2_S
+            adcState = ADC_WAIT2_S;
+            
+         }
          
-         // switch to channel
-         if (adcChn < 15)
-            adcChn++;
-         else
-            adcChn=0;
-         
-         // change state to IDLE
-         adcState = ADC_IDLE_S;
+      }
+      
+      // wait for measurement
+      if (adcState == ADC_WAIT2_S) {
+         // poll the FPGA fabric counter
+         // change state if ADC done
+         regIn = Xil_In32(QUADMON_SENSOR_CNT);
+         if( regIn == 0 )
+            adcState = ADC_IDLE_S;
       }
       
       // send channel conversion command
       if (adcState == ADC_IDLE_S) {
-         // send snapshot commands to two power monitors
-         convCmd = 0xB0 | (adcChn & 0xF);
-         convCmd |= ((convCmd<<8) | (convCmd<<16) | (convCmd<<24));
-         Xil_Out32(MON_I2C_BUS_ADC, convCmd);
+         // trigger ADC channel conversion
+         convCmd = 0xB0 | (adcChMap[adcChn] & 0xF);
+         convCmd <<= 8;
+         //convCmd |= (convCmd<<8);
+         ltc2497TrigAdcChannel(I2CADDR_LTC2497, convCmd);
          
          // start FPGA fabric timer (150 ms conversion cycle)
-         Xil_Out32(QUADMON_SENSOR_CNT, 20000000);
+         Xil_Out32(QUADMON_SENSOR_CNT, 15000000);
          
          // change state
-         adcState = ADC_WAIT_S;
+         adcState = ADC_WAIT1_S;
       }
       
    }

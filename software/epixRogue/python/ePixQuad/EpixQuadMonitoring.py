@@ -88,7 +88,17 @@ class EpixQuadMonitor(pr.Device):
             return TthermK - 273.15
          else:
             return 0.0
-         
+      
+      def getAnaTemp(var):
+         x = var.dependencies[0].value()
+         a = 130.0/(0.882-1.951)
+         b = (0.882/0.0082)+100
+         return x * 1.65 / 65535 * a + b
+      
+      def getLdoTemp(var):
+         x = var.dependencies[0].value()
+         return x * 1.65 / 65535 *100
+      
       # Creation. memBase is either the register bus server (srp, rce mapped memory, etc) or the device which
       # contains this object. In most cases the parent and memBase are the same but they can be 
       # different in more complex bus structures. They will also be different for the top most node.
@@ -264,7 +274,56 @@ class EpixQuadMonitor(pr.Device):
             mode       = 'RO',
             verify     = False,
          ))
-         
+      
+      
+      LdoNames = [
+         'A0+2_5V_H_Temp', 'A0+2_5V_L_Temp',
+         'A1+2_5V_H_Temp', 'A1+2_5V_L_Temp',
+         'A2+2_5V_H_Temp', 'A2+2_5V_L_Temp',
+         'A3+2_5V_H_Temp', 'A3+2_5V_L_Temp',
+         'D0+2_5V_Temp'  , 'D1+2_5V_Temp',
+         'A0+1_8V_Temp'  , 'A1+1_8V_Temp',
+         'A2+1_8V_Temp'
+      ]
+      
+      for i in range(13):      
+         self.add(pr.LinkVariable(
+            name         = LdoNames[i], 
+            mode         = 'RO', 
+            units        = 'deg C',
+            linkedGet    = getLdoTemp,
+            disp         = '{:3.1f}',
+            dependencies = [self.SensorRegRaw[i+6]],
+         )) 
+      
+      self.add(pr.LinkVariable(
+         name         = 'PcbAnaTemp0', 
+         mode         = 'RO', 
+         units        = 'deg C',
+         linkedGet    = getAnaTemp,
+         disp         = '{:3.1f}',
+         dependencies = [self.SensorRegRaw[19]],
+      )) 
+      
+      self.add(pr.LinkVariable(
+         name         = 'PcbAnaTemp1', 
+         mode         = 'RO', 
+         units        = 'deg C',
+         linkedGet    = getAnaTemp,
+         disp         = '{:3.1f}',
+         dependencies = [self.SensorRegRaw[20]],
+      )) 
+      
+      self.add(pr.LinkVariable(
+         name         = 'PcbAnaTemp2', 
+         mode         = 'RO', 
+         units        = 'deg C',
+         linkedGet    = getAnaTemp,
+         disp         = '{:3.1f}',
+         dependencies = [self.SensorRegRaw[21]],
+      )) 
+      
+      
       #####################################
       # Create commands
       #####################################

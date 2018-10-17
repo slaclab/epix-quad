@@ -57,7 +57,7 @@ entity AsicCoreTop is
       -- Opcode to insert into frame
       opCode               : in    slv(7 downto 0);
       -- Monitor data for the image stream
-      monData              : in    Slv16Array(15 downto 0);
+      monData              : in    Slv16Array(33 downto 0);
       -- ASIC ACQ signals
       acqStart             : in    sl;
       asicAcq              : out   sl;
