@@ -356,7 +356,7 @@ begin
    --------------------------------------------------
 
    comb : process (sysRst, r, axilReadMaster, axilWriteMaster,
-      i2cMasterOut, acqStart, monitorEn, monitorTxSlave, spiRdData, spiRdEn) is
+      i2cMasterOut, acqStart, monitorEn, monitorTxSlave, spiRdData, spiRdEn, iMonData) is
       variable v            : RegType;
       variable addrIndexVar : integer;
       variable dataIndexVar : integer;
