@@ -27,6 +27,7 @@ use work.StdRtlPkg.all;
 use work.I2cPkg.all;
 use work.AxiStreamPkg.all;
 use work.AxiLitePkg.all;
+use work.SsiPkg.all;
 
 entity EpixQuadMonitoring is
    generic (
@@ -92,6 +93,14 @@ architecture rtl of EpixQuadMonitoring is
    constant AD7949_CYC_CLK_C  : real := 250.0E+3;
    constant AD7949_CYC_PER_C  : natural := getTimeRatio(AXI_CLK_FREQ_G, AD7949_CYC_CLK_C)-1;
    
+   -- 1 HZ counter ticks for the monitor data trigger
+   constant MON_TRIG_PER_C       : natural := ite(SIM_SPEEDUP_G, 1000, getTimeRatio(AXI_CLK_FREQ_G, 1.0)-1);
+   constant SLAVE_AXI_CONFIG_C   : AxiStreamConfigType := ssiAxiStreamConfig(4);
+   constant LANE_C               : slv( 1 downto 0) := "00";
+   constant VC_C                 : slv( 1 downto 0) := "11";
+   constant QUAD_C               : slv( 1 downto 0) := "00";
+   constant OPCODE_C             : slv( 7 downto 0) := x"00";
+   
    type StateType is (
       WAIT_REQ_S, 
       ADDR_S, 
@@ -120,6 +129,12 @@ architecture rtl of EpixQuadMonitoring is
       BUS_EN_S,
       BUS_WAIT_S,
       WAIT_TCYC_S
+   );
+   
+   type RdStateType is (
+      IDLE_S,
+      HDR_S,
+      DATA_S
    );
    
    type RegType is record
@@ -167,6 +182,10 @@ architecture rtl of EpixQuadMonitoring is
       sensorReg         : Slv16Array(25 downto 0);
       sensorCnt         : slv(31 downto 0);
       --
+      rdState           : RdStateType;
+      wordCnt           : integer range 0 to 63;
+      monTrigCnt        : integer range 0 to MON_TRIG_PER_C;
+      monData           : Slv16Array(37 downto 0);
       txMaster          : AxiStreamMasterType;
       sAxilWriteSlave   : AxiLiteWriteSlaveType;
       sAxilReadSlave    : AxiLiteReadSlaveType;
@@ -229,6 +248,10 @@ architecture rtl of EpixQuadMonitoring is
       sensorReg         => (others=>(others=>'0')),
       sensorCnt         => (others=>'0'),
       --
+      rdState           => IDLE_S,
+      wordCnt           => 0,
+      monTrigCnt        => 0,
+      monData           => (others=>(others=>'0')),
       txMaster          => AXI_STREAM_MASTER_INIT_C,
       sAxilWriteSlave   => AXI_LITE_WRITE_SLAVE_INIT_C,
       sAxilReadSlave    => AXI_LITE_READ_SLAVE_INIT_C
@@ -244,6 +267,8 @@ architecture rtl of EpixQuadMonitoring is
    
    signal spiRdEn       : sl;
    signal spiRdData     : slv(13 downto 0);
+   
+   signal iMonData      : Slv16Array(37 downto 0);
 
    function getIndex (
       endianness : sl;
@@ -745,6 +770,119 @@ begin
             
       end case;
       
+      --------------------------------------------------
+      -- FSM to stream monitoring data
+      --------------------------------------------------
+      
+      if monitorEn = '1' and r.monitorEnReg = '1' then
+         if r.monTrigCnt < MON_TRIG_PER_C then
+            v.monTrigCnt := r.monTrigCnt + 1;
+         else
+            v.monTrigCnt := 0;
+         end if;
+      else
+         v.monTrigCnt := 0;
+      end if;
+      
+      -- Reset strobing Signals
+      if (monitorTxSlave.tReady = '1') then
+         v.txMaster.tValid := '0';
+         v.txMaster.tLast  := '0';
+         v.txMaster.tUser  := (others => '0');
+         v.txMaster.tKeep  := (others => '1');
+         v.txMaster.tStrb  := (others => '1');
+      end if;
+      
+      case r.rdState is
+         
+         -- wait for trigger
+         when IDLE_S =>
+            if r.monTrigCnt = MON_TRIG_PER_C then
+               v.monData   := iMonData;
+               v.rdState   := HDR_S;
+            end if;
+      
+         when HDR_S =>
+            if v.txMaster.tValid = '0' then
+               v.txMaster.tValid := '1';
+               if r.wordCnt = 0 then
+                  ssiSetUserSof(SLAVE_AXI_CONFIG_C, v.txMaster, '1');
+                  v.txMaster.tData(31 downto  0) := x"000000" & "00" & LANE_C & "00" & VC_C;
+               elsif r.wordCnt = 1 then
+                  v.txMaster.tData(31 downto  0) := x"0" & "00" & QUAD_C & OPCODE_C & x"0000";
+               else
+                  v.txMaster.tData(31 downto  0) := x"00000000";
+               end if;
+               if (r.wordCnt = 7) then
+                  v.wordCnt   := 0;
+                  v.rdState   := DATA_S;
+               else
+                  v.wordCnt   := r.wordCnt + 1;
+               end if;
+            end if;
+         
+         when DATA_S =>
+            if v.txMaster.tValid = '0' then
+               v.txMaster.tValid := '1';
+               
+               if r.wordCnt = 0 then
+                  v.txMaster.tData(31 downto  0) := r.monData( 1) & r.monData( 0);
+               elsif r.wordCnt = 1 then
+                  v.txMaster.tData(31 downto  0) := r.monData( 3) & r.monData( 2);
+               elsif r.wordCnt = 2 then
+                  v.txMaster.tData(31 downto  0) := r.monData( 5) & r.monData( 4);
+               elsif r.wordCnt = 3 then
+                  v.txMaster.tData(31 downto  0) := r.monData( 7) & r.monData( 6);
+               elsif r.wordCnt = 4 then
+                  v.txMaster.tData(31 downto  0) := r.monData( 9) & r.monData( 8);
+               elsif r.wordCnt = 5 then
+                  v.txMaster.tData(31 downto  0) := r.monData(11) & r.monData(10);
+               elsif r.wordCnt = 6 then
+                  v.txMaster.tData(31 downto  0) := r.monData(13) & r.monData(12);
+               elsif r.wordCnt = 7 then
+                  v.txMaster.tData(31 downto  0) := r.monData(15) & r.monData(14);
+               elsif r.wordCnt = 8 then
+                  v.txMaster.tData(31 downto  0) := r.monData(17) & r.monData(16);
+               elsif r.wordCnt = 9 then
+                  v.txMaster.tData(31 downto  0) := r.monData(19) & r.monData(18);
+               elsif r.wordCnt = 10 then
+                  v.txMaster.tData(31 downto  0) := r.monData(21) & r.monData(20);
+               elsif r.wordCnt = 11 then
+                  v.txMaster.tData(31 downto  0) := r.monData(23) & r.monData(22);
+               elsif r.wordCnt = 12 then
+                  v.txMaster.tData(31 downto  0) := r.monData(25) & r.monData(24);
+               elsif r.wordCnt = 13 then
+                  v.txMaster.tData(31 downto  0) := r.monData(27) & r.monData(26);
+               elsif r.wordCnt = 14 then
+                  v.txMaster.tData(31 downto  0) := r.monData(29) & r.monData(28);
+               elsif r.wordCnt = 15 then
+                  v.txMaster.tData(31 downto  0) := r.monData(31) & r.monData(30);
+               elsif r.wordCnt = 16 then
+                  v.txMaster.tData(31 downto  0) := r.monData(33) & r.monData(32);
+               elsif r.wordCnt = 17 then
+                  v.txMaster.tData(31 downto  0) := r.monData(35) & r.monData(34);
+               elsif r.wordCnt = 18 then
+                  v.txMaster.tData(31 downto  0) := r.monData(37) & r.monData(36);
+               else
+                  v.txMaster.tData(31 downto  0) := x"00000000";
+               end if;
+               
+               if (r.wordCnt < 31) then
+                  v.wordCnt := r.wordCnt + 1;
+               else
+                  v.txMaster.tLast  := '1';
+                  ssiSetUserEofe(SLAVE_AXI_CONFIG_C, v.txMaster, '0');
+                  v.wordCnt := 0;
+                  v.rdState := IDLE_S;
+               end if;
+               
+            end if;
+         
+         when others =>
+            v.rdState := IDLE_S;
+            
+      end case;
+      
       ------------------------------------------------------------------------------------------------
       -- Synchronous Reset
       ------------------------------------------------------------------------------------------------
@@ -778,12 +916,14 @@ begin
       
       monitorTxMaster         <= r.txMaster;
       
-      monData( 0)             <= r.shtHumReg;
-      monData( 1)             <= r.shtTempReg;
-      monData( 2)             <= x"00" & r.nctRegs(0);
-      monData( 3)             <= r.nctRegs(2) & r.nctRegs(1);
-      monData(11 downto  4)   <= r.adDataReg;
-      monData(37 downto 12)   <= r.sensorReg;
+      iMonData( 0)            <= r.shtHumReg;
+      iMonData( 1)            <= r.shtTempReg;
+      iMonData( 2)            <= x"00" & r.nctRegs(0);
+      iMonData( 3)            <= r.nctRegs(2) & r.nctRegs(1);
+      iMonData(11 downto  4)  <= r.adDataReg;
+      iMonData(37 downto 12)  <= r.sensorReg;
+      monData                 <= iMonData;
+      
 
    end process comb;
 

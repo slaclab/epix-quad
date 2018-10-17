@@ -73,8 +73,19 @@ class Top(pr.Root):
         pyrogue.streamConnect(self.pgpVc2, dataWriter.getChannel(0x2))
         pyrogue.streamConnect(self.pgpVc3, dataWriter.getChannel(0x3))
         
-        cmd = rogue.protocols.srp.Cmd()
-        pyrogue.streamConnect(cmd, self.pgpVc0)
+        cmdVc0 = rogue.protocols.srp.Cmd()
+        pyrogue.streamConnect(cmdVc0, self.pgpVc0)
+        cmdVc3 = rogue.protocols.srp.Cmd()
+        pyrogue.streamConnect(cmdVc3, self.pgpVc3)
+        
+        @self.command()
+        def MonStrEnable():
+            cmdVc3.sendCmd(1, 0)
+        
+        @self.command()
+        def MonStrDisable():
+            cmdVc3.sendCmd(0, 0)
+        
         
         ######################################################################
         
