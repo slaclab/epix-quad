@@ -819,8 +819,73 @@ class Camera():
         # returns final image
         return imgDesc
     
+    def getThermistorTemp(self, x):
+         # resistor divider 100k and MC65F103B (Rt25=10k)
+         # Vref 2.5V
+         if x != 0:
+            Umeas = x / 16383.0 * 2.5
+            Itherm = Umeas / 100000;
+            Rtherm = (2.5 - Umeas) / Itherm;
+            LnRtR25 = np.log(Rtherm/10000.0)
+            TthermK = 1.0 / (3.3538646E-03 + 2.5654090E-04 * LnRtR25 + 1.9243889E-06 * (LnRtR25**2) + 1.0969244E-07 * (LnRtR25**3))
+            return TthermK - 273.15
+         else:
+            return 0.0
+    
     def _descrambleEPixQuadImageAsByteArray(self, rawData):
         """performs the ePix Quad image descrambling (this is a place holder only)"""
+        
+        # example of monitoring data descrambling
+        if (PRINT_VERBOSE):
+            footerOffset = 32+self._superRowSizeInBytes*self.sensorHeight
+            footer = rawData[footerOffset:footerOffset+34*2]
+            
+            shtHumRaw      = (footer[1] << 8) | footer[0]
+            shtTempRaw     = (footer[3] << 8) | footer[2]
+            nctLocTempRaw  = footer[4]
+            nctRemTempLRaw = footer[6]
+            nctRemTempHRaw = footer[7]
+            ad7949DataRaw0 = (footer[ 9] << 8) | footer[ 8]
+            ad7949DataRaw1 = (footer[11] << 8) | footer[10]
+            ad7949DataRaw2 = (footer[13] << 8) | footer[12]
+            ad7949DataRaw3 = (footer[15] << 8) | footer[14]
+            ad7949DataRaw4 = (footer[17] << 8) | footer[16]
+            ad7949DataRaw5 = (footer[19] << 8) | footer[18]
+            ad7949DataRaw6 = (footer[21] << 8) | footer[20]
+            ad7949DataRaw7 = (footer[23] << 8) | footer[22]
+            sensorRegRaw = [0] * 22
+            for i in range(22):
+                sensorRegRaw[i] = (footer[25+i*2] << 8) | footer[24+i*2]
+            print('SHT31 humidity %f %%'           %(shtHumRaw / 65535.0 * 100.0))
+            print('SHT31 temperature %f deg C'     %(shtTempRaw / 65535.0 * 175.0 - 45.0))
+            print('NCT local temperature %d deg C' %(nctLocTempRaw))
+            print('NCT FPGA temperature %f deg C'  %(nctRemTempHRaw + (nctRemTempLRaw >> 6)*0.25))
+            print('ASIC_A0_2V5_Current %f mA'      %(ad7949DataRaw0 / 16383.0 * 2.5 / 330.0 * 1000000))
+            print('ASIC_A1_2V5_Current %f mA'      %(ad7949DataRaw1 / 16383.0 * 2.5 / 330.0 * 1000000))
+            print('ASIC_A2_2V5_Current %f mA'      %(ad7949DataRaw2 / 16383.0 * 2.5 / 330.0 * 1000000))
+            print('ASIC_A3_2V5_Current %f mA'      %(ad7949DataRaw3 / 16383.0 * 2.5 / 330.0 * 1000000))
+            print('ASIC_D0_2V5_Current %f mA'      %(ad7949DataRaw4 / 16383.0 * 2.5 / 330.0 * 1000000 / 2.0))
+            print('ASIC_D1_2V5_Current %f mA'      %(ad7949DataRaw5 / 16383.0 * 2.5 / 330.0 * 1000000 / 2.0))
+            print('Therm0_Temp %f deg C'           %(self.getThermistorTemp(ad7949DataRaw6)))
+            print('Therm1_Temp %f deg C'           %(self.getThermistorTemp(ad7949DataRaw7)))
+            print('PwrDigCurr %f A'                %(sensorRegRaw[0] * 0.1024 / 4095 / 0.02))
+            print('PwrDigVin %f V'                 %(sensorRegRaw[1] * 102.4 / 4095))
+            print('PwrDigTemp %f deg C'            %(sensorRegRaw[2] * 2.048 / 4095 * (130.0/(0.882-1.951)) + (0.882/0.0082+100) ))
+            print('PwrAnaCurr %f A'                %(sensorRegRaw[3] * 0.1024 / 4095 / 0.02))
+            print('PwrAnaVin %f V'                 %(sensorRegRaw[4] * 102.4 / 4095))
+            print('PwrAnaTemp %f deg C'            %(sensorRegRaw[5] * 2.048 / 4095 * (130.0/(0.882-1.951)) + (0.882/0.0082+100) ))
+            LdoNames = [
+               'A0+2_5V_H_Temp', 'A0+2_5V_L_Temp',
+               'A1+2_5V_H_Temp', 'A1+2_5V_L_Temp',
+               'A2+2_5V_H_Temp', 'A2+2_5V_L_Temp',
+               'A3+2_5V_H_Temp', 'A3+2_5V_L_Temp',
+               'D0+2_5V_Temp'  , 'D1+2_5V_Temp',
+               'A0+1_8V_Temp'  , 'A1+1_8V_Temp',
+               'A2+1_8V_Temp'
+            ]
+            for i in range(13):
+                print('%s %f deg C'            %(LdoNames[i], sensorRegRaw[6+i] * 1.65 / 65535 *100 ))
+        
         
         #removes header before displying the image
         for j in range(0,32):
@@ -840,15 +905,11 @@ class Camera():
             else:
                 imgBotBot.extend(rawData[(j*self._superRowSizeInBytes):((j+1)*self._superRowSizeInBytes)]) 
         
-        #imgDesc = imgTopTop
-        #imgDesc.extend(imgTopBot)
-        #imgDesc.extend(imgBotTop)
-        #imgDesc.extend(imgBotBot)
-        
         imgDesc = imgBotTop
         imgDesc.extend(imgTopBot)
         imgDesc.extend(imgTopTop)
         imgDesc.extend(imgBotBot)
+        
 
         # returns final image
         return imgDesc
