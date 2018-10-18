@@ -838,7 +838,7 @@ class Camera():
         # example of monitoring data descrambling
         if (PRINT_VERBOSE):
             footerOffset = 32+self._superRowSizeInBytes*self.sensorHeight
-            footer = rawData[footerOffset:footerOffset+34*2]
+            footer = rawData[footerOffset:footerOffset+38*2]
             
             shtHumRaw      = (footer[1] << 8) | footer[0]
             shtTempRaw     = (footer[3] << 8) | footer[2]
@@ -853,8 +853,8 @@ class Camera():
             ad7949DataRaw5 = (footer[19] << 8) | footer[18]
             ad7949DataRaw6 = (footer[21] << 8) | footer[20]
             ad7949DataRaw7 = (footer[23] << 8) | footer[22]
-            sensorRegRaw = [0] * 22
-            for i in range(22):
+            sensorRegRaw = [0] * 26
+            for i in range(26):
                 sensorRegRaw[i] = (footer[25+i*2] << 8) | footer[24+i*2]
             print('SHT31 humidity %f %%'           %(shtHumRaw / 65535.0 * 100.0))
             print('SHT31 temperature %f deg C'     %(shtTempRaw / 65535.0 * 175.0 - 45.0))
@@ -884,8 +884,14 @@ class Camera():
                'A2+1_8V_Temp'
             ]
             for i in range(13):
-                print('%s %f deg C'            %(LdoNames[i], sensorRegRaw[6+i] * 1.65 / 65535 *100 ))
-        
+                print('%s %f deg C'                %(LdoNames[i], sensorRegRaw[6+i] * 1.65 / 65535 *100 ))
+            print('PcbAnaTemp0 %f deg C'           %(sensorRegRaw[19] * 1.65 / 65535 * (130.0/(0.882-1.951)) + (0.882/0.0082+100) ))
+            print('PcbAnaTemp1 %f deg C'           %(sensorRegRaw[20] * 1.65 / 65535 * (130.0/(0.882-1.951)) + (0.882/0.0082+100) ))
+            print('PcbAnaTemp2 %f deg C'           %(sensorRegRaw[21] * 1.65 / 65535 * (130.0/(0.882-1.951)) + (0.882/0.0082+100) ))
+            print('TrOptTemp %f deg C'             %(sensorRegRaw[22] * 1.0 / 256 ))
+            print('TrOptVcc %f V'                  %(sensorRegRaw[23] * 0.0001 ))
+            print('TrOptTxPwr %f uW'               %(sensorRegRaw[24] * 0.1 ))
+            print('TrOptRxPwr %f uW'               %(sensorRegRaw[25] * 0.1 ))
         
         #removes header before displying the image
         for j in range(0,32):

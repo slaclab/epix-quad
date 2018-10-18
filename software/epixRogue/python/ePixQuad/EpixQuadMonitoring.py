@@ -99,6 +99,18 @@ class EpixQuadMonitor(pr.Device):
          x = var.dependencies[0].value()
          return x * 1.65 / 65535 *100
       
+      def getTrOptTemp(var):
+         x = var.dependencies[0].value()
+         return x * 1.0 / 256
+      
+      def getTrOptVolt(var):
+         x = var.dependencies[0].value()
+         return x * 0.0001
+      
+      def getTrOptPwr(var):
+         x = var.dependencies[0].value()
+         return x * 0.1
+      
       # Creation. memBase is either the register bus server (srp, rce mapped memory, etc) or the device which
       # contains this object. In most cases the parent and memBase are the same but they can be 
       # different in more complex bus structures. They will also be different for the top most node.
@@ -323,6 +335,55 @@ class EpixQuadMonitor(pr.Device):
          dependencies = [self.SensorRegRaw[21]],
       )) 
       
+      
+      for i in range(4):      
+         i = i + 22
+         self.add(pr.RemoteVariable(
+            name       = ('SensorRegRaw[%d]'%i),
+            description= ('Sensor Raw Data Register [%d]'%i),
+            offset     = (0x00000200+i*4), 
+            bitSize    = 32, 
+            bitOffset  = 0,  
+            base       = pr.UInt, 
+            mode       = 'RO',
+            verify     = False,
+         ))
+      
+      self.add(pr.LinkVariable(
+         name         = 'TrOptTemp', 
+         mode         = 'RO', 
+         units        = 'deg C',
+         linkedGet    = getTrOptTemp,
+         disp         = '{:3.1f}',
+         dependencies = [self.SensorRegRaw[22]],
+      )) 
+      
+      self.add(pr.LinkVariable(
+         name         = 'TrOptVcc', 
+         mode         = 'RO', 
+         units        = 'V',
+         linkedGet    = getTrOptVolt,
+         disp         = '{:3.1f}',
+         dependencies = [self.SensorRegRaw[23]],
+      )) 
+      
+      self.add(pr.LinkVariable(
+         name         = 'TrOptTxPwr', 
+         mode         = 'RO', 
+         units        = 'uW',
+         linkedGet    = getTrOptPwr,
+         disp         = '{:3.1f}',
+         dependencies = [self.SensorRegRaw[24]],
+      )) 
+      
+      self.add(pr.LinkVariable(
+         name         = 'TrOptRxPwr', 
+         mode         = 'RO', 
+         units        = 'uW',
+         linkedGet    = getTrOptPwr,
+         disp         = '{:3.1f}',
+         dependencies = [self.SensorRegRaw[25]],
+      )) 
       
       #####################################
       # Create commands
