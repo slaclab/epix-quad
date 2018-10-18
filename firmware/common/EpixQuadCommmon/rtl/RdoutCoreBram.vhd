@@ -79,7 +79,7 @@ architecture rtl of RdoutCoreBram is
    -- Buffer settings
    constant BUFF_BITS_C    : integer range 1 to 5 := 2;
    constant BUFF_MAX_C     : slv(2**BUFF_BITS_C-1 downto 0) := (others=>'1');
-   constant TIMEOUT_C      : integer := 10000;  -- 100us
+   constant TIMEOUT_C      : integer := 500000;  -- 5ms
    
    -- Stream settings
    constant SLAVE_AXI_CONFIG_C   : AxiStreamConfigType := ssiAxiStreamConfig(8);
