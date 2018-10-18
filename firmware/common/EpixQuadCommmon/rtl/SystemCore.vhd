@@ -133,15 +133,8 @@ architecture top_level of SystemCore is
    constant START_ADDR_C : slv(DDR_AXI_CONFIG_C.ADDR_WIDTH_C-1 downto 0) := (others => '0');
    constant STOP_ADDR_C  : slv(DDR_AXI_CONFIG_C.ADDR_WIDTH_C-1 downto 0) := ite(SIM_SPEEDUP_G, toSlv(32*4096, DDR_AXI_CONFIG_C.ADDR_WIDTH_C) ,toSlv(2**DDR_AXI_CONFIG_C.ADDR_WIDTH_C-1, DDR_AXI_CONFIG_C.ADDR_WIDTH_C));
    
-   constant I2C_MON_CONFIG_C : I2cAxiLiteDevArray(3 downto 0) := (
-      0 => (MakeI2cAxiLiteDevType("0110100", 16, 0, '0')),
-      1 => (MakeI2cAxiLiteDevType("1100111", 8, 8, '0', '1')),
-      2 => (MakeI2cAxiLiteDevType("1101111", 8, 8, '0', '1')),
-      3 => (MakeI2cAxiLiteDevType("1010001", 8, 8, '0'))
-   );
-   
    constant I2C_DAC_CONFIG_C : I2cAxiLiteDevArray(0 downto 0) := (
-      0 => (MakeI2cAxiLiteDevType("1001110", 8, 8, '0'))
+      0 => (MakeI2cAxiLiteDevType("1001110", 16, 8, '1'))
    );   
 
    constant NUM_AXI_MASTERS_C : natural := 8;
@@ -506,10 +499,8 @@ begin
    ------------------------------------------------
    -- Power nad temperature monitoring sensors readout
    ------------------------------------------------
-   --U_MonI2C : entity work.AxiI2cRegMaster
    U_MonI2C : entity work.AxiI2cMaster
    generic map (
-      --DEVICE_MAP_G     => I2C_MON_CONFIG_C,
       AXI_CLK_FREQ_G   => AXI_CLK_FREQ_G,
       I2C_SCL_FREQ_G   => ite(SIM_SPEEDUP_G, 500.0E+3, 50.0E+3)
    )
