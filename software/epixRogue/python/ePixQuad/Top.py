@@ -132,6 +132,13 @@ class Top(pr.Root):
             expand  = False,
         ))
         
+        self.add(ePixQuad.VguardDac( 
+            name    = 'VguardDac', 
+            memBase = memMap, 
+            offset  = 0x00500000, 
+            expand  = False,
+        ))
+        
         self.add(ePixQuad.EpixQuadMonitor( 
             name    = 'EpixQuadMonitor', 
             memBase = memMap, 
