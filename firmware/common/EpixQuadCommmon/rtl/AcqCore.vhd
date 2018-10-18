@@ -219,6 +219,8 @@ begin
             v.stateCnt  := (others=>'0');
             v.roClkCnt  := (others=>'0');
             v.acqBusy   := '0';
+            -- R0 must be low in IDLE for the matrix configuration to work
+            v.asicR0    := '0';
             if acqStartEdge = '1' then
                v.acqState := WAIT_R0_S;
             end if;
