@@ -148,7 +148,7 @@ class Top(pr.Root):
             memBase = memMap, 
             offset  = 0x00600000, 
             expand  = False,
-            #hidden  = True,
+            hidden  = True,
         ))
         
         self.add(axi.AxiMemTester( 

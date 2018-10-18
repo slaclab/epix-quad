@@ -200,6 +200,7 @@ static unsigned int  cfg10Asic[16] = {
 #define I2CADDR_LTC2945_DIG   (0x67)
 #define I2CADDR_LTC2945_ANA   (0x6F)
 #define I2CADDR_LTC2497       (0x34)
+#define I2CADDR_FINISAR       (0x51)
 
 static unsigned int pwrRegAddr[3] = {
    0x14,    // Sense MSB
