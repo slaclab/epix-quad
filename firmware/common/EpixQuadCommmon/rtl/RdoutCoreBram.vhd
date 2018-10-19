@@ -118,7 +118,7 @@ architecture rtl of RdoutCoreBram is
       seqCount             : slv(31 downto 0);
       seqCountReset        : sl;
       adcPipelineDly       : slv(7 downto 0);
-      adcPipelineDlyReg    : slv(7 downto 0);
+      adcPipelineDlyReg    : slv(31 downto 0);
       acqSmplEn            : slv(255 downto 0);
       readPend             : sl;
       buffErr              : sl;
@@ -364,10 +364,11 @@ begin
    begin
       v := r;
       
+      v.adcPipelineDlyReg := (others=>'0');
+      
       -- settings that chan change when no readout is pending
       if r.readPend = '0' and acqBusyEdge = '0' then
          v.rdoutEn         := r.rdoutEnReg;
-         v.adcPipelineDly  := r.adcPipelineDlyReg;
       end if;
       
       -- count readouts
@@ -389,6 +390,7 @@ begin
       axiSlaveRegisterR(regCon, x"004", 0, r.seqCount          );
       axiSlaveRegister (regCon, x"008", 0, v.seqCountReset     );
       axiSlaveRegister (regCon, x"00C", 0, v.adcPipelineDlyReg );
+      axiSlaveRegisterR(regCon, x"00C", 0, r.adcPipelineDly    );
       axiSlaveRegisterR(regCon, x"010", 0, r.lineBufErr(0)     );
       axiSlaveRegisterR(regCon, x"014", 0, r.lineBufErr(1)     );
       axiSlaveRegisterR(regCon, x"018", 0, r.lineBufErr(2)     );
@@ -398,6 +400,11 @@ begin
       
       -- Close out the AXI-Lite transaction
       axiSlaveDefault(regCon, v.sAxilWriteSlave, v.sAxilReadSlave, AXI_RESP_DECERR_C);
+      
+      -- ADC pipeline delay is preset by the Microblaze and should be changed only be an expert
+      if r.adcPipelineDlyReg(31 downto 16) = x"AAAA" then
+         v.adcPipelineDly := r.adcPipelineDlyReg(7 downto 0);
+      end if;
       
       --------------------------------------------------
       -- Line buffers write FSM (64 bank channels)

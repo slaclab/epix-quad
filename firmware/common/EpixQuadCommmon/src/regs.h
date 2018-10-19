@@ -220,3 +220,8 @@ static uint8_t adcChMap[16] = {
    0x04, 0x0C, 0x05, 0x0D, 0x06, 0x0E, 0x07, 0x0F
 };
 
+#define RDOUT_CORE         (BUS_OFFSET+0x01100000)
+#define RDOUT_ADC_PIPELINE (RDOUT_CORE+0x00C)
+
+#define ACQ_CORE           (BUS_OFFSET+0x01000000)
+#define ACQ_ASIC_ROCLK_H   (ACQ_CORE+0x020)

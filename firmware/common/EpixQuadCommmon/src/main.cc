@@ -483,6 +483,11 @@ int main() {
    // initialize ASIC core settings
    initAsics();
    
+   // preset ADC and ASIC clock frequencies
+   // this should always be changed together
+   Xil_Out32(RDOUT_ADC_PIPELINE, 0xAAAA005A);
+   Xil_Out32(ACQ_ASIC_ROCLK_H,   0xAAAA0005);
+   
    // re-read carrier ID after ASIC's DMs are disabled
    Xil_Out32( SYSTEM_IDRST, 0x1);
    

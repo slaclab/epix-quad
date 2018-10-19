@@ -85,6 +85,7 @@ architecture RTL of AcqCore is
       asicR0ToAsicAcq      : slv(31 downto 0);
       asicAcqWidth         : slv(31 downto 0);
       asicAcqLToPPmatL     : slv(31 downto 0);
+      asicRoClkHalfTReg    : slv(31 downto 0);
       asicRoClkHalfT       : slv(31 downto 0);
       asicPreAcqTime       : slv(31 downto 0);
       asicPpmatToReadout   : slv(31 downto 0);
@@ -113,7 +114,8 @@ architecture RTL of AcqCore is
       asicR0ToAsicAcq      => toSlv(100, 32),
       asicAcqWidth         => toSlv(100, 32),
       asicAcqLToPPmatL     => (others=>'0'),
-      asicRoClkHalfT       => toSlv(3, 32),
+      asicRoClkHalfTReg    => (others=>'0'),
+      asicRoClkHalfT       => (others=>'0'),
       asicPreAcqTime       => (others=>'0'),
       asicPpmatToReadout   => (others=>'0'),
       asicPinForce         => (others=>'0'),
@@ -157,6 +159,8 @@ begin
    begin
       v := r;
       
+      v.asicRoClkHalfTReg := (others=>'0');
+      
       -- ADC clock frequency is fixed to 50 MHz
       v.adcClk := not r.adcClk;
       
@@ -186,7 +190,8 @@ begin
       axiSlaveRegister (regCon, x"014", 0, v.asicAcqWidth      );
       axiSlaveRegister (regCon, x"018", 0, v.asicAcqLToPPmatL  );
       axiSlaveRegister (regCon, x"01C", 0, v.asicPpmatToReadout);
-      axiSlaveRegister (regCon, x"020", 0, v.asicRoClkHalfT    );
+      axiSlaveRegister (regCon, x"020", 0, v.asicRoClkHalfTReg );
+      axiSlaveRegisterR(regCon, x"020", 0, r.asicRoClkHalfT    );
       axiSlaveRegisterR(regCon, x"024", 0, toSlv(ROCLK_COUNT_C, 32));
       axiSlaveRegisterR(regCon, x"028", 0, r.asicPreAcqTime    );
       axiSlaveRegister (regCon, x"02C", 0, v.asicPinForce      );
@@ -194,6 +199,11 @@ begin
       
       -- Close out the AXI-Lite transaction
       axiSlaveDefault(regCon, v.sAxilWriteSlave, v.sAxilReadSlave, AXI_RESP_DECERR_C);
+      
+      -- ASIC RdoutClk period is preset by the Microblaze and should be changed only be an expert
+      if r.asicRoClkHalfTReg(31 downto 16) = x"AAAA" then
+         v.asicRoClkHalfT := x"0000" & r.asicRoClkHalfTReg(15 downto 0);
+      end if;
       
       --------------------------------------------------
       -- Acquisition FSM
