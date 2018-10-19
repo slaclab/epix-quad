@@ -143,6 +143,7 @@ QuadTop.SystemRegs.TrigSrcSel.set(0x3)
 # request 10 frames for average
 eventReader.reqFrames = 10
 
+QuadTop.RdoutCore.RdoutEn.set(True)
 adcPipDly = QuadTop.RdoutCore.AdcPipelineDelay.get()
 
 print('AsicRoClkHalfT is set to %d. AdcPipelineDelay should be re-adjusted for different AsicRoClkHalfT settings'%(QuadTop.AcqCore.AsicRoClkHalfT.get()))
