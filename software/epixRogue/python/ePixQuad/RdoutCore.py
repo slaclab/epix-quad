@@ -75,6 +75,7 @@ class RdoutCore(pr.Device):
          bitOffset  = 0,  
          base       = pr.UInt, 
          mode       = 'RW',
+         verify     = False,
       ))
       
       for i in range(4):      
