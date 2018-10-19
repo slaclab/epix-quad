@@ -71,7 +71,7 @@ class RdoutCore(pr.Device):
          name       = 'AdcPipelineDelay',     
          description= 'ADC Sample Pipeline Delay',     
          offset     = 0x0000000C, 
-         bitSize    = 8, 
+         bitSize    = 32, 
          bitOffset  = 0,  
          base       = pr.UInt, 
          mode       = 'RW',

@@ -140,17 +140,16 @@ QuadTop.SystemRegs.AutoTrigEn.set(False)  # stop and reset auto trigger counter
 QuadTop.SystemRegs.AutoTrigPer.set(2000000) # 20ms = 50Hz
 QuadTop.SystemRegs.TrigSrcSel.set(0x3)
 
-# set ASIC readout clock
-QuadTop.AcqCore.AsicRoClkHalfT.set(0x5)
-
 # request 10 frames for average
 eventReader.reqFrames = 10
+
+adcPipDly = QuadTop.RdoutCore.AdcPipelineDelay.get()
 
 print('AsicRoClkHalfT is set to %d. AdcPipelineDelay should be re-adjusted for different AsicRoClkHalfT settings'%(QuadTop.AcqCore.AsicRoClkHalfT.get()))
 print('AdcPipelineDelay, PixelAvg')
 # look for pulsed pixel (maximum)
 for i in range(256):
-   QuadTop.RdoutCore.AdcPipelineDelay.set(i)
+   QuadTop.RdoutCore.AdcPipelineDelay.set(0xAAAA0000 | i)
    QuadTop.SystemRegs.AutoTrigEn.set(True)   # start auto trigger counter
    while(eventReader.accFrames < eventReader.reqFrames):
       pass
@@ -159,6 +158,7 @@ for i in range(256):
    eventReader.pixelSum = 0
    eventReader.accFrames = 0
 
+QuadTop.RdoutCore.AdcPipelineDelay.set(0xAAAA0000 | adcPipDly)
 
 QuadTop.stop()
 exit()
