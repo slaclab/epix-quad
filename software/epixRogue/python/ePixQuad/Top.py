@@ -79,6 +79,18 @@ class Top(pr.Root):
         pyrogue.streamConnect(cmdVc3, self.pgpVc3)
         
         @self.command()
+        def ClearAsicMatrix():
+            # save TrigEn state and stop
+            self.SystemRegs.enable.set(True)
+            trigEn = self.SystemRegs.TrigEn.get()
+            self.SystemRegs.TrigEn.set(False)
+            # clear matrix in all enabled ASICs
+            for i in range(16):
+                self.Epix10kaSaci[i].ClearMatrix()
+            # restore TrigEn state
+            self.SystemRegs.TrigEn.set(trigEn)
+        
+        @self.command()
         def MonStrEnable():
             cmdVc3.sendCmd(1, 0)
         
