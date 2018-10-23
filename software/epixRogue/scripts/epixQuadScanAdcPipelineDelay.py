@@ -18,6 +18,7 @@ import ePixQuad as quad
 import time
 from time import gmtime, strftime
 import pandas as pd
+import numpy as np
 
 class EventReader(rogue.interfaces.stream.Slave):
    """retrieves data from a file using rogue utilities services"""
@@ -38,6 +39,8 @@ class EventReader(rogue.interfaces.stream.Slave):
       self.accFrames = 0
       self.pixelSum = 0
       self.pixelAvg = 0
+      self.rmsData = []
+      self.rms = 0
    
    
    def _acceptFrame(self,frame):
@@ -56,7 +59,13 @@ class EventReader(rogue.interfaces.stream.Slave):
       #print(pixelOffset)
    
       if (VcNum == 0 and self.accFrames < self.reqFrames):
-         self.pixelSum = self.pixelSum + (((p[pixelOffset+7] << 8) | p[pixelOffset+6]) & 0x3FFF)
+         pixel = (((p[pixelOffset+7] << 8) | p[pixelOffset+6]) & 0x3FFF)
+         self.pixelSum = self.pixelSum + pixel
+         if self.accFrames == 0:
+            self.rmsData = []
+         self.rmsData.append(pixel)
+         if self.accFrames == self.reqFrames - 1:
+            self.rms = np.sqrt(np.mean((self.rmsData-np.mean(self.rmsData))**2))
          self.accFrames = self.accFrames + 1
          if (PRINT_VERBOSE): 
             for i in range(10):
@@ -141,13 +150,13 @@ QuadTop.SystemRegs.AutoTrigPer.set(2000000) # 20ms = 50Hz
 QuadTop.SystemRegs.TrigSrcSel.set(0x3)
 
 # request 10 frames for average
-eventReader.reqFrames = 10
+eventReader.reqFrames = 50
 
 QuadTop.RdoutCore.RdoutEn.set(True)
 adcPipDly = QuadTop.RdoutCore.AdcPipelineDelay.get()
 
 print('AsicRoClkHalfT is set to %d. AdcPipelineDelay should be re-adjusted for different AsicRoClkHalfT settings'%(QuadTop.AcqCore.AsicRoClkHalfT.get()))
-print('AdcPipelineDelay, PixelAvg')
+print('AdcPipelineDelay, PixelAvg, PixelRMS')
 # look for pulsed pixel (maximum)
 for i in range(256):
    QuadTop.RdoutCore.AdcPipelineDelay.set(0xAAAA0000 | i)
@@ -155,7 +164,8 @@ for i in range(256):
    while(eventReader.accFrames < eventReader.reqFrames):
       pass
    QuadTop.SystemRegs.AutoTrigEn.set(False)  # stop and reset auto trigger counter
-   print('%d, %f'%(i, eventReader.pixelSum/eventReader.reqFrames))
+   print('%d, %f, %f'%(i, eventReader.pixelSum/eventReader.reqFrames, eventReader.rms))
+   if (PRINT_VERBOSE): print(eventReader.rmsData)
    eventReader.pixelSum = 0
    eventReader.accFrames = 0
 
