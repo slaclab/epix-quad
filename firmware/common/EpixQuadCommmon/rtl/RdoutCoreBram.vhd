@@ -259,7 +259,7 @@ begin
    muxDoutMap( 2) <= muxAsicDout(13);
    muxDoutMap( 3) <= muxAsicDout(14);
    
-   -- sRow 1 (bottom, up)
+   -- sRow 1 (bottom, top)
    -- ASIC 8, ASIC 11  (left)
    muxStrMap(16) <= muxStream(32);
    muxStrMap(17) <= muxStream(33);
@@ -273,7 +273,7 @@ begin
    muxDoutMap( 4) <= muxAsicDout( 8);
    muxDoutMap( 5) <= muxAsicDout(11);
    
-   -- sRow 1 (bottom, up)
+   -- sRow 1 (bottom, top)
    -- ASIC 12, ASIC 15  (right)
    muxStrMap(24) <= muxStream(48);
    muxStrMap(25) <= muxStream(49);
@@ -287,7 +287,7 @@ begin
    muxDoutMap( 6) <= muxAsicDout(12);
    muxDoutMap( 7) <= muxAsicDout(15);
    
-   -- sRow 2 (bottom, bottom)
+   -- sRow 2 (top, bottom)
    -- ASIC 1, ASIC 2 (left)
    muxStrMap(32) <= muxStream( 8);
    muxStrMap(33) <= muxStream( 9);
@@ -301,7 +301,7 @@ begin
    muxDoutMap( 8) <= muxAsicDout( 1);
    muxDoutMap( 9) <= muxAsicDout( 2);
    
-   -- sRow 2 (bottom, bottom)
+   -- sRow 2 (top, bottom)
    -- ASIC 5, ASIC 6 (right)
    muxStrMap(40) <= muxStream(24);
    muxStrMap(41) <= muxStream(25);
@@ -315,7 +315,7 @@ begin
    muxDoutMap(10) <= muxAsicDout( 5);
    muxDoutMap(11) <= muxAsicDout( 6);
    
-   -- sRow 3 (bottom, up)
+   -- sRow 3 (top, top)
    -- ASIC 0, ASIC 3  (left)
    muxStrMap(48) <= muxStream(0);
    muxStrMap(49) <= muxStream(1);
@@ -329,7 +329,7 @@ begin
    muxDoutMap(12) <= muxAsicDout( 0);
    muxDoutMap(13) <= muxAsicDout( 3);
    
-   -- sRow 3 (bottom, up)
+   -- sRow 3 (top, top)
    -- ASIC 4, ASIC 7  (right)
    muxStrMap(56) <= muxStream(16);
    muxStrMap(57) <= muxStream(17);
