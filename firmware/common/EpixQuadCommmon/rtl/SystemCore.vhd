@@ -226,17 +226,18 @@ begin
       port map 
       (
          -- AXI-Lite Register Interface
-         axiReadMaster  => axilReadMasters(VERSION_INDEX_C),
-         axiReadSlave   => axilReadSlaves(VERSION_INDEX_C),
-         axiWriteMaster => axilWriteMasters(VERSION_INDEX_C),
-         axiWriteSlave  => axilWriteSlaves(VERSION_INDEX_C),
+         axiReadMaster        => axilReadMasters(VERSION_INDEX_C),
+         axiReadSlave         => axilReadSlaves(VERSION_INDEX_C),
+         axiWriteMaster       => axilWriteMasters(VERSION_INDEX_C),
+         axiWriteSlave        => axilWriteSlaves(VERSION_INDEX_C),
          -- Clocks and Resets
-         axiClk         => sysClk,
-         axiRst         => sysRst,
-         dnaValueOut    => open,
-         userValues(0)  => BOARD_VER_G,
-         userValues(1)  => BOARD_REV_G,
-         userValues(2)  => ASIC_TYPE_G
+         axiClk               => sysClk,
+         axiRst               => sysRst,
+         dnaValueOut          => open,
+         userValues(0)        => BOARD_VER_G,
+         userValues(1)        => BOARD_REV_G,
+         userValues(2)        => ASIC_TYPE_G,
+         userValues(3 to 63)  => (others => X"00000000")
       );
       
    --------------------------
