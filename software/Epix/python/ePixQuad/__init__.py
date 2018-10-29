@@ -17,3 +17,4 @@ from ePixQuad.AdcTester          import *
 from ePixQuad.EpixQuadMonitoring import *
 from ePixQuad.AxiI2cMaster       import *
 from ePixQuad.VguardDac          import *
+from ePixQuad.EpixVersion        import *

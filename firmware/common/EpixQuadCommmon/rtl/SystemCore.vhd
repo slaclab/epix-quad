@@ -34,6 +34,9 @@ entity SystemCore is
    generic (
       TPD_G                : time             := 1 ns;
       BUILD_INFO_G         : BuildInfoType;
+      ASIC_TYPE_G          : slv(31 downto 0) := toSlv(2, 32);
+      BOARD_VER_G          : slv(31 downto 0) := "00000" & toSlv(261, 10) & toSlv(100, 10) & toSlv(85, 7);
+      BOARD_REV_G          : slv(31 downto 0) := toSlv(0, 32);
       AXI_CLK_FREQ_G       : real             := 100.00E+6;
       SIMULATION_G         : boolean          := false;
       SIM_SPEEDUP_G        : boolean          := false;
@@ -230,7 +233,10 @@ begin
          -- Clocks and Resets
          axiClk         => sysClk,
          axiRst         => sysRst,
-         dnaValueOut    => open
+         dnaValueOut    => open,
+         userValues(0)  => BOARD_VER_G,
+         userValues(1)  => BOARD_REV_G,
+         userValues(2)  => ASIC_TYPE_G
       );
       
    --------------------------

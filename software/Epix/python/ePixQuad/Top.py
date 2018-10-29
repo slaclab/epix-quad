@@ -102,7 +102,7 @@ class Top(pr.Root):
         ######################################################################
         
         # Add devices
-        self.add(axi.AxiVersion( 
+        self.add(ePixQuad.EpixVersion( 
             name    = 'AxiVersion', 
             memBase = memMap, 
             offset  = 0x00000000, 
