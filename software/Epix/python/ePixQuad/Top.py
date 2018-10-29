@@ -66,15 +66,15 @@ class Top(pr.Root):
         
         # Connect the SRPv3 to PGPv3.VC[0]
         memMap = rogue.protocols.srp.SrpV3()                
-        pr.streamConnectBiDir(self.pgpVc1, memMap)             
+        pr.streamConnectBiDir(self.pgpVc0, memMap)             
         
-        pyrogue.streamConnect(self.pgpVc0, dataWriter.getChannel(0x1))
+        pyrogue.streamConnect(self.pgpVc1, dataWriter.getChannel(0x1))
         # Add pseudoscope to file writer
         pyrogue.streamConnect(self.pgpVc2, dataWriter.getChannel(0x2))
         pyrogue.streamConnect(self.pgpVc3, dataWriter.getChannel(0x3))
         
-        cmdVc0 = rogue.protocols.srp.Cmd()
-        pyrogue.streamConnect(cmdVc0, self.pgpVc0)
+        cmdVc1 = rogue.protocols.srp.Cmd()
+        pyrogue.streamConnect(cmdVc1, self.pgpVc1)
         cmdVc3 = rogue.protocols.srp.Cmd()
         pyrogue.streamConnect(cmdVc3, self.pgpVc3)
         

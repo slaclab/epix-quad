@@ -67,15 +67,42 @@ end PgpVcMapping;
 
 architecture mapping of PgpVcMapping is
 
-   signal ssiCmdVc0  : SsiCmdMasterType;
+   signal ssiCmdVc1  : SsiCmdMasterType;
    signal ssiCmdVc3  : SsiCmdMasterType;
    signal monEn      : sl;
    signal monDis     : sl;
    
 begin
+   
+   -- VC0 RX/TX, SRPv3 Register Module    
+   U_VC0 : entity work.SrpV3AxiLite
+      generic map (
+         TPD_G               => TPD_G,
+         SLAVE_READY_EN_G    => SIMULATION_G,
+         GEN_SYNC_FIFO_G     => false,
+         AXI_STREAM_CONFIG_G => AXI_STREAM_CONFIG_G)
+      port map (
+         -- Streaming Slave (Rx) Interface (sAxisClk domain) 
+         sAxisClk         => pgpClk,
+         sAxisRst         => pgpRst,
+         sAxisMaster      => rxMasters(0),
+         sAxisCtrl        => rxCtrl(0),
+         sAxisSlave       => rxSlaves(0),
+         -- Streaming Master (Tx) Data Interface (mAxisClk domain)
+         mAxisClk         => pgpClk,
+         mAxisRst         => pgpRst,
+         mAxisMaster      => txMasters(0),
+         mAxisSlave       => txSlaves(0),
+         -- Master AXI-Lite Interface (axilClk domain)
+         axilClk          => sysClk,
+         axilRst          => sysRst,
+         mAxilReadMaster  => axilReadMaster,
+         mAxilReadSlave   => axilReadSlave,
+         mAxilWriteMaster => axilWriteMaster,
+         mAxilWriteSlave  => axilWriteSlave);
 
-   -- VC0 TX, Image Data
-   U_VC0_TX : entity work.AxiStreamFifoV2
+   -- VC1 TX, Image Data
+   U_VC1_TX : entity work.AxiStreamFifoV2
       generic map (
          -- General Configurations
          TPD_G               => TPD_G,
@@ -102,12 +129,12 @@ begin
          -- Master Port
          mAxisClk    => pgpClk,
          mAxisRst    => pgpRst,
-         mAxisMaster => txMasters(0),
-         mAxisSlave  => txSlaves(0));
+         mAxisMaster => txMasters(1),
+         mAxisSlave  => txSlaves(1));
 
 
-   -- VC0 RX, Command processor
-   U_VC0_RX : entity work.SsiCmdMaster
+   -- VC1 RX, Command processor
+   U_VC1_RX : entity work.SsiCmdMaster
       generic map (
          SLAVE_READY_EN_G    => SIMULATION_G,
          AXI_STREAM_CONFIG_G => AXI_STREAM_CONFIG_G)
@@ -115,13 +142,13 @@ begin
          -- Streaming Data Interface
          axisClk     => pgpClk,
          axisRst     => pgpRst,
-         sAxisMaster => rxMasters(0),
-         sAxisSlave  => rxSlaves(0),
-         sAxisCtrl   => rxCtrl(0),
+         sAxisMaster => rxMasters(1),
+         sAxisSlave  => rxSlaves(1),
+         sAxisCtrl   => rxCtrl(1),
          -- Command signals
          cmdClk      => sysClk,
          cmdRst      => sysRst,
-         cmdMaster   => ssiCmdVc0
+         cmdMaster   => ssiCmdVc1
          );
    -- Command opCode x00 - SW trigger
    U_TrigPulser : entity work.SsiCmdMasterPulser
@@ -131,7 +158,7 @@ begin
          PULSE_WIDTH_G  => 1)
       port map (
          -- Local command signal
-         cmdSlaveOut => ssiCmdVc0,
+         cmdSlaveOut => ssiCmdVc1,
          --addressed cmdOpCode
          opCode      => x"00",
          -- output pulse to sync module
@@ -139,33 +166,6 @@ begin
          -- Local clock and reset
          locClk      => sysClk,
          locRst      => sysRst);
-   
-   -- VC1 RX/TX, SRPv3 Register Module    
-   U_VC1 : entity work.SrpV3AxiLite
-      generic map (
-         TPD_G               => TPD_G,
-         SLAVE_READY_EN_G    => SIMULATION_G,
-         GEN_SYNC_FIFO_G     => false,
-         AXI_STREAM_CONFIG_G => AXI_STREAM_CONFIG_G)
-      port map (
-         -- Streaming Slave (Rx) Interface (sAxisClk domain) 
-         sAxisClk         => pgpClk,
-         sAxisRst         => pgpRst,
-         sAxisMaster      => rxMasters(1),
-         sAxisCtrl        => rxCtrl(1),
-         sAxisSlave       => rxSlaves(1),
-         -- Streaming Master (Tx) Data Interface (mAxisClk domain)
-         mAxisClk         => pgpClk,
-         mAxisRst         => pgpRst,
-         mAxisMaster      => txMasters(1),
-         mAxisSlave       => txSlaves(1),
-         -- Master AXI-Lite Interface (axilClk domain)
-         axilClk          => sysClk,
-         axilRst          => sysRst,
-         mAxilReadMaster  => axilReadMaster,
-         mAxilReadSlave   => axilReadSlave,
-         mAxilWriteMaster => axilWriteMaster,
-         mAxilWriteSlave  => axilWriteSlave);
    
    
    -- VC2 TX, Scope Data
