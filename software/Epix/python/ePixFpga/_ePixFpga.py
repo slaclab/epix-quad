@@ -752,7 +752,7 @@ class Epix10kaFpgaRegisters(pr.Device):
       self.add(pr.RemoteVariable(name='EnvData07',           description='Analog raw input voltage',                                offset=0x00000147*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
       self.add(pr.RemoteVariable(name='EnvData08',           description='Digital raw input voltage',                               offset=0x00000148*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
       
-      self.add(pr.RemoteVariable(name='DebugOut',            description='DebugOut',                                                offset=0x00000200*addrSize, bitSize=5,  bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='DebugOut',            description='DebugOut',                                                offset=0x10000200*addrSize, bitSize=5,  bitOffset=0, base=pr.UInt, mode='RW'))
       
       self.add((
             pr.RemoteVariable(name='SyncStartDly',    description='SyncStartDly', offset=0x00000201*addrSize, bitSize=16, bitOffset=0,  base=pr.UInt, mode='RW'),
