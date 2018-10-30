@@ -755,9 +755,9 @@ class Epix10kaFpgaRegisters(pr.Device):
       self.add(pr.RemoteVariable(name='DebugOut',            description='DebugOut',                                                offset=0x10000200*addrSize, bitSize=5,  bitOffset=0, base=pr.UInt, mode='RW'))
       
       self.add((
-            pr.RemoteVariable(name='SyncStartDly',    description='SyncStartDly', offset=0x00000201*addrSize, bitSize=16, bitOffset=0,  base=pr.UInt, mode='RW'),
-            pr.RemoteVariable(name='SyncStopDly',     description='SyncStopDly',  offset=0x00000201*addrSize, bitSize=8,  bitOffset=16, base=pr.UInt, mode='RW'),
-            pr.RemoteVariable(name='SyncCntrlEn',     description='SyncCntrlEn',  offset=0x00000201*addrSize, bitSize=1,  bitOffset=24, base=pr.Bool, mode='RW')))
+            pr.RemoteVariable(name='SyncStartDly',    description='SyncStartDly', offset=0x10000203*addrSize, bitSize=32, bitOffset=0,  base=pr.UInt, mode='RW'),
+            pr.RemoteVariable(name='SyncStopDly',     description='SyncStopDly',  offset=0x10000202*addrSize, bitSize=32, bitOffset=0,  base=pr.UInt, mode='RW'),
+            pr.RemoteVariable(name='SyncCntrlEn',     description='SyncCntrlEn',  offset=0x10000201*addrSize, bitSize=1,  bitOffset=0,  base=pr.Bool, mode='RW')))
       
       #####################################
       # Create commands
