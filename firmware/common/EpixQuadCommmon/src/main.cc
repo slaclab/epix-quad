@@ -266,14 +266,14 @@ void sensorsHandler(void * data) {
       /* ----------------------------------------------------------
        * Read Finisar Optical Transceiver Diagnostics
        * ---------------------------------------------------------*/
-      finisarReadWord(I2CADDR_FINISAR, 96, &regIn2); // temperature
-      Xil_Out32(QUADMON_SENSOR_REG+22*4, regIn2);
-      finisarReadWord(I2CADDR_FINISAR, 98, &regIn2); // voltage
-      Xil_Out32(QUADMON_SENSOR_REG+23*4, regIn2);
-      finisarReadWord(I2CADDR_FINISAR, 102, &regIn2);// TX power
-      Xil_Out32(QUADMON_SENSOR_REG+24*4, regIn2);
-      finisarReadWord(I2CADDR_FINISAR, 104, &regIn2);// RX power
-      Xil_Out32(QUADMON_SENSOR_REG+25*4, regIn2);
+      if(finisarReadWord(I2CADDR_FINISAR, 96, &regIn2) == 0)   // temperature
+         Xil_Out32(QUADMON_SENSOR_REG+22*4, regIn2);
+      if(finisarReadWord(I2CADDR_FINISAR, 98, &regIn2) == 0)   // voltage
+         Xil_Out32(QUADMON_SENSOR_REG+23*4, regIn2);
+      if(finisarReadWord(I2CADDR_FINISAR, 102, &regIn2) == 0)  // TX power
+         Xil_Out32(QUADMON_SENSOR_REG+24*4, regIn2);
+      if(finisarReadWord(I2CADDR_FINISAR, 104, &regIn2) == 0)  // RX power
+         Xil_Out32(QUADMON_SENSOR_REG+25*4, regIn2);
    }
    
    
