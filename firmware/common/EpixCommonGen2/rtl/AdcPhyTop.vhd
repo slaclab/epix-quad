@@ -228,8 +228,8 @@ begin
    monAdc.fClkN <= adcFClkN(2);
    monAdc.dClkP <= adcDClkP(2);
    monAdc.dClkN <= adcDClkN(2);
-   monAdc.chP   <= adcChP(19 downto 16);
-   monAdc.chN   <= adcChN(19 downto 16);
+   monAdc.chP(3 downto 0) <= adcChP(19 downto 16);
+   monAdc.chN(3 downto 0) <= adcChN(19 downto 16);
       
    U_MonAdcReadout : entity work.Ad9249ReadoutGroup
    generic map (
