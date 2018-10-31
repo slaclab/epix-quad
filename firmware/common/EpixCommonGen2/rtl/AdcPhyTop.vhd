@@ -313,8 +313,7 @@ begin
       TPD_G             => TPD_G,
       CLK_PERIOD_G      => 10.0e-9,
       CLK_EN_PERIOD_G   => 20.0e-9,
-      NUM_CHIPS_G       => 2,
-      AXIL_ERR_RESP_G   => AXI_RESP_OK_C
+      NUM_CHIPS_G       => 2
    )
    port map (
       axilClk           => coreClk,
