@@ -20,8 +20,10 @@
 # contained in the LICENSE.txt file.
 #-----------------------------------------------------------------------------
 import rogue.hardware.pgp
+import pyrogue as pr
 import pyrogue.utilities.prbs
 import pyrogue.utilities.fileio
+import pyrogue.interfaces.simulation
 import pyrogue.gui
 import surf
 import surf.axi
@@ -37,24 +39,91 @@ import PyQt4.QtGui
 import PyQt4.QtCore
 import ePixViewer as vi
 import ePixFpga as fpga
+import argparse
+
+
+# Set the argument parser
+parser = argparse.ArgumentParser()
+
+# Convert str to bool
+argBool = lambda s: s.lower() in ['true', 't', 'yes', '1']
+
+# Add arguments
+parser.add_argument(
+    "--pollEn", 
+    type     = argBool,
+    required = False,
+    default  = False,
+    help     = "Enable auto-polling",
+) 
+
+parser.add_argument(
+    "--initRead", 
+    type     = argBool,
+    required = False,
+    default  = False,
+    help     = "Enable read all variables at start",
+)  
+
+parser.add_argument(
+    "--viewer", 
+    type     = argBool,
+    required = False,
+    default  = True,
+    help     = "Start viewer",
+)  
+
+parser.add_argument(
+    "--gui", 
+    type     = argBool,
+    required = False,
+    default  = True,
+    help     = "Start control GUI",
+)  
+
+parser.add_argument(
+    "--verbose", 
+    type     = argBool,
+    required = False,
+    default  = False,
+    help     = "Print debug info",
+)  
+
+parser.add_argument(
+    "--simulation", 
+    type     = argBool,
+    required = False,
+    default  = False,
+    help     = "Connect to VCS simulation",
+)  
+
+
+# Get the arguments
+args = parser.parse_args()
 
 #############################################
 # Define if the GUI is started (1 starts it)
-START_GUI = True
-START_VIEWER = True
+START_GUI = args.gui
+START_VIEWER = args.viewer
 #############################################
 #print debug info
-PRINT_VERBOSE = False
+PRINT_VERBOSE = args.verbose
 #############################################
 
-# Create the PGP interfaces for ePix camera
-pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,0) # Data & cmds
-pgpVc1 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,1) # Registers for ePix board
-pgpVc2 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,2) # PseudoScope
-pgpVc3 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,3) # Monitoring (Slow ADC)
 
-print("")
-print("PGP Card Version: %x" % (pgpVc0.getInfo().version))
+# Create the PGP interfaces for ePix camera
+if args.simulation:
+   pgpVc0 = pr.interfaces.simulation.StreamSim(host='localhost', dest=0, uid=2, ssi=True)
+   pgpVc1 = pr.interfaces.simulation.StreamSim(host='localhost', dest=1, uid=2, ssi=True)
+   pgpVc2 = pr.interfaces.simulation.StreamSim(host='localhost', dest=2, uid=2, ssi=True)
+   pgpVc3 = pr.interfaces.simulation.StreamSim(host='localhost', dest=3, uid=2, ssi=True)   
+else:
+   pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,0) # Data & cmds
+   pgpVc1 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,1) # Registers for ePix board
+   pgpVc2 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,2) # PseudoScope
+   pgpVc3 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,3) # Monitoring (Slow ADC)
+   print("")
+   print("PGP Card Version: %x" % (pgpVc0.getInfo().version))
 
 
 # Add data stream to file as channel 1
@@ -190,7 +259,11 @@ if (PRINT_VERBOSE): pyrogue.streamTap(pgpVc0, dbgData)
 appTop = PyQt4.QtGui.QApplication(sys.argv)
 guiTop = pyrogue.gui.GuiTop(group = 'ePix10kaGui')
 ePixBoard = EpixBoard(guiTop, cmd, dataWriter, srp)
-ePixBoard.start()
+ePixBoard.start(
+   pollEn   = args.pollEn,
+   initRead = args.initRead,
+   timeout  = 5.0,  
+)
 guiTop.addTree(ePixBoard)
 guiTop.resize(1000,800)
 

@@ -48,7 +48,8 @@ entity EpixCoreGen2 is
       ADC0_INVERT_CH    : slv(7 downto 0) := "00000000";
       ADC1_INVERT_CH    : slv(7 downto 0) := "00000000";
       ADC2_INVERT_CH    : slv(7 downto 0) := "00000000";
-      IODELAY_GROUP_G   : string          := "DEFAULT_GROUP"
+      IODELAY_GROUP_G   : string          := "DEFAULT_GROUP";
+      SIMULATION_G      : boolean         := false
    );
    port (
       -- Debugging IOs
@@ -258,6 +259,8 @@ architecture top_level of EpixCoreGen2 is
    signal doutValid  : slv(15 downto 0);
    signal roClkTail  : slv(7 downto 0);
    
+   signal powerBad : sl;
+   
    constant SACI_CLK_PERIOD_C : real := saciClkPeriod(ASIC_TYPE_G);
    
    constant DDR_AXI_CONFIG_C : AxiConfigType := axiConfig(
@@ -397,6 +400,10 @@ begin
    -- PGP Front end   --
    ---------------------
    U_PgpFrontEnd : entity work.PgpFrontEnd
+   generic map (
+      TPD_G          => TPD_G,
+      SIMULATION_G   => SIMULATION_G
+   )
    port map (
       -- GTX 7 Ports
       gtClkP      => gtRefClk0P,
@@ -406,7 +413,7 @@ begin
       gtTxP       => gtDataTxP,
       gtTxN       => gtDataTxN,
       -- Input power status
-      powerBad    => not(powerGood),
+      powerBad    => powerBad,
       -- Output reset
       pgpRst      => sysRst,
       -- Output status
@@ -442,7 +449,7 @@ begin
       -- Sideband interface
       pgpRxOut            => pgpRxOut
    );
-   
+   powerBad <= not powerGood;
    ---------------------------------------------
    -- Microblaze based ePix Startup Sequencer --
    ---------------------------------------------
@@ -671,18 +678,9 @@ begin
    G_DOUT_NONE : if ASIC_TYPE_G /= EPIX10KA_C generate
       doutOut <= (others=>(others=>'0'));
       doutValid <= (others=>'1');
-      roClkTail <= (others=>'0');
-      
-      U_AxiLiteEmpty: entity work.AxiLiteEmpty
-      port map (
-         axiClk         => coreClk,
-         axiClkRst      => axiRst,
-         axiReadMaster  => mAxiReadMasters(DOUT10KA_AXI_INDEX_C),
-         axiReadSlave   => mAxiReadSlaves(DOUT10KA_AXI_INDEX_C),
-         axiWriteMaster => mAxiWriteMasters(DOUT10KA_AXI_INDEX_C),
-         axiWriteSlave  => mAxiWriteSlaves(DOUT10KA_AXI_INDEX_C)
-      );
-      
+      roClkTail <= (others=>'0');      
+      mAxiWriteSlaves(DOUT10KA_AXI_INDEX_C) <= AXI_LITE_WRITE_SLAVE_INIT_C;
+      mAxiReadSlaves(DOUT10KA_AXI_INDEX_C)  <= AXI_LITE_READ_SLAVE_INIT_C;
    end generate;
    ---------------------
    -- Acq control     --
