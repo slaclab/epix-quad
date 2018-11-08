@@ -237,6 +237,7 @@ begin
          
          -- delay before R0
          when WAIT_R0_S =>
+            v.asicR0 := '0';
             v.asicPpmat := '1';
             if r.stateCnt >= r.acqToAsicR0Delay then
                v.stateCnt := (others=>'0');
