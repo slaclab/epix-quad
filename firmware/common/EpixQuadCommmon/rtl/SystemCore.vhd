@@ -110,6 +110,8 @@ entity SystemCore is
       asicDmSn             : inout slv(3 downto 0);
       -- ASIC Global Reset
       asicGr               : out   sl;
+      -- ASIC mask output
+      asicMask             : out slv(15 downto 0);
       -- trigger inputs
       trigPgp              : in  sl := '0';
       trigTtl              : in  sl := '0';
@@ -283,7 +285,9 @@ begin
       trigTtl           => trigTtl,
       trigCmd           => trigCmd,
       -- trigger output
-      acqStart          => iAcqStart
+      acqStart          => iAcqStart,
+      -- ASIC mask output
+      asicMask          => asicMask
    );
    
    acqStart <= iAcqStart;

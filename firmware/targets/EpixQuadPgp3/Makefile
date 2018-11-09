@@ -2,7 +2,7 @@
 export INCLUDE_PGP3_6G = 1
 
 # Define Firmware Version Number
-export PRJ_VERSION = 0xEA050004
+export PRJ_VERSION = 0xEA050005
 
 # Define the Microblaze source path
 export SDK_SRC_PATH = $(PROJ_DIR)/../../common/EpixQuadCommmon/src/

@@ -35,7 +35,8 @@ entity AsicCoreTop is
       AXI_CLK_FREQ_G       : real             := 100.00E+6;
       BANK_COLS_G          : natural          := 48;
       BANK_ROWS_G          : natural          := 178;
-      AXI_BASE_ADDR_G      : slv(31 downto 0) := (others => '0')
+      AXI_BASE_ADDR_G      : slv(31 downto 0) := (others => '0');
+      SIM_SPEEDUP_G        : boolean          := false
    );
    port (
       -- Clock and Reset
@@ -68,6 +69,9 @@ entity AsicCoreTop is
       asicDout             : in    slv(15 downto 0);
       -- ADC Clock Output
       adcClk               : out   sl;
+      -- SACI Sync handshake
+      prepReadoutReq       : out   sl;
+      prepReadoutAck       : in    sl;
       -- Image Data Stream
       dataTxMaster         : out   AxiStreamMasterType;
       dataTxSlave          : in    AxiStreamSlaveType;
@@ -146,7 +150,8 @@ begin
    generic map (
       TPD_G             => TPD_G,
       BANK_COLS_G       => BANK_COLS_G,
-      BANK_ROWS_G       => BANK_ROWS_G
+      BANK_ROWS_G       => BANK_ROWS_G,
+      SIM_SPEEDUP_G     => SIM_SPEEDUP_G
    )
    port map (
       -- System Clock (100 MHz)
@@ -171,7 +176,10 @@ begin
       asicPpmat         => iAsicPpmat,
       asicRoClk         => iAsicRoClk,
       -- ADC Clock Output
-      adcClk            => adcClk
+      adcClk            => adcClk,
+      -- SACI Sync handshake
+      prepReadoutReq    => prepReadoutReq,
+      prepReadoutAck    => prepReadoutAck
    );
    asicAcq     <=  iAsicAcq;
    asicR0      <=  iAsicR0;

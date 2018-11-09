@@ -158,6 +158,11 @@ architecture rtl of EpixQuadCore is
    signal mbReadSlave      : AxiLiteReadSlaveType;
    signal mbWriteMaster    : AxiLiteWriteMasterType;
    signal mbWriteSlave     : AxiLiteWriteSlaveType;
+   
+   signal saciReadMaster   : AxiLiteReadMasterType;
+   signal saciReadSlave    : AxiLiteReadSlaveType;
+   signal saciWriteMaster  : AxiLiteWriteMasterType;
+   signal saciWriteSlave   : AxiLiteWriteSlaveType;
 
    signal dataTxMaster     : AxiStreamMasterType;
    signal dataTxSlave      : AxiStreamSlaveType;
@@ -189,6 +194,7 @@ architecture rtl of EpixQuadCore is
    signal iAsicSaciClk  : slv(3 downto 0);
    signal iAsicSaciCmd  : slv(3 downto 0);
    signal iAsicSaciSelL : slv(15 downto 0);
+   signal iAsicMask     : slv(15 downto 0);
    signal iAdcClk       : sl;
    
    signal adcStream     : AxiStreamMasterArray(79 downto 0);
@@ -207,6 +213,9 @@ architecture rtl of EpixQuadCore is
    signal mbIrq         : slv(7 downto 0) := (others => '0'); 
    
    signal monData       : Slv16Array(37 downto 0);
+   
+   signal saciPrepReadoutReq : sl;
+   signal saciPrepReadoutAck : sl;
    
 begin
 
@@ -308,7 +317,7 @@ begin
    U_XBAR0 : entity work.AxiLiteCrossbar
       generic map (
          TPD_G              => TPD_G,
-         NUM_SLAVE_SLOTS_G  => 2,
+         NUM_SLAVE_SLOTS_G  => 3,
          NUM_MASTER_SLOTS_G => NUM_AXI_MASTERS_C,
          MASTERS_CONFIG_G   => AXI_CONFIG_C)
       port map (
@@ -316,12 +325,16 @@ begin
          axiClkRst           => sysRst,
          sAxiWriteMasters(0) => axilWriteMaster,
          sAxiWriteMasters(1) => mbWriteMaster,
+         sAxiWriteMasters(2) => saciWriteMaster,
          sAxiWriteSlaves(0)  => axilWriteSlave,
          sAxiWriteSlaves(1)  => mbWriteSlave,
+         sAxiWriteSlaves(2)  => saciWriteSlave,
          sAxiReadMasters(0)  => axilReadMaster,
          sAxiReadMasters(1)  => mbReadMaster,
+         sAxiReadMasters(2)  => saciReadMaster,
          sAxiReadSlaves(0)   => axilReadSlave,
          sAxiReadSlaves(1)   => mbReadSlave,
+         sAxiReadSlaves(2)   => saciReadSlave,
          mAxiWriteMasters    => axilWriteMasters,
          mAxiWriteSlaves     => axilWriteSlaves,
          mAxiReadMasters     => axilReadMasters,
@@ -407,6 +420,8 @@ begin
          asicDmSn             => asicDmSn,
          -- ASIC Global Reset
          asicGr               => iAsicGr,
+         -- ASIC mask output
+         asicMask             => iAsicMask,
          -- trigger inputs
          trigPgp              => opCodeEn,
          trigTtl              => '0',
@@ -434,7 +449,8 @@ begin
          AXI_CLK_FREQ_G    => AXI_CLK_FREQ_G,
          BANK_COLS_G       => BANK_COLS_C,
          BANK_ROWS_G       => BANK_ROWS_C,
-         AXI_BASE_ADDR_G   => AXI_CONFIG_C(ASIC_INDEX_C).baseAddr
+         AXI_BASE_ADDR_G   => AXI_CONFIG_C(ASIC_INDEX_C).baseAddr,
+         SIM_SPEEDUP_G     => SIM_SPEEDUP_G
       )
       port map (
          -- Clock and Reset
@@ -467,6 +483,9 @@ begin
          asicDout             => iAsicDout,
          -- ADC Clock Output
          adcClk               => iAdcClk,
+         -- SACI Sync handshake
+         prepReadoutReq       => saciPrepReadoutReq,
+         prepReadoutAck       => saciPrepReadoutAck,
          -- Image Data Stream
          dataTxMaster         => dataTxMaster,
          dataTxSlave          => dataTxSlave,
@@ -480,6 +499,13 @@ begin
    -- Wide address space (has to be at the top level)
    ----------------------------------------------------          
    GEN_SACI : for i in 3 downto 0 generate
+      constant SACI_BASE_ADDR_C : Slv32Array(3 downto 0) := (
+         x"04000000",
+         x"05000000",
+         x"06000000",
+         x"07000000"
+      );
+   begin
       U_AxiLiteSaciMaster : entity work.AxiLiteSaciMaster
          generic map (
             AXIL_CLK_PERIOD_G  => (1.0/AXI_CLK_FREQ_G), -- In units of seconds
@@ -502,6 +528,35 @@ begin
             axilWriteMaster   => axilWriteMasters(ASIC_SACI0_INDEX_C+i),
             axilWriteSlave    => axilWriteSlaves(ASIC_SACI0_INDEX_C+i)
          );
+      
+      ---------------------------------------------
+      -- SACI prepare for readout command Master --
+      ---------------------------------------------
+      U_SaciPrepRdout : entity work.SaciPrepRdout
+         generic map (
+            TPD_G             => TPD_G,
+            MASK_REG_READ_G   => false,
+            SACI_BASE_ADDR_G  => SACI_BASE_ADDR_C(i),
+            SACI_NUM_CHIPS_G  => 4
+         )
+         port map (
+            
+            axilClk           => sysClk,
+            axilRst           => sysRst,
+            
+            -- Prepare for readout req/ack
+            prepRdoutReq      => saciPrepReadoutReq,
+            prepRdoutAck      => saciPrepReadoutAck,
+            
+            -- AXI lite master port
+            mAxilWriteMaster  => saciWriteMaster,
+            mAxilWriteSlave   => saciWriteSlave,
+            mAxilReadMaster   => saciReadMaster,
+            mAxilReadSlave    => saciReadSlave,
+            
+            asicMask          => iAsicMask(i*4+3 downto i*4)
+         );
+      
    end generate GEN_SACI;
    
    --------------------------------------------------------

@@ -64,7 +64,9 @@ entity SystemRegs is
       trigTtl           : in  sl := '0';
       trigCmd           : in  sl := '0';
       -- trigger output
-      acqStart          : out sl
+      acqStart          : out sl;
+      -- ASIC mask output
+      asicMask          : out slv(15 downto 0)
    );
 end SystemRegs;
 
@@ -72,9 +74,10 @@ end SystemRegs;
 -- Define architecture
 architecture RTL of SystemRegs is
    
-   constant LATCH_TEMP_DEF_C  : sl        := ite(USE_TEMP_FAULT_G, '1', '0');
-   constant DEBOUNCE_PERIOD_C : real      := ite(SIM_SPEEDUP_G, 5.0E-6, 500.0E-3);
-   constant ASIC_GR_INDEX_C   : natural   := ite(SIM_SPEEDUP_G, 5, 25);
+   constant LATCH_TEMP_DEF_C  : sl                 := ite(USE_TEMP_FAULT_G, '1', '0');
+   constant DEBOUNCE_PERIOD_C : real               := ite(SIM_SPEEDUP_G, 5.0E-6, 500.0E-3);
+   constant ASIC_GR_INDEX_C   : natural            := ite(SIM_SPEEDUP_G, 5, 25);
+   constant ASIC_MAS_INIT_C   : slv(15 downto 0)   := ite(SIM_SPEEDUP_G, x"FFFF", x"0000");
 
    type RegType is record
       acqStart          : sl;
@@ -170,7 +173,7 @@ architecture RTL of SystemRegs is
       trigPerMin        => (others=>'1'),
       trigPerMax        => (others=>'0'),
       asicMaskReg       => (others=>'0'),
-      asicMask          => (others=>'0'),
+      asicMask          => ASIC_MAS_INIT_C,
       idValues          => (others => (others => '0'))
    );
 
@@ -477,6 +480,7 @@ begin
       asicDigEn   <= r.asicDigEn;
       asicGr      <= r.asicGrCnt(ASIC_GR_INDEX_C);
       acqStart    <= r.acqStart;
+      asicMask    <= r.asicMask;
 
    end process comb;
 

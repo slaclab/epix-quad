@@ -224,7 +224,7 @@ begin
       vPIn              => '0',
       vNIn              => '1',
       -- ASIC SACI signals
-      asicSaciResp      => "0000",
+      asicSaciResp      => "1111",
       asicSaciClk       => open,
       asicSaciCmd       => open,
       asicSaciSelL      => open,
