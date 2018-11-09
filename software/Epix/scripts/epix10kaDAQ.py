@@ -81,6 +81,15 @@ parser.add_argument(
     help     = "Start control GUI",
 )  
 
+
+parser.add_argument(
+    "--pgp", 
+    type     = str,
+    required = False,
+    default  = '/dev/pgpcard_0',
+    help     = "PGP devide (default /dev/pgpcard_0)",
+)  
+
 parser.add_argument(
     "--verbose", 
     type     = argBool,
@@ -118,10 +127,10 @@ if args.simulation:
    pgpVc2 = pr.interfaces.simulation.StreamSim(host='localhost', dest=2, uid=2, ssi=True)
    pgpVc3 = pr.interfaces.simulation.StreamSim(host='localhost', dest=3, uid=2, ssi=True)   
 else:
-   pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,0) # Data & cmds
-   pgpVc1 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,1) # Registers for ePix board
-   pgpVc2 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,2) # PseudoScope
-   pgpVc3 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,3) # Monitoring (Slow ADC)
+   pgpVc0 = rogue.hardware.pgp.PgpCard(args.pgp,0,0) # Data & cmds
+   pgpVc1 = rogue.hardware.pgp.PgpCard(args.pgp,0,1) # Registers for ePix board
+   pgpVc2 = rogue.hardware.pgp.PgpCard(args.pgp,0,2) # PseudoScope
+   pgpVc3 = rogue.hardware.pgp.PgpCard(args.pgp,0,3) # Monitoring (Slow ADC)
    print("")
    print("PGP Card Version: %x" % (pgpVc0.getInfo().version))
 

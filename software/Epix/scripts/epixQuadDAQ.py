@@ -54,13 +54,22 @@ parser.add_argument(
     help     = "Start viewer",
 )  
 
+parser.add_argument(
+    "--pgp", 
+    type     = str,
+    required = False,
+    default  = '/dev/pgpcard_0',
+    help     = "PGP devide (default /dev/pgpcard_0)",
+)  
+
+
 # Get the arguments
 args = parser.parse_args()
 
 #################################################################
 
 # Set base
-base = quad.Top(hwType='pgp3_cardG3')    
+base = quad.Top(hwType='pgp3_cardG3', dev=args.pgp)    
 
 # Start the system
 base.start(
