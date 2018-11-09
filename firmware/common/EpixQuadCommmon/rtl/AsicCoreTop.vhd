@@ -70,8 +70,8 @@ entity AsicCoreTop is
       -- ADC Clock Output
       adcClk               : out   sl;
       -- SACI Sync handshake
-      prepReadoutReq       : out   sl;
-      prepReadoutAck       : in    sl;
+      prepReadoutReq       : out   slv(3 downto 0);
+      prepReadoutAck       : in    slv(3 downto 0);
       -- Image Data Stream
       dataTxMaster         : out   AxiStreamMasterType;
       dataTxSlave          : in    AxiStreamSlaveType;

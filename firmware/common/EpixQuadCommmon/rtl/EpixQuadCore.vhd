@@ -214,8 +214,8 @@ architecture rtl of EpixQuadCore is
    
    signal monData       : Slv16Array(37 downto 0);
    
-   signal saciPrepReadoutReq : sl;
-   signal saciPrepReadoutAck : sl;
+   signal saciPrepReadoutReq : slv(3 downto 0);
+   signal saciPrepReadoutAck : slv(3 downto 0);
    
 begin
 
@@ -557,8 +557,8 @@ begin
             axilRst           => sysRst,
             
             -- Prepare for readout req/ack
-            prepRdoutReq      => saciPrepReadoutReq,
-            prepRdoutAck      => saciPrepReadoutAck,
+            prepRdoutReq      => saciPrepReadoutReq(i),
+            prepRdoutAck      => saciPrepReadoutAck(i),
             
             -- AXI lite master port
             mAxilWriteMaster  => saciWriteMaster(i),

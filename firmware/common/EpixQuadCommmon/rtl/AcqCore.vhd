@@ -55,8 +55,8 @@ entity AcqCore is
       -- ADC Clock Output
       adcClk            : out   sl;
       -- SACI Sync handshake
-      prepReadoutReq    : out   sl;
-      prepReadoutAck    : in    sl
+      prepReadoutReq    : out   slv(3 downto 0);
+      prepReadoutAck    : in    slv(3 downto 0)
    );
 end AcqCore;
 
@@ -105,7 +105,8 @@ architecture RTL of AcqCore is
       acqBusy              : sl;
       adcClk               : sl;
       useSaciSync          : sl;
-      prepReadoutReq       : sl;
+      syncCnt              : natural range 0 to 3;
+      prepReadoutReq       : slv(3 downto 0);
       stateCnt             : slv(31 downto 0);
       acqState             : AcqStateType;
       sAxilWriteSlave      : AxiLiteWriteSlaveType;
@@ -136,7 +137,8 @@ architecture RTL of AcqCore is
       acqBusy              => '0',
       adcClk               => '0',
       useSaciSync          => '1',
-      prepReadoutReq       => '0',
+      syncCnt              => 0,
+      prepReadoutReq       => (others=>'0'),
       stateCnt             => (others=>'0'),
       acqState             => IDLE_S,
       sAxilWriteSlave      => AXI_LITE_WRITE_SLAVE_INIT_C,
@@ -374,11 +376,16 @@ begin
                   v.acqState := IDLE_S;
                end if;
             else
-               v.prepReadoutReq := '1';
-               if prepReadoutAck = '1' or r.stateCnt >= SACI_TIMEOUT_C then
-                  v.prepReadoutReq  := '0';
-                  v.stateCnt        := (others=>'0');
-                  v.acqState        := IDLE_S;
+               v.prepReadoutReq(r.syncCnt) := '1';
+               if prepReadoutAck(r.syncCnt) = '1' or r.stateCnt >= SACI_TIMEOUT_C then
+                  v.prepReadoutReq(r.syncCnt) := '0';
+                  v.stateCnt := (others=>'0');
+                  if r.syncCnt >= 3 then
+                     v.syncCnt  := 0;
+                     v.acqState := IDLE_S;
+                  else
+                     v.syncCnt  := r.syncCnt + 1;
+                  end if;
                end if;
             end if;
          
