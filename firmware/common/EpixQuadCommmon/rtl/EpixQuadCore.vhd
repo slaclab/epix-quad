@@ -159,10 +159,10 @@ architecture rtl of EpixQuadCore is
    signal mbWriteMaster    : AxiLiteWriteMasterType;
    signal mbWriteSlave     : AxiLiteWriteSlaveType;
    
-   signal saciReadMaster   : AxiLiteReadMasterType;
-   signal saciReadSlave    : AxiLiteReadSlaveType;
-   signal saciWriteMaster  : AxiLiteWriteMasterType;
-   signal saciWriteSlave   : AxiLiteWriteSlaveType;
+   signal saciReadMaster   : AxiLiteReadMasterArray(3 downto 0);
+   signal saciReadSlave    : AxiLiteReadSlaveArray(3 downto 0);
+   signal saciWriteMaster  : AxiLiteWriteMasterArray(3 downto 0);
+   signal saciWriteSlave   : AxiLiteWriteSlaveArray(3 downto 0);
 
    signal dataTxMaster     : AxiStreamMasterType;
    signal dataTxSlave      : AxiStreamSlaveType;
@@ -317,7 +317,7 @@ begin
    U_XBAR0 : entity work.AxiLiteCrossbar
       generic map (
          TPD_G              => TPD_G,
-         NUM_SLAVE_SLOTS_G  => 3,
+         NUM_SLAVE_SLOTS_G  => 6,
          NUM_MASTER_SLOTS_G => NUM_AXI_MASTERS_C,
          MASTERS_CONFIG_G   => AXI_CONFIG_C)
       port map (
@@ -325,16 +325,28 @@ begin
          axiClkRst           => sysRst,
          sAxiWriteMasters(0) => axilWriteMaster,
          sAxiWriteMasters(1) => mbWriteMaster,
-         sAxiWriteMasters(2) => saciWriteMaster,
+         sAxiWriteMasters(2) => saciWriteMaster(0),
+         sAxiWriteMasters(3) => saciWriteMaster(1),
+         sAxiWriteMasters(4) => saciWriteMaster(2),
+         sAxiWriteMasters(5) => saciWriteMaster(3),
          sAxiWriteSlaves(0)  => axilWriteSlave,
          sAxiWriteSlaves(1)  => mbWriteSlave,
-         sAxiWriteSlaves(2)  => saciWriteSlave,
+         sAxiWriteSlaves(2)  => saciWriteSlave(0),
+         sAxiWriteSlaves(3)  => saciWriteSlave(1),
+         sAxiWriteSlaves(4)  => saciWriteSlave(2),
+         sAxiWriteSlaves(5)  => saciWriteSlave(3),
          sAxiReadMasters(0)  => axilReadMaster,
          sAxiReadMasters(1)  => mbReadMaster,
-         sAxiReadMasters(2)  => saciReadMaster,
+         sAxiReadMasters(2)  => saciReadMaster(0),
+         sAxiReadMasters(3)  => saciReadMaster(1),
+         sAxiReadMasters(4)  => saciReadMaster(2),
+         sAxiReadMasters(5)  => saciReadMaster(3),
          sAxiReadSlaves(0)   => axilReadSlave,
          sAxiReadSlaves(1)   => mbReadSlave,
-         sAxiReadSlaves(2)   => saciReadSlave,
+         sAxiReadSlaves(2)   => saciReadSlave(0),
+         sAxiReadSlaves(3)   => saciReadSlave(1),
+         sAxiReadSlaves(4)   => saciReadSlave(2),
+         sAxiReadSlaves(5)   => saciReadSlave(3),
          mAxiWriteMasters    => axilWriteMasters,
          mAxiWriteSlaves     => axilWriteSlaves,
          mAxiReadMasters     => axilReadMasters,
@@ -549,10 +561,10 @@ begin
             prepRdoutAck      => saciPrepReadoutAck,
             
             -- AXI lite master port
-            mAxilWriteMaster  => saciWriteMaster,
-            mAxilWriteSlave   => saciWriteSlave,
-            mAxilReadMaster   => saciReadMaster,
-            mAxilReadSlave    => saciReadSlave,
+            mAxilWriteMaster  => saciWriteMaster(i),
+            mAxilWriteSlave   => saciWriteSlave(i),
+            mAxilReadMaster   => saciReadMaster(i),
+            mAxilReadSlave    => saciReadSlave(i),
             
             asicMask          => iAsicMask(i*4+3 downto i*4)
          );
