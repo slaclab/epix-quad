@@ -44,14 +44,6 @@ parser.add_argument(
 )  
 
 parser.add_argument(
-    "--dev", 
-    type     = str,
-    required = False,
-    default  = '/dev/pgpcard_0',
-    help     = "path to device",
-)  
-
-parser.add_argument(
     "--l", 
     type     = int,
     required = True,
@@ -65,6 +57,14 @@ parser.add_argument(
     help     = "path to mcs file",
 )
 
+parser.add_argument(
+    "--pgp", 
+    type     = str,
+    required = False,
+    default  = '/dev/pgpcard_0',
+    help     = "PGP devide (default /dev/pgpcard_0)",
+)  
+
 # Get the arguments
 args = parser.parse_args()
 
@@ -73,8 +73,8 @@ args = parser.parse_args()
 # Set base
 base = quad.Top(
     hwType = args.type, 
-    dev    = args.dev, 
     lane   = args.l,
+    dev    = args.pgp,
 )    
 
 # Start the system

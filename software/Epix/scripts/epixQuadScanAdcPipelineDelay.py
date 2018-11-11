@@ -148,7 +148,8 @@ QuadTop.Epix10kaSaci[13].ColCounter(3)
 QuadTop.Epix10kaSaci[13].WritePixelData(0xD)
 
 # pulse one pixel
-QuadTop.Epix10kaSaci[13].Pulser.set(0x3FF)
+QuadTop.Epix10kaSaci[13].Pulser.set(0x1)
+QuadTop.Epix10kaSaci[13].hrtest.set(True)
 QuadTop.Epix10kaSaci[13].test.set(True)
 
 # set autotrigger
