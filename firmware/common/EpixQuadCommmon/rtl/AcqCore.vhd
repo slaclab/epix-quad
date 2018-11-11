@@ -136,7 +136,7 @@ architecture RTL of AcqCore is
       roClkCnt             => (others=>'0'),
       acqBusy              => '0',
       adcClk               => '0',
-      useSaciSync          => '1',
+      useSaciSync          => '0',
       syncCnt              => 0,
       prepReadoutReq       => (others=>'0'),
       stateCnt             => (others=>'0'),
@@ -365,8 +365,6 @@ begin
             end if;
          
          -- SACI_RESET_S state renamed to SYNC_S
-         -- for simplicity the big EPIX will use sync pulse
-         -- instead of a SACI prep command for synchronization
          when SYNC_S =>
             if r.useSaciSync = '0' then
                v.asicSync  := '1';
