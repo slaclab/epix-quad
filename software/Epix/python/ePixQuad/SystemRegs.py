@@ -349,10 +349,10 @@ class SystemRegs(pr.Device):
          name       = 'AsicMask',     
          description= 'Asic Bit Mask. Set by Microblaze ASIC Auto-detect Function.',
          offset     = 0x00000028, 
-         bitSize    = 16, 
+         bitSize    = 32, 
          bitOffset  = 0,  
          base       = pr.UInt, 
-         mode       = 'RO',
+         mode       = 'RW',
       ))
       
       #####################################

@@ -678,6 +678,8 @@ class Epix10kaAsic(pr.Device):
 
         if (self.enable.get()):
             self.reportCmd(dev,cmd,arg)
+            if not isinstance(arg, str):
+               arg = ''
             if len(arg) > 0:
                self.filename = arg
             else:

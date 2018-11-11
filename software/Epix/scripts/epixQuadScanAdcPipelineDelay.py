@@ -101,13 +101,21 @@ parser.add_argument(
     help     = "Enable read all variables at start",
 )  
 
+parser.add_argument(
+    "--pgp", 
+    type     = str,
+    required = False,
+    default  = '/dev/pgpcard_0',
+    help     = "PGP devide (default /dev/pgpcard_0)",
+)  
+
 # Get the arguments
 args = parser.parse_args()
 
 #################################################################
 
 # Set base
-QuadTop = quad.Top(hwType='pgp3_cardG3')    
+QuadTop = quad.Top(hwType='pgp3_cardG3', dev=args.pgp)    
 eventReader = EventReader(QuadTop)
 pyrogue.streamTap(QuadTop.pgpVc0, eventReader) 
 
