@@ -62,6 +62,12 @@ parser.add_argument(
     help     = "PGP devide (default /dev/pgpcard_0)",
 )  
 
+parser.add_argument(
+    "--l", 
+    type     = int,
+    required = True,
+    help     = "PGP lane number [0 ~ 3]",
+)
 
 # Get the arguments
 args = parser.parse_args()
@@ -69,7 +75,7 @@ args = parser.parse_args()
 #################################################################
 
 # Set base
-base = quad.Top(hwType='pgp3_cardG3', dev=args.pgp)    
+base = quad.Top(hwType='pgp3_cardG3', dev=args.pgp, lane=args.l,)    
 
 # Start the system
 base.start(
