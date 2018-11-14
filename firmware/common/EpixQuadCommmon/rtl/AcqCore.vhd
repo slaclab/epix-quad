@@ -367,6 +367,7 @@ begin
          -- SACI_RESET_S state renamed to SYNC_S
          when SYNC_S =>
             if r.useSaciSync = '0' then
+               v.prepReadoutReq := (others=>'0');
                v.asicSync  := '1';
                -- arbitrary sync pulse width (1us)
                if r.stateCnt >= 100 then
