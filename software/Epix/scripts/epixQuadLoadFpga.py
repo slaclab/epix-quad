@@ -23,7 +23,6 @@
 import sys
 import pyrogue as pr
 import pyrogue.gui
-import PyQt4.QtGui
 import argparse
 import time
 import rogue.hardware

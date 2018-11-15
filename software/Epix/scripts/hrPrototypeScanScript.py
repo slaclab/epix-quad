@@ -33,11 +33,17 @@ import yaml
 import time
 import sys
 import testBridge
-import PyQt4.QtGui
-import PyQt4.QtCore
 import ePixViewer as vi
 import ePixFpga as fpga
 import numpy as np
+
+try:
+    from PyQt5.QtWidgets import *
+    from PyQt5.QtCore    import *
+    from PyQt5.QtGui     import *
+except ImportError:
+    from PyQt4.QtCore    import *
+    from PyQt4.QtGui     import *
 
 #-----------------------------------------------------------------------------
 # To convert the generated data use
@@ -172,7 +178,7 @@ class EpixBoard(pyrogue.Root):
 
 
 # Create GUI
-appTop = PyQt4.QtGui.QApplication(sys.argv)
+appTop = QApplication(sys.argv)
 guiTop = pyrogue.gui.GuiTop(group = 'HRGui')
 ePixBoard = EpixBoard(guiTop, cmd, dataWriter, srp)
 ePixBoard.start()

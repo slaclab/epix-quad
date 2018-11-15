@@ -23,14 +23,21 @@
 #-----------------------------------------------------------------------------
 
 import sys
-from PyQt4 import QtGui
 import ePixViewer as vi
+
+try:
+    from PyQt5.QtWidgets import *
+    from PyQt5.QtCore    import *
+    from PyQt5.QtGui     import *
+except ImportError:
+    from PyQt4.QtCore    import *
+    from PyQt4.QtGui     import *
 
 def run():
     sys.exit(app.exec_())
 
 # creates and runs a viewer gui
-app = QtGui.QApplication(sys.argv)
+app = QApplication(sys.argv)
 
 if __name__ == '__main__':
     if (len(sys.argv) > 1):
