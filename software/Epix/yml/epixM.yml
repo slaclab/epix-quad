@@ -1,6 +1,5 @@
 ePixBoard:
   enable: 'True'
-  forceWrite: 'False'
   dataWriter:
     enable: 'True'
     dataFile: ''
@@ -9,13 +8,6 @@ ePixBoard:
     maxFileSize: '0'
   EpixM32Array:
     enable: 'True'
-    AxiVersion:
-      enable: 'True'
-      ScratchPad: '0x0'
-      FpgaReloadHalt: '0x0'
-      FpgaReload: '0x0'
-      FpgaReloadAddress: '0x0'
-      UserReset: '0x1'
     EpixM32ArrayFpgaRegisters:
       enable: 'True'
       Version: '0xef020000'
@@ -67,12 +59,6 @@ ePixBoard:
       InputChannelA: NONE00
       InputChannelB: NONE00
       TriggerDelay: '0'
-    Pgp2bAxi:
-      enable: 'True'
-      Loopback: '0x0'
-      LocData: '0x0'
-      LocDataEn: 'False'
-      AutoStatus: 'False'
     Ad9249Rdout[0].Adc[0]:
       enable: 'False'
       ChannelDelay[0]: '0x0'
