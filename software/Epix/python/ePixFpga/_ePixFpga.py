@@ -29,11 +29,16 @@ import surf.devices.analog_devices as analog_devices
 import surf.misc
 from surf.devices.micron._AxiMicronN25Q import *
 import surf
-from PyQt4 import QtGui, QtCore
-from PyQt4.QtGui import *
 import numpy as np
 
-#import epix.Epix100aAsic
+try:
+    from PyQt5.QtWidgets import *
+    from PyQt5.QtCore    import *
+    from PyQt5.QtGui     import *
+except ImportError:
+    from PyQt4.QtCore    import *
+    from PyQt4.QtGui     import *
+
 
 
 ################################################################################################
@@ -1311,7 +1316,7 @@ class AsicDeserHrRegisters(pr.Device):
             if len(arg) > 0:
                 self.filename = arg
             else:
-                self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+                self.filename = QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
             if os.path.splitext(self.filename)[1] == '.csv':
                 matrixCfg = np.genfromtxt(self.filename, delimiter=',')
                 if matrixCfg.shape == (354, 384):
@@ -1442,7 +1447,7 @@ class AsicDeserRegisters(pr.Device):
             if len(arg) > 0:
                 self.filename = arg
             else:
-                self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+                self.filename = QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
             if os.path.splitext(self.filename)[1] == '.csv':
                 matrixCfg = np.genfromtxt(self.filename, delimiter=',')
                 if matrixCfg.shape == (354, 384):
@@ -1705,7 +1710,7 @@ class WaveformMemoryDevice(pr.MemoryDevice):
 
     def fnSetWaveform(self, dev,cmd,arg):
         """SetTestBitmap command function"""
-        self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+        self.filename = QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
         if os.path.splitext(self.filename)[1] == '.csv':
             waveform = np.genfromtxt(self.filename, delimiter=',', dtype='uint16')
             if waveform.shape == (1024,):
@@ -1716,7 +1721,7 @@ class WaveformMemoryDevice(pr.MemoryDevice):
 
     def fnGetWaveform(self, dev,cmd,arg):
         """GetTestBitmap command function"""
-        self.filename = QtGui.QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+        self.filename = QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
         if os.path.splitext(self.filename)[1] == '.csv':
             readBack = np.zeros((1024),dtype='uint16')
             for x in range (0, 1024):
