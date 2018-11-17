@@ -135,7 +135,7 @@ architecture top_level of EpixM32ArrayCore is
    signal axiWriteSlave   : AxiWriteSlaveType;
    
    
-   constant NUM_AXI_MASTER_SLOTS_C : natural := 12;
+   constant NUM_AXI_MASTER_SLOTS_C : natural := 13;
    constant NUM_AXI_SLAVE_SLOTS_C : natural := 2;
    
    constant VERSION_AXI_INDEX_C     : natural := 0;
@@ -150,6 +150,7 @@ architecture top_level of EpixM32ArrayCore is
    constant ADC_CFG_AXI_INDEX_C     : natural := 9;
    constant MEM_LOG_AXI_INDEX_C     : natural := 10;
    constant SCOPE_REG_AXI_INDEX_C   : natural := 11;
+   constant AXIS_MON_INDEX_C        : natural := 12;
    
    constant VERSION_AXI_BASE_ADDR_C    : slv(31 downto 0) := X"00000000";
    constant REG_AXI_BASE_ADDR_C        : slv(31 downto 0) := X"01000000";
@@ -163,6 +164,7 @@ architecture top_level of EpixM32ArrayCore is
    constant ADC_CFG_AXI_BASE_ADDR_C    : slv(31 downto 0) := X"09000000";
    constant MEM_LOG_AXI_BASE_ADDR_C    : slv(31 downto 0) := X"0A000000";
    constant SCOPE_AXI_BASE_ADDR_C      : slv(31 downto 0) := X"0B000000";
+   constant AXIS_MON_BASE_ADDR_C       : slv(31 downto 0) := X"0C000000";
    
    constant AXI_CROSSBAR_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0) := (
       VERSION_AXI_INDEX_C      => (
@@ -211,6 +213,10 @@ architecture top_level of EpixM32ArrayCore is
          connectivity         => x"FFFF"),
       SCOPE_REG_AXI_INDEX_C      => ( 
          baseAddr             => SCOPE_AXI_BASE_ADDR_C,
+         addrBits             => 24,
+         connectivity         => x"FFFF"),
+      AXIS_MON_INDEX_C      => ( 
+         baseAddr             => AXIS_MON_BASE_ADDR_C,
          addrBits             => 24,
          connectivity         => x"FFFF")
    );
@@ -795,8 +801,7 @@ begin
    generic map (
       TPD_G             => TPD_G,
       AXIL_CLK_PERIOD_G => 10.0e-9,
-      NUM_CHIPS_G       => 2,
-      AXIL_ERR_RESP_G   => AXI_RESP_OK_C
+      NUM_CHIPS_G       => 2
    )
    port map (
       axilClk           => coreClk,
@@ -1004,6 +1009,34 @@ begin
       axiClk         => coreClk,
       axiRst         => axiRst
    );
+   
+   
+   
+   ---------------------------------------------------------------
+   -- ASIC Stream Monitor
+   --------------------- ------------------------------------------
+   U_AXIS_MON : entity work.AxiStreamMonAxiL
+      generic map(
+         TPD_G             => TPD_G,
+         COMMON_CLK_G      => true,
+         AXIS_CLK_FREQ_G   => 100.0E+6, -- Units of Hz
+         AXIS_NUM_SLOTS_G  => 2,
+         AXIS_CONFIG_G     => ssiAxiStreamConfig(2) -- 16-bits
+      ) 
+      port map(
+         -- AXIS Stream Interface
+         axisClk           => coreClk,
+         axisRst           => axiRst,
+         axisMaster        => doutAxisMaster,
+         axisSlave         => doutAxisSlave,
+         -- AXI lite slave port for register access
+         axilClk           => coreClk,
+         axilRst           => axiRst,
+         sAxilReadMaster   => mAxiReadMasters(AXIS_MON_INDEX_C),
+         sAxilReadSlave    => mAxiReadSlaves(AXIS_MON_INDEX_C),
+         sAxilWriteMaster  => mAxiWriteMasters(AXIS_MON_INDEX_C),
+         sAxilWriteSlave   => mAxiWriteSlaves(AXIS_MON_INDEX_C)
+      );
    
    
    

@@ -80,6 +80,7 @@ class EpixM32Array(pr.Device):
             analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]', offset=0x09000000, enabled=False, expand=False),
             analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]', offset=0x09000800, enabled=False, expand=False),
             #analog_devices.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]', offset=0x09001000, enabled=False, expand=False),
+            #axi.AxiStreamMonitoring(name='RdoutStreamMonitoring', offset=0x0C000000, enabled=True, expand=False, numberLanes=2),
             MicroblazeLog(name='MicroblazeLog', offset=0x0A000000, enabled=False, expand=False)))
       
 

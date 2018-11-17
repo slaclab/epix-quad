@@ -665,7 +665,6 @@ class EventReader(rogue.interfaces.stream.Slave):
         self.busy = False
         self.busyTimeout = 0
         self.lastTime = time.clock_gettime(0)
-        
 
 
     # Checks all frames in the file to look for the one that needs to be displayed
@@ -698,7 +697,7 @@ class EventReader(rogue.interfaces.stream.Slave):
             self.busyTimeout = 0
 
             
-        if (time.clock_gettime(0)-self.lastTime)>1:
+        if (time.clock_gettime(0)-self.lastTime)>1 or self.parent.currentCam.cameraType == 'ePixM32Array':
             self.lastTime = time.clock_gettime(0)
             if ((VcNum == self.VIEW_PSEUDOSCOPE_ID) and (not self.busy)):
                 self.lastProcessedFrameTime = time.time()
