@@ -68,7 +68,8 @@ entity RegControlM is
       asicClk        : out sl;   -- to ASIC
       asicStart      : out sl;   -- to readout
       asicSample     : out sl;   -- to readout (with pipeline delay setting)
-      asicReady      : in  sl    -- from readout
+      asicReady      : in  sl;   -- from readout;
+      asicClkPerHalf : out slv(15 downto 0)
    );
 end RegControlM;
 
@@ -90,8 +91,8 @@ architecture rtl of RegControlM is
       asicR1Test        : sl;                -- register setting
       asicClk           : sl;
       asicClkDly        : slv(31 downto 0);  -- register setting
-      asicClkPerHalf    : slv(31 downto 0);  -- register setting
-      asicClkPerCnt     : slv(31 downto 0);
+      asicClkPerHalf    : slv(15 downto 0);  -- register setting
+      asicClkPerCnt     : slv(15 downto 0);
       asicClkCnt        : integer;
       asicSample        : slv(255 downto 0);
       asicSampleDly     : slv(7 downto 0);   -- register setting
@@ -113,7 +114,7 @@ architecture rtl of RegControlM is
       asicR1Test        => '0',
       asicClk           => '0',
       asicClkDly        => toSlv(1000, 32),  -- T = value * 10ns
-      asicClkPerHalf    => toSlv(100, 32),   -- T = value * 10ns
+      asicClkPerHalf    => toSlv(100, 16),   -- T = value * 10ns
       asicClkPerCnt     => (others=>'0'),
       asicClkCnt        => 0,
       asicSample        => (others=>'0'),
@@ -378,6 +379,7 @@ begin
       asicClk        <= r.asicAcqReg.asicClk;
       asicStart      <= r.asicAcqReg.asicStart;
       asicSample     <= r.asicAcqReg.asicSample(conv_integer(r.asicAcqReg.asicSampleDly));
+      asicClkPerHalf <= r.asicAcqReg.asicClkPerHalf;
       
    end process comb;
 

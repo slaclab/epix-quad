@@ -1,4 +1,4 @@
-export GIT_BYPASS = 1
+export GIT_BYPASS = 0
 
 # Define target output
 target: prom
@@ -7,7 +7,7 @@ target: prom
 export PRJ_PART = XC7A200TSBG484-3
 
 # Define Firmware Version Number
-export PRJ_VERSION = 0xEF020000
+export PRJ_VERSION = 0xEF020001
 
 # Define the Microblaze source path
 export SDK_SRC_PATH = $(PROJ_DIR)/src
