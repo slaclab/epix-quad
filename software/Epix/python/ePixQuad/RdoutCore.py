@@ -99,6 +99,16 @@ class RdoutCore(pr.Device):
          mode       = 'RW',
       ))   
       
+      self.add(pr.RemoteVariable(
+         name       = 'TxDelay',     
+         description= 'Enable Test Data',
+         offset     = 0x00000024, 
+         bitSize    = 32, 
+         bitOffset  = 0,  
+         base       = pr.UInt, 
+         mode       = 'RW',
+      ))   
+      
       #####################################
       # Create commands
       #####################################

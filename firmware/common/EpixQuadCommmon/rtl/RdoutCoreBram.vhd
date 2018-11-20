@@ -101,7 +101,6 @@ architecture rtl of RdoutCoreBram is
    type RdStateType is (
       IDLE_S,
       HDR_S,
-      TXDLY_S,
       WAIT_LINE_S,
       MOVE_LINE_S,
       FOOTER_S,
@@ -145,8 +144,7 @@ architecture rtl of RdoutCoreBram is
       sAxilWriteSlave      : AxiLiteWriteSlaveType;
       sAxilReadSlave       : AxiLiteReadSlaveType;
       monData              : Slv16Array(37 downto 0);
-      txDelayCnt           : slv(31 downto 0);
-      txDelayReg           : slv(31 downto 0);
+      txDelay              : slv(31 downto 0);
    end record RegType;
 
    constant REG_INIT_C : RegType := (
@@ -186,8 +184,7 @@ architecture rtl of RdoutCoreBram is
       sAxilWriteSlave      => AXI_LITE_WRITE_SLAVE_INIT_C,
       sAxilReadSlave       => AXI_LITE_READ_SLAVE_INIT_C,
       monData              => (others=>(others=>'0')),
-      txDelayCnt           => (others=>'0'),
-      txDelayReg           => (others=>'0')
+      txDelay              => (others=>'0')
    );
 
    signal r                : RegType := REG_INIT_C;
@@ -218,6 +215,10 @@ architecture rtl of RdoutCoreBram is
    signal muxDoutMap       : slv(15 downto 0);
    
    signal doutRd           : Slv16Array(3 downto 0);
+   
+   signal axisDelay        : slv(31 downto 0);
+   signal axisOutMaster    : AxiStreamMasterType;
+   signal axisOutSlave     : AxiStreamSlaveType;
    
 begin
    --r.rowCount(BUFF_BITS_C-1 downto 0)
@@ -401,7 +402,7 @@ begin
       axiSlaveRegisterR(regCon, x"018", 0, r.lineBufErr(2)     );
       axiSlaveRegisterR(regCon, x"01C", 0, r.lineBufErr(3)     );
       axiSlaveRegister (regCon, x"020", 0, v.testData          );
-      axiSlaveRegister (regCon, x"024", 0, v.txDelayReg        );
+      axiSlaveRegister (regCon, x"024", 0, v.txDelay           );
       
       
       -- Close out the AXI-Lite transaction
@@ -536,15 +537,7 @@ begin
             v.monData      := monData;
             if acqBusyEdge = '1' and r.rdoutEn = '1' then
                v.readPend  := '1';
-               v.rdState   := TXDLY_S;
-            end if;
-         
-         when TXDLY_S =>
-            if r.txDelayCnt >= r.txDelayReg then
-               v.txDelayCnt := (others=>'0');
-               v.rdState    := HDR_S;
-            else
-               v.txDelayCnt := r.txDelayCnt + 1;
+               v.rdState   := HDR_S;
             end if;
       
          when HDR_S =>
@@ -956,8 +949,41 @@ begin
       -- Master Port
       mAxisClk    => axisClk,
       mAxisRst    => axisRst,
-      mAxisMaster => axisMaster,
-      mAxisSlave  => axisSlave
+      mAxisMaster => axisOutMaster,
+      mAxisSlave  => axisOutSlave
+   );
+   
+   ----------------------------------------------------------------------
+   -- Configurable Stream Delay to Ease PGP Throughput Management
+   ----------------------------------------------------------------------
+   
+   U_DlySync : entity work.SynchronizerVector
+   generic map (
+      TPD_G    => TPD_G,         
+      WIDTH_G  => 32
+   )
+   port map (
+      clk      => axisClk,
+      rst      => axisRst,
+      dataIn   => r.txDelay,
+      dataOut  => axisDelay
+   );
+   
+   U_AxisDelay : entity work.AxiStreamDelay
+   generic map (
+      TPD_G          => TPD_G,
+      AXIS_CONFIG_G  => MASTER_AXI_CONFIG_C
+   )
+   port map (
+      axisClk        => axisClk,
+      axisRst        => axisRst,
+      delay          => axisDelay,
+      -- Slave Port
+      sAxisMaster    => axisOutMaster,
+      sAxisSlave     => axisOutSlave,
+      -- Master Port
+      mAxisMaster    => axisMaster,
+      mAxisSlave     => axisSlave
    );
    
 end rtl;
