@@ -134,6 +134,8 @@ architecture top_level of EpixM32ArrayCore is
    signal axiWriteMaster  : AxiWriteMasterType;
    signal axiWriteSlave   : AxiWriteSlaveType;
    
+   signal asicClkPerHalf : slv(15 downto 0);
+   
    
    constant NUM_AXI_MASTER_SLOTS_C : natural := 13;
    constant NUM_AXI_SLAVE_SLOTS_C : natural := 2;
@@ -587,7 +589,8 @@ begin
       asicClk        => iAsicClk,
       asicStart      => iAsicStart,
       asicSample     => iAsicSample,
-      asicReady      => iAsicReady
+      asicReady      => iAsicReady,
+      asicClkPerHalf => asicClkPerHalf
    );
    
    ---------------------
@@ -606,6 +609,7 @@ begin
       asicSample     => iAsicSample,
       asicReady      => iAsicReady0,
       asicGlblRst    => iAsicGlblRst,
+      asicClkPerHalf => asicClkPerHalf,
       axisClk        => coreClk,
       axisRst        => axiRst,
       axisMaster     => doutAxisMaster(0),
@@ -625,6 +629,7 @@ begin
       asicSample     => iAsicSample,
       asicReady      => iAsicReady1,
       asicGlblRst    => iAsicGlblRst,
+      asicClkPerHalf => asicClkPerHalf,
       axisClk        => coreClk,
       axisRst        => axiRst,
       axisMaster     => doutAxisMaster(1),
