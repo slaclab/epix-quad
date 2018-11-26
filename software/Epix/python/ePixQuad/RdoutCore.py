@@ -101,8 +101,18 @@ class RdoutCore(pr.Device):
       
       self.add(pr.RemoteVariable(
          name       = 'TxDelay',     
-         description= 'Enable Test Data',
+         description= 'Delay Start of Frame',
          offset     = 0x00000024, 
+         bitSize    = 32, 
+         bitOffset  = 0,  
+         base       = pr.UInt, 
+         mode       = 'RW',
+      ))   
+      
+      self.add(pr.RemoteVariable(
+         name       = 'TxBurstDelay',     
+         description= 'Delay Quad Data Bursts',
+         offset     = 0x00000028, 
          bitSize    = 32, 
          bitOffset  = 0,  
          base       = pr.UInt, 
