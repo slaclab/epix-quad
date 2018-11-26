@@ -123,8 +123,10 @@ end EpixQuadCore;
 
 architecture rtl of EpixQuadCore is
    
-   constant BANK_COLS_C          : natural      := ite(SIM_SPEEDUP_G, 24, 48);
-   constant BANK_ROWS_C          : natural      := ite(SIM_SPEEDUP_G, 48, 178);
+   --constant BANK_COLS_C          : natural      := ite(SIM_SPEEDUP_G, 24, 48);
+   --constant BANK_ROWS_C          : natural      := ite(SIM_SPEEDUP_G, 48, 178);
+   constant BANK_COLS_C          : natural      := ite(SIM_SPEEDUP_G, 48, 48);
+   constant BANK_ROWS_C          : natural      := ite(SIM_SPEEDUP_G, 178, 178);
    
    constant NUM_AXI_MASTERS_C    : natural := 8;
 

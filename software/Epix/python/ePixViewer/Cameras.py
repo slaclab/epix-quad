@@ -102,7 +102,8 @@ class Camera():
         if (camID == EPIXQUAD):
             self._initEpix10kaQuad()
         if (camID == EPIXQUADSIM):
-            self._initEpix10kaQuadSim()
+            #self._initEpix10kaQuadSim()
+            self._initEpix10kaQuad()
 
         #creates a image processing tool for local use
         self.imgTool = imgPr.ImageProcessing(self)
