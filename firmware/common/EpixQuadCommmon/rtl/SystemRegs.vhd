@@ -506,7 +506,8 @@ begin
       U_DS2411 : entity work.DS2411Core
       generic map (
          TPD_G        => TPD_G,
-         CLK_PERIOD_G => CLK_PERIOD_G
+         CLK_PERIOD_G => CLK_PERIOD_G,
+         SMPL_TIME_G  => 19.1E-6
       )
       port map (
          clk       => sysClk,
