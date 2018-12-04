@@ -72,13 +72,45 @@ parser.add_argument(
     help     = "PGP devide (default /dev/pgpcard_0)",
 )  
 
+parser.add_argument(
+    "--l", 
+    type     = int,
+    required = False,
+    default  = 0,
+    help     = "PGP lane number [0 ~ 3]",
+)
+
+parser.add_argument(
+    "--startup", 
+    type     = argBool,
+    required = False,
+    default  = True,
+    help     = "Request ADC startup",
+)
+
+parser.add_argument(
+    "--adcStart", 
+    type     = int,
+    required = False,
+    default  = 0,
+    help     = "Start testing from ADC no.",
+)
+
+parser.add_argument(
+    "--adcStop", 
+    type     = int,
+    required = False,
+    default  = 7,
+    help     = "Stop testing on ADC no.",
+)
+
 # Get the arguments
 args = parser.parse_args()
 
 #################################################################
 
 # Set base
-QuadTop = quad.Top(hwType='pgp3_cardG3', dev=args.pgp)    
+QuadTop = quad.Top(hwType='pgp3_cardG3', dev=args.pgp, lane=args.l)    
 
 # Start the system
 QuadTop.start(
@@ -100,24 +132,25 @@ f = open(fileName, 'w')
 
 f.write('static int adcDelays[10][9] = {\n')
 
-print('Request ADC startup')
-# Reset deserializers
-QuadTop.SystemRegs.AdcReqStart.set(True)
-QuadTop.SystemRegs.AdcReqStart.set(False)
+if args.startup:
+   print('Request ADC startup')
+   # Reset deserializers
+   QuadTop.SystemRegs.AdcReqStart.set(True)
+   QuadTop.SystemRegs.AdcReqStart.set(False)
 
-while(QuadTop.SystemRegs.AdcTestDone.get() != True):
-   pass
+   while(QuadTop.SystemRegs.AdcTestDone.get() != True):
+      pass
 
-if(QuadTop.SystemRegs.AdcTestFailed.get() != False):
-   print('ADC startup failed')
-   exit()
-else:
-   print('ADC startup success')
+   if(QuadTop.SystemRegs.AdcTestFailed.get() != False):
+      print('ADC startup failed')
+      exit()
+   else:
+      print('ADC startup success')
    
 prevDly = 0
 
 # Train frame delay in all ADCs
-for adc in range(10):
+for adc in range(args.adcStart, args.adcStop+1):
    
    f.write('    {')
    
