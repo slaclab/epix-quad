@@ -68,8 +68,9 @@ entity RegControlM is
       asicClk        : out sl;   -- to ASIC
       asicStart      : out sl;   -- to readout
       asicSample     : out sl;   -- to readout (with pipeline delay setting)
-      asicReady      : in  sl;   -- from readout;
-      asicClkPerHalf : out slv(15 downto 0)
+      asicReady      : in  sl;   -- from readout
+      -- debug trigger out
+      trigOut        : out sl
    );
 end RegControlM;
 
@@ -96,6 +97,9 @@ architecture rtl of RegControlM is
       asicClkCnt        : integer;
       asicSample        : slv(255 downto 0);
       asicSampleDly     : slv(7 downto 0);   -- register setting
+      trigOut           : sl;
+      trigOutDly        : slv(31 downto 0);
+      trigOutLen        : slv(31 downto 0);
    end record AsicAcqType;
    
    constant ASICACQ_TYPE_INIT_C : AsicAcqType := (
@@ -118,7 +122,10 @@ architecture rtl of RegControlM is
       asicClkPerCnt     => (others=>'0'),
       asicClkCnt        => 0,
       asicSample        => (others=>'0'),
-      asicSampleDly     => toSlv(112, 8)     -- 112 is sampling in the middle of low asicClk (verified in asicR1Test mode)
+      asicSampleDly     => toSlv(112, 8),    -- 112 is sampling in the middle of low asicClk (verified in asicR1Test mode)
+      trigOut           => '0',
+      trigOutDly        => (others=>'0'),
+      trigOutLen        => (others=>'0')
    );
    
    type StateType is (IDLE_S, WAIT_ADC_S);
@@ -218,6 +225,8 @@ begin
       axiSlaveRegister(regCon,  x"00011C",  0, v.asicAcqReg.asicClkDly);
       axiSlaveRegister(regCon,  x"000120",  0, v.asicAcqReg.asicClkPerHalf);
       axiSlaveRegister(regCon,  x"000124",  0, v.asicAcqReg.asicSampleDly);
+      axiSlaveRegister(regCon,  x"000128",  0, v.asicAcqReg.trigOutDly);
+      axiSlaveRegister(regCon,  x"00012C",  0, v.asicAcqReg.trigOutLen);
       
       axiSlaveRegister(regCon,  x"000200",  0, v.pwrEnableReq);
       axiSlaveRegister(regCon,  x"000204",  0, v.dbgSel1);
@@ -341,6 +350,17 @@ begin
             
          end if;
          
+         -- output trigger generator
+         if r.asicAcqReg.trigOutDly <= r.asicAcqTimeCnt then
+            v.asicAcqReg.trigOut := '0';
+         end if;
+         if r.asicAcqReg.trigOutDly + r.asicAcqReg.trigOutLen <= r.asicAcqTimeCnt then
+            v.asicAcqReg.trigOut := '1';
+         end if;
+         if r.asicAcqReg.trigOutLen = 0 then
+            v.asicAcqReg.trigOut := '0';
+         end if;
+         
       end if;
       
       -- ASIC global reset
@@ -379,7 +399,7 @@ begin
       asicClk        <= r.asicAcqReg.asicClk;
       asicStart      <= r.asicAcqReg.asicStart;
       asicSample     <= r.asicAcqReg.asicSample(conv_integer(r.asicAcqReg.asicSampleDly));
-      asicClkPerHalf <= r.asicAcqReg.asicClkPerHalf;
+      trigOut        <= r.asicAcqReg.trigOut;
       
    end process comb;
 

@@ -134,8 +134,6 @@ architecture top_level of EpixM32ArrayCore is
    signal axiWriteMaster  : AxiWriteMasterType;
    signal axiWriteSlave   : AxiWriteSlaveType;
    
-   signal asicClkPerHalf : slv(15 downto 0);
-   
    
    constant NUM_AXI_MASTER_SLOTS_C : natural := 13;
    constant NUM_AXI_SLAVE_SLOTS_C : natural := 2;
@@ -293,6 +291,7 @@ architecture top_level of EpixM32ArrayCore is
    signal iAsicReady      : sl;
    signal iAsicReady0     : sl;
    signal iAsicReady1     : sl;
+   signal trigOut         : sl;
    
    signal fpgaReload : sl;
    signal bootSck    : sl;
@@ -367,7 +366,7 @@ begin
    asicClk     <= iAsicClk;
    
    tgOutMux <= 
-      acqStart          when tixelDbgSel1 = "00000" else
+      trigOut           when tixelDbgSel1 = "00000" else
       adcClk            when tixelDbgSel1 = "00001" else
       iAsicGlblRst      when tixelDbgSel1 = "00010" else
       iAsicR1           when tixelDbgSel1 = "00011" else
@@ -590,7 +589,7 @@ begin
       asicStart      => iAsicStart,
       asicSample     => iAsicSample,
       asicReady      => iAsicReady,
-      asicClkPerHalf => asicClkPerHalf
+      trigOut        => trigOut
    );
    
    ---------------------
@@ -608,8 +607,7 @@ begin
       asicStart      => iAsicStart,
       asicSample     => iAsicSample,
       asicReady      => iAsicReady0,
-      asicGlblRst    => iAsicGlblRst,
-      asicClkPerHalf => asicClkPerHalf,
+      asicGlblRst    => iAsicGlblRst
       axisClk        => coreClk,
       axisRst        => axiRst,
       axisMaster     => doutAxisMaster(0),
@@ -628,8 +626,7 @@ begin
       asicStart      => iAsicStart,
       asicSample     => iAsicSample,
       asicReady      => iAsicReady1,
-      asicGlblRst    => iAsicGlblRst,
-      asicClkPerHalf => asicClkPerHalf,
+      asicGlblRst    => iAsicGlblRst
       axisClk        => coreClk,
       axisRst        => axiRst,
       axisMaster     => doutAxisMaster(1),

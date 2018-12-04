@@ -41,7 +41,6 @@ entity AcqControlM is
       asicSample        : in  sl;   -- from waveform gen
       asicReady         : out sl;   -- to waveform gen
       asicGlblRst       : in  sl;
-      asicClkPerHalf    : in  slv(15 downto 0);
       -- AxiStream output
       axisClk           : in  sl;
       axisRst           : in  sl;
@@ -69,7 +68,7 @@ architecture rtl of AcqControlM is
       txMaster       : AxiStreamMasterType;
       hdrCnt         : integer;
       pixelCnt       : integer;
-      timeout        : slv(17 downto 0);
+      missedSample   : sl;
    end record RegType;
 
    constant REG_INIT_C : RegType := (
@@ -80,7 +79,7 @@ architecture rtl of AcqControlM is
       txMaster       => AXI_STREAM_MASTER_INIT_C,
       hdrCnt         => 0,
       pixelCnt       => 0,
-      timeout        => (others=>'0')
+      missedSample   => '0'
    );
    
    signal fifoRst : sl;
@@ -93,7 +92,7 @@ architecture rtl of AcqControlM is
 begin
    
    
-   comb : process (rst, reg, txSlave, asicStart, asicSample, adcData, adcValid, asicGlblRst, asicClkPerHalf) is
+   comb : process (rst, reg, txSlave, asicStart, asicSample, adcData, adcValid, asicGlblRst) is
       variable vreg     : RegType;
    begin
       -- Latch the current value
@@ -129,6 +128,7 @@ begin
             vreg.pixelCnt := 0;
             vreg.hdrCnt := 0;
             vreg.asicReady := '1';
+            vreg.missedSample = '0';
             if asicStart = '1' then
                vreg.state   := HDR_S;
             end if;            
@@ -151,7 +151,6 @@ begin
                else
                   vreg.txMaster.tData(15 downto 0) := x"0000";                         -- ASIC number
                   vreg.state   := MOVE_S;
-                  vreg.timeout := asicClkPerHalf & "11";
                end if;
                vreg.hdrCnt := reg.hdrCnt + 1;
             end if;
@@ -161,10 +160,14 @@ begin
             -- Check if ready to move data
             if (vreg.txMaster.tValid = '0') then
                
-               if (asicSample = '1') and (reg.timeout > 0) then
-                  
-                  -- reset counter only if no timeout due to back pressure
-                  vreg.timeout := asicClkPerHalf & "11";
+               if (reg.missedSample = '1') then
+                  -- abort packet if there sample request during back pressure
+                  vreg.txMaster.tValid := '1';
+                  vreg.txMaster.tData(15 downto 0) := reg.adcData;
+                  vreg.txMaster.tLast := '1';
+                  ssiSetUserEofe(SLAVE_AXI_CONFIG_C, vreg.txMaster, '1');
+                  vreg.state := IDLE_S;
+               elsif (asicSample = '1') then
                   
                   -- stream data samples
                   vreg.txMaster.tValid := '1';
@@ -181,18 +184,10 @@ begin
                      vreg.pixelCnt := reg.pixelCnt + 1;
                   end if;
                
-               elsif (reg.timeout = 0) then
-                  vreg.txMaster.tValid := '1';
-                  vreg.txMaster.tData(15 downto 0) := reg.adcData;
-                  vreg.txMaster.tLast := '1';
-                  ssiSetUserEofe(SLAVE_AXI_CONFIG_C, vreg.txMaster, '1');
-                  vreg.state := IDLE_S;
                end if;
-               
-            end if;
-            -- avoid deadlock on back pressure
-            if reg.timeout > 0 then
-               vreg.timeout := reg.timeout - 1;
+            
+            elsif (asicSample = '1') then
+               vreg.missedSample = '1';
             end if;
          
          when others =>
