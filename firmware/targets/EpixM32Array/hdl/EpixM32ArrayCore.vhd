@@ -607,7 +607,7 @@ begin
       asicStart      => iAsicStart,
       asicSample     => iAsicSample,
       asicReady      => iAsicReady0,
-      asicGlblRst    => iAsicGlblRst
+      asicGlblRst    => iAsicGlblRst,
       axisClk        => coreClk,
       axisRst        => axiRst,
       axisMaster     => doutAxisMaster(0),
@@ -626,7 +626,7 @@ begin
       asicStart      => iAsicStart,
       asicSample     => iAsicSample,
       asicReady      => iAsicReady1,
-      asicGlblRst    => iAsicGlblRst
+      asicGlblRst    => iAsicGlblRst,
       axisClk        => coreClk,
       axisRst        => axiRst,
       axisMaster     => doutAxisMaster(1),

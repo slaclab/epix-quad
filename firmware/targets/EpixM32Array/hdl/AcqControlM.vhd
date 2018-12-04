@@ -128,7 +128,7 @@ begin
             vreg.pixelCnt := 0;
             vreg.hdrCnt := 0;
             vreg.asicReady := '1';
-            vreg.missedSample = '0';
+            vreg.missedSample := '0';
             if asicStart = '1' then
                vreg.state   := HDR_S;
             end if;            
@@ -187,7 +187,7 @@ begin
                end if;
             
             elsif (asicSample = '1') then
-               vreg.missedSample = '1';
+               vreg.missedSample := '1';
             end if;
          
          when others =>
