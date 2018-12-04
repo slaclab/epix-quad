@@ -282,6 +282,7 @@ begin
          end if;
          v.asicAcqReg.asicR2        := '1';
          v.asicAcqReg.asicR3        := '1';
+         v.asicAcqReg.trigOut       := '0';
          v.asicAcqReg.asicClk       := '0';
          v.asicAcqReg.asicClkPerCnt := (others=>'0');
          v.asicAcqReg.asicClkCnt    := 0;
@@ -352,10 +353,10 @@ begin
          
          -- output trigger generator
          if r.asicAcqReg.trigOutDly <= r.asicAcqTimeCnt then
-            v.asicAcqReg.trigOut := '0';
+            v.asicAcqReg.trigOut := '1';
          end if;
          if r.asicAcqReg.trigOutDly + r.asicAcqReg.trigOutLen <= r.asicAcqTimeCnt then
-            v.asicAcqReg.trigOut := '1';
+            v.asicAcqReg.trigOut := '0';
          end if;
          if r.asicAcqReg.trigOutLen = 0 then
             v.asicAcqReg.trigOut := '0';
