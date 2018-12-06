@@ -52,6 +52,7 @@ entity Epix10kMatrixConfig is
       confSel        : in  slv(SACI_NUM_CHIPS_G-1 downto 0);
       confDone       : out sl;
       confFail       : out slv(SACI_NUM_CHIPS_G-1 downto 0);
+      maxFreqConf    : in  Slv4Array(SACI_NUM_CHIPS_G-1 downto 0) := (others=>(others=>'0'));
       memAddr        : out Slv13Array(SACI_NUM_CHIPS_G-1 downto 0);
       memDout        : in  Slv32Array(SACI_NUM_CHIPS_G-1 downto 0);
       memDin         : out Slv32Array(SACI_NUM_CHIPS_G-1 downto 0);
@@ -73,6 +74,10 @@ architecture rtl of Epix10kMatrixConfig is
    constant SACI_COLCNT_ADR_C : slv(11 downto 0) := "000000010011";
    constant SACI_PIXDAT_CMD_C : slv( 6 downto 0) := "0000101";
    constant SACI_PIXDAT_ADR_C : slv(11 downto 0) := "000000000000";
+   constant SACI_PREPMC_CMD_C : slv( 6 downto 0) := "0001000";
+   constant SACI_PREPMC_ADR_C : slv(11 downto 0) := "000000000000";
+   constant SACI_MATDAT_CMD_C : slv( 6 downto 0) := "0000100";
+   constant SACI_MATDAT_ADR_C : slv(11 downto 0) := "000000000000";
 
 
    type SaciStateType is (
@@ -85,6 +90,10 @@ architecture rtl of Epix10kMatrixConfig is
       IDLE_S,
       WAIT_BUS_S,
       NEXT_ASIC_S,
+      PREPMC_CMD_S,
+      PREPMC_CMD_WAIT_S,
+      MATDAT_CMD_S,
+      MATDAT_CMD_WAIT_S,
       ROWCNT_CMD_S,
       ROWCNT_CMD_WAIT_S,
       COLCNT_CMD_S,
@@ -97,13 +106,16 @@ architecture rtl of Epix10kMatrixConfig is
    type RegType is record
       saciState      : SaciStateType;
       confState      : ConfStateType;
+      maxFreqConf    : Slv4Array(SACI_NUM_CHIPS_G-1 downto 0);
       saciBusReq     : sl;
       saciReq        : sl;
+      saciSkip       : sl;
       saciDone       : sl;
       saciErr        : sl;
       confWrReq      : sl;
       confDone       : sl;
       confFail       : slv(SACI_NUM_CHIPS_G-1 downto 0);
+      dlyCnt         : integer range 0 to 3;
       asicCnt        : integer range 0 to SACI_NUM_CHIPS_G-1;
       bankCnt        : integer range 0 to 3;
       colCnt         : integer range 0 to COLCNT_C;
@@ -126,13 +138,16 @@ architecture rtl of Epix10kMatrixConfig is
    constant REG_INIT_C : RegType := (
       saciState      => IDLE_S,
       confState      => IDLE_S,
+      maxFreqConf    => (others=>(others=>'0')),
       saciBusReq     => '0',
       saciReq        => '0',
+      saciSkip       => '0',
       saciDone       => '0',
       saciErr        => '0',
       confWrReq      => '0',
       confDone       => '0',
       confFail       => (others => '0'),
+      dlyCnt         => 0,
       asicCnt        => 0,
       bankCnt        => 0,
       colCnt         => 0,
@@ -199,8 +214,10 @@ begin
          saciCmd  => saciCmd,           -- [out]
          saciRsp  => saciRsp);          -- [in]
 
-   comb : process (ack, rst, fail, r, rdData, memDout, confWrReq, confRdReq, confSel, saciBusGr) is
-      variable v : RegType;
+   comb : process (ack, rst, fail, r, rdData, memDout, confWrReq, confRdReq, confSel, saciBusGr, maxFreqConf) is
+      variable v           : RegType;
+      variable maxFreq     : sl;
+      variable memDoutSel  : slv(3 downto 0);
    begin
       -- Latch the current value
       v := r;
@@ -215,6 +232,32 @@ begin
       if r.timer /= TIMEOUT_C then
          -- Increment the counter
          v.timer := r.timer + 1;
+      end if;
+      
+      -- select memory output bits of current ASIC
+      if r.confAddr(2 downto 0) = "000" then
+         memDoutSel := memDout(r.asicCnt)( 3 downto  0);
+      elsif r.confAddr(2 downto 0) = "001" then
+         memDoutSel := memDout(r.asicCnt)( 7 downto  4);
+      elsif r.confAddr(2 downto 0) = "010" then
+         memDoutSel := memDout(r.asicCnt)(11 downto  8);
+      elsif r.confAddr(2 downto 0) = "011" then
+         memDoutSel := memDout(r.asicCnt)(15 downto 12);
+      elsif r.confAddr(2 downto 0) = "100" then
+         memDoutSel := memDout(r.asicCnt)(19 downto 16);
+      elsif r.confAddr(2 downto 0) = "101" then
+         memDoutSel := memDout(r.asicCnt)(23 downto 20);
+      elsif r.confAddr(2 downto 0) = "110" then
+         memDoutSel := memDout(r.asicCnt)(27 downto 24);
+      else
+         memDoutSel := memDout(r.asicCnt)(31 downto 28);
+      end if;
+      
+      -- check if current pixel config of current ASIC is equal to most frequent element
+      if memDoutSel = maxFreqConf(r.asicCnt) then
+         maxFreq := '1';
+      else
+         maxFreq := '0';
       end if;
       
       -- Matrix Set/Get Configuration State Machine
@@ -233,39 +276,111 @@ begin
                v.confDone := '0';
                v.confFail := (others=>'0');
                v.confWrReq := confWrReq;
+               v.maxFreqConf := maxFreqConf;
                v.confState := WAIT_BUS_S;
             end if;
          
+         -- wait for SACI bus
          when WAIT_BUS_S =>
             v.saciBusReq := '1';
             if saciBusGr = '1' then
                v.confState := NEXT_ASIC_S;
             end if;
          
+         -- select next enabled ASIC
          when NEXT_ASIC_S =>
             v.bankCnt := 0;
             v.colCnt := 0;
             v.rowCnt := 0;
             v.confAddr := (others=>'0');
             if confSel(r.asicCnt) = '1' then
-               v.confState := ROWCNT_CMD_S;
+               if r.confWrReq = '1' then
+                  v.confState := PREPMC_CMD_S;
+               else
+                  -- do not set entire matrix when reading
+                  v.confState := ROWCNT_CMD_S;
+               end if;
             elsif r.asicCnt < SACI_NUM_CHIPS_G-1 then
                v.asicCnt := r.asicCnt + 1;
             else
                v.confState := IDLE_S;
             end if;
          
-         when ROWCNT_CMD_S =>
-            -- SACI Command
+         ----------------------------------------------------------
+         -- the following SACI commands set entire matrix to selected
+         -- most frequent (common) configration component
+         ----------------------------------------------------------
+         
+         when PREPMC_CMD_S =>
+            -- Prepare Multi-config SACI Command
             v.req       := '1';
             v.op        := '1';
             v.chip      := toSlv(r.asicCnt, CHIP_BITS_C);
-            v.cmd       := SACI_ROWCNT_CMD_C;
-            v.addr      := SACI_ROWCNT_ADR_C;
-            v.wrData    := toSlv(r.rowCnt, 32);
+            v.cmd       := SACI_PREPMC_CMD_C;
+            v.addr      := SACI_PREPMC_ADR_C;
+            v.wrData    := (others=>'0');
             v.saciReq   := '1';
-            v.confState := ROWCNT_CMD_WAIT_S;
+            v.confState := PREPMC_CMD_WAIT_S;
             
+         when PREPMC_CMD_WAIT_S =>
+            if r.saciDone = '1' then
+               if r.saciErr = '0' then
+                  v.confState := MATDAT_CMD_S;
+               else
+                  v.confFail(r.asicCnt) := '1';
+                  v.confState := ASIC_DONE_S;
+               end if;
+            end if;
+            
+         when MATDAT_CMD_S =>
+            -- Set Matrix Data SACI Command
+            v.req       := '1';
+            v.op        := '1';
+            v.chip      := toSlv(r.asicCnt, CHIP_BITS_C);
+            v.cmd       := SACI_MATDAT_CMD_C;
+            v.addr      := SACI_MATDAT_ADR_C;
+            v.wrData    := x"0000000" & maxFreqConf(r.asicCnt);
+            v.saciReq   := '1';
+            v.confState := MATDAT_CMD_WAIT_S;
+            
+         when MATDAT_CMD_WAIT_S =>
+            if r.saciDone = '1' then
+               if r.saciErr = '0' then
+                  v.confState := ROWCNT_CMD_S;
+               else
+                  v.confFail(r.asicCnt) := '1';
+                  v.confState := ASIC_DONE_S;
+               end if;
+            end if;
+         
+         ----------------------------------------------------------
+         -- the following SACI commands loop through all non common
+         -- configuration components
+         ----------------------------------------------------------
+         
+         when ROWCNT_CMD_S =>
+            -- wait for the read address 
+            if r.dlyCnt >= 2 then
+               if maxFreq = '0' or r.confWrReq = '0' then
+                  -- Set Row SACI Command
+                  v.req       := '1';
+                  v.op        := '1';
+                  v.chip      := toSlv(r.asicCnt, CHIP_BITS_C);
+                  v.cmd       := SACI_ROWCNT_CMD_C;
+                  v.addr      := SACI_ROWCNT_ADR_C;
+                  v.wrData    := toSlv(r.rowCnt, 32);
+                  v.saciReq   := '1';
+                  v.confState := ROWCNT_CMD_WAIT_S;
+               else
+                  -- skip all 3 SACI commands for the most frequent config
+                  -- only when writing configuration to ASIC
+                  v.confState := PIXDAT_CMD_WAIT_S;
+                  v.saciSkip := '1';
+               end if;
+               v.dlyCnt := 0;
+            else
+               v.dlyCnt := r.dlyCnt + 1;
+            end if;
             
          
          when ROWCNT_CMD_WAIT_S =>
@@ -273,12 +388,13 @@ begin
                if r.saciErr = '0' then
                   v.confState := COLCNT_CMD_S;
                else
+                  v.confFail(r.asicCnt) := '1';
                   v.confState := ASIC_DONE_S;
                end if;
             end if;
             
          when COLCNT_CMD_S =>
-            -- SACI Command
+            -- Set Column and Bank SACI Command
             v.req       := '1';
             v.op        := '1';
             v.chip      := toSlv(r.asicCnt, CHIP_BITS_C);
@@ -302,44 +418,31 @@ begin
                if r.saciErr = '0' then
                   v.confState := PIXDAT_CMD_S;
                else
+                  v.confFail(r.asicCnt) := '1';
                   v.confState := ASIC_DONE_S;
                end if;
             end if;
             
          when PIXDAT_CMD_S =>
-            -- SACI Command
+            -- Set Pixel Data SACI Command
             v.req       := '1';
             v.op        := r.confWrReq;
             v.chip      := toSlv(r.asicCnt, CHIP_BITS_C);
             v.cmd       := SACI_PIXDAT_CMD_C;
             v.addr      := SACI_PIXDAT_ADR_C;
-            v.wrData    := (others=>'0');
-            if r.confAddr(2 downto 0) = "000" then
-               v.wrData(3 downto 0) := memDout(r.asicCnt)( 3 downto  0);
-            elsif r.confAddr(2 downto 0) = "001" then
-               v.wrData(3 downto 0) := memDout(r.asicCnt)( 7 downto  4);
-            elsif r.confAddr(2 downto 0) = "010" then
-               v.wrData(3 downto 0) := memDout(r.asicCnt)(11 downto  8);
-            elsif r.confAddr(2 downto 0) = "011" then
-               v.wrData(3 downto 0) := memDout(r.asicCnt)(15 downto 12);
-            elsif r.confAddr(2 downto 0) = "100" then
-               v.wrData(3 downto 0) := memDout(r.asicCnt)(19 downto 16);
-            elsif r.confAddr(2 downto 0) = "101" then
-               v.wrData(3 downto 0) := memDout(r.asicCnt)(23 downto 20);
-            elsif r.confAddr(2 downto 0) = "110" then
-               v.wrData(3 downto 0) := memDout(r.asicCnt)(27 downto 24);
-            else
-               v.wrData(3 downto 0) := memDout(r.asicCnt)(31 downto 28);
-            end if;
+            v.wrData    := x"0000000" & memDoutSel;
             v.saciReq   := '1';
             v.confState := PIXDAT_CMD_WAIT_S;
             
          when PIXDAT_CMD_WAIT_S =>
-            if r.saciDone = '1' then
+            if r.saciDone = '1' or r.saciSkip = '1' then
+               
+               v.saciSkip := '0';
                
                -- if no error
                -- select next column/row/ASIC
                if r.saciErr = '1' then
+                  v.confFail(r.asicCnt) := '1';
                   v.confState := ASIC_DONE_S;
                elsif r.colCnt < COLCNT_C then
                   v.colCnt := r.colCnt + 1;
@@ -354,6 +457,12 @@ begin
                   v.rowCnt := r.rowCnt + 1;
                   v.confState := ROWCNT_CMD_S;
                else
+                  -- all pixels done
+                  if r.confWrReq = '0' then
+                     -- this will ensure that last pixels
+                     -- configuration is stored with unaligned address
+                     v.memWr := '1';
+                  end if;
                   v.confState := ASIC_DONE_S;
                end if; 
                
@@ -364,6 +473,7 @@ begin
                -- overwrite memory if matrix read request
                if r.confWrReq = '0' then
                   if r.confAddr(2 downto 0) = "000" then
+                     v.memDin               := (others=>'0');
                      v.memDin( 3 downto  0) := r.rdData(3 downto 0);
                   elsif r.confAddr(2 downto 0) = "001" then
                      v.memDin( 7 downto  4) := r.rdData(3 downto 0);
@@ -386,7 +496,6 @@ begin
             end if;
          
          when ASIC_DONE_S =>
-            v.confFail(r.asicCnt) := r.saciErr;
             if r.asicCnt < SACI_NUM_CHIPS_G-1 then
                v.asicCnt := r.asicCnt + 1;
                v.confState := NEXT_ASIC_S;
@@ -407,9 +516,9 @@ begin
             v.saciRst   := '0';
             v.timer     := 0;
             v.saciDone  := '0';
+            v.saciErr   := '0';
             -- Check for a write or read request
             if (r.saciReq = '1') then
-               v.saciErr := '0';
                -- Next state
                v.saciState  := SACI_REQ_S;
             end if;

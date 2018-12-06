@@ -140,6 +140,8 @@ class SaciConfigCore(pr.Device):
                         #print('BRAM[0x%X] = 0x%X'%((asic*0x80000)+int(memAddr/8)*4, memData))
                      
                      memAddr = memAddr + 1
+               #self._rawWrite((asic*0x80000)+int(0)*4, 0x02000100)
+               #self._rawWrite((asic*0x80000)+int(2)*4, 0x00040003)
             
             self.ConfSel.set(0xffff)
             self.ConfWrReq.set(True)

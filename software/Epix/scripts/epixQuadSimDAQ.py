@@ -76,6 +76,8 @@ appTop.setStyle('Fusion')
 guiTop.addTree(base)
 guiTop.resize(600, 800)
 
+base.guiTop = guiTop
+
 # Viewer gui
 if args.viewer:
    gui = vi.Window(cameraType = 'ePixQuadSim')
