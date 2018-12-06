@@ -69,9 +69,6 @@ entity AsicCoreTop is
       asicDout             : in    slv(15 downto 0);
       -- ADC Clock Output
       adcClk               : out   sl;
-      -- SACI Sync handshake
-      prepReadoutReq       : out   slv(3 downto 0);
-      prepReadoutAck       : in    slv(3 downto 0);
       -- Image Data Stream
       dataTxMaster         : out   AxiStreamMasterType;
       dataTxSlave          : in    AxiStreamSlaveType;
@@ -176,10 +173,7 @@ begin
       asicPpmat         => iAsicPpmat,
       asicRoClk         => iAsicRoClk,
       -- ADC Clock Output
-      adcClk            => adcClk,
-      -- SACI Sync handshake
-      prepReadoutReq    => prepReadoutReq,
-      prepReadoutAck    => prepReadoutAck
+      adcClk            => adcClk
    );
    asicAcq     <=  iAsicAcq;
    asicR0      <=  iAsicR0;

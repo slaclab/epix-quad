@@ -249,16 +249,6 @@ class AcqCore(pr.Device):
          mode       = 'RW',
       ))
       
-      self.add(pr.RemoteVariable(
-         name       = 'UseSaciSync',     
-         description= 'Use SACI Command as Sync',
-         offset     = 0x00000034, 
-         bitSize    = 1, 
-         bitOffset  = 0,  
-         base       = pr.Bool, 
-         mode       = 'RW',
-      ))
-      
       
       #####################################
       # Create commands

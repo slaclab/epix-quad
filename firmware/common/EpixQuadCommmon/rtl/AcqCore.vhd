@@ -53,10 +53,7 @@ entity AcqCore is
       asicPpmat         : out   sl;
       asicRoClk         : out   sl;
       -- ADC Clock Output
-      adcClk            : out   sl;
-      -- SACI Sync handshake
-      prepReadoutReq    : out   slv(3 downto 0);
-      prepReadoutAck    : in    slv(3 downto 0)
+      adcClk            : out   sl
    );
 end AcqCore;
 
@@ -104,9 +101,6 @@ architecture RTL of AcqCore is
       roClkCnt             : slv(31 downto 0);
       acqBusy              : sl;
       adcClk               : sl;
-      useSaciSync          : sl;
-      syncCnt              : natural range 0 to 3;
-      prepReadoutReq       : slv(3 downto 0);
       stateCnt             : slv(31 downto 0);
       acqState             : AcqStateType;
       sAxilWriteSlave      : AxiLiteWriteSlaveType;
@@ -136,9 +130,6 @@ architecture RTL of AcqCore is
       roClkCnt             => (others=>'0'),
       acqBusy              => '0',
       adcClk               => '0',
-      useSaciSync          => '0',
-      syncCnt              => 0,
-      prepReadoutReq       => (others=>'0'),
       stateCnt             => (others=>'0'),
       acqState             => IDLE_S,
       sAxilWriteSlave      => AXI_LITE_WRITE_SLAVE_INIT_C,
@@ -149,8 +140,6 @@ architecture RTL of AcqCore is
    signal rin : RegType;
    
    signal acqStartEdge       : std_logic             := '0';
-   
-   constant SACI_TIMEOUT_C   : natural := ite(SIM_SPEEDUP_G, 100, 100000);
    
    constant ROCLK_COUNT_C : natural := 4 * BANK_COLS_G * BANK_ROWS_G;   -- roClk is divided by 4, (data is read out from 64 banks simultaneously)
    
@@ -165,7 +154,7 @@ begin
       );
 
    comb : process (sysRst, r, sAxilReadMaster, sAxilWriteMaster,
-      acqStartEdge, readDone, roClkTail, prepReadoutAck) is
+      acqStartEdge, readDone, roClkTail) is
       variable v      : RegType;
       variable regCon : AxiLiteEndPointType;
    begin
@@ -208,7 +197,6 @@ begin
       axiSlaveRegisterR(regCon, x"028", 0, r.asicPreAcqTime    );
       axiSlaveRegister (regCon, x"02C", 0, v.asicPinForce      );
       axiSlaveRegister (regCon, x"030", 0, v.asicPinValue      );
-      axiSlaveRegister (regCon, x"034", 0, v.useSaciSync       );
       
       -- Close out the AXI-Lite transaction
       axiSlaveDefault(regCon, v.sAxilWriteSlave, v.sAxilReadSlave, AXI_RESP_DECERR_C);
@@ -366,26 +354,11 @@ begin
          
          -- SACI_RESET_S state renamed to SYNC_S
          when SYNC_S =>
-            if r.useSaciSync = '0' then
-               v.prepReadoutReq := (others=>'0');
-               v.asicSync  := '1';
-               -- arbitrary sync pulse width (1us)
-               if r.stateCnt >= 100 then
-                  v.stateCnt := (others=>'0');
-                  v.acqState := IDLE_S;
-               end if;
-            else
-               v.prepReadoutReq(r.syncCnt) := '1';
-               if prepReadoutAck(r.syncCnt) = '1' or r.stateCnt >= SACI_TIMEOUT_C then
-                  v.prepReadoutReq(r.syncCnt) := '0';
-                  v.stateCnt := (others=>'0');
-                  if r.syncCnt >= 3 then
-                     v.syncCnt  := 0;
-                     v.acqState := IDLE_S;
-                  else
-                     v.syncCnt  := r.syncCnt + 1;
-                  end if;
-               end if;
+            v.asicSync  := '1';
+            -- arbitrary sync pulse width (1us)
+            if r.stateCnt >= 100 then
+               v.stateCnt := (others=>'0');
+               v.acqState := IDLE_S;
             end if;
          
          -- removed DONE_S state as it was an empty transition
@@ -407,7 +380,6 @@ begin
       adcClk            <= r.adcClk;
       acqCount          <= r.acqCount;
       acqSmplEn         <= r.acqSmplEn;
-      prepReadoutReq    <= v.prepReadoutReq;
 
    end process comb;
    
