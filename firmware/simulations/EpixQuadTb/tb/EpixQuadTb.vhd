@@ -107,6 +107,12 @@ architecture testbed of EpixQuadTb is
    
    signal adcDoutClk       : sl;
    
+   signal asicSaciResp     : slv(3 downto 0);
+   signal asicSaciClk      : slv(3 downto 0);
+   signal asicSaciCmd      : slv(3 downto 0);
+   signal asicSaciSelL     : slv(15 downto 0);
+   signal iAasicSaciResp   : slv(15 downto 0);
+   
    constant ADC_BASELINE_C  : RealArray(79 downto 0)    := (
       0 =>0.5+0 *1.0/80, 1 =>0.5+1 *1.0/80, 2 =>0.5+2 *1.0/80, 3 =>0.5+3 *1.0/80, 4 =>0.5+4 *1.0/80, 5 =>0.5+5 *1.0/80, 6 =>0.5+6 *1.0/80, 7 =>0.5+7 *1.0/80,
       8 =>0.5+8 *1.0/80, 9 =>0.5+9 *1.0/80, 10=>0.5+10*1.0/80, 11=>0.5+11*1.0/80, 12=>0.5+12*1.0/80, 13=>0.5+13*1.0/80, 14=>0.5+14*1.0/80, 15=>0.5+15*1.0/80,
@@ -159,7 +165,7 @@ begin
          rstL => open);
    
    ------------------------------------------------
-   -- Buffer Reader UUT
+   -- Quad Core UUT
    ------------------------------------------------
    U_EpixQuad: entity work.EpixQuadCore
    generic map (
@@ -224,10 +230,10 @@ begin
       vPIn              => '0',
       vNIn              => '1',
       -- ASIC SACI signals
-      asicSaciResp      => "1111",
-      asicSaciClk       => open,
-      asicSaciCmd       => open,
-      asicSaciSelL      => open,
+      asicSaciResp      => asicSaciResp,
+      asicSaciClk       => asicSaciClk,
+      asicSaciCmd       => asicSaciCmd,
+      asicSaciSelL      => asicSaciSelL,
       -- ASIC ACQ signals
       asicAcq           => open,
       asicR0            => open,
@@ -249,6 +255,71 @@ begin
       adcChN            => adcChN
    );   
    
+   
+   GEN_SACI_SLAVE : for i in 15 downto 0 generate
+      signal asicSaciSel : slv(15 downto 0);
+   begin
+      
+      asicSaciSel(i) <= not asicSaciSelL(i);
+      
+      U_SaciSlave : entity work.SaciSlaveWrapper
+         generic map (
+            TPD_G    => TPD_C
+         )
+         port map (
+            asicRstL => asicSaciSel(i),
+            saciClk  => asicSaciClk(i/4),
+            saciSelL => asicSaciSelL(i), 
+            saciCmd  => asicSaciCmd(i/4),
+            saciRsp  => iAasicSaciResp(i)
+         );
+
+   end generate GEN_SACI_SLAVE;
+   
+   saciSel_p : process (asicSaciSelL, iAasicSaciResp) is
+   begin
+      if asicSaciSelL(0) = '0' then
+         asicSaciResp(0) <= iAasicSaciResp(0);
+      elsif asicSaciSelL(1) = '0' then
+         asicSaciResp(0) <= iAasicSaciResp(1);
+      elsif asicSaciSelL(2) = '0' then
+         asicSaciResp(0) <= iAasicSaciResp(2);
+      elsif asicSaciSelL(3) = '0' then
+         asicSaciResp(0) <= iAasicSaciResp(3);
+      end if;
+      
+      if asicSaciSelL(4) = '0' then
+         asicSaciResp(1) <= iAasicSaciResp(4);
+      elsif asicSaciSelL(5) = '0' then
+         asicSaciResp(1) <= iAasicSaciResp(5);
+      elsif asicSaciSelL(6) = '0' then
+         asicSaciResp(1) <= iAasicSaciResp(6);
+      elsif asicSaciSelL(7) = '0' then
+         asicSaciResp(1) <= iAasicSaciResp(7);
+      end if;
+      
+      if asicSaciSelL(8) = '0' then
+         asicSaciResp(2) <= iAasicSaciResp(8);
+      elsif asicSaciSelL(9) = '0' then
+         asicSaciResp(2) <= iAasicSaciResp(9);
+      elsif asicSaciSelL(10) = '0' then
+         asicSaciResp(2) <= iAasicSaciResp(10);
+      elsif asicSaciSelL(11) = '0' then
+         asicSaciResp(2) <= iAasicSaciResp(11);
+      end if;
+      
+      if asicSaciSelL(12) = '0' then
+         asicSaciResp(3) <= iAasicSaciResp(12);
+      elsif asicSaciSelL(13) = '0' then
+         asicSaciResp(3) <= iAasicSaciResp(13);
+      elsif asicSaciSelL(14) = '0' then
+         asicSaciResp(3) <= iAasicSaciResp(14);
+      else
+         asicSaciResp(3) <= iAasicSaciResp(15);
+      end if;
+      
+   end process saciSel_p;
+      
    U_ddr4 : Ddr4ModelWrapper
       generic map (
          DDR_WIDTH_G => DDR_WIDTH_C)

@@ -193,6 +193,13 @@ class Top(pr.Root):
                   expand  = False,
             ))
         
+        self.add(ePixQuad.SaciConfigCore( 
+            name    = 'SaciConfigCore', 
+            memBase = memMap, 
+            offset  = 0x08800000, 
+            expand  = False,
+        ))
+        
         if (hwType != 'simulation'):     
         
             confAddr = [
