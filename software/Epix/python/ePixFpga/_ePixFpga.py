@@ -92,7 +92,7 @@ class EpixM32ArrayFpgaRegisters(pr.Device):
       #############################################
       # Create block / RemoteVariable combinations
       #############################################
-      self.add(pr.RemoteVariable(name='Version',         description='Version',           offset=0x00000000, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RW'))
+      self.add(pr.RemoteVariable(name='Version',         description='Version',           offset=0x00000000, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
       self.add(pr.RemoteVariable(name='IdDigitalLow',    description='IdDigitalLow',      offset=0x00000004, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
       self.add(pr.RemoteVariable(name='IdDigitalHigh',   description='IdDigitalHigh',     offset=0x00000008, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
       self.add(pr.RemoteVariable(name='IdAnalogLow',     description='IdAnalogLow',       offset=0x0000000C, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
