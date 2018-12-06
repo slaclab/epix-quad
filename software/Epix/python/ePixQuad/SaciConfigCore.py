@@ -19,6 +19,17 @@
 #-----------------------------------------------------------------------------
 import pyrogue as pr
 import collections
+import os
+import numpy as np
+import time as ti
+
+try:
+    from PyQt5.QtWidgets import *
+    from PyQt5.QtCore    import *
+    from PyQt5.QtGui     import *
+except ImportError:
+    from PyQt4.QtCore    import *
+    from PyQt4.QtGui     import *
 
 class SaciConfigCore(pr.Device):
    def __init__(self, **kwargs):
@@ -41,7 +52,7 @@ class SaciConfigCore(pr.Device):
       self.add(pr.RemoteVariable(
          name       = 'ConfWrReq',     
          description= 'Request Config Write to ASICs',
-         offset     = 0x00000000, 
+         offset     = 0x00800000, 
          bitSize    = 1, 
          bitOffset  = 0,  
          base       = pr.Bool, 
@@ -52,7 +63,7 @@ class SaciConfigCore(pr.Device):
       self.add(pr.RemoteVariable(
          name       = 'ConfRdReq',     
          description= 'Request Config Read from ASICs',
-         offset     = 0x00000004, 
+         offset     = 0x00800004, 
          bitSize    = 1, 
          bitOffset  = 0,  
          base       = pr.Bool, 
@@ -63,7 +74,7 @@ class SaciConfigCore(pr.Device):
       self.add(pr.RemoteVariable(
          name       = 'ConfSel',     
          description= 'Select ASICs bit mask',     
-         offset     = 0x00000008, 
+         offset     = 0x00800008, 
          bitSize    = 16, 
          bitOffset  = 0,  
          base       = pr.UInt, 
@@ -73,7 +84,7 @@ class SaciConfigCore(pr.Device):
       self.add(pr.RemoteVariable(
          name       = 'ConfDoneAll',     
          description= 'All ASICs configuration done',     
-         offset     = 0x0000000C, 
+         offset     = 0x0080000C, 
          bitSize    = 1, 
          bitOffset  = 0,  
          base       = pr.Bool, 
@@ -83,23 +94,61 @@ class SaciConfigCore(pr.Device):
       self.add(pr.RemoteVariable(
          name       = 'ConfFail',     
          description= 'ASIC failed bit mask',     
-         offset     = 0x00000010, 
+         offset     = 0x00800010, 
          bitSize    = 16, 
          bitOffset  = 0,  
          base       = pr.UInt, 
          mode       = 'RO',
       ))
       
-      
       #####################################
       # Create commands
       #####################################
+      self.add(pr.Command(
+         name        = 'SetAsicsMatrix',
+         description = 'Configure all ASICs matrix',
+         function    = self.setAsicsMatrix,
+      ))
       
       # A command has an associated function. The function can be a series of
       # python commands in a string. Function calls are executed in the command scope
       # the passed arg is available as 'arg'. Use 'dev' to get to device scope.
       # A command can also be a call to a local function with local scope.
       # The command object and the arg are passed
+   
+   def setAsicsMatrix(self, dev,cmd,arg):
+      """SetAsicsMatrix command function"""
+      if not isinstance(arg, str):
+         arg = ''
+      if len(arg) > 0:
+         self.filename = arg
+      else:
+         self.filename = QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+      if os.path.splitext(self.filename)[1] == '.csv':
+         matrixCfg = np.genfromtxt(self.filename, delimiter=',')
+         if matrixCfg.shape == (178, 192):
+            for asic in range (0, 16):
+               memAddr = 0
+               for x in range (0, 177):
+                  for y in range (0, 192):
+                     
+                     if memAddr%8 == 0:
+                        memData = 0
+                     memData = memData | ( (int(matrixCfg[x][y]) & 0xF) << ((memAddr%8)*4) )
+                     if memAddr%8 == 7:
+                        self._rawWrite((asic*0x80000)+int(memAddr/8)*4, memData)
+                        #print('BRAM[0x%X] = 0x%X'%((asic*0x80000)+int(memAddr/8)*4, memData))
+                     
+                     memAddr = memAddr + 1
+            
+            self.ConfSel.set(0xffff)
+            self.ConfWrReq.set(True)
+            while self.ConfDoneAll.get() != True:
+               ti.sleep(1)
+         else:
+            print('csv file must be 192x178 pixels')
+      else:
+            print("Not csv file : ", self.filename)    
    
    @staticmethod   
    def frequencyConverter(self):
