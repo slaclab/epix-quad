@@ -64,7 +64,7 @@ architecture rtl of Epix10kMatrixConfig is
    constant CHIP_BITS_C : integer := log2(SACI_NUM_CHIPS_G);
    constant TIMEOUT_C   : integer := integer(AXIL_TIMEOUT_G/AXIL_CLK_PERIOD_G)-1;
    
-   constant COLCNT_C    : integer := ite(SIM_SPEEDUP_G, 4,  47);
+   constant COLCNT_C    : integer := ite(SIM_SPEEDUP_G, 2,  47);
    constant ROWCNT_C    : integer := ite(SIM_SPEEDUP_G, 4, 176);
    
    constant SACI_ROWCNT_CMD_C : slv( 6 downto 0) := "0000110";
@@ -456,7 +456,9 @@ begin
       -- Outputs
       confDone             <= r.confDone;
       confFail             <= r.confFail;
-      -- 4 bits per pixel / 32 bit memory (cut 3 lower bits)
+      memAddr              <= (others=>(others=>'0'));
+      memDin               <= (others=>(others=>'0'));
+      memWr                <= (others=>'0');
       memAddr(r.asicCnt)   <= r.memAddr;
       memDin(r.asicCnt)    <= r.memDin;
       memWr(r.asicCnt)     <= r.memWr;
