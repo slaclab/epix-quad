@@ -224,16 +224,9 @@ begin
       --------------------------------------------------
       for asic in 15 downto 0 loop
          
-         -- Reset statistics on address 0
-         if axilCbWriteMasters(asic).awaddr(18 downto 0) = 0 and axilCbWriteSlaves(asic).awready = '1' then
-            v.maxFreqConf(asic)           := (others=>'0');
-            for bins in 0 to 15 loop
-               v.maxFreqHist(asic, bins)  := (others=>'0');
-            end loop;
-         end if;
-         
-         -- count bins in all 8 nibbles
          for bins in 0 to 15 loop
+            
+            -- count bins in all 8 nibbles
             countConf(asic, bins) := (others=>'0');
             if axilCbWriteMasters(asic).wdata(3 downto 0) = bins then
                countConf(asic, bins) := countConf(asic, bins) + 1;
@@ -259,13 +252,18 @@ begin
             if axilCbWriteMasters(asic).wdata(31 downto 28) = bins then
                countConf(asic, bins) := countConf(asic, bins) + 1;
             end if;
-         end loop;
-         
-         if axilCbWriteSlaves(asic).wready = '1' then
-            for bins in 0 to 15 loop
+            
+            -- Register statistics
+            if axilCbWriteSlaves(asic).wready = '1' then
                v.maxFreqHist(asic, bins) := r.maxFreqHist(asic, bins) + countConf(asic, bins);
-            end loop;
-         end if;
+            end if;
+            
+            -- Reset statistics on address 0
+            if axilCbWriteMasters(asic).awaddr(18 downto 0) = 0 and axilCbWriteSlaves(asic).awready = '1' then
+               v.maxFreqHist(asic, bins)  := "00000000000000" & countConf(asic, bins);
+            end if;
+            
+         end loop;
          
          -- select the highest bin
          
