@@ -32,9 +32,11 @@ except ImportError:
     from PyQt4.QtGui     import *
 
 class SaciConfigCore(pr.Device):
-   def __init__(self, **kwargs):
+   def __init__(self, simSpeedup = False, **kwargs):
       """Create SaciConfigCore"""
       super().__init__(description='Readout Core Regsisters', **kwargs)
+      
+      self.simSpeedup = simSpeedup
       
       # Creation. memBase is either the register bus server (srp, rce mapped memory, etc) or the device which
       # contains this object. In most cases the parent and memBase are the same but they can be 
@@ -101,6 +103,17 @@ class SaciConfigCore(pr.Device):
          mode       = 'RO',
       ))
       
+      for i in range(16):      
+          self.add(pr.RemoteVariable(
+                 name       = ('MaxFreqConfAsic[%d]'%i),     
+                 description= ('Most frequent configuration ASIC[%d]'%i),     
+                 offset     = 0x00800020+i*4, 
+                 bitSize    = 4, 
+                 bitOffset  = 0,  
+                 base       = pr.UInt, 
+                 mode       = 'RO',
+              ))
+      
       #####################################
       # Create commands
       #####################################
@@ -118,12 +131,30 @@ class SaciConfigCore(pr.Device):
    
    def setAsicsMatrix(self, dev,cmd,arg):
       """SetAsicsMatrix command function"""
+      
+      # simulation only test
+      if self.simSpeedup:
+         # write memory
+         for asic in range (0, 16):
+            self._rawWrite((asic*0x80000)+int(0)*4, 0x82888180)
+            self._rawWrite((asic*0x80000)+int(1)*4, 0x88888888)
+            self._rawWrite((asic*0x80000)+int(2)*4, 0x88848883)
+            self._rawWrite((asic*0x80000)+int(3)*4, 0x88888888)
+         # request config write to ASICs and wait for completion
+         self.ConfSel.set(0xffff)
+         self.ConfWrReq.set(True)
+         while self.ConfDoneAll.get() != True:
+            ti.sleep(1)
+         return
+      
       if not isinstance(arg, str):
          arg = ''
       if len(arg) > 0:
          self.filename = arg
       else:
          self.filename = QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+      
+      # write csv to memory
       if os.path.splitext(self.filename)[1] == '.csv':
          matrixCfg = np.genfromtxt(self.filename, delimiter=',')
          if matrixCfg.shape == (178, 192):
@@ -140,17 +171,17 @@ class SaciConfigCore(pr.Device):
                         #print('BRAM[0x%X] = 0x%X'%((asic*0x80000)+int(memAddr/8)*4, memData))
                      
                      memAddr = memAddr + 1
-               #self._rawWrite((asic*0x80000)+int(0)*4, 0x02000100)
-               #self._rawWrite((asic*0x80000)+int(2)*4, 0x00040003)
-            
-            self.ConfSel.set(0xffff)
-            self.ConfWrReq.set(True)
-            while self.ConfDoneAll.get() != True:
-               ti.sleep(1)
          else:
             print('csv file must be 192x178 pixels')
       else:
-            print("Not csv file : ", self.filename)    
+            print("Not csv file : ", self.filename)
+      
+      #request config write to ASICs and wait for completion
+      self.ConfSel.set(0xffff)
+      self.ConfWrReq.set(True)
+      while self.ConfDoneAll.get() != True:
+         ti.sleep(1)
+      
    
    @staticmethod   
    def frequencyConverter(self):

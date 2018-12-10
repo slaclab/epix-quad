@@ -56,6 +56,7 @@ end SaciConfigCore;
 
 architecture rtl of SaciConfigCore is
    
+   constant DSP_CMP_NUM_C     : natural := 15;
    constant NUM_AXI_MASTERS_C : natural := 17;
    constant AXI_CONFIG_C      : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := genAxiLiteConfig(NUM_AXI_MASTERS_C, AXI_BASE_ADDR_G, 24, 19);
 
@@ -74,6 +75,8 @@ architecture rtl of SaciConfigCore is
    
    type RegType is record
       state                : StateTypeArray(3 downto 0);
+      maxFreqConf          : Slv4Array(15 downto 0);
+      maxFreqHist          : Slv18VectorArray(15 downto 0, 15 downto 0);
       regSaciBusGr         : slv(3 downto 0);
       conSaciBusGr         : slv(3 downto 0);
       confWrReq            : sl;
@@ -85,6 +88,8 @@ architecture rtl of SaciConfigCore is
 
    constant REG_INIT_C : RegType := (
       state                => (others=>REG_ACC_S),
+      maxFreqConf          => (others=>(others=>'0')),
+      maxFreqHist          => (others=>(others=>(others=>'0'))),
       regSaciBusGr         => (others=>'0'),
       conSaciBusGr         => (others=>'0'),
       confWrReq            => '0',
@@ -116,6 +121,9 @@ architecture rtl of SaciConfigCore is
    signal memDin        : Slv32Array(15 downto 0);
    signal memWr         : slv(15 downto 0);
    
+   signal cmpAin        : Slv18VectorArray(15 downto 0, DSP_CMP_NUM_C-1 downto 0);
+   signal cmpBin        : Slv18VectorArray(15 downto 0, DSP_CMP_NUM_C-1 downto 0);
+   signal cmpGtEq       : Slv1VectorArray (15 downto 0, DSP_CMP_NUM_C-1 downto 0);
    
 begin
    
@@ -145,10 +153,12 @@ begin
       );
    
 
-   comb : process (sysRst, r, axilCbReadMasters(16), axilCbWriteMasters(16), 
-      confDone, confDoneAll, confFail, regSaciBusReq, conSaciBusReq) is
-      variable v      : RegType;
-      variable regCon : AxiLiteEndPointType;
+   comb : process (sysRst, r, axilCbReadMasters(16), axilCbWriteMasters, axilCbWriteSlaves, 
+      confDone, confDoneAll, confFail, regSaciBusReq, conSaciBusReq, cmpGtEq) is
+      variable v           : RegType;
+      variable regCon      : AxiLiteEndPointType;
+      variable countConf   : Slv4VectorArray(15 downto 0, 15 downto 0);
+      variable cmpGtEqSel  : Slv18VectorArray(15 downto 0, 13 downto 0);
    begin
       v := r;
       
@@ -168,6 +178,9 @@ begin
       axiSlaveRegister (regCon, x"008", 0, v.confSel           );
       axiSlaveRegisterR(regCon, x"00C", 0, confDoneAll         );
       axiSlaveRegisterR(regCon, x"010", 0, confFail            );
+      for asic in 15 downto 0 loop
+         axiSlaveRegisterR(regCon, x"020"+toSlv(asic*4,12), 0, r.maxFreqConf(asic));
+      end loop;
       
       -- Close out the AXI-Lite transaction
       axiSlaveDefault(regCon, v.axilWriteSlave, v.axilReadSlave, AXI_RESP_DECERR_C);
@@ -204,6 +217,189 @@ begin
                v.state(i) := REG_ACC_S;
             
          end case;
+      end loop;
+      
+      --------------------------------------------------
+      -- Find most frequent (commmon) pixel configuration in memories write transactions
+      --------------------------------------------------
+      for asic in 15 downto 0 loop
+         
+         -- Reset statistics on address 0
+         if axilCbWriteMasters(asic).awaddr(18 downto 0) = 0 and axilCbWriteSlaves(asic).awready = '1' then
+            v.maxFreqConf(asic)           := (others=>'0');
+            for bins in 0 to 15 loop
+               v.maxFreqHist(asic, bins)  := (others=>'0');
+            end loop;
+         end if;
+         
+         -- count bins in all 8 nibbles
+         for bins in 0 to 15 loop
+            countConf(asic, bins) := (others=>'0');
+            if axilCbWriteMasters(asic).wdata(3 downto 0) = bins then
+               countConf(asic, bins) := countConf(asic, bins) + 1;
+            end if;
+            if axilCbWriteMasters(asic).wdata(7 downto 4) = bins then
+               countConf(asic, bins) := countConf(asic, bins) + 1;
+            end if;
+            if axilCbWriteMasters(asic).wdata(11 downto 8) = bins then
+               countConf(asic, bins) := countConf(asic, bins) + 1;
+            end if;
+            if axilCbWriteMasters(asic).wdata(15 downto 12) = bins then
+               countConf(asic, bins) := countConf(asic, bins) + 1;
+            end if;
+            if axilCbWriteMasters(asic).wdata(19 downto 16) = bins then
+               countConf(asic, bins) := countConf(asic, bins) + 1;
+            end if;
+            if axilCbWriteMasters(asic).wdata(23 downto 20) = bins then
+               countConf(asic, bins) := countConf(asic, bins) + 1;
+            end if;
+            if axilCbWriteMasters(asic).wdata(27 downto 24) = bins then
+               countConf(asic, bins) := countConf(asic, bins) + 1;
+            end if;
+            if axilCbWriteMasters(asic).wdata(31 downto 28) = bins then
+               countConf(asic, bins) := countConf(asic, bins) + 1;
+            end if;
+         end loop;
+         
+         if axilCbWriteSlaves(asic).wready = '1' then
+            for bins in 0 to 15 loop
+               v.maxFreqHist(asic, bins) := r.maxFreqHist(asic, bins) + countConf(asic, bins);
+            end loop;
+         end if;
+         
+         -- select the highest bin
+         
+         -- first stage of 8 DSP comparators
+         for cmp in 0 to 7 loop
+            cmpAin(asic, cmp) <= r.maxFreqHist(asic, cmp*2+0);
+            cmpBin(asic, cmp) <= r.maxFreqHist(asic, cmp*2+1);
+            if cmpGtEq(asic, cmp) = "1" then
+               cmpGtEqSel(asic, cmp) := r.maxFreqHist(asic, cmp*2+0);
+            else
+               cmpGtEqSel(asic, cmp) := r.maxFreqHist(asic, cmp*2+1);
+            end if;
+         end loop;
+         
+         -- second stage of 4 DSP comparators
+         for cmp in 0 to 3 loop
+            cmpAin(asic, 8+cmp) <= cmpGtEqSel(asic, cmp*2+0);
+            cmpBin(asic, 8+cmp) <= cmpGtEqSel(asic, cmp*2+1);
+            if cmpGtEq(asic, 8+cmp) = "1" then
+               cmpGtEqSel(asic, 8+cmp) := cmpGtEqSel(asic, cmp*2+0);
+            else
+               cmpGtEqSel(asic, 8+cmp) := cmpGtEqSel(asic, cmp*2+1);
+            end if;
+         end loop;
+         
+         -- third stage of 2 DSP comparators
+         for cmp in 0 to 1 loop
+            cmpAin(asic, 12+cmp) <= cmpGtEqSel(asic, 8+cmp*2+0);
+            cmpBin(asic, 12+cmp) <= cmpGtEqSel(asic, 8+cmp*2+1);
+            if cmpGtEq(asic, 12+cmp) = "1" then
+               cmpGtEqSel(asic, 12+cmp) := cmpGtEqSel(asic, 8+cmp*2+0);
+            else
+               cmpGtEqSel(asic, 12+cmp) := cmpGtEqSel(asic, 8+cmp*2+1);
+            end if;
+         end loop;
+         
+         -- fourth stage of 1 DSP comparator
+         cmpAin(asic, 14) <= cmpGtEqSel(asic, 12);
+         cmpBin(asic, 14) <= cmpGtEqSel(asic, 13);
+         
+         -- decode highest bin
+         if cmpGtEq(asic, 14) = "1" then
+            -- comparator 12
+            if cmpGtEq(asic, 12) = "1" then
+               -- comparator 8
+               if cmpGtEq(asic, 8) = "1" then 
+                  -- comparator 0
+                  if cmpGtEq(asic, 0) = "1" then 
+                     -- bin 0
+                     v.maxFreqConf(asic) := "0000";
+                  else
+                     -- bin 1
+                     v.maxFreqConf(asic) := "0001";
+                  end if;
+               else
+                  -- comparator 1
+                  if cmpGtEq(asic, 1) = "1" then 
+                     -- bin 2
+                     v.maxFreqConf(asic) := "0010";
+                  else
+                     -- bin 3
+                     v.maxFreqConf(asic) := "0011";
+                  end if;
+               end if;
+            -- comparator 13
+            else
+               -- comparator 9
+               if cmpGtEq(asic, 9) = "1" then 
+                  -- comparator 2
+                  if cmpGtEq(asic, 2) = "1" then 
+                     -- bin 4
+                     v.maxFreqConf(asic) := "0100";
+                  else
+                     -- bin 5
+                     v.maxFreqConf(asic) := "0101";
+                  end if;
+               else
+                  -- comparator 3
+                  if cmpGtEq(asic, 3) = "1" then 
+                     -- bin 6
+                     v.maxFreqConf(asic) := "0110";
+                  else
+                     -- bin 7
+                     v.maxFreqConf(asic) := "0111";
+                  end if;
+               end if;
+            end if;
+         else
+            if cmpGtEq(asic, 13) = "1" then
+               -- comparator 10
+               if cmpGtEq(asic, 10) = "1" then 
+                  -- comparator 4
+                  if cmpGtEq(asic, 4) = "1" then 
+                     -- bin 8
+                     v.maxFreqConf(asic) := "1000";
+                  else
+                     -- bin 9
+                     v.maxFreqConf(asic) := "1001";
+                  end if;
+               else
+                  -- comparator 5
+                  if cmpGtEq(asic, 5) = "1" then 
+                     -- bin 10
+                     v.maxFreqConf(asic) := "1010";
+                  else
+                     -- bin 11
+                     v.maxFreqConf(asic) := "1011";
+                  end if;
+               end if;
+            else
+               -- comparator 11
+               if cmpGtEq(asic, 11) = "1" then 
+                  -- comparator 6
+                  if cmpGtEq(asic, 6) = "1" then 
+                     -- bin 12
+                     v.maxFreqConf(asic) := "1100";
+                  else
+                     -- bin 13
+                     v.maxFreqConf(asic) := "1101";
+                  end if;
+               else
+                  -- comparator 7
+                  if cmpGtEq(asic, 7) = "1" then 
+                     -- bin 14
+                     v.maxFreqConf(asic) := "1110";
+                  else
+                     -- bin 15
+                     v.maxFreqConf(asic) := "1111";
+                  end if;
+               end if;
+            end if;
+         end if;
+         
+         
       end loop;
       
       
@@ -291,6 +487,7 @@ begin
             confSel        => r.confSel(i*4+3 downto i*4),
             confDone       => confDone(i),
             confFail       => confFail(i*4+3 downto i*4),
+            maxFreqConf    => r.maxFreqConf(i*4+3 downto i*4),
             memAddr        => memAddr(i*4+3 downto i*4),
             memDout        => memDout(i*4+3 downto i*4),
             memDin         => memDin(i*4+3 downto i*4),
@@ -345,8 +542,27 @@ begin
             din            => memDin(i),
             dout           => memDout(i)
          );
-         
+   
    end generate GEN_MEM;
+   
+   ----------------------------------------------------
+   -- Generate DSP Comparators
+   ----------------------------------------------------
+   GEN_ASIC : for asic in 15 downto 0 generate
+      GEN_CMP : for cmp in DSP_CMP_NUM_C-1 downto 0 generate
+         U_DspCmp : entity work.DspComparator
+            generic map (
+               WIDTH_G  => 18
+            )
+            port map (
+               clk     => sysClk,
+               rst     => sysRst,
+               ain     => cmpAin(asic, cmp),
+               bin     => cmpBin(asic, cmp),
+               gtEq    => cmpGtEq(asic, cmp)(0)
+            );
+      end generate GEN_CMP;
+   end generate GEN_ASIC;
    
 end rtl;
 

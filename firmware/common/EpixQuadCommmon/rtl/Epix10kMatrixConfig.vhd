@@ -360,7 +360,7 @@ begin
          
          when ROWCNT_CMD_S =>
             -- wait for the read address 
-            if r.dlyCnt >= 2 then
+            if r.dlyCnt >= 3 then
                if maxFreq = '0' or r.confWrReq = '0' then
                   -- Set Row SACI Command
                   v.req       := '1';

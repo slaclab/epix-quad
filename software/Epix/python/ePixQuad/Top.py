@@ -194,10 +194,11 @@ class Top(pr.Root):
             ))
         
         self.add(ePixQuad.SaciConfigCore( 
-            name    = 'SaciConfigCore', 
-            memBase = memMap, 
-            offset  = 0x08000000, 
-            expand  = False,
+            name       = 'SaciConfigCore', 
+            memBase    = memMap, 
+            offset     = 0x08000000, 
+            expand     = False,
+            simSpeedup = (hwType == 'simulation'),
         ))
         
         if (hwType != 'simulation'):     
