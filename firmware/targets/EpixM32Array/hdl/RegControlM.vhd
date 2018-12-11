@@ -407,9 +407,9 @@ begin
       -- ASIC debug test
       -- remove feature when done testing
       if r.asicAcqReg.asicClkCnt >= r.asicAcqReg.asicClkMaskCnt and r.asicAcqReg.asicClkMaskEn = '1' then
-         asicClk     <= r.asicAcqReg.asicClk;
-      else
          asicClk     <= '0';
+      else
+         asicClk     <= r.asicAcqReg.asicClk;
       end if;
       asicStart      <= r.asicAcqReg.asicStart;
       asicSample     <= r.asicAcqReg.asicSample(conv_integer(r.asicAcqReg.asicSampleDly));
