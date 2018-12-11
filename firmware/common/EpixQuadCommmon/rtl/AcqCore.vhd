@@ -347,6 +347,7 @@ begin
          
          -- wait unit all ASIC data is read out (handshake)
          when WAIT_FOR_READOUT_S =>
+            v.asicR0 := '0';
             if readDone = '1' then
                v.stateCnt := (others=>'0');
                v.acqState := SYNC_S;
@@ -354,6 +355,7 @@ begin
          
          -- SACI_RESET_S state renamed to SYNC_S
          when SYNC_S =>
+            v.asicR0 := '0';
             v.asicSync  := '1';
             -- arbitrary sync pulse width (1us)
             if r.stateCnt >= 100 then
