@@ -100,7 +100,7 @@ parser.add_argument(
     "--adcStop", 
     type     = int,
     required = False,
-    default  = 7,
+    default  = 9,
     help     = "Stop testing on ADC no.",
 )
 
