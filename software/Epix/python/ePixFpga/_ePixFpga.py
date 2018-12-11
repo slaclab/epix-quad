@@ -79,6 +79,7 @@ class EpixM32Array(pr.Device):
             analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[1]', offset=0x08000000, channels=8, enabled=False, expand=False),
             analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]', offset=0x09000000, enabled=False, expand=False),
             analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]', offset=0x09000800, enabled=False, expand=False),
+            AxiMicronN25Q(name='MicronN25Q',              offset=0x05000000, expand=False, hidden=False),
             #analog_devices.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]', offset=0x09001000, enabled=False, expand=False),
             #axi.AxiStreamMonitoring(name='RdoutStreamMonitoring', offset=0x0C000000, enabled=True, expand=False, numberLanes=2),
             MicroblazeLog(name='MicroblazeLog', offset=0x0A000000, enabled=False, expand=False)))
@@ -112,8 +113,6 @@ class EpixM32ArrayFpgaRegisters(pr.Device):
       self.add(pr.RemoteVariable(name='AsicSampleDly',   description='AsicSampleDly',     offset=0x00000124, bitSize=8,  bitOffset=0, base=pr.UInt, mode='RW'))
       self.add(pr.RemoteVariable(name='TrigOutDelay',    description='TrigOutDelay',      offset=0x00000128, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
       self.add(pr.RemoteVariable(name='TrigOutLength',   description='TrigOutLength',     offset=0x0000012C, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
-      self.add(pr.RemoteVariable(name='AsicClkMaskEn',   description='AsicClkMaskEn',     offset=0x00000130, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='AsicClkMaskCnt',  description='AsicClkMaskCnt',    offset=0x00000134, bitSize=11, bitOffset=0, base=pr.UInt, mode='RW'))
       
       self.add((
          pr.RemoteVariable(name='AsicDigitalPwrEnable',  description='AsicPower', offset=0x00000200, bitSize=1, bitOffset=0,  base=pr.Bool, mode='RW'),
