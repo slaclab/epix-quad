@@ -102,7 +102,6 @@ architecture rtl of RdoutCoreBram is
       IDLE_S,
       HDR_S,
       WAIT_LINE_S,
-      WAIT_LINE_DLY_S,
       MOVE_LINE_S,
       FOOTER_S,
       TPS_DATA_S
@@ -145,9 +144,6 @@ architecture rtl of RdoutCoreBram is
       sAxilWriteSlave      : AxiLiteWriteSlaveType;
       sAxilReadSlave       : AxiLiteReadSlaveType;
       monData              : Slv16Array(37 downto 0);
-      txDelay              : slv(31 downto 0);
-      txBurstDelay         : slv(31 downto 0);
-      txBurstDelayCnt      : slv(31 downto 0);
    end record RegType;
 
    constant REG_INIT_C : RegType := (
@@ -186,10 +182,7 @@ architecture rtl of RdoutCoreBram is
       txMaster             => AXI_STREAM_MASTER_INIT_C,
       sAxilWriteSlave      => AXI_LITE_WRITE_SLAVE_INIT_C,
       sAxilReadSlave       => AXI_LITE_READ_SLAVE_INIT_C,
-      monData              => (others=>(others=>'0')),
-      txDelay              => (others=>'0'),
-      txBurstDelay         => (others=>'0'),
-      txBurstDelayCnt      => (others=>'0')
+      monData              => (others=>(others=>'0'))
    );
 
    signal r                : RegType := REG_INIT_C;
@@ -220,10 +213,6 @@ architecture rtl of RdoutCoreBram is
    signal muxDoutMap       : slv(15 downto 0);
    
    signal doutRd           : Slv16Array(3 downto 0);
-   
-   signal axisDelay        : slv(31 downto 0);
-   signal axisOutMaster    : AxiStreamMasterType;
-   signal axisOutSlave     : AxiStreamSlaveType;
    
 begin
    --r.rowCount(BUFF_BITS_C-1 downto 0)
@@ -407,8 +396,6 @@ begin
       axiSlaveRegisterR(regCon, x"018", 0, r.lineBufErr(2)     );
       axiSlaveRegisterR(regCon, x"01C", 0, r.lineBufErr(3)     );
       axiSlaveRegister (regCon, x"020", 0, v.testData          );
-      axiSlaveRegister (regCon, x"024", 0, v.txDelay           );
-      axiSlaveRegister (regCon, x"028", 0, v.txBurstDelay      );
       
       
       -- Close out the AXI-Lite transaction
@@ -580,9 +567,7 @@ begin
                else
                   v.lineRdAddr := r.lineRdAddr - 1;
                end if;
-               --v.rdState   := MOVE_LINE_S;
-               v.rdState   := WAIT_LINE_DLY_S;
-               v.txBurstDelayCnt := (others=>'0');
+               v.rdState   := MOVE_LINE_S;
             elsif r.timeCnt = TIMEOUT_C then
                v.timeErr   := '1';
                v.colCount  := 0;
@@ -590,16 +575,6 @@ begin
                v.rdState   := FOOTER_S;
             else
                v.timeCnt   := r.timeCnt + 1;
-            end if;
-         
-         -- this state is to delay stram bursts to help balance the link load for the pgpG3
-         -- it should be removed after migrating to newer pgp card with more PCIe bandwidth
-         when WAIT_LINE_DLY_S =>
-            if r.txBurstDelayCnt >= r.txBurstDelay then
-               v.txBurstDelayCnt := (others=>'0');
-               v.rdState         := MOVE_LINE_S;
-            else
-               v.txBurstDelayCnt := r.txBurstDelayCnt + 1;
             end if;
             
          when MOVE_LINE_S =>
@@ -967,41 +942,8 @@ begin
       -- Master Port
       mAxisClk    => axisClk,
       mAxisRst    => axisRst,
-      mAxisMaster => axisOutMaster,
-      mAxisSlave  => axisOutSlave
-   );
-   
-   ----------------------------------------------------------------------
-   -- Configurable Stream Delay to Ease PGP Throughput Management
-   ----------------------------------------------------------------------
-   
-   U_DlySync : entity work.SynchronizerVector
-   generic map (
-      TPD_G    => TPD_G,         
-      WIDTH_G  => 32
-   )
-   port map (
-      clk      => axisClk,
-      rst      => axisRst,
-      dataIn   => r.txDelay,
-      dataOut  => axisDelay
-   );
-   
-   U_AxisDelay : entity work.AxiStreamDelay
-   generic map (
-      TPD_G          => TPD_G,
-      AXIS_CONFIG_G  => MASTER_AXI_CONFIG_C
-   )
-   port map (
-      axisClk        => axisClk,
-      axisRst        => axisRst,
-      delay          => axisDelay,
-      -- Slave Port
-      sAxisMaster    => axisOutMaster,
-      sAxisSlave     => axisOutSlave,
-      -- Master Port
-      mAxisMaster    => axisMaster,
-      mAxisSlave     => axisSlave
+      mAxisMaster => axisMaster,
+      mAxisSlave  => axisSlave
    );
    
 end rtl;
