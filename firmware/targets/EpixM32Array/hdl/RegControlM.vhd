@@ -91,6 +91,8 @@ architecture rtl of RegControlM is
       asicR3Tr2         : slv(31 downto 0);
       asicR1Test        : sl;                -- register setting
       asicClk           : sl;
+      asicClkMaskEn     : sl;
+      asicClkMaskCnt    : slv(10 downto 0);
       asicClkDly        : slv(31 downto 0);  -- register setting
       asicClkPerHalf    : slv(15 downto 0);  -- register setting
       asicClkPerCnt     : slv(15 downto 0);
@@ -117,6 +119,8 @@ architecture rtl of RegControlM is
       asicR3Tr2         => toSlv(500, 32),   -- T = value * 10ns
       asicR1Test        => '0',
       asicClk           => '0',
+      asicClkMaskEn     => '0',
+      asicClkMaskCnt    => (others=>'0'),
       asicClkDly        => toSlv(1000, 32),  -- T = value * 10ns
       asicClkPerHalf    => toSlv(100, 16),   -- T = value * 10ns
       asicClkPerCnt     => (others=>'0'),
@@ -227,6 +231,8 @@ begin
       axiSlaveRegister(regCon,  x"000124",  0, v.asicAcqReg.asicSampleDly);
       axiSlaveRegister(regCon,  x"000128",  0, v.asicAcqReg.trigOutDly);
       axiSlaveRegister(regCon,  x"00012C",  0, v.asicAcqReg.trigOutLen);
+      axiSlaveRegister(regCon,  x"000130",  0, v.asicAcqReg.asicClkMaskEn);
+      axiSlaveRegister(regCon,  x"000134",  0, v.asicAcqReg.asicClkMaskCnt);
       
       axiSlaveRegister(regCon,  x"000200",  0, v.pwrEnableReq);
       axiSlaveRegister(regCon,  x"000204",  0, v.dbgSel1);
@@ -397,7 +403,14 @@ begin
       asicR1         <= r.asicAcqReg.asicR1;
       asicR2         <= r.asicAcqReg.asicR2;
       asicR3         <= r.asicAcqReg.asicR3;
-      asicClk        <= r.asicAcqReg.asicClk;
+      -- stop reading out at a given (set) pixel
+      -- ASIC debug test
+      -- remove feature when done testing
+      if r.asicAcqReg.asicClkCnt >= r.asicAcqReg.asicClkMaskCnt and r.asicAcqReg.asicClkMaskEn = '1' then
+         asicClk     <= r.asicAcqReg.asicClk;
+      else
+         asicClk     <= '0';
+      end if;
       asicStart      <= r.asicAcqReg.asicStart;
       asicSample     <= r.asicAcqReg.asicSample(conv_integer(r.asicAcqReg.asicSampleDly));
       trigOut        <= r.asicAcqReg.trigOut;
