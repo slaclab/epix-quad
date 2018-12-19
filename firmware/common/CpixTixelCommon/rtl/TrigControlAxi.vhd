@@ -76,6 +76,7 @@ architecture rtl of TrigControlAxi is
       runTriggerDelay   : slv(31 downto 0);
       daqTriggerDelay   : slv(31 downto 0);
       autoTrigPeriod    : slv(31 downto 0);
+      daqTrigPrescale   : slv(31 downto 0);
    end record TriggerType;
    
    constant TRIGGER_INIT_C : TriggerType := (
@@ -87,7 +88,8 @@ architecture rtl of TrigControlAxi is
       acqCountReset     => '0',
       runTriggerDelay   => (others=>'0'),
       daqTriggerDelay   => (others=>'0'),
-      autoTrigPeriod    => (others=>'0')
+      autoTrigPeriod    => (others=>'0'),
+      daqTrigPrescale   => (others=>'0')
    );
    
    type RegType is record
@@ -114,8 +116,10 @@ architecture rtl of TrigControlAxi is
    signal daqTriggerEdge  : std_logic;
    signal runTriggerCnt   : std_logic_vector(31 downto 0);
    signal daqTriggerCnt   : std_logic_vector(31 downto 0);
+   signal daqTriggerPreCnt   : std_logic_vector(31 downto 0);
    signal runTriggerOut   : std_logic;
    signal daqTriggerOut   : std_logic;
+   signal daqTriggerPreOut   : std_logic;
    signal countEnable     : std_logic;
    signal acqCount        : std_logic_vector(31 downto 0);
    signal acqCountSync    : std_logic_vector(31 downto 0);
@@ -309,12 +313,39 @@ begin
          end if;
       end if;
    end process;
+   
+   -- Daq trigger optional prescaler
+   process ( sysClk, sysRst ) begin
+      if ( sysRst = '1' ) then
+         daqTriggerPreCnt  <= (others=>'0') after TPD_G;
+         daqTriggerPreOut  <= '0'           after TPD_G;
+      elsif rising_edge(sysClk) then
+
+         if daqTriggerOut = '1' then
+            
+            if daqTriggerPreCnt >= r.trig.daqTrigPrescale then
+               daqTriggerPreCnt  <= (others=>'0') after TPD_G;
+               daqTriggerPreOut  <= '1'           after TPD_G;
+            else
+               daqTriggerPreCnt  <= daqTriggerPreCnt + 1 after TPD_G;  
+            end if;
+         
+         else
+            daqTriggerPreOut  <= '0'           after TPD_G;
+         
+         end if;
+         
+         
+         
+      end if;
+   end process;
+
 
    --------------------------------
    -- External triggers
    --------------------------------
    hwRunTrig <= runTriggerOut;
-   hwDaqTrig <= daqTriggerOut;
+   hwDaqTrig <= daqTriggerPreOut;
 
    --------------------------------
    -- Autotrigger block
@@ -386,6 +417,7 @@ begin
       axiSlaveRegister (regCon, x"1C", 0, v.trig.pgpTrigEn);
       axiSlaveRegister (regCon, x"20", 0, v.trig.acqCountReset);
       axiSlaveRegisterR(regCon, x"24", 0, acqCountSync);
+      axiSlaveRegister (regCon, x"30", 0, v.trig.daqTrigPrescale);
       
       axiSlaveDefault(regCon, v.sAxilWriteSlave, v.sAxilReadSlave, AXIL_ERR_RESP_G);
       
