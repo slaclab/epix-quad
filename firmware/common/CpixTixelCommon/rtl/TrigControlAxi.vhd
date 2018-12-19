@@ -76,6 +76,7 @@ architecture rtl of TrigControlAxi is
       runTriggerDelay   : slv(31 downto 0);
       daqTriggerDelay   : slv(31 downto 0);
       autoTrigPeriod    : slv(31 downto 0);
+      runTrigPrescale   : slv(31 downto 0);
       daqTrigPrescale   : slv(31 downto 0);
    end record TriggerType;
    
@@ -89,6 +90,7 @@ architecture rtl of TrigControlAxi is
       runTriggerDelay   => (others=>'0'),
       daqTriggerDelay   => (others=>'0'),
       autoTrigPeriod    => (others=>'0'),
+      runTrigPrescale   => (others=>'0'),
       daqTrigPrescale   => (others=>'0')
    );
    
@@ -117,9 +119,11 @@ architecture rtl of TrigControlAxi is
    signal runTriggerCnt   : std_logic_vector(31 downto 0);
    signal daqTriggerCnt   : std_logic_vector(31 downto 0);
    signal daqTriggerPreCnt   : std_logic_vector(31 downto 0);
+   signal runTriggerPreCnt   : std_logic_vector(31 downto 0);
    signal runTriggerOut   : std_logic;
    signal daqTriggerOut   : std_logic;
    signal daqTriggerPreOut   : std_logic;
+   signal runTriggerPreOut   : std_logic;
    signal countEnable     : std_logic;
    signal acqCount        : std_logic_vector(31 downto 0);
    signal acqCountSync    : std_logic_vector(31 downto 0);
@@ -314,6 +318,29 @@ begin
       end if;
    end process;
    
+   -- Run trigger optional prescaler
+   process ( sysClk, sysRst ) begin
+      if ( sysRst = '1' ) then
+         runTriggerPreCnt  <= (others=>'0') after TPD_G;
+         runTriggerPreOut  <= '0'           after TPD_G;
+      elsif rising_edge(sysClk) then
+
+         if runTriggerOut = '1' then
+            
+            if runTriggerPreCnt >= r.trig.runTrigPrescale then
+               runTriggerPreCnt  <= (others=>'0') after TPD_G;
+               runTriggerPreOut  <= '1'           after TPD_G;
+            else
+               runTriggerPreCnt  <= runTriggerPreCnt + 1 after TPD_G;  
+            end if;
+         
+         else
+            runTriggerPreOut  <= '0'           after TPD_G;
+         
+         end if;
+      end if;
+   end process;
+   
    -- Daq trigger optional prescaler
    process ( sysClk, sysRst ) begin
       if ( sysRst = '1' ) then
@@ -334,9 +361,6 @@ begin
             daqTriggerPreOut  <= '0'           after TPD_G;
          
          end if;
-         
-         
-         
       end if;
    end process;
 
@@ -344,7 +368,7 @@ begin
    --------------------------------
    -- External triggers
    --------------------------------
-   hwRunTrig <= runTriggerOut;
+   hwRunTrig <= runTriggerPreOut;
    hwDaqTrig <= daqTriggerPreOut;
 
    --------------------------------
@@ -417,7 +441,8 @@ begin
       axiSlaveRegister (regCon, x"1C", 0, v.trig.pgpTrigEn);
       axiSlaveRegister (regCon, x"20", 0, v.trig.acqCountReset);
       axiSlaveRegisterR(regCon, x"24", 0, acqCountSync);
-      axiSlaveRegister (regCon, x"30", 0, v.trig.daqTrigPrescale);
+      axiSlaveRegister (regCon, x"30", 0, v.trig.runTrigPrescale);
+      axiSlaveRegister (regCon, x"34", 0, v.trig.daqTrigPrescale);
       
       axiSlaveDefault(regCon, v.sAxilWriteSlave, v.sAxilReadSlave, AXIL_ERR_RESP_G);
       
