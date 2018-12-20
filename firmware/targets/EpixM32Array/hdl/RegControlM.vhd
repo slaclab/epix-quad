@@ -102,6 +102,7 @@ architecture rtl of RegControlM is
       trigOut           : sl;
       trigOutDly        : slv(31 downto 0);
       trigOutLen        : slv(31 downto 0);
+      asicR3ForceLow    : sl;
    end record AsicAcqType;
    
    constant ASICACQ_TYPE_INIT_C : AsicAcqType := (
@@ -129,7 +130,8 @@ architecture rtl of RegControlM is
       asicSampleDly     => toSlv(112, 8),    -- 112 is sampling in the middle of low asicClk (verified in asicR1Test mode)
       trigOut           => '0',
       trigOutDly        => (others=>'0'),
-      trigOutLen        => (others=>'0')
+      trigOutLen        => (others=>'0'),
+      asicR3ForceLow    => '0'
    );
    
    type StateType is (IDLE_S, WAIT_ADC_S);
@@ -233,6 +235,7 @@ begin
       axiSlaveRegister(regCon,  x"00012C",  0, v.asicAcqReg.trigOutLen);
       axiSlaveRegister(regCon,  x"000130",  0, v.asicAcqReg.asicClkMaskEn);
       axiSlaveRegister(regCon,  x"000134",  0, v.asicAcqReg.asicClkMaskCnt);
+      axiSlaveRegister(regCon,  x"000138",  0, v.asicAcqReg.asicR3ForceLow);
       
       axiSlaveRegister(regCon,  x"000200",  0, v.pwrEnableReq);
       axiSlaveRegister(regCon,  x"000204",  0, v.dbgSel1);
@@ -287,7 +290,11 @@ begin
             v.asicAcqReg.asicR1     := '0';
          end if;
          v.asicAcqReg.asicR2        := '1';
-         v.asicAcqReg.asicR3        := '1';
+         if r.asicAcqReg.asicR3ForceLow = '0' then
+            v.asicAcqReg.asicR3        := '1';
+         else
+            v.asicAcqReg.asicR3        := '0';
+         end if;
          v.asicAcqReg.trigOut       := '0';
          v.asicAcqReg.asicClk       := '0';
          v.asicAcqReg.asicClkPerCnt := (others=>'0');
@@ -323,6 +330,10 @@ begin
          if r.asicAcqReg.asicR3Tr1 + r.asicAcqReg.asicR3Tr2 <= r.asicAcqTimeCnt then
             v.asicAcqReg.asicR3 := '1';
          end if; 
+         -- force R3 low (test mode)
+         if r.asicAcqReg.asicR3ForceLow = '1' then
+            v.asicAcqReg.asicR3 := '0';
+         end if;
          
          -- asicClk generator 
          -- starts after delay as set in the register
