@@ -832,6 +832,7 @@ begin
    G_DOUT_EPIX10KA : for i in 3 downto 0 generate
       signal iDoutOut   : Slv4Array(63 downto 0);
       signal iDoutCount : Slv8Array(63 downto 0);
+      signal asicRoClkGated : sl;
    begin
       
       U_DoutAsic : entity work.DoutDeserializer
@@ -847,7 +848,7 @@ begin
          acqBusy           => acqBusy,
          roClkTail         => iRoClkTail(i),
          asicDout          => muxDoutMap(3+i*4 downto 0+i*4),
-         asicRoClk         => asicRoClk,
+         asicRoClk         => asicRoClkGated,
          doutOut4          => iDoutOut(15+i*16 downto 0+i*16),
          doutRd            => doutRd(i),
          doutValid         => doutValid(i),
@@ -857,6 +858,10 @@ begin
          sAxilReadMaster   => AXI_LITE_READ_MASTER_INIT_C,
          sAxilReadSlave    => open
       );
+      
+      -- need gated clock to avoid out deserializing during 
+      -- the dummy readout (see AcqCore.vhd)
+      asicRoClkGated <= asicRoClk and r.readPend;
       
       G_NORM : if LINE_REVERSE_G(i) = '0' generate
          G_VEC16 : for j in 15 downto 0 generate

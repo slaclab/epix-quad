@@ -105,6 +105,8 @@ architecture RTL of AcqCore is
       acqState             : AcqStateType;
       sAxilWriteSlave      : AxiLiteWriteSlaveType;
       sAxilReadSlave       : AxiLiteReadSlaveType;
+      dummyAcqEn           : sl;
+      dummyAcq             : sl;
    end record RegType;
 
    constant REG_INIT_C : RegType := (
@@ -133,7 +135,9 @@ architecture RTL of AcqCore is
       stateCnt             => (others=>'0'),
       acqState             => IDLE_S,
       sAxilWriteSlave      => AXI_LITE_WRITE_SLAVE_INIT_C,
-      sAxilReadSlave       => AXI_LITE_READ_SLAVE_INIT_C
+      sAxilReadSlave       => AXI_LITE_READ_SLAVE_INIT_C,
+      dummyAcqEn           => '1',
+      dummyAcq             => '0'
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -142,6 +146,7 @@ architecture RTL of AcqCore is
    signal acqStartEdge       : std_logic             := '0';
    
    constant ROCLK_COUNT_C : natural := 4 * BANK_COLS_G * BANK_ROWS_G;   -- roClk is divided by 4, (data is read out from 64 banks simultaneously)
+   constant DUMMY_ASIC_ROCLK_HALFT_C : natural := 2;
    
 begin
    
@@ -198,6 +203,8 @@ begin
       axiSlaveRegister (regCon, x"02C", 0, v.asicPinForce      );
       axiSlaveRegister (regCon, x"030", 0, v.asicPinValue      );
       
+      axiSlaveRegister (regCon, x"100", 0, v.dummyAcqEn        );
+      
       -- Close out the AXI-Lite transaction
       axiSlaveDefault(regCon, v.sAxilWriteSlave, v.sAxilReadSlave, AXI_RESP_DECERR_C);
       
@@ -230,6 +237,7 @@ begin
             v.stateCnt  := (others=>'0');
             v.roClkCnt  := (others=>'0');
             v.acqBusy   := '0';
+            v.dummyAcq  := '0';
             -- R0 must be low in IDLE for the matrix configuration to work
             v.asicR0    := '0';
             if acqStartEdge = '1' then
@@ -240,9 +248,14 @@ begin
          when WAIT_R0_S =>
             v.asicR0 := '0';
             v.asicPpmat := '1';
-            if r.stateCnt >= r.acqToAsicR0Delay then
+            if r.dummyAcq = '1' then
                v.stateCnt := (others=>'0');
                v.acqState := PULSE_R0_S;
+            else
+               if r.stateCnt >= r.acqToAsicR0Delay then
+                  v.stateCnt := (others=>'0');
+                  v.acqState := PULSE_R0_S;
+               end if;
             end if;
          
          -- R0 pulse (low)
@@ -257,9 +270,14 @@ begin
          -- delay before ACQ pulse
          when WAIT_ACQ_S =>
             v.asicPpmat := '1';
-            if r.stateCnt >= r.asicR0ToAsicAcq then
+            if r.dummyAcq = '1' then
                v.stateCnt := (others=>'0');
                v.acqState := ACQ_S;
+            else
+               if r.stateCnt >= r.asicR0ToAsicAcq then
+                  v.stateCnt := (others=>'0');
+                  v.acqState := ACQ_S;
+               end if;
             end if;
          
          -- ACQ pulse (high)
@@ -276,16 +294,26 @@ begin
          -- Delay before PPMAT drop (matrix power off)
          when WAIT_PPMAT_S =>
             v.asicPpmat := '1';
-            if r.stateCnt >= r.asicAcqLToPPmatL then
+            if r.dummyAcq = '1' then
                v.stateCnt := (others=>'0');
                v.acqState := WAIT_POST_PPMAT_S;
+            else
+               if r.stateCnt >= r.asicAcqLToPPmatL then
+                  v.stateCnt := (others=>'0');
+                  v.acqState := WAIT_POST_PPMAT_S;
+               end if;
             end if;
          
          -- delay before start of readout
          when WAIT_POST_PPMAT_S =>
-            if r.stateCnt >= r.asicPPmatToReadout then
+            if r.dummyAcq = '1' then
                v.stateCnt := (others=>'0');
                v.acqState := SYNC_TO_ADC_S;
+            else
+               if r.stateCnt >= r.asicPPmatToReadout then
+                  v.stateCnt := (others=>'0');
+                  v.acqState := SYNC_TO_ADC_S;
+               end if;
             end if;
          
          -- synchronize with adcClk
@@ -297,52 +325,127 @@ begin
          
          -- asicRoClk low
          when WAIT_ADC_S =>
-            if r.stateCnt >= r.asicRoClkHalfT-1 or r.asicRoClkHalfT = 0 then
-               v.stateCnt  := (others=>'0');
-               v.roClkCnt  := r.roClkCnt + 1;
-               if r.roClkCnt < ROCLK_COUNT_C-1 then
-                  v.acqState  := NEXT_CELL_S;
-               else
-                  v.roClkCnt := (others=>'0');
-                  -- roClkTail is equal to roClk delay needed to output
-                  -- remaining digital output bits
-                  if roClkTail = 0 then
-                     v.acqState := WAIT_FOR_READOUT_S;
+            if r.dummyAcq = '1' then
+               
+               -- do faster (dummy) readout 
+               -- DUMMY_ASIC_ROCLK_HALFT_C = 2 -> 40ns -> 25MHz (this clock is divided by 4 inside epix10kA)
+               if r.stateCnt >= DUMMY_ASIC_ROCLK_HALFT_C - 1 then
+                  v.stateCnt  := (others=>'0');
+                  v.roClkCnt  := r.roClkCnt + 1;
+                  if r.roClkCnt < ROCLK_COUNT_C-1 then
+                     v.acqState  := NEXT_CELL_S;
                   else
-                     v.acqState := NEXT_DOUT_S;
+                     v.roClkCnt := (others=>'0');
+                     -- roClkTail is equal to roClk delay needed to output
+                     -- remaining digital output bits
+                     if roClkTail = 0 then
+                        v.acqState := SYNC_S;
+                     else
+                        v.acqState := NEXT_DOUT_S;
+                     end if;
                   end if;
                end if;
+               
+            else
+            
+               if r.stateCnt >= r.asicRoClkHalfT-1 or r.asicRoClkHalfT = 0 then
+                  v.stateCnt  := (others=>'0');
+                  v.roClkCnt  := r.roClkCnt + 1;
+                  if r.roClkCnt < ROCLK_COUNT_C-1 then
+                     v.acqState  := NEXT_CELL_S;
+                  else
+                     v.roClkCnt := (others=>'0');
+                     -- roClkTail is equal to roClk delay needed to output
+                     -- remaining digital output bits
+                     if roClkTail = 0 then
+                        v.acqState := WAIT_FOR_READOUT_S;
+                     else
+                        v.acqState := NEXT_DOUT_S;
+                     end if;
+                  end if;
+               end if;
+            
             end if;
          
          -- asicRoClk high
          when NEXT_CELL_S =>
             v.asicRoClk := '1';
-            if r.stateCnt >= r.asicRoClkHalfT-1 or r.asicRoClkHalfT = 0 then
-               v.stateCnt := (others=>'0');
-               v.acqState := WAIT_ADC_S;
-            end if;
-            if r.roClkCnt(1 downto 0) = "11" and r.stateCnt = 0 then
-               v.acqSmplEn := '1';
+            
+            if r.dummyAcq = '1' then
+               
+               -- do faster (dummy) readout 
+               -- DUMMY_ASIC_ROCLK_HALFT_C = 2 -> 40ns -> 25MHz (this clock is divided by 4 inside epix10kA)
+               if r.stateCnt >= DUMMY_ASIC_ROCLK_HALFT_C - 1 then
+                  v.stateCnt := (others=>'0');
+                  v.acqState := WAIT_ADC_S;
+               end if;
+               if r.roClkCnt(1 downto 0) = "11" and r.stateCnt = 0 then
+                  v.acqSmplEn := '1';
+               end if;
+               
+            else
+               
+               if r.stateCnt >= r.asicRoClkHalfT-1 or r.asicRoClkHalfT = 0 then
+                  v.stateCnt := (others=>'0');
+                  v.acqState := WAIT_ADC_S;
+               end if;
+               if r.roClkCnt(1 downto 0) = "11" and r.stateCnt = 0 then
+                  v.acqSmplEn := '1';
+               end if;
+            
             end if;
          
          -- asicRoClk low
          when WAIT_DOUT_S =>
-            if r.stateCnt >= r.asicRoClkHalfT-1 or r.asicRoClkHalfT = 0 then
-               v.stateCnt  := (others=>'0');
-               if r.roClkCnt < roClkTail then
-                  v.roClkCnt := r.roClkCnt + 1;
-                  v.acqState := NEXT_DOUT_S;
-               else
-                  v.acqState := WAIT_FOR_READOUT_S;
+            
+            if r.dummyAcq = '1' then
+               
+               -- do faster (dummy) readout 
+               -- DUMMY_ASIC_ROCLK_HALFT_C = 2 -> 40ns -> 25MHz (this clock is divided by 4 inside epix10kA)
+               if r.stateCnt >= DUMMY_ASIC_ROCLK_HALFT_C - 1 then
+                  v.stateCnt  := (others=>'0');
+                  if r.roClkCnt < roClkTail then
+                     v.roClkCnt := r.roClkCnt + 1;
+                     v.acqState := NEXT_DOUT_S;
+                  else
+                     v.acqState := SYNC_S;
+                  end if;
                end if;
+               
+            else
+               
+               if r.stateCnt >= r.asicRoClkHalfT-1 or r.asicRoClkHalfT = 0 then
+                  v.stateCnt  := (others=>'0');
+                  if r.roClkCnt < roClkTail then
+                     v.roClkCnt := r.roClkCnt + 1;
+                     v.acqState := NEXT_DOUT_S;
+                  else
+                     v.acqState := WAIT_FOR_READOUT_S;
+                  end if;
+               end if;
+            
             end if;
          
          -- asicRoClk high
          when NEXT_DOUT_S =>
             v.asicRoClk := '1';
-            if r.stateCnt >= r.asicRoClkHalfT-1 or r.asicRoClkHalfT = 0 then
-               v.stateCnt := (others=>'0');
-               v.acqState := WAIT_DOUT_S;
+            
+            if r.dummyAcq = '1' then
+               
+               -- do faster (dummy) readout 
+               -- DUMMY_ASIC_ROCLK_HALFT_C = 2 -> 40ns -> 25MHz (this clock is divided by 4 inside epix10kA)
+               if r.stateCnt >= DUMMY_ASIC_ROCLK_HALFT_C - 1 then
+                  v.stateCnt := (others=>'0');
+                  v.acqState := WAIT_DOUT_S;
+               end if;
+               
+            else
+            
+               if r.stateCnt >= r.asicRoClkHalfT-1 or r.asicRoClkHalfT = 0 then
+                  v.stateCnt := (others=>'0');
+                  v.acqState := WAIT_DOUT_S;
+               end if;
+            
             end if;
          
          -- wait unit all ASIC data is read out (handshake)
@@ -361,6 +464,18 @@ begin
             if r.stateCnt >= 100 then
                v.stateCnt := (others=>'0');
                v.acqState := IDLE_S;
+            end if;
+            
+            -- this is implementing the gost effect correction
+            -- until we have new ASICs with a proper fix
+            -- run one more dummy ASIC acquisition cycle
+            -- outputs won't be sampled and sent out
+            -- the dummy cycle will be faster than normal acq cycle
+            if r.dummyAcqEn = '1' and r.dummyAcq = '0' then
+               v.stateCnt := (others=>'0');
+               v.roClkCnt := (others=>'0');
+               v.dummyAcq := '1';
+               v.acqState := WAIT_R0_S;
             end if;
          
          -- removed DONE_S state as it was an empty transition
