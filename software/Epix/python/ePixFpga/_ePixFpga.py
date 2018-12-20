@@ -994,7 +994,12 @@ class TriggerRegisters(pr.Device):
       self.add(pr.RemoteVariable(name='PgpTrigEn',       description='PgpTrigEn',         offset=0x0000001C, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='AcqCountReset',   description='AcqCountReset',     offset=0x00000020, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='AcqCount',        description='AcqCount',          offset=0x00000024, bitSize=32, bitOffset=0, base=pr.UInt, disp = '{}', mode='RO'))
+<<<<<<< HEAD
       self.add(pr.RemoteVariable(name='DaqTrigPrescale', description='DaqTrigPrescale',   offset=0x00000030, bitSize=32, bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
+=======
+      self.add(pr.RemoteVariable(name='RunTrigPrescale', description='RunTrigPrescale',   offset=0x00000030, bitSize=32, bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
+      self.add(pr.RemoteVariable(name='DaqTrigPrescale', description='DaqTrigPrescale',   offset=0x00000034, bitSize=32, bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
+>>>>>>> added trigger prescalers needed for xpp runs
       
       #####################################
       # Create commands
