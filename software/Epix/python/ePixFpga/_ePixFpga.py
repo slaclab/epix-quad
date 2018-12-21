@@ -116,6 +116,7 @@ class EpixM32ArrayFpgaRegisters(pr.Device):
       self.add(pr.RemoteVariable(name='AsicClkMaskEn',   description='AsicClkMaskEn',     offset=0x00000130, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='AsicClkMaskCnt',  description='AsicClkMaskCnt',    offset=0x00000134, bitSize=11, bitOffset=0, base=pr.UInt, mode='RW'))
       self.add(pr.RemoteVariable(name='AsicR3ForceLow',  description='AsicR3ForceLow',    offset=0x00000138, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='AsicR3ForceHigh', description='AsicR3ForceHigh',   offset=0x0000013C, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
       
       self.add((
          pr.RemoteVariable(name='AsicDigitalPwrEnable',  description='AsicPower', offset=0x00000200, bitSize=1, bitOffset=0,  base=pr.Bool, mode='RW'),

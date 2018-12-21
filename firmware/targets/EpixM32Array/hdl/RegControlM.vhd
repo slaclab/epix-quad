@@ -103,6 +103,7 @@ architecture rtl of RegControlM is
       trigOutDly        : slv(31 downto 0);
       trigOutLen        : slv(31 downto 0);
       asicR3ForceLow    : sl;
+      asicR3ForceHigh   : sl;
    end record AsicAcqType;
    
    constant ASICACQ_TYPE_INIT_C : AsicAcqType := (
@@ -131,7 +132,8 @@ architecture rtl of RegControlM is
       trigOut           => '0',
       trigOutDly        => (others=>'0'),
       trigOutLen        => (others=>'0'),
-      asicR3ForceLow    => '0'
+      asicR3ForceLow    => '0',
+      asicR3ForceHigh   => '0'
    );
    
    type StateType is (IDLE_S, WAIT_ADC_S);
@@ -236,6 +238,7 @@ begin
       axiSlaveRegister(regCon,  x"000130",  0, v.asicAcqReg.asicClkMaskEn);
       axiSlaveRegister(regCon,  x"000134",  0, v.asicAcqReg.asicClkMaskCnt);
       axiSlaveRegister(regCon,  x"000138",  0, v.asicAcqReg.asicR3ForceLow);
+      axiSlaveRegister(regCon,  x"00013C",  0, v.asicAcqReg.asicR3ForceHigh);
       
       axiSlaveRegister(regCon,  x"000200",  0, v.pwrEnableReq);
       axiSlaveRegister(regCon,  x"000204",  0, v.dbgSel1);
@@ -333,6 +336,10 @@ begin
          -- force R3 low (test mode)
          if r.asicAcqReg.asicR3ForceLow = '1' then
             v.asicAcqReg.asicR3 := '0';
+         end if;
+         -- force R3 high (test mode)
+         if r.asicAcqReg.asicR3ForceHigh = '1' then
+            v.asicAcqReg.asicR3 := '1';
          end if;
          
          -- asicClk generator 
