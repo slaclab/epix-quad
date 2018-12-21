@@ -262,22 +262,22 @@ begin
          when PULSE_R0_S =>
             v.asicR0 := '0';
             v.asicPpmat := '1';
-            if r.stateCnt >= r.asicR0Width then
+            if r.dummyAcq = '1' then
                v.stateCnt := (others=>'0');
                v.acqState := WAIT_ACQ_S;
+            else
+               if r.stateCnt >= r.asicR0Width then
+                  v.stateCnt := (others=>'0');
+                  v.acqState := WAIT_ACQ_S;
+               end if;
             end if;
          
          -- delay before ACQ pulse
          when WAIT_ACQ_S =>
             v.asicPpmat := '1';
-            if r.dummyAcq = '1' then
+            if r.stateCnt >= r.asicR0ToAsicAcq then
                v.stateCnt := (others=>'0');
                v.acqState := ACQ_S;
-            else
-               if r.stateCnt >= r.asicR0ToAsicAcq then
-                  v.stateCnt := (others=>'0');
-                  v.acqState := ACQ_S;
-               end if;
             end if;
          
          -- ACQ pulse (high)
