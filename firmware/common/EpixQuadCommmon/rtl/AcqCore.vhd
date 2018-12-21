@@ -481,20 +481,20 @@ begin
             -- arbitrary sync pulse width (1us)
             if r.stateCnt >= 100 then
                v.stateCnt := (others=>'0');
-               v.acqState := IDLE_S;
+               -- this is implementing the gost effect correction
+               -- until we have new ASICs with a proper fix
+               -- run one more dummy ASIC acquisition cycle
+               -- outputs won't be sampled and sent out
+               -- the dummy cycle will be faster than normal acq cycle
+               if r.dummyAcqEn = '1' and r.dummyAcq = '0' then
+                  v.roClkCnt := (others=>'0');
+                  v.dummyAcq := '1';
+                  v.acqState := WAIT_R0_S;
+               else
+                  v.acqState := IDLE_S;
+               end if;
             end if;
             
-            -- this is implementing the gost effect correction
-            -- until we have new ASICs with a proper fix
-            -- run one more dummy ASIC acquisition cycle
-            -- outputs won't be sampled and sent out
-            -- the dummy cycle will be faster than normal acq cycle
-            if r.dummyAcqEn = '1' and r.dummyAcq = '0' then
-               v.stateCnt := (others=>'0');
-               v.roClkCnt := (others=>'0');
-               v.dummyAcq := '1';
-               v.acqState := WAIT_R0_S;
-            end if;
          
          -- removed DONE_S state as it was an empty transition
             
