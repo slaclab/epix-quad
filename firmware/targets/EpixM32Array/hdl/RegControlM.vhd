@@ -104,6 +104,10 @@ architecture rtl of RegControlM is
       trigOutLen        : slv(31 downto 0);
       asicR3ForceLow    : sl;
       asicR3ForceHigh   : sl;
+      asicR2ForceLow    : sl;
+      asicR2ForceHigh   : sl;
+      asicR1ForceLow    : sl;
+      asicR1ForceHigh   : sl;
    end record AsicAcqType;
    
    constant ASICACQ_TYPE_INIT_C : AsicAcqType := (
@@ -133,7 +137,11 @@ architecture rtl of RegControlM is
       trigOutDly        => (others=>'0'),
       trigOutLen        => (others=>'0'),
       asicR3ForceLow    => '0',
-      asicR3ForceHigh   => '0'
+      asicR3ForceHigh   => '0',
+      asicR2ForceLow    => '0',
+      asicR2ForceHigh   => '0',
+      asicR1ForceLow    => '0',
+      asicR1ForceHigh   => '0'
    );
    
    type StateType is (IDLE_S, WAIT_ADC_S);
@@ -239,6 +247,10 @@ begin
       axiSlaveRegister(regCon,  x"000134",  0, v.asicAcqReg.asicClkMaskCnt);
       axiSlaveRegister(regCon,  x"000138",  0, v.asicAcqReg.asicR3ForceLow);
       axiSlaveRegister(regCon,  x"00013C",  0, v.asicAcqReg.asicR3ForceHigh);
+      axiSlaveRegister(regCon,  x"000140",  0, v.asicAcqReg.asicR2ForceLow);
+      axiSlaveRegister(regCon,  x"000144",  0, v.asicAcqReg.asicR2ForceHigh);
+      axiSlaveRegister(regCon,  x"000148",  0, v.asicAcqReg.asicR1ForceLow);
+      axiSlaveRegister(regCon,  x"00014C",  0, v.asicAcqReg.asicR1ForceHigh);
       
       axiSlaveRegister(regCon,  x"000200",  0, v.pwrEnableReq);
       axiSlaveRegister(regCon,  x"000204",  0, v.dbgSel1);
@@ -287,16 +299,20 @@ begin
          v.asicAcqTimeCnt           := (others=>'1');
       elsif acqStart = '1' and asicReady = '1' then
          v.asicAcqTimeCnt           := (others=>'0');
-         if r.asicAcqReg.asicR1Test = '0' then
+         if r.asicAcqReg.asicR1Test = '0' and r.asicAcqReg.asicR1ForceLow = '0' then
             v.asicAcqReg.asicR1     := '1';
          else
             v.asicAcqReg.asicR1     := '0';
          end if;
-         v.asicAcqReg.asicR2        := '1';
-         if r.asicAcqReg.asicR3ForceLow = '0' then
-            v.asicAcqReg.asicR3        := '1';
+         if r.asicAcqReg.asicR2ForceLow = '0' then
+            v.asicAcqReg.asicR2     := '1';
          else
-            v.asicAcqReg.asicR3        := '0';
+            v.asicAcqReg.asicR2     := '0';
+         end if;
+         if r.asicAcqReg.asicR3ForceLow = '0' then
+            v.asicAcqReg.asicR3     := '1';
+         else
+            v.asicAcqReg.asicR3     := '0';
          end if;
          v.asicAcqReg.trigOut       := '0';
          v.asicAcqReg.asicClk       := '0';
@@ -333,6 +349,8 @@ begin
          if r.asicAcqReg.asicR3Tr1 + r.asicAcqReg.asicR3Tr2 <= r.asicAcqTimeCnt then
             v.asicAcqReg.asicR3 := '1';
          end if; 
+         
+         
          -- force R3 low (test mode)
          if r.asicAcqReg.asicR3ForceLow = '1' then
             v.asicAcqReg.asicR3 := '0';
@@ -341,6 +359,26 @@ begin
          if r.asicAcqReg.asicR3ForceHigh = '1' then
             v.asicAcqReg.asicR3 := '1';
          end if;
+         
+         -- force R2 low (test mode)
+         if r.asicAcqReg.asicR2ForceLow = '1' then
+            v.asicAcqReg.asicR2 := '0';
+         end if;
+         -- force R2 high (test mode)
+         if r.asicAcqReg.asicR2ForceHigh = '1' then
+            v.asicAcqReg.asicR2 := '1';
+         end if;
+         
+         -- force R1 low (test mode)
+         if r.asicAcqReg.asicR1ForceLow = '1' then
+            v.asicAcqReg.asicR1 := '0';
+         end if;
+         -- force R1 high (test mode)
+         if r.asicAcqReg.asicR1ForceHigh = '1' then
+            v.asicAcqReg.asicR1 := '1';
+         end if;
+         
+         
          
          -- asicClk generator 
          -- starts after delay as set in the register
