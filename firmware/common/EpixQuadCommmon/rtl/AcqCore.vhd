@@ -147,6 +147,8 @@ architecture RTL of AcqCore is
    
    constant ROCLK_COUNT_C : natural := 4 * BANK_COLS_G * BANK_ROWS_G;   -- roClk is divided by 4, (data is read out from 64 banks simultaneously)
    constant DUMMY_ASIC_ROCLK_HALFT_C : natural := 2;
+   constant DUMMY_ASIC_R0_TO_ACQ_C   : natural := 2500;
+   constant DUMMY_ASIC_ACQ_WIDTH_C   : natural := 2500;
    
 begin
    
@@ -275,18 +277,32 @@ begin
          -- delay before ACQ pulse
          when WAIT_ACQ_S =>
             v.asicPpmat := '1';
-            if r.stateCnt >= r.asicR0ToAsicAcq then
-               v.stateCnt := (others=>'0');
-               v.acqState := ACQ_S;
+            if r.dummyAcq = '1' then
+               if r.stateCnt >= DUMMY_ASIC_R0_TO_ACQ_C - 1 then
+                  v.stateCnt := (others=>'0');
+                  v.acqState := ACQ_S;
+               end if;
+            else
+               if r.stateCnt >= r.asicR0ToAsicAcq then
+                  v.stateCnt := (others=>'0');
+                  v.acqState := ACQ_S;
+               end if;
             end if;
          
          -- ACQ pulse (high)
          when ACQ_S =>
             v.asicAcq := '1';
             v.asicPpmat := '1';
-            if r.stateCnt >= r.asicAcqWidth then
-               v.stateCnt := (others=>'0');
-               v.acqState := WAIT_PPMAT_S;
+            if r.dummyAcq = '1' then
+               if r.stateCnt >= DUMMY_ASIC_ACQ_WIDTH_C - 1 then
+                  v.stateCnt := (others=>'0');
+                  v.acqState := WAIT_PPMAT_S;
+               end if;
+            else
+               if r.stateCnt >= r.asicAcqWidth then
+                  v.stateCnt := (others=>'0');
+                  v.acqState := WAIT_PPMAT_S;
+               end if;
             end if;
          
          -- removed DROP_ACQ_S state as it was an empty transition
@@ -339,6 +355,7 @@ begin
                      -- roClkTail is equal to roClk delay needed to output
                      -- remaining digital output bits
                      if roClkTail = 0 then
+                        v.stateCnt := (others=>'0');
                         v.acqState := SYNC_S;
                      else
                         v.acqState := NEXT_DOUT_S;
@@ -408,6 +425,7 @@ begin
                      v.roClkCnt := r.roClkCnt + 1;
                      v.acqState := NEXT_DOUT_S;
                   else
+                     v.stateCnt := (others=>'0');
                      v.acqState := SYNC_S;
                   end if;
                end if;
