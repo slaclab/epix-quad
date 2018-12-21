@@ -249,6 +249,15 @@ class AcqCore(pr.Device):
          mode       = 'RW',
       ))
       
+      self.add(pr.RemoteVariable(
+         name       = 'DummyAcqEn',     
+         description= 'Make one more dummy acq cycle to clear out any remaining charge',
+         offset     = 0x00000100, 
+         bitSize    = 1, 
+         bitOffset  = 0,  
+         base       = pr.Bool, 
+         mode       = 'RW',
+      ))
       
       #####################################
       # Create commands
