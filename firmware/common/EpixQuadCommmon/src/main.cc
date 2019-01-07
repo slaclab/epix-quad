@@ -281,6 +281,45 @@ void sensorsHandler(void * data) {
 }
 
 
+void ghostTestHandler(void * data) {
+   
+   uint32_t * acqCounter = (uint32_t *)data;
+   uint8_t pixX, pixY;
+   uint32_t asicOffset;
+   
+   //ghostTestEn register
+   if(Xil_In32(ACQ_CORE+0x104) == 0x1) {
+      
+      (*acqCounter)++;
+      
+      //ghostAsic register
+      asicOffset = Xil_In32(ACQ_CORE+0x108)*0x400000;
+      
+      // every second acquisition set or reset one pixel test mode
+      
+      if((*acqCounter)%2) {
+         // set one selected pixel to test
+         //ghostPixX register
+         pixX = Xil_In32(ACQ_CORE+0x10C);
+         //ghostPixY register
+         pixY = Xil_In32(ACQ_CORE+0x110);
+         // ColCounter cmd
+         Xil_Out32(ASIC00_SACI_OFFSET+asicOffset+0x1804C, pixX);
+         // RowCounter cmd
+         Xil_Out32(ASIC00_SACI_OFFSET+asicOffset+0x18044, pixY);
+         // SetPixelData cmd
+         Xil_Out32(ASIC00_SACI_OFFSET+asicOffset+0x14000, 1);
+      }
+      else {
+         // clear whole matrix
+         Xil_Out32(ASIC00_SACI_OFFSET+asicOffset+0x10000, 0);
+      }
+      
+   }
+   
+   XIntc_Acknowledge(&intc, 3);
+}
+
 void timerIntHandler(void * data, unsigned char num ) {
    timerStructType * timer = (timerStructType *)data;
    
@@ -445,6 +484,7 @@ int main() {
    volatile uint32_t adcStartupInt = 0;
    volatile uint32_t adcTestInt = 0;
    volatile uint32_t sensorsInt = 0;
+   volatile uint32_t ghostTestInt = 0;
    uint32_t failed = 0;
    uint32_t tryCnt = 0;
    int i;
@@ -456,10 +496,12 @@ int main() {
    XIntc_Connect(&intc,0,(XInterruptHandler)adcStartupIntHandler,(void*)&adcStartupInt);
    XIntc_Connect(&intc,1,(XInterruptHandler)adcTestIntHandler,(void*)&adcTestInt);
    XIntc_Connect(&intc,2,(XInterruptHandler)sensorsHandler,(void*)&sensorsInt);
+   XIntc_Connect(&intc,3,(XInterruptHandler)ghostTestHandler,(void*)&ghostTestInt);
    XIntc_Connect(&intc,8,XTmrCtr_InterruptHandler,&tmrctr);
    XIntc_Start(&intc,XIN_REAL_MODE);
    XIntc_Enable(&intc,0);
    XIntc_Enable(&intc,1);
+   XIntc_Enable(&intc,3);
    XIntc_Enable(&intc,8);
    
    XTmrCtr_SetHandler(&tmrctr,timerIntHandler,(void*)&timer);

@@ -74,7 +74,9 @@ entity AsicCoreTop is
       dataTxSlave          : in    AxiStreamSlaveType;
       -- Scope Data Stream
       scopeTxMaster        : out   AxiStreamMasterType;
-      scopeTxSlave         : in    AxiStreamSlaveType
+      scopeTxSlave         : in    AxiStreamSlaveType;
+      -- acquisition done strobe
+      acqDone              : out   sl
    );
 end AsicCoreTop;
 
@@ -345,6 +347,17 @@ begin
          sAxilReadSlave    => axilReadSlaves(AXIS_MON_INDEX_C),
          sAxilWriteMaster  => axilWriteMasters(AXIS_MON_INDEX_C),
          sAxilWriteSlave   => axilWriteSlaves(AXIS_MON_INDEX_C)
+      );
+   
+   ---------------------------------------------------------------
+   -- ASIC Stream Monitor
+   --------------------- ------------------------------------------
+   U_AcqDoneEdge : entity work.SynchronizerEdge
+      port map (
+         clk         => sysClk,
+         rst         => sysRst,
+         dataIn      => acqBusy,
+         fallingEdge => acqDone
       );
    
    

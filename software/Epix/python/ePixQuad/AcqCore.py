@@ -259,6 +259,16 @@ class AcqCore(pr.Device):
          mode       = 'RW',
       ))
       
+      self.add(pr.RemoteVariable(
+         name       = 'GhostTestEn',     
+         description= 'Enable ghost test procedure',
+         offset     = 0x00000104, 
+         bitSize    = 1, 
+         bitOffset  = 0,  
+         base       = pr.Bool, 
+         mode       = 'RW',
+      ))
+      
       #####################################
       # Create commands
       #####################################

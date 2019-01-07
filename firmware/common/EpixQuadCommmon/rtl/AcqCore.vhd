@@ -107,6 +107,10 @@ architecture RTL of AcqCore is
       sAxilReadSlave       : AxiLiteReadSlaveType;
       dummyAcqEn           : sl;
       dummyAcq             : sl;
+      ghostTestEn          : sl;
+      ghostAsic            : slv(3 downto 0);
+      ghostPixX            : slv(7 downto 0);
+      ghostPixY            : slv(7 downto 0);
    end record RegType;
 
    constant REG_INIT_C : RegType := (
@@ -137,7 +141,11 @@ architecture RTL of AcqCore is
       sAxilWriteSlave      => AXI_LITE_WRITE_SLAVE_INIT_C,
       sAxilReadSlave       => AXI_LITE_READ_SLAVE_INIT_C,
       dummyAcqEn           => '1',
-      dummyAcq             => '0'
+      dummyAcq             => '0',
+      ghostTestEn          => '0',
+      ghostAsic            => (others=>'0'),
+      ghostPixX            => (others=>'0'),
+      ghostPixY            => (others=>'0')
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -206,6 +214,13 @@ begin
       axiSlaveRegister (regCon, x"030", 0, v.asicPinValue      );
       
       axiSlaveRegister (regCon, x"100", 0, v.dummyAcqEn        );
+      -- the following registers are for the MB to set and reset pulser on
+      -- selected pixel in between frames
+      -- this is for the test procedure only
+      axiSlaveRegister (regCon, x"104", 0, v.ghostTestEn       );
+      axiSlaveRegister (regCon, x"108", 0, v.ghostAsic         );
+      axiSlaveRegister (regCon, x"10C", 0, v.ghostPixX         );
+      axiSlaveRegister (regCon, x"110", 0, v.ghostPixY         );
       
       -- Close out the AXI-Lite transaction
       axiSlaveDefault(regCon, v.sAxilWriteSlave, v.sAxilReadSlave, AXI_RESP_DECERR_C);

@@ -211,6 +211,8 @@ architecture rtl of EpixQuadCore is
    
    signal monData       : Slv16Array(37 downto 0);
    
+   signal acqDone       : sl;
+   
 begin
 
    --------------------------------------------------------
@@ -304,6 +306,7 @@ begin
          risingEdge  => mbIrq(1));
    
    mbIrq(2) <= acqStart;
+   mbIrq(3) <= acqDone;
    
    --------------------------------------------------------
    -- AXI-Lite: Crossbar
@@ -478,7 +481,9 @@ begin
          dataTxSlave          => dataTxSlave,
          -- Scope Data Stream
          scopeTxMaster        => scopeTxMaster,
-         scopeTxSlave         => scopeTxSlave
+         scopeTxSlave         => scopeTxSlave,
+         -- acquisition done strobe
+         acqDone              => acqDone
       );
    
    ----------------------------------------------------
