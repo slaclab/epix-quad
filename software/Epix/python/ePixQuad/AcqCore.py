@@ -269,6 +269,36 @@ class AcqCore(pr.Device):
          mode       = 'RW',
       ))
       
+      self.add(pr.RemoteVariable(
+         name       = 'GhostAsic',     
+         description= 'Ghost test procedure ASIC',
+         offset     = 0x00000108, 
+         bitSize    = 4, 
+         bitOffset  = 0,  
+         base       = pr.UInt, 
+         mode       = 'RW',
+      ))
+      
+      self.add(pr.RemoteVariable(
+         name       = 'GhostPixX',     
+         description= 'Ghost test procedure pixel X',
+         offset     = 0x0000010C, 
+         bitSize    = 8, 
+         bitOffset  = 0,  
+         base       = pr.UInt, 
+         mode       = 'RW',
+      ))
+      
+      self.add(pr.RemoteVariable(
+         name       = 'GhostPixY',     
+         description= 'Ghost test procedure pixel Y',
+         offset     = 0x00000110, 
+         bitSize    = 8, 
+         bitOffset  = 0,  
+         base       = pr.UInt, 
+         mode       = 'RW',
+      ))
+      
       #####################################
       # Create commands
       #####################################
