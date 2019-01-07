@@ -309,10 +309,16 @@ void ghostTestHandler(void * data) {
          Xil_Out32(ASIC00_SACI_OFFSET+asicOffset+0x18044, pixY);
          // SetPixelData cmd
          Xil_Out32(ASIC00_SACI_OFFSET+asicOffset+0x14000, 1);
+         // PrepReadout cmd
+         Xil_Out32(ASIC00_SACI_OFFSET+asicOffset+0x0, 0);
       }
       else {
-         // clear whole matrix
+         // prepare multiconfig cmd
+         Xil_Out32(ASIC00_SACI_OFFSET+asicOffset+0x20000, 0);
+         // set matrix cmd
          Xil_Out32(ASIC00_SACI_OFFSET+asicOffset+0x10000, 0);
+         // PrepReadout cmd
+         Xil_Out32(ASIC00_SACI_OFFSET+asicOffset+0x0, 0);
       }
       
    }
