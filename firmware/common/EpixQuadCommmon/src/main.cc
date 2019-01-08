@@ -285,7 +285,7 @@ void ghostTestHandler(void * data) {
    
    uint32_t * acqCounter = (uint32_t *)data;
    uint8_t pixX, pixY;
-   uint32_t asicOffset;
+   uint32_t asicOffset, tmp;
    
    //ghostTestEn register
    if(Xil_In32(ACQ_CORE+0x104) == 0x1) {
@@ -311,6 +311,10 @@ void ghostTestHandler(void * data) {
          Xil_Out32(ASIC00_SACI_OFFSET+asicOffset+0x14000, 1);
          // PrepReadout cmd
          Xil_Out32(ASIC00_SACI_OFFSET+asicOffset+0x0, 0);
+         // re-enable test bit 
+         tmp = Xil_In32(ASIC00_SACI_OFFSET+asicOffset+0x400c);
+         tmp |= 0x1000;
+         Xil_Out32(ASIC00_SACI_OFFSET+asicOffset+0x400c, tmp);
       }
       else {
          // prepare multiconfig cmd
@@ -319,6 +323,10 @@ void ghostTestHandler(void * data) {
          Xil_Out32(ASIC00_SACI_OFFSET+asicOffset+0x10000, 0);
          // PrepReadout cmd
          Xil_Out32(ASIC00_SACI_OFFSET+asicOffset+0x0, 0);
+         // disable test bit to avoid pulser cross talk
+         tmp = Xil_In32(ASIC00_SACI_OFFSET+asicOffset+0x400c);
+         tmp &= ~(0x1000);
+         Xil_Out32(ASIC00_SACI_OFFSET+asicOffset+0x400c, tmp);
       }
       
    }
