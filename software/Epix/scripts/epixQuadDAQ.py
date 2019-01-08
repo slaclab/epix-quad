@@ -16,12 +16,39 @@ import rogue
 import argparse
 import ePixQuad as quad
 import ePixViewer as vi
-
-# rogue.Logging.setLevel(rogue.Logging.Warning)
-# rogue.Logging.setFilter("pyrogue.SrpV3",rogue.Logging.Debug)
-# rogue.Logging.setLevel(rogue.Logging.Debug)
+import rogue.interfaces.stream
 
 #################################################################
+
+
+class FrameSizeChecker(rogue.interfaces.stream.Slave):
+   """retrieves data from a file using rogue utilities services"""
+   
+   def __init__(self, parent) :
+      rogue.interfaces.stream.Slave.__init__(self)
+      self.goodFrameCnt = 0
+      self.badFrameCnt = 0
+      self.eventCnt = 0
+   
+   
+   # Checks all frames in the stream
+   def _acceptFrame(self,frame):
+      
+      if frame.getPayload() != 1095232:
+         print('Bad frame size: ', frame.getPayload())
+         self.badFrameCnt = self.badFrameCnt + 1
+         self.eventCnt = self.eventCnt + 1
+      else:
+         self.goodFrameCnt = self.goodFrameCnt + 1
+         self.eventCnt = self.eventCnt + 1
+      
+      if self.eventCnt % 120 == 0:
+         print('Good frames %d, bad frames %d' %(self.goodFrameCnt, self.badFrameCnt))
+      
+      
+
+#################################################################
+
 
 # Set the argument parser
 parser = argparse.ArgumentParser()
@@ -69,6 +96,14 @@ parser.add_argument(
     help     = "PGP lane number [0 ~ 3]",
 )
 
+parser.add_argument(
+    "--frameCheck", 
+    type     = argBool,
+    required = False,
+    default  = False,
+    help     = "Tap to the data stream to check frame sizes",
+)  
+
 # Get the arguments
 args = parser.parse_args()
 
@@ -94,7 +129,7 @@ guiTop.resize(600, 800)
 base.guiTop = guiTop
 
 # Viewer gui
-if args.viewer:
+if args.viewer and not args.frameCheck:
    gui = vi.Window(cameraType = 'ePixQuad')
    gui.eventReader.frameIndex = 0
    #gui.eventReaderImage.VIEW_DATA_CHANNEL_ID = 0
@@ -102,6 +137,10 @@ if args.viewer:
    pyrogue.streamTap(base.pgpVc0, gui.eventReader) 
    pyrogue.streamTap(base.pgpVc2, gui.eventReaderScope)# PseudoScope
    pyrogue.streamTap(base.pgpVc3, gui.eventReaderMonitoring) # Slow Monitoring
+
+if args.frameCheck:
+   frameChecker = FrameSizeChecker(appTop)
+   pyrogue.streamTap(base.pgpVc0, frameChecker) 
 
 print("Starting GUI...\n");
 
