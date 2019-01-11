@@ -1176,12 +1176,14 @@ class Cpix2Asic(pr.Device):
 
         if (self.enable.get()):
             self.reportCmd(dev,cmd,arg)
+            if not isinstance(arg, str):
+               arg = ''
             if len(arg) > 0:
                self.filename = arg
             else:
                self.filename = QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
-            if os.path.splitext(self.filename)[1] == '.csv':
-                matrixCfg = np.genfromtxt(self.filename, delimiter=',')
+            if os.path.splitext(self.filename[0])[1] == '.csv':
+                matrixCfg = np.genfromtxt(self.filename[0], delimiter=',')
                 if matrixCfg.shape == (48, 48):
                     self._rawWrite(0x00000000*addrSize,0)
                     self._rawWrite(0x00008000*addrSize,0)
@@ -1194,7 +1196,7 @@ class Cpix2Asic(pr.Device):
                 else:
                     print('csv file must be 48x48 pixels')
             else:
-                print("Not csv file : ", self.filename)
+                print("Not csv file : ", self.filename[0])
         else:
             print("Warning: ASIC enable is set to False!")      
 
