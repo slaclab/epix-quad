@@ -12,7 +12,7 @@
 #######################################
 
 create_clock -name gtRefClk0P   -period  6.400 [get_ports gtRefClk0P]
-create_clock -name pgpClk       -period  6.400 [get_pins {U_Cpix2Core/U_PgpFrontEnd/U_Pgp2bVarLatWrapper/Pgp2bGtp7VarLat_Inst/MuliLane_Inst/GTP7_CORE_GEN[0].Gtp7Core_Inst/gtpe2_i/TXOUTCLK}]
+create_clock -name pgpClk       -period  6.400 [get_pins {U_Cpix2Core/U_PgpFrontEnd/G_PGP.U_Pgp2bVarLatWrapper/Pgp2bGtp7VarLat_Inst/MuliLane_Inst/GTP7_CORE_GEN[0].Gtp7Core_Inst/gtpe2_i/TXOUTCLK}]
 create_clock -name adcMonDoClkP -period  2.857 [get_ports {adcDoClkP[2]}]
 
 create_generated_clock -name iDelayCtrlClk [get_pins {U_Cpix2Core/U_CoreClockGen/MmcmGen.U_Mmcm/CLKOUT3}]
@@ -176,7 +176,7 @@ set_property IOSTANDARD LVCMOS25 [get_ports {asicPpmat[*]}]
 #set_property PACKAGE_PIN   V8 [get_ports {adcClkM[0]}]
 set_property PACKAGE_PIN  T14 [get_ports {adcClkP[1]}]
 set_property PACKAGE_PIN  T15 [get_ports {adcClkM[1]}]   
-set_property IOSTANDARD LVDS_25 [get_ports {adcClkP[1]}]
+set_property IOSTANDARD LVDS_25 [get_ports {adcClkP[*]}]
 
 #set_property PACKAGE_PIN   R4 [get_ports {adcDoClkP[0]}]
 #set_property PACKAGE_PIN   T4 [get_ports {adcDoClkM[0]}]

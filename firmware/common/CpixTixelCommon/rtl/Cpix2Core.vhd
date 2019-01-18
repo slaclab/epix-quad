@@ -434,14 +434,15 @@ begin
    -- clkOut(1) : 100.00 MHz system clock
    -- clkOut(2) : 7.5 MHz ASIC readout clock
    -- clkOut(3) : 200 MHz Idelaye2 calibration clock
+   -- clkOut(4) : 30 MHz parallel byte clock
    U_CoreClockGen : entity work.ClockManager7
    generic map (
       INPUT_BUFG_G         => false,
       FB_BUFG_G            => true,
-      NUM_CLOCKS_G         => 4,
+      NUM_CLOCKS_G         => 5,
       CLKIN_PERIOD_G       => 6.4,
-      DIVCLK_DIVIDE_G      => 5,
-      CLKFBOUT_MULT_F_G    => 38.4,
+      DIVCLK_DIVIDE_G      => 10,
+      CLKFBOUT_MULT_F_G    => 38.5,
       
       CLKOUT0_DIVIDE_F_G   => 4.0,
       CLKOUT0_PHASE_G      => 90.0,
@@ -457,7 +458,11 @@ begin
     
       CLKOUT3_DIVIDE_G     => 3,
       CLKOUT3_PHASE_G      => 0.0,
-      CLKOUT3_DUTY_CYCLE_G => 0.5
+      CLKOUT3_DUTY_CYCLE_G => 0.5,
+      
+      CLKOUT4_DIVIDE_G     => 20,
+      CLKOUT4_PHASE_G      => 0.0,
+      CLKOUT4_DUTY_CYCLE_G => 0.5
    )
    port map (
       clkIn     => pgpClk,
@@ -466,10 +471,12 @@ begin
       clkOut(1) => coreClk,
       clkOut(2) => asicRdClk,
       clkOut(3) => iDelayCtrlClk,
+      clkOut(4) => byteClk,
       rstOut(0) => bitClkRst,
       rstOut(1) => coreClkRst,
       rstOut(2) => open,
       rstOut(3) => iDelayCtrlRst,
+      rstOut(4) => byteClkRst,
       locked    => open,
       -- AXI-Lite Interface       
       axilClk           => coreClk,
@@ -481,26 +488,26 @@ begin
    );
    
 
-   U_BUFR : BUFR
-   generic map (
-      SIM_DEVICE  => "7SERIES",
-      BUFR_DIVIDE => "5"
-   )
-   port map (
-      I   => bitClk,
-      O   => byteClk,
-      CE  => '1',
-      CLR => '0'
-   );
-   
-   U_RdPwrUpRst : entity work.PwrUpRst
-   generic map (
-      DURATION_G => 20000000
-   )
-   port map (
-      clk      => byteClk,
-      rstOut   => byteClkRst
-   );
+   --U_BUFR : BUFR
+   --generic map (
+   --   SIM_DEVICE  => "7SERIES",
+   --   BUFR_DIVIDE => "5"
+   --)
+   --port map (
+   --   I   => bitClk,
+   --   O   => byteClk,
+   --   CE  => '1',
+   --   CLR => '0'
+   --);
+   --
+   --U_RdPwrUpRst : entity work.PwrUpRst
+   --generic map (
+   --   DURATION_G => 20000000
+   --)
+   --port map (
+   --   clk      => byteClk,
+   --   rstOut   => byteClkRst
+   --);
    
    
    G_ASIC : for i in 0 to NUMBER_OF_ASICS_C-1 generate 
