@@ -24,6 +24,7 @@ import pyrogue.utilities.prbs
 import pyrogue.utilities.fileio
 
 import pyrogue as pr
+import pyrogue.interfaces.simulation
 import pyrogue.gui
 import surf
 import threading
@@ -31,6 +32,7 @@ import signal
 import atexit
 import yaml
 import time
+import argparse
 import sys
 import testBridge
 import ePixViewer as vi
@@ -106,7 +108,8 @@ parser.add_argument(
 parser.add_argument(
     "--l", 
     type     = int,
-    required = True,
+    required = False,
+    default  = 0,
     help     = "PGP lane number [0 ~ 3]",
 )
 
