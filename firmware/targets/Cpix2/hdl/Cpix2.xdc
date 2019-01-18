@@ -12,16 +12,16 @@
 #######################################
 
 create_clock -name gtRefClk0P   -period  6.400 [get_ports gtRefClk0P]
-create_clock -name pgpClk       -period  6.400 [get_pins {U_TixelCore/U_PgpFrontEnd/U_Pgp2bVarLatWrapper/Pgp2bGtp7VarLat_Inst/MuliLane_Inst/GTP7_CORE_GEN[0].Gtp7Core_Inst/gtpe2_i/TXOUTCLK}]
+create_clock -name pgpClk       -period  6.400 [get_pins {U_Cpix2Core/U_PgpFrontEnd/U_Pgp2bVarLatWrapper/Pgp2bGtp7VarLat_Inst/MuliLane_Inst/GTP7_CORE_GEN[0].Gtp7Core_Inst/gtpe2_i/TXOUTCLK}]
 create_clock -name adcMonDoClkP -period  2.857 [get_ports {adcDoClkP[2]}]
 
-create_generated_clock -name iDelayCtrlClk [get_pins {U_TixelCore/U_CoreClockGen/MmcmGen.U_Mmcm/CLKOUT4}]
-create_generated_clock -name coreClk       [get_pins {U_TixelCore/U_CoreClockGen/MmcmGen.U_Mmcm/CLKOUT1}]
-create_generated_clock -name bitClk        [get_pins {U_TixelCore/U_CoreClockGen/MmcmGen.U_Mmcm/CLKOUT0}]
-create_generated_clock -name asicRdClk     [get_pins {U_TixelCore/U_CoreClockGen/MmcmGen.U_Mmcm/CLKOUT2}]
-create_generated_clock -name byteClk       [get_pins {U_TixelCore/U_BUFR/O}]
-create_generated_clock -name progClk      [get_pins {U_TixelCore/U_Iprog7Series/DIVCLK_GEN.BUFR_ICPAPE2/O}]
-create_generated_clock -name adcMonBitClkR [get_pins {U_TixelCore/U_MonAdcReadout/U_AdcBitClkR/O}]
+create_generated_clock -name iDelayCtrlClk [get_pins {U_Cpix2Core/U_CoreClockGen/MmcmGen.U_Mmcm/CLKOUT3}]
+create_generated_clock -name coreClk       [get_pins {U_Cpix2Core/U_CoreClockGen/MmcmGen.U_Mmcm/CLKOUT1}]
+create_generated_clock -name bitClk        [get_pins {U_Cpix2Core/U_CoreClockGen/MmcmGen.U_Mmcm/CLKOUT0}]
+create_generated_clock -name asicRdClk     [get_pins {U_Cpix2Core/U_CoreClockGen/MmcmGen.U_Mmcm/CLKOUT2}]
+create_generated_clock -name byteClk       [get_pins {U_Cpix2Core/U_BUFR/O}]
+create_generated_clock -name progClk      [get_pins {U_Cpix2Core/U_Iprog7Series/DIVCLK_GEN.BUFR_ICPAPE2/O}]
+create_generated_clock -name adcMonBitClkR [get_pins {U_Cpix2Core/U_MonAdcReadout/U_AdcBitClkR/O}]
 
 set_clock_groups -asynchronous \
     -group [get_clocks -include_generated_clocks pgpClk] \
