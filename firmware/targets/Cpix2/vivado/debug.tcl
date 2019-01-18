@@ -12,74 +12,75 @@
 ## Open the run
 open_run synth_1
 
-### Configure the Core
-set ilaName u_ila_0
-##set ilaName1 u_ila_1
-CreateDebugCore ${ilaName}
-##CreateDebugCore ${ilaName1}
+#### Configure the Core
+#set ilaName u_ila_0
+###set ilaName1 u_ila_1
+#CreateDebugCore ${ilaName}
+###CreateDebugCore ${ilaName1}
+##
+#### Increase the record depth
+###set_property C_DATA_DEPTH 16384 [get_debug_cores ${ilaName}]
+#set_property C_DATA_DEPTH 16384 [get_debug_cores ${ilaName}]
+##
+##############################################################################
+##############################################################################
+##############################################################################
+##
+#### Core debug signals
+###SetDebugCoreClk ${ilaName} {U_EpixCore/coreClk}
+#SetDebugCoreClk ${ilaName} {U_Cpix2Core/coreClk}
+##
+##ConfigProbe ${ilaName} {U_Cpix2Core/iAsic01DM1}
+##ConfigProbe ${ilaName} {U_Cpix2Core/iAsic01DM2}
+#ConfigProbe ${ilaName} {U_Cpix2Core/iAsicR0}
+#ConfigProbe ${ilaName} {U_Cpix2Core/iAsicSR0}
+##ConfigProbe ${ilaName} {U_Cpix2Core/iAsicEnA}
+##ConfigProbe ${ilaName} {U_Cpix2Core/iAsicEnB}
+##ConfigProbe ${ilaName} {U_Cpix2Core/iAsicAcq}
+##ConfigProbe ${ilaName} {U_Cpix2Core/iAsicGrst}
+#ConfigProbe ${ilaName} {U_Cpix2Core/iAsicSync}
+#ConfigProbe ${ilaName} {U_Cpix2Core/serialResync}
 #
-### Increase the record depth
-##set_property C_DATA_DEPTH 16384 [get_debug_cores ${ilaName}]
-set_property C_DATA_DEPTH 16384 [get_debug_cores ${ilaName}]
+##ConfigProbe ${ilaName} {U_Cpix2Core/iAsicPpmat[*]}
+##ConfigProbe ${ilaName} {U_Cpix2Core/iAsicPPbe[*]}
+#ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[0].U_AsicDeser/iserdeseOut_orig[*]}
+#ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[0].U_AsicDeser/idleWord}
+#ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[0].U_AsicDeser/twoWords[*]}
+#ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[0].U_AsicDeser/iLocked}
+#ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[0].U_AXI_Framer/dFifoSof}
+#ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[0].U_AXI_Framer/dFifoEof}
+#ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[0].U_AXI_Framer/dFifoEofe}
+#ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[0].U_AXI_Framer/dFifoValid}
+#ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[0].U_AXI_Framer/dFifoOut[*]}
+#ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[0].U_AXI_Framer/rxDataCs[*]}
+#ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[0].U_AXI_Framer/rxValidCs}
+#ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[0].U_AXI_Framer/Dec8b10b_U/codeErr[*]}
 #
-#############################################################################
-#############################################################################
-#############################################################################
-#
-### Core debug signals
-##SetDebugCoreClk ${ilaName} {U_EpixCore/coreClk}
-SetDebugCoreClk ${ilaName} {U_Cpix2Core/coreClk}
-#
-#ConfigProbe ${ilaName} {U_Cpix2Core/iAsic01DM1}
-#ConfigProbe ${ilaName} {U_Cpix2Core/iAsic01DM2}
-ConfigProbe ${ilaName} {U_Cpix2Core/iAsicR0}
-ConfigProbe ${ilaName} {U_Cpix2Core/iAsicSR0}
-#ConfigProbe ${ilaName} {U_Cpix2Core/iAsicEnA}
-#ConfigProbe ${ilaName} {U_Cpix2Core/iAsicEnB}
-#ConfigProbe ${ilaName} {U_Cpix2Core/iAsicAcq}
-#ConfigProbe ${ilaName} {U_Cpix2Core/iAsicGrst}
-ConfigProbe ${ilaName} {U_Cpix2Core/iAsicSync}
-ConfigProbe ${ilaName} {U_Cpix2Core/serialResync}
-
-#ConfigProbe ${ilaName} {U_Cpix2Core/iAsicPpmat[*]}
-#ConfigProbe ${ilaName} {U_Cpix2Core/iAsicPPbe[*]}
-ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[0].U_AsicDeser/iserdeseOut_orig[*]}
-ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[0].U_AsicDeser/idleWord}
-ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[0].U_AsicDeser/twoWords[*]}
-ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[0].U_AsicDeser/iLocked}
-ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[0].U_AXI_Framer/dFifoSof}
-ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[0].U_AXI_Framer/dFifoEof}
-ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[0].U_AXI_Framer/dFifoEofe}
-ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[0].U_AXI_Framer/dFifoValid}
-ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[0].U_AXI_Framer/dFifoOut[*]}
-ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[0].U_AXI_Framer/rxDataCs[*]}
-ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[0].U_AXI_Framer/rxValidCs}
-ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[0].U_AXI_Framer/Dec8b10b_U/codeErr[*]}
-
-#
-ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[1].U_AsicDeser/iserdeseOut_orig[*]}
-ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[1].U_AsicDeser/idleWord}
-ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[1].U_AsicDeser/twoWords[*]}
-ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[1].U_AsicDeser/iLocked}
-ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[1].U_AXI_Framer/dFifoSof}
-ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[1].U_AXI_Framer/dFifoEof}
-ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[1].U_AXI_Framer/dFifoEofe}
-ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[1].U_AXI_Framer/dFifoValid}
-ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[1].U_AXI_Framer/dFifoOut[*]}
-ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[1].U_AXI_Framer/rxDataCs[*]}
-ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[1].U_AXI_Framer/rxValidCs}
-ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[1].U_AXI_Framer/Dec8b10b_U/codeErr[*]}
-#
-##ConfigProbe ${ilaName1} {U_TixelCore/dataOut[1][*]}
-##ConfigProbe ${ilaName1} {U_TixelCore/dataKOut[1]}
-##ConfigProbe ${ilaName1} {U_TixelCore/G_ASIC[1].U_AsicDeser/iserdese_out[*]}
-#
-#############################################################################
-#
-### Delete the last unused port
-delete_debug_port [get_debug_ports [GetCurrentProbe ${ilaName}]]
-##delete_debug_port [get_debug_ports [GetCurrentProbe ${ilaName1}]]
-#
-### Write the port map file
-write_debug_probes -force ${PROJ_DIR}/debug/debug_probes.ltx
+##
+#ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[1].U_AsicDeser/iserdeseOut_orig[*]}
+#ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[1].U_AsicDeser/idleWord}
+#ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[1].U_AsicDeser/twoWords[*]}
+#ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[1].U_AsicDeser/iLocked}
+#ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[1].U_AXI_Framer/dFifoSof}
+#ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[1].U_AXI_Framer/dFifoEof}
+#ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[1].U_AXI_Framer/dFifoEofe}
+#ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[1].U_AXI_Framer/dFifoValid}
+#ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[1].U_AXI_Framer/dFifoOut[*]}
+#ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[1].U_AXI_Framer/rxDataCs[*]}
+#ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[1].U_AXI_Framer/rxValidCs}
+#ConfigProbe ${ilaName} {U_Cpix2Core/G_ASIC[1].U_AXI_Framer/Dec8b10b_U/codeErr[*]}
+##
+###ConfigProbe ${ilaName1} {U_TixelCore/dataOut[1][*]}
+###ConfigProbe ${ilaName1} {U_TixelCore/dataKOut[1]}
+###ConfigProbe ${ilaName1} {U_TixelCore/G_ASIC[1].U_AsicDeser/iserdese_out[*]}
+##
+##############################################################################
+##
+#### Delete the last unused port
+#delete_debug_port [get_debug_ports [GetCurrentProbe ${ilaName}]]
+###delete_debug_port [get_debug_ports [GetCurrentProbe ${ilaName1}]]
+##
+#### Write the port map file
+#write_debug_probes -force ${PROJ_DIR}/debug/debug_probes.ltx
+##
 #

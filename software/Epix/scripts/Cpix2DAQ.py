@@ -23,6 +23,7 @@ import rogue.hardware.pgp
 import pyrogue.utilities.prbs
 import pyrogue.utilities.fileio
 
+import pyrogue as pr
 import pyrogue.gui
 import surf
 import threading
@@ -43,30 +44,101 @@ except ImportError:
     from PyQt4.QtCore    import *
     from PyQt4.QtGui     import *
 
+
+#################################################################
+
+# Set the argument parser
+parser = argparse.ArgumentParser()
+
+# Convert str to bool
+argBool = lambda s: s.lower() in ['true', 't', 'yes', '1']
+
+# Add arguments
+parser.add_argument(
+    "--pollEn", 
+    type     = argBool,
+    required = False,
+    default  = False,
+    help     = "Enable auto-polling",
+) 
+
+parser.add_argument(
+    "--initRead", 
+    type     = argBool,
+    required = False,
+    default  = False,
+    help     = "Enable read all variables at start",
+)  
+
+parser.add_argument(
+    "--viewer", 
+    type     = argBool,
+    required = False,
+    default  = True,
+    help     = "Start viewer",
+)  
+
+parser.add_argument(
+    "--gui", 
+    type     = argBool,
+    required = False,
+    default  = True,
+    help     = "Start GUI",
+)  
+
+
+parser.add_argument(
+    "--type", 
+    type     = str,
+    required = False,
+    default  = 'pgp-gen3',
+    help     = "PGP hardware type: pgp-gen3, kcu1500 or simulation",
+)  
+
+parser.add_argument(
+    "--pgp", 
+    type     = str,
+    required = False,
+    default  = '/dev/pgpcard_0',
+    help     = "PGP devide (default /dev/pgpcard_0)",
+)  
+
+parser.add_argument(
+    "--l", 
+    type     = int,
+    required = True,
+    help     = "PGP lane number [0 ~ 3]",
+)
+
+# Get the arguments
+args = parser.parse_args()
+
+#################################################################
+
 #############################################
 # Define if the GUI is started (1 starts it)
-START_GUI = True
-START_VIEWER = True
+START_GUI = args.gui
+START_VIEWER = args.viewer
 #############################################
-#Define driver used
-DRIVER = 'pgp-gen3'  
-#DRIVER = 'kcu1500'
 
-if ( DRIVER == 'pgp-gen3' ):
+if ( args.type == 'pgp-gen3' ):
     # Create the PGP interfaces for ePix camera
-    pgpVc0 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,0) # Data & cmds
-    pgpVc1 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,1) # Registers for ePix board
-    pgpVc2 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,2) # PseudoScope
-    pgpVc3 = rogue.hardware.pgp.PgpCard('/dev/pgpcard_0',0,3) # Monitoring (Slow ADC)
-
-    print("")
+    pgpVc0 = rogue.hardware.pgp.PgpCard(args.pgp,args.l,0) # Data & cmds
+    pgpVc1 = rogue.hardware.pgp.PgpCard(args.pgp,args.l,1) # Registers for ePix board
+    pgpVc2 = rogue.hardware.pgp.PgpCard(args.pgp,args.l,2) # PseudoScope
+    pgpVc3 = rogue.hardware.pgp.PgpCard(args.pgp,args.l,3) # Monitoring (Slow ADC)
     print("PGP Card Version: %x" % (pgpVc0.getInfo().version))
-elif ( DRIVER == 'kcu1500' ):
+elif ( args.type == 'kcu1500' ):
     # Create the PGP interfaces for ePix hr camera
-    pgpVc0 = rogue.hardware.data.DataCard('/dev/datadev_0',(0*32)+0) # Data & cmds
-    pgpVc1 = rogue.hardware.data.DataCard('/dev/datadev_0',(0*32)+1) # Registers for ePix board
-    pgpVc2 = rogue.hardware.data.DataCard('/dev/datadev_0',(0*32)+2) # PseudoScope
-    pgpVc3 = rogue.hardware.data.DataCard('/dev/datadev_0',(0*32)+3) # Monitoring (Slow ADC)
+    pgpVc0 = rogue.hardware.data.DataCard(args.pgp,(0*32)+0) # Data & cmds
+    pgpVc1 = rogue.hardware.data.DataCard(args.pgp,(0*32)+1) # Registers for ePix board
+    pgpVc2 = rogue.hardware.data.DataCard(args.pgp,(0*32)+2) # PseudoScope
+    pgpVc3 = rogue.hardware.data.DataCard(args.pgp,(0*32)+3) # Monitoring (Slow ADC)
+elif ( args.type == 'simulation' ):
+    pgpVc0 = pr.interfaces.simulation.StreamSim(host='localhost', dest=0, uid=2, ssi=True)
+    pgpVc1 = pr.interfaces.simulation.StreamSim(host='localhost', dest=1, uid=2, ssi=True)
+    pgpVc2 = pr.interfaces.simulation.StreamSim(host='localhost', dest=2, uid=2, ssi=True)
+    pgpVc3 = pr.interfaces.simulation.StreamSim(host='localhost', dest=3, uid=2, ssi=True)      
 else:
     raise ValueError("Invalid type (%s)" % (args.type) )
 
@@ -170,7 +242,7 @@ class EpixBoard(pyrogue.Root):
 appTop = QApplication(sys.argv)
 guiTop = pyrogue.gui.GuiTop(group = 'Cpix2Gui')
 ePixBoard = EpixBoard(guiTop, cmd, dataWriter, srp)
-ePixBoard.start(pollEn=False, timeout=3.0)
+ePixBoard.start(pollEn=args.pollEn, initRead = args.initRead, timeout=3.0)
 guiTop.addTree(ePixBoard)
 guiTop.resize(1000,800)
 

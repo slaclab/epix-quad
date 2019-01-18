@@ -826,8 +826,8 @@ begin
    monAdc.fClkN <= adcFClkN(2);
    monAdc.dClkP <= adcDClkP(2);
    monAdc.dClkN <= adcDClkN(2);
-   monAdc.chP   <= adcChP(19 downto 16);
-   monAdc.chN   <= adcChN(19 downto 16);
+   monAdc.chP(3 downto 0)   <= adcChP(19 downto 16);
+   monAdc.chN(3 downto 0)   <= adcChN(19 downto 16);
       
    U_MonAdcReadout : entity work.Ad9249ReadoutGroup
    generic map (
@@ -890,8 +890,7 @@ begin
    generic map (
       TPD_G             => TPD_G,
       AXIL_CLK_PERIOD_G => 10.0e-9,
-      NUM_CHIPS_G       => 2,
-      AXIL_ERR_RESP_G   => AXI_RESP_OK_C
+      NUM_CHIPS_G       => 2
    )
    port map (
       axilClk           => coreClk,
@@ -966,7 +965,7 @@ begin
       mAxilReadMaster  => sAxiReadMaster(1),
       mAxilReadSlave   => sAxiReadSlave(1),
       -- Interrupt Interface
-      interrupt(7 downto 1)   => "000000",
+      interrupt(7 downto 1)   => "0000000",
       interrupt(0)            => cpix2Config.requestStartupCal,
       -- Clock and Reset
       clk              => coreClk,
