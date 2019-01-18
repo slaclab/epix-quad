@@ -47,7 +47,8 @@ entity Cpix2Core is
       ADC0_INVERT_CH    : slv(7 downto 0) := "00000000";
       ADC1_INVERT_CH    : slv(7 downto 0) := "00000000";
       ADC2_INVERT_CH    : slv(7 downto 0) := "00000000";
-      IODELAY_GROUP_G   : string          := "DEFAULT_GROUP"
+      IODELAY_GROUP_G   : string          := "DEFAULT_GROUP";
+      SIMULATION_G      : boolean         := false
    );
    port (
       -- Debugging IOs
@@ -375,6 +376,9 @@ begin
    -- PGP Front end   --
    ---------------------
    U_PgpFrontEnd : entity work.PgpFrontEnd
+      generic map (
+         SIMULATION_G => SIMULATION_G
+      )
       port map (
          -- GTX 7 Ports
          gtClkP      => gtRefClk0P,
@@ -436,7 +440,7 @@ begin
       FB_BUFG_G            => true,
       NUM_CLOCKS_G         => 4,
       CLKIN_PERIOD_G       => 6.4,
-      DIVCLK_DIVIDE_G      => 10,
+      DIVCLK_DIVIDE_G      => 5,
       CLKFBOUT_MULT_F_G    => 38.4,
       
       CLKOUT0_DIVIDE_F_G   => 4.0,
