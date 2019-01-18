@@ -226,6 +226,7 @@ architecture rtl of RegControlCpix2 is
       axiReadSlave      : AxiLiteReadSlaveType;
       axiWriteSlave     : AxiLiteWriteSlaveType;
       triggerCntPerCycle: slv(31 downto 0);
+      idValues          : Slv64Array(2 downto 0);
    end record RegType;
    
    constant REG_INIT_C : RegType := (
@@ -243,14 +244,14 @@ architecture rtl of RegControlCpix2 is
       errInhibitCnt     => (others=>'0'),
       axiReadSlave      => AXI_LITE_READ_SLAVE_INIT_C,
       axiWriteSlave     => AXI_LITE_WRITE_SLAVE_INIT_C,
-      triggerCntPerCycle=> (others=>'0')
+      triggerCntPerCycle=> (others=>'0'),
+      idValues          => (others=>(others=>'0'))
    );
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
    
    signal idValues        : Slv64Array(2 downto 0);
-   signal idValues_upper  : Slv64Array(2 downto 0);
    signal idValids        : slv(2 downto 0);
    
    signal adcCardStartUp     : sl;
@@ -292,12 +293,12 @@ begin
       -- Map out standard registers
       axiSlaveRegister (regCon, x"000000",  0, v.usrRst );
       axiSlaveRegisterR(regCon, x"000000",  0, BUILD_INFO_C.fwVersion );
-      axiSlaveRegisterR(regCon, x"000004",  0, ite(idValids(0) = '1',idValues(0)(31 downto  0), x"00000000")); --Digital card ID low
-      axiSlaveRegisterR(regCon, x"000008",  0, ite(idValids(0) = '1',idValues(0)(63 downto 32), x"00000000")); --Digital card ID high
-      axiSlaveRegisterR(regCon, x"00000C",  0, ite(idValids(1) = '1',idValues(1)(31 downto  0), x"00000000")); --Analog card ID low
-      axiSlaveRegisterR(regCon, x"000010",  0, ite(idValids(1) = '1',idValues(1)(63 downto 32), x"00000000")); --Analog card ID high
-      axiSlaveRegisterR(regCon, x"000014",  0, ite(idValids(2) = '1',idValues(2)(31 downto  0), x"00000000")); --Carrier card ID low
-      axiSlaveRegisterR(regCon, x"000018",  0, ite(idValids(2) = '1',idValues(2)(63 downto 32), x"00000000")); --Carrier card ID high
+      axiSlaveRegisterR(regCon, x"000004",  0, r.idValues(0)(31 downto  0)); --Digital card ID low
+      axiSlaveRegisterR(regCon, x"000008",  0, r.idValues(0)(63 downto 32)); --Digital card ID high
+      axiSlaveRegisterR(regCon, x"00000C",  0, r.idValues(1)(31 downto  0)); --Analog card ID low
+      axiSlaveRegisterR(regCon, x"000010",  0, r.idValues(1)(63 downto 32)); --Analog card ID high
+      axiSlaveRegisterR(regCon, x"000014",  0, r.idValues(2)(31 downto  0)); --Carrier card ID low
+      axiSlaveRegisterR(regCon, x"000018",  0, r.idValues(2)(63 downto 32)); --Carrier card ID high
       
       axiSlaveRegister(regCon,  x"00010C",  0, v.asicAcqReg.GlblRstPolarity);
       axiSlaveRegister(regCon,  x"000110",  0, v.asicAcqReg.GlblRstDelay);
@@ -381,6 +382,16 @@ begin
       --end if;
       
       axiSlaveDefault(regCon, v.axiWriteSlave, v.axiReadSlave, AXI_RESP_OK_C);
+      
+      -- Register IDs
+      for i in 0 to 2 loop
+         if idValids(i) = '1' then
+            v.idValues(i) := idValues(i);
+         else
+            v.idValues(i) := (others=>'0');
+         end if;
+      end loop;
+      
       
       -- ADC clock counter
       if r.adcCnt >= r.adcClkHalfT - 1 then
@@ -684,7 +695,7 @@ begin
          port map (
             clk      => axiClk,
             rst      => axiReset,
-            dnaValue(127 downto 64) => idValues_upper(0),
+            dnaValue(127 downto 64) => open,
             dnaValue( 63 downto  0) => idValues(0),
             dnaValid => idValids(0)
          );
