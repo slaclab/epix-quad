@@ -19,7 +19,7 @@ create_generated_clock -name iDelayCtrlClk [get_pins {U_Cpix2Core/U_CoreClockGen
 create_generated_clock -name coreClk       [get_pins {U_Cpix2Core/U_CoreClockGen/MmcmGen.U_Mmcm/CLKOUT1}]
 create_generated_clock -name bitClk        [get_pins {U_Cpix2Core/U_CoreClockGen/MmcmGen.U_Mmcm/CLKOUT0}]
 create_generated_clock -name asicRdClk     [get_pins {U_Cpix2Core/U_CoreClockGen/MmcmGen.U_Mmcm/CLKOUT2}]
-create_generated_clock -name byteClk       [get_pins {U_Cpix2Core/U_BUFR/O}]
+create_generated_clock -name byteClk       [get_pins {U_Cpix2Core/U_CoreClockGen/MmcmGen.U_Mmcm/CLKOUT4}]
 create_generated_clock -name progClk      [get_pins {U_Cpix2Core/U_Iprog7Series/DIVCLK_GEN.BUFR_ICPAPE2/O}]
 create_generated_clock -name adcMonBitClkR [get_pins {U_Cpix2Core/U_MonAdcReadout/U_AdcBitClkR/O}]
 
