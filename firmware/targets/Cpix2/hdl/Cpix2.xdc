@@ -176,7 +176,7 @@ set_property IOSTANDARD LVCMOS25 [get_ports {asicPpmat[*]}]
 #set_property PACKAGE_PIN   V8 [get_ports {adcClkM[0]}]
 set_property PACKAGE_PIN  T14 [get_ports {adcClkP[1]}]
 set_property PACKAGE_PIN  T15 [get_ports {adcClkM[1]}]   
-set_property IOSTANDARD LVDS_25 [get_ports {adcClkP[*]}]
+set_property IOSTANDARD LVDS_25 [get_ports {adcClkP[1]}]
 
 #set_property PACKAGE_PIN   R4 [get_ports {adcDoClkP[0]}]
 #set_property PACKAGE_PIN   T4 [get_ports {adcDoClkM[0]}]
