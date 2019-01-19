@@ -291,89 +291,89 @@ begin
       axiSlaveWaitTxn(regCon, axiWriteMaster, axiReadMaster, v.axiWriteSlave, v.axiReadSlave);
       
       -- Map out standard registers
-      axiSlaveRegister (regCon, x"000000",  0, v.usrRst );
-      axiSlaveRegisterR(regCon, x"000000",  0, BUILD_INFO_C.fwVersion );
-      axiSlaveRegisterR(regCon, x"000004",  0, r.idValues(0)(31 downto  0)); --Digital card ID low
-      axiSlaveRegisterR(regCon, x"000008",  0, r.idValues(0)(63 downto 32)); --Digital card ID high
-      axiSlaveRegisterR(regCon, x"00000C",  0, r.idValues(1)(31 downto  0)); --Analog card ID low
-      axiSlaveRegisterR(regCon, x"000010",  0, r.idValues(1)(63 downto 32)); --Analog card ID high
-      axiSlaveRegisterR(regCon, x"000014",  0, r.idValues(2)(31 downto  0)); --Carrier card ID low
-      axiSlaveRegisterR(regCon, x"000018",  0, r.idValues(2)(63 downto 32)); --Carrier card ID high
+      axiSlaveRegister (regCon, x"000",  0, v.usrRst );
+      axiSlaveRegisterR(regCon, x"000",  0, BUILD_INFO_C.fwVersion );
+      axiSlaveRegisterR(regCon, x"004",  0, r.idValues(0)(31 downto  0)); --Digital card ID low
+      axiSlaveRegisterR(regCon, x"008",  0, r.idValues(0)(63 downto 32)); --Digital card ID high
+      axiSlaveRegisterR(regCon, x"00C",  0, r.idValues(1)(31 downto  0)); --Analog card ID low
+      axiSlaveRegisterR(regCon, x"010",  0, r.idValues(1)(63 downto 32)); --Analog card ID high
+      axiSlaveRegisterR(regCon, x"014",  0, r.idValues(2)(31 downto  0)); --Carrier card ID low
+      axiSlaveRegisterR(regCon, x"018",  0, r.idValues(2)(63 downto 32)); --Carrier card ID high
       
-      axiSlaveRegister(regCon,  x"00010C",  0, v.asicAcqReg.GlblRstPolarity);
-      axiSlaveRegister(regCon,  x"000110",  0, v.asicAcqReg.GlblRstDelay);
-      axiSlaveRegister(regCon,  x"000114",  0, v.asicAcqReg.GlblRstWidth);
-      axiSlaveRegister(regCon,  x"000118",  0, v.asicAcqReg.AcqPolarity);
-      axiSlaveRegister(regCon,  x"00011C",  0, v.asicAcqReg.AcqDelay);
-      axiSlaveRegister(regCon,  x"000120",  0, v.asicAcqReg.AcqWidth);
+      axiSlaveRegister(regCon,  x"10C",  0, v.asicAcqReg.GlblRstPolarity);
+      axiSlaveRegister(regCon,  x"110",  0, v.asicAcqReg.GlblRstDelay);
+      axiSlaveRegister(regCon,  x"114",  0, v.asicAcqReg.GlblRstWidth);
+      axiSlaveRegister(regCon,  x"118",  0, v.asicAcqReg.AcqPolarity);
+      axiSlaveRegister(regCon,  x"11C",  0, v.asicAcqReg.AcqDelay);
+      axiSlaveRegister(regCon,  x"120",  0, v.asicAcqReg.AcqWidth);
 
-      axiSlaveRegister(regCon,  x"000124",  0, v.asicAcqReg.EnAPattern);
-      axiSlaveRegisterR(regCon, x"000128",  0, v.asicAcqReg.EnAShiftPattern);
-      axiSlaveRegister(regCon,  x"00012C",  0, v.asicAcqReg.EnAPolarity);
-      axiSlaveRegister(regCon,  x"000130",  0, v.asicAcqReg.EnADelay);
-      axiSlaveRegister(regCon,  x"000134",  0, v.asicAcqReg.EnAWidth);
+      axiSlaveRegister(regCon,  x"124",  0, v.asicAcqReg.EnAPattern);
+      axiSlaveRegisterR(regCon, x"128",  0, v.asicAcqReg.EnAShiftPattern);
+      axiSlaveRegister(regCon,  x"12C",  0, v.asicAcqReg.EnAPolarity);
+      axiSlaveRegister(regCon,  x"130",  0, v.asicAcqReg.EnADelay);
+      axiSlaveRegister(regCon,  x"134",  0, v.asicAcqReg.EnAWidth);
       --
-      axiSlaveRegister(regCon,  x"000138",  0, v.cpix2RegOut.ReqTriggerCnt);
-      axiSlaveRegisterR(regCon, x"00013C",  0, v.triggerCntPerCycle);
-      axiSlaveRegister(regCon,  x"000140",  0, v.cpix2RegOut.EnAllFrames);
-      axiSlaveRegister(regCon,  x"000140",  1, v.cpix2RegOut.EnSingleFrame);
+      axiSlaveRegister(regCon,  x"138",  0, v.cpix2RegOut.ReqTriggerCnt);
+      axiSlaveRegisterR(regCon, x"13C",  0, v.triggerCntPerCycle);
+      axiSlaveRegister(regCon,  x"140",  0, v.cpix2RegOut.EnAllFrames);
+      axiSlaveRegister(regCon,  x"140",  1, v.cpix2RegOut.EnSingleFrame);
       --
-      axiSlaveRegister(regCon,  x"000144",  0, v.asicAcqReg.PPbePolarity);
-      axiSlaveRegister(regCon,  x"000148",  0, v.asicAcqReg.PPbeDelay);
-      axiSlaveRegister(regCon,  x"00014C",  0, v.asicAcqReg.PPbeWidth);
-      axiSlaveRegister(regCon,  x"000150",  0, v.asicAcqReg.PpmatPolarity);
-      axiSlaveRegister(regCon,  x"000154",  0, v.asicAcqReg.PpmatDelay);
-      axiSlaveRegister(regCon,  x"000158",  0, v.asicAcqReg.PpmatWidth);
-      axiSlaveRegister(regCon,  x"00015C",  0, v.asicAcqReg.FastSyncPolarity);
-      axiSlaveRegister(regCon,  x"000160",  0, v.asicAcqReg.FastSyncDelay);
-      axiSlaveRegister(regCon,  x"000164",  0, v.asicAcqReg.FastSyncWidth);
-      axiSlaveRegister(regCon,  x"000168",  0, v.asicAcqReg.SyncPolarity);
-      axiSlaveRegister(regCon,  x"00016C",  0, v.asicAcqReg.SyncDelay);
-      axiSlaveRegister(regCon,  x"000170",  0, v.asicAcqReg.SyncWidth);
-      axiSlaveRegister(regCon,  x"000174",  0, v.asicAcqReg.saciSyncPolarity);
-      axiSlaveRegister(regCon,  x"000178",  0, v.asicAcqReg.saciSyncDelay);
-      axiSlaveRegister(regCon,  x"00017C",  0, v.asicAcqReg.saciSyncWidth);
-      axiSlaveRegister(regCon,  x"000180",  0, v.asicAcqReg.SR0Polarity);
-      axiSlaveRegister(regCon,  x"000184",  0, v.asicAcqReg.SR0Delay1);
-      axiSlaveRegister(regCon,  x"000188",  0, v.asicAcqReg.SR0Width1);
-      axiSlaveRegister(regCon,  x"00018C",  0, v.asicAcqReg.SR0Delay2);
-      axiSlaveRegister(regCon,  x"000190",  0, v.asicAcqReg.SR0Width2);
-      axiSlaveRegister(regCon,  x"000194",  0, v.asicAcqReg.Vid);
-      axiSlaveRegister(regCon,  x"000198",  0, v.asicAcqReg.asicWFEnOut);
+      axiSlaveRegister(regCon,  x"144",  0, v.asicAcqReg.PPbePolarity);
+      axiSlaveRegister(regCon,  x"148",  0, v.asicAcqReg.PPbeDelay);
+      axiSlaveRegister(regCon,  x"14C",  0, v.asicAcqReg.PPbeWidth);
+      axiSlaveRegister(regCon,  x"150",  0, v.asicAcqReg.PpmatPolarity);
+      axiSlaveRegister(regCon,  x"154",  0, v.asicAcqReg.PpmatDelay);
+      axiSlaveRegister(regCon,  x"158",  0, v.asicAcqReg.PpmatWidth);
+      axiSlaveRegister(regCon,  x"15C",  0, v.asicAcqReg.FastSyncPolarity);
+      axiSlaveRegister(regCon,  x"160",  0, v.asicAcqReg.FastSyncDelay);
+      axiSlaveRegister(regCon,  x"164",  0, v.asicAcqReg.FastSyncWidth);
+      axiSlaveRegister(regCon,  x"168",  0, v.asicAcqReg.SyncPolarity);
+      axiSlaveRegister(regCon,  x"16C",  0, v.asicAcqReg.SyncDelay);
+      axiSlaveRegister(regCon,  x"170",  0, v.asicAcqReg.SyncWidth);
+      axiSlaveRegister(regCon,  x"174",  0, v.asicAcqReg.saciSyncPolarity);
+      axiSlaveRegister(regCon,  x"178",  0, v.asicAcqReg.saciSyncDelay);
+      axiSlaveRegister(regCon,  x"17C",  0, v.asicAcqReg.saciSyncWidth);
+      axiSlaveRegister(regCon,  x"180",  0, v.asicAcqReg.SR0Polarity);
+      axiSlaveRegister(regCon,  x"184",  0, v.asicAcqReg.SR0Delay1);
+      axiSlaveRegister(regCon,  x"188",  0, v.asicAcqReg.SR0Width1);
+      axiSlaveRegister(regCon,  x"18C",  0, v.asicAcqReg.SR0Delay2);
+      axiSlaveRegister(regCon,  x"190",  0, v.asicAcqReg.SR0Width2);
+      axiSlaveRegister(regCon,  x"194",  0, v.asicAcqReg.Vid);
+      axiSlaveRegister(regCon,  x"198",  0, v.asicAcqReg.asicWFEnOut);
 
       
-      axiSlaveRegisterR(regCon, x"000200",  0, r.cpix2RegOut.acqCnt);
-      axiSlaveRegisterR(regCon, x"000204",  0, r.saciPrepRdoutCnt);
-      axiSlaveRegister(regCon,  x"000208",  0, v.resetCounters);
-      axiSlaveRegister(regCon,  x"00020C",  0, v.cpix2RegOut.pwrEnableReq);
-      axiSlaveRegister(regCon,  x"00020C", 16, v.cpix2RegOut.pwrManual);
-      axiSlaveRegister(regCon,  x"00020C", 20, v.cpix2RegOut.pwrManualDig);
-      axiSlaveRegister(regCon,  x"00020C", 21, v.cpix2RegOut.pwrManualAna);
-      axiSlaveRegister(regCon,  x"00020C", 22, v.cpix2RegOut.pwrManualIo);
-      axiSlaveRegister(regCon,  x"00020C", 23, v.cpix2RegOut.pwrManualFpga);
-      axiSlaveRegister(regCon,  x"000210",  0, v.cpix2RegOut.asicMask);
-      axiSlaveRegister(regCon,  x"000214",  0, v.vguardDacSetting);
-      axiSlaveRegister(regCon,  x"000218",  0, v.cpix2RegOut.cpix2DbgSel1);
-      axiSlaveRegister(regCon,  x"00021C",  0, v.cpix2RegOut.cpix2DbgSel2);
-      axiSlaveRegisterR(regCon, x"000220",  0, r.cpix2RegOut.syncCounter);
+      axiSlaveRegisterR(regCon, x"200",  0, r.cpix2RegOut.acqCnt);
+      axiSlaveRegisterR(regCon, x"204",  0, r.saciPrepRdoutCnt);
+      axiSlaveRegister(regCon,  x"208",  0, v.resetCounters);
+      axiSlaveRegister(regCon,  x"20C",  0, v.cpix2RegOut.pwrEnableReq);
+      axiSlaveRegister(regCon,  x"20C", 16, v.cpix2RegOut.pwrManual);
+      axiSlaveRegister(regCon,  x"20C", 20, v.cpix2RegOut.pwrManualDig);
+      axiSlaveRegister(regCon,  x"20C", 21, v.cpix2RegOut.pwrManualAna);
+      axiSlaveRegister(regCon,  x"20C", 22, v.cpix2RegOut.pwrManualIo);
+      axiSlaveRegister(regCon,  x"20C", 23, v.cpix2RegOut.pwrManualFpga);
+      axiSlaveRegister(regCon,  x"210",  0, v.cpix2RegOut.asicMask);
+      axiSlaveRegister(regCon,  x"214",  0, v.vguardDacSetting);
+      axiSlaveRegister(regCon,  x"218",  0, v.cpix2RegOut.cpix2DbgSel1);
+      axiSlaveRegister(regCon,  x"21C",  0, v.cpix2RegOut.cpix2DbgSel2);
+      axiSlaveRegisterR(regCon, x"220",  0, r.cpix2RegOut.syncCounter);
 
-      axiSlaveRegister(regCon,  x"000224",  0, v.asicAcqReg.EnBPattern);
-      axiSlaveRegisterR(regCon, x"000228",  0, v.asicAcqReg.EnBShiftPattern);
-      axiSlaveRegister(regCon,  x"00022C",  0, v.asicAcqReg.EnBPolarity);
-      axiSlaveRegister(regCon,  x"000230",  0, v.asicAcqReg.EnBDelay);
-      axiSlaveRegister(regCon,  x"000234",  0, v.asicAcqReg.EnBWidth);
+      axiSlaveRegister(regCon,  x"224",  0, v.asicAcqReg.EnBPattern);
+      axiSlaveRegisterR(regCon, x"228",  0, v.asicAcqReg.EnBShiftPattern);
+      axiSlaveRegister(regCon,  x"22C",  0, v.asicAcqReg.EnBPolarity);
+      axiSlaveRegister(regCon,  x"230",  0, v.asicAcqReg.EnBDelay);
+      axiSlaveRegister(regCon,  x"234",  0, v.asicAcqReg.EnBWidth);
       
-      axiSlaveRegister(regCon,  x"000300",  0, v.adcClkHalfT);
-      axiSlaveRegister(regCon,  x"000304",  0, v.cpix2RegOut.requestStartupCal);
-      axiSlaveRegister(regCon,  x"000304",  1, v.cpix2RegOut.startupAck);          -- set by Microblaze
-      axiSlaveRegister(regCon,  x"000304",  2, v.cpix2RegOut.startupFail);         -- set by Microblaze     
+      axiSlaveRegister(regCon,  x"300",  0, v.adcClkHalfT);
+      axiSlaveRegister(regCon,  x"304",  0, v.cpix2RegOut.requestStartupCal);
+      axiSlaveRegister(regCon,  x"304",  1, v.cpix2RegOut.startupAck);          -- set by Microblaze
+      axiSlaveRegister(regCon,  x"304",  2, v.cpix2RegOut.startupFail);         -- set by Microblaze     
 
-      axiSlaveRegister(regCon,  x"000400",  0, v.asicAcqReg.SerialResyncPolarity);
-      axiSlaveRegister(regCon,  x"000404",  0, v.asicAcqReg.SerialResyncDelay);
-      axiSlaveRegister(regCon,  x"000408",  0, v.asicAcqReg.SerialResyncWidth);
-      axiSlaveRegister(regCon,  x"000410",  0, v.asicAcqReg.R0Polarity);
-      axiSlaveRegister(regCon,  x"000414",  0, v.asicAcqReg.R0Delay);
-      axiSlaveRegister(regCon,  x"000418",  0, v.asicAcqReg.R0Width);
+      axiSlaveRegister(regCon,  x"400",  0, v.asicAcqReg.SerialResyncPolarity);
+      axiSlaveRegister(regCon,  x"404",  0, v.asicAcqReg.SerialResyncDelay);
+      axiSlaveRegister(regCon,  x"408",  0, v.asicAcqReg.SerialResyncWidth);
+      axiSlaveRegister(regCon,  x"410",  0, v.asicAcqReg.R0Polarity);
+      axiSlaveRegister(regCon,  x"414",  0, v.asicAcqReg.R0Delay);
+      axiSlaveRegister(regCon,  x"418",  0, v.asicAcqReg.R0Width);
 
       
       -- Special reset for write to address 00
