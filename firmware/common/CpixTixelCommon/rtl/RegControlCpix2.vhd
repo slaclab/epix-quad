@@ -291,14 +291,14 @@ begin
       axiSlaveWaitTxn(regCon, axiWriteMaster, axiReadMaster, v.axiWriteSlave, v.axiReadSlave);
       
       -- Map out standard registers
-      axiSlaveRegister (regCon, x"000",  0, v.usrRst );
-      axiSlaveRegisterR(regCon, x"000",  0, BUILD_INFO_C.fwVersion );
-      axiSlaveRegisterR(regCon, x"004",  0, r.idValues(0)(31 downto  0)); --Digital card ID low
-      axiSlaveRegisterR(regCon, x"008",  0, r.idValues(0)(63 downto 32)); --Digital card ID high
-      axiSlaveRegisterR(regCon, x"00C",  0, r.idValues(1)(31 downto  0)); --Analog card ID low
-      axiSlaveRegisterR(regCon, x"010",  0, r.idValues(1)(63 downto 32)); --Analog card ID high
-      axiSlaveRegisterR(regCon, x"014",  0, r.idValues(2)(31 downto  0)); --Carrier card ID low
-      axiSlaveRegisterR(regCon, x"018",  0, r.idValues(2)(63 downto 32)); --Carrier card ID high
+      --axiSlaveRegister (regCon, x"000",  0, v.usrRst );
+      --axiSlaveRegisterR(regCon, x"000",  0, BUILD_INFO_C.fwVersion );
+      --axiSlaveRegisterR(regCon, x"004",  0, r.idValues(0)(31 downto  0)); --Digital card ID low
+      --axiSlaveRegisterR(regCon, x"008",  0, r.idValues(0)(63 downto 32)); --Digital card ID high
+      --axiSlaveRegisterR(regCon, x"00C",  0, r.idValues(1)(31 downto  0)); --Analog card ID low
+      --axiSlaveRegisterR(regCon, x"010",  0, r.idValues(1)(63 downto 32)); --Analog card ID high
+      --axiSlaveRegisterR(regCon, x"014",  0, r.idValues(2)(31 downto  0)); --Carrier card ID low
+      --axiSlaveRegisterR(regCon, x"018",  0, r.idValues(2)(63 downto 32)); --Carrier card ID high
       
       axiSlaveRegister(regCon,  x"10C",  0, v.asicAcqReg.GlblRstPolarity);
       axiSlaveRegister(regCon,  x"110",  0, v.asicAcqReg.GlblRstDelay);
