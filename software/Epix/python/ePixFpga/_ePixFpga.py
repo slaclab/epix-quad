@@ -209,13 +209,13 @@ class Cpix2FpgaRegisters(pr.Device):
 
       #Setup registers & RemoteVariables
       
-      self.add(pr.RemoteVariable(name='Version',         description='Version',           offset=0x00000000, bitSize=32, bitOffset=0, base=pr.UInt, disp = '{:#x}',  verify = False, mode='RW'))
-      self.add(pr.RemoteVariable(name='IdDigitalLow',    description='IdDigitalLow',      offset=0x00000004, bitSize=32, bitOffset=0, base=pr.UInt, disp = '{:#x}',  mode='RO'))
-      self.add(pr.RemoteVariable(name='IdDigitalHigh',   description='IdDigitalHigh',     offset=0x00000008, bitSize=32, bitOffset=0, base=pr.UInt, disp = '{:#x}',  mode='RO'))
-      self.add(pr.RemoteVariable(name='IdAnalogLow',     description='IdAnalogLow',       offset=0x0000000C, bitSize=32, bitOffset=0, base=pr.UInt, disp = '{:#x}',  mode='RO'))
-      self.add(pr.RemoteVariable(name='IdAnalogHigh',    description='IdAnalogHigh',      offset=0x00000010, bitSize=32, bitOffset=0, base=pr.UInt, disp = '{:#x}',  mode='RO'))
-      self.add(pr.RemoteVariable(name='IdCarrierLow',    description='IdCarrierLow',      offset=0x00000014, bitSize=32, bitOffset=0, base=pr.UInt, disp = '{:#x}',  mode='RO'))
-      self.add(pr.RemoteVariable(name='IdCarrierHigh',   description='IdCarrierHigh',     offset=0x00000018, bitSize=32, bitOffset=0, base=pr.UInt, disp = '{:#x}',  mode='RO'))
+      #self.add(pr.RemoteVariable(name='Version',         description='Version',           offset=0x00000000, bitSize=32, bitOffset=0, base=pr.UInt, disp = '{:#x}',  verify = False, mode='RW'))
+      #self.add(pr.RemoteVariable(name='IdDigitalLow',    description='IdDigitalLow',      offset=0x00000004, bitSize=32, bitOffset=0, base=pr.UInt, disp = '{:#x}',  mode='RO'))
+      #self.add(pr.RemoteVariable(name='IdDigitalHigh',   description='IdDigitalHigh',     offset=0x00000008, bitSize=32, bitOffset=0, base=pr.UInt, disp = '{:#x}',  mode='RO'))
+      #self.add(pr.RemoteVariable(name='IdAnalogLow',     description='IdAnalogLow',       offset=0x0000000C, bitSize=32, bitOffset=0, base=pr.UInt, disp = '{:#x}',  mode='RO'))
+      #self.add(pr.RemoteVariable(name='IdAnalogHigh',    description='IdAnalogHigh',      offset=0x00000010, bitSize=32, bitOffset=0, base=pr.UInt, disp = '{:#x}',  mode='RO'))
+      #self.add(pr.RemoteVariable(name='IdCarrierLow',    description='IdCarrierLow',      offset=0x00000014, bitSize=32, bitOffset=0, base=pr.UInt, disp = '{:#x}',  mode='RO'))
+      #self.add(pr.RemoteVariable(name='IdCarrierHigh',   description='IdCarrierHigh',     offset=0x00000018, bitSize=32, bitOffset=0, base=pr.UInt, disp = '{:#x}',  mode='RO'))
       self.add(pr.RemoteVariable(name='R0Polarity',      description='R0Polarity',        offset=0x00000410, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='R0Delay',         description='R0Delay',           offset=0x00000414, bitSize=32, bitOffset=0, base=pr.UInt, disp = '{}',  mode='RW'))
       self.add(pr.RemoteVariable(name='R0Width',         description='R0Width',           offset=0x00000418, bitSize=32, bitOffset=0, base=pr.UInt, disp = '{}',  mode='RW'))
