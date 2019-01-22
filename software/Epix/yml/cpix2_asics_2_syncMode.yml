@@ -17,7 +17,6 @@ ePixBoard:
       UserReset: '0x0'
     Cpix2FpgaRegisters:
       enable: 'True'
-      Version: '0xaa010001'
       R0Polarity: 'False'
       R0Delay: '4'
       R0Width: '120'
