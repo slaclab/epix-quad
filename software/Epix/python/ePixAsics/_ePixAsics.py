@@ -26,6 +26,8 @@ import collections
 import os
 import numpy as np
 
+usingPyQt5 = True
+
 try:
     from PyQt5.QtWidgets import *
     from PyQt5.QtCore    import *
@@ -33,6 +35,7 @@ try:
 except ImportError:
     from PyQt4.QtCore    import *
     from PyQt4.QtGui     import *
+    usingPyQt5 = False
 
 
 class Epix100aAsic(pr.Device):
@@ -294,6 +297,9 @@ class Epix100aAsic(pr.Device):
                 self.filename = arg
             else:
                 self.filename = QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+            # in PyQt5 QFileDialog returns a tuple
+            if usingPyQt5:
+               self.filename = self.filename[0]
             if os.path.splitext(self.filename)[1] == '.csv':
                 matrixCfg = np.genfromtxt(self.filename, delimiter=',')
                 if matrixCfg.shape == (354, 384):
@@ -336,6 +342,9 @@ class Epix100aAsic(pr.Device):
                 self.filename = arg
             else:
                 self.filename = QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+            # in PyQt5 QFileDialog returns a tuple
+            if usingPyQt5:
+               self.filename = self.filename[0]
             if os.path.splitext(self.filename)[1] == '.csv':
                 readBack = np.zeros((354, 384),dtype='uint16')
                 self._rawWrite(0x00000000*addrSize,0)
@@ -645,6 +654,9 @@ class Epix10kaAsic(pr.Device):
                self.filename = arg
             else:
                self.filename = QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+            # in PyQt5 QFileDialog returns a tuple
+            if usingPyQt5:
+               self.filename = self.filename[0]
             if os.path.splitext(self.filename)[1] == '.csv':
                 matrixCfg = np.genfromtxt(self.filename, delimiter=',')
                 if matrixCfg.shape == (178, 192):
@@ -688,6 +700,9 @@ class Epix10kaAsic(pr.Device):
                self.filename = arg
             else:
                self.filename = QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+            # in PyQt5 QFileDialog returns a tuple
+            if usingPyQt5:
+               self.filename = self.filename[0]
             if os.path.splitext(self.filename)[1] == '.csv':
                 readBack = np.zeros((178, 192),dtype='uint16')
                 self._rawWrite(0x00000000*addrSize,0)
@@ -906,6 +921,9 @@ class TixelAsic(pr.Device):
                self.filename = arg
             else:
                self.filename = QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+            # in PyQt5 QFileDialog returns a tuple
+            if usingPyQt5:
+               self.filename = self.filename[0]
             if os.path.splitext(self.filename)[1] == '.csv':
                 matrixCfg = np.genfromtxt(self.filename, delimiter=',')
                 if matrixCfg.shape == (48, 48):
@@ -936,6 +954,9 @@ class TixelAsic(pr.Device):
                self.filename = arg
             else:
                self.filename = QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+            # in PyQt5 QFileDialog returns a tuple
+            if usingPyQt5:
+               self.filename = self.filename[0]
             if os.path.splitext(self.filename)[1] == '.csv':
                 readBack = np.zeros((48,48),dtype='uint16')
                 self._rawWrite(0x00000000*addrSize,0)
@@ -1182,8 +1203,11 @@ class Cpix2Asic(pr.Device):
                self.filename = arg
             else:
                self.filename = QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
-            if os.path.splitext(self.filename[0])[1] == '.csv':
-                matrixCfg = np.genfromtxt(self.filename[0], delimiter=',')
+            # in PyQt5 QFileDialog returns a tuple
+            if usingPyQt5:
+               self.filename = self.filename[0]
+            if os.path.splitext(self.filename)[1] == '.csv':
+                matrixCfg = np.genfromtxt(self.filename, delimiter=',')
                 if matrixCfg.shape == (48, 48):
                     self._rawWrite(0x00000000*addrSize,0)
                     self._rawWrite(0x00008000*addrSize,0)
@@ -1196,7 +1220,7 @@ class Cpix2Asic(pr.Device):
                 else:
                     print('csv file must be 48x48 pixels')
             else:
-                print("Not csv file : ", self.filename[0])
+                print("Not csv file : ", self.filename)
         else:
             print("Warning: ASIC enable is set to False!")      
 
@@ -1212,6 +1236,9 @@ class Cpix2Asic(pr.Device):
                self.filename = arg
             else:
                self.filename = QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+            # in PyQt5 QFileDialog returns a tuple
+            if usingPyQt5:
+               self.filename = self.filename[0]
             if os.path.splitext(self.filename)[1] == '.csv':
                 readBack = np.zeros((48,48),dtype='uint16')
                 self._rawWrite(0x00000000*addrSize,0)
@@ -1510,6 +1537,9 @@ class EpixHrAdcAsic(pr.Device):
                self.filename = arg
             else:
                self.filename = QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+            # in PyQt5 QFileDialog returns a tuple
+            if usingPyQt5:
+               self.filename = self.filename[0]
             if os.path.splitext(self.filename)[1] == '.csv':
                 matrixCfg = np.genfromtxt(self.filename, delimiter=',')
                 if matrixCfg.shape == (178, 192):
@@ -1551,6 +1581,9 @@ class EpixHrAdcAsic(pr.Device):
                self.filename = arg
             else:
                self.filename = QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+            # in PyQt5 QFileDialog returns a tuple
+            if usingPyQt5:
+               self.filename = self.filename[0]
             if os.path.splitext(self.filename)[1] == '.csv':
                 readBack = np.zeros((178, 192),dtype='uint16')
                 self._rawWrite(0x00000000*addrSize,0)
