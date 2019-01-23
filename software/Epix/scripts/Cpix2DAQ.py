@@ -224,12 +224,12 @@ class EpixBoard(pyrogue.Root):
         @self.command()
         def Trigger():       
             self.Cpix2.Cpix2FpgaRegisters.EnSingleFrame.post(True)
-            pulserAmpliture = self.Cpix2.Cpix2Asic1.Pulser.get()
-            if pulserAmpliture == 1023:
-                pulserAmpliture = 0
-            else:
-                pulserAmpliture += 1
-            self.Cpix2.Cpix2Asic1.Pulser.set(pulserAmpliture)
+            #pulserAmpliture = self.Cpix2.Cpix2Asic1.Pulser.get()
+            #if pulserAmpliture == 1023:
+            #    pulserAmpliture = 0
+            #else:
+            #    pulserAmpliture += 1
+            #self.Cpix2.Cpix2Asic1.Pulser.set(pulserAmpliture)
             self.runControl.runCount.set(self.runControl.runCount.get()) 
             #print("run control", self.runControl.runCount.get())
 
@@ -271,10 +271,7 @@ if (START_GUI):
     appTop.exec_()
 
 # Close window and stop polling
-def stop():
-    mNode.stop()
-    ePixBoard.stop()
-    exit()
+ePixBoard.stop()
+exit()
 
-print("Started rogue mesh and epics V3 server. To exit type stop()")
 

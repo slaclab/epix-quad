@@ -1,5 +1,6 @@
 ePixBoard:
   enable: 'True'
+  ForceWrite: 'False'
   dataWriter:
     enable: 'True'
     dataFile: ''
@@ -205,12 +206,6 @@ ePixBoard:
       DCycle_bypass: 'False'
       MSBCompTH1_DAC: '4'
       MSBCompTH2_DAC: '5'
-    Pgp2bAxi:
-      enable: 'False'
-      Loopback: 'No'
-      LocData: '0x0'
-      LocDataEn: 'False'
-      AutoStatus: 'False'
     Ad9249Rdout[1].Adc[0]:
       enable: 'False'
       ChannelDelay[0]: '0x0'

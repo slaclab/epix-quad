@@ -1230,8 +1230,10 @@ class Cpix2Asic(pr.Device):
         addrSize = 4
         #set r0mode in order to have saci cmd to work properly on legacy firmware
         #self.root.Cpix2.Cpix2FpgaRegisters.AsicR0Mode.set(True)
-
         if (self.enable.get()):
+            self.reportCmd(dev,cmd,arg)
+            if not isinstance(arg, str):
+               arg = ''
             if len(arg) > 0:
                self.filename = arg
             else:
