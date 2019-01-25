@@ -106,8 +106,13 @@ if filesNum == 0:
 
 for i in range(filesNum):
    f = open(dir + '/' + onlyfiles[i], mode = 'rb')
-   h5_filename = os.path.splitext(dir + '/' +  onlyfiles[i])[0]+".hdf5"
-   f_h5 = h5py.File(h5_filename, "w")
+   if args.cnt == 1:
+      cntStr = '_CNTA'
+   else:
+      cntStr = '_CNTB'
+   out_filename = os.path.splitext(dir + '/' +  onlyfiles[i])[0]+cntStr
+   f_h5 = h5py.File(out_filename+".hdf5", "w")
+   f_bin = open(out_filename+".bin", "wb")
 
    file_header = [0]
    numberOfFrames = 0
@@ -124,9 +129,6 @@ for i in range(filesNum):
          file_header = np.fromfile(f, dtype='uint32', count=2)
          payloadSize = int(file_header[0]/4)-1 
          newPayload = np.fromfile(f, dtype='uint32', count=payloadSize) #(frame size splited by four to read 32 bit 
-         
-         
-         #if payloadSize == 4624: # valid frame size
             
          # store header info
          hdrSeq = newPayload[1]
@@ -137,7 +139,7 @@ for i in range(filesNum):
          if hdrAsic == args.asic:
             
             # look for two equal sequence numbers for selected asic
-            if prevSeq > 0 and prevSeq == hdrSeq:
+            if prevSeq > 0 and prevSeq == hdrSeq and len(newPayload) == 1155 and prevPayloadLen == 1155:
                if (numberOfFrames == 0):
                   if args.cnt == 1: # counter A - take 1st packet with the same sequence
                      allFrames = [prevPayload.copy()]
@@ -154,8 +156,11 @@ for i in range(filesNum):
             #print('Prev seq %d, curr seq %d'%(prevSeq, hdrSeq))
             prevSeq = hdrSeq
             prevPayload = [newPayload.copy()]
+            prevPayloadLen = len(newPayload)
       except Exception: 
          pass
+         #e = sys.exc_info()[0]
+         #print ("Message\n", e)
          #print("numberOfFrames read: " ,numberOfFrames)
 
    f.close()
@@ -191,9 +196,11 @@ for i in range(filesNum):
             #imgDesc = np.concatenate((imgDesc, np.array([currentCam.descrambleImage(bytearray(rawImgFrame.tobytes()))])),0)
 
    imgDesc = imgDesc.reshape(-1,48,48)
-   print('Saving %s with %d frames'%(h5_filename, numberOfFrames))
+   print('Saving %s with %d frames'%(out_filename, numberOfFrames))
    index_h5 ='data'
    f_h5[index_h5] = imgDesc.astype('uint16')
    f_h5.close()
+   f_bin.write(imgDesc.tobytes())
+   f_bin.close()
 
 

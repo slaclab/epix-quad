@@ -38,6 +38,7 @@ import testBridge
 import ePixViewer as vi
 import ePixFpga as fpga
 import os
+import datetime
 
 try:
     from PyQt5.QtWidgets import *
@@ -95,10 +96,17 @@ def setAsic1AsyncModeRegisters():
    ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqPolarity.set(False)
    ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqDelay1.set(6)
    ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqWidth1.set(8)
-   ePixBoard.Cpix2.Cpix2FpgaRegisters.EnAPattern.set(0x0)
+   
+   ePixBoard.Cpix2.Cpix2FpgaRegisters.EnAPattern.set(0xffffffff)
    ePixBoard.Cpix2.Cpix2FpgaRegisters.EnAPolarity.set(True)
    ePixBoard.Cpix2.Cpix2FpgaRegisters.EnADelay.set(0)
    ePixBoard.Cpix2.Cpix2FpgaRegisters.EnAWidth.set(0)
+   
+   ePixBoard.Cpix2.Cpix2FpgaRegisters.EnBPattern.set(0xffffffff)
+   ePixBoard.Cpix2.Cpix2FpgaRegisters.EnBPolarity.set(True)
+   ePixBoard.Cpix2.Cpix2FpgaRegisters.EnBDelay.set(0)
+   ePixBoard.Cpix2.Cpix2FpgaRegisters.EnBWidth.set(0)
+   
    ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.set(8)
    ePixBoard.Cpix2.Cpix2FpgaRegisters.EnAllFrames.set(False)
    ePixBoard.Cpix2.Cpix2FpgaRegisters.EnSingleFrame.set(False)
@@ -176,9 +184,9 @@ def setAsic1AsyncModeRegisters():
    ePixBoard.Cpix2.Cpix2Asic1.TPS_MUX.set(0)
    ePixBoard.Cpix2.Cpix2Asic1.RO_Monost.set(3)
    ePixBoard.Cpix2.Cpix2Asic1.TPS_GR.set(3)
-   ePixBoard.Cpix2.Cpix2Asic1.cout.set(False)
-   ePixBoard.Cpix2.Cpix2Asic1.ckc.set(False)
-   ePixBoard.Cpix2.Cpix2Asic1.mod.set(True)
+   ePixBoard.Cpix2.Cpix2Asic1.cout.set(False)   # False - do not concatenate counters
+   ePixBoard.Cpix2.Cpix2Asic1.ckc.set(True)     # True - count over TH1 in counter A and over Th2 in counter B
+   ePixBoard.Cpix2.Cpix2Asic1.mod.set(True)     # True - asynchronous mode
    ePixBoard.Cpix2.Cpix2Asic1.PP_OCB_S2D.set(True)
    ePixBoard.Cpix2.Cpix2Asic1.OCB.set(3)
    ePixBoard.Cpix2.Cpix2Asic1.Monost.set(3)
@@ -503,6 +511,8 @@ if args.test == 1:
 # threshold TH1 scan on noise
 if args.test == 2:
    
+   
+   # test specific settings
    framesPerThreshold = 20
    
    
@@ -557,29 +567,69 @@ if args.test == 2:
       ePixBoard.Cpix2.Cpix2Asic1.atest.set(False)
       
       print('Setting TH2 to maximum')
-      ePixBoard.Cpix2.Cpix2Asic1.MSBCompTH2_DAC.set(15) # 4 bit corse
-      ePixBoard.Cpix2.Cpix2Asic1.CompTH2_DAC.set(63) # 6 bit fine
+      threshold_2 = 0
+      ePixBoard.Cpix2.Cpix2Asic1.MSBCompTH2_DAC.set(threshold_2 >> 6) # 4 bit MSB
+      ePixBoard.Cpix2.Cpix2Asic1.CompTH2_DAC.set(threshold_2 & 0x3F) # 6 bit LSB
       
       print('Setting TH1 to minimum')
-      ePixBoard.Cpix2.Cpix2Asic1.MSBCompTH1_DAC.set(0) # 4 bit corse
-      ePixBoard.Cpix2.Cpix2Asic1.CompTH1_DAC.set(0) # 6 bit fine
+      threshold_1 = 0
+      ePixBoard.Cpix2.Cpix2Asic1.MSBCompTH1_DAC.set(threshold_1 >> 6) # 4 bit MSB
+      ePixBoard.Cpix2.Cpix2Asic1.CompTH1_DAC.set(threshold_1 & 0x3F) # 6 bit LSB
       
       # dummy readout to flush
       time.sleep(totalTimeSec+totalTimeSec*0.1)
       ePixBoard.Trigger()
       
+      # enable packetizer to monitor that the data is still coming
+      ePixBoard.Cpix2.Asic1PktRegisters.enable.set(True)
+      ePixBoard.Cpix2.Asic1PktRegisters.ResetCounters.set(True)
+      ePixBoard.Cpix2.Asic1PktRegisters.ResetCounters.set(False)
       
-      for th1Msb in range(16):
-         for th1Lsb in range(64):
-            print('Acquiring %d frames with TH1Msb=%d, TH1Lsb=%d' %(framesPerThreshold, th1Msb, th1Lsb))
-            ePixBoard.dataWriter.dataFile.set(args.dir + '/TH1MSB' + '{:02d}'.format(th1Msb) + '_TH1LSB' + '{:02d}'.format(th1Lsb) + '.dat')
+      # get settings for the file name
+      VtrimB = ePixBoard.Cpix2.Cpix2Asic1.Vtrim_b.get() & 0x3
+      Pulser = ePixBoard.Cpix2.Cpix2Asic1.Pulser.get() & 0x3FF
+      Npulse = ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
+      
+      for threshold_1 in range(1024):
+         
+         t_start = datetime.datetime.now()
+         
+         while True:
+         
+            frms_start = ePixBoard.Cpix2.Asic1PktRegisters.FrameCount.get()
+            print('Acquiring %d frames with Threshold_1=%d' %(framesPerThreshold, threshold_1))
+            ePixBoard.dataWriter.dataFile.set(args.dir + '/ACQ' + '{:04d}'.format(framesPerThreshold) + '_VTRIMB' + '{:1d}'.format(VtrimB) + '_TH1' + '{:04d}'.format(threshold_1) + '_TH2' + '{:04d}'.format(threshold_2) + '_P' + '{:04d}'.format(Pulser) + '_N' + '{:05d}'.format(Npulse) + '_6600.dat')
             ePixBoard.dataWriter.open.set(True)
+            
+            # acquire frames
             for frm in range(framesPerThreshold+1):
-               ePixBoard.Cpix2.Cpix2Asic1.MSBCompTH1_DAC.set(th1Msb) # 4 bit corse
-               ePixBoard.Cpix2.Cpix2Asic1.CompTH1_DAC.set(th1Lsb) # 6 bit fine
+               ePixBoard.Cpix2.Cpix2Asic1.MSBCompTH1_DAC.set(threshold_1 >> 6) # 4 bit MSB
+               ePixBoard.Cpix2.Cpix2Asic1.CompTH1_DAC.set(threshold_1 & 0x3F) # 6 bit LSB
                time.sleep(totalTimeSec+totalTimeSec*0.1)
                ePixBoard.Trigger()
             ePixBoard.dataWriter.open.set(False)
+            
+            #check if still in sync
+            if ePixBoard.Cpix2.Asic1PktRegisters.FrameCount.get() - frms_start < int(framesPerThreshold*0.9):
+               #resync
+               print('Re-synchronizing ASIC 1')
+               rsyncTry = 1
+               ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+               time.sleep(1)
+               while rsyncTry < 10 and ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+                  rsyncTry = rsyncTry + 1
+                  ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+                  time.sleep(1)
+               if ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+                  print('Failed to re-synchronize ASIC 1 after %d tries'%rsyncTry)
+                  exit()
+               else:
+                  print('ASIC 1 re-synchronized after %d tries'%rsyncTry)
+            else:
+               break
+            
+         print(abs(datetime.datetime.now()-t_start))
+         
    
    else:
       print('Directory %s does not exist'%args.dir)
