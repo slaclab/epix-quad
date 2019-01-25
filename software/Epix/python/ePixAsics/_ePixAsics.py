@@ -1106,11 +1106,11 @@ class Cpix2Asic(pr.Device):
 
         # CMD = 4, Addr = X  : Write Matrix with data        
         self.add((    
-            pr.RemoteCommand(name='WriteMatrixData', description='', offset=0x00004000*addrSize, bitSize=2, bitOffset=0, function=pr.Command.touch, hidden=False)))   
+            pr.RemoteCommand(name='WriteMatrixData', description='', offset=0x00004000*addrSize, bitSize=6, bitOffset=0, function=pr.Command.touch, hidden=False)))   
         
 
         # CMD = 5, Addr = X  : Read/Write Pixel with data
-        self.add(pr.RemoteCommand(name='WritePixelData',  description='WritePixelData',  offset=0x00005000*addrSize, bitSize=2, bitOffset=0, function=pr.Command.touch, hidden=False))
+        self.add(pr.RemoteCommand(name='WritePixelData',  description='WritePixelData',  offset=0x00005000*addrSize, bitSize=6, bitOffset=0, function=pr.Command.touch, hidden=False))
 
         # CMD = 7, Addr = X  : Prepare to write chip ID
         #self.add((
