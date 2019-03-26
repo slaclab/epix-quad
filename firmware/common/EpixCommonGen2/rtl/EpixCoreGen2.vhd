@@ -968,7 +968,8 @@ begin
       -- Clocks and Resets
       axiClk         => coreClk,
       axiRst         => axiRst,
-      userValues(0)  => hitCnt
+      userValues(0)  => hitCnt,
+      userValues(1 to 63) => (others => X"00000000")
    );
 
    ---------------------
