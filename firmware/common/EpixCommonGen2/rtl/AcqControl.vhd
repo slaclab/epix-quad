@@ -79,7 +79,12 @@ entity AcqControl is
       asicRoClk           : out   std_logic;
       
       -- external pulser output
-      extSync             : out   std_logic
+      extSync             : out   std_logic;
+      
+      -- external ttl frame tagging signals
+      trigIn               : in  sl;
+      tagOut               : out sl;
+      hitCnt               : out slv(31 downto 0)
 
    );
 end AcqControl;
@@ -149,6 +154,10 @@ architecture AcqControl of AcqControl is
    -- Alternate R0 that can be used for "original" polarity
    -- (i.e., usually low except before ACQ and through readout)
    signal iAsicR0Alt    : std_logic             := '0';
+   
+   signal iTrigIn               : sl;
+   signal iTagOut               : sl;
+   signal iHitCnt               : slv(31 downto 0);
 
    -- State machine values
    type state is (IDLE_S,
@@ -182,6 +191,33 @@ architecture AcqControl of AcqControl is
    
 
 begin
+
+   -- external ttl tagging logic
+   
+   U_TrigSync : entity work.SynchronizerEdge
+      port map (
+         clk        => sysClk,
+         rst        => sysClkRst,
+         dataIn     => trigIn,
+         risingEdge => iTrigIn
+      );
+   
+   process(sysClk) begin
+      if rising_edge(sysClk) then
+         if sysClkRst = '1' then  
+            iTagOut <= '0' after tpd;     
+            iHitCnt <= (others=>'0') after tpd;     
+         elsif iTrigIn = '1' and curState = ACQ_S then
+            iTagOut <= '1' after tpd;
+            iHitCnt <= iHitCnt + 1 after tpd;
+         elsif readDone = '1' then
+            iTagOut <= '0' after tpd;
+         end if;
+      end if;
+   end process;
+   
+   hitCnt <= iHitCnt;
+   tagOut <= iTagOut;
 
    -- ADC Clock outputs
    U_AdcClk0 : OBUFDS port map ( I => adcClk, O => adcClkP(0), OB => adcClkM(0) );

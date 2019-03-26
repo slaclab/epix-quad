@@ -261,6 +261,9 @@ architecture top_level of EpixCoreGen2 is
    
    signal powerBad : sl;
    
+   signal hitTag  : sl;
+   signal hitCnt  : slv(31 downto 0);
+   
    constant SACI_CLK_PERIOD_C : real := saciClkPeriod(ASIC_TYPE_G);
    
    constant DDR_AXI_CONFIG_C : AxiConfigType := axiConfig(
@@ -715,7 +718,10 @@ begin
       asicAcq         => iAsicAcq,
       asicSync        => iAsicSync,
       asicRoClk       => iAsicRoClk,
-      extSync         => iExtSync
+      extSync         => iExtSync,
+      trigIn          => iRunTrigger,
+      tagOut          => hitTag,
+      hitCnt          => hitCnt
    );
  
    ---------------------
@@ -752,7 +758,8 @@ begin
       mpsOut         => open,
       doutOut        => doutOut,
       doutRd         => doutRd,
-      doutValid      => doutValid
+      doutValid      => doutValid,
+      tagIn          => hitTag,
    );
    
    --------------------------------------------
@@ -960,7 +967,8 @@ begin
       axiWriteSlave  => mAxiWriteSlaves(VERSION_AXI_INDEX_C),
       -- Clocks and Resets
       axiClk         => coreClk,
-      axiRst         => axiRst
+      axiRst         => axiRst,
+      userValues(0)  => hitCnt
    );
 
    ---------------------

@@ -87,7 +87,9 @@ entity ReadoutControl is
       -- EPIX10KA bank-deserialized digital outputs
       doutOut             : in  Slv2Array(15 downto 0);
       doutRd              : out slv(15 downto 0);
-      doutValid           : in  slv(15 downto 0)
+      doutValid           : in  slv(15 downto 0);
+      
+      tagIn                : in sl
    );
 end ReadoutControl;
 
@@ -319,7 +321,7 @@ begin
                    channelOrder,doutOrder,fifoEmptyAll,acqBusy,adcMemOflowAny,fifoOflowAny,
                    envData,tpsAdcData,acqStartEdge,dataSendEdge,adcFifoEmpty,
                    sysClkRst,mAxisSlave, adcData, channelValid, opCode,
-                   doutOut) 
+                   doutOut, tagIn) 
       variable v : RegType;
    begin
       v := r;
@@ -459,7 +461,7 @@ begin
             when FOOTER_S =>
                ssiSetUserEofe(MASTER_AXI_STREAM_CONFIG_G,v.mAxisMaster,r.error);
                v.readDone                       := '1';
-               v.mAxisMaster.tData(31 downto 0) := ZEROWORD_C;
+               v.mAxisMaster.tData(31 downto 0) := x"0000000" & "000" & tagIn;
                v.mAxisMaster.tValid             := '1';
                v.mAxisMaster.tLast              := '1';
                v.state                          := IDLE_S;
