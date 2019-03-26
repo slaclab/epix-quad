@@ -759,7 +759,7 @@ begin
       doutOut        => doutOut,
       doutRd         => doutRd,
       doutValid      => doutValid,
-      tagIn          => hitTag,
+      tagIn          => hitTag
    );
    
    --------------------------------------------
