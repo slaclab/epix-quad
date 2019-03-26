@@ -1310,7 +1310,7 @@ if args.test == 6:
 #  -> Scan VtrimB 0 to 3
 #     -> Scan (4) trim bits 0 to 15 values (fine)
 #        -> Scan all bit masks 6600 to 6655 (x36)
-#           -> Keep TH2 1023, scan TH1 700-500
+#           -> Keep TH2 1023, scan TH1 900-400
 if args.test == 7:
    
    
@@ -1453,7 +1453,7 @@ if args.test == 7:
                         gr_fail = True
                   
                   
-                  for threshold_1 in range(900,750,-1):
+                  for threshold_1 in range(900,400,-1):
                   
                      t_start = datetime.datetime.now()
                      

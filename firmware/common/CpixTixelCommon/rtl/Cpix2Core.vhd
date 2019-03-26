@@ -441,14 +441,14 @@ begin
       FB_BUFG_G            => true,
       NUM_CLOCKS_G         => 5,
       CLKIN_PERIOD_G       => 6.4,
-      DIVCLK_DIVIDE_G      => 10,
-      CLKFBOUT_MULT_F_G    => 38.5,
+      DIVCLK_DIVIDE_G      => ite(SIMULATION_G, 5,    10),
+      CLKFBOUT_MULT_F_G    => ite(SIMULATION_G, 32.0, 38.5),
       
       CLKOUT0_DIVIDE_F_G   => 4.0,
       CLKOUT0_PHASE_G      => 90.0,
       CLKOUT0_DUTY_CYCLE_G => 0.5,
       
-      CLKOUT1_DIVIDE_G     => 6,
+      CLKOUT1_DIVIDE_G     => ite(SIMULATION_G, 10, 6),
       CLKOUT1_PHASE_G      => 0.0,
       CLKOUT1_DUTY_CYCLE_G => 0.5,
       
