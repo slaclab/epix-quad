@@ -267,8 +267,7 @@ ePixBoard.start(pollEn=args.pollEn, initRead = args.initRead, timeout=3.0)
 # simple pulser scan
 if args.test == 1:
 	
-	trbit = 1
-	acqWidth = 5000
+	acqWidth = 20000
 	
 	if os.path.isdir(args.dir):
 		
@@ -291,19 +290,6 @@ if args.test == 1:
 		ePixBoard.Epix10ka.Epix10kaAsic2.ClearMatrix()
 		ePixBoard.Epix10ka.Epix10kaAsic3.ClearMatrix()
 		
-		if trbit == 1:
-			print('Setting trbit to 1 (high to low gain)')
-			ePixBoard.Epix10ka.Epix10kaAsic0.trbit.set(True)
-			ePixBoard.Epix10ka.Epix10kaAsic1.trbit.set(True)
-			ePixBoard.Epix10ka.Epix10kaAsic2.trbit.set(True)
-			ePixBoard.Epix10ka.Epix10kaAsic3.trbit.set(True)
-		else:
-			print('Setting trbit to 0 (medium to low gain)')
-			ePixBoard.Epix10ka.Epix10kaAsic0.trbit.set(False)
-			ePixBoard.Epix10ka.Epix10kaAsic1.trbit.set(False)
-			ePixBoard.Epix10ka.Epix10kaAsic2.trbit.set(False)
-			ePixBoard.Epix10ka.Epix10kaAsic3.trbit.set(False)
-		
 		
 		print('Enable ASICs test')
 		ePixBoard.Epix10ka.Epix10kaAsic0.test.set(True)
@@ -317,41 +303,54 @@ if args.test == 1:
 		ePixBoard.Epix10ka.Epix10kaAsic2.atest.set(True)
 		ePixBoard.Epix10ka.Epix10kaAsic3.atest.set(True)
 		
-		for x in range(8):
-			for y in range(8):
-				print('Clearing ASICs matrix (auto-range)')
-				ePixBoard.Epix10ka.Epix10kaAsic0.ClearMatrix()
-				ePixBoard.Epix10ka.Epix10kaAsic1.ClearMatrix()
-				ePixBoard.Epix10ka.Epix10kaAsic2.ClearMatrix()
-				ePixBoard.Epix10ka.Epix10kaAsic3.ClearMatrix()
-				print('Setting ASICs matrix to %d%d pattern'%(x,y))
-				setAsicMatrixGrid88(x, y, 1, ePixBoard.Epix10ka.Epix10kaAsic0)
-				setAsicMatrixGrid88(x, y, 1, ePixBoard.Epix10ka.Epix10kaAsic1)
-				setAsicMatrixGrid88(x, y, 1, ePixBoard.Epix10ka.Epix10kaAsic2)
-				setAsicMatrixGrid88(x, y, 1, ePixBoard.Epix10ka.Epix10kaAsic3)
-				
-				print('Reset pulser')
-				ePixBoard.Epix10ka.Epix10kaAsic0.PulserR.set(True)
-				ePixBoard.Epix10ka.Epix10kaAsic0.PulserR.set(False)
-				ePixBoard.Epix10ka.Epix10kaAsic1.PulserR.set(True)
-				ePixBoard.Epix10ka.Epix10kaAsic1.PulserR.set(False)
-				ePixBoard.Epix10ka.Epix10kaAsic2.PulserR.set(True)
-				ePixBoard.Epix10ka.Epix10kaAsic2.PulserR.set(False)
-				ePixBoard.Epix10ka.Epix10kaAsic3.PulserR.set(True)
-				ePixBoard.Epix10ka.Epix10kaAsic3.PulserR.set(False)
-				
-				print('Open data file')
-				ePixBoard.dataWriter.dataFile.set(args.dir + '/calib_acq_width' +  '{:06d}'.format(acqWidth) + '_trbit' + '{:1d}'.format(trbit) + '_88' + '{:1d}'.format(x) + '{:1d}'.format(y)  + '.dat')
-				ePixBoard.dataWriter.open.set(True)
-				
-				ePixBoard.Epix10ka.EpixFpgaRegisters.AutoRunEnable.set(True)
-				
-				time.sleep(30)
-				
-				ePixBoard.Epix10ka.EpixFpgaRegisters.AutoRunEnable.set(False)
-				
-				print('Close data file')
-				ePixBoard.dataWriter.open.set(False)
+		for trbit in range(2):
+			if trbit == 1:
+				print('Setting trbit to 1 (high to low gain)')
+				ePixBoard.Epix10ka.Epix10kaAsic0.trbit.set(True)
+				ePixBoard.Epix10ka.Epix10kaAsic1.trbit.set(True)
+				ePixBoard.Epix10ka.Epix10kaAsic2.trbit.set(True)
+				ePixBoard.Epix10ka.Epix10kaAsic3.trbit.set(True)
+			else:
+				print('Setting trbit to 0 (medium to low gain)')
+				ePixBoard.Epix10ka.Epix10kaAsic0.trbit.set(False)
+				ePixBoard.Epix10ka.Epix10kaAsic1.trbit.set(False)
+				ePixBoard.Epix10ka.Epix10kaAsic2.trbit.set(False)
+				ePixBoard.Epix10ka.Epix10kaAsic3.trbit.set(False)
+			for x in range(8):
+				for y in range(8):
+					print('Clearing ASICs matrix (auto-range)')
+					ePixBoard.Epix10ka.Epix10kaAsic0.ClearMatrix()
+					ePixBoard.Epix10ka.Epix10kaAsic1.ClearMatrix()
+					ePixBoard.Epix10ka.Epix10kaAsic2.ClearMatrix()
+					ePixBoard.Epix10ka.Epix10kaAsic3.ClearMatrix()
+					print('Setting ASICs matrix to %d%d pattern'%(x,y))
+					setAsicMatrixGrid88(x, y, 1, ePixBoard.Epix10ka.Epix10kaAsic0)
+					setAsicMatrixGrid88(x, y, 1, ePixBoard.Epix10ka.Epix10kaAsic1)
+					setAsicMatrixGrid88(x, y, 1, ePixBoard.Epix10ka.Epix10kaAsic2)
+					setAsicMatrixGrid88(x, y, 1, ePixBoard.Epix10ka.Epix10kaAsic3)
+					
+					print('Reset pulser')
+					ePixBoard.Epix10ka.Epix10kaAsic0.PulserR.set(True)
+					ePixBoard.Epix10ka.Epix10kaAsic0.PulserR.set(False)
+					ePixBoard.Epix10ka.Epix10kaAsic1.PulserR.set(True)
+					ePixBoard.Epix10ka.Epix10kaAsic1.PulserR.set(False)
+					ePixBoard.Epix10ka.Epix10kaAsic2.PulserR.set(True)
+					ePixBoard.Epix10ka.Epix10kaAsic2.PulserR.set(False)
+					ePixBoard.Epix10ka.Epix10kaAsic3.PulserR.set(True)
+					ePixBoard.Epix10ka.Epix10kaAsic3.PulserR.set(False)
+					
+					print('Open data file')
+					ePixBoard.dataWriter.dataFile.set(args.dir + '/calib_acq_width' +  '{:06d}'.format(acqWidth) + '_trbit' + '{:1d}'.format(trbit) + '_88' + '{:1d}'.format(x) + '{:1d}'.format(y)  + '.dat')
+					ePixBoard.dataWriter.open.set(True)
+					
+					ePixBoard.Epix10ka.EpixFpgaRegisters.AutoRunEnable.set(True)
+					
+					time.sleep(30)
+					
+					ePixBoard.Epix10ka.EpixFpgaRegisters.AutoRunEnable.set(False)
+					
+					print('Close data file')
+					ePixBoard.dataWriter.open.set(False)
 	else:
 		print('Directory %s does not exist'%args.dir)
 
