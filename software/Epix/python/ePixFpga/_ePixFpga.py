@@ -668,6 +668,7 @@ class Epix10ka(pr.Device):
             epix.Epix10kaAsic(name='Epix10kaAsic2', offset=0x02800000, enabled=False, expand=False),
             epix.Epix10kaAsic(name='Epix10kaAsic3', offset=0x02C00000, enabled=False, expand=False),
             axi.AxiVersion(offset=0x08000000),
+            AxiMicronN25Q(name='MicronN25Q',              offset=0x0C000000, expand=False, hidden=False),
             analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[0]', offset=0x14100000, channels=8, enabled=False, expand=False),
             analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[1]', offset=0x14200000, channels=8, enabled=False, expand=False),
             analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[1].Adc[0]', offset=0x14300000, channels=4, enabled=False, expand=False),
