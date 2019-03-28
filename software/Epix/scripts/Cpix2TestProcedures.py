@@ -330,6 +330,14 @@ parser.add_argument(
     help     = "Directory where data files are stored",
 )
 
+parser.add_argument(
+    "--trim", 
+    type     = str,
+    required = False,
+    default  = ' ',
+    help     = "Trim bits csv file",
+)
+
 # Get the arguments
 args = parser.parse_args()
 
@@ -1567,6 +1575,12 @@ if args.test == 8:
       
       print('Clearing ASIC 1 matrix')
       ePixBoard.Cpix2.Cpix2Asic1.ClearMatrix()
+      
+      if args.trim == ' ':
+         print('Missing --trim argument')
+      else:
+         print('Setting ASIC 1 pixel trim bits')
+         ePixBoard.Cpix2.Cpix2Asic1.SetPixelBitmap(args.trim)
       
       print('Enabling pulser')
       ePixBoard.Cpix2.Cpix2Asic1.Pulser.set(Pulser)
