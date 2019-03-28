@@ -1203,9 +1203,9 @@ class Cpix2Asic(pr.Device):
                self.filename = arg
             else:
                self.filename = QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
-            # in PyQt5 QFileDialog returns a tuple
-            if usingPyQt5:
-               self.filename = self.filename[0]
+               # in PyQt5 QFileDialog returns a tuple
+               if usingPyQt5:
+                  self.filename = self.filename[0]
             if os.path.splitext(self.filename)[1] == '.csv':
                 matrixCfg = np.genfromtxt(self.filename, delimiter=',')
                 if matrixCfg.shape == (48, 48):
