@@ -1521,6 +1521,7 @@ if args.test == 8:
    framesPerThreshold = 10
    Pulser = 319
    Npulse = 100
+   VtrimB = 3
    
    
    if os.path.isdir(args.dir):
@@ -1608,6 +1609,7 @@ if args.test == 8:
       ePixBoard.Cpix2.Asic1PktRegisters.ResetCounters.set(False)
       
       # get settings for the file name
+      ePixBoard.Cpix2.Cpix2Asic1.Vtrim_b.set(VtrimB)
       VtrimB = ePixBoard.Cpix2.Cpix2Asic1.Vtrim_b.get() & 0x3
       Pulser = ePixBoard.Cpix2.Cpix2Asic1.Pulser.get() & 0x3FF
       Npulse = ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
@@ -1627,7 +1629,7 @@ if args.test == 8:
                   gr_fail = True
             
             
-            for threshold_1 in range(900,400,-1):
+            for threshold_1 in range(750,400,-1):
             
                t_start = datetime.datetime.now()
                
