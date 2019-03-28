@@ -250,7 +250,8 @@ def asic1ModifyBitPixel(x, y, val, offset, size):
    pix = pix & (~mask & 0xFF)
    pix = pix | ((val<<offset) & mask)
    ePixBoard.Cpix2.Cpix2Asic1._rawWrite(0x00005000*addrSize, pix)
-   print('Set ASIC 1 pixel (%d, %d) to %d'%(x,y,pix))
+   if val != 0:
+      print('Set ASIC 1 pixel (%d, %d) to %d'%(x,y,pix))
    
 def setAsic1MatrixGrid66(x, y):
    addrSize=4
