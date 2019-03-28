@@ -260,7 +260,7 @@ def setAsic1MatrixGrid66(x, y):
       for j in range(48):
          if (i % 6 == x) and (j % 6 == y):
             asic1ModifyBitPixel(i, j, 1, 0, 1)
-         else
+         else:
             asic1ModifyBitPixel(i, j, 0, 0, 1)
    ePixBoard.Cpix2.Cpix2Asic1._rawWrite(0x00000000*addrSize,0)
    
