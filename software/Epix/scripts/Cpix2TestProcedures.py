@@ -262,7 +262,15 @@ def setAsic1MatrixGrid66(x, y):
             asic1ModifyBitPixel(i, j, 1, 0, 1)
    ePixBoard.Cpix2.Cpix2Asic1._rawWrite(0x00000000*addrSize,0)
    
-
+def setAsic1MatrixGrid88(x, y):
+   addrSize=4
+   ePixBoard.Cpix2.Cpix2Asic1._rawWrite(0x00000000*addrSize,0)
+   ePixBoard.Cpix2.Cpix2Asic1._rawWrite(0x00008000*addrSize,0)
+   for i in range(48):
+      for j in range(48):
+         if (i % 8 == x) and (j % 8 == y):
+            asic1ModifyBitPixel(i, j, 1, 0, 1)
+   ePixBoard.Cpix2.Cpix2Asic1._rawWrite(0x00000000*addrSize,0)
 
 #################################################################
 
@@ -1512,7 +1520,7 @@ if args.test == 7:
 ###########################
 # This test is to verify the trim bit settings from test no. 7
 #  -> Set Pulser to 319
-#     -> Scan all bit masks 6600 to 6655 (x36)
+#     -> Scan all bit masks 8800 to 8877 (x64)
 #        -> Keep TH2 1023, scan TH1 900-400
 if args.test == 8:
    
@@ -1617,8 +1625,8 @@ if args.test == 8:
       
       addrSize=4
       
-      for Mask_x in range(6):
-         for Mask_y in range(6):
+      for Mask_x in range(8):
+         for Mask_y in range(8):
             
             print('Setting ASIC 1 pixel trim bits')
             #ePixBoard.Cpix2.Cpix2Asic1.SetPixelBitmap(args.trim)
@@ -1627,8 +1635,8 @@ if args.test == 8:
             gr_fail = True
             while gr_fail:
                try:
-                  print('Set ASIC 1 matrix to 66%d%d pulse pattern'%(Mask_x,Mask_y))
-                  setAsic1MatrixGrid66(Mask_x,Mask_y)
+                  print('Set ASIC 1 matrix to 88%d%d pulse pattern'%(Mask_x,Mask_y))
+                  setAsic1MatrixGrid88(Mask_x,Mask_y)
                   gr_fail = False
                except:
                   gr_fail = True
@@ -1642,7 +1650,7 @@ if args.test == 8:
                ePixBoard.Cpix2.Cpix2Asic1.MSBCompTH1_DAC.set(threshold_1 >> 6) # 4 bit MSB
                ePixBoard.Cpix2.Cpix2Asic1.CompTH1_DAC.set(threshold_1 & 0x3F) # 6 bit LSB
                print('Acquiring %d frames with Threshold_1=%d' %(framesPerThreshold, threshold_1))
-               ePixBoard.dataWriter.dataFile.set(args.dir + '/ACQ' + '{:04d}'.format(framesPerThreshold) + '_VTRIMB' + '{:1d}'.format(VtrimB) + '_TH1' + '{:04d}'.format(threshold_1) + '_TH2' + '{:04d}'.format(threshold_2) + '_P' + '{:04d}'.format(Pulser) + '_N' + '{:05d}'.format(Npulse) + '_66' + '{:1d}'.format(Mask_x) + '{:1d}'.format(Mask_y) + '.dat')
+               ePixBoard.dataWriter.dataFile.set(args.dir + '/ACQ' + '{:04d}'.format(framesPerThreshold) + '_VTRIMB' + '{:1d}'.format(VtrimB) + '_TH1' + '{:04d}'.format(threshold_1) + '_TH2' + '{:04d}'.format(threshold_2) + '_P' + '{:04d}'.format(Pulser) + '_N' + '{:05d}'.format(Npulse) + '_88' + '{:1d}'.format(Mask_x) + '{:1d}'.format(Mask_y) + '.dat')
                ePixBoard.dataWriter.open.set(True)
                
                # acquire frames
