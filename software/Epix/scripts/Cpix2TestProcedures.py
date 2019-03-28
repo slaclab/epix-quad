@@ -1595,6 +1595,7 @@ if args.test == 8:
                print('Setting ASIC 1 pixel trim bits')
                #ePixBoard.Cpix2.Cpix2Asic1.SetPixelBitmap(args.trim)
                ePixBoard.Cpix2.Cpix2Asic1.fnSetPixelBitmap(cmd=cmd, dev=ePixBoard.Cpix2.Cpix2Asic1, arg=args.trim)
+               gr_fail = False
             except:
                gr_fail = True
       
@@ -1639,6 +1640,7 @@ if args.test == 8:
                   print('Setting ASIC 1 pixel trim bits')
                   #ePixBoard.Cpix2.Cpix2Asic1.SetPixelBitmap(args.trim)
                   ePixBoard.Cpix2.Cpix2Asic1.fnSetPixelBitmap(cmd=cmd, dev=ePixBoard.Cpix2.Cpix2Asic1, arg=args.trim)
+                  gr_fail = False
                except:
                   gr_fail = True
             
