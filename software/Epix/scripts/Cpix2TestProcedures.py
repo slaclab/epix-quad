@@ -1589,9 +1589,14 @@ if args.test == 8:
          print('Missing --trim argument')
          exit()
       else:
-         print('Setting ASIC 1 pixel trim bits')
-         #ePixBoard.Cpix2.Cpix2Asic1.SetPixelBitmap(args.trim)
-         ePixBoard.Cpix2.Cpix2Asic1.fnSetPixelBitmap(cmd=cmd, dev=ePixBoard.Cpix2.Cpix2Asic1, arg=args.trim)
+         gr_fail = True
+         while gr_fail:
+            try:
+               print('Setting ASIC 1 pixel trim bits')
+               #ePixBoard.Cpix2.Cpix2Asic1.SetPixelBitmap(args.trim)
+               ePixBoard.Cpix2.Cpix2Asic1.fnSetPixelBitmap(cmd=cmd, dev=ePixBoard.Cpix2.Cpix2Asic1, arg=args.trim)
+            except:
+               gr_fail = True
       
       print('Enabling pulser')
       ePixBoard.Cpix2.Cpix2Asic1.Pulser.set(Pulser)
@@ -1628,9 +1633,14 @@ if args.test == 8:
       for Mask_x in range(8):
          for Mask_y in range(8):
             
-            print('Setting ASIC 1 pixel trim bits')
-            #ePixBoard.Cpix2.Cpix2Asic1.SetPixelBitmap(args.trim)
-            ePixBoard.Cpix2.Cpix2Asic1.fnSetPixelBitmap(cmd=cmd, dev=ePixBoard.Cpix2.Cpix2Asic1, arg=args.trim)
+            gr_fail = True
+            while gr_fail:
+               try:
+                  print('Setting ASIC 1 pixel trim bits')
+                  #ePixBoard.Cpix2.Cpix2Asic1.SetPixelBitmap(args.trim)
+                  ePixBoard.Cpix2.Cpix2Asic1.fnSetPixelBitmap(cmd=cmd, dev=ePixBoard.Cpix2.Cpix2Asic1, arg=args.trim)
+               except:
+                  gr_fail = True
             
             gr_fail = True
             while gr_fail:
