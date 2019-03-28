@@ -1578,6 +1578,7 @@ if args.test == 8:
       
       if args.trim == ' ':
          print('Missing --trim argument')
+         exit()
       else:
          print('Setting ASIC 1 pixel trim bits')
          ePixBoard.Cpix2.Cpix2Asic1.SetPixelBitmap(args.trim)
