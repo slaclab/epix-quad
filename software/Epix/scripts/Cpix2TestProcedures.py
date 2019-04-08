@@ -485,7 +485,7 @@ if args.test == 1:
       print('Setting camera registers')
       setAsic1AsyncModeRegisters()
       
-      acqTime = ePixBoard.Cpix2.TriggerRegisters.AutoTrigPeriod.get() * 10 * ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
+      acqTime = ePixBoard.Cpix2.TriggerRegisters.AutoTrigPeriod.get() * (ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqWidth1.get() + ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqDelay1.get()) * ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
       print('Acquisition time set is %d ns' %acqTime)
       rdoutTime = (
          ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Delay1.get() +
@@ -559,7 +559,7 @@ if args.test == 2:
       print('Setting camera registers')
       setAsic1AsyncModeRegisters()
       
-      acqTime = ePixBoard.Cpix2.TriggerRegisters.AutoTrigPeriod.get() * 10 * ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
+      acqTime = ePixBoard.Cpix2.TriggerRegisters.AutoTrigPeriod.get() * (ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqWidth1.get() + ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqDelay1.get()) * ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
       print('Acquisition time set is %d ns' %acqTime)
       rdoutTime = (
          ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Delay1.get() +
@@ -686,7 +686,7 @@ if args.test == 3:
       print('Setting camera registers')
       setAsic1AsyncModeRegisters()
       
-      acqTime = ePixBoard.Cpix2.TriggerRegisters.AutoTrigPeriod.get() * 10 * ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
+      acqTime = ePixBoard.Cpix2.TriggerRegisters.AutoTrigPeriod.get() * (ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqWidth1.get() + ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqDelay1.get()) * ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
       print('Acquisition time set is %d ns' %acqTime)
       rdoutTime = (
          ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Delay1.get() +
@@ -817,7 +817,7 @@ if args.test == 4:
       print('Setting camera registers')
       setAsic1AsyncModeRegisters()
       
-      acqTime = ePixBoard.Cpix2.TriggerRegisters.AutoTrigPeriod.get() * 10 * ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
+      acqTime = ePixBoard.Cpix2.TriggerRegisters.AutoTrigPeriod.get() * (ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqWidth1.get() + ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqDelay1.get()) * ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
       print('Acquisition time set is %d ns' %acqTime)
       rdoutTime = (
          ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Delay1.get() +
@@ -1022,7 +1022,7 @@ if args.test == 5:
       print('Setting camera registers')
       setAsic1AsyncModeRegisters()
       
-      acqTime = ePixBoard.Cpix2.TriggerRegisters.AutoTrigPeriod.get() * 10 * ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
+      acqTime = ePixBoard.Cpix2.TriggerRegisters.AutoTrigPeriod.get() * (ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqWidth1.get() + ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqDelay1.get()) * ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
       print('Acquisition time set is %d ns' %acqTime)
       rdoutTime = (
          ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Delay1.get() +
@@ -1181,7 +1181,7 @@ if args.test == 6:
       setAsic1AsyncModeRegisters()
       ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.set(NPulses)
       
-      acqTime = ePixBoard.Cpix2.TriggerRegisters.AutoTrigPeriod.get() * 10 * ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
+      acqTime = ePixBoard.Cpix2.TriggerRegisters.AutoTrigPeriod.get() * (ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqWidth1.get() + ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqDelay1.get()) * ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
       print('Acquisition time set is %d ns' %acqTime)
       rdoutTime = (
          ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Delay1.get() +
@@ -1349,7 +1349,7 @@ if args.test == 7:
       ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Delay2.set(0)
       ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Width2.set(0)
       
-      acqTime = ePixBoard.Cpix2.TriggerRegisters.AutoTrigPeriod.get() * 10 * ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
+      acqTime = ePixBoard.Cpix2.TriggerRegisters.AutoTrigPeriod.get() * (ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqWidth1.get() + ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqDelay1.get()) * ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
       print('Acquisition time set is %d ns' %acqTime)
       rdoutTime = (
          ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Delay1.get() +
@@ -1545,7 +1545,7 @@ if args.test == 8:
       ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Delay2.set(0)
       ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Width2.set(0)
       
-      acqTime = ePixBoard.Cpix2.TriggerRegisters.AutoTrigPeriod.get() * 10 * ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
+      acqTime = ePixBoard.Cpix2.TriggerRegisters.AutoTrigPeriod.get() * (ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqWidth1.get() + ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqDelay1.get()) * ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
       print('Acquisition time set is %d ns' %acqTime)
       rdoutTime = (
          ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Delay1.get() +
@@ -1733,7 +1733,7 @@ if args.test == 9:
       ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Delay2.set(0)
       ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Width2.set(0)
       
-      acqTime = ePixBoard.Cpix2.TriggerRegisters.AutoTrigPeriod.get() * 10 * ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
+      acqTime = ePixBoard.Cpix2.TriggerRegisters.AutoTrigPeriod.get() * (ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqWidth1.get() + ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqDelay1.get()) * ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
       print('Acquisition time set is %d ns' %acqTime)
       rdoutTime = (
          ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Delay1.get() +
@@ -1899,6 +1899,190 @@ if args.test == 9:
    
    else:
       print('Directory %s does not exist'%args.dir)
+
+
+
+###########################
+# This test is to verify the trim bit settings from test no. 7
+# It is first test without pulser and with photons
+# -> Load trim bits and disable test
+# -> Set integration to 1ms (asynchronous mode)
+# -> Keep TH2 1023, scan TH1 1023-0 (0 might be impossible)
+
+if args.test == 10:
+   
+   
+   # test specific settings
+   framesPerThreshold = 10
+   Npulse = 1
+   AcqWidth = 100000
+   VtrimB = 3
+   
+   
+   if os.path.isdir(args.dir):
+      
+      print('Setting camera registers')
+      setAsic1AsyncModeRegisters()
+      print('Enable only counter A readout')
+      ePixBoard.Cpix2.Cpix2Asic1.Pix_Count_T.set(False)
+      ePixBoard.Cpix2.Cpix2Asic1.Pix_Count_sel.set(False)
+      
+      print('Set integration time to %d ns'%(AcqWidth*10))
+      ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.set(Npulse)
+      ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqWidth1.set(AcqWidth)
+      
+      
+      print('Disable 2nd readout pulse')
+      ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Delay2.set(0)
+      ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Width2.set(0)
+      
+      acqTime = ePixBoard.Cpix2.TriggerRegisters.AutoTrigPeriod.get() * (ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqWidth1.get() + ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqDelay1.get()) * ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
+      print('Acquisition time set is %d ns' %acqTime)
+      rdoutTime = (
+         ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Delay1.get() +
+         ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Width1.get() +
+         ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Delay2.get() +
+         ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Width2.get()) * 10 * 2
+      print('Readout time set is %d ns' %rdoutTime)
+      syncTime = (
+         ePixBoard.Cpix2.Cpix2FpgaRegisters.SyncDelay.get() +
+         ePixBoard.Cpix2.Cpix2FpgaRegisters.SyncWidth.get()) * 10
+      print('Sync time set is %d ns' %syncTime)
+      saciSyncTime = (
+         ePixBoard.Cpix2.Cpix2FpgaRegisters.SaciSyncDelay.get() +
+         ePixBoard.Cpix2.Cpix2FpgaRegisters.SaciSyncWidth.get()) * 10
+      print('SACI sync time set is %d ns' %saciSyncTime)
+      totalTime = acqTime + max([rdoutTime, syncTime, saciSyncTime])
+      totalTimeSec = (totalTime*1e-9)
+      print('Total time set is %f seconds' %totalTimeSec)
+      print('Maximum frame rate is %f fps' %(1.0/totalTimeSec))
+      
+      
+      # resync ASIC
+      print('Synchronizing ASIC 1')
+      rsyncTry = 1
+      ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+      time.sleep(1)
+      while rsyncTry < 10 and ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+         rsyncTry = rsyncTry + 1
+         ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+         time.sleep(1)
+      if ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+         print('Failed to synchronize ASIC 1 after %d tries'%rsyncTry)
+         exit()
+      else:
+         print('ASIC 1 synchronized after %d tries'%rsyncTry)
+      
+      print('Clearing ASIC 1 matrix')
+      ePixBoard.Cpix2.Cpix2Asic1.ClearMatrix()
+      
+      if args.trim == ' ':
+         print('Missing --trim argument')
+         exit()
+      else:
+         gr_fail = True
+         while gr_fail:
+            try:
+               print('Setting ASIC 1 pixel trim bits')
+               #ePixBoard.Cpix2.Cpix2Asic1.SetPixelBitmap(args.trim)
+               ePixBoard.Cpix2.Cpix2Asic1.fnSetPixelBitmap(cmd=cmd, dev=ePixBoard.Cpix2.Cpix2Asic1, arg=args.trim)
+               gr_fail = False
+            except:
+               gr_fail = True
+      
+      print('Disabling pulser')
+      ePixBoard.Cpix2.Cpix2Asic1.Pulser.set(0)
+      ePixBoard.Cpix2.Cpix2Asic1.test.set(False)
+      ePixBoard.Cpix2.Cpix2Asic1.atest.set(False)
+      
+      print('Setting TH2 to maximum')
+      threshold_2 = 1023
+      ePixBoard.Cpix2.Cpix2Asic1.MSBCompTH2_DAC.set(threshold_2 >> 6) # 4 bit MSB
+      ePixBoard.Cpix2.Cpix2Asic1.CompTH2_DAC.set(threshold_2 & 0x3F) # 6 bit LSB
+      
+      print('Setting TH1 to maximum')
+      threshold_1 = 1023
+      ePixBoard.Cpix2.Cpix2Asic1.MSBCompTH1_DAC.set(threshold_1 >> 6) # 4 bit MSB
+      ePixBoard.Cpix2.Cpix2Asic1.CompTH1_DAC.set(threshold_1 & 0x3F) # 6 bit LSB
+      
+      # dummy readout to flush
+      time.sleep(totalTimeSec+totalTimeSec*0.1)
+      ePixBoard.Trigger()
+      
+      # enable packetizer to monitor that the data is still coming
+      ePixBoard.Cpix2.Asic1PktRegisters.enable.set(True)
+      ePixBoard.Cpix2.Asic1PktRegisters.ResetCounters.set(True)
+      ePixBoard.Cpix2.Asic1PktRegisters.ResetCounters.set(False)
+      
+      # get settings for the file name
+      ePixBoard.Cpix2.Cpix2Asic1.Vtrim_b.set(VtrimB)
+      VtrimB = ePixBoard.Cpix2.Cpix2Asic1.Vtrim_b.get() & 0x3
+      Pulser = ePixBoard.Cpix2.Cpix2Asic1.Pulser.get() & 0x3FF
+      Npulse = ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
+      
+      addrSize=4
+      Mask_x = 0
+      Mask_y = 0
+            
+      gr_fail = True
+      while gr_fail:
+         try:
+            print('Setting ASIC 1 pixel trim bits')
+            #ePixBoard.Cpix2.Cpix2Asic1.SetPixelBitmap(args.trim)
+            ePixBoard.Cpix2.Cpix2Asic1.fnSetPixelBitmap(cmd=cmd, dev=ePixBoard.Cpix2.Cpix2Asic1, arg=args.trim)
+            gr_fail = False
+         except:
+            gr_fail = True
+      
+      
+      for threshold_1 in range(1023,-1,-1):
+      
+         t_start = datetime.datetime.now()
+         
+         frms_start = ePixBoard.Cpix2.Asic1PktRegisters.FrameCount.get()
+         ePixBoard.Cpix2.Cpix2Asic1.MSBCompTH1_DAC.set(threshold_1 >> 6) # 4 bit MSB
+         ePixBoard.Cpix2.Cpix2Asic1.CompTH1_DAC.set(threshold_1 & 0x3F) # 6 bit LSB
+         print('Acquiring %d frames with Threshold_1=%d' %(framesPerThreshold, threshold_1))
+         ePixBoard.dataWriter.dataFile.set(args.dir + '/ACQ' + '{:04d}'.format(framesPerThreshold) + '_VTRIMB' + '{:1d}'.format(VtrimB) + '_TH1' + '{:04d}'.format(threshold_1) + '_TH2' + '{:04d}'.format(threshold_2) + '_P' + '{:04d}'.format(Pulser) + '_N' + '{:05d}'.format(Npulse) + '_88' + '{:1d}'.format(Mask_x) + '{:1d}'.format(Mask_y) + '.dat')
+         ePixBoard.dataWriter.open.set(True)
+         
+         # acquire frames
+         frmCnt = 0
+         mult = 1
+         while ePixBoard.dataWriter.frameCount.get() < framesPerThreshold*mult:
+            
+            # do not read fater than acquisition
+            time.sleep(totalTimeSec+totalTimeSec*0.1)
+            
+            ePixBoard.Trigger()
+            frmCnt = frmCnt + 1
+            
+            #check if still in sync
+            if frmCnt - ePixBoard.dataWriter.frameCount.get() > int(framesPerThreshold/2):
+               print('Re-synchronizing ASIC 1')
+               rsyncTry = 1
+               ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+               time.sleep(1)
+               while ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+                  rsyncTry = rsyncTry + 1
+                  ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+                  time.sleep(1)
+               print('ASIC 1 re-synchronized after %d tries'%rsyncTry)
+               frmCnt = ePixBoard.dataWriter.frameCount.get()
+               if mult < 5:
+                  
+                  mult = mult + 1
+            
+         ePixBoard.dataWriter.open.set(False)
+         
+         print(abs(datetime.datetime.now()-t_start))
+         
+         
+         
+   
+   else:
+      print('Directory %s does not exist'%args.dir)
+
 
 
 
