@@ -144,6 +144,8 @@ architecture rtl of RdoutCoreBram is
       sAxilWriteSlave      : AxiLiteWriteSlaveType;
       sAxilReadSlave       : AxiLiteReadSlaveType;
       monData              : Slv16Array(37 downto 0);
+      overSampleEn         : sl;
+      overSampleSize       : slv(2 downto 0);
    end record RegType;
 
    constant REG_INIT_C : RegType := (
@@ -182,7 +184,9 @@ architecture rtl of RdoutCoreBram is
       txMaster             => AXI_STREAM_MASTER_INIT_C,
       sAxilWriteSlave      => AXI_LITE_WRITE_SLAVE_INIT_C,
       sAxilReadSlave       => AXI_LITE_READ_SLAVE_INIT_C,
-      monData              => (others=>(others=>'0'))
+      monData              => (others=>(others=>'0')),
+      overSampleEn         => '0',
+      overSampleSize       => (others=>'0')
    );
 
    signal r                : RegType := REG_INIT_C;
@@ -201,6 +205,7 @@ architecture rtl of RdoutCoreBram is
    signal memRdData        : Slv64VectorArray(3 downto 0, 15 downto 0);
    signal memWrData        : Slv64Array(63 downto 0);
    
+   signal adcStreamOvs     : AxiStreamMasterArray(63 downto 0);
    signal muxStrMap        : AxiStreamMasterArray(63 downto 0);
    signal muxStream        : AxiStreamMasterArray(63 downto 0);
    
@@ -214,6 +219,8 @@ architecture rtl of RdoutCoreBram is
    
    signal doutRd           : Slv16Array(3 downto 0);
    
+   signal overSampleSizeAct : slv(1 downto 0);
+   
 begin
    --r.rowCount(BUFF_BITS_C-1 downto 0)
    assert ROWS_BITS_C >= BUFF_BITS_C
@@ -224,8 +231,14 @@ begin
       report "BANK_COLS_G must be multiple of 4"
       severity failure;
    
-   muxStream   <= adcStream when r.testData = '0' else testStream;
-   muxAsicDout <= asicDout  when r.testData = '0' else asicDoutTest;
+   muxStream   <= 
+      testStream     when r.testData = '1' else
+      adcStreamOvs   when r.overSampleEn = '1' else
+      adcStream;
+   
+   muxAsicDout <= 
+      asicDoutTest  when r.testData = '1' else
+      asicDout;
    
    --------------------------------------------------
    -- Map ADC/Test channels
@@ -344,6 +357,31 @@ begin
    muxDoutMap(15) <= muxAsicDout( 7);
    
    --------------------------------------------------
+   -- Instantiate Moving Average cores for oversampling
+   --------------------------------------------------
+   G_OVERSAMPLE_AVG : for i in 63 downto 0 generate
+   begin
+      
+      U_MovingAvg : entity work.MovingAvg
+      generic map (
+         TPD_G             => TPD_G,
+         CTRL_BITS_G       => 2,
+         DATA_BITS_G       => 14
+      )
+      port map ( 
+         clk               => sysClk,
+         rst               => sysRst,
+         sizeCtrl          => r.overSampleSize(1 downto 0),
+         sizeCtrlSer       => r.overSampleSize(2),
+         actSizeCtrl       => overSampleSizeAct,
+         dataIn            => adcStream(i).tData(13 downto 0),
+         dataOut           => adcStreamOvs(i).tData(13 downto 0),
+         dataOutValid      => open
+      );
+   
+   end generate;
+   
+   --------------------------------------------------
    -- Data storage and readout FSMs
    --------------------------------------------------
    
@@ -357,7 +395,7 @@ begin
    
    comb : process (sysRst, sAxilReadMaster, sAxilWriteMaster, txSlave, r,
       acqBusyEdge, acqBusy, acqCount, acqSmplEn, memRdData, opCode, muxStrMap, tpsStream,
-      doutValid, doutOut, doutCount, monData) is
+      doutValid, doutOut, doutCount, monData, overSampleSizeAct) is
       variable v      : RegType;
       variable regCon : AxiLiteEndPointType;
       variable sRowCountVar : integer;
@@ -396,6 +434,11 @@ begin
       axiSlaveRegisterR(regCon, x"018", 0, r.lineBufErr(2)     );
       axiSlaveRegisterR(regCon, x"01C", 0, r.lineBufErr(3)     );
       axiSlaveRegister (regCon, x"020", 0, v.testData          );
+      
+      
+      axiSlaveRegister (regCon, x"024", 0, v.overSampleEn      );
+      axiSlaveRegister (regCon, x"028", 0, v.overSampleSize    );
+      axiSlaveRegisterR(regCon, x"028", 0, overSampleSizeAct   );
       
       
       -- Close out the AXI-Lite transaction
