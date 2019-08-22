@@ -75,9 +75,9 @@ def printAsic1AsyncModeRegisters():
    for key, value in Asic0Deserializer.items():
       print('ePixBoard.Cpix2.Asic0Deserializer.%s.set(%s)'%(key, value))
 
-   Asic1Deserializer = dataMap['ePixBoard']['Cpix2']['Asic1Deserializer']
-   for key, value in Asic1Deserializer.items():
-      print('ePixBoard.Cpix2.Asic1Deserializer.%s.set(%s)'%(key, value))
+   AsicDeserializer = dataMap['ePixBoard']['Cpix2']['AsicDeserializer']
+   for key, value in AsicDeserializer.items():
+      print('AsicDeserializer.%s.set(%s)'%(key, value))
 
    Asic0PktRegisters = dataMap['ePixBoard']['Cpix2']['Asic0PktRegisters']
    for key, value in Asic0PktRegisters.items():
@@ -89,7 +89,7 @@ def printAsic1AsyncModeRegisters():
 
 
 # unfold yaml settings to hardcode in case the file is lost
-def setAsic1AsyncModeRegisters():
+def setAsicAsyncModeRegisters():
    ePixBoard.Cpix2.Cpix2FpgaRegisters.enable.set(True)
    ePixBoard.Cpix2.Cpix2FpgaRegisters.R0Polarity.set(True)
    ePixBoard.Cpix2.Cpix2FpgaRegisters.R0Delay.set(0)
@@ -221,14 +221,21 @@ def setAsic1AsyncModeRegisters():
    Cpix2Asic.DCycle_bypass.set(False)
    Cpix2Asic.MSBCompTH1_DAC.set(4)
    Cpix2Asic.MSBCompTH2_DAC.set(14)
+   
    ePixBoard.Cpix2.Asic0Deserializer.enable.set(True)
    ePixBoard.Cpix2.Asic0Deserializer.Resync.set(False)
    ePixBoard.Cpix2.Asic0Deserializer.SerDesDelay.set(10)
    ePixBoard.Cpix2.Asic0Deserializer.DelayEn.set(True)
+   
    ePixBoard.Cpix2.Asic1Deserializer.enable.set(True)
    ePixBoard.Cpix2.Asic1Deserializer.Resync.set(False)
    ePixBoard.Cpix2.Asic1Deserializer.SerDesDelay.set(10)
    ePixBoard.Cpix2.Asic1Deserializer.DelayEn.set(True)
+   
+   AsicDeserializer.enable.set(True)
+   AsicDeserializer.Resync.set(False)
+   AsicDeserializer.SerDesDelay.set(10)
+   AsicDeserializer.DelayEn.set(True)
    ePixBoard.Cpix2.Asic0PktRegisters.enable.set(True)
    ePixBoard.Cpix2.Asic0PktRegisters.TestMode.set(False)
    ePixBoard.Cpix2.Asic0PktRegisters.ResetCounters.set(False)
@@ -354,6 +361,30 @@ parser.add_argument(
     required = False,
     default  = 0,
     help     = "ASIC number",
+)
+
+parser.add_argument(
+    "--framesPerThreshold", 
+    type     = int,
+    required = False,
+    default  = 10,
+    help     = "Test 11: number of frames per threshold",
+)
+
+parser.add_argument(
+    "--thStart", 
+    type     = int,
+    required = False,
+    default  = 300,
+    help     = "Test 11: first threshold",
+)
+
+parser.add_argument(
+    "--thStop", 
+    type     = int,
+    required = False,
+    default  = 400,
+    help     = "Test 11: last threshold",
 )
 
 # Get the arguments
@@ -488,8 +519,10 @@ ePixBoard.start(pollEn=args.pollEn, initRead = args.initRead, timeout=3.0)
 
 if args.asic == 1:
    Cpix2Asic = ePixBoard.Cpix2.Cpix2Asic1
+   AsicDeserializer = ePixBoard.Cpix2.Asic1Deserializer
 else:
    Cpix2Asic = ePixBoard.Cpix2.Cpix2Asic0
+   AsicDeserializer = ePixBoard.Cpix2.Asic0Deserializer
 
 # simple pulser scan for my purpose
 if args.test == 1:
@@ -497,7 +530,7 @@ if args.test == 1:
    if os.path.isdir(args.dir):
       
       print('Setting camera registers')
-      setAsic1AsyncModeRegisters()
+      setAsicAsyncModeRegisters()
       
       acqTime = ePixBoard.Cpix2.TriggerRegisters.AutoTrigPeriod.get() * (ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqWidth1.get() + ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqDelay1.get()) * ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
       print('Acquisition time set is %d ns' %acqTime)
@@ -524,13 +557,13 @@ if args.test == 1:
       # resync ASIC
       print('Synchronizing ASIC %d'%(args.asic))
       rsyncTry = 1
-      ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+      AsicDeserializer.Resync.set(True)
       time.sleep(1)
-      while rsyncTry < 10 and ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+      while rsyncTry < 10 and AsicDeserializer.Locked.get() == False:
          rsyncTry = rsyncTry + 1
-         ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+         AsicDeserializer.Resync.set(True)
          time.sleep(1)
-      if ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+      if AsicDeserializer.Locked.get() == False:
          print('Failed to synchronize ASIC %d after %d tries'%(args.asic,rsyncTry))
          exit()
       else:
@@ -571,7 +604,7 @@ if args.test == 2:
    if os.path.isdir(args.dir):
       
       print('Setting camera registers')
-      setAsic1AsyncModeRegisters()
+      setAsicAsyncModeRegisters()
       
       acqTime = ePixBoard.Cpix2.TriggerRegisters.AutoTrigPeriod.get() * (ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqWidth1.get() + ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqDelay1.get()) * ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
       print('Acquisition time set is %d ns' %acqTime)
@@ -598,13 +631,13 @@ if args.test == 2:
       # resync ASIC
       print('Synchronizing ASIC %d'%(args.asic))
       rsyncTry = 1
-      ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+      AsicDeserializer.Resync.set(True)
       time.sleep(1)
-      while rsyncTry < 10 and ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+      while rsyncTry < 10 and AsicDeserializer.Locked.get() == False:
          rsyncTry = rsyncTry + 1
-         ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+         AsicDeserializer.Resync.set(True)
          time.sleep(1)
-      if ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+      if AsicDeserializer.Locked.get() == False:
          print('Failed to synchronize ASIC %d after %d tries'%(args.asic,rsyncTry))
          exit()
       else:
@@ -666,13 +699,13 @@ if args.test == 2:
                #resync
                print('Re-synchronizing ASIC %d'%(args.asic))
                rsyncTry = 1
-               ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+               AsicDeserializer.Resync.set(True)
                time.sleep(1)
-               while rsyncTry < 10 and ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+               while rsyncTry < 10 and AsicDeserializer.Locked.get() == False:
                   rsyncTry = rsyncTry + 1
-                  ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+                  AsicDeserializer.Resync.set(True)
                   time.sleep(1)
-               if ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+               if AsicDeserializer.Locked.get() == False:
                   print('Failed to re-synchronize ASIC %d after %d tries'%(args.asic,rsyncTry))
                   exit()
                else:
@@ -698,7 +731,7 @@ if args.test == 3:
    if os.path.isdir(args.dir):
       
       print('Setting camera registers')
-      setAsic1AsyncModeRegisters()
+      setAsicAsyncModeRegisters()
       
       acqTime = ePixBoard.Cpix2.TriggerRegisters.AutoTrigPeriod.get() * (ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqWidth1.get() + ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqDelay1.get()) * ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
       print('Acquisition time set is %d ns' %acqTime)
@@ -725,13 +758,13 @@ if args.test == 3:
       # resync ASIC
       print('Synchronizing ASIC %d'%(args.asic))
       rsyncTry = 1
-      ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+      AsicDeserializer.Resync.set(True)
       time.sleep(1)
-      while rsyncTry < 10 and ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+      while rsyncTry < 10 and AsicDeserializer.Locked.get() == False:
          rsyncTry = rsyncTry + 1
-         ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+         AsicDeserializer.Resync.set(True)
          time.sleep(1)
-      if ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+      if AsicDeserializer.Locked.get() == False:
          print('Failed to synchronize ASIC %d after %d tries'%(args.asic,rsyncTry))
          exit()
       else:
@@ -793,13 +826,13 @@ if args.test == 3:
                #resync
                print('Re-synchronizing ASIC %d'%(args.asic))
                rsyncTry = 1
-               ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+               AsicDeserializer.Resync.set(True)
                time.sleep(1)
-               while rsyncTry < 10 and ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+               while rsyncTry < 10 and AsicDeserializer.Locked.get() == False:
                   rsyncTry = rsyncTry + 1
-                  ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+                  AsicDeserializer.Resync.set(True)
                   time.sleep(1)
-               if ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+               if AsicDeserializer.Locked.get() == False:
                   print('Failed to re-synchronize ASIC %d after %d tries'%(args.asic,rsyncTry))
                   exit()
                else:
@@ -829,7 +862,7 @@ if args.test == 4:
    if os.path.isdir(args.dir):
       
       print('Setting camera registers')
-      setAsic1AsyncModeRegisters()
+      setAsicAsyncModeRegisters()
       
       acqTime = ePixBoard.Cpix2.TriggerRegisters.AutoTrigPeriod.get() * (ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqWidth1.get() + ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqDelay1.get()) * ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
       print('Acquisition time set is %d ns' %acqTime)
@@ -856,13 +889,13 @@ if args.test == 4:
       # resync ASIC
       print('Synchronizing ASIC %d'%(args.asic))
       rsyncTry = 1
-      ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+      AsicDeserializer.Resync.set(True)
       time.sleep(1)
-      while rsyncTry < 10 and ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+      while rsyncTry < 10 and AsicDeserializer.Locked.get() == False:
          rsyncTry = rsyncTry + 1
-         ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+         AsicDeserializer.Resync.set(True)
          time.sleep(1)
-      if ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+      if AsicDeserializer.Locked.get() == False:
          print('Failed to synchronize ASIC %d after %d tries'%(args.asic,rsyncTry))
          exit()
       else:
@@ -948,13 +981,13 @@ if args.test == 4:
                      #resync
                      print('Re-synchronizing ASIC %d'%(args.asic))
                      rsyncTry = 1
-                     ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+                     AsicDeserializer.Resync.set(True)
                      time.sleep(1)
-                     while rsyncTry < 10 and ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+                     while rsyncTry < 10 and AsicDeserializer.Locked.get() == False:
                         rsyncTry = rsyncTry + 1
-                        ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+                        AsicDeserializer.Resync.set(True)
                         time.sleep(1)
-                     if ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+                     if AsicDeserializer.Locked.get() == False:
                         print('Failed to re-synchronize ASIC %d after %d tries'%(args.asic,rsyncTry))
                         exit()
                      else:
@@ -993,13 +1026,13 @@ if args.test == 4:
                      #resync
                      print('Re-synchronizing ASIC %d'%(args.asic))
                      rsyncTry = 1
-                     ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+                     AsicDeserializer.Resync.set(True)
                      time.sleep(1)
-                     while rsyncTry < 10 and ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+                     while rsyncTry < 10 and AsicDeserializer.Locked.get() == False:
                         rsyncTry = rsyncTry + 1
-                        ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+                        AsicDeserializer.Resync.set(True)
                         time.sleep(1)
-                     if ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+                     if AsicDeserializer.Locked.get() == False:
                         print('Failed to re-synchronize ASIC %d after %d tries'%(args.asic,rsyncTry))
                         exit()
                      else:
@@ -1034,7 +1067,7 @@ if args.test == 5:
    if os.path.isdir(args.dir):
       
       print('Setting camera registers')
-      setAsic1AsyncModeRegisters()
+      setAsicAsyncModeRegisters()
       
       acqTime = ePixBoard.Cpix2.TriggerRegisters.AutoTrigPeriod.get() * (ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqWidth1.get() + ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqDelay1.get()) * ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
       print('Acquisition time set is %d ns' %acqTime)
@@ -1061,13 +1094,13 @@ if args.test == 5:
       # resync ASIC
       print('Synchronizing ASIC %d'%(args.asic))
       rsyncTry = 1
-      ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+      AsicDeserializer.Resync.set(True)
       time.sleep(1)
-      while rsyncTry < 10 and ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+      while rsyncTry < 10 and AsicDeserializer.Locked.get() == False:
          rsyncTry = rsyncTry + 1
-         ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+         AsicDeserializer.Resync.set(True)
          time.sleep(1)
-      if ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+      if AsicDeserializer.Locked.get() == False:
          print('Failed to synchronize ASIC %d after %d tries'%(args.asic,rsyncTry))
          exit()
       else:
@@ -1152,13 +1185,13 @@ if args.test == 5:
                      #resync
                      print('Re-synchronizing ASIC %d'%(args.asic))
                      rsyncTry = 1
-                     ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+                     AsicDeserializer.Resync.set(True)
                      time.sleep(1)
-                     while rsyncTry < 10 and ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+                     while rsyncTry < 10 and AsicDeserializer.Locked.get() == False:
                         rsyncTry = rsyncTry + 1
-                        ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+                        AsicDeserializer.Resync.set(True)
                         time.sleep(1)
-                     if ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+                     if AsicDeserializer.Locked.get() == False:
                         print('Failed to re-synchronize ASIC %d after %d tries'%(args.asic,rsyncTry))
                         exit()
                      else:
@@ -1192,7 +1225,7 @@ if args.test == 6:
    if os.path.isdir(args.dir):
       
       print('Setting camera registers')
-      setAsic1AsyncModeRegisters()
+      setAsicAsyncModeRegisters()
       ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.set(NPulses)
       
       acqTime = ePixBoard.Cpix2.TriggerRegisters.AutoTrigPeriod.get() * (ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqWidth1.get() + ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqDelay1.get()) * ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
@@ -1220,13 +1253,13 @@ if args.test == 6:
       # resync ASIC
       print('Synchronizing ASIC %d'%(args.asic))
       rsyncTry = 1
-      ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+      AsicDeserializer.Resync.set(True)
       time.sleep(1)
-      while rsyncTry < 10 and ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+      while rsyncTry < 10 and AsicDeserializer.Locked.get() == False:
          rsyncTry = rsyncTry + 1
-         ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+         AsicDeserializer.Resync.set(True)
          time.sleep(1)
-      if ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+      if AsicDeserializer.Locked.get() == False:
          print('Failed to synchronize ASIC %d after %d tries'%(args.asic,rsyncTry))
          exit()
       else:
@@ -1315,13 +1348,13 @@ if args.test == 6:
                #resync
                print('Re-synchronizing ASIC %d'%(args.asic))
                rsyncTry = 1
-               ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+               AsicDeserializer.Resync.set(True)
                time.sleep(1)
-               while rsyncTry < 10 and ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+               while rsyncTry < 10 and AsicDeserializer.Locked.get() == False:
                   rsyncTry = rsyncTry + 1
-                  ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+                  AsicDeserializer.Resync.set(True)
                   time.sleep(1)
-               if ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+               if AsicDeserializer.Locked.get() == False:
                   print('Failed to re-synchronize ASIC %d after %d tries'%(args.asic,rsyncTry))
                   exit()
                else:
@@ -1353,7 +1386,7 @@ if args.test == 7:
    if os.path.isdir(args.dir):
       
       print('Setting camera registers')
-      setAsic1AsyncModeRegisters()
+      setAsicAsyncModeRegisters()
       ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.set(Npulse)
       print('Enable only counter A readout')
       Cpix2Asic.Pix_Count_T.set(False)
@@ -1388,13 +1421,13 @@ if args.test == 7:
       # resync ASIC
       print('Synchronizing ASIC %d'%(args.asic))
       rsyncTry = 1
-      ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+      AsicDeserializer.Resync.set(True)
       time.sleep(1)
-      while rsyncTry < 10 and ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+      while rsyncTry < 10 and AsicDeserializer.Locked.get() == False:
          rsyncTry = rsyncTry + 1
-         ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+         AsicDeserializer.Resync.set(True)
          time.sleep(1)
-      if ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+      if AsicDeserializer.Locked.get() == False:
          print('Failed to synchronize ASIC %d after %d tries'%(args.asic,rsyncTry))
          exit()
       else:
@@ -1509,11 +1542,11 @@ if args.test == 7:
                         if frmCnt - ePixBoard.dataWriter.frameCount.get() > int(framesPerThreshold/2):
                            print('Re-synchronizing ASIC %d'%(args.asic))
                            rsyncTry = 1
-                           ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+                           AsicDeserializer.Resync.set(True)
                            time.sleep(1)
-                           while ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+                           while AsicDeserializer.Locked.get() == False:
                               rsyncTry = rsyncTry + 1
-                              ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+                              AsicDeserializer.Resync.set(True)
                               time.sleep(1)
                            print('ASIC %d re-synchronized after %d tries'%(args.asic,rsyncTry))
                            frmCnt = ePixBoard.dataWriter.frameCount.get()
@@ -1549,7 +1582,7 @@ if args.test == 8:
    if os.path.isdir(args.dir):
       
       print('Setting camera registers')
-      setAsic1AsyncModeRegisters()
+      setAsicAsyncModeRegisters()
       ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.set(Npulse)
       print('Enable only counter A readout')
       Cpix2Asic.Pix_Count_T.set(False)
@@ -1584,13 +1617,13 @@ if args.test == 8:
       # resync ASIC
       print('Synchronizing ASIC %d'%(args.asic))
       rsyncTry = 1
-      ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+      AsicDeserializer.Resync.set(True)
       time.sleep(1)
-      while rsyncTry < 10 and ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+      while rsyncTry < 10 and AsicDeserializer.Locked.get() == False:
          rsyncTry = rsyncTry + 1
-         ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+         AsicDeserializer.Resync.set(True)
          time.sleep(1)
-      if ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+      if AsicDeserializer.Locked.get() == False:
          print('Failed to synchronize ASIC %d after %d tries'%(args.asic,rsyncTry))
          exit()
       else:
@@ -1694,11 +1727,11 @@ if args.test == 8:
                   if frmCnt - ePixBoard.dataWriter.frameCount.get() > int(framesPerThreshold/2):
                      print('Re-synchronizing ASIC %d'%(args.asic))
                      rsyncTry = 1
-                     ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+                     AsicDeserializer.Resync.set(True)
                      time.sleep(1)
-                     while ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+                     while AsicDeserializer.Locked.get() == False:
                         rsyncTry = rsyncTry + 1
-                        ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+                        AsicDeserializer.Resync.set(True)
                         time.sleep(1)
                      print('ASIC %d re-synchronized after %d tries'%(args.asic,rsyncTry))
                      frmCnt = ePixBoard.dataWriter.frameCount.get()
@@ -1737,7 +1770,7 @@ if args.test == 9:
    if os.path.isdir(args.dir):
       
       print('Setting camera registers')
-      setAsic1AsyncModeRegisters()
+      setAsicAsyncModeRegisters()
       ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.set(Npulse)
       print('Enable only counter B readout')
       Cpix2Asic.Pix_Count_T.set(False)
@@ -1772,13 +1805,13 @@ if args.test == 9:
       # resync ASIC
       print('Synchronizing ASIC %d'%(args.asic))
       rsyncTry = 1
-      ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+      AsicDeserializer.Resync.set(True)
       time.sleep(1)
-      while rsyncTry < 10 and ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+      while rsyncTry < 10 and AsicDeserializer.Locked.get() == False:
          rsyncTry = rsyncTry + 1
-         ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+         AsicDeserializer.Resync.set(True)
          time.sleep(1)
-      if ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+      if AsicDeserializer.Locked.get() == False:
          print('Failed to synchronize ASIC %d after %d tries'%(args.asic,rsyncTry))
          exit()
       else:
@@ -1893,11 +1926,11 @@ if args.test == 9:
                         if frmCnt - ePixBoard.dataWriter.frameCount.get() > int(framesPerThreshold/2):
                            print('Re-synchronizing ASIC %d'%(args.asic))
                            rsyncTry = 1
-                           ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+                           AsicDeserializer.Resync.set(True)
                            time.sleep(1)
-                           while ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+                           while AsicDeserializer.Locked.get() == False:
                               rsyncTry = rsyncTry + 1
-                              ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+                              AsicDeserializer.Resync.set(True)
                               time.sleep(1)
                            print('ASIC %d re-synchronized after %d tries'%(args.asic,rsyncTry))
                            frmCnt = ePixBoard.dataWriter.frameCount.get()
@@ -1936,7 +1969,7 @@ if args.test == 10:
    if os.path.isdir(args.dir):
       
       print('Setting camera registers')
-      setAsic1AsyncModeRegisters()
+      setAsicAsyncModeRegisters()
       print('Enable only counter A readout')
       Cpix2Asic.Pix_Count_T.set(False)
       Cpix2Asic.Pix_Count_sel.set(False)
@@ -1975,13 +2008,13 @@ if args.test == 10:
       # resync ASIC
       print('Synchronizing ASIC %d'%(args.asic))
       rsyncTry = 1
-      ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+      AsicDeserializer.Resync.set(True)
       time.sleep(1)
-      while rsyncTry < 10 and ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+      while rsyncTry < 10 and AsicDeserializer.Locked.get() == False:
          rsyncTry = rsyncTry + 1
-         ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+         AsicDeserializer.Resync.set(True)
          time.sleep(1)
-      if ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+      if AsicDeserializer.Locked.get() == False:
          print('Failed to synchronize ASIC %d after %d tries'%(args.asic,rsyncTry))
          exit()
       else:
@@ -2075,11 +2108,11 @@ if args.test == 10:
             if frmCnt - ePixBoard.dataWriter.frameCount.get() > int(framesPerThreshold/2):
                print('Re-synchronizing ASIC %d'%(args.asic))
                rsyncTry = 1
-               ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+               AsicDeserializer.Resync.set(True)
                time.sleep(1)
-               while ePixBoard.Cpix2.Asic1Deserializer.Locked.get() == False:
+               while AsicDeserializer.Locked.get() == False:
                   rsyncTry = rsyncTry + 1
-                  ePixBoard.Cpix2.Asic1Deserializer.Resync.set(True)
+                  AsicDeserializer.Resync.set(True)
                   time.sleep(1)
                print('ASIC %d re-synchronized after %d tries'%(args.asic,rsyncTry))
                frmCnt = ePixBoard.dataWriter.frameCount.get()
@@ -2097,6 +2130,186 @@ if args.test == 10:
    else:
       print('Directory %s does not exist'%args.dir)
 
+
+if args.test == 11:
+   
+   
+   # test specific settings
+   framesPerThreshold = args.framesPerThreshold    # number of frames per threshold
+   thStart = args.thStart              # first threshold
+   thStop = args.thStop               # last threshold
+   Npulse = 1
+   AcqWidth = 100000
+   VtrimB = 3
+   
+   if thStart > thStop:
+      thDir = -1
+   else:
+      thDir = 1
+   
+   if os.path.isdir(args.dir):
+      
+      print('Setting camera registers')
+      setAsicAsyncModeRegisters()
+      print('Enable only counter A readout')
+      Cpix2Asic.Pix_Count_T.set(False)
+      Cpix2Asic.Pix_Count_sel.set(False)
+      
+      print('Set integration time to %d ns'%(AcqWidth*10))
+      ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.set(Npulse)
+      ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqWidth1.set(AcqWidth)
+      
+      
+      print('Disable 2nd readout pulse')
+      ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Delay2.set(0)
+      ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Width2.set(0)
+      
+      acqTime = ePixBoard.Cpix2.TriggerRegisters.AutoTrigPeriod.get() * (ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqWidth1.get() + ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqDelay1.get()) * ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
+      print('Acquisition time set is %d ns' %acqTime)
+      rdoutTime = (
+         ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Delay1.get() +
+         ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Width1.get() +
+         ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Delay2.get() +
+         ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Width2.get()) * 10 * 2
+      print('Readout time set is %d ns' %rdoutTime)
+      syncTime = (
+         ePixBoard.Cpix2.Cpix2FpgaRegisters.SyncDelay.get() +
+         ePixBoard.Cpix2.Cpix2FpgaRegisters.SyncWidth.get()) * 10
+      print('Sync time set is %d ns' %syncTime)
+      saciSyncTime = (
+         ePixBoard.Cpix2.Cpix2FpgaRegisters.SaciSyncDelay.get() +
+         ePixBoard.Cpix2.Cpix2FpgaRegisters.SaciSyncWidth.get()) * 10
+      print('SACI sync time set is %d ns' %saciSyncTime)
+      totalTime = acqTime + max([rdoutTime, syncTime, saciSyncTime])
+      totalTimeSec = (totalTime*1e-9)
+      print('Total time set is %f seconds' %totalTimeSec)
+      print('Maximum frame rate is %f fps' %(1.0/totalTimeSec))
+      
+      
+      # resync ASIC
+      print('Synchronizing ASIC %d'%(args.asic))
+      rsyncTry = 1
+      AsicDeserializer.Resync.set(True)
+      time.sleep(1)
+      while rsyncTry < 10 and AsicDeserializer.Locked.get() == False:
+         rsyncTry = rsyncTry + 1
+         AsicDeserializer.Resync.set(True)
+         time.sleep(1)
+      if AsicDeserializer.Locked.get() == False:
+         print('Failed to synchronize ASIC %d after %d tries'%(args.asic,rsyncTry))
+         exit()
+      else:
+         print('ASIC %d synchronized after %d tries'%(args.asic,rsyncTry))
+      
+      print('Clearing ASIC %d matrix'%(args.asic))
+      Cpix2Asic.ClearMatrix()
+      
+      if args.trim == ' ':
+         print('Missing --trim argument')
+         exit()
+      else:
+         gr_fail = True
+         while gr_fail:
+            try:
+               print('Setting ASIC %d pixel trim bits'%(args.asic))
+               #Cpix2Asic.SetPixelBitmap(args.trim)
+               Cpix2Asic.fnSetPixelBitmap(cmd=cmd, dev=Cpix2Asic, arg=args.trim)
+               gr_fail = False
+            except:
+               gr_fail = True
+      
+      print('Disabling pulser')
+      Cpix2Asic.Pulser.set(0)
+      Cpix2Asic.test.set(False)
+      Cpix2Asic.atest.set(False)
+      
+      print('Setting TH2 to maximum')
+      threshold_2 = 1023
+      Cpix2Asic.MSBCompTH2_DAC.set(threshold_2 >> 6) # 4 bit MSB
+      Cpix2Asic.CompTH2_DAC.set(threshold_2 & 0x3F) # 6 bit LSB
+      
+      print('Setting TH1 to maximum')
+      threshold_1 = thStart
+      Cpix2Asic.MSBCompTH1_DAC.set(threshold_1 >> 6) # 4 bit MSB
+      Cpix2Asic.CompTH1_DAC.set(threshold_1 & 0x3F) # 6 bit LSB
+      
+      # dummy readout to flush
+      time.sleep(totalTimeSec+totalTimeSec*0.1)
+      ePixBoard.Trigger()
+      
+      # enable packetizer to monitor that the data is still coming
+      ePixBoard.Cpix2.Asic1PktRegisters.enable.set(True)
+      ePixBoard.Cpix2.Asic1PktRegisters.ResetCounters.set(True)
+      ePixBoard.Cpix2.Asic1PktRegisters.ResetCounters.set(False)
+      
+      # get settings for the file name
+      Cpix2Asic.Vtrim_b.set(VtrimB)
+      VtrimB = Cpix2Asic.Vtrim_b.get() & 0x3
+      Pulser = Cpix2Asic.Pulser.get() & 0x3FF
+      Npulse = ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
+      
+      addrSize=4
+      Mask_x = 0
+      Mask_y = 0
+            
+      gr_fail = True
+      while gr_fail:
+         try:
+            print('Setting ASIC %d pixel trim bits'%(args.asic))
+            #Cpix2Asic.SetPixelBitmap(args.trim)
+            Cpix2Asic.fnSetPixelBitmap(cmd=cmd, dev=Cpix2Asic, arg=args.trim)
+            gr_fail = False
+         except:
+            gr_fail = True
+      
+      
+      for threshold_1 in range(thStart,thStop-1,thDir):
+      
+         t_start = datetime.datetime.now()
+         
+         frms_start = ePixBoard.Cpix2.Asic1PktRegisters.FrameCount.get()
+         Cpix2Asic.MSBCompTH1_DAC.set(threshold_1 >> 6) # 4 bit MSB
+         Cpix2Asic.CompTH1_DAC.set(threshold_1 & 0x3F) # 6 bit LSB
+         print('Acquiring %d frames with Threshold_1=%d' %(framesPerThreshold, threshold_1))
+         ePixBoard.dataWriter.dataFile.set(args.dir + '/ACQ' + '{:04d}'.format(framesPerThreshold) + '_VTRIMB' + '{:1d}'.format(VtrimB) + '_TH1' + '{:04d}'.format(threshold_1) + '_TH2' + '{:04d}'.format(threshold_2) + '_P' + '{:04d}'.format(Pulser) + '_N' + '{:05d}'.format(Npulse) + '_88' + '{:1d}'.format(Mask_x) + '{:1d}'.format(Mask_y) + '.dat')
+         ePixBoard.dataWriter.open.set(True)
+         
+         # acquire frames
+         frmCnt = 0
+         mult = 1
+         while ePixBoard.dataWriter.frameCount.get() < framesPerThreshold*mult:
+            
+            # do not read fater than acquisition
+            time.sleep(totalTimeSec+totalTimeSec*0.1)
+            
+            ePixBoard.Trigger()
+            frmCnt = frmCnt + 1
+            
+            #check if still in sync
+            if frmCnt - ePixBoard.dataWriter.frameCount.get() > int(framesPerThreshold/2):
+               print('Re-synchronizing ASIC %d'%(args.asic))
+               rsyncTry = 1
+               AsicDeserializer.Resync.set(True)
+               time.sleep(1)
+               while AsicDeserializer.Locked.get() == False:
+                  rsyncTry = rsyncTry + 1
+                  AsicDeserializer.Resync.set(True)
+                  time.sleep(1)
+               print('ASIC %d re-synchronized after %d tries'%(args.asic,rsyncTry))
+               frmCnt = ePixBoard.dataWriter.frameCount.get()
+               if mult < 5:
+                  
+                  mult = mult + 1
+            
+         ePixBoard.dataWriter.open.set(False)
+         
+         print(abs(datetime.datetime.now()-t_start))
+         
+         
+         
+   
+   else:
+      print('Directory %s does not exist'%args.dir)
 
 
 
