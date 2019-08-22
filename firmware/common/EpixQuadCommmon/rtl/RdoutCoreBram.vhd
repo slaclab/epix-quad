@@ -219,7 +219,7 @@ architecture rtl of RdoutCoreBram is
    
    signal doutRd           : Slv16Array(3 downto 0);
    
-   signal overSampleSizeAct : slv(1 downto 0);
+   signal overSampleSizeAct : Slv2Array(63 downto 0);
    
 begin
    --r.rowCount(BUFF_BITS_C-1 downto 0)
@@ -372,8 +372,8 @@ begin
          clk               => sysClk,
          rst               => sysRst,
          sizeCtrl          => r.overSampleSize(1 downto 0),
-         sizeCtrlSer       => r.overSampleSize(2),
-         actSizeCtrl       => overSampleSizeAct,
+         sizeCtrlSet       => r.overSampleSize(2),
+         actSizeCtrl       => overSampleSizeAct(i),
          dataIn            => adcStream(i).tData(13 downto 0),
          dataOut           => adcStreamOvs(i).tData(13 downto 0),
          dataOutValid      => open
@@ -438,7 +438,7 @@ begin
       
       axiSlaveRegister (regCon, x"024", 0, v.overSampleEn      );
       axiSlaveRegister (regCon, x"028", 0, v.overSampleSize    );
-      axiSlaveRegisterR(regCon, x"028", 0, overSampleSizeAct   );
+      axiSlaveRegisterR(regCon, x"028", 0, overSampleSizeAct(0));
       
       
       -- Close out the AXI-Lite transaction
