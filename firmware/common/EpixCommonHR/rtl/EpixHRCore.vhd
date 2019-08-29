@@ -4,7 +4,7 @@
 -- File       : EpixHRCore.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 03/02/2016
--- Last update: 2018-07-24
+-- Last update: 2019-08-27
 -- Platform   : Vivado 2014.4
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -910,8 +910,8 @@ begin
    monAdc.fClkN <= adcFClkN;
    monAdc.dClkP <= adcDClkP;
    monAdc.dClkN <= adcDClkN;
-   monAdc.chP   <= adcChP(3 downto 0);
-   monAdc.chN   <= adcChN(3 downto 0);
+   monAdc.chP(3 downto 0)   <= adcChP(3 downto 0);
+   monAdc.chN(3 downto 0)   <= adcChN(3 downto 0);
       
    U_MonAdcReadout : entity work.Ad9249ReadoutGroup
    generic map (
@@ -1049,7 +1049,7 @@ begin
       mAxilReadMaster  => sAxiReadMaster(1),
       mAxilReadSlave   => sAxiReadSlave(1),
       -- Interrupt Interface
-      interrupt(7 downto 1)   => "000000",
+      interrupt(7 downto 1)   => "0000000",
       interrupt(0)            => EpixHRConfig.requestStartupCal,
       -- Clock and Reset
       clk              => coreClk,
