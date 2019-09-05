@@ -99,6 +99,28 @@ class RdoutCore(pr.Device):
          mode       = 'RW',
       ))   
       
+      self.add(pr.RemoteVariable(
+         name       = 'OverSampleEn',     
+         description= 'Enable Over-sampling',
+         offset     = 0x00000024, 
+         bitSize    = 1, 
+         bitOffset  = 0,  
+         base       = pr.Bool, 
+         mode       = 'RW',
+      ))   
+      
+      self.add(pr.RemoteVariable(
+         name       = 'OverSampleSize',     
+         description= 'Over-sampling Size',     
+         offset     = 0x00000028, 
+         bitSize    = 3, 
+         bitOffset  = 0,  
+         base       = pr.UInt, 
+         mode       = 'RW',
+         verify     = False,
+      ))
+      
+      
       #####################################
       # Create commands
       #####################################
