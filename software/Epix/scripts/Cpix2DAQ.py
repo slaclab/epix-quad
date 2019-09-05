@@ -133,10 +133,10 @@ if ( args.type == 'pgp-gen3' ):
     print("PGP Card Version: %x" % (pgpVc0.getInfo().version))
 elif ( args.type == 'kcu1500' ):
     # Create the PGP interfaces for ePix hr camera
-    pgpVc0 = rogue.hardware.data.DataCard(args.pgp,(0*32)+0) # Data & cmds
-    pgpVc1 = rogue.hardware.data.DataCard(args.pgp,(0*32)+1) # Registers for ePix board
-    pgpVc2 = rogue.hardware.data.DataCard(args.pgp,(0*32)+2) # PseudoScope
-    pgpVc3 = rogue.hardware.data.DataCard(args.pgp,(0*32)+3) # Monitoring (Slow ADC)
+    pgpVc0 = rogue.hardware.axi.AxiStreamDma(args.pgp,32*args.l+0,True) # Data & cmds
+    pgpVc1 = rogue.hardware.axi.AxiStreamDma(args.pgp,32*args.l+1,True) # Registers for ePix board
+    pgpVc2 = rogue.hardware.axi.AxiStreamDma(args.pgp,32*args.l+2,True) # PseudoScope
+    pgpVc3 = rogue.hardware.axi.AxiStreamDma(args.pgp,32*args.l+3,True) # Monitoring (Slow ADC)  
 elif ( args.type == 'simulation' ):
     pgpVc0 = pr.interfaces.simulation.StreamSim(host='localhost', dest=0, uid=2, ssi=True)
     pgpVc1 = pr.interfaces.simulation.StreamSim(host='localhost', dest=1, uid=2, ssi=True)
