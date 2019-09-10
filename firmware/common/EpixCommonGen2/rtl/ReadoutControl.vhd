@@ -98,8 +98,8 @@ architecture ReadoutControl of ReadoutControl is
    constant WORDS_PER_SUPER_ROW_C  : integer := getWordsPerSuperRow(ASIC_TYPE_G);
 
    -- Timeout in clock cycles between acqStart and sendData
-   constant DAQ_TIMEOUT_C   : slv(31 downto 0) := conv_std_logic_vector(12500,32); --100 us at 125 MHz
-   constant STUCK_TIMEOUT_C : slv(31 downto 0) := conv_std_logic_vector(1250000,32); --2 s at 125 MHz
+   constant DAQ_TIMEOUT_C   : slv(31 downto 0) := conv_std_logic_vector(12500,32); --125 us 
+   constant STUCK_TIMEOUT_C : slv(31 downto 0) := conv_std_logic_vector(1250000,32); --12.5 ms 
    -- Depth of FIFO 
    constant CH_FIFO_ADDR_WIDTH_C : integer := 10;
    -- Hard coded words in the data stream for now
@@ -123,6 +123,7 @@ architecture ReadoutControl of ReadoutControl is
       fillCnt        : slv(CH_FIFO_ADDR_WIDTH_C-1 downto 0);
       chCnt          : slv(3 downto 0);
       timeoutCnt     : slv(31 downto 0);
+      stuckTimeout   : slv(31 downto 0);
       clearFifos     : sl;
       error          : sl;
       wordCnt        : slv(31 downto 0);
@@ -134,6 +135,7 @@ architecture ReadoutControl of ReadoutControl is
       '0',
       '0',
       '0',
+      (others => '0'),
       (others => '0'),
       (others => '0'),
       (others => '0'),
@@ -342,6 +344,13 @@ begin
          v.error := '1';
       end if;
       
+      if STUCK_TIMEOUT_C + epixConfig.asicAcqWidth < x"ffffffff" then
+         v.stuckTimeout := STUCK_TIMEOUT_C + epixConfig.asicAcqWidth;
+      else
+         v.stuckTimeout := x"ffffffff";
+      end if;
+      
+      
       -- State outputs
       if mAxisSlave.tReady = '1' then      
          case (r.state) is
@@ -414,7 +423,7 @@ begin
                end if;
                if acqBusy = '0' and fifoEmptyAll = '1' then
                   v.state := ENV_DATA_S;
-               elsif r.error = '1' or r.timeoutCnt = STUCK_TIMEOUT_C then
+               elsif r.error = '1' or r.timeoutCnt >= r.stuckTimeout then
                   v.state := FOOTER_S;
                end if;
             when ENV_DATA_S =>
