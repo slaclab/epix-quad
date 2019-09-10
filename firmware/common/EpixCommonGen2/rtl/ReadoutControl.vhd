@@ -97,8 +97,7 @@ architecture ReadoutControl of ReadoutControl is
    constant NCOL_C       : integer          := getNumColumns(ASIC_TYPE_G);
    constant WORDS_PER_SUPER_ROW_C  : integer := getWordsPerSuperRow(ASIC_TYPE_G);
 
-   -- Timeout in clock cycles between acqStart and sendData
-   constant DAQ_TIMEOUT_C   : slv(31 downto 0) := conv_std_logic_vector(12500,32); --125 us 
+   -- Timeout in clock cycles
    constant STUCK_TIMEOUT_C : slv(31 downto 0) := conv_std_logic_vector(1250000,32); --12.5 ms 
    -- Depth of FIFO 
    constant CH_FIFO_ADDR_WIDTH_C : integer := 10;
@@ -373,7 +372,7 @@ begin
                if dataSendEdge = '1' then
                   v.seqCountEn := '1';
                   v.state      := HEADER_S;
-               elsif (r.timeoutCnt >= DAQ_TIMEOUT_C) then
+               elsif (r.timeoutCnt >= r.stuckTimeout) then
                   v.state := IDLE_S;
                end if;
             when HEADER_S =>
