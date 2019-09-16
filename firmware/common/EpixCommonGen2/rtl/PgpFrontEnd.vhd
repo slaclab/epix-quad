@@ -229,6 +229,8 @@ begin
             rstOut => stableRst
          ); 
       
+      pgpRst <= stableRst;
+      
       U_PGP_SIM : entity work.RoguePgp2bSim
          generic map (
             TPD_G           => TPD_G,
