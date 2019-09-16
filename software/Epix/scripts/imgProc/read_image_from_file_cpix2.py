@@ -27,7 +27,7 @@ import ePixViewer.imgProcessing as imgPr
 import matplotlib   
 matplotlib.use('QT4Agg')
 import matplotlib.pyplot as plt
-#import h5py
+import h5py
 import argparse
 
 
@@ -145,8 +145,8 @@ for i in range(filesNum):
    else:
       asicStr = '_ASIC1'
    out_filename = os.path.splitext(dir + '/' +  onlyfiles[i])[0]+cntStr+asicStr
-   #if args.df5:
-   #   f_h5 = h5py.File(out_filename+".hdf5", "w")
+   if args.df5:
+      f_h5 = h5py.File(out_filename+".hdf5", "w")
    f_bin = open(out_filename+".bin", "wb")
 
    file_header = [0]
@@ -247,16 +247,16 @@ for i in range(filesNum):
    if numberOfFrames > 0:
       imgDesc = imgDesc.reshape(-1,48,48)
       index_h5 ='data'
-      #if args.df5:
-         #f_h5[index_h5] = imgDesc.astype('uint16')
-         #print('Saving %s with %d frames'%(out_filename, numberOfFrames))
-         #f_h5.close()
+      if args.df5:
+         f_h5[index_h5] = imgDesc.astype('uint16')
+         print('Saving %s with %d frames'%(out_filename, numberOfFrames))
+         f_h5.close()
       f_bin.write(imgDesc.tobytes())
       f_bin.close()
    else:
       #print('Empty file %s with %d frames !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'%(out_filename, numberOfFrames))
-      #if args.df5:
-      #   f_h5.close()
+      if args.df5:
+         f_h5.close()
       f_bin.close()
    
    if numberOfFrames == 0:
