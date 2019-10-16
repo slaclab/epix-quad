@@ -243,7 +243,7 @@ class EpixBoard(pyrogue.Root):
 
 # Create GUI
 appTop = QApplication(sys.argv)
-guiTop = pyrogue.gui.GuiTop()
+guiTop = pyrogue.gui.GuiTop(group = 'Cpix2Gui')
 ePixBoard = EpixBoard(guiTop, cmd, dataWriter, srp)
 ePixBoard.start(pollEn=args.pollEn, initRead = args.initRead, timeout=3.0)
 guiTop.addTree(ePixBoard)

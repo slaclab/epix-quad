@@ -2678,18 +2678,21 @@ if args.test == 12:
                ePixBoard.Cpix2.Cpix2FpgaRegisters.EnSingleFrame.set(False)
                
                # calculate median
-               pixMedian = np.median(a=imgProc.frameBuf, axis=0)
+               #pixMedian = np.median(a=imgProc.frameBuf, axis=0)
+               pixMedian = np.amax(a=imgProc.frameBuf, axis=0)
                
                # subtract previously masked (should give -1)
                # and save median
-               fileName = args.dir + '/ACQ' + '{:04d}'.format(framesPerThreshold) + '_VTRIMB' + '{:1d}'.format(VtrimB) + '_TH1' + '{:04d}'.format(threshold_1) + '_TH2' + '{:04d}'.format(threshold_2) + '_P' + '{:04d}'.format(Pulser) + '_N' + '{:05d}'.format(Npulse) + '_TrimBits' + '{:02d}'.format(TrimBits) + '_median.npy'
+               #fileName = args.dir + '/ACQ' + '{:04d}'.format(framesPerThreshold) + '_VTRIMB' + '{:1d}'.format(VtrimB) + '_TH1' + '{:04d}'.format(threshold_1) + '_TH2' + '{:04d}'.format(threshold_2) + '_P' + '{:04d}'.format(Pulser) + '_N' + '{:05d}'.format(Npulse) + '_TrimBits' + '{:02d}'.format(TrimBits) + '_median.npy'
+               fileName = args.dir + '/ACQ' + '{:04d}'.format(framesPerThreshold) + '_VTRIMB' + '{:1d}'.format(VtrimB) + '_TH1' + '{:04d}'.format(threshold_1) + '_TH2' + '{:04d}'.format(threshold_2) + '_P' + '{:04d}'.format(Pulser) + '_N' + '{:05d}'.format(Npulse) + '_TrimBits' + '{:02d}'.format(TrimBits) + '_max.npy'
                np.save(fileName, pixMedian-maskedPixel)
                
                # mask pixels that are above the median threshold
                pixToMask = np.argwhere(pixMedian >= medThr)
                for i in range(pixToMask.shape[0]):
-                  asic1ModifyBitPixel(x=int(pixToMask[i,0]), y=int(pixToMask[i,1]), val=1, offset=1, size=1)
-                  maskedPixel[pixToMask[i,0], pixToMask[i,1]] = 1
+                  if maskedPixel[pixToMask[i,0], pixToMask[i,1]] == 0:
+                     asic1ModifyBitPixel(x=int(pixToMask[i,0]), y=int(pixToMask[i,1]), val=1, offset=1, size=1)
+                     maskedPixel[pixToMask[i,0], pixToMask[i,1]] = 1
                
                
                
