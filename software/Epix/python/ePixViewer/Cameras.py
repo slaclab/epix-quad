@@ -126,7 +126,7 @@ class Camera():
             return self.imgTool.applyBitMask(descImg, mask = self.bitMask)
         if (camID == EPIX10KA):
             descImg = self._descrambleEPix100aImage(rawData)
-            return self.imgTool.applyBitMask(descImg, mask = self.bitMask)
+            return self.imgTool.applyBitMask(descImg, mask = 0xffff)
         if (camID == EPIXQUAD or camID == EPIXQUADSIM):
             descImg = self._descrambleEPixQuadImage(rawData)
             return self.imgTool.applyBitMask(descImg, mask = self.bitMask)
@@ -235,7 +235,7 @@ class Camera():
         self.sensorHeight = 356#706
         self.pixelDepth = 16
         self.cameraModule = "Standard ePix10ka"
-        self.bitMask = np.uint16(0x3FFF)
+        self.bitMask = np.uint16(0x7FFF)
     
     def _initEpix10kaQuad(self):
         self._superRowSize = int(768/2)
@@ -247,7 +247,7 @@ class Camera():
         self.sensorHeight = 712
         self.pixelDepth = 16
         self.cameraModule = "ePix10ka Quad"
-        self.bitMask = np.uint16(0x3FFF)
+        self.bitMask = np.uint16(0x7FFF)
     
     
     def _initEpix10kaQuadSim(self):
