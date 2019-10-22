@@ -411,7 +411,7 @@ begin
    end process;
 
    --Next state logic
-   process(curState,acqStartEdge,stateCnt,saciReadoutAck,adcSampCnt,pixelCnt,ePixConfig,adcClkEdge,readDone,roClkTail,dummyAcq) begin
+   process(curState,acqStartEdge,stateCnt,saciReadoutAck,adcSampCnt,pixelCnt,ePixConfig,adcClkEdge,readDone,roClkTail,dummyAcq,epixConfigExt) begin
       
       dummyAcqSet <= '0' after tpd;
       dummyAcqClr <= '0' after tpd;
