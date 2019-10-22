@@ -89,12 +89,9 @@ begin
       axiSlaveWaitTxn(regCon, axiWriteMaster, axiReadMaster, v.axiWriteSlave, v.axiReadSlave);
 
       -- Map out standard registers    
+      axiSlaveRegister (regCon, x"000" & "00",  0, v.epixRegOut.ghostCorr);
       
       axiSlaveRegister (regCon, x"200" & "00",  0, v.epixRegOut.dbgReg);
-      
-      axiSlaveRegister (regCon, x"201" & "00",  0, v.epixRegOut.syncCntrl);
-      axiSlaveRegister (regCon, x"202" & "00",  0, v.epixRegOut.syncStopDly);
-      axiSlaveRegister (regCon, x"203" & "00",  0, v.epixRegOut.syncStartDly);
       
       axiSlaveDefault(regCon, v.axiWriteSlave, v.axiReadSlave, AXI_ERROR_RESP_G);
       

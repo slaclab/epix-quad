@@ -191,16 +191,12 @@ package EpixPkgGen2 is
    
    type EpixConfigExtType is record
       dbgReg             : slv(4 downto 0);
-      syncCntrl          : sl;
-      syncStopDly        : slv(31 downto 0);
-      syncStartDly       : slv(31 downto 0);
+      ghostCorr          : sl;
    end record;
    type EpixConfigExtArray is array (natural range <>) of EpixConfigExtType;
    constant EPIX_CONFIG_EXT_INIT_C : EpixConfigExtType := (
       dbgReg             => (others => '0'),
-      syncCntrl          => '0',
-      syncStopDly        => (others => '0'),
-      syncStartDly       => (others => '0')
+      ghostCorr          => '1'
    );
    
    type EpixStatusType is record

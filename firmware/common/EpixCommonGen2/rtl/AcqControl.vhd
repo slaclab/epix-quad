@@ -36,8 +36,7 @@ use UNISIM.vcomponents.all;
 
 entity AcqControl is
    generic (
-      ASIC_TYPE_G       : AsicType := EPIX100A_C;
-      SACI_TIMEOUT_G    : natural := 100000
+      ASIC_TYPE_G       : AsicType := EPIX100A_C
    );
    port (
 
@@ -76,10 +75,7 @@ entity AcqControl is
       asicGlblRst         : out   std_logic;
       asicAcq             : out   std_logic;
       asicSync            : out   std_logic;
-      asicRoClk           : out   std_logic;
-      
-      -- external pulser output
-      extSync             : out   std_logic
+      asicRoClk           : out   std_logic
 
    );
 end AcqControl;
@@ -91,9 +87,12 @@ architecture AcqControl of AcqControl is
    
    -- epix10ka dummy acquisition settings
    -- dummy acquisition to remove the ghost
-   constant DUMMY_ASIC_ROCLK_HALFT_C : natural := 2;
-   constant DUMMY_ASIC_R0_TO_ACQ_C   : natural := 2500;
-   constant DUMMY_ASIC_ACQ_WIDTH_C   : natural := 2500;
+   constant DUMMY_ASIC_ROCLK_HALFT_C   : natural := 2;
+   constant DUMMY_ASIC_R0_TO_ACQ_C     : natural := 2500;
+   constant DUMMY_ASIC_ACQ_WIDTH_C     : natural := 2500;
+   
+   -- arbitrary sync pulse width (1us)
+   constant SYNC_WIDTH_C               : natural := 100;
    
    constant DUMMY_ACQ_EN_C : boolean := ite(ASIC_TYPE_G = EPIX10KA_C, true, false);
    
@@ -148,16 +147,6 @@ architecture AcqControl of AcqControl is
    signal iAsicClk         : std_logic := '0';
    
    signal iAsicSync         : sl;
-   signal asicSyncExt       : sl;
-   signal asicSyncMux       : sl;
-   signal asicSyncMuxReg    : sl;
-   --signal asicSyncEndVec    : slv(31 downto 0);
-   --signal asicSyncEndVecCmp : slv(31 downto 0);
-   signal syncCntRst        : sl;
-   signal asicSyncStart     : sl;
-   signal asicSyncStartCnt  : slv(31 downto 0);
-   signal asicSyncStop      : sl;
-   signal asicSyncStopCnt   : slv(31 downto 0);
    
    -- Alternate R0 that can be used for "original" polarity
    -- (i.e., usually low except before ACQ and through readout)
@@ -225,48 +214,7 @@ begin
    asicClk     <= iAsicClk               when ePixConfig.manualPinControl(5) = '0' else
                   ePixConfig.asicPins(5) when ePixConfig.manualPinControl(5) = '1' else
                   'X';
-   asicSync    <= '0'                    when epixConfigExt.syncCntrl = '0' else
-                   asicSyncMuxReg;
-   
-   extSync     <= not asicSyncMuxReg;
-   
-   -- asicSync register
-   process(sysClk) begin
-      if rising_edge(sysClk) then
-         if sysClkRst = '1' then  
-            asicSyncMuxReg <= '0' after tpd;     
-         else
-            asicSyncMuxReg <= asicSyncMux after tpd;
-         end if;
-      end if;
-   end process; 
-   
-   asicSyncMux    <= asicSyncExt when epixConfigExt.syncStartDly = 0 else (asicSyncExt and asicSyncStart);
-   asicSyncStart  <= '1' when asicSyncStartCnt = epixConfigExt.syncStartDly else '0';
-   asicSyncStop   <= '1' when asicSyncStopCnt < epixConfigExt.syncStopDly else '0';
-   asicSyncExt    <= iAsicSync or asicSyncStop;
-   
-   -- asicSync start delay counter
-   process(sysClk) begin
-      if rising_edge(sysClk) then
-         if sysClkRst = '1' or syncCntRst = '1' then
-            asicSyncStartCnt <= (others => '0') after tpd;     
-         elsif asicSyncStartCnt < epixConfigExt.syncStartDly then
-            asicSyncStartCnt <= asicSyncStartCnt + 1 after tpd;
-         end if;
-      end if;
-   end process; 
-   
-   -- asicSync stop delay counter
-   process(sysClk) begin
-      if rising_edge(sysClk) then
-         if sysClkRst = '1' or iAsicSync = '1' then
-            asicSyncStopCnt <= (others => '0') after tpd;     
-         elsif asicSyncStopCnt < epixConfigExt.syncStopDly then
-            asicSyncStopCnt <= asicSyncStopCnt + 1 after tpd;
-         end if;
-      end if;
-   end process; 
+   asicSync    <= iAsicSync;
    
    --Outputs not incorporated into state machine at the moment
    iAsicPpbe    <= '1'; 
@@ -299,7 +247,6 @@ begin
       iAsicPpmat         <= '0' after tpd;
       iAsicAcq           <= '0' after tpd;
       iAsicSync          <= '0' after tpd;
-      syncCntRst         <= '0' after tpd;
       saciReadoutReq     <= '0' after tpd;
       stateCntEn         <= '0' after tpd;
       stateCntRst        <= '0' after tpd;
@@ -319,12 +266,10 @@ begin
             adcSampCntRst   <= '1' after tpd;
             firstPixelRst   <= '1' after tpd;
             iAsicR0Alt      <= '0' after tpd;
-            syncCntRst      <= '1' after tpd;
          --Bring up PPmat through just before the asicClk
          when WAIT_R0_S =>
             iAsicPpmat      <= '1' after tpd;
             iAsicR0Alt      <= '0' after tpd;
-            syncCntRst      <= '1' after tpd;
             if stateCnt < unsigned(ePixConfig.acqToAsicR0Delay)  and dummyAcq = '0' then
                stateCntEn      <= '1' after tpd;
             else
@@ -335,7 +280,6 @@ begin
             iAsicPpmat      <= '1' after tpd;
             iAsicR0         <= '0' after tpd;
             iAsicR0Alt      <= '0' after tpd;
-            syncCntRst      <= '1' after tpd;
             if stateCnt < unsigned(ePixConfig.asicR0Width) and dummyAcq = '0' then
                stateCntEn      <= '1' after tpd;
             else 
@@ -344,7 +288,6 @@ begin
          --Bring up R0 and hold through the rest of the readout
          when WAIT_ACQ_S =>
             iAsicPpmat      <= '1' after tpd;
-            iAsicSync       <= '1' after tpd;
             if stateCnt < unsigned(ePixConfig.asicR0ToAsicAcq) and dummyAcq = '0' then
                stateCntEn      <= '1' after tpd;
             elsif stateCnt < DUMMY_ASIC_R0_TO_ACQ_C-1 and dummyAcq = '1' then
@@ -356,7 +299,6 @@ begin
          when ACQ_S =>
             iAsicPpmat      <= '1' after tpd;
             iAsicAcq        <= '1' after tpd;
-            iAsicSync       <= '1' after tpd;
             if stateCnt < unsigned(ePixConfig.asicAcqWidth) and dummyAcq = '0' then
                stateCntEn      <= '1' after tpd;
             elsif stateCnt < DUMMY_ASIC_ACQ_WIDTH_C-1 and dummyAcq = '1' then
@@ -450,10 +392,11 @@ begin
             iAsicR0Alt     <= '0' after tpd;
          --Send SACI prepare for readout for the next event
          when SACI_RESET_S =>
-            saciReadoutReq <= '1' after tpd;
+            saciReadoutReq <= '0' after tpd; -- use SYNC pin to allow higher frame rates
+            iAsicSync      <= '1' after tpd;
             iAcqBusy       <= '0' after tpd;
             iAsicR0Alt     <= '0' after tpd;
-            if stateCnt < SACI_TIMEOUT_G then
+            if stateCnt < SYNC_WIDTH_C then
                stateCntEn      <= '1' after tpd;
             else
                stateCntRst     <= '1' after tpd;
@@ -617,13 +560,14 @@ begin
             end if;
          --Use SACI prepare for readout
          when SACI_RESET_S =>
-            if (saciReadoutAck = '1') or stateCnt >= SACI_TIMEOUT_G then
+            -- arbitrary sync pulse width (1us)
+            if stateCnt >= SYNC_WIDTH_C then
                -- this is implementing the gost effect correction in epix10ka
                -- until we have new ASICs with a proper fix
                -- run one more dummy ASIC acquisition cycle
                -- outputs won't be sampled and sent out
                -- the dummy cycle will be faster than normal acq cycle
-               if dummyAcq = '0' and DUMMY_ACQ_EN_C = true then
+               if dummyAcq = '0' and epixConfigExt.ghostCorr = '1' then
                   nxtState <= WAIT_R0_S after tpd;
                   dummyAcqSet <= '1' after tpd;
                else

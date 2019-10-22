@@ -235,7 +235,6 @@ architecture top_level of EpixCoreGen2 is
    signal iAsicGrst  : sl;
    signal iAsicRoClk : sl;
    signal iAsicSync  : sl;
-   signal iExtSync   : sl;
    
    signal fpgaReload : sl;
    signal bootSck    : sl;
@@ -310,7 +309,7 @@ begin
       saciPrepReadoutAck   when epixConfigExt.dbgReg = "00110" else
       iAsicSync            when epixConfigExt.dbgReg = "00111" else
       iAsicR0              when epixConfigExt.dbgReg = "01000" else
-      iExtSync             when epixConfigExt.dbgReg = "01001" else
+      iAsicRoClk           when epixConfigExt.dbgReg = "01001" else
       '0';
    
    -- ASIC signals
@@ -714,8 +713,7 @@ begin
       asicGlblRst     => iAsicGrst,
       asicAcq         => iAsicAcq,
       asicSync        => iAsicSync,
-      asicRoClk       => iAsicRoClk,
-      extSync         => iExtSync
+      asicRoClk       => iAsicRoClk
    );
  
    ---------------------
