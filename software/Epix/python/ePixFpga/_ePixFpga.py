@@ -813,10 +813,8 @@ class Epix10kaFpgaExtRegisters(pr.Device):
       #it is defined the addrSize RemoteVariable
       addrSize = 4	
       
+      self.add(pr.RemoteVariable(name='GhostCorrEn',         description='GhostCorrEn',      offset=0x00000000*addrSize, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='DebugOut',            description='DebugOut',         offset=0x00000200*addrSize, bitSize=5,  bitOffset=0, base=pr.UInt, mode='RW'))
-      self.add(pr.RemoteVariable(name='SyncCntrlEn',         description='SyncCntrlEn',      offset=0x00000201*addrSize, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='syncStopDly',         description='syncStopDly',      offset=0x00000202*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
-      self.add(pr.RemoteVariable(name='syncStartDly',        description='syncStartDly',     offset=0x00000203*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
       
       # Overwrite reset calls with local functions
       #self.setResetFunc(self.resetFunc)
