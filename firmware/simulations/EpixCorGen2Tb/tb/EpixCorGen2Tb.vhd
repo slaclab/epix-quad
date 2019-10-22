@@ -40,6 +40,12 @@ architecture testbed of EpixCorGen2Tb is
    constant TPD_C             : time    := 1 ns;
    constant SIM_SPEEDUP_C     : boolean := true;
    
+   constant TRIG_PER_C     : time := 2 ms;
+   constant RUN_DLY_C      : time := 500 us;
+   constant RUN_WIDTH_C    : time := 100 us;
+   constant DAQ_DLY_C      : time := 800 us;
+   constant DAQ_WIDTH_C    : time := 100 us;
+   
    constant BUILD_INFO_TB_C : BuildInfoRetType := (
       buildString =>  (others => (others => '0')),
       fwVersion => X"EA040000",
@@ -270,30 +276,55 @@ begin
    );
    
    -----------------------------------------------------------------------
-   -- Sim process
+   -- Run trig process
    -----------------------------------------------------------------------
    process
    begin
       
-      --tempAlertL <= '1';
-      --
-      --wait for 100 us;
-      --
-      --tempAlertL <= '0';
-      --
-      --wait for 100 us;
-      --
-      --tempAlertL <= '1';
+      runTrigger <= '0';
       
-      --wait;
+      wait for RUN_DLY_C;
       
-      --acqStart <= not acqStart;
+      loop
+      
+         runTrigger <= '1';
+         wait for RUN_WIDTH_C;
+         runTrigger <= '0';
+         
+         wait for TRIG_PER_C - RUN_WIDTH_C;
+         
+      
+      end loop;
       
       wait for 100 us;
          
       
    end process;
    
-   
+   -----------------------------------------------------------------------
+   -- Daq trig process
+   -----------------------------------------------------------------------
+   process
+   begin
+      
+      daqTrigger <= '0';
+      
+      wait for DAQ_DLY_C;
+      
+      loop
+      
+         daqTrigger <= '1';
+         wait for DAQ_WIDTH_C;
+         daqTrigger <= '0';
+         
+         wait for TRIG_PER_C - DAQ_WIDTH_C;
+         
+      
+      end loop;
+      
+      wait for 100 us;
+         
+      
+   end process;
    
 end testbed;
