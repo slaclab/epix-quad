@@ -2,7 +2,7 @@
 -- File       : TSDecoderMode.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2014-07-14
--- Last update: 2018-06-29
+-- Last update: 2019-10-22
 -------------------------------------------------------------------------------
 -- Description: The test structure sends data in different way depending on the
 -- selected mode (using SACI registers). This modules adapts the data from the
@@ -36,7 +36,7 @@ entity TSDecoderMode is
       rst      : in  sl := RST_POLARITY_G;
       dataIn   : in  slv(15 downto 0);
       validIn  : in  sl := '1';
-      modeIn   : in  slv(1 downto 0) := "00";
+      modeIn   : in  slv(2 downto 0) := "100";
       dataOut  : out slv(15 downto 0);
       validOut : out sl;
       sof      : out sl;
@@ -55,6 +55,8 @@ architecture rtl of TSDecoderMode is
   
   type StrType is record
     state          : StateType;
+    enabled        : sl;
+    mode           : slv( 1 downto 0); 
     data           : slv(15 downto 0);
     dataValid      : sl;
     frmSize        : slv(15 downto 0);
@@ -66,6 +68,8 @@ architecture rtl of TSDecoderMode is
 
   constant STR_INIT_C : StrType := (
     state          => IDLE_S,
+    enabled        => '0',
+    mode           => (others=>'0'),
     data           => (others=>'0'),
     dataValid      => '0',
     frmSize        => (others=>'0'),
@@ -121,7 +125,9 @@ begin
     sv := s;
 
     --saves input signal in local varialble
-    sv.data := dataInSync;
+    sv.enabled   := modeIn(2);
+    sv.mode      := modeIn(1 downto 0);
+    sv.data      := dataInSync;
     sv.dataValid := validInSync;
 
     -- state machine that creates data packet and SOF, EOF flags
@@ -133,14 +139,14 @@ begin
         sv.eofe := '0';
         sv.frmSize := (others=>'0');
         -- next state logic
-        if (validInSync='1') and (s.dataValid='0') then
+        if (validInSync='1') and (s.dataValid='0') and (s.enabled='1') then
             sv.sof := '1';
             sv.state := SOF_S;
         end if;
       when SOF_S =>
         --sof flag
         sv.sof := '0';
-        if ((modeIn = "00") or (modeIn = "01")) then
+        if ((s.mode = "00") or (s.mode = "01")) then
           --next state logic
           if (validInSync='0') and (s.dataValid='1') then
             sv.state := VALID_DATA_S;
@@ -153,6 +159,9 @@ begin
           --next state logic
           sv.state := VALID_DATA_S;
         end if;
+        if s.enabled='0' then
+          sv.state := IDLE_S;
+        end if;
       when VALID_DATA_S =>
         --sof flag
         sv.sof := '0';
@@ -161,16 +170,19 @@ begin
           sv.frmSize := s.frmSize + '1';
         end if;
         --next state logic
-        if ((modeIn = "00") or (modeIn = "01")) then
+        if ((s.mode = "00") or (s.mode = "01")) then
           if s.frmSize = FRAME_1_2_SIZE_C then
             sv.state := EOF_S;           
           end if;
         end if;
-        if ((modeIn = "10") or (modeIn = "11")) then
+        if ((s.mode = "10") or (s.mode = "11")) then
           if s.frmSize = FRAME_3_4_SIZE_C then
             sv.state := EOF_S;           
-          end if;
-        end if;      
+          end if;          
+        end if;
+        if s.enabled='0' then
+          sv.state := IDLE_S;
+        end if;
       when EOF_S =>
         sv.eof := '1';
         sv.state := IDLE_S;

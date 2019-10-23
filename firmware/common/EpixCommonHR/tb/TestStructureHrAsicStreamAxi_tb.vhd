@@ -6,7 +6,7 @@
 -- Author     : Dionisio Doering  <ddoering@tid-pc94280.slac.stanford.edu>
 -- Company    : 
 -- Created    : 2017-05-22
--- Last update: 2018-05-11
+-- Last update: 2019-10-22
 -- Platform   : 
 -- Standard   : VHDL'87
 -------------------------------------------------------------------------------
@@ -29,6 +29,9 @@ use work.EpixHRPkg.all;
 use work.AxiStreamPkg.all;
 use work.AxiLitePkg.all;
 use work.SsiPkg.all;
+
+Library UNISIM;
+use UNISIM.vcomponents.all;
 
 -------------------------------------------------------------------------------
 
@@ -91,8 +94,24 @@ architecture sim_arch of TestStructureHrAsicStreamAxi_tb is
   constant DATA_WIDTH_G : integer := 16;
   
   -- clock
-  signal sysClk    : std_logic := '1';
-  signal axilClk   : std_logic := '1';
+  signal pgpClk        : sl := '1';
+  signal asicRfClk     : sl;
+  signal asicRfClkRst  : sl;
+  signal asicRdClk     : sl;
+  signal asicRdClkRst  : sl;
+  signal bitClk        : sl;
+  signal bitClkRst     : sl;
+  signal byteClk       : sl;
+  signal byteClkRst    : sl;
+  signal sysRst        : sl;
+  signal coreClk       : sl;
+  signal iDelayCtrlClk : sl;
+  signal tsClk0        : sl;
+  signal tsClk1        : sl;
+  signal coreClkRst    : sl;
+  signal iDelayCtrlRst : sl;
+  signal dummyRst      : slv(1 downto 0);
+
   -- component ports: axi lite
   signal sysClkRst          : std_logic;
   signal axilRst            : std_logic;
@@ -119,17 +138,17 @@ begin  -- _arch
                                                             -- ASICs using 2
       )
       port map (
-         rxClk             => sysClk,
-         rxRst             => axilRst,
+         rxClk             => bitClk,
+         rxRst             => bitClkRst,
          rxData            => iasicTsData,
          rxValid           => iasicTsSync,
-         axilClk           => sysClk,
+         axilClk           => coreClk,
          axilRst           => axilRst,
          sAxilWriteMaster  => sAxilWriteMaster,
          sAxilWriteSlave   => sAxilWriteSlave,
          sAxilReadMaster   => sAxilReadMaster,
          sAxilReadSlave    => sAxilReadSlave,
-         axisClk           => sysClk,
+         axisClk           => coreClk,
          axisRst           => axilRst,
          mAxisMaster       => userAxisMaster,
          mAxisSlave        => userAxisSlave, 
@@ -139,18 +158,134 @@ begin  -- _arch
       );
 
   -- clock generation
-  sysClk <= not sysClk after 6.4 ns;
-  axilClk <= not axilClk after 6.4 ns;
+  pgpClk <= not pgpClk after 3.2 ns;
+  
+   ------------------------------------------
+   -- Generate clocks from 156.25 MHz PGP  --
+   ------------------------------------------
+   -- clkIn     : 156.25 MHz PGP
+   -- clkOut(0) : 250 MHz serial data bit clock
+   -- clkOut(1) : 100.00 MHz system clock
+   -- clkOut(2) : 8 MHz ASIC readout clock
+   -- clkOut(3) : 20 MHz ASIC reference clock
+   -- clkOut(4) : 200 MHz Idelaye2 calibration clock
+   -- clkOut(5) : 100.00 MHz system clock TS clocks
+   -- clkOut(6) : 100.00 MHz system clock TS clocks
+   U_CoreClockGen : entity work.ClockManager7
+   generic map (
+      INPUT_BUFG_G         => false,
+      FB_BUFG_G            => true,
+      NUM_CLOCKS_G         => 7,
+      CLKIN_PERIOD_G       => 6.4,
+      DIVCLK_DIVIDE_G      => 6,     --base clock 1000MHz
+      CLKFBOUT_MULT_F_G    => 38.4,
+      
+      CLKOUT0_DIVIDE_F_G   => 4.0,
+      CLKOUT0_PHASE_G      => 90.0,
+      CLKOUT0_DUTY_CYCLE_G => 0.5,
+      
+      CLKOUT1_DIVIDE_G     => 10,
+      CLKOUT1_PHASE_G      => 0.0,
+      CLKOUT1_DUTY_CYCLE_G => 0.5,
+      
+      CLKOUT2_DIVIDE_G     => 4,
+      CLKOUT2_PHASE_G      => 0.0,
+      CLKOUT2_DUTY_CYCLE_G => 0.5,
+      
+      CLKOUT3_DIVIDE_G     => 20,
+      CLKOUT3_PHASE_G      => 0.0,
+      CLKOUT3_DUTY_CYCLE_G => 0.5,
+      
+      CLKOUT4_DIVIDE_G     => 5,
+      CLKOUT4_PHASE_G      => 0.0,
+      CLKOUT4_DUTY_CYCLE_G => 0.5,
+
+      CLKOUT5_DIVIDE_G     => 10,
+      CLKOUT5_PHASE_G      => 0.0,
+      CLKOUT5_DUTY_CYCLE_G => 0.5,
+
+      CLKOUT6_DIVIDE_G     => 10,
+      CLKOUT6_PHASE_G      => 0.0,
+      CLKOUT6_DUTY_CYCLE_G => 0.5
+   )
+   port map (
+      clkIn     => pgpClk,
+      rstIn     => sysRst,
+      clkOut(0) => bitClk,
+      clkOut(1) => coreClk,
+      clkOut(2) => asicRdClk,
+      clkOut(3) => asicRfClk,
+      clkOut(4) => iDelayCtrlClk,
+      clkOut(5) => tsClk0,
+      clkOut(6) => tsClk1,
+      rstOut(0) => bitClkRst,
+      rstOut(1) => coreClkRst,
+      rstOut(2) => asicRdClkRst,
+      rstOut(3) => asicRfClkRst,
+      rstOut(4) => iDelayCtrlRst,
+      rstOut(5) => dummyRst(0),
+      rstOut(6) => dummyRst(1),
+      locked    => open
+   );
+
+  U_BUFR : BUFR
+   generic map (
+      SIM_DEVICE  => "7SERIES",
+      BUFR_DIVIDE => "5"
+   )
+   port map (
+      I   => bitClk,
+      O   => byteClk,
+      CE  => '1',
+      CLR => '0'
+   );
   
   -- reset
   axilRst <= sysClkRst;
+
+-- waveform generation
+  asicModel: process
+  begin
+
+    packetloop : for p in 0 to 3 loop
+      wait for 100 us;
+      --creates odd first pulse
+      wait until rising_edge(byteClk);
+      iasicTsSync <= '0';
+      wait until rising_edge(byteClk);
+      iasicTsSync <= '1';
+      wait for 1 us;
+      iasicTsSync <= '1';
+      -- starts nomal pulses
+      stimloop : for i in 0 to 31 loop    -- 31 "normal" pulses last pulse keeps TS_Sync high
+        wait until rising_edge(byteClk);
+        iasicTsSync <= '1';
+        wait until rising_edge(byteClk);
+      
+        if i < 1023 then
+          iasicTsSync <= '0';  
+        end if;
+
+        iasicTsData <= std_logic_vector(to_unsigned(i, 16));
+      
+        -- simulates the HR adc modes 0,1 where data rate is low
+        delayloop : for j in 0 to 63 loop 
+          wait until rising_edge(byteClk);
+        end loop delayloop;
+
+
+      
+      end loop stimloop;
+      iasicTsSync <= '1';                 -- last pulse keeps TS_Sync high
+    end loop packetloop;
+  end process;
 
   -- waveform generation
   WaveGen_Proc: process
   begin
     -- insert signal assignments here
 
-    wait until rising_edge(sysClk);
+    wait until rising_edge(coreClk);
     sysClkRst <= '1';
     sAxilWriteMaster.awaddr  <= x"00000000";
     sAxilWriteMaster.awprot  <= "000";
@@ -172,7 +307,7 @@ begin  -- _arch
     sAxilWriteMaster.bready  <= '1';
 
         --wait for 1 us;
-    wait until rising_edge(sysClk);    
+    wait until rising_edge(coreClk);    
     --sAxilWriteMaster.awaddr  <= x"00000000";
     sAxilWriteMaster.awprot  <= "000";
     sAxilWriteMaster.awvalid <= '0';
@@ -180,49 +315,18 @@ begin  -- _arch
     sAxilWriteMaster.wstrb   <= x"0";
     sAxilWriteMaster.wvalid  <= '0';
     sAxilWriteMaster.bready  <= '1';
-    wait for 10 us;
-
-    axiLiteBusSimWrite (sysClk, sAxilWriteMaster, sAxilWriteSlave, x"00000020", x"00000001", true);
+    wait for 5 us;
+    axiLiteBusSimWrite (coreClk, sAxilWriteMaster, sAxilWriteSlave, x"00000024", x"0000001F", true);
+    wait for 5 us;
+    axiLiteBusSimWrite (coreClk, sAxilWriteMaster, sAxilWriteSlave, x"00000028", x"00000004", true);
+    
     wait for 10 us;
     
     wait for 7 ms;
-    wait until rising_edge(sysClk);
+    wait until rising_edge(coreClk);
     testTrig <= '1';
-    wait until rising_edge(sysClk);
+    wait until rising_edge(coreClk);
     testTrig <= '0';
-    --creates odd first pulse
-    wait until rising_edge(sysClk);
-    iasicTsSync <= '0';
-    wait until rising_edge(sysClk);
-    iasicTsSync <= '1';
-    wait for 1 us;
-    iasicTsSync <= '0';
-    -- starts nomal pulses
-    stimloop : for i in 0 to 30 loop    -- 31 "normal" pulses last pulse keeps TS_Sync high
-      wait until rising_edge(sysClk);
-      iasicTsData <= std_logic_vector(to_unsigned(i, 16));
-      iasicTsSync <= '1';
-      wait until rising_edge(sysClk);
-      wait until rising_edge(sysClk);
-      wait until rising_edge(sysClk);
-      wait until rising_edge(sysClk);
-      wait until rising_edge(sysClk);
-      wait until rising_edge(sysClk);
-      wait until rising_edge(sysClk);
-      wait until rising_edge(sysClk);
-      wait until rising_edge(sysClk);
-      
-      if i < 1023 then
-        iasicTsSync <= '0';  
-      end if;
-      
-      -- simulates the HR adc modes 0,1 where data rate is low
-      delayloop : for i in 0 to 63 loop 
-        wait until rising_edge(sysClk);
-      end loop delayloop;
-      
-    end loop stimloop;
-    iasicTsSync <= '1';                 -- last pulse keeps TS_Sync high
 
     wait;
   end process WaveGen_Proc;

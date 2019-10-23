@@ -141,7 +141,7 @@ architecture RTL of TestStructureHrAsicStreamAxi is
       frmExpSize        : slv(15 downto 0);
       sAxilWriteSlave   : AxiLiteWriteSlaveType;
       sAxilReadSlave    : AxiLiteReadSlaveType;
-      tsMode            : slv(1 downto 0);
+      tsMode            : slv(2 downto 0);
    end record RegType;
 
    constant REG_INIT_C : RegType := (
