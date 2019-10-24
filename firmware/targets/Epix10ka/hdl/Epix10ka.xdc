@@ -20,9 +20,10 @@ create_clock -name adcMonDoClkP -period  2.857 [get_ports {adcDoClkP[2]}]
 create_generated_clock -name coreClk      [get_pins {U_EpixCore/U_CoreClockGen/MmcmGen.U_Mmcm/CLKOUT0}]
 create_generated_clock -name delayCtrlClk [get_pins {U_EpixCore/U_CoreClockGen/MmcmGen.U_Mmcm/CLKOUT1}]
 create_generated_clock -name progClk      [get_pins {U_EpixCore/U_Iprog7Series/DIVCLK_GEN.BUFR_ICPAPE2/O}]
-create_generated_clock -name adc0BitClkR  [get_pins {U_EpixCore/G_AdcReadout[0].U_AdcReadout/U_AdcBitClkR/O}]
-create_generated_clock -name adc1BitClkR  [get_pins {U_EpixCore/G_AdcReadout[1].U_AdcReadout/U_AdcBitClkR/O}]
-create_generated_clock -name adcMonBitClkR [get_pins {U_EpixCore/U_MonAdcReadout/U_AdcBitClkR/O}]
+create_generated_clock -name adc0BitClkR  [get_pins {U_EpixCore/U_AdcPhyTop/G_AdcReadout[0].U_AdcReadout/U_AdcBitClkR/O}]
+create_generated_clock -name adc1BitClkR  [get_pins {U_EpixCore/U_AdcPhyTop/G_AdcReadout[1].U_AdcReadout/U_AdcBitClkR/O}]
+create_generated_clock -name adcMonBitClkR [get_pins {U_EpixCore/U_AdcPhyTop/U_MonAdcReadout/U_AdcBitClkR/O}]
+
 
 set_clock_groups -asynchronous \
    -group [get_clocks -include_generated_clocks pgpClk] \
