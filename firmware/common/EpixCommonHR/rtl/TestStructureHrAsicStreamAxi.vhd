@@ -44,6 +44,9 @@ entity TestStructureHrAsicStreamAxi is
       rxRst             : in  sl;
       rxData            : in  slv(15 downto 0);
       rxValid           : in  sl;
+      -- Decoder logic needs to know that state of the ASIC to propoerly create
+      -- sof and a eof flags
+      asicSR0           : in  sl;
       
       -- AXI lite slave port for register access
       axilClk           : in  sl;
@@ -141,7 +144,7 @@ architecture RTL of TestStructureHrAsicStreamAxi is
       frmExpSize        : slv(15 downto 0);
       sAxilWriteSlave   : AxiLiteWriteSlaveType;
       sAxilReadSlave    : AxiLiteReadSlaveType;
-      tsMode            : slv(2 downto 0);
+      tsMode            : slv(3 downto 0);
    end record RegType;
 
    constant REG_INIT_C : RegType := (
@@ -183,6 +186,7 @@ architecture RTL of TestStructureHrAsicStreamAxi is
    
    signal testModeSync  : sl;
    signal iRxValid      : sl;
+   signal iAsicSR0      : sl;
    
    signal rxDataCs   : slv(15 downto 0);                 -- for chipscope
    signal rxValidCs  : sl;                               -- for chipscope
@@ -208,7 +212,16 @@ begin
       rst     => rxRst,
       dataIn  => s.testMode,
       dataOut => testModeSync
-   );   
+   );
+
+   -- synchronizers
+   Sync2_U : entity work.Synchronizer
+   port map (
+      clk     => rxClk,
+      rst     => rxRst,
+      dataIn  => asicSR0,
+      dataOut => iAsicSR0
+   );
    
 
     -- test structure data decoder
@@ -220,8 +233,10 @@ begin
       clk         => rxClk,
       rst         => rxRst,
       dataIn      => rxData,
+      asicSR0     => iAsicSR0,
       validIn     => iRxValid,
       modeIn      => r.tsMode,
+      frameSize   => r.frmExpSize,
       dataOut     => decDataOut,
       validOut    => decValid,
       sof         => decSof,
@@ -410,7 +425,7 @@ begin
                end if;
                sv.dFifoRd := '1';
                sv.stCnt := s.stCnt + 1;
-               if s.stCnt = r.frmExpSize then 
+               if s.stCnt >= r.frmExpSize then 
                   sv.frmSize := toSlv(s.stCnt, 16);
                   sv.stCnt := 0;
                   if s.frmMax <= sv.frmSize then

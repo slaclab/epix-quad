@@ -4,7 +4,7 @@
 -- File       : EpixHRCore.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 03/02/2016
--- Last update: 2019-08-27
+-- Last update: 2019-10-24
 -- Platform   : Vivado 2014.4
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -658,6 +658,7 @@ begin
          rxRst             => bitClkRst,
          rxData            => iasicTsData,
          rxValid           => iasicTsSync,
+         asicSR0           => iAsicSR0,
          axilClk           => coreClk,
          axilRst           => axiRst,
          sAxilWriteMaster  => mAxiWriteMasters(TS_AXI_INDEX_C),
