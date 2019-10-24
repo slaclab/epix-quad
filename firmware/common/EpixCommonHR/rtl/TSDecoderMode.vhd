@@ -123,7 +123,7 @@ begin
 --      dataOut => validOutOneShot
 --   );
   
-  comb : process (s, dataInSync, validInSync, validOutOneShot, modeIn) is
+  comb : process (s, dataInSync, validInSync, validOutOneShot, modeIn, asicSR0, frameSize) is
     variable sv       : StrType;
 
   begin
