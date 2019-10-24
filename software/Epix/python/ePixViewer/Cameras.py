@@ -126,7 +126,7 @@ class Camera():
             return self.imgTool.applyBitMask(descImg, mask = self.bitMask)
         if (camID == EPIX10KA):
             descImg = self._descrambleEPix100aImage(rawData)
-            return self.imgTool.applyBitMask(descImg, mask = 0xffff)
+            return self.imgTool.applyBitMask(descImg, mask = self.bitMask)
         if (camID == EPIXQUAD or camID == EPIXQUADSIM):
             descImg = self._descrambleEPixQuadImage(rawData)
             return self.imgTool.applyBitMask(descImg, mask = self.bitMask)
