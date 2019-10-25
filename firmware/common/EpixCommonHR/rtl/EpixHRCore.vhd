@@ -158,7 +158,10 @@ architecture top_level of EpixHRCore is
    signal iAsicVid             : sl;
    signal iAsicGrst            : sl;
    signal iasicTsData          : slv(15 downto 0);
-   signal iasicTsSync          : sl; 
+   signal iasicTsSync          : sl;
+   signal iAsicTsShClk         : sl;
+   signal iAsicTsAdcClk        : sl;
+   signal iAsicTsRst           : sl;
    
    attribute keep of iAsic01DM1    : signal is "true";
    attribute keep of iAsic01DM2    : signal is "true";
@@ -349,9 +352,9 @@ begin
       WFdacLdacL_i      when EpixHRConfig.epixhrDbgSel1 = "10001" else
       WFdacClrL_i       when EpixHRConfig.epixhrDbgSel1 = "10010" else
       iAsicGrst         when EpixHRConfig.epixhrDbgSel1 = "10011" else
-      asicTsShClk       when EpixHRConfig.epixhrDbgSel1 = "10100" else
-      asicTsAdcClk      when EpixHRConfig.epixhrDbgSel1 = "10101" else
-      asicTsRst         when EpixHRConfig.epixhrDbgSel1 = "10110" else
+      iAsicTsShClk      when EpixHRConfig.epixhrDbgSel1 = "10100" else
+      iAsicTsAdcClk     when EpixHRConfig.epixhrDbgSel1 = "10101" else
+      iAsicTsRst        when EpixHRConfig.epixhrDbgSel1 = "10110" else
       '0';   
    
    mpsOutMux <=
@@ -375,9 +378,9 @@ begin
       WFdacLdacL_i      when EpixHRConfig.epixhrDbgSel2 = "10001" else
       WFdacClrL_i       when EpixHRConfig.epixhrDbgSel2 = "10010" else
       iAsicGrst         when EpixHRConfig.epixhrDbgSel2 = "10011" else
-      asicTsShClk       when EpixHRConfig.epixhrDbgSel2 = "10100" else
-      asicTsAdcClk      when EpixHRConfig.epixhrDbgSel2 = "10101" else
-      asicTsRst         when EpixHRConfig.epixhrDbgSel2 = "10110" else
+      iAsicTsShClk      when EpixHRConfig.epixhrDbgSel2 = "10100" else
+      iAsicTsAdcClk     when EpixHRConfig.epixhrDbgSel2 = "10101" else
+      iAsicTsRst        when EpixHRConfig.epixhrDbgSel2 = "10110" else
       '0';
    
    -- Temporary one-shot for grabbing PGP op code
@@ -410,7 +413,10 @@ begin
    -- HR test structure signal assignments --
    ---------------------
    iasicTsData <= asicTsData;
-   iasicTsSync <= asicTsSync; 
+   iasicTsSync <= asicTsSync;
+   asicTsRst   <= iAsicTsRst;
+   asicTsShClk <= iAsicTsShClk;
+   asicTsAdcClk<= iAsicTsAdcClk;
 
    ---------------------
    -- Heart beat LED  --
@@ -696,9 +702,9 @@ begin
        axiWriteMaster => mAxiWriteMasters(TS_AXI_INDEX2_C),
        axiWriteSlave  => mAxiWriteSlaves(TS_AXI_INDEX2_C),
        -- ASICs acquisition signals
-       asicSDCLk      => asicTsAdcClk,
-       asicSDRst      => asicTsRst,
-       asicSHClk      => asicTsShClk
+       asicSDCLk      => iAsicTsAdcClk,
+       asicSDRst      => iAsicTsRst,
+       asicSHClk      => iAsicTsShClk
        );
 
 
