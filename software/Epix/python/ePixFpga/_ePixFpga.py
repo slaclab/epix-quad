@@ -400,7 +400,7 @@ class HrPrototypeFpgaRegisters(pr.Device):
       #############################################
       debugChEnum={0 :'Asic01DM',     1:'AsicSync',     2:'AsicEnA',      3:'AsicAcq',    4:'AsicEnB', 5:'AsicSR0',   6:'SaciClk',  7:'SaciCmd',  
                    8 :'saciRsp',      9:'SaciSelL(0)', 10:'SaciSelL(1)', 11:'asicRdClk', 12:'bitClk', 13:'byteClk', 14:'dacDin',  15: 'dacSclk',
-                   16:'dacCsL',      17:'dacLdacL',    18: 'dacClrL'}      
+                   16:'dacCsL',      17:'dacLdacL',    18: 'dacClrL',    19: 'AsicGrst', 20:'TsShClk',21:'TsAdcClk',22:'TsRst'}      
       
       #Setup registers & RemoteVariables
       
@@ -1647,7 +1647,8 @@ class AsicTSPktRegisters(pr.Device):
       self.add(pr.RemoteVariable(name='ResetCounters',   description='ResetCounters',        offset=0x00000020, bitSize=1,   bitOffset=0, base=pr.Bool, mode='RW', verify = False))
       self.add(pr.RemoteVariable(name='NumPixels',       description='Number of Pixels',     offset=0x00000024, bitSize=16,  bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
       self.add(pr.RemoteVariable(name='TSMode',          description='Matches TS ASIC mode', offset=0x00000028, bitSize=2,   bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
-      self.add(pr.RemoteVariable(name='TSDecEn',         description='Enables TS ASIC mode', offset=0x00000028, bitSize=1,   bitOffset=2, base=pr.UInt, disp = '{}', mode='RW'))
+      self.add(pr.RemoteVariable(name='TSDecEn',         description='Enables TS ASIC mode', offset=0x00000028, bitSize=1,   bitOffset=2, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='LatchFallEdge',   description='True to latch on the falling edge', offset=0x00000028, bitSize=1,   bitOffset=3, base=pr.Bool, mode='RW'))
 
       
       #####################################
