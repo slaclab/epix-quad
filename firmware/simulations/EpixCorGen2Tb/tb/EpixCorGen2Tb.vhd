@@ -40,10 +40,10 @@ architecture testbed of EpixCorGen2Tb is
    constant TPD_C             : time    := 1 ns;
    constant SIM_SPEEDUP_C     : boolean := true;
    
-   constant TRIG_PER_C     : time := 2 ms;
-   constant RUN_DLY_C      : time := 500 us;
+   constant TRIG_PER_C     : time := 1 ms;
+   constant RUN_DLY_C      : time := 200 us;
    constant RUN_WIDTH_C    : time := 100 us;
-   constant DAQ_DLY_C      : time := 800 us;
+   constant DAQ_DLY_C      : time := 250 us;
    constant DAQ_WIDTH_C    : time := 100 us;
    
    constant BUILD_INFO_TB_C : BuildInfoRetType := (
@@ -127,7 +127,6 @@ begin
          TPD_G             => TPD_C,
          BUILD_INFO_G      => toSlv (BUILD_INFO_TB_C),
          ASIC_TYPE_G       => EPIX10KA_C,
-         FPGA_BASE_CLOCK_G => x"00" & x"100000",
          -- Polarity of selected LVDS data lanes is swapped on gen2 ADC board
          ADC1_INVERT_CH    => "10000000",
          ADC2_INVERT_CH    => "00000010",
