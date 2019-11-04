@@ -38,6 +38,8 @@ use unisim.vcomponents.all;
 entity AdcPhyTop is
    generic (
       TPD_G             : time := 1 ns;
+      CLK_PERIOD_G      : real := 10.0e-9;
+      IDELAYCTRL_FREQ_G : real := 200.0;
       AXI_BASE_ADDR_G   : slv(31 downto 0) := (others => '0');
       ADC0_INVERT_CH    : slv(7 downto 0) := "00000000";
       ADC1_INVERT_CH    : slv(7 downto 0) := "00000000";
@@ -74,8 +76,7 @@ entity AdcPhyTop is
       adcChP              : in  slv(19 downto 0);
       adcChN              : in  slv(19 downto 0);
       -- ADC data output
-      adcValid            : out slv(19 downto 0);
-      adcData             : out Slv16Array(19 downto 0)
+      adcStreams          : out AxiStreamMasterArray(19 downto 0)
    );
 end AdcPhyTop;
 
@@ -125,7 +126,7 @@ architecture rtl of AdcPhyTop is
    signal mAxiReadSlaves   : AxiLiteReadSlaveArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
    
    -- ADC signals
-   signal adcStreams       : AxiStreamMasterArray(19 downto 0);
+   signal iAdcStreams       : AxiStreamMasterArray(19 downto 0);
    
    -- Power up reset to SERDES block
    signal adcCardPowerUpEdge : sl;
@@ -196,7 +197,7 @@ begin
          TPD_G             => TPD_G,
          NUM_CHANNELS_G    => 8,
          IODELAY_GROUP_G   => IODELAY_GROUP_G,
-         IDELAYCTRL_FREQ_G => 200.0,
+         IDELAYCTRL_FREQ_G => IDELAYCTRL_FREQ_G,
          ADC_INVERT_CH_G   => ADC_INVERT_CH_C(i)
       )
       port map (
@@ -218,7 +219,7 @@ begin
 
          -- Deserialized ADC Data
          adcStreamClk      => coreClk,
-         adcStreams        => adcStreams((i*8)+7 downto i*8)
+         adcStreams        => iAdcStreams((i*8)+7 downto i*8)
       );
       
    end generate;
@@ -236,7 +237,7 @@ begin
       TPD_G             => TPD_G,
       NUM_CHANNELS_G    => 4,
       IODELAY_GROUP_G   => IODELAY_GROUP_G,
-      IDELAYCTRL_FREQ_G => 200.0,
+      IDELAYCTRL_FREQ_G => IDELAYCTRL_FREQ_G,
       ADC_INVERT_CH_G   => ADC2_INVERT_CH
    )
    port map (
@@ -258,7 +259,7 @@ begin
 
       -- Deserialized ADC Data
       adcStreamClk      => coreClk,
-      adcStreams        => adcStreams(19 downto 16)
+      adcStreams        => iAdcStreams(19 downto 16)
    );
 
    -- Give a special reset to the SERDES blocks when power
@@ -296,7 +297,7 @@ begin
       clk               => coreClk,
       rst               => coreRst,
       -- ADC data stream inputs
-      adcStreams        => adcStreams,
+      adcStreams        => iAdcStreams,
       -- Axi Interface
       axilReadMaster  => mAxiReadMasters(ADCTEST_AXI_INDEX_C),
       axilReadSlave   => mAxiReadSlaves(ADCTEST_AXI_INDEX_C),
@@ -311,7 +312,7 @@ begin
    U_AdcConf : entity work.Ad9249ConfigNoPullup
    generic map (
       TPD_G             => TPD_G,
-      CLK_PERIOD_G      => 10.0e-9,
+      CLK_PERIOD_G      => CLK_PERIOD_G,
       CLK_EN_PERIOD_G   => 20.0e-9,
       NUM_CHIPS_G       => 2
    )
@@ -335,10 +336,7 @@ begin
    adcSpiCsb <= iAdcSpiCsb(2 downto 0);
    adcPdwn <= iAdcPdwn(2 downto 0);
    
-   GenAdcStr : for i in 0 to 19 generate 
-      adcData(i)  <= adcStreams(i).tData(15 downto 0);
-      adcValid(i) <= adcStreams(i).tValid;
-   end generate;
+   adcStreams <= iAdcStreams;
    
    
 end rtl;

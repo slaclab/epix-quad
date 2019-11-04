@@ -48,10 +48,7 @@ entity AcqControl is
       acqStart            : in    std_logic;
       acqBusy             : out   std_logic;
       readDone            : in    std_logic;
-      readValidA0         : out   std_logic;
-      readValidA1         : out   std_logic;
-      readValidA2         : out   std_logic;
-      readValidA3         : out   std_logic;
+      readValid           : out   slv(15 downto 0);
       adcPulse            : out   std_logic;
       readTps             : out   std_logic;
       roClkTail           : in    std_logic_vector(7 downto 0);
@@ -59,10 +56,6 @@ entity AcqControl is
       -- Configuration
       epixConfig          : in    EpixConfigType;
       epixConfigExt       : in    EpixConfigExtType;
-
-      -- SACI Command
-      saciReadoutReq      : out   std_logic;
-      saciReadoutAck      : in    std_logic;
 
       -- Fast ADC Readout
       adcClkP             : out   std_logic_vector(2 downto 0);
@@ -107,7 +100,6 @@ architecture AcqControl of AcqControl is
    signal acqStartEdge       : std_logic             := '0';
    signal adcCnt             : unsigned(31 downto 0) := (others => '0');
    signal adcSampCnt         : slv(31 downto 0) := (others => '0');
-   signal adcSampCntEn       : sl := '0';
    signal adcSampCntRst      : sl := '0';
    signal rstCnt             : unsigned(25 downto 0) := (others => '0');
    signal stateCnt           : unsigned(31 downto 0) := (others => '0');
@@ -117,15 +109,8 @@ architecture AcqControl of AcqControl is
    signal pixelCntEn         : sl := '0';
    signal pixelCntRst        : sl := '0';
    signal iReadValid         : sl := '0';
-   signal iReadValidWaitingA0: sl := '0';
-   signal iReadValidWaitingA1: sl := '0';
-   signal iReadValidWaitingA2: sl := '0';
-   signal iReadValidWaitingA3: sl := '0';
-   signal iReadValidTestMode : sl := '0';
-   signal readValidDelayedA0 : slv(127 downto 0);
-   signal readValidDelayedA1 : slv(127 downto 0);
-   signal readValidDelayedA2 : slv(127 downto 0);
-   signal readValidDelayedA3 : slv(127 downto 0);
+   signal iReadValidWaiting  : slv(15 downto 0) := (others=>'0');
+   signal readValidDelayed   : Slv128Array(15 downto 0);
    signal firstPixel         : sl := '0';
    signal firstPixelSet      : sl := '0';
    signal firstPixelRst      : sl := '0';
@@ -147,10 +132,6 @@ architecture AcqControl of AcqControl is
    signal iAsicClk         : std_logic := '0';
    
    signal iAsicSync         : sl;
-   
-   -- Alternate R0 that can be used for "original" polarity
-   -- (i.e., usually low except before ACQ and through readout)
-   signal iAsicR0Alt    : std_logic             := '0';
 
    -- State machine values
    type state is (IDLE_S,
@@ -164,10 +145,8 @@ architecture AcqControl of AcqControl is
                   SYNC_TO_ADC_S,
                   WAIT_ADC_S,
                   NEXT_CELL_S,
-                  
                   WAIT_DOUT_S,
                   NEXT_DOUT_S,
-                  
                   WAIT_FOR_READOUT_S,
                   SACI_RESET_S,
                   DONE_S);
@@ -200,9 +179,7 @@ begin
    asicAcq     <= iAsicAcq               when ePixConfig.manualPinControl(1) = '0' else
                   ePixConfig.asicPins(1) when ePixConfig.manualPinControl(1) = '1' else
                   'X';
-   -- removed asicR0Mode = '0' option. R0 must be low in IDLE otherwise the matrix configuration does not work.
-   asicR0      <= iAsicR0Alt             when ePixConfig.manualPinControl(2) = '0' and ePixConfig.asicR0Mode = '0' else
-                  iAsicR0Alt             when ePixConfig.manualPinControl(2) = '0' and ePixConfig.asicR0Mode = '1' else
+   asicR0      <= iAsicR0                when ePixConfig.manualPinControl(2) = '0' else
                   ePixConfig.asicPins(2) when ePixConfig.manualPinControl(2) = '1' else
                   'X';
    asicPpmat   <= iAsicPpmat             when ePixConfig.manualPinControl(3) = '0' else
@@ -223,7 +200,7 @@ begin
    readTps <= iTpsDelayed;
 
    --Busy is internal busy or data left in the pipeline
-   acqBusy <= iAcqBusy or iReadValidWaitingA0 or iReadValidWaitingA1 or iReadValidWaitingA2 or iReadValidWaitingA3;
+   acqBusy <= '1' when iAcqBusy = '1' or iReadValidWaiting /= 0 else '0';
    
    -- ADC pulse signal allows counting of adc cycles in other blocks
    adcPulse <= adcClkEdge;
@@ -235,245 +212,132 @@ begin
          dataIn     => acqStart,
          risingEdge => acqStartEdge
       );
+   
 
-
--- Normal path for taking data frames
-   --Asynchronous state machine outputs
-   process(curState,stateCnt,adcSampCnt,ePixConfig, saciReadoutAck, dummyAcq) begin
+   --Next state logic
+   process(curState,acqStartEdge,stateCnt,adcSampCnt,pixelCnt,ePixConfig,adcClkEdge,readDone,roClkTail,dummyAcq,epixConfigExt) begin
+      
       --All signals default values
       iAsicClk           <= '0' after tpd;
       iAsicR0            <= '1' after tpd;
-      iAsicR0Alt         <= '1' after tpd;
       iAsicPpmat         <= '0' after tpd;
       iAsicAcq           <= '0' after tpd;
       iAsicSync          <= '0' after tpd;
-      saciReadoutReq     <= '0' after tpd;
       stateCntEn         <= '0' after tpd;
       stateCntRst        <= '0' after tpd;
       adcSampCntRst      <= '0' after tpd;
-      adcSampCntEn       <= '0' after tpd;
       pixelCntEn         <= '0' after tpd;
       pixelCntRst        <= '1' after tpd;
       iAcqBusy           <= '1' after tpd;
       firstPixelRst      <= '0' after tpd;
       firstPixelSet      <= '0' after tpd;
-      iReadValidTestMode <= '0' after tpd;
-      case curState is
-         --Idle state, all signals zeroed out, counters reset
-         when IDLE_S =>
-            iAcqBusy        <= '0' after tpd;
-            stateCntRst     <= '1' after tpd;
-            adcSampCntRst   <= '1' after tpd;
-            firstPixelRst   <= '1' after tpd;
-            iAsicR0Alt      <= '0' after tpd;
-         --Bring up PPmat through just before the asicClk
-         when WAIT_R0_S =>
-            iAsicPpmat      <= '1' after tpd;
-            iAsicR0Alt      <= '0' after tpd;
-            if stateCnt < unsigned(ePixConfig.acqToAsicR0Delay)  and dummyAcq = '0' then
-               stateCntEn      <= '1' after tpd;
-            else
-               stateCntRst     <= '1' after tpd;
-            end if;
-         --Drop R0 low before asicAcq
-         when PULSE_R0_S =>
-            iAsicPpmat      <= '1' after tpd;
-            iAsicR0         <= '0' after tpd;
-            iAsicR0Alt      <= '0' after tpd;
-            if stateCnt < unsigned(ePixConfig.asicR0Width) and dummyAcq = '0' then
-               stateCntEn      <= '1' after tpd;
-            else 
-               stateCntRst     <= '1' after tpd;
-            end if;
-         --Bring up R0 and hold through the rest of the readout
-         when WAIT_ACQ_S =>
-            iAsicPpmat      <= '1' after tpd;
-            if stateCnt < unsigned(ePixConfig.asicR0ToAsicAcq) and dummyAcq = '0' then
-               stateCntEn      <= '1' after tpd;
-            elsif stateCnt < DUMMY_ASIC_R0_TO_ACQ_C-1 and dummyAcq = '1' then
-               stateCntEn      <= '1' after tpd;
-            else
-               stateCntRst     <= '1' after tpd;
-            end if;
-         --Bring up Acq and hold for a specified time
-         when ACQ_S =>
-            iAsicPpmat      <= '1' after tpd;
-            iAsicAcq        <= '1' after tpd;
-            if stateCnt < unsigned(ePixConfig.asicAcqWidth) and dummyAcq = '0' then
-               stateCntEn      <= '1' after tpd;
-            elsif stateCnt < DUMMY_ASIC_ACQ_WIDTH_C-1 and dummyAcq = '1' then
-               stateCntEn      <= '1' after tpd;
-            else
-               stateCntRst     <= '1' after tpd;
-            end if;
-         --Drop ACQ and send the SACI reset to reset pixel position
-         when DROP_ACQ_S =>
-            iAsicPpmat      <= '1' after tpd;
-            stateCntEn      <= '1' after tpd;
-         --Ensure that the minimum hold off time has been enforced before dropping PPmat
-         --Send the signal to read the test point system here (last item before power down)
-         when WAIT_PPMAT_S =>
-            iAsicPpmat <= '1' after tpd;
-            if stateCnt < unsigned(ePixConfig.asicAcqLToPPmatL) and dummyAcq = '0' then
-               stateCntEn   <= '1' after tpd;
-            else
-               stateCntRst  <= '1' after tpd;
-            end if;
-         -- Programmable delay before starting the readout after dropping PPmat
-         when WAIT_POST_PPMAT_S =>
-            if stateCnt < unsigned(ePixConfig.asicPPmatToReadout) and dummyAcq = '0' then
-               stateCntEn <= '1' after tpd;
-            else
-               stateCntRst <= '1' after tpd;
-            end if;
-         --Synchronize phases of ASIC RoClk and ADC clk
-         when SYNC_TO_ADC_S =>
-         --Wait for the ADC to readout the desired number of samples
-         --(or a minimum of the ASIC clock half period)
-         when WAIT_ADC_S =>
-            pixelCntRst   <= '0' after tpd;
-            adcSampCntEn  <= '1' after tpd;
-            firstPixelSet <= '1' after tpd;
-            if (stateCnt = unsigned(ePixConfig.asicRoClkHalfT)-1 or ePixConfig.asicRoClkHalfT = 0) and dummyAcq = '0' then
-               stateCntRst     <= '1' after tpd;
-               pixelCntEn      <= '1' after tpd;
-            elsif stateCnt = DUMMY_ASIC_ROCLK_HALFT_C-1 and dummyAcq = '1' then
-               stateCntRst     <= '1' after tpd;
-               pixelCntEn      <= '1' after tpd;
-            else
-               stateCntEn      <= '1' after tpd;
-            end if;
-         --Clock once to the next cell
-         when NEXT_CELL_S =>
-            pixelCntRst  <= '0' after tpd;
-            adcSampCntEn <= '1';
-            iAsicClk     <= '1' after tpd;
-            if (stateCnt = unsigned(ePixConfig.asicRoClkHalfT)-1 or ePixConfig.asicRoClkHalfT = 0) and dummyAcq = '0' then
-               adcSampCntRst   <= '1' after tpd;
-               stateCntRst     <= '1' after tpd;
-            elsif stateCnt = DUMMY_ASIC_ROCLK_HALFT_C-1 and dummyAcq = '1' then
-               adcSampCntRst   <= '1' after tpd;
-               stateCntRst     <= '1' after tpd;
-            else
-               stateCntEn      <= '1' after tpd;
-            end if;
-         
-         
-         -- continue asicClk until all douts are captured (epix10ka only)
-         when NEXT_DOUT_S =>
-            pixelCntRst  <= '0' after tpd;
-            iAsicClk     <= '1' after tpd;
-            if (stateCnt = unsigned(ePixConfig.asicRoClkHalfT)-1 or ePixConfig.asicRoClkHalfT = 0) and dummyAcq = '0' then
-               stateCntRst     <= '1' after tpd;
-            elsif stateCnt = DUMMY_ASIC_ROCLK_HALFT_C-1 and dummyAcq = '1' then
-               stateCntRst     <= '1' after tpd;
-            else
-               stateCntEn      <= '1' after tpd;
-            end if;
-            
-         when WAIT_DOUT_S =>
-            pixelCntRst   <= '0' after tpd;
-            if (stateCnt = unsigned(ePixConfig.asicRoClkHalfT)-1 or ePixConfig.asicRoClkHalfT = 0) and dummyAcq = '0' then
-               stateCntRst     <= '1' after tpd;
-               pixelCntEn      <= '1' after tpd;
-            elsif stateCnt = DUMMY_ASIC_ROCLK_HALFT_C-1 and dummyAcq = '1' then
-               stateCntRst     <= '1' after tpd;
-               pixelCntEn      <= '1' after tpd;
-            else
-               stateCntEn      <= '1' after tpd;
-            end if;
-            
-         
-         --Wait for readout to finish before sending SACI
-         --"prepare for readout."  This way we avoid cross-talk
-         --with the ADC lines.
-         when WAIT_FOR_READOUT_S =>
-            iAcqBusy       <= '0' after tpd;
-            iAsicR0Alt     <= '0' after tpd;
-         --Send SACI prepare for readout for the next event
-         when SACI_RESET_S =>
-            saciReadoutReq <= '0' after tpd; -- use SYNC pin to allow higher frame rates
-            iAsicSync      <= '1' after tpd;
-            iAcqBusy       <= '0' after tpd;
-            iAsicR0Alt     <= '0' after tpd;
-            if stateCnt < SYNC_WIDTH_C then
-               stateCntEn      <= '1' after tpd;
-            else
-               stateCntRst     <= '1' after tpd;
-            end if;
-         --Done
-         when DONE_S =>
-            iAcqBusy       <= '0' after tpd;
-            iAsicR0Alt     <= '0' after tpd;
-         --Undefined states: treat with default
-         when others =>
-      end case;
-   end process;
-
-   --Next state logic
-   process(curState,acqStartEdge,stateCnt,saciReadoutAck,adcSampCnt,pixelCnt,ePixConfig,adcClkEdge,readDone,roClkTail,dummyAcq,epixConfigExt) begin
-      
-      dummyAcqSet <= '0' after tpd;
-      dummyAcqClr <= '0' after tpd;
+      dummyAcqSet        <= '0' after tpd;
+      dummyAcqClr        <= '0' after tpd;
       
       case curState is
          --Remain idle until we get the acqStart signal
          when IDLE_S =>
-            dummyAcqClr <= '1' after tpd;
+            iAcqBusy       <= '0' after tpd;
+            stateCntRst    <= '1' after tpd;
+            adcSampCntRst  <= '1' after tpd;
+            firstPixelRst  <= '1' after tpd;
+            iAsicR0        <= '0' after tpd;
+            dummyAcqClr    <= '1' after tpd;
             if acqStartEdge = '1' then
                nxtState <= WAIT_R0_S after tpd;
             else
                nxtState <= curState after tpd;
             end if;
+         
          --Wait a specified number of clock cycles before bringing asicR0 up
          when WAIT_R0_S =>
-            if stateCnt = unsigned(ePixConfig.acqToAsicR0Delay) or dummyAcq = '1' then
-               nxtState <= PULSE_R0_S after tpd;
+            iAsicPpmat     <= '1' after tpd;
+            iAsicR0        <= '0' after tpd;
+            stateCntEn     <= '1' after tpd;
+            if stateCnt >= unsigned(ePixConfig.acqToAsicR0Delay) or dummyAcq = '1' then
+               stateCntEn  <= '0' after tpd;
+               stateCntRst <= '1' after tpd;
+               nxtState    <= PULSE_R0_S after tpd;
             else
                nxtState <= curState after tpd;
             end if; 
+         
          --Pulse R0 low for a specified number of clock cycles
          when PULSE_R0_S =>
-            if stateCnt = unsigned(ePixConfig.asicR0Width) or dummyAcq = '1' then
-               nxtState <= WAIT_ACQ_S after tpd;
+            iAsicPpmat     <= '1' after tpd;
+            iAsicR0        <= '0' after tpd;
+            stateCntEn     <= '1' after tpd;
+            if stateCnt >= unsigned(ePixConfig.asicR0Width) or dummyAcq = '1' then
+               stateCntEn  <= '0' after tpd;
+               stateCntRst <= '1' after tpd;
+               nxtState    <= WAIT_ACQ_S after tpd;
             else
                nxtState <= curState after tpd;
             end if;
+         
          --Wait a specified number of clock cycles before bringing asicAcq up
          when WAIT_ACQ_S => 
-            if stateCnt = unsigned(ePixConfig.asicR0ToAsicAcq) and dummyAcq = '0' then
-               nxtState <= ACQ_S after tpd;
-            elsif stateCnt = DUMMY_ASIC_R0_TO_ACQ_C-1 and dummyAcq = '1' then
-               nxtState <= ACQ_S after tpd;
+            iAsicPpmat     <= '1' after tpd;
+            stateCntEn     <= '1' after tpd;
+            if stateCnt >= unsigned(ePixConfig.asicR0ToAsicAcq) and dummyAcq = '0' then
+               stateCntEn  <= '0' after tpd;
+               stateCntRst <= '1' after tpd;
+               nxtState    <= ACQ_S after tpd;
+            elsif stateCnt >= DUMMY_ASIC_R0_TO_ACQ_C-1 and dummyAcq = '1' then
+               stateCntEn  <= '0' after tpd;
+               stateCntRst <= '1' after tpd;
+               nxtState    <= ACQ_S after tpd;
             else
                nxtState <= curState after tpd;
             end if;
+         
          --Hold acq high for a specified time
          when ACQ_S =>
-            if stateCnt = unsigned(ePixConfig.asicAcqWidth) and dummyAcq = '0' then
-               nxtState <= DROP_ACQ_S after tpd;
-            elsif stateCnt = DUMMY_ASIC_ACQ_WIDTH_C-1 and dummyAcq = '1' then
-               nxtState <= DROP_ACQ_S after tpd;
+            iAsicPpmat     <= '1' after tpd;
+            iAsicAcq       <= '1' after tpd;
+            stateCntEn     <= '1' after tpd;
+            if stateCnt >= unsigned(ePixConfig.asicAcqWidth) and dummyAcq = '0' then
+               stateCntEn  <= '0' after tpd;
+               stateCntRst <= '1' after tpd;
+               nxtState    <= DROP_ACQ_S after tpd;
+            elsif stateCnt >= DUMMY_ASIC_ACQ_WIDTH_C-1 and dummyAcq = '1' then
+               stateCntEn  <= '0' after tpd;
+               stateCntRst <= '1' after tpd;
+               nxtState    <= DROP_ACQ_S after tpd;
             else
                nxtState <= curState after tpd;
             end if;
+         
          --Wait for the matrix counter to reset (via saci interface)
          when DROP_ACQ_S =>
+            iAsicPpmat      <= '1' after tpd;
+            stateCntEn      <= '1' after tpd;
+            
             nxtState <= WAIT_PPMAT_S after tpd;
+         
          --Ensure that the minimum hold off time has been enforced before dropping PPmat
          when WAIT_PPMAT_S =>
-            if stateCnt = unsigned(ePixConfig.asicAcqLToPPmatL) or dummyAcq = '1' then
-               nxtState <= WAIT_POST_PPMAT_S after tpd;
+            iAsicPpmat     <= '1' after tpd;
+            stateCntEn     <= '1' after tpd;
+            if stateCnt >= unsigned(ePixConfig.asicAcqLToPPmatL) or dummyAcq = '1' then
+               stateCntEn  <= '0' after tpd;
+               stateCntRst <= '1' after tpd;
+               nxtState    <= WAIT_POST_PPMAT_S after tpd;
             else
                nxtState <= curState after tpd;
             end if;
+         
          -- Programmable delay before starting the readout after dropping PPmat
          when WAIT_POST_PPMAT_S =>
-            if stateCnt = unsigned(ePixConfig.asicPPmatToReadout) or dummyAcq = '1' then
-               nxtState <= SYNC_TO_ADC_S after tpd;
+            stateCntEn     <= '1' after tpd;
+            if stateCnt >= unsigned(ePixConfig.asicPPmatToReadout) or dummyAcq = '1' then
+               stateCntEn  <= '0' after tpd;
+               stateCntRst <= '1' after tpd;
+               nxtState    <= SYNC_TO_ADC_S after tpd;
             else
                nxtState <= curState after tpd;
             end if;
+         
          --Synchronize phases of ASIC RoClk and ADC clk
          when SYNC_TO_ADC_S =>
             if adcClkEdge = '1' then
@@ -481,9 +345,16 @@ begin
             else
                nxtState <= curState after tpd;
             end if;
+         
          --ADC reads out while we wait a half period of RoClk.  If we're done with all pixels, finish.
          when WAIT_ADC_S => 
-            if (stateCnt = unsigned(ePixConfig.asicRoClkHalfT)-1 or unsigned(ePixConfig.asicRoClkHalfT) = 0) and dummyAcq = '0' then
+            pixelCntRst    <= '0' after tpd;
+            firstPixelSet  <= '1' after tpd;
+            stateCntEn     <= '1' after tpd;
+            if stateCnt >= unsigned(ePixConfig.asicRoClkHalfT(31 downto 16))-1 and dummyAcq = '0' then
+               stateCntEn  <= '0' after tpd;
+               stateCntRst <= '1' after tpd;
+               pixelCntEn  <= '1' after tpd;
                if pixelCnt < unsigned(ePixConfig.totalPixelsToRead)-1 then
                   nxtState <= NEXT_CELL_S after tpd;
                else
@@ -495,7 +366,10 @@ begin
                end if;
             -- do faster (dummy) readout 
             -- DUMMY_ASIC_ROCLK_HALFT_C = 2 -> 40ns -> 25MHz (this clock is divided by 4 inside epix10kA)
-            elsif stateCnt = DUMMY_ASIC_ROCLK_HALFT_C-1 and dummyAcq = '1' then
+            elsif stateCnt >= DUMMY_ASIC_ROCLK_HALFT_C-1 and dummyAcq = '1' then
+               stateCntEn  <= '0' after tpd;
+               stateCntRst <= '1' after tpd;
+               pixelCntEn  <= '1' after tpd;
                if pixelCnt < unsigned(ePixConfig.totalPixelsToRead)-1 then
                   nxtState <= NEXT_CELL_S after tpd;
                else
@@ -508,32 +382,54 @@ begin
             else
                nxtState <= curState after tpd;
             end if;
+         
          --Toggle the asicClk, then back to ADC readouts if there are more pixels to read.
          when NEXT_CELL_S => 
-            if (stateCnt = unsigned(ePixConfig.asicRoClkHalfT)-1 or unsigned(ePixConfig.asicRoClkHalfT) = 0) and dummyAcq = '0' then
-               nxtState <= WAIT_ADC_S after tpd;
+            pixelCntRst    <= '0' after tpd;
+            iAsicClk       <= '1' after tpd;
+            stateCntEn     <= '1' after tpd;
+            if stateCnt >= unsigned(ePixConfig.asicRoClkHalfT(15 downto 0))-1 and dummyAcq = '0' then
+               stateCntEn     <= '0' after tpd;
+               adcSampCntRst  <= '1' after tpd;
+               stateCntRst    <= '1' after tpd;
+               nxtState       <= WAIT_ADC_S after tpd;
             -- do faster (dummy) readout 
             -- DUMMY_ASIC_ROCLK_HALFT_C = 2 -> 40ns -> 25MHz (this clock is divided by 4 inside epix10kA)
-            elsif stateCnt = DUMMY_ASIC_ROCLK_HALFT_C-1 and dummyAcq = '1' then
-               nxtState <= WAIT_ADC_S after tpd;
+            elsif stateCnt >= DUMMY_ASIC_ROCLK_HALFT_C-1 and dummyAcq = '1' then
+               stateCntEn     <= '0' after tpd;
+               adcSampCntRst  <= '1' after tpd;
+               stateCntRst    <= '1' after tpd;
+               nxtState       <= WAIT_ADC_S after tpd;
             else
                nxtState <= curState after tpd;
             end if;
          
          -- continue asicClk untill all douts are captured (epix10ka only)
          when NEXT_DOUT_S => 
-            if (stateCnt = unsigned(ePixConfig.asicRoClkHalfT)-1 or unsigned(ePixConfig.asicRoClkHalfT) = 0) and dummyAcq = '0' then
-               nxtState <= WAIT_DOUT_S after tpd;
+            pixelCntRst <= '0' after tpd;
+            iAsicClk    <= '1' after tpd;
+            stateCntEn  <= '1' after tpd;
+            if stateCnt >= unsigned(ePixConfig.asicRoClkHalfT(15 downto 0))-1 and dummyAcq = '0' then
+               stateCntEn  <= '0' after tpd;
+               stateCntRst <= '1' after tpd;
+               nxtState    <= WAIT_DOUT_S after tpd;
             -- do faster (dummy) readout 
             -- DUMMY_ASIC_ROCLK_HALFT_C = 2 -> 40ns -> 25MHz (this clock is divided by 4 inside epix10kA)
-            elsif stateCnt = DUMMY_ASIC_ROCLK_HALFT_C-1 and dummyAcq = '1' then
-               nxtState <= WAIT_DOUT_S after tpd;
+            elsif stateCnt >= DUMMY_ASIC_ROCLK_HALFT_C-1 and dummyAcq = '1' then
+               stateCntEn  <= '0' after tpd;
+               stateCntRst <= '1' after tpd;
+               nxtState    <= WAIT_DOUT_S after tpd;
             else 
                nxtState <= curState after tpd;
             end if;
          
          when WAIT_DOUT_S => 
-            if (stateCnt = unsigned(ePixConfig.asicRoClkHalfT)-1 or unsigned(ePixConfig.asicRoClkHalfT) = 0) and dummyAcq = '0' then
+            pixelCntRst <= '0' after tpd;
+            stateCntEn  <= '1' after tpd;
+            if stateCnt >= unsigned(ePixConfig.asicRoClkHalfT(31 downto 16))-1 and dummyAcq = '0' then
+               stateCntEn  <= '0' after tpd;
+               stateCntRst <= '1' after tpd;
+               pixelCntEn  <= '1' after tpd;
                if pixelCnt < unsigned(ePixConfig.totalPixelsToRead)+unsigned(roClkTail)-1 then
                   nxtState <= NEXT_DOUT_S after tpd;
                else
@@ -541,7 +437,10 @@ begin
                end if;
             -- do faster (dummy) readout 
             -- DUMMY_ASIC_ROCLK_HALFT_C = 2 -> 40ns -> 25MHz (this clock is divided by 4 inside epix10kA)
-            elsif stateCnt = DUMMY_ASIC_ROCLK_HALFT_C-1 and dummyAcq = '1' then
+            elsif stateCnt >= DUMMY_ASIC_ROCLK_HALFT_C-1 and dummyAcq = '1' then
+               stateCntEn  <= '0' after tpd;
+               stateCntRst <= '1' after tpd;
+               pixelCntEn  <= '1' after tpd;
                if pixelCnt < unsigned(ePixConfig.totalPixelsToRead)+unsigned(roClkTail)-1 then
                   nxtState <= NEXT_DOUT_S after tpd;
                else
@@ -553,15 +452,25 @@ begin
          
          --Wait for readout to finish before sending SACI commands
          when WAIT_FOR_READOUT_S =>
+            iAcqBusy    <= '0' after tpd;
+            iAsicR0     <= '0' after tpd;
+            
             if readDone = '1' then
                nxtState <= SACI_RESET_S;
             else
                nxtState <= curState after tpd;
             end if;
+         
          --Use SACI prepare for readout
          when SACI_RESET_S =>
+            iAsicSync  <= '1' after tpd;
+            iAcqBusy   <= '0' after tpd;
+            iAsicR0    <= '0' after tpd;
+            stateCntEn <= '1' after tpd;
             -- arbitrary sync pulse width (1us)
             if stateCnt >= SYNC_WIDTH_C then
+               stateCntEn  <= '0' after tpd;
+               stateCntRst <= '1' after tpd;
                -- this is implementing the gost effect correction in epix10ka
                -- until we have new ASICs with a proper fix
                -- run one more dummy ASIC acquisition cycle
@@ -576,9 +485,13 @@ begin
             else
                nxtState <= curState after tpd;
             end if;
+         
          --Wait for readout to be done
          when DONE_S =>
-            nxtState <= IDLE_S after tpd;
+            iAcqBusy    <= '0' after tpd;
+            iAsicR0     <= '0' after tpd;
+            nxtState    <= IDLE_S after tpd;
+         
          --Send back to IDLE if we end up in an undefined state
          when others =>
             nxtState <= IDLE_S after tpd;
@@ -608,12 +521,12 @@ begin
       end if;
    end process;
 
-   --Count the number of ADC clocks sent out since last reset
+   -- Count the number of ADC samples within a single readout clock cycle 
    process(sysClk) begin
       if rising_edge(sysClk) then
          if sysClkRst = '1' or adcSampCntRst = '1' then
             adcSampCnt <= (others => '0') after tpd;
-         elsif adcSampCntEn = '1' and adcCnt = unsigned(ePixConfig.adcClkHalfT)-1 and adcClk = '0' then
+         elsif adcClkEdge = '1' then
             adcSampCnt <= adcSampCnt + 1 after tpd;
          end if;
       end if;
@@ -626,11 +539,11 @@ begin
          iReadValid <= '0';
          if ASIC_TYPE_G = EPIX10KA_C then
             -- in epix10ka analog output is valid after 4 readout clocks
-            if adcSampCnt < ePixConfig.adcReadsPerPixel+1 and adcSampCnt > 0 and firstPixel = '0' and pixelCnt(1 downto 0) = 3 then
+            if adcSampCnt < ePixConfig.adcReadsPerPixel and firstPixel = '0' and pixelCnt(1 downto 0) = 3 then
                iReadValid <= '1' after tpd;
             end if;
          else
-            if adcSampCnt < ePixConfig.adcReadsPerPixel+1 and adcSampCnt > 0 and firstPixel = '0' then
+            if adcSampCnt < ePixConfig.adcReadsPerPixel and firstPixel = '0' then
                iReadValid <= '1' after tpd;
             end if;
          end if;
@@ -697,60 +610,41 @@ begin
    process(sysClk) begin
       if rising_edge(sysClk) then
          if sysClkRst = '1' then
-            readValidDelayedA0 <= (others => '0') after tpd;
-            readValidDelayedA1 <= (others => '0') after tpd;
-            readValidDelayedA2 <= (others => '0') after tpd;
-            readValidDelayedA3 <= (others => '0') after tpd;       
+            readValidDelayed <= (others => (others => '0')) after tpd;     
          elsif (adcClkEdge = '1') then
             --Shift register to allow picking off delayed samples
             for i in 1 to 127 loop
-               readValidDelayedA0(i) <= readValidDelayedA0(i-1) after tpd; 
-               readValidDelayedA1(i) <= readValidDelayedA1(i-1) after tpd; 
-               readValidDelayedA2(i) <= readValidDelayedA2(i-1) after tpd; 
-               readValidDelayedA3(i) <= readValidDelayedA3(i-1) after tpd; 
+               for j in 15 downto 0 loop
+                  readValidDelayed(j)(i) <= readValidDelayed(j)(i-1) after tpd; 
+               end loop;
             end loop;
             --Assignment of shifted-in bits
             --Test mode can only use the first oversampling shift register
-            readValidDelayedA0(0) <= iReadValid or iReadValidTestMode after tpd;
-            readValidDelayedA1(0) <= iReadValid or iReadValidTestMode after tpd;
-            readValidDelayedA2(0) <= iReadValid or iReadValidTestMode after tpd;
-            readValidDelayedA3(0) <= iReadValid or iReadValidTestMode after tpd;
+            for j in 15 downto 0 loop
+               readValidDelayed(j)(0) <= iReadValid after tpd;
+            end loop;
          end if;
       end if;
    end process; 
    --Wire up the delayed output
-   readValidA0 <= readValidDelayedA0( conv_integer(epixConfig.pipelineDelayA0(6 downto 0)) );
-   readValidA1 <= readValidDelayedA1( conv_integer(epixConfig.pipelineDelayA1(6 downto 0)) );
-   readValidA2 <= readValidDelayedA2( conv_integer(epixConfig.pipelineDelayA2(6 downto 0)) );
-   readValidA3 <= readValidDelayedA3( conv_integer(epixConfig.pipelineDelayA3(6 downto 0)) );
+   G_OUTS : for j in 15 downto 0 generate
+      readValid(j) <= readValidDelayed(j)( conv_integer(epixConfigExt.pipelineDelay(j)) );
+   end generate;
    --Single bit signal that indicates whether there is anything left in the pipeline
    process(sysClk)
-      variable runningOrA0 : std_logic := '0';
-      variable runningOrA1 : std_logic := '0';
-      variable runningOrA2 : std_logic := '0';
-      variable runningOrA3 : std_logic := '0';
+      variable runningOr : slv(15 downto 0) := (others=>'0');
    begin
       if rising_edge(sysClk) then
          if (sysClkRst = '1') then
-            iReadValidWaitingA0 <= '0';
-            iReadValidWaitingA1 <= '0';
-            iReadValidWaitingA2 <= '0';
-            iReadValidWaitingA3 <= '0';
+            iReadValidWaiting <= (others=>'0');
          else
-            runningOrA0 := '0';
-            runningOrA1 := '0';
-            runningOrA2 := '0';
-            runningOrA3 := '0';
+            runningOr := (others=>'0');
             for i in 0 to 127 loop
-               runningOrA0 := runningOrA0 or readValidDelayedA0(i);
-               runningOrA1 := runningOrA1 or readValidDelayedA1(i);
-               runningOrA2 := runningOrA2 or readValidDelayedA2(i);
-               runningOrA3 := runningOrA3 or readValidDelayedA3(i);
+               for j in 15 downto 0 loop
+                  runningOr(j) := runningOr(j) or readValidDelayed(j)(i);
+               end loop;
             end loop;
-            iReadValidWaitingA0 <= runningOrA0;
-            iReadValidWaitingA1 <= runningOrA1;
-            iReadValidWaitingA2 <= runningOrA2;
-            iReadValidWaitingA3 <= runningOrA3;
+            iReadValidWaiting <= runningOr;
          end if;
       end if;
    end process;

@@ -48,22 +48,31 @@ entity RegExtControl is
       axiWriteMaster : in  AxiLiteWriteMasterType;
       axiWriteSlave  : out AxiLiteWriteSlaveType;
       -- Register Inputs/Outputs (axiClk domain)
-      epixConfigExt  : out EpixConfigExtType
+      epixConfigExt  : out EpixConfigExtType;
+      epixConfig     : in  EpixConfigType
    );
 end RegExtControl;
 
 architecture rtl of RegExtControl is
    
    type RegType is record
-      epixRegOut     : EpixConfigExtType;
-      axiReadSlave   : AxiLiteReadSlaveType;
-      axiWriteSlave  : AxiLiteWriteSlaveType;
+      epixRegOut        : EpixConfigExtType;
+      axiReadSlave      : AxiLiteReadSlaveType;
+      axiWriteSlave     : AxiLiteWriteSlaveType;
+      pipelineDelayA0   : slv(31 downto 0);
+      pipelineDelayA1   : slv(31 downto 0);
+      pipelineDelayA2   : slv(31 downto 0);
+      pipelineDelayA3   : slv(31 downto 0);
    end record RegType;
    
    constant REG_INIT_C : RegType := (
-      epixRegOut     => EPIX_CONFIG_EXT_INIT_C,
-      axiReadSlave   => AXI_LITE_READ_SLAVE_INIT_C,
-      axiWriteSlave  => AXI_LITE_WRITE_SLAVE_INIT_C
+      epixRegOut        => EPIX_CONFIG_EXT_INIT_C,
+      axiReadSlave      => AXI_LITE_READ_SLAVE_INIT_C,
+      axiWriteSlave     => AXI_LITE_WRITE_SLAVE_INIT_C,
+      pipelineDelayA0   => (others=>'0'),
+      pipelineDelayA1   => (others=>'0'),
+      pipelineDelayA2   => (others=>'0'),
+      pipelineDelayA3   => (others=>'0')
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -74,13 +83,46 @@ begin
    -------------------------------
    -- Configuration Register
    -------------------------------  
-   comb : process (axiReadMaster, axiRst, axiWriteMaster, r) is
+   comb : process (axiReadMaster, axiRst, axiWriteMaster, r, epixConfig) is
       variable v        : RegType;
       variable regCon   : AxiLiteEndPointType;
       
    begin
       -- Latch the current value
       v := r;   
+      
+      -- set per bank delays when per asic delay is set
+      -- this is for software backwards compatibility
+      if epixConfig.pipelineDelayA0 /= r.pipelineDelayA0 then
+         v.pipelineDelayA0 := epixConfig.pipelineDelayA0;
+         v.epixRegOut.pipelineDelay( 0) := epixConfig.pipelineDelayA0(6 downto 0);
+         v.epixRegOut.pipelineDelay( 1) := epixConfig.pipelineDelayA0(6 downto 0);
+         v.epixRegOut.pipelineDelay( 2) := epixConfig.pipelineDelayA0(6 downto 0);
+         v.epixRegOut.pipelineDelay(10) := epixConfig.pipelineDelayA0(6 downto 0);
+      end if;
+      if epixConfig.pipelineDelayA1 /= r.pipelineDelayA1 then
+         v.pipelineDelayA1 := epixConfig.pipelineDelayA1;
+         v.epixRegOut.pipelineDelay( 8) := epixConfig.pipelineDelayA1(6 downto 0);
+         v.epixRegOut.pipelineDelay( 9) := epixConfig.pipelineDelayA1(6 downto 0);
+         v.epixRegOut.pipelineDelay( 3) := epixConfig.pipelineDelayA1(6 downto 0);
+         v.epixRegOut.pipelineDelay( 4) := epixConfig.pipelineDelayA1(6 downto 0);
+      end if;
+      if epixConfig.pipelineDelayA2 /= r.pipelineDelayA2 then
+         v.pipelineDelayA2 := epixConfig.pipelineDelayA2;
+         v.epixRegOut.pipelineDelay( 5) := epixConfig.pipelineDelayA2(6 downto 0);
+         v.epixRegOut.pipelineDelay( 6) := epixConfig.pipelineDelayA2(6 downto 0);
+         v.epixRegOut.pipelineDelay( 7) := epixConfig.pipelineDelayA2(6 downto 0);
+         v.epixRegOut.pipelineDelay(15) := epixConfig.pipelineDelayA2(6 downto 0);
+      end if;
+      if epixConfig.pipelineDelayA3 /= r.pipelineDelayA3 then
+         v.pipelineDelayA3 := epixConfig.pipelineDelayA3;
+         v.epixRegOut.pipelineDelay(11) := epixConfig.pipelineDelayA3(6 downto 0);
+         v.epixRegOut.pipelineDelay(12) := epixConfig.pipelineDelayA3(6 downto 0);
+         v.epixRegOut.pipelineDelay(13) := epixConfig.pipelineDelayA3(6 downto 0);
+         v.epixRegOut.pipelineDelay(14) := epixConfig.pipelineDelayA3(6 downto 0);
+      end if;
+      
+      
       
       -- Reset data
       v.axiReadSlave.rdata       := (others => '0');
@@ -92,6 +134,24 @@ begin
       axiSlaveRegister (regCon, x"000" & "00",  0, v.epixRegOut.ghostCorr);
       
       axiSlaveRegister (regCon, x"200" & "00",  0, v.epixRegOut.dbgReg);
+      
+      axiSlaveRegister (regCon, x"C00",  0, v.epixRegOut.pipelineDelay( 0));
+      axiSlaveRegister (regCon, x"C04",  0, v.epixRegOut.pipelineDelay( 1));
+      axiSlaveRegister (regCon, x"C08",  0, v.epixRegOut.pipelineDelay( 2));
+      axiSlaveRegister (regCon, x"C0C",  0, v.epixRegOut.pipelineDelay(10));
+      axiSlaveRegister (regCon, x"C10",  0, v.epixRegOut.pipelineDelay( 4));
+      axiSlaveRegister (regCon, x"C14",  0, v.epixRegOut.pipelineDelay( 3));
+      axiSlaveRegister (regCon, x"C18",  0, v.epixRegOut.pipelineDelay( 9));
+      axiSlaveRegister (regCon, x"C1C",  0, v.epixRegOut.pipelineDelay( 8));
+      axiSlaveRegister (regCon, x"C20",  0, v.epixRegOut.pipelineDelay(15));
+      axiSlaveRegister (regCon, x"C24",  0, v.epixRegOut.pipelineDelay( 7));
+      axiSlaveRegister (regCon, x"C28",  0, v.epixRegOut.pipelineDelay( 6));
+      axiSlaveRegister (regCon, x"C2C",  0, v.epixRegOut.pipelineDelay( 5));
+      axiSlaveRegister (regCon, x"C30",  0, v.epixRegOut.pipelineDelay(11));
+      axiSlaveRegister (regCon, x"C34",  0, v.epixRegOut.pipelineDelay(12));
+      axiSlaveRegister (regCon, x"C38",  0, v.epixRegOut.pipelineDelay(13));
+      axiSlaveRegister (regCon, x"C3C",  0, v.epixRegOut.pipelineDelay(14));
+      
       
       axiSlaveDefault(regCon, v.axiWriteSlave, v.axiReadSlave, AXI_ERROR_RESP_G);
       

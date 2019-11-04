@@ -273,7 +273,37 @@ begin
       axilWriteSlave   => sAxiLiteWriteSlave
    );   
    
-   -- Lane 0, VC0 TX, streaming data out 
+   
+   -- Lane 0, VC0 RX/TX, Register access control        
+   U_Vc1AxiMasterRegisters : entity work.SsiAxiLiteMaster 
+      generic map (
+         USE_BUILT_IN_G      => false,
+         EN_32BIT_ADDR_G     => true,
+         AXI_STREAM_CONFIG_G => SSI_PGP2B_CONFIG_C,
+         SLAVE_READY_EN_G    => SIMULATION_G
+      )
+      port map (
+         -- Streaming Slave (Rx) Interface (sAxisClk domain) 
+         sAxisClk    => iPgpClk,
+         sAxisRst    => stableRst,
+         sAxisMaster => pgpRxMasters(0),
+         sAxisSlave  => pgpRxSlaves(0),
+         sAxisCtrl   => pgpRxCtrl(0),
+         -- Streaming Master (Tx) Data Interface (mAxisClk domain)
+         mAxisClk    => iPgpClk,
+         mAxisRst    => stableRst,
+         mAxisMaster => pgpTxMasters(0),
+         mAxisSlave  => pgpTxSlaves(0),
+         -- AXI Lite Bus (axiLiteClk domain)
+         axiLiteClk          => axiClk,
+         axiLiteRst          => axiRst,
+         mAxiLiteWriteMaster => mAxiLiteWriteMaster,
+         mAxiLiteWriteSlave  => mAxiLiteWriteSlave,
+         mAxiLiteReadMaster  => mAxiLiteReadMaster,
+         mAxiLiteReadSlave   => mAxiLiteReadSlave
+      );
+   
+   -- Lane 0, VC1 TX, streaming data out 
    U_Vc0SsiTxFifo : entity work.AxiStreamFifo
       generic map (
          --EN_FRAME_FILTER_G   => true,
@@ -295,9 +325,9 @@ begin
          -- Master Port
          mAxisClk    => iPgpClk,
          mAxisRst    => stableRst,
-         mAxisMaster => pgpTxMasters(0),
-         mAxisSlave  => pgpTxSlaves(0));     
-   -- Lane 0, VC0 RX, Command processor
+         mAxisMaster => pgpTxMasters(1),
+         mAxisSlave  => pgpTxSlaves(1));     
+   -- Lane 0, VC1 RX, Command processor
    U_Vc0SsiCmdMaster : entity work.SsiCmdMaster
       generic map (
          SLAVE_READY_EN_G    => SIMULATION_G,
@@ -306,43 +336,14 @@ begin
          -- Streaming Data Interface
          axisClk     => iPgpClk,
          axisRst     => stableRst,
-         sAxisMaster => pgpRxMasters(0),
-         sAxisSlave  => pgpRxSlaves(0),
-         sAxisCtrl   => pgpRxCtrl(0),
+         sAxisMaster => pgpRxMasters(1),
+         sAxisSlave  => pgpRxSlaves(1),
+         sAxisCtrl   => pgpRxCtrl(1),
          -- Command signals
          cmdClk      => axiClk,
          cmdRst      => axiRst,
          cmdMaster   => ssiCmd_0
       );     
-   
-   -- Lane 0, VC1 RX/TX, Register access control        
-   U_Vc1AxiMasterRegisters : entity work.SsiAxiLiteMaster 
-      generic map (
-         USE_BUILT_IN_G      => false,
-         EN_32BIT_ADDR_G     => true,
-         AXI_STREAM_CONFIG_G => SSI_PGP2B_CONFIG_C,
-         SLAVE_READY_EN_G    => SIMULATION_G
-      )
-      port map (
-         -- Streaming Slave (Rx) Interface (sAxisClk domain) 
-         sAxisClk    => iPgpClk,
-         sAxisRst    => stableRst,
-         sAxisMaster => pgpRxMasters(1),
-         sAxisSlave  => pgpRxSlaves(1),
-         sAxisCtrl   => pgpRxCtrl(1),
-         -- Streaming Master (Tx) Data Interface (mAxisClk domain)
-         mAxisClk    => iPgpClk,
-         mAxisRst    => stableRst,
-         mAxisMaster => pgpTxMasters(1),
-         mAxisSlave  => pgpTxSlaves(1),
-         -- AXI Lite Bus (axiLiteClk domain)
-         axiLiteClk          => axiClk,
-         axiLiteRst          => axiRst,
-         mAxiLiteWriteMaster => mAxiLiteWriteMaster,
-         mAxiLiteWriteSlave  => mAxiLiteWriteSlave,
-         mAxiLiteReadMaster  => mAxiLiteReadMaster,
-         mAxiLiteReadSlave   => mAxiLiteReadSlave
-      );
       
    -- Lane 0, VC2 TX oscilloscope data stream
    U_Vc2SsiOscilloscopeFifo : entity work.AxiStreamFifo

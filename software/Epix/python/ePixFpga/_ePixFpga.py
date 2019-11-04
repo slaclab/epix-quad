@@ -467,7 +467,7 @@ class Epix100a(pr.Device):
       if 'description' not in kwargs:
             kwargs['description'] = "EPIX100A FPGA"
       
-      trigChEnum={0:'TrigReg', 1:'ThresholdChA', 2:'ThresholdChB', 3:'AcqStart', 4:'AsicAcq', 5:'AsicR0', 6:'AsicRoClk', 7:'AsicPpmat', 8:'AsicPpbe', 9:'AsicSync', 10:'AsicGr', 11:'AsicSaciSel0', 12:'AsicSaciSel1', 13:'AsicSaciSel2', 14:'AsicSaciSel3'}
+      trigChEnum={0:'TrigReg', 1:'ThresholdChA', 2:'ThresholdChB', 3:'AcqStart', 4:'AsicAcq', 5:'AsicR0', 6:'AsicPpmat', 7:'AsicPpbe', 8:'AsicSync', 9:'AsicGr', 10: 'AsicRoClk'}
       #TODO: assign meaningful channel names
       inChaEnum={
             10:'ASIC0_B0',  2: 'ASIC0_B1',  1: 'ASIC0_B2',  0: 'ASIC0_B3', 
@@ -487,151 +487,26 @@ class Epix100a(pr.Device):
       
       super(self.__class__, self).__init__(**kwargs)
       self.add((
-            Epix100aFpgaRegisters(name="EpixFpgaRegisters", offset=0x00000000, expand=True),
-            OscilloscopeRegisters(name='Oscilloscope', offset=0x00000140, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum),
-            #pgp.Pgp2bAxi(name='Pgp2bAxi', offset=0x00300000, expand=False),
-            epix.Epix100aAsic(name='Epix100aAsic0', offset=0x00800000*addrSize, hidden=False, enabled=False, expand=False),
-            epix.Epix100aAsic(name='Epix100aAsic1', offset=0x00900000*addrSize, hidden=False, enabled=False, expand=False),
-            epix.Epix100aAsic(name='Epix100aAsic2', offset=0x00A00000*addrSize, hidden=False, enabled=False, expand=False),
-            epix.Epix100aAsic(name='Epix100aAsic3', offset=0x00B00000*addrSize, hidden=False, enabled=False, expand=False),
-            axi.AxiVersion(name="AxiVersion", description="AXI-Lite Version Module", memBase=None, offset=0x08000000, hidden =  False, expand=False,  enabled=False),
-            AxiMicronN25Q(name='MicronN25Q', offset=0x0C000000, expand=False, hidden=False),
-            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[0]', offset=0x14100000, channels=8, enabled=False, expand=False),
-            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[1]', offset=0x14200000, channels=8, enabled=False, expand=False),
-            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[1].Adc[0]', offset=0x14300000, channels=4, enabled=False, expand=False),
-            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]', offset=0x14400000, enabled=False, expand=False),
-            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]', offset=0x14400800, enabled=False, expand=False),
-            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]', offset=0x14401000, enabled=False, expand=False),
-            MicroblazeLog(name='MicroblazeLog', offset=0x18000000, enabled=False, expand=False)))
+            axi.AxiVersion(offset=0x00000000, expand=False),
+            EpixFpgaRegisters(name="EpixFpgaRegisters", offset=0x01000000),
+            EpixFpgaExtRegisters(name="EpixFpgaExtRegisters", offset=0x01100000, enabled=False, expand=False),
+            OscilloscopeRegisters(name='Oscilloscope', offset=0x01200000, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum),
+            Epix10kADouts(name="Epix10kADouts", offset=0x01300000, expand=False),
+            epix.Epix10kaAsic(name='Epix10kaAsic0', offset=0x02000000, enabled=False, expand=False),
+            epix.Epix10kaAsic(name='Epix10kaAsic1', offset=0x02400000, enabled=False, expand=False),
+            epix.Epix10kaAsic(name='Epix10kaAsic2', offset=0x02800000, enabled=False, expand=False),
+            epix.Epix10kaAsic(name='Epix10kaAsic3', offset=0x02C00000, enabled=False, expand=False),
+            pgp.Pgp2bAxi(name='Pgp2bAxi', offset=0x03000000, expand=False),
+            SlowAdcRegisters(name="SlowAdcRegisters", offset=0x04000000, enabled=False, expand=False),
+            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[0]', offset=0x05100000, channels=8, enabled=False, expand=False),
+            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[1]', offset=0x05200000, channels=8, enabled=False, expand=False),
+            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[1].Adc[0]', offset=0x05300000, channels=4, enabled=False, expand=False),
+            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]',   offset=0x05400000, enabled=False, expand=False),
+            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]',   offset=0x05400800, enabled=False, expand=False),
+            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]',   offset=0x05401000, enabled=False, expand=False),
+            AxiMicronN25Q(name='MicronN25Q', offset=0x06000000, expand=False, hidden=False),
+            MicroblazeLog(name='MicroblazeLog', offset=0x07000000, enabled=False, expand=False)))
       
-
-class Epix100aFpgaRegisters(pr.Device):
-   def __init__(self, **kwargs):
-      """Create the configuration device for Epix"""
-      super().__init__(description='Epix Configuration Registers', **kwargs)
-      
-      #In order to easely compare GedDAQ address map with the eprix rogue address map 
-      #it is defined the addrSize RemoteVariable
-      addrSize = 4	
-      
-      # Creation. memBase is either the register bus server (srp, rce mapped memory, etc) or the device which
-      # contains this object. In most cases the parent and memBase are the same but they can be 
-      # different in more complex bus structures. They will also be different for the top most node.
-      # The setMemBase call can be used to update the memBase for this Device. All sub-devices and local
-      # blocks will be updated.
-      
-      #############################################
-      # Create block / RemoteVariable combinations
-      #############################################
-      self.add(pr.RemoteVariable(name='Version',             description='FPGA firmware version number',                            offset=0x00000000*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-      self.add(pr.RemoteVariable(name='RunTriggerEnable',    description='Enable external run trigger',                             offset=0x00000001*addrSize, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='RunTriggerDelay',     description='Run trigger delay',                                       offset=0x00000002*addrSize, bitSize=31, bitOffset=0, base=pr.UInt,  mode='RW'))
-      self.add(pr.RemoteVariable(name='DaqTriggerEnable',    description='Enable external run trigger',                             offset=0x00000003*addrSize, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='DaqTriggerDelay',     description='Run trigger delay',                                       offset=0x00000004*addrSize, bitSize=31, bitOffset=0, base=pr.UInt,  mode='RW'))
-      self.add(pr.RemoteVariable(name='AcqCount',            description='Acquisition counter',                                     offset=0x00000005*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-      self.add(pr.RemoteVariable(name='AcqCountReset',       description='Reset acquisition counter',                               offset=0x00000006*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RW'))
-      self.add(pr.RemoteVariable(name='DacData',             description='Sets analog DAC (MAX5443)',                               offset=0x00000007*addrSize, bitSize=16, bitOffset=0, base=pr.UInt,  mode='RW'))
-      self.add(pr.RemoteVariable(name='DigitalPowerEnable',  description='Digital power enable',                                    offset=0x00000008*addrSize, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='AnalogPowerEnable',   description='Analog power enable',                                     offset=0x00000008*addrSize, bitSize=1,  bitOffset=1, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='FpgaOutputEnable',    description='Fpga output enable',                                      offset=0x00000008*addrSize, bitSize=1,  bitOffset=2, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='IDelayCtrlRdy',       description='Ready flag for IDELAYCTRL block',                         offset=0x0000000A*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RW'))
-      self.add(pr.RemoteVariable(name='SeqCount',            description='Sequence (frame) Counter',                                offset=0x0000000B*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-      self.add(pr.RemoteVariable(name='SeqCountReset',       description='Reset (frame) counter',                                   offset=0x0000000C*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RW'))
-      self.add(pr.RemoteVariable(name='AsicMask',            description='ASIC mask bits for the SACI access',                      offset=0x0000000D*addrSize, bitSize=4,  bitOffset=0, base=pr.UInt,  mode='RO'))
-      self.add(pr.RemoteVariable(name='BaseClock',           description='FPGA base clock frequency',                               offset=0x00000010*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-      self.add(pr.RemoteVariable(name='AutoRunEnable',       description='Enable auto run trigger',                                 offset=0x00000011*addrSize, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='AutoRunPeriod',       description='Auto run trigger period',                                 offset=0x00000012*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RW'))
-      self.add(pr.RemoteVariable(name='AutoDaqEnable',       description='Enable auto DAQ trigger',                                 offset=0x00000013*addrSize, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='OutPipelineDelay',    description='Number of clock cycles to delay ASIC digital output bit', offset=0x0000001F*addrSize, bitSize=8,  bitOffset=0, base=pr.UInt,  mode='RW'))
-      self.add(pr.RemoteVariable(name='AcqToAsicR0Delay',    description='Delay (in 10ns) between system acq and ASIC reset pulse', offset=0x00000020*addrSize, bitSize=31, bitOffset=0, base=pr.UInt,  mode='RW'))
-      self.add(pr.RemoteVariable(name='AsicR0ToAsicAcq',     description='Delay (in 10ns) between ASIC reset pulse and int. window',offset=0x00000021*addrSize, bitSize=31, bitOffset=0, base=pr.UInt,  mode='RW'))
-      self.add(pr.RemoteVariable(name='AsicAcqWidth',        description='Width (in 10ns) of ASIC acq signal',                      offset=0x00000022*addrSize, bitSize=31, bitOffset=0, base=pr.UInt,  mode='RW')) 
-      self.add(pr.RemoteVariable(name='AsicAcqLToPPmatL',    description='Delay (in 10ns) bet. ASIC acq drop and power pulse drop', offset=0x00000023*addrSize, bitSize=31, bitOffset=0, base=pr.UInt,  mode='RW'))
-      self.add(pr.RemoteVariable(name='AsicRoClkHalfT',      description='Width (in 10ns) of half of readout clock (10 = 5MHz)',    offset=0x00000024*addrSize, bitSize=31, bitOffset=0, base=pr.UInt,  mode='RW'))
-      self.add(pr.RemoteVariable(name='AdcReadsPerPixel',    description='Number of ADC samples to record for each ASIC',           offset=0x00000025*addrSize, bitSize=31, bitOffset=0, base=pr.UInt,  mode='RW'))  
-      self.add(pr.RemoteVariable(name='AdcClkHalfT',         description='Width (in 8ns) of half clock period of ADC',              offset=0x00000026*addrSize, bitSize=31, bitOffset=0, base=pr.UInt,  mode='RW'))
-      self.add(pr.RemoteVariable(name='TotalPixelsToRead',   description='Total numbers of pixels to be readout',                   offset=0x00000027*addrSize, bitSize=31, bitOffset=0, base=pr.UInt,  mode='RW'))
-      self.add(pr.RemoteVariable(name='AsicGR',              description='ASIC Global Reset',                                       offset=0x00000029*addrSize, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='AsicAcq',             description='ASIC Acq Signal',                                         offset=0x00000029*addrSize, bitSize=1,  bitOffset=1, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='AsicRO',              description='ASIC R0 Signal',                                          offset=0x00000029*addrSize, bitSize=1,  bitOffset=2, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='AsicPpmat',           description='ASIC Ppmat Signal',                                       offset=0x00000029*addrSize, bitSize=1,  bitOffset=3, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='AsicPpbe',            description='ASIC Ppbe Signal',                                        offset=0x00000029*addrSize, bitSize=1,  bitOffset=4, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='AsicRoClk',           description='ASIC RO Clock Signal',                                    offset=0x00000029*addrSize, bitSize=1,  bitOffset=5, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='AsicPinGRControl',    description='Manual ASIC Global Reset Enabled',                        offset=0x0000002A*addrSize, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='AsicPinAcqControl',   description='Manual ASIC Acq Enabled',                                 offset=0x0000002A*addrSize, bitSize=1,  bitOffset=1, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='AsicPinROControl',    description='Manual ASIC R0 Enabled',                                  offset=0x0000002A*addrSize, bitSize=1,  bitOffset=2, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='AsicPinPpmatControl', description='Manual ASIC Ppmat Enabled',                               offset=0x0000002A*addrSize, bitSize=1,  bitOffset=3, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='AsicPinPpbeControl',  description='Manual ASIC Ppbe Enabled',                                offset=0x0000002A*addrSize, bitSize=1,  bitOffset=4, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='AsicPinROClkControl', description='Manual ASIC RO Clock Enabled',                            offset=0x0000002A*addrSize, bitSize=1,  bitOffset=5, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='AdcStreamMode',       description='Enables manual test of ADC',                              offset=0x0000002A*addrSize, bitSize=1,  bitOffset=7, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='AdcPatternEnable',    description='Enables test pattern on data out',                        offset=0x0000002A*addrSize, bitSize=1,  bitOffset=8, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='AsicR0Mode',          description='AsicR0Mode',                                              offset=0x0000002A*addrSize, bitSize=1,  bitOffset=11,base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='AsicR0Width',         description='Width of R0 low pulse',                                   offset=0x0000002B*addrSize, bitSize=31, bitOffset=0, base=pr.UInt,  mode='RW'))
-      self.add(pr.RemoteVariable(name='DigitalCardId0',      description='Digital Card Serial Number (low 32 bits)',                offset=0x00000030*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-      self.add(pr.RemoteVariable(name='DigitalCardId1',      description='Digital Card Serial Number (high 32 bits)',               offset=0x00000031*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-      self.add(pr.RemoteVariable(name='AnalogCardId0',       description='Analog Card Serial Number (low 32 bits)',                 offset=0x00000032*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-      self.add(pr.RemoteVariable(name='AnalogCardId1',       description='Analog Card Serial Number (high 32 bits)',                offset=0x00000033*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-      self.add(pr.RemoteVariable(name='AsicPreAcqTime',      description='Sum of time delays leading to the ASIC ACQ pulse',        offset=0x00000039*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-      self.add(pr.RemoteVariable(name='AsicPPmatToReadout',  description='Delay (in 10ns) between Ppmat pulse and readout',         offset=0x0000003A*addrSize, bitSize=31, bitOffset=0, base=pr.UInt,  mode='RW'))
-      self.add(pr.RemoteVariable(name='CarrierCardId0',      description='Carrier Card Serial Number (low 32 bits)',                offset=0x0000003B*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-      self.add(pr.RemoteVariable(name='CarrierCardId1',      description='Carrier Card Serial Number (high 32 bits)',               offset=0x0000003C*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-      self.add(pr.RemoteVariable(name='PgpTrigEn',           description='Set to enable triggering over PGP. Disables the TTL trigger input', offset=0x0000003D*addrSize, bitSize=1, bitOffset=0, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='MonStreamEn',         description='Set to enable monitor data stream over PGP',              offset=0x0000003E*addrSize, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='TpsTiming',           description='Delay TPS signal',                                        offset=0x00000040*addrSize, bitSize=16, bitOffset=0, base=pr.UInt,  mode='RW'))
-      self.add(pr.RemoteVariable(name='TpsEdge',             description='Sync TPS to rising or falling edge of Acq',               offset=0x00000040*addrSize, bitSize=1,  bitOffset=16,base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='RequestStartup',      description='Request startup sequence',                                offset=0x00000080*addrSize, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='StartupDone',         description='Startup sequence done',                                   offset=0x00000080*addrSize, bitSize=1,  bitOffset=1, base=pr.Bool, mode='RO'))
-      self.add(pr.RemoteVariable(name='StartupFail',         description='Startup sequence failed',                                 offset=0x00000080*addrSize, bitSize=1,  bitOffset=2, base=pr.Bool, mode='RO'))
-      self.add(pr.RemoteVariable(name='AdcPipelineDelayA0',  description='Number of samples to delay ADC reads of the ASIC0 chls',  offset=0x00000090*addrSize, bitSize=8,  bitOffset=0, base=pr.UInt,  mode='RW'))
-      self.add(pr.RemoteVariable(name='AdcPipelineDelayA1',  description='Number of samples to delay ADC reads of the ASIC1 chls',  offset=0x00000091*addrSize, bitSize=8,  bitOffset=0, base=pr.UInt,  mode='RW'))
-      self.add(pr.RemoteVariable(name='AdcPipelineDelayA2',  description='Number of samples to delay ADC reads of the ASIC2 chls',  offset=0x00000092*addrSize, bitSize=8,  bitOffset=0, base=pr.UInt,  mode='RW'))
-      self.add(pr.RemoteVariable(name='AdcPipelineDelayA3',  description='Number of samples to delay ADC reads of the ASIC3 chls',  offset=0x00000093*addrSize, bitSize=8,  bitOffset=0, base=pr.UInt,  mode='RW'))
-      self.add(pr.RemoteVariable(name='EnvData00',           description='Thermistor0 temperature',                                 offset=0x00000140*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-      self.add(pr.RemoteVariable(name='EnvData01',           description='Thermistor1 temperature',                                 offset=0x00000141*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-      self.add(pr.RemoteVariable(name='EnvData02',           description='Humidity',                                                offset=0x00000142*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-      self.add(pr.RemoteVariable(name='EnvData03',           description='ASIC analog current',                                     offset=0x00000143*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-      self.add(pr.RemoteVariable(name='EnvData04',           description='ASIC digital current',                                    offset=0x00000144*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-      self.add(pr.RemoteVariable(name='EnvData05',           description='Guard ring current',                                      offset=0x00000145*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-      self.add(pr.RemoteVariable(name='EnvData06',           description='Detector bias current',                                   offset=0x00000146*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-      self.add(pr.RemoteVariable(name='EnvData07',           description='Analog raw input voltage',                                offset=0x00000147*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-      self.add(pr.RemoteVariable(name='EnvData08',           description='Digital raw input voltage',                               offset=0x00000148*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-
-
-  
-      #####################################
-      # Create commands
-      #####################################
-  
-      self.add(pr.Command(name='masterReset',   description='Master Board Reset', function=pr.Command.postedTouch))
-      self.add(pr.Command(name='fpgaReload',    description='Reload FPGA',        function=self.cmdFpgaReload))
-      self.add(pr.Command(name='counterReset',  description='Counter Reset',      function='  self.counter.post(0)'))
-      self.add(pr.Command(name='testCpsw',      description='Test CPSW',          function=collections.OrderedDict({ 'masterResetVar': 1, 'usleep': 100, 'counter': 1 })))
-
-      # Overwrite reset calls with local functions
-      #self.setResetFunc(self.resetFunc)
-     
-
-   def cmdFpgaReload(dev,cmd,arg):
-      """Example command function"""
-      dev.Version.post(1)
-   
-   def resetFunc(dev,rstType):
-      """Application specific reset function"""
-      if rstType == 'soft':
-         print('AxiVersion countReset')
-      elif rstType == 'hard':
-         dev.masterResetVar.post(1)
-      elif rstType == 'count':
-         print('AxiVersion countReset')
-
-   @staticmethod   
-   def frequencyConverter(self):
-      def func(dev, var):         
-         return '{:.3f} kHz'.format(1/(self.clkPeriod * self._count(var.dependencies)) * 1e-3)
-      return func
-
-
-
 
 ################################################################################################
 ##
@@ -643,7 +518,7 @@ class Epix10ka(pr.Device):
       if 'description' not in kwargs:
             kwargs['description'] = "EPIX10KA FPGA"
       
-      trigChEnum={0:'TrigReg', 1:'ThresholdChA', 2:'ThresholdChB', 3:'AcqStart', 4:'AsicAcq', 5:'AsicR0', 6:'AsicRoClk', 7:'AsicPpmat', 8:'AsicPpbe', 9:'AsicSync', 10:'AsicGr', 11:'AsicSaciSel0', 12:'AsicSaciSel1', 13:'AsicSaciSel2', 14:'AsicSaciSel3'}
+      trigChEnum={0:'TrigReg', 1:'ThresholdChA', 2:'ThresholdChB', 3:'AcqStart', 4:'AsicAcq', 5:'AsicR0', 6:'AsicPpmat', 7:'AsicPpbe', 8:'AsicSync', 9:'AsicGr', 10: 'AsicRoClk'}
       #TODO: assign meaningful channel names
       inChaEnum={
             10:'ASIC0_B0',  2: 'ASIC0_B1',  1: 'ASIC0_B2',  0: 'ASIC0_B3', 
@@ -659,30 +534,55 @@ class Epix10ka(pr.Device):
             17:'ASIC0_TPS', 19:'ASIC1_TPS', 18:'ASIC2_TPS', 16:'ASIC3_TPS'}
       super(self.__class__, self).__init__(**kwargs)
       self.add((
-            Epix10kaFpgaRegisters(name="EpixFpgaRegisters", offset=0x00000000),
-            Epix10kaFpgaExtRegisters(name="EpixFpgaExtRegisters", offset=0x10000000, enabled=False, expand=False),
-            Epix10kADouts(name="Epix10kADouts", offset=0x1C000000, expand=False),
-            OscilloscopeRegisters(name='Oscilloscope', offset=0x00000140, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum),
-            pgp.Pgp2bAxi(name='Pgp2bAxi', offset=0x00300000, expand=False),
+            axi.AxiVersion(offset=0x00000000, expand=False),
+            EpixFpgaRegisters(name="EpixFpgaRegisters", offset=0x01000000),
+            EpixFpgaExtRegisters(name="EpixFpgaExtRegisters", offset=0x01100000, enabled=False, expand=False),
+            OscilloscopeRegisters(name='Oscilloscope', offset=0x01200000, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum),
+            Epix10kADouts(name="Epix10kADouts", offset=0x01300000, expand=False),
             epix.Epix10kaAsic(name='Epix10kaAsic0', offset=0x02000000, enabled=False, expand=False),
             epix.Epix10kaAsic(name='Epix10kaAsic1', offset=0x02400000, enabled=False, expand=False),
             epix.Epix10kaAsic(name='Epix10kaAsic2', offset=0x02800000, enabled=False, expand=False),
             epix.Epix10kaAsic(name='Epix10kaAsic3', offset=0x02C00000, enabled=False, expand=False),
-            axi.AxiVersion(offset=0x08000000),
-            AxiMicronN25Q(name='MicronN25Q', offset=0x0C000000, expand=False, hidden=False),
-            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[0]', offset=0x14100000, channels=8, enabled=False, expand=False),
-            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[1]', offset=0x14200000, channels=8, enabled=False, expand=False),
-            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[1].Adc[0]', offset=0x14300000, channels=4, enabled=False, expand=False),
-            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]', offset=0x14400000, enabled=False, expand=False),
-            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]', offset=0x14400800, enabled=False, expand=False),
-            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]', offset=0x14401000, enabled=False, expand=False),
-            MicroblazeLog(name='MicroblazeLog', offset=0x18000000, enabled=False, expand=False)))
+            pgp.Pgp2bAxi(name='Pgp2bAxi', offset=0x03000000, expand=False),
+            SlowAdcRegisters(name="SlowAdcRegisters", offset=0x04000000, enabled=False, expand=False),
+            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[0]', offset=0x05100000, channels=8, enabled=False, expand=False),
+            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[1]', offset=0x05200000, channels=8, enabled=False, expand=False),
+            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[1].Adc[0]', offset=0x05300000, channels=4, enabled=False, expand=False),
+            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]',   offset=0x05400000, enabled=False, expand=False),
+            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]',   offset=0x05400800, enabled=False, expand=False),
+            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]',   offset=0x05401000, enabled=False, expand=False),
+            AxiMicronN25Q(name='MicronN25Q', offset=0x06000000, expand=False, hidden=False),
+            MicroblazeLog(name='MicroblazeLog', offset=0x07000000, enabled=False, expand=False)))
       
 
-class Epix10kaFpgaRegisters(pr.Device):
+class EpixFpgaRegisters(pr.Device):
    def __init__(self, **kwargs):
       """Create the configuration device for Epix"""
       super().__init__(description='Epix Configuration Registers', **kwargs)
+      
+      def getFreqMHz(var):
+         x = var.dependencies[0].value()
+         return x / 1000000.0
+         
+      def getPerUs(var):
+         x = var.dependencies[0].value()
+         return x / (self.BaseClock.get()/1000000.0)
+               
+      def setPerUs(deps):
+         def setUsValue(var, value, write):
+            rawVal = int(round(value*(self.BaseClock.get()/1000000.0)))
+            deps[0].set(rawVal,write)            
+         return setUsValue
+      
+      def getPerMs(var):
+         x = var.dependencies[0].value()
+         return x / (self.BaseClock.get()/1000.0)
+               
+      def setPerMs(deps):
+         def setMsValue(var, value, write):
+            rawVal = int(round(value*(self.BaseClock.get()/1000.0)))
+            deps[0].set(rawVal,write)            
+         return setMsValue
       
       #In order to easely compare GedDAQ address map with the eprix rogue address map 
       #it is defined the addrSize RemoteVariable
@@ -701,8 +601,10 @@ class Epix10kaFpgaRegisters(pr.Device):
       self.add(pr.RemoteVariable(name='Version',             description='FPGA firmware version number',                            offset=0x00000000*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
       self.add(pr.RemoteVariable(name='RunTriggerEnable',    description='Enable external run trigger',                             offset=0x00000001*addrSize, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='RunTriggerDelay',     description='Run trigger delay',                                       offset=0x00000002*addrSize, bitSize=31, bitOffset=0, base=pr.UInt,  mode='RW'))
+      self.add(pr.LinkVariable(  name='RunTriggerDelayUs',   dependencies=[self.RunTriggerDelay], mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.RunTriggerDelay]), disp='{:1.5f}')) 
       self.add(pr.RemoteVariable(name='DaqTriggerEnable',    description='Enable external run trigger',                             offset=0x00000003*addrSize, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='DaqTriggerDelay',     description='Run trigger delay',                                       offset=0x00000004*addrSize, bitSize=31, bitOffset=0, base=pr.UInt,  mode='RW'))
+      self.add(pr.LinkVariable(  name='DaqTriggerDelayUs',   dependencies=[self.DaqTriggerDelay], mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.DaqTriggerDelay]), disp='{:1.5f}')) 
       self.add(pr.RemoteVariable(name='AcqCount',            description='Acquisition counter',                                     offset=0x00000005*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
       self.add(pr.RemoteVariable(name='AcqCountReset',       description='Reset acquisition counter',                               offset=0x00000006*addrSize, bitSize=32, bitOffset=0, base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='DacData',             description='Sets analog DAC (MAX5443)',                               offset=0x00000007*addrSize, bitSize=16, bitOffset=0, base=pr.UInt,  mode='RW'))
@@ -714,15 +616,21 @@ class Epix10kaFpgaRegisters(pr.Device):
       self.add(pr.RemoteVariable(name='SeqCountReset',       description='Reset (frame) counter',                                   offset=0x0000000C*addrSize, bitSize=32, bitOffset=0, base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='AsicMask',            description='ASIC mask bits for the SACI access',                      offset=0x0000000D*addrSize, bitSize=4,  bitOffset=0, base=pr.UInt,  mode='RO'))
       self.add(pr.RemoteVariable(name='BaseClock',           description='FPGA base clock frequency',                               offset=0x00000010*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
+      self.add(pr.LinkVariable(  name='BaseClockMHz',        dependencies=[self.BaseClock], mode='RO', units='MHz', linkedGet=getFreqMHz, disp='{:1.6f}')) 
       self.add(pr.RemoteVariable(name='AutoRunEnable',       description='Enable auto run trigger',                                 offset=0x00000011*addrSize, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='AutoRunPeriod',       description='Auto run trigger period',                                 offset=0x00000012*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RW'))
+      self.add(pr.LinkVariable(  name='AutoRunPeriodMs',     dependencies=[self.AutoRunPeriod], mode='RW', units='ms', linkedGet=getPerMs, linkedSet=setPerMs([self.AutoRunPeriod]), disp='{:1.5f}')) 
       self.add(pr.RemoteVariable(name='AutoDaqEnable',       description='Enable auto DAQ trigger',                                 offset=0x00000013*addrSize, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='OutPipelineDelay',    description='Number of clock cycles to delay ASIC digital output bit', offset=0x0000001F*addrSize, bitSize=8,  bitOffset=0, base=pr.UInt,  mode='RW'))
-      self.add(pr.RemoteVariable(name='AcqToAsicR0Delay',    description='Delay (in 10ns) between system acq and ASIC reset pulse', offset=0x00000020*addrSize, bitSize=31, bitOffset=0, base=pr.UInt,  mode='RW'))
-      self.add(pr.RemoteVariable(name='AsicR0ToAsicAcq',     description='Delay (in 10ns) between ASIC reset pulse and int. window',offset=0x00000021*addrSize, bitSize=31, bitOffset=0, base=pr.UInt,  mode='RW'))
-      self.add(pr.RemoteVariable(name='AsicAcqWidth',        description='Width (in 10ns) of ASIC acq signal',                      offset=0x00000022*addrSize, bitSize=31, bitOffset=0, base=pr.UInt, mode='RW')) 
-      self.add(pr.RemoteVariable(name='AsicAcqLToPPmatL',    description='Delay (in 10ns) bet. ASIC acq drop and power pulse drop', offset=0x00000023*addrSize, bitSize=31, bitOffset=0, base=pr.UInt,  mode='RW'))
-      self.add(pr.RemoteVariable(name='AsicRoClkHalfT',      description='Width (in 10ns) of half of readout clock (10 = 5MHz)',    offset=0x00000024*addrSize, bitSize=31, bitOffset=0, base=pr.UInt,  mode='RW'))
+      self.add(pr.RemoteVariable(name='AcqToAsicR0Delay',    description='Delay between system acq and ASIC reset pulse',           offset=0x00000020*addrSize, bitSize=31, bitOffset=0, base=pr.UInt,  mode='RW'))
+      self.add(pr.LinkVariable(  name='AcqToAsicR0DelayUs',  dependencies=[self.AcqToAsicR0Delay], mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.AcqToAsicR0Delay]), disp='{:1.5f}')) 
+      self.add(pr.RemoteVariable(name='AsicR0ToAsicAcq',     description='Delay between ASIC reset pulse and int. window',          offset=0x00000021*addrSize, bitSize=31, bitOffset=0, base=pr.UInt,  mode='RW'))
+      self.add(pr.LinkVariable(  name='AsicR0ToAsicAcqUs',   dependencies=[self.AsicR0ToAsicAcq], mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.AsicR0ToAsicAcq]), disp='{:1.5f}')) 
+      self.add(pr.RemoteVariable(name='AsicAcqWidth',        description='Width of ASIC acq signal',                                offset=0x00000022*addrSize, bitSize=31, bitOffset=0, base=pr.UInt, mode='RW')) 
+      self.add(pr.LinkVariable(  name='AsicAcqWidthUs',      dependencies=[self.AsicAcqWidth], mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.AsicAcqWidth]), disp='{:1.5f}')) 
+      self.add(pr.RemoteVariable(name='AsicAcqLToPPmatL',    description='Delay bet. ASIC acq drop and power pulse drop',           offset=0x00000023*addrSize, bitSize=31, bitOffset=0, base=pr.UInt,  mode='RW'))
+      self.add(pr.LinkVariable(  name='AsicAcqLToPPmatLUs',  dependencies=[self.AsicAcqLToPPmatL], mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.AsicAcqLToPPmatL]), disp='{:1.5f}')) 
+      self.add(pr.RemoteVariable(name='AsicRoClkT',          description='Width of readout clock ',                                 offset=0x00000024*addrSize, bitSize=16, bitOffset=0, base=pr.UInt,  mode='RW'))
       self.add(pr.RemoteVariable(name='AdcReadsPerPixel',    description='Number of ADC samples to record for each ASIC',           offset=0x00000025*addrSize, bitSize=31, bitOffset=0, base=pr.UInt,  mode='RW'))  
       self.add(pr.RemoteVariable(name='AdcClkHalfT',         description='Width (in 8ns) of half clock period of ADC',              offset=0x00000026*addrSize, bitSize=31, bitOffset=0, base=pr.UInt,  mode='RW'))
       self.add(pr.RemoteVariable(name='TotalPixelsToRead',   description='Total numbers of pixels to be readout',                   offset=0x00000027*addrSize, bitSize=31, bitOffset=0, base=pr.UInt,  mode='RW'))
@@ -738,20 +646,20 @@ class Epix10kaFpgaRegisters(pr.Device):
       self.add(pr.RemoteVariable(name='AsicPinPpmatControl', description='Manual ASIC Ppmat Enabled',                               offset=0x0000002A*addrSize, bitSize=1,  bitOffset=3, base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='AsicPinPpbeControl',  description='Manual ASIC Ppbe Enabled',                                offset=0x0000002A*addrSize, bitSize=1,  bitOffset=4, base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='AsicPinROClkControl', description='Manual ASIC RO Clock Enabled',                            offset=0x0000002A*addrSize, bitSize=1,  bitOffset=5, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='AdcStreamMode',       description='Enables manual test of ADC',                              offset=0x0000002A*addrSize, bitSize=1,  bitOffset=7, base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='AdcPatternEnable',    description='Enables test pattern on data out',                        offset=0x0000002A*addrSize, bitSize=1,  bitOffset=8, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='AsicR0Mode',          description='AsicR0Mode',                                              offset=0x0000002A*addrSize, bitSize=1,  bitOffset=11,base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='AsicR0Width',         description='Width of R0 low pulse',                                   offset=0x0000002B*addrSize, bitSize=31, bitOffset=0, base=pr.UInt,  mode='RW'))
+      self.add(pr.LinkVariable(  name='AsicR0WidthUs',       dependencies=[self.AsicR0Width], mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.AsicR0Width]), disp='{:1.5f}')) 
       self.add(pr.RemoteVariable(name='DigitalCardId0',      description='Digital Card Serial Number (low 32 bits)',                offset=0x00000030*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
       self.add(pr.RemoteVariable(name='DigitalCardId1',      description='Digital Card Serial Number (high 32 bits)',               offset=0x00000031*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
       self.add(pr.RemoteVariable(name='AnalogCardId0',       description='Analog Card Serial Number (low 32 bits)',                 offset=0x00000032*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
       self.add(pr.RemoteVariable(name='AnalogCardId1',       description='Analog Card Serial Number (high 32 bits)',                offset=0x00000033*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
       self.add(pr.RemoteVariable(name='AsicPreAcqTime',      description='Sum of time delays leading to the ASIC ACQ pulse',        offset=0x00000039*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-      self.add(pr.RemoteVariable(name='AsicPPmatToReadout',  description='Delay (in 10ns) between Ppmat pulse and readout',         offset=0x0000003A*addrSize, bitSize=31, bitOffset=0, base=pr.UInt,  mode='RW'))
+      self.add(pr.LinkVariable(  name='AsicPreAcqTimeUs',    dependencies=[self.AsicPreAcqTime], mode='RO', units='us', linkedGet=getPerUs, disp='{:1.5f}')) 
+      self.add(pr.RemoteVariable(name='AsicPPmatToReadout',  description='Delay between Ppmat pulse and readout',                   offset=0x0000003A*addrSize, bitSize=31, bitOffset=0, base=pr.UInt,  mode='RW'))
+      self.add(pr.LinkVariable(  name='AsicPPmatToReadoutUs',dependencies=[self.AsicPPmatToReadout], mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.AsicPPmatToReadout]), disp='{:1.5f}')) 
       self.add(pr.RemoteVariable(name='CarrierCardId0',      description='Carrier Card Serial Number (low 32 bits)',                offset=0x0000003B*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
       self.add(pr.RemoteVariable(name='CarrierCardId1',      description='Carrier Card Serial Number (high 32 bits)',               offset=0x0000003C*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
       self.add(pr.RemoteVariable(name='PgpTrigEn',           description='Set to enable triggering over PGP. Disables the TTL trigger input', offset=0x0000003D*addrSize, bitSize=1, bitOffset=0, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='MonStreamEn',         description='Set to enable monitor data stream over PGP',              offset=0x0000003E*addrSize, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='TpsTiming',           description='Delay TPS signal',                                        offset=0x00000040*addrSize, bitSize=16, bitOffset=0, base=pr.UInt,  mode='RW'))
       self.add(pr.RemoteVariable(name='TpsEdge',             description='Sync TPS to rising or falling edge of Acq',               offset=0x00000040*addrSize, bitSize=1,  bitOffset=16,base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='RequestStartup',      description='Request startup sequence',                                offset=0x00000080*addrSize, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
@@ -761,16 +669,7 @@ class Epix10kaFpgaRegisters(pr.Device):
       self.add(pr.RemoteVariable(name='AdcPipelineDelayA1',  description='Number of samples to delay ADC reads of the ASIC1 chls',  offset=0x00000091*addrSize, bitSize=8,  bitOffset=0, base=pr.UInt,  mode='RW'))
       self.add(pr.RemoteVariable(name='AdcPipelineDelayA2',  description='Number of samples to delay ADC reads of the ASIC2 chls',  offset=0x00000092*addrSize, bitSize=8,  bitOffset=0, base=pr.UInt,  mode='RW'))
       self.add(pr.RemoteVariable(name='AdcPipelineDelayA3',  description='Number of samples to delay ADC reads of the ASIC3 chls',  offset=0x00000093*addrSize, bitSize=8,  bitOffset=0, base=pr.UInt,  mode='RW'))
-      self.add(pr.RemoteVariable(name='EnvData00',           description='Thermistor0 temperature',                                 offset=0x00000140*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-      self.add(pr.RemoteVariable(name='EnvData01',           description='Thermistor1 temperature',                                 offset=0x00000141*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-      self.add(pr.RemoteVariable(name='EnvData02',           description='Humidity',                                                offset=0x00000142*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-      self.add(pr.RemoteVariable(name='EnvData03',           description='ASIC analog current',                                     offset=0x00000143*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-      self.add(pr.RemoteVariable(name='EnvData04',           description='ASIC digital current',                                    offset=0x00000144*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-      self.add(pr.RemoteVariable(name='EnvData05',           description='Guard ring current',                                      offset=0x00000145*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-      self.add(pr.RemoteVariable(name='EnvData06',           description='Detector bias current',                                   offset=0x00000146*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-      self.add(pr.RemoteVariable(name='EnvData07',           description='Analog raw input voltage',                                offset=0x00000147*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-      self.add(pr.RemoteVariable(name='EnvData08',           description='Digital raw input voltage',                               offset=0x00000148*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
-      
+  
       
       #####################################
       # Create commands
@@ -780,7 +679,7 @@ class Epix10kaFpgaRegisters(pr.Device):
       self.add(pr.Command(name='fpgaReload',    description='Reload FPGA',        function=self.cmdFpgaReload))
       self.add(pr.Command(name='counterReset',  description='Counter Reset',      function='self.counter.post(0)'))
       self.add(pr.Command(name='testCpsw',      description='Test CPSW',          function=collections.OrderedDict({ 'masterResetVar': 1, 'usleep': 100, 'counter': 1 })))
-  
+      
       # Overwrite reset calls with local functions
       #self.setResetFunc(self.resetFunc)
 
@@ -804,7 +703,7 @@ class Epix10kaFpgaRegisters(pr.Device):
       return func
 
 
-class Epix10kaFpgaExtRegisters(pr.Device):
+class EpixFpgaExtRegisters(pr.Device):
    def __init__(self, **kwargs):
       """Create the configuration device for Epix"""
       super().__init__(description='Epix Extended Configuration Registers', **kwargs)
@@ -815,6 +714,23 @@ class Epix10kaFpgaExtRegisters(pr.Device):
       
       self.add(pr.RemoteVariable(name='GhostCorrEn',         description='GhostCorrEn',      offset=0x00000000*addrSize, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='DebugOut',            description='DebugOut',         offset=0x00000200*addrSize, bitSize=5,  bitOffset=0, base=pr.UInt, mode='RW'))
+      
+      self.add(pr.RemoteVariable(name='BankPipelineDly00',   description='BankDly00',        offset=0x00000300*addrSize, bitSize=7,  bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='BankPipelineDly01',   description='BankDly01',        offset=0x00000301*addrSize, bitSize=7,  bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='BankPipelineDly02',   description='BankDly02',        offset=0x00000302*addrSize, bitSize=7,  bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='BankPipelineDly03',   description='BankDly03',        offset=0x00000303*addrSize, bitSize=7,  bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='BankPipelineDly04',   description='BankDly04',        offset=0x00000304*addrSize, bitSize=7,  bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='BankPipelineDly05',   description='BankDly05',        offset=0x00000305*addrSize, bitSize=7,  bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='BankPipelineDly06',   description='BankDly06',        offset=0x00000306*addrSize, bitSize=7,  bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='BankPipelineDly07',   description='BankDly07',        offset=0x00000307*addrSize, bitSize=7,  bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='BankPipelineDly08',   description='BankDly08',        offset=0x00000308*addrSize, bitSize=7,  bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='BankPipelineDly09',   description='BankDly09',        offset=0x00000309*addrSize, bitSize=7,  bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='BankPipelineDly10',   description='BankDly10',        offset=0x0000030a*addrSize, bitSize=7,  bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='BankPipelineDly11',   description='BankDly11',        offset=0x0000030b*addrSize, bitSize=7,  bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='BankPipelineDly12',   description='BankDly12',        offset=0x0000030c*addrSize, bitSize=7,  bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='BankPipelineDly13',   description='BankDly13',        offset=0x0000030d*addrSize, bitSize=7,  bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='BankPipelineDly14',   description='BankDly14',        offset=0x0000030e*addrSize, bitSize=7,  bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='BankPipelineDly15',   description='BankDly15',        offset=0x0000030f*addrSize, bitSize=7,  bitOffset=0, base=pr.UInt, mode='RW'))
       
       # Overwrite reset calls with local functions
       #self.setResetFunc(self.resetFunc)
@@ -1038,24 +954,18 @@ class OscilloscopeRegisters(pr.Device):
       
       self.add(pr.RemoteVariable(name='ArmReg',          description='Arm',               offset=0x00000000, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='TrigReg',         description='Trig',              offset=0x00000004, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
-      self.add((
-         pr.RemoteVariable(name='ScopeEnable',     description='Setting1', offset=0x00000008, bitSize=1,  bitOffset=0,  base=pr.Bool, mode='RW'),
-         pr.RemoteVariable(name='TriggerEdge',     description='Setting1', offset=0x00000008, bitSize=1,  bitOffset=1,  mode='RW', enum={0:'Falling', 1:'Rising'}),
-         pr.RemoteVariable(name='TriggerChannel',  description='Setting1', offset=0x00000008, bitSize=4,  bitOffset=2,  mode='RW', enum=trigChEnum),
-         pr.RemoteVariable(name='TriggerMode',     description='Setting1', offset=0x00000008, bitSize=2,  bitOffset=6,  mode='RW', enum={0:'Never', 1:'ArmReg', 2:'AcqStart', 3:'Always'}),
-         pr.RemoteVariable(name='TriggerAdcThresh',description='Setting1', offset=0x00000008, bitSize=16, bitOffset=16, base=pr.UInt, disp = '{}', mode='RW')))
-      self.add((
-         pr.RemoteVariable(name='TriggerHoldoff',  description='Setting2', offset=0x0000000C, bitSize=13, bitOffset=0,  base=pr.UInt, disp = '{}', mode='RW'),
-         pr.RemoteVariable(name='TriggerOffset',   description='Setting2', offset=0x0000000C, bitSize=13, bitOffset=13, base=pr.UInt, disp = '{}', mode='RW')))
-      self.add((
-         pr.RemoteVariable(name='TraceLength',     description='Setting3', offset=0x00000010, bitSize=13, bitOffset=0,  base=pr.UInt, disp = '{}', mode='RW'),
-         pr.RemoteVariable(name='SkipSamples',     description='Setting3', offset=0x00000010, bitSize=13, bitOffset=13, base=pr.UInt, disp = '{}', mode='RW')))
-      self.add((
-         pr.RemoteVariable(name='InputChannelA',   description='Setting4', offset=0x00000014, bitSize=5,  bitOffset=0,  mode='RW', enum=inChaEnum),
-         pr.RemoteVariable(name='InputChannelB',   description='Setting4', offset=0x00000014, bitSize=5,  bitOffset=5,  mode='RW', enum=inChbEnum)))
-      self.add(pr.RemoteVariable(name='TriggerDelay',    description='TriggerDelay',      offset=0x00000018, bitSize=13, bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
-      
-      
+      self.add(pr.RemoteVariable(name='ScopeEnable',     description='ScopeEnable',       offset=0x00000008, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='TriggerEdge',     description='TriggerEdge',       offset=0x0000000C, bitSize=1,  bitOffset=0, mode='RW', enum={0:'Falling', 1:'Rising'}))
+      self.add(pr.RemoteVariable(name='TriggerChannel',  description='TriggerChannel',    offset=0x00000010, bitSize=4,  bitOffset=0, mode='RW', enum=trigChEnum))
+      self.add(pr.RemoteVariable(name='TriggerMode'   ,  description='TriggerMode',       offset=0x00000014, bitSize=2,  bitOffset=0, mode='RW', enum={0:'Never', 1:'ArmReg', 2:'AcqStart', 3:'Always'}))
+      self.add(pr.RemoteVariable(name='TriggerAdcThresh',description='TriggerAdcThresh',  offset=0x00000018, bitSize=16, bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
+      self.add(pr.RemoteVariable(name='TriggerHoldoff',  description='TriggerHoldoff',    offset=0x0000001C, bitSize=13, bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
+      self.add(pr.RemoteVariable(name='TriggerOffset',   description='TriggerOffset',     offset=0x00000020, bitSize=13, bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
+      self.add(pr.RemoteVariable(name='TraceLength',     description='TraceLength',       offset=0x00000024, bitSize=13, bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
+      self.add(pr.RemoteVariable(name='SkipSamples',     description='SkipSamples',       offset=0x00000028, bitSize=13, bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
+      self.add(pr.RemoteVariable(name='InputChannelA',   description='InputChannelA',     offset=0x0000002C, bitSize=5,  bitOffset=0, mode='RW', enum=inChaEnum))
+      self.add(pr.RemoteVariable(name='InputChannelB',   description='InputChannelB',     offset=0x00000030, bitSize=5,  bitOffset=0, mode='RW', enum=inChbEnum))
+      self.add(pr.RemoteVariable(name='TriggerDelay',    description='TriggerDelay',      offset=0x00000034, bitSize=13, bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
       
       #####################################
       # Create commands
@@ -1122,6 +1032,18 @@ class SlowAdcRegisters(pr.Device):
    def __init__(self, **kwargs):
       super().__init__(description='Monitoring Slow ADC Registers', **kwargs)
       
+      def getTemp(var):
+         x = np.int32(var.dependencies[0].value())/100.0
+         return x 
+      
+      def getEnv(var):
+         x = var.dependencies[0].value()
+         return x 
+      
+      def getHum(var):
+         x = var.dependencies[0].value() /100.0
+         return x 
+      
       # Creation. memBase is either the register bus server (srp, rce mapped memory, etc) or the device which
       # contains this object. In most cases the parent and memBase are the same but they can be 
       # different in more complex bus structures. They will also be different for the top most node.
@@ -1138,6 +1060,7 @@ class SlowAdcRegisters(pr.Device):
       
       self.add(pr.RemoteVariable(name='StreamEn',        description='StreamEn',          offset=0x00000000, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='StreamPeriod',    description='StreamPeriod',      offset=0x00000004, bitSize=32, bitOffset=0, base=pr.UInt, disp = '{}',     mode='RW'))
+      
       self.add(pr.RemoteVariable(name='AdcData0',        description='RawAdcData',        offset=0x00000040, bitSize=24, bitOffset=0, base=pr.UInt, disp = '{:#x}',  mode='RO'))
       self.add(pr.RemoteVariable(name='AdcData1',        description='RawAdcData',        offset=0x00000044, bitSize=24, bitOffset=0, base=pr.UInt, disp = '{:#x}',  mode='RO'))
       self.add(pr.RemoteVariable(name='AdcData2',        description='RawAdcData',        offset=0x00000048, bitSize=24, bitOffset=0, base=pr.UInt, disp = '{:#x}',  mode='RO'))
@@ -1157,6 +1080,14 @@ class SlowAdcRegisters(pr.Device):
       self.add(pr.RemoteVariable(name='EnvData6',        description='Unused',            offset=0x00000098, bitSize=32, bitOffset=0, base=pr.UInt, disp = '{}',     mode='RO'))
       self.add(pr.RemoteVariable(name='EnvData7',        description='AnalogVin',         offset=0x0000009C, bitSize=32, bitOffset=0, base=pr.UInt, disp = '{}',     mode='RO'))
       self.add(pr.RemoteVariable(name='EnvData8',        description='DigitalVin',        offset=0x000000A0, bitSize=32, bitOffset=0, base=pr.UInt, disp = '{}',     mode='RO'))
+      
+      self.add(pr.LinkVariable(name='Temp1',             dependencies=[self.EnvData0], mode='RO', units='C', linkedGet=getTemp, disp='{:1.1f}')) 
+      self.add(pr.LinkVariable(name='Temp2',             dependencies=[self.EnvData1], mode='RO', units='C', linkedGet=getTemp, disp='{:1.1f}')) 
+      self.add(pr.LinkVariable(name='Humidity',          dependencies=[self.EnvData2], mode='RO', units='%', linkedGet=getHum, disp='{:1.2f}')) 
+      self.add(pr.LinkVariable(name='AsicAnalogCurr',    dependencies=[self.EnvData3], mode='RO', units='mA', linkedGet=getEnv, disp='{:d}')) 
+      self.add(pr.LinkVariable(name='AsicDigitalCurr',   dependencies=[self.EnvData4], mode='RO', units='mA', linkedGet=getEnv, disp='{:d}')) 
+      self.add(pr.LinkVariable(name='AnalogVin',         dependencies=[self.EnvData7], mode='RO', units='mV', linkedGet=getEnv, disp='{:d}')) 
+      self.add(pr.LinkVariable(name='DigitalVin',        dependencies=[self.EnvData8], mode='RO', units='mV', linkedGet=getEnv, disp='{:d}')) 
       
       
       
@@ -1321,8 +1252,6 @@ class AsicDeserHrRegisters(pr.Device):
    def fnEvaluateSerDelay(self, dev,cmd,arg):
         """SetPixelBitmap command function"""
         addrSize = 4
-        #set r0mode in order to have saci cmd to work properly on legacy firmware
-        self.root.ePix100aFPGA.EpixFpgaRegisters.AsicR0Mode.set(True)
 
         if (self.enable.get()):
             self.reportCmd(dev,cmd,arg)
@@ -1452,8 +1381,6 @@ class AsicDeserRegisters(pr.Device):
    def fnEvaluateSerDelay(self, dev,cmd,arg):
         """SetPixelBitmap command function"""
         addrSize = 4
-        #set r0mode in order to have saci cmd to work properly on legacy firmware
-        self.root.ePix100aFPGA.EpixFpgaRegisters.AsicR0Mode.set(True)
 
         if (self.enable.get()):
             self.reportCmd(dev,cmd,arg)

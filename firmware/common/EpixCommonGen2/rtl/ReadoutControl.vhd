@@ -60,10 +60,7 @@ entity ReadoutControl is
       
       -- Run control
       acqStart            : in    sl;
-      readValidA0         : in    sl;
-      readValidA1         : in    sl;
-      readValidA2         : in    sl;
-      readValidA3         : in    sl;
+      readValid           : in    slv(15 downto 0);
       readDone            : out   sl;
       acqBusy             : in    sl;
       dataSend            : in    sl;
@@ -159,10 +156,6 @@ architecture ReadoutControl of ReadoutControl is
    signal adcMemOflow    : slv(15 downto 0);
    signal adcMemOflowAny : std_logic;
    signal adcMemRdData   : Slv16Array(15 downto 0);
-
-   signal adcCntEn       : sl;
-   signal adcCntRst      : sl;
-   signal adcCnt         : slv(11 downto 0);
    
    signal adcFifoWrEn    : slv(15 downto 0);
    signal adcFifoEmpty   : slv(15 downto 0);
@@ -288,30 +281,6 @@ begin
          dataIn     => acqStart,
          risingEdge => acqStartEdge
       );
-
-   --process(adcFifoRdValid,channelOrder, doutOrder,mAxisSlave,r, acqBusy) begin
-   --   for i in 0 to 15 loop
-   --      -- read ADC FIFOs
-   --      if (r.state = READ_FIFO_S and i = channelOrder(conv_integer(r.chCnt)) and 
-   --          adcFifoRdValid(i) = '1' and mAxisSlave.tReady = '1') then
-   --         adcFifoRdEn(i) <= '1';
-   --      else
-   --         adcFifoRdEn(i) <= '0';
-   --      end if;
-   --      -- read dout FIFOs always with ADC FIFOs but in different order
-   --      -- no validity check on dout FIFOs
-   --      if (r.state = READ_FIFO_S and i = doutOrder(conv_integer(r.chCnt)) and 
-   --          adcFifoRdValid(i) = '1' and mAxisSlave.tReady = '1') then
-   --         doutRd(i) <= '1';
-   --      else
-   --         doutRd(i) <= '0';
-   --      end if;
-   --      
-   --   end loop;
-   --end process;
-   
-   
-   
    
    --------------------------------------------------
    -- Simple state machine to just send ADC values --
@@ -496,20 +465,7 @@ begin
          r <= rin after TPD_G;
       end if;
    end process seq;
- 
-
-   --Count number of ADC writes
-   adcCntEn  <= readValidA0 and adcPulse;
-   adcCntRst <= memRst or sysClkRst;
-   process(sysClk) begin
-      if rising_edge(sysClk) then
-         if (sysClkRst = '1' or adcCntRst = '1') then
-            adcCnt <= (others => '0') after TPD_G;
-         elsif adcCntEn = '1' then
-            adcCnt <= adcCnt + 1 after TPD_G;
-         end if;
-      end if;
-   end process;
+   
    --Register the TPS ADC data when readTps is high
    process(sysClk) 
    begin
@@ -564,15 +520,7 @@ begin
       --Write when the ADC block says data is good AND when AcqControl agrees
       process(sysClk) begin
          if rising_edge(sysClk) then
-            if asicOrder(i) = 0  then
-               adcMemWrEn(i) <= readValidA0 and adcPulse;
-            elsif asicOrder(i) = 1 then
-               adcMemWrEn(i) <= readValidA1 and adcPulse;
-            elsif asicOrder(i) = 2 then
-               adcMemWrEn(i) <= readValidA2 and adcPulse;
-            else
-               adcMemWrEn(i) <= readValidA3 and adcPulse;
-            end if;                  
+            adcMemWrEn(i) <= readValid(i) and adcPulse;
          end if;
       end process;
 

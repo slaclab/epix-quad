@@ -166,20 +166,20 @@ args = parser.parse_args()
 
 if ( args.type == 'pgp-gen3' ):
     # Create the PGP interfaces for ePix camera
-    pgpVc0 = rogue.hardware.pgp.PgpCard(args.pgp,args.l,0) # Data & cmds
-    pgpVc1 = rogue.hardware.pgp.PgpCard(args.pgp,args.l,1) # Registers for ePix board
+    pgpVc1 = rogue.hardware.pgp.PgpCard(args.pgp,args.l,0) # Data & cmds
+    pgpVc0 = rogue.hardware.pgp.PgpCard(args.pgp,args.l,1) # Registers for ePix board
     pgpVc2 = rogue.hardware.pgp.PgpCard(args.pgp,args.l,2) # PseudoScope
     pgpVc3 = rogue.hardware.pgp.PgpCard(args.pgp,args.l,3) # Monitoring (Slow ADC)
     print("PGP Card Version: %x" % (pgpVc0.getInfo().version))
 elif ( args.type == 'kcu1500' ):
     # Create the PGP interfaces for ePix hr camera
-    pgpVc0 = rogue.hardware.data.DataCard(args.pgp,(0*32)+0) # Data & cmds
-    pgpVc1 = rogue.hardware.data.DataCard(args.pgp,(0*32)+1) # Registers for ePix board
+    pgpVc1 = rogue.hardware.data.DataCard(args.pgp,(0*32)+0) # Data & cmds
+    pgpVc0 = rogue.hardware.data.DataCard(args.pgp,(0*32)+1) # Registers for ePix board
     pgpVc2 = rogue.hardware.data.DataCard(args.pgp,(0*32)+2) # PseudoScope
     pgpVc3 = rogue.hardware.data.DataCard(args.pgp,(0*32)+3) # Monitoring (Slow ADC)
 elif ( args.type == 'simulation' ):
-    pgpVc0 = pr.interfaces.simulation.StreamSim(host='localhost', dest=0, uid=2, ssi=True)
-    pgpVc1 = pr.interfaces.simulation.StreamSim(host='localhost', dest=1, uid=2, ssi=True)
+    pgpVc1 = pr.interfaces.simulation.StreamSim(host='localhost', dest=0, uid=2, ssi=True)
+    pgpVc0 = pr.interfaces.simulation.StreamSim(host='localhost', dest=1, uid=2, ssi=True)
     pgpVc2 = pr.interfaces.simulation.StreamSim(host='localhost', dest=2, uid=2, ssi=True)
     pgpVc3 = pr.interfaces.simulation.StreamSim(host='localhost', dest=3, uid=2, ssi=True)      
 else:
@@ -300,26 +300,26 @@ if args.test == 1:
          print('Enable ASICs test')
          ePixBoard.Epix10ka.Epix10kaAsic0.test.set(True)
          ePixBoard.Epix10ka.Epix10kaAsic1.test.set(True)
-         ePixBoard.Epix10ka.Epix10kaAsic2.test.set(True)
+         #ePixBoard.Epix10ka.Epix10kaAsic2.test.set(True)
          ePixBoard.Epix10ka.Epix10kaAsic3.test.set(True)
          
          print('Enable ASICs atest')
          ePixBoard.Epix10ka.Epix10kaAsic0.atest.set(True)
          ePixBoard.Epix10ka.Epix10kaAsic1.atest.set(True)
-         ePixBoard.Epix10ka.Epix10kaAsic2.atest.set(True)
+         #ePixBoard.Epix10ka.Epix10kaAsic2.atest.set(True)
          ePixBoard.Epix10ka.Epix10kaAsic3.atest.set(True)
          
          if trbit == 1:
             print('Setting trbit to 1 (high to low gain)')
             ePixBoard.Epix10ka.Epix10kaAsic0.trbit.set(True)
             ePixBoard.Epix10ka.Epix10kaAsic1.trbit.set(True)
-            ePixBoard.Epix10ka.Epix10kaAsic2.trbit.set(True)
+            #ePixBoard.Epix10ka.Epix10kaAsic2.trbit.set(True)
             ePixBoard.Epix10ka.Epix10kaAsic3.trbit.set(True)
          else:
             print('Setting trbit to 0 (medium to low gain)')
             ePixBoard.Epix10ka.Epix10kaAsic0.trbit.set(False)
             ePixBoard.Epix10ka.Epix10kaAsic1.trbit.set(False)
-            ePixBoard.Epix10ka.Epix10kaAsic2.trbit.set(False)
+            #ePixBoard.Epix10ka.Epix10kaAsic2.trbit.set(False)
             ePixBoard.Epix10ka.Epix10kaAsic3.trbit.set(False)
          
          for x in range(8):
@@ -327,12 +327,12 @@ if args.test == 1:
                print('Clearing ASICs matrix (auto-range)')
                ePixBoard.Epix10ka.Epix10kaAsic0.ClearMatrix()
                ePixBoard.Epix10ka.Epix10kaAsic1.ClearMatrix()
-               ePixBoard.Epix10ka.Epix10kaAsic2.ClearMatrix()
+               #ePixBoard.Epix10ka.Epix10kaAsic2.ClearMatrix()
                ePixBoard.Epix10ka.Epix10kaAsic3.ClearMatrix()
                print('Setting ASICs matrix to %d%d pattern'%(x,y))
                setAsicMatrixGrid88(x, y, 1, ePixBoard.Epix10ka.Epix10kaAsic0)
                setAsicMatrixGrid88(x, y, 1, ePixBoard.Epix10ka.Epix10kaAsic1)
-               setAsicMatrixGrid88(x, y, 1, ePixBoard.Epix10ka.Epix10kaAsic2)
+               #setAsicMatrixGrid88(x, y, 1, ePixBoard.Epix10ka.Epix10kaAsic2)
                setAsicMatrixGrid88(x, y, 1, ePixBoard.Epix10ka.Epix10kaAsic3)
                
                print('Reset pulser')
@@ -340,8 +340,8 @@ if args.test == 1:
                ePixBoard.Epix10ka.Epix10kaAsic0.PulserR.set(False)
                ePixBoard.Epix10ka.Epix10kaAsic1.PulserR.set(True)
                ePixBoard.Epix10ka.Epix10kaAsic1.PulserR.set(False)
-               ePixBoard.Epix10ka.Epix10kaAsic2.PulserR.set(True)
-               ePixBoard.Epix10ka.Epix10kaAsic2.PulserR.set(False)
+               #ePixBoard.Epix10ka.Epix10kaAsic2.PulserR.set(True)
+               #ePixBoard.Epix10ka.Epix10kaAsic2.PulserR.set(False)
                ePixBoard.Epix10ka.Epix10kaAsic3.PulserR.set(True)
                ePixBoard.Epix10ka.Epix10kaAsic3.PulserR.set(False)
                
@@ -364,27 +364,27 @@ if args.test == 1:
          print('Disable ASICs test for darks')
          ePixBoard.Epix10ka.Epix10kaAsic0.test.set(False)
          ePixBoard.Epix10ka.Epix10kaAsic1.test.set(False)
-         ePixBoard.Epix10ka.Epix10kaAsic2.test.set(False)
+         #ePixBoard.Epix10ka.Epix10kaAsic2.test.set(False)
          ePixBoard.Epix10ka.Epix10kaAsic3.test.set(False)
          
          print('Disable ASICs atest for darks')
          ePixBoard.Epix10ka.Epix10kaAsic0.atest.set(False)
          ePixBoard.Epix10ka.Epix10kaAsic1.atest.set(False)
-         ePixBoard.Epix10ka.Epix10kaAsic2.atest.set(False)
+         #ePixBoard.Epix10ka.Epix10kaAsic2.atest.set(False)
          ePixBoard.Epix10ka.Epix10kaAsic3.atest.set(False)
          
          
          print('Open dark file fixed medium')
          ePixBoard.Epix10ka.Epix10kaAsic0.trbit.set(False)
          ePixBoard.Epix10ka.Epix10kaAsic1.trbit.set(False)
-         ePixBoard.Epix10ka.Epix10kaAsic2.trbit.set(False)
+         #ePixBoard.Epix10ka.Epix10kaAsic2.trbit.set(False)
          ePixBoard.Epix10ka.Epix10kaAsic3.trbit.set(False)
          ePixBoard.Epix10ka.Epix10kaAsic0.PrepareMultiConfig()
          ePixBoard.Epix10ka.Epix10kaAsic0.WriteMatrixData(12)
          ePixBoard.Epix10ka.Epix10kaAsic1.PrepareMultiConfig()
          ePixBoard.Epix10ka.Epix10kaAsic1.WriteMatrixData(12)
-         ePixBoard.Epix10ka.Epix10kaAsic2.PrepareMultiConfig()
-         ePixBoard.Epix10ka.Epix10kaAsic2.WriteMatrixData(12)
+         #ePixBoard.Epix10ka.Epix10kaAsic2.PrepareMultiConfig()
+         #ePixBoard.Epix10ka.Epix10kaAsic2.WriteMatrixData(12)
          ePixBoard.Epix10ka.Epix10kaAsic3.PrepareMultiConfig()
          ePixBoard.Epix10ka.Epix10kaAsic3.WriteMatrixData(12)
          ePixBoard.dataWriter.dataFile.set(args.dir + '/calib_acq_width' +  '{:06d}'.format(args.acqWidth) + '_trbit' + '{:1d}'.format(trbit) + '_darkFixedMed.dat')
@@ -398,14 +398,14 @@ if args.test == 1:
          print('Open dark file fixed high')
          ePixBoard.Epix10ka.Epix10kaAsic0.trbit.set(True)
          ePixBoard.Epix10ka.Epix10kaAsic1.trbit.set(True)
-         ePixBoard.Epix10ka.Epix10kaAsic2.trbit.set(True)
+         #ePixBoard.Epix10ka.Epix10kaAsic2.trbit.set(True)
          ePixBoard.Epix10ka.Epix10kaAsic3.trbit.set(True)
          ePixBoard.Epix10ka.Epix10kaAsic0.PrepareMultiConfig()
          ePixBoard.Epix10ka.Epix10kaAsic0.WriteMatrixData(12)
          ePixBoard.Epix10ka.Epix10kaAsic1.PrepareMultiConfig()
          ePixBoard.Epix10ka.Epix10kaAsic1.WriteMatrixData(12)
-         ePixBoard.Epix10ka.Epix10kaAsic2.PrepareMultiConfig()
-         ePixBoard.Epix10ka.Epix10kaAsic2.WriteMatrixData(12)
+         #ePixBoard.Epix10ka.Epix10kaAsic2.PrepareMultiConfig()
+         #ePixBoard.Epix10ka.Epix10kaAsic2.WriteMatrixData(12)
          ePixBoard.Epix10ka.Epix10kaAsic3.PrepareMultiConfig()
          ePixBoard.Epix10ka.Epix10kaAsic3.WriteMatrixData(12)
          ePixBoard.dataWriter.dataFile.set(args.dir + '/calib_acq_width' +  '{:06d}'.format(args.acqWidth) + '_trbit' + '{:1d}'.format(trbit) + '_darkFixedHigh.dat')
@@ -421,8 +421,8 @@ if args.test == 1:
          ePixBoard.Epix10ka.Epix10kaAsic0.WriteMatrixData(8)
          ePixBoard.Epix10ka.Epix10kaAsic1.PrepareMultiConfig()
          ePixBoard.Epix10ka.Epix10kaAsic1.WriteMatrixData(8)
-         ePixBoard.Epix10ka.Epix10kaAsic2.PrepareMultiConfig()
-         ePixBoard.Epix10ka.Epix10kaAsic2.WriteMatrixData(8)
+         #ePixBoard.Epix10ka.Epix10kaAsic2.PrepareMultiConfig()
+         #ePixBoard.Epix10ka.Epix10kaAsic2.WriteMatrixData(8)
          ePixBoard.Epix10ka.Epix10kaAsic3.PrepareMultiConfig()
          ePixBoard.Epix10ka.Epix10kaAsic3.WriteMatrixData(8)
          ePixBoard.dataWriter.dataFile.set(args.dir + '/calib_acq_width' +  '{:06d}'.format(args.acqWidth) + '_trbit' + '{:1d}'.format(trbit) + '_darkFixedLow.dat')
@@ -436,14 +436,14 @@ if args.test == 1:
          print('Open dark file auto range high to low')
          ePixBoard.Epix10ka.Epix10kaAsic0.trbit.set(True)
          ePixBoard.Epix10ka.Epix10kaAsic1.trbit.set(True)
-         ePixBoard.Epix10ka.Epix10kaAsic2.trbit.set(True)
+         #ePixBoard.Epix10ka.Epix10kaAsic2.trbit.set(True)
          ePixBoard.Epix10ka.Epix10kaAsic3.trbit.set(True)
          ePixBoard.Epix10ka.Epix10kaAsic0.PrepareMultiConfig()
          ePixBoard.Epix10ka.Epix10kaAsic0.WriteMatrixData(0)
          ePixBoard.Epix10ka.Epix10kaAsic1.PrepareMultiConfig()
          ePixBoard.Epix10ka.Epix10kaAsic1.WriteMatrixData(0)
-         ePixBoard.Epix10ka.Epix10kaAsic2.PrepareMultiConfig()
-         ePixBoard.Epix10ka.Epix10kaAsic2.WriteMatrixData(0)
+         #ePixBoard.Epix10ka.Epix10kaAsic2.PrepareMultiConfig()
+         #ePixBoard.Epix10ka.Epix10kaAsic2.WriteMatrixData(0)
          ePixBoard.Epix10ka.Epix10kaAsic3.PrepareMultiConfig()
          ePixBoard.Epix10ka.Epix10kaAsic3.WriteMatrixData(0)
          ePixBoard.dataWriter.dataFile.set(args.dir + '/calib_acq_width' +  '{:06d}'.format(args.acqWidth) + '_trbit' + '{:1d}'.format(trbit) + '_darkAutoHtoL.dat')
@@ -457,14 +457,14 @@ if args.test == 1:
          print('Open dark file auto range medium to low')
          ePixBoard.Epix10ka.Epix10kaAsic0.trbit.set(False)
          ePixBoard.Epix10ka.Epix10kaAsic1.trbit.set(False)
-         ePixBoard.Epix10ka.Epix10kaAsic2.trbit.set(False)
+         #ePixBoard.Epix10ka.Epix10kaAsic2.trbit.set(False)
          ePixBoard.Epix10ka.Epix10kaAsic3.trbit.set(False)
          ePixBoard.Epix10ka.Epix10kaAsic0.PrepareMultiConfig()
          ePixBoard.Epix10ka.Epix10kaAsic0.WriteMatrixData(0)
          ePixBoard.Epix10ka.Epix10kaAsic1.PrepareMultiConfig()
          ePixBoard.Epix10ka.Epix10kaAsic1.WriteMatrixData(0)
-         ePixBoard.Epix10ka.Epix10kaAsic2.PrepareMultiConfig()
-         ePixBoard.Epix10ka.Epix10kaAsic2.WriteMatrixData(0)
+         #ePixBoard.Epix10ka.Epix10kaAsic2.PrepareMultiConfig()
+         #ePixBoard.Epix10ka.Epix10kaAsic2.WriteMatrixData(0)
          ePixBoard.Epix10ka.Epix10kaAsic3.PrepareMultiConfig()
          ePixBoard.Epix10ka.Epix10kaAsic3.WriteMatrixData(0)
          ePixBoard.dataWriter.dataFile.set(args.dir + '/calib_acq_width' +  '{:06d}'.format(args.acqWidth) + '_trbit' + '{:1d}'.format(trbit) + '_darkAutoMtoL.dat')

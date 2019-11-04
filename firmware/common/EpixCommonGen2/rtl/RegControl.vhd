@@ -28,9 +28,7 @@ use ieee.std_logic_arith.all;
 use work.StdRtlPkg.all;
 use work.AxiLitePkg.all;
 use work.AxiStreamPkg.all;
-
 use work.EpixPkgGen2.all;
-use work.ScopeTypes.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -55,12 +53,9 @@ entity RegControl is
       axiReadSlave   : out AxiLiteReadSlaveType;
       axiWriteMaster : in  AxiLiteWriteMasterType;
       axiWriteSlave  : out AxiLiteWriteSlaveType;
-      -- Monitoring enable command incoming stream
-      monEnAxisMaster : in AxiStreamMasterType;
       -- Register Inputs/Outputs (axiClk domain)
       epixStatus     : in  EpixStatusType;
       epixConfig     : out EpixConfigType;
-      scopeConfig    : out ScopeConfigType;
       -- Guard ring DAC interfaces
       dacSclk        : out sl;
       dacDin         : out sl;
@@ -78,21 +73,17 @@ architecture rtl of RegControl is
    type RegType is record
       usrRst         : sl;
       epixRegOut     : EpixConfigType;
-      scopeRegOut    : ScopeConfigType;
       axiReadSlave   : AxiLiteReadSlaveType;
       axiWriteSlave  : AxiLiteWriteSlaveType;
       reqStartupD1   : sl;
-      dummyRegs      : Slv32Array(4 downto 0);
    end record RegType;
    
    constant REG_INIT_C : RegType := (
       usrRst         => '0',
       epixRegOut     => EPIX_CONFIG_INIT_C,
-      scopeRegOut    => SCOPE_CONFIG_INIT_C,
       axiReadSlave   => AXI_LITE_READ_SLAVE_INIT_C,
       axiWriteSlave  => AXI_LITE_WRITE_SLAVE_INIT_C,
-      reqStartupD1   => '0',
-      dummyRegs      => (others=>(others=>'0'))
+      reqStartupD1   => '0'
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -116,7 +107,7 @@ begin
    -------------------------------
    -- Configuration Register
    -------------------------------  
-   comb : process (axiReadMaster, axiReset, axiWriteMaster, r, ePixStatus, idValids, idValues, monEnAxisMaster) is
+   comb : process (axiReadMaster, axiReset, axiWriteMaster, r, ePixStatus, idValids, idValues) is
       variable v        : RegType;
       variable regCon   : AxiLiteEndPointType;
       
@@ -127,8 +118,6 @@ begin
       -- Reset strobe signals
       v.epixRegOut.acqCountReset := '0';
       v.epixRegOut.seqCountReset := '0';
-      v.scopeRegOut.arm          := '0';
-      v.scopeRegOut.trig         := '0';
       
       -- Check for hard reset
       if (HARD_RESET_G = false) then
@@ -139,9 +128,13 @@ begin
          end if;      
       end if;      
       
-      -- dedicated axi stream channel to set or clear monitorEnable register
-      if monEnAxisMaster.tValid = '1' and monEnAxisMaster.tLast = '1' then
-         v.epixRegOut.monitorEnable := monEnAxisMaster.tData(0);
+      -- allow non 50% ducty cycle for ASIC readout clock
+      if r.epixRegOut.asicRoClkT(0) = '0' then
+         v.epixRegOut.asicRoClkHalfT(31 downto 16) := '0' & r.epixRegOut.asicRoClkT(15 downto 1);
+         v.epixRegOut.asicRoClkHalfT(15 downto 0)  := '0' & r.epixRegOut.asicRoClkT(15 downto 1);
+      else
+         v.epixRegOut.asicRoClkHalfT(31 downto 16) := '0' & r.epixRegOut.asicRoClkT(15 downto 1) + 1;
+         v.epixRegOut.asicRoClkHalfT(15 downto 0)  := '0' & r.epixRegOut.asicRoClkT(15 downto 1);
       end if;
       
       
@@ -154,9 +147,6 @@ begin
          v.epixRegOut.startupAck := '0';
          v.epixRegOut.startupFail := '0';
       end if;
-      
-      -- add a feature to disable the pseudoscope when the DAC trigger is disabled
-      v.scopeRegOut.triggerEnable:= r.epixRegOut.daqTriggerEnable;
       
       -- Reset data
       v.axiReadSlave.rdata       := (others => '0');
@@ -192,21 +182,14 @@ begin
       axiSlaveRegister (regCon, x"021" & "00",  0, v.epixRegOut.asicR0ToAsicAcq);
       axiSlaveRegister (regCon, x"022" & "00",  0, v.epixRegOut.asicAcqWidth);
       axiSlaveRegister (regCon, x"023" & "00",  0, v.epixRegOut.asicAcqLToPPmatL);
-      axiSlaveRegister (regCon, x"024" & "00",  0, v.epixRegOut.asicRoClkHalfT);
+      axiSlaveRegister (regCon, x"024" & "00",  0, v.epixRegOut.asicRoClkT);
       axiSlaveRegister (regCon, x"025" & "00",  0, v.epixRegOut.adcReadsPerPixel);  -- must be set to 1 (default). To be removed.
       axiSlaveRegister (regCon, x"026" & "00",  0, v.epixRegOut.adcClkHalfT);
       axiSlaveRegister (regCon, x"027" & "00",  0, v.epixRegOut.totalPixelsToRead);
       axiSlaveRegister (regCon, x"029" & "00",  0, v.epixRegOut.asicPins);
       axiSlaveRegister (regCon, x"02A" & "00",  0, v.epixRegOut.manualPinControl);
-      axiSlaveRegister (regCon, x"02A" & "00",  6, v.dummyRegs(0)(0));
-      axiSlaveRegister (regCon, x"02A" & "00",  7, v.epixRegOut.adcStreamMode);     -- not used anymore
       axiSlaveRegister (regCon, x"02A" & "00",  8, v.epixRegOut.testPattern);
-      axiSlaveRegister (regCon, x"02A" & "00", 11, v.epixRegOut.asicR0Mode);
       axiSlaveRegister (regCon, x"02B" & "00",  0, v.epixRegOut.asicR0Width);
-      axiSlaveRegister (regCon, x"02C" & "00",  0, v.dummyRegs(1));
-      axiSlaveRegister (regCon, x"02D" & "00",  0, v.dummyRegs(2));
-      axiSlaveRegister (regCon, x"02E" & "00",  0, v.dummyRegs(3));
-      axiSlaveRegister (regCon, x"02F" & "00",  0, v.dummyRegs(4));
       axiSlaveRegisterR(regCon, x"030" & "00",  0, ite(idValids(0) = '1',idValues(0)(31 downto  0), x"00000000")); --Digital card ID low
       axiSlaveRegisterR(regCon, x"031" & "00",  0, ite(idValids(0) = '1',idValues(0)(63 downto 32), x"00000000")); --Digital card ID high
       axiSlaveRegisterR(regCon, x"032" & "00",  0, ite(idValids(1) = '1',idValues(1)(31 downto  0), x"00000000")); --Analog card ID low
@@ -217,23 +200,8 @@ begin
       axiSlaveRegisterR(regCon, x"03B" & "00",  0, ite(idValids(2) = '1',idValues(2)(31 downto  0), x"00000000")); --Carrier card ID low
       axiSlaveRegisterR(regCon, x"03C" & "00",  0, ite(idValids(2) = '1',idValues(2)(63 downto 32), x"00000000")); --Carrier card ID high
       axiSlaveRegister (regCon, x"03D" & "00",  0, v.epixRegOut.pgpTrigEn);
-      axiSlaveRegister (regCon, x"03E" & "00",  0, v.epixRegOut.monitorEnable);
       axiSlaveRegister (regCon, x"040" & "00",  0, v.epixRegOut.tpsDelay);
       axiSlaveRegister (regCon, x"040" & "00", 16, v.epixRegOut.tpsEdge);
-      axiSlaveRegister (regCon, x"050" & "00",  0, v.scopeRegOut.arm);
-      axiSlaveRegister (regCon, x"051" & "00",  0, v.scopeRegOut.trig);
-      axiSlaveRegister (regCon, x"052" & "00",  0, v.scopeRegOut.scopeEnable);
-      axiSlaveRegister (regCon, x"052" & "00",  1, v.scopeRegOut.triggerEdge);
-      axiSlaveRegister (regCon, x"052" & "00",  2, v.scopeRegOut.triggerChannel);
-      axiSlaveRegister (regCon, x"052" & "00",  6, v.scopeRegOut.triggerMode);
-      axiSlaveRegister (regCon, x"052" & "00", 16, v.scopeRegOut.triggerAdcThresh);
-      axiSlaveRegister (regCon, x"053" & "00",  0, v.scopeRegOut.triggerHoldoff);
-      axiSlaveRegister (regCon, x"053" & "00", 13, v.scopeRegOut.triggerOffset);
-      axiSlaveRegister (regCon, x"054" & "00",  0, v.scopeRegOut.traceLength);
-      axiSlaveRegister (regCon, x"054" & "00", 13, v.scopeRegOut.skipSamples);
-      axiSlaveRegister (regCon, x"055" & "00",  0, v.scopeRegOut.inputChannelA);
-      axiSlaveRegister (regCon, x"055" & "00",  5, v.scopeRegOut.inputChannelB);
-      axiSlaveRegister (regCon, x"056" & "00",  0, v.scopeRegOut.triggerDelay);
       axiSlaveRegister (regCon, x"080" & "00",  0, v.epixRegOut.requestStartupCal);
       axiSlaveRegister (regCon, x"080" & "00",  1, v.epixRegOut.startupAck);          -- set by Microblaze
       axiSlaveRegister (regCon, x"080" & "00",  2, v.epixRegOut.startupFail);         -- set by Microblaze
@@ -242,17 +210,6 @@ begin
       axiSlaveRegister (regCon, x"091" & "00",  0, v.epixRegOut.pipelineDelayA1);
       axiSlaveRegister (regCon, x"092" & "00",  0, v.epixRegOut.pipelineDelayA2);
       axiSlaveRegister (regCon, x"093" & "00",  0, v.epixRegOut.pipelineDelayA3);
-      
-      -- gen 2 slow ADC data transformed to real numbers
-      axiSlaveRegisterR(regCon, x"140" & "00",  0, epixStatus.envData(0));
-      axiSlaveRegisterR(regCon, x"141" & "00",  0, epixStatus.envData(1));
-      axiSlaveRegisterR(regCon, x"142" & "00",  0, epixStatus.envData(2));
-      axiSlaveRegisterR(regCon, x"143" & "00",  0, epixStatus.envData(3));
-      axiSlaveRegisterR(regCon, x"144" & "00",  0, epixStatus.envData(4));
-      axiSlaveRegisterR(regCon, x"145" & "00",  0, epixStatus.envData(5));
-      axiSlaveRegisterR(regCon, x"146" & "00",  0, epixStatus.envData(6));
-      axiSlaveRegisterR(regCon, x"147" & "00",  0, epixStatus.envData(7));
-      axiSlaveRegisterR(regCon, x"148" & "00",  0, epixStatus.envData(8));
       
       axiSlaveDefault(regCon, v.axiWriteSlave, v.axiReadSlave, AXI_ERROR_RESP_G);
 
@@ -277,7 +234,6 @@ begin
       axiReadSlave   <= r.axiReadSlave;
       axiWriteSlave  <= r.axiWriteSlave;
       epixConfig     <= r.epixRegOut;
-      scopeConfig    <= r.scopeRegOut;
       
    end process comb;
    

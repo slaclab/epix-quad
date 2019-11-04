@@ -1,4 +1,4 @@
-export GIT_BYPASS = 0
+export GIT_BYPASS = 1
 
 # Define target output
 target: prom
@@ -7,7 +7,7 @@ target: prom
 export PRJ_PART = XC7A200TSBG484-3
 
 # Define Firmware Version Number
-export PRJ_VERSION = 0xE2030007
+export PRJ_VERSION = 0xE2040000
 
 # Define the Microblaze source path
 export SDK_SRC_PATH = $(PROJ_DIR)/../../common/EpixCommonGen2/src/ePix100a

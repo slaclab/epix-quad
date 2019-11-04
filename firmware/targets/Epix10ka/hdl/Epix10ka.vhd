@@ -38,7 +38,6 @@ use unisim.vcomponents.all;
 entity Epix10ka is
    generic (
       TPD_G : time := 1 ns;
-      FPGA_BASE_CLOCK_G : slv(31 downto 0) := x"00" & x"100000"; 
       BUILD_INFO_G  : BuildInfoType
    );
    port (
@@ -198,7 +197,6 @@ begin
       generic map (
          TPD_G => TPD_G,
          ASIC_TYPE_G => EPIX10KA_C,
-         FPGA_BASE_CLOCK_G => FPGA_BASE_CLOCK_G,
          BUILD_INFO_G => BUILD_INFO_G,
          -- Polarity of selected LVDS data lanes is swapped on gen2 ADC board
          ADC1_INVERT_CH    => "10000000",

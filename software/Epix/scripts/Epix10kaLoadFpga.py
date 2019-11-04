@@ -103,8 +103,8 @@ PRINT_VERBOSE = args.verbose
 
 
 # Create the PGP interfaces for ePix camera
-pgpVc0 = rogue.hardware.pgp.PgpCard(args.pgp,0,0) # Data & cmds
-pgpVc1 = rogue.hardware.pgp.PgpCard(args.pgp,0,1) # Registers for ePix board
+pgpVc1 = rogue.hardware.pgp.PgpCard(args.pgp,0,0) # Data & cmds
+pgpVc0 = rogue.hardware.pgp.PgpCard(args.pgp,0,1) # Registers for ePix board
 pgpVc2 = rogue.hardware.pgp.PgpCard(args.pgp,0,2) # PseudoScope
 pgpVc3 = rogue.hardware.pgp.PgpCard(args.pgp,0,3) # Monitoring (Slow ADC)
 
