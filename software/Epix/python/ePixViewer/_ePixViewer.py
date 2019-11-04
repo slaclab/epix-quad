@@ -433,8 +433,8 @@ class Window(QMainWindow, QObject):
         self.chBdata = -1.0 + data[int(oscWords/2): oscWords] * (2.0/2**14)
         
         if (self.LinePlot2_RB1.isChecked()):
-            self.lineDisplay2.update_plot(self.cbScopeCh0.isChecked(), "Scope Trace A", 'r',  self.chAdata, 
-                                            self.cbScopeCh1.isChecked(), "Scope Trace B", 'b',  self.chBdata)
+            self.lineDisplay2.update_plot(self.cbScopeCh0.isChecked(), "Scope Trace A", 'r.',  self.chAdata, 
+                                            self.cbScopeCh1.isChecked(), "Scope Trace B", 'b.',  self.chBdata)
         self.eventReaderScope.busy = False
        
 
@@ -794,13 +794,13 @@ class MplCanvas(FigureCanvas):
     def compute_initial_figure(self):
         #if one wants to plot something at the begining of the application fill this function.
         #self.axes.plot([0, 1, 2, 3], [1, 2, 0, 4], 'b')
-        self.axes.plot([], [], 'b')
+        self.axes.plot([], [], 'b.')
 
     def update_plot(self):
         # Build a list of 4 random integers between 0 and 10 (both inclusive)
         l = [-1, -2, 10, 14] #[random.randint(0, 10) for i in range(4)]
         #self.axes.cla()
-        self.axes.plot([0, 1, 2, 3], l, 'r')
+        self.axes.plot([0, 1, 2, 3], l, 'r.')
         self.draw()
 
     #the arguments are expected in the following sequence
