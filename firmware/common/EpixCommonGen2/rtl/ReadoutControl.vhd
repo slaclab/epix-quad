@@ -390,9 +390,9 @@ begin
                   v.timeoutCnt := r.timeoutCnt + 1;
                end if;
                if acqBusy = '0' and fifoEmptyAll = '1' then
-                  v.state := ENV_DATA_S;
+                  v.state     := ENV_DATA_S;
                elsif r.error = '1' or r.timeoutCnt >= r.stuckTimeout then
-                  v.state := FOOTER_S;
+                  v.state     := FOOTER_S;
                end if;
             when ENV_DATA_S =>
                v.wordCnt         := r.wordCnt + 1;
@@ -435,10 +435,10 @@ begin
                end if;
             when FOOTER_S =>
                ssiSetUserEofe(MASTER_AXI_STREAM_CONFIG_G,v.mAxisMaster,r.error);
-               v.readDone                       := '1';
                v.mAxisMaster.tData(31 downto 0) := ZEROWORD_C;
                v.mAxisMaster.tValid             := '1';
                v.mAxisMaster.tLast              := '1';
+               v.readDone                       := '1';
                v.state                          := IDLE_S;
          end case;
       end if;

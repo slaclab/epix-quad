@@ -147,8 +147,7 @@ architecture AcqControl of AcqControl is
                   NEXT_CELL_S,
                   WAIT_DOUT_S,
                   NEXT_DOUT_S,
-                  WAIT_FOR_READOUT_S,
-                  SACI_RESET_S,
+                  SYNC_RESET_S,
                   DONE_S);
    signal curState           : state := IDLE_S;
    signal nxtState           : state := IDLE_S;
@@ -359,7 +358,7 @@ begin
                   nxtState <= NEXT_CELL_S after tpd;
                else
                   if unsigned(roClkTail) = 0 then
-                     nxtState <= WAIT_FOR_READOUT_S after tpd;
+                     nxtState <= SYNC_RESET_S after tpd;
                   else
                      nxtState <= NEXT_DOUT_S after tpd;
                   end if;
@@ -374,7 +373,7 @@ begin
                   nxtState <= NEXT_CELL_S after tpd;
                else
                   if unsigned(roClkTail) = 0 then
-                     nxtState <= WAIT_FOR_READOUT_S after tpd;
+                     nxtState <= SYNC_RESET_S after tpd;
                   else
                      nxtState <= NEXT_DOUT_S after tpd;
                   end if;
@@ -433,7 +432,7 @@ begin
                if pixelCnt < unsigned(ePixConfig.totalPixelsToRead)+unsigned(roClkTail)-1 then
                   nxtState <= NEXT_DOUT_S after tpd;
                else
-                  nxtState <= WAIT_FOR_READOUT_S after tpd;
+                  nxtState <= SYNC_RESET_S after tpd;
                end if;
             -- do faster (dummy) readout 
             -- DUMMY_ASIC_ROCLK_HALFT_C = 2 -> 40ns -> 25MHz (this clock is divided by 4 inside epix10kA)
@@ -444,25 +443,14 @@ begin
                if pixelCnt < unsigned(ePixConfig.totalPixelsToRead)+unsigned(roClkTail)-1 then
                   nxtState <= NEXT_DOUT_S after tpd;
                else
-                  nxtState <= SACI_RESET_S after tpd;
+                  nxtState <= SYNC_RESET_S after tpd;
                end if;
             else
                nxtState <= curState after tpd;
             end if;
          
-         --Wait for readout to finish before sending SACI commands
-         when WAIT_FOR_READOUT_S =>
-            iAcqBusy    <= '0' after tpd;
-            iAsicR0     <= '0' after tpd;
-            
-            if readDone = '1' then
-               nxtState <= SACI_RESET_S;
-            else
-               nxtState <= curState after tpd;
-            end if;
-         
-         --Use SACI prepare for readout
-         when SACI_RESET_S =>
+         --make SYNC pulse to reset ASIC readout counters
+         when SYNC_RESET_S =>
             iAsicSync  <= '1' after tpd;
             iAcqBusy   <= '0' after tpd;
             iAsicR0    <= '0' after tpd;
@@ -490,7 +478,11 @@ begin
          when DONE_S =>
             iAcqBusy    <= '0' after tpd;
             iAsicR0     <= '0' after tpd;
-            nxtState    <= IDLE_S after tpd;
+            if readDone = '1' then
+               nxtState <= IDLE_S after tpd;
+            else
+               nxtState <= curState after tpd;
+            end if;
          
          --Send back to IDLE if we end up in an undefined state
          when others =>
