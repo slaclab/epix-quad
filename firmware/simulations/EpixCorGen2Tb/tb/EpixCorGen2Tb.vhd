@@ -262,7 +262,7 @@ begin
       FB_BUFG_G          => true,
       NUM_CLOCKS_G       => 1,
       -- MMCM attributes
-      CLKIN_PERIOD_G     => 20.0,
+      CLKIN_PERIOD_G     => 15.42,
       DIVCLK_DIVIDE_G    => 1,
       CLKFBOUT_MULT_F_G  => 14.0,
       CLKOUT0_DIVIDE_F_G => 2.0
