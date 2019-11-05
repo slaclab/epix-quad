@@ -76,6 +76,7 @@ architecture rtl of RegControl is
       axiReadSlave   : AxiLiteReadSlaveType;
       axiWriteSlave  : AxiLiteWriteSlaveType;
       reqStartupD1   : sl;
+      idValues       : Slv64Array(2 downto 0);
    end record RegType;
    
    constant REG_INIT_C : RegType := (
@@ -83,7 +84,8 @@ architecture rtl of RegControl is
       epixRegOut     => EPIX_CONFIG_INIT_C,
       axiReadSlave   => AXI_LITE_READ_SLAVE_INIT_C,
       axiWriteSlave  => AXI_LITE_WRITE_SLAVE_INIT_C,
-      reqStartupD1   => '0'
+      reqStartupD1   => '0',
+      idValues       => (others=>(others=>'0'))
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -137,6 +139,14 @@ begin
          v.epixRegOut.asicRoClkHalfT(15 downto 0)  := '0' & r.epixRegOut.asicRoClkT(15 downto 1);
       end if;
       
+      -- register IDs to help with timing closure
+      for i in 2 downto 0 loop
+         if idValids(i) = '1' then
+            v.idValues(i) := idValues(i);
+         else
+            v.idValues(i) := (others=>'0');
+         end if;
+      end loop;
       
       -- sum all time delays leading to the ACQ pulse and expose in a read only register
       v.epixRegOut.asicPreAcqTime := r.epixRegOut.acqToAsicR0Delay + r.epixRegOut.asicR0Width + r.epixRegOut.asicR0ToAsicAcq;
@@ -190,15 +200,15 @@ begin
       axiSlaveRegister (regCon, x"02A" & "00",  0, v.epixRegOut.manualPinControl);
       axiSlaveRegister (regCon, x"02A" & "00",  8, v.epixRegOut.testPattern);
       axiSlaveRegister (regCon, x"02B" & "00",  0, v.epixRegOut.asicR0Width);
-      axiSlaveRegisterR(regCon, x"030" & "00",  0, ite(idValids(0) = '1',idValues(0)(31 downto  0), x"00000000")); --Digital card ID low
-      axiSlaveRegisterR(regCon, x"031" & "00",  0, ite(idValids(0) = '1',idValues(0)(63 downto 32), x"00000000")); --Digital card ID high
-      axiSlaveRegisterR(regCon, x"032" & "00",  0, ite(idValids(1) = '1',idValues(1)(31 downto  0), x"00000000")); --Analog card ID low
-      axiSlaveRegisterR(regCon, x"033" & "00",  0, ite(idValids(1) = '1',idValues(1)(63 downto 32), x"00000000")); --Analog card ID high
+      axiSlaveRegisterR(regCon, x"030" & "00",  0, r.idValues(0)(31 downto  0)); --Digital card ID low
+      axiSlaveRegisterR(regCon, x"031" & "00",  0, r.idValues(0)(63 downto 32)); --Digital card ID high
+      axiSlaveRegisterR(regCon, x"032" & "00",  0, r.idValues(1)(31 downto  0)); --Analog card ID low
+      axiSlaveRegisterR(regCon, x"033" & "00",  0, r.idValues(1)(63 downto 32)); --Analog card ID high
       
       axiSlaveRegisterR(regCon, x"039" & "00",  0, r.epixRegOut.asicPreAcqTime);
       axiSlaveRegister (regCon, x"03A" & "00",  0, v.epixRegOut.asicPPmatToReadout);
-      axiSlaveRegisterR(regCon, x"03B" & "00",  0, ite(idValids(2) = '1',idValues(2)(31 downto  0), x"00000000")); --Carrier card ID low
-      axiSlaveRegisterR(regCon, x"03C" & "00",  0, ite(idValids(2) = '1',idValues(2)(63 downto 32), x"00000000")); --Carrier card ID high
+      axiSlaveRegisterR(regCon, x"03B" & "00",  0, r.idValues(2)(31 downto  0)); --Carrier card ID low
+      axiSlaveRegisterR(regCon, x"03C" & "00",  0, r.idValues(2)(63 downto 32)); --Carrier card ID high
       axiSlaveRegister (regCon, x"03D" & "00",  0, v.epixRegOut.pgpTrigEn);
       axiSlaveRegister (regCon, x"040" & "00",  0, v.epixRegOut.tpsDelay);
       axiSlaveRegister (regCon, x"040" & "00", 16, v.epixRegOut.tpsEdge);
