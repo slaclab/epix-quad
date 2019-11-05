@@ -146,7 +146,8 @@ end EpixCoreGen2;
 
 architecture top_level of EpixCoreGen2 is
    
-   constant AXI_CLK_FREQ_C : real := 120.3125E+6;
+   --constant AXI_CLK_FREQ_C : real := 120.3125E+6;
+   constant AXI_CLK_FREQ_C : real := 129.6875E+6;
    
    constant NUM_AXI_MASTERS_C    : natural := 9;
 
@@ -264,35 +265,47 @@ begin
    -- Generate clocks from 156.25 MHz PGP  --
    ------------------------------------------
    -- clkIn     : 156.25 MHz PGP
-   -- clkOut(0) : 120.3125 MHz system clock (Modify AXI_CLK_FREQ_C when changed)
-   -- clkOut(1) : 200.521 MHz IDELAYCTRL clock
-   U_CoreClockGen : entity work.ClockManager7
+   -- clkOut(0) : 129.6875 MHz system clock (Modify AXI_CLK_FREQ_C when changed)
+   U_CoreClockGen0 : entity work.ClockManager7
    generic map (
       INPUT_BUFG_G         => false,
       FB_BUFG_G            => true,
-      NUM_CLOCKS_G         => 2,
+      NUM_CLOCKS_G         => 1,
       CLKIN_PERIOD_G       => 6.4,
       DIVCLK_DIVIDE_G      => 10,
-      --DIVCLK_DIVIDE_G      => 5,
-      CLKFBOUT_MULT_F_G    => 38.5,
-      --CLKFBOUT_MULT_F_G    => 32.0,
+      --CLKFBOUT_MULT_F_G    => 38.5, 
+      CLKFBOUT_MULT_F_G    => 41.5,    -- base 648.4375MHz
       CLKOUT0_DIVIDE_F_G   => 5.0,
-      --CLKOUT0_DIVIDE_F_G   => 10.0,
       CLKOUT0_PHASE_G      => 0.0,
-      CLKOUT0_DUTY_CYCLE_G => 0.5,
-      CLKOUT1_DIVIDE_G     => 3,
-      --CLKOUT1_DIVIDE_G     => 5,
-      CLKOUT1_PHASE_G      => 0.0,
-      CLKOUT1_DUTY_CYCLE_G => 0.5,
-      CLKOUT1_RST_HOLD_G   => 32
+      CLKOUT0_DUTY_CYCLE_G => 0.5
    )
    port map (
       clkIn     => pgpClk,
       rstIn     => sysRst,
       clkOut(0) => coreClk,
-      clkOut(1) => iDelayCtrlClk,
       rstOut(0) => coreClkRst,
-      rstOut(1) => iDelayCtrlRst,
+      locked    => open
+   );
+   
+   -- clkIn     : 156.25 MHz PGP
+   -- clkOut(0) : 200.0 MHz IDELAYCTRL clock
+   U_CoreClockGen1 : entity work.ClockManager7
+   generic map (
+      INPUT_BUFG_G         => false,
+      FB_BUFG_G            => true,
+      NUM_CLOCKS_G         => 1,
+      CLKIN_PERIOD_G       => 6.4,
+      DIVCLK_DIVIDE_G      => 5,
+      CLKFBOUT_MULT_F_G    => 32.0,    -- base 1000.0MHz
+      CLKOUT0_DIVIDE_F_G   => 5.0,
+      CLKOUT0_PHASE_G      => 0.0,
+      CLKOUT0_DUTY_CYCLE_G => 0.5
+   )
+   port map (
+      clkIn     => pgpClk,
+      rstIn     => sysRst,
+      clkOut(0) => iDelayCtrlClk,
+      rstOut(0) => iDelayCtrlRst,
       locked    => open
    );
    
@@ -544,7 +557,7 @@ begin
    generic map (
       TPD_G               => TPD_G,
       CLK_PERIOD_G        => 1.0/AXI_CLK_FREQ_C,
-      IDELAYCTRL_FREQ_G   => 200.521,
+      IDELAYCTRL_FREQ_G   => 200.0,
       AXI_BASE_ADDR_G     => AXI_CONFIG_C(ADC_INDEX_C).baseAddr,
       ADC0_INVERT_CH      => ADC0_INVERT_CH,
       ADC1_INVERT_CH      => ADC1_INVERT_CH,
