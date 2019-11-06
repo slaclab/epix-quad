@@ -36,8 +36,10 @@ use unisim.vcomponents.all;
 
 entity RegExtControl is
    generic (
-      TPD_G            : time            := 1 ns;
-      AXI_ERROR_RESP_G : slv(1 downto 0) := AXI_RESP_OK_C);
+      TPD_G             : time            := 1 ns;
+      AXI_ERROR_RESP_G  : slv(1 downto 0) := AXI_RESP_OK_C;
+      FPGA_BASE_CLOCK_G : slv(31 downto 0)
+   );
    port (
       -- Global Signals
       axiClk         : in  sl;
@@ -132,8 +134,12 @@ begin
 
       -- Map out standard registers    
       axiSlaveRegister (regCon, x"000" & "00",  0, v.epixRegOut.ghostCorr);
+      axiSlaveRegisterR(regCon, x"001" & "00",  0, FPGA_BASE_CLOCK_G);
       
       axiSlaveRegister (regCon, x"200" & "00",  0, v.epixRegOut.dbgReg);
+      axiSlaveRegister (regCon, x"201" & "00",  0, v.epixRegOut.injStartDly);
+      axiSlaveRegister (regCon, x"202" & "00",  0, v.epixRegOut.injStopDly);
+      axiSlaveRegister (regCon, x"203" & "00",  0, v.epixRegOut.injSkip);
       
       axiSlaveRegister (regCon, x"C00",  0, v.epixRegOut.pipelineDelay( 0));
       axiSlaveRegister (regCon, x"C04",  0, v.epixRegOut.pipelineDelay( 1));

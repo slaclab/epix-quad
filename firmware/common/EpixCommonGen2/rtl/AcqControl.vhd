@@ -36,7 +36,8 @@ use UNISIM.vcomponents.all;
 
 entity AcqControl is
    generic (
-      ASIC_TYPE_G       : AsicType := EPIX100A_C
+      ASIC_TYPE_G       : AsicType  := EPIX100A_C;
+      TPD_G             : time      := 1 ns
    );
    port (
 
@@ -52,6 +53,7 @@ entity AcqControl is
       adcPulse            : out   std_logic;
       readTps             : out   std_logic;
       roClkTail           : in    std_logic_vector(7 downto 0);
+      injAcq              : out   std_logic;
 
       -- Configuration
       epixConfig          : in    EpixConfigType;
@@ -151,14 +153,12 @@ architecture AcqControl of AcqControl is
                   DONE_S);
    signal curState           : state := IDLE_S;
    signal nxtState           : state := IDLE_S;
-
-   -- Register delay for simulation
-   constant tpd:time := 0.5 ns;
    
-   attribute keep : string;
-   attribute keep of pixelCnt : signal is "true";
-   attribute keep of curState : signal is "true";
-   attribute keep of iReadValid : signal is "true";
+   signal injStartCnt   : slv(15 downto 0);
+   signal injStopCnt    : slv(15 downto 0);
+   signal injSkipCnt    : slv(7 downto 0);
+   signal injStartEn    : sl;
+   signal injStopEn     : sl;
    
 
 begin
@@ -217,276 +217,276 @@ begin
    process(curState,acqStartEdge,stateCnt,adcSampCnt,pixelCnt,ePixConfig,adcClkEdge,readDone,roClkTail,dummyAcq,epixConfigExt) begin
       
       --All signals default values
-      iAsicClk           <= '0' after tpd;
-      iAsicR0            <= '1' after tpd;
-      iAsicPpmat         <= '0' after tpd;
-      iAsicAcq           <= '0' after tpd;
-      iAsicSync          <= '0' after tpd;
-      stateCntEn         <= '0' after tpd;
-      stateCntRst        <= '0' after tpd;
-      adcSampCntRst      <= '0' after tpd;
-      pixelCntEn         <= '0' after tpd;
-      pixelCntRst        <= '1' after tpd;
-      iAcqBusy           <= '1' after tpd;
-      firstPixelRst      <= '0' after tpd;
-      firstPixelSet      <= '0' after tpd;
-      dummyAcqSet        <= '0' after tpd;
-      dummyAcqClr        <= '0' after tpd;
+      iAsicClk           <= '0' after TPD_G;
+      iAsicR0            <= '1' after TPD_G;
+      iAsicPpmat         <= '0' after TPD_G;
+      iAsicAcq           <= '0' after TPD_G;
+      iAsicSync          <= '0' after TPD_G;
+      stateCntEn         <= '0' after TPD_G;
+      stateCntRst        <= '0' after TPD_G;
+      adcSampCntRst      <= '0' after TPD_G;
+      pixelCntEn         <= '0' after TPD_G;
+      pixelCntRst        <= '1' after TPD_G;
+      iAcqBusy           <= '1' after TPD_G;
+      firstPixelRst      <= '0' after TPD_G;
+      firstPixelSet      <= '0' after TPD_G;
+      dummyAcqSet        <= '0' after TPD_G;
+      dummyAcqClr        <= '0' after TPD_G;
       
       case curState is
          --Remain idle until we get the acqStart signal
          when IDLE_S =>
-            iAcqBusy       <= '0' after tpd;
-            stateCntRst    <= '1' after tpd;
-            adcSampCntRst  <= '1' after tpd;
-            firstPixelRst  <= '1' after tpd;
-            iAsicR0        <= '0' after tpd;
-            dummyAcqClr    <= '1' after tpd;
+            iAcqBusy       <= '0' after TPD_G;
+            stateCntRst    <= '1' after TPD_G;
+            adcSampCntRst  <= '1' after TPD_G;
+            firstPixelRst  <= '1' after TPD_G;
+            iAsicR0        <= '0' after TPD_G;
+            dummyAcqClr    <= '1' after TPD_G;
             if acqStartEdge = '1' then
-               nxtState <= WAIT_R0_S after tpd;
+               nxtState <= WAIT_R0_S after TPD_G;
             else
-               nxtState <= curState after tpd;
+               nxtState <= curState after TPD_G;
             end if;
          
          --Wait a specified number of clock cycles before bringing asicR0 up
          when WAIT_R0_S =>
-            iAsicPpmat     <= '1' after tpd;
-            iAsicR0        <= '0' after tpd;
-            stateCntEn     <= '1' after tpd;
+            iAsicPpmat     <= '1' after TPD_G;
+            iAsicR0        <= '0' after TPD_G;
+            stateCntEn     <= '1' after TPD_G;
             if stateCnt >= unsigned(ePixConfig.acqToAsicR0Delay) or dummyAcq = '1' then
-               stateCntEn  <= '0' after tpd;
-               stateCntRst <= '1' after tpd;
-               nxtState    <= PULSE_R0_S after tpd;
+               stateCntEn  <= '0' after TPD_G;
+               stateCntRst <= '1' after TPD_G;
+               nxtState    <= PULSE_R0_S after TPD_G;
             else
-               nxtState <= curState after tpd;
+               nxtState <= curState after TPD_G;
             end if; 
          
          --Pulse R0 low for a specified number of clock cycles
          when PULSE_R0_S =>
-            iAsicPpmat     <= '1' after tpd;
-            iAsicR0        <= '0' after tpd;
-            stateCntEn     <= '1' after tpd;
+            iAsicPpmat     <= '1' after TPD_G;
+            iAsicR0        <= '0' after TPD_G;
+            stateCntEn     <= '1' after TPD_G;
             if stateCnt >= unsigned(ePixConfig.asicR0Width) or dummyAcq = '1' then
-               stateCntEn  <= '0' after tpd;
-               stateCntRst <= '1' after tpd;
-               nxtState    <= WAIT_ACQ_S after tpd;
+               stateCntEn  <= '0' after TPD_G;
+               stateCntRst <= '1' after TPD_G;
+               nxtState    <= WAIT_ACQ_S after TPD_G;
             else
-               nxtState <= curState after tpd;
+               nxtState <= curState after TPD_G;
             end if;
          
          --Wait a specified number of clock cycles before bringing asicAcq up
          when WAIT_ACQ_S => 
-            iAsicPpmat     <= '1' after tpd;
-            stateCntEn     <= '1' after tpd;
+            iAsicPpmat     <= '1' after TPD_G;
+            stateCntEn     <= '1' after TPD_G;
             if stateCnt >= unsigned(ePixConfig.asicR0ToAsicAcq) and dummyAcq = '0' then
-               stateCntEn  <= '0' after tpd;
-               stateCntRst <= '1' after tpd;
-               nxtState    <= ACQ_S after tpd;
+               stateCntEn  <= '0' after TPD_G;
+               stateCntRst <= '1' after TPD_G;
+               nxtState    <= ACQ_S after TPD_G;
             elsif stateCnt >= DUMMY_ASIC_R0_TO_ACQ_C-1 and dummyAcq = '1' then
-               stateCntEn  <= '0' after tpd;
-               stateCntRst <= '1' after tpd;
-               nxtState    <= ACQ_S after tpd;
+               stateCntEn  <= '0' after TPD_G;
+               stateCntRst <= '1' after TPD_G;
+               nxtState    <= ACQ_S after TPD_G;
             else
-               nxtState <= curState after tpd;
+               nxtState <= curState after TPD_G;
             end if;
          
          --Hold acq high for a specified time
          when ACQ_S =>
-            iAsicPpmat     <= '1' after tpd;
-            iAsicAcq       <= '1' after tpd;
-            stateCntEn     <= '1' after tpd;
+            iAsicPpmat     <= '1' after TPD_G;
+            iAsicAcq       <= '1' after TPD_G;
+            stateCntEn     <= '1' after TPD_G;
             if stateCnt >= unsigned(ePixConfig.asicAcqWidth) and dummyAcq = '0' then
-               stateCntEn  <= '0' after tpd;
-               stateCntRst <= '1' after tpd;
-               nxtState    <= DROP_ACQ_S after tpd;
+               stateCntEn  <= '0' after TPD_G;
+               stateCntRst <= '1' after TPD_G;
+               nxtState    <= DROP_ACQ_S after TPD_G;
             elsif stateCnt >= DUMMY_ASIC_ACQ_WIDTH_C-1 and dummyAcq = '1' then
-               stateCntEn  <= '0' after tpd;
-               stateCntRst <= '1' after tpd;
-               nxtState    <= DROP_ACQ_S after tpd;
+               stateCntEn  <= '0' after TPD_G;
+               stateCntRst <= '1' after TPD_G;
+               nxtState    <= DROP_ACQ_S after TPD_G;
             else
-               nxtState <= curState after tpd;
+               nxtState <= curState after TPD_G;
             end if;
          
          --Wait for the matrix counter to reset (via saci interface)
          when DROP_ACQ_S =>
-            iAsicPpmat      <= '1' after tpd;
-            stateCntEn      <= '1' after tpd;
+            iAsicPpmat      <= '1' after TPD_G;
+            stateCntEn      <= '1' after TPD_G;
             
-            nxtState <= WAIT_PPMAT_S after tpd;
+            nxtState <= WAIT_PPMAT_S after TPD_G;
          
          --Ensure that the minimum hold off time has been enforced before dropping PPmat
          when WAIT_PPMAT_S =>
-            iAsicPpmat     <= '1' after tpd;
-            stateCntEn     <= '1' after tpd;
+            iAsicPpmat     <= '1' after TPD_G;
+            stateCntEn     <= '1' after TPD_G;
             if stateCnt >= unsigned(ePixConfig.asicAcqLToPPmatL) or dummyAcq = '1' then
-               stateCntEn  <= '0' after tpd;
-               stateCntRst <= '1' after tpd;
-               nxtState    <= WAIT_POST_PPMAT_S after tpd;
+               stateCntEn  <= '0' after TPD_G;
+               stateCntRst <= '1' after TPD_G;
+               nxtState    <= WAIT_POST_PPMAT_S after TPD_G;
             else
-               nxtState <= curState after tpd;
+               nxtState <= curState after TPD_G;
             end if;
          
          -- Programmable delay before starting the readout after dropping PPmat
          when WAIT_POST_PPMAT_S =>
-            stateCntEn     <= '1' after tpd;
+            stateCntEn     <= '1' after TPD_G;
             if stateCnt >= unsigned(ePixConfig.asicPPmatToReadout) or dummyAcq = '1' then
-               stateCntEn  <= '0' after tpd;
-               stateCntRst <= '1' after tpd;
-               nxtState    <= SYNC_TO_ADC_S after tpd;
+               stateCntEn  <= '0' after TPD_G;
+               stateCntRst <= '1' after TPD_G;
+               nxtState    <= SYNC_TO_ADC_S after TPD_G;
             else
-               nxtState <= curState after tpd;
+               nxtState <= curState after TPD_G;
             end if;
          
          --Synchronize phases of ASIC RoClk and ADC clk
          when SYNC_TO_ADC_S =>
             if adcClkEdge = '1' then
-               nxtState <= NEXT_CELL_S after tpd;
+               nxtState <= NEXT_CELL_S after TPD_G;
             else
-               nxtState <= curState after tpd;
+               nxtState <= curState after TPD_G;
             end if;
          
          --ADC reads out while we wait a half period of RoClk.  If we're done with all pixels, finish.
          when WAIT_ADC_S => 
-            pixelCntRst    <= '0' after tpd;
-            firstPixelSet  <= '1' after tpd;
-            stateCntEn     <= '1' after tpd;
+            pixelCntRst    <= '0' after TPD_G;
+            firstPixelSet  <= '1' after TPD_G;
+            stateCntEn     <= '1' after TPD_G;
             if stateCnt >= unsigned(ePixConfig.asicRoClkHalfT(31 downto 16))-1 and dummyAcq = '0' then
-               stateCntEn  <= '0' after tpd;
-               stateCntRst <= '1' after tpd;
-               pixelCntEn  <= '1' after tpd;
+               stateCntEn  <= '0' after TPD_G;
+               stateCntRst <= '1' after TPD_G;
+               pixelCntEn  <= '1' after TPD_G;
                if pixelCnt < unsigned(ePixConfig.totalPixelsToRead)-1 then
-                  nxtState <= NEXT_CELL_S after tpd;
+                  nxtState <= NEXT_CELL_S after TPD_G;
                else
                   if unsigned(roClkTail) = 0 then
-                     nxtState <= SYNC_RESET_S after tpd;
+                     nxtState <= SYNC_RESET_S after TPD_G;
                   else
-                     nxtState <= NEXT_DOUT_S after tpd;
+                     nxtState <= NEXT_DOUT_S after TPD_G;
                   end if;
                end if;
             -- do faster (dummy) readout 
             -- DUMMY_ASIC_ROCLK_HALFT_C = 2 -> 40ns -> 25MHz (this clock is divided by 4 inside epix10kA)
             elsif stateCnt >= DUMMY_ASIC_ROCLK_HALFT_C-1 and dummyAcq = '1' then
-               stateCntEn  <= '0' after tpd;
-               stateCntRst <= '1' after tpd;
-               pixelCntEn  <= '1' after tpd;
+               stateCntEn  <= '0' after TPD_G;
+               stateCntRst <= '1' after TPD_G;
+               pixelCntEn  <= '1' after TPD_G;
                if pixelCnt < unsigned(ePixConfig.totalPixelsToRead)-1 then
-                  nxtState <= NEXT_CELL_S after tpd;
+                  nxtState <= NEXT_CELL_S after TPD_G;
                else
                   if unsigned(roClkTail) = 0 then
-                     nxtState <= SYNC_RESET_S after tpd;
+                     nxtState <= SYNC_RESET_S after TPD_G;
                   else
-                     nxtState <= NEXT_DOUT_S after tpd;
+                     nxtState <= NEXT_DOUT_S after TPD_G;
                   end if;
                end if;
             else
-               nxtState <= curState after tpd;
+               nxtState <= curState after TPD_G;
             end if;
          
          --Toggle the asicClk, then back to ADC readouts if there are more pixels to read.
          when NEXT_CELL_S => 
-            pixelCntRst    <= '0' after tpd;
-            iAsicClk       <= '1' after tpd;
-            stateCntEn     <= '1' after tpd;
+            pixelCntRst    <= '0' after TPD_G;
+            iAsicClk       <= '1' after TPD_G;
+            stateCntEn     <= '1' after TPD_G;
             if stateCnt >= unsigned(ePixConfig.asicRoClkHalfT(15 downto 0))-1 and dummyAcq = '0' then
-               stateCntEn     <= '0' after tpd;
-               adcSampCntRst  <= '1' after tpd;
-               stateCntRst    <= '1' after tpd;
-               nxtState       <= WAIT_ADC_S after tpd;
+               stateCntEn     <= '0' after TPD_G;
+               adcSampCntRst  <= '1' after TPD_G;
+               stateCntRst    <= '1' after TPD_G;
+               nxtState       <= WAIT_ADC_S after TPD_G;
             -- do faster (dummy) readout 
             -- DUMMY_ASIC_ROCLK_HALFT_C = 2 -> 40ns -> 25MHz (this clock is divided by 4 inside epix10kA)
             elsif stateCnt >= DUMMY_ASIC_ROCLK_HALFT_C-1 and dummyAcq = '1' then
-               stateCntEn     <= '0' after tpd;
-               adcSampCntRst  <= '1' after tpd;
-               stateCntRst    <= '1' after tpd;
-               nxtState       <= WAIT_ADC_S after tpd;
+               stateCntEn     <= '0' after TPD_G;
+               adcSampCntRst  <= '1' after TPD_G;
+               stateCntRst    <= '1' after TPD_G;
+               nxtState       <= WAIT_ADC_S after TPD_G;
             else
-               nxtState <= curState after tpd;
+               nxtState <= curState after TPD_G;
             end if;
          
          -- continue asicClk untill all douts are captured (epix10ka only)
          when NEXT_DOUT_S => 
-            pixelCntRst <= '0' after tpd;
-            iAsicClk    <= '1' after tpd;
-            stateCntEn  <= '1' after tpd;
+            pixelCntRst <= '0' after TPD_G;
+            iAsicClk    <= '1' after TPD_G;
+            stateCntEn  <= '1' after TPD_G;
             if stateCnt >= unsigned(ePixConfig.asicRoClkHalfT(15 downto 0))-1 and dummyAcq = '0' then
-               stateCntEn  <= '0' after tpd;
-               stateCntRst <= '1' after tpd;
-               nxtState    <= WAIT_DOUT_S after tpd;
+               stateCntEn  <= '0' after TPD_G;
+               stateCntRst <= '1' after TPD_G;
+               nxtState    <= WAIT_DOUT_S after TPD_G;
             -- do faster (dummy) readout 
             -- DUMMY_ASIC_ROCLK_HALFT_C = 2 -> 40ns -> 25MHz (this clock is divided by 4 inside epix10kA)
             elsif stateCnt >= DUMMY_ASIC_ROCLK_HALFT_C-1 and dummyAcq = '1' then
-               stateCntEn  <= '0' after tpd;
-               stateCntRst <= '1' after tpd;
-               nxtState    <= WAIT_DOUT_S after tpd;
+               stateCntEn  <= '0' after TPD_G;
+               stateCntRst <= '1' after TPD_G;
+               nxtState    <= WAIT_DOUT_S after TPD_G;
             else 
-               nxtState <= curState after tpd;
+               nxtState <= curState after TPD_G;
             end if;
          
          when WAIT_DOUT_S => 
-            pixelCntRst <= '0' after tpd;
-            stateCntEn  <= '1' after tpd;
+            pixelCntRst <= '0' after TPD_G;
+            stateCntEn  <= '1' after TPD_G;
             if stateCnt >= unsigned(ePixConfig.asicRoClkHalfT(31 downto 16))-1 and dummyAcq = '0' then
-               stateCntEn  <= '0' after tpd;
-               stateCntRst <= '1' after tpd;
-               pixelCntEn  <= '1' after tpd;
+               stateCntEn  <= '0' after TPD_G;
+               stateCntRst <= '1' after TPD_G;
+               pixelCntEn  <= '1' after TPD_G;
                if pixelCnt < unsigned(ePixConfig.totalPixelsToRead)+unsigned(roClkTail)-1 then
-                  nxtState <= NEXT_DOUT_S after tpd;
+                  nxtState <= NEXT_DOUT_S after TPD_G;
                else
-                  nxtState <= SYNC_RESET_S after tpd;
+                  nxtState <= SYNC_RESET_S after TPD_G;
                end if;
             -- do faster (dummy) readout 
             -- DUMMY_ASIC_ROCLK_HALFT_C = 2 -> 40ns -> 25MHz (this clock is divided by 4 inside epix10kA)
             elsif stateCnt >= DUMMY_ASIC_ROCLK_HALFT_C-1 and dummyAcq = '1' then
-               stateCntEn  <= '0' after tpd;
-               stateCntRst <= '1' after tpd;
-               pixelCntEn  <= '1' after tpd;
+               stateCntEn  <= '0' after TPD_G;
+               stateCntRst <= '1' after TPD_G;
+               pixelCntEn  <= '1' after TPD_G;
                if pixelCnt < unsigned(ePixConfig.totalPixelsToRead)+unsigned(roClkTail)-1 then
-                  nxtState <= NEXT_DOUT_S after tpd;
+                  nxtState <= NEXT_DOUT_S after TPD_G;
                else
-                  nxtState <= SYNC_RESET_S after tpd;
+                  nxtState <= SYNC_RESET_S after TPD_G;
                end if;
             else
-               nxtState <= curState after tpd;
+               nxtState <= curState after TPD_G;
             end if;
          
          --make SYNC pulse to reset ASIC readout counters
          when SYNC_RESET_S =>
-            iAsicSync  <= '1' after tpd;
-            iAcqBusy   <= '0' after tpd;
-            iAsicR0    <= '0' after tpd;
-            stateCntEn <= '1' after tpd;
+            iAsicSync  <= '1' after TPD_G;
+            iAcqBusy   <= '0' after TPD_G;
+            iAsicR0    <= '0' after TPD_G;
+            stateCntEn <= '1' after TPD_G;
             -- arbitrary sync pulse width (1us)
             if stateCnt >= SYNC_WIDTH_C then
-               stateCntEn  <= '0' after tpd;
-               stateCntRst <= '1' after tpd;
+               stateCntEn  <= '0' after TPD_G;
+               stateCntRst <= '1' after TPD_G;
                -- this is implementing the gost effect correction in epix10ka
                -- until we have new ASICs with a proper fix
                -- run one more dummy ASIC acquisition cycle
                -- outputs won't be sampled and sent out
                -- the dummy cycle will be faster than normal acq cycle
                if dummyAcq = '0' and epixConfigExt.ghostCorr = '1' then
-                  nxtState <= WAIT_R0_S after tpd;
-                  dummyAcqSet <= '1' after tpd;
+                  nxtState <= WAIT_R0_S after TPD_G;
+                  dummyAcqSet <= '1' after TPD_G;
                else
-                  nxtState <= DONE_S after tpd;
+                  nxtState <= DONE_S after TPD_G;
                end if;
             else
-               nxtState <= curState after tpd;
+               nxtState <= curState after TPD_G;
             end if;
          
          --Wait for readout to be done
          when DONE_S =>
-            iAcqBusy    <= '0' after tpd;
-            iAsicR0     <= '0' after tpd;
+            iAcqBusy    <= '0' after TPD_G;
+            iAsicR0     <= '0' after TPD_G;
             if readDone = '1' then
-               nxtState <= IDLE_S after tpd;
+               nxtState <= IDLE_S after TPD_G;
             else
-               nxtState <= curState after tpd;
+               nxtState <= curState after TPD_G;
             end if;
          
          --Send back to IDLE if we end up in an undefined state
          when others =>
-            nxtState <= IDLE_S after tpd;
+            nxtState <= IDLE_S after TPD_G;
       end case;
    end process;
 
@@ -494,9 +494,9 @@ begin
    process(sysClk) begin
       if rising_edge(sysClk) then
          if sysClkRst = '1' then
-            curState <= IDLE_S after tpd;
+            curState <= IDLE_S after TPD_G;
          else 
-            curState <= nxtState after tpd;
+            curState <= nxtState after TPD_G;
          end if;
       end if;
    end process;
@@ -505,10 +505,10 @@ begin
    process(sysClk) begin
       if rising_edge(sysClk) then
          if adcCnt >= unsigned(ePixConfig.adcClkHalfT)-1 then
-            adcClk <= not(AdcClk)     after tpd;
-            adcCnt <= (others => '0') after tpd;
+            adcClk <= not(AdcClk)     after TPD_G;
+            adcCnt <= (others => '0') after TPD_G;
          else
-            adcCnt <= adcCnt + 1 after tpd;
+            adcCnt <= adcCnt + 1 after TPD_G;
          end if;
       end if;
    end process;
@@ -517,9 +517,9 @@ begin
    process(sysClk) begin
       if rising_edge(sysClk) then
          if sysClkRst = '1' or adcSampCntRst = '1' then
-            adcSampCnt <= (others => '0') after tpd;
+            adcSampCnt <= (others => '0') after TPD_G;
          elsif adcClkEdge = '1' then
-            adcSampCnt <= adcSampCnt + 1 after tpd;
+            adcSampCnt <= adcSampCnt + 1 after TPD_G;
          end if;
       end if;
    end process;
@@ -532,11 +532,11 @@ begin
          if ASIC_TYPE_G = EPIX10KA_C then
             -- in epix10ka analog output is valid after 4 readout clocks
             if adcSampCnt < 1 and firstPixel = '0' and pixelCnt(1 downto 0) = 3 then
-               iReadValid <= '1' after tpd;
+               iReadValid <= '1' after TPD_G;
             end if;
          else
             if adcSampCnt < 1 and firstPixel = '0' then
-               iReadValid <= '1' after tpd;
+               iReadValid <= '1' after TPD_G;
             end if;
          end if;
       end if;
@@ -546,7 +546,7 @@ begin
    process(sysClk) begin
       if rising_edge(sysClk) then
          if sysClkRst = '1' or pixelCntRst = '1' then
-            pixelCnt <= (others => '0') after tpd;
+            pixelCnt <= (others => '0') after TPD_G;
          elsif pixelCntEn = '1' then
             pixelCnt <= pixelCnt + 1;
          end if;
@@ -557,7 +557,7 @@ begin
    process(sysClk) begin
       if rising_edge(sysClk) then
          if sysClkRst = '1' or firstPixelRst = '1' then
-            firstPixel <= '1' after tpd;
+            firstPixel <= '1' after TPD_G;
          elsif firstPixelSet = '1' then
             firstPixel <= '0';
          end if;
@@ -568,7 +568,7 @@ begin
    process(sysClk) begin
       if rising_edge(sysClk) then
          if sysClkRst = '1' or dummyAcqClr = '1' then
-            dummyAcq <= '0' after tpd;
+            dummyAcq <= '0' after TPD_G;
          elsif dummyAcqSet = '1' then
             dummyAcq <= '1';
          end if;
@@ -580,9 +580,9 @@ begin
    process(sysClk) begin
       if rising_edge(sysClk) then
          if epixConfig.powerEnable(0) = '0' then
-            rstCnt <= (others => '0') after tpd;
+            rstCnt <= (others => '0') after TPD_G;
          elsif rstCnt(rstCnt'left) = '0' then
-            rstCnt <= rstCnt + 1 after tpd;
+            rstCnt <= rstCnt + 1 after TPD_G;
          end if;
       end if;
    end process;
@@ -591,9 +591,9 @@ begin
    process(sysClk) begin
       if rising_edge(sysClk) then
          if sysClkRst = '1' or stateCntRst = '1' then
-            stateCnt <= (others => '0') after tpd;
+            stateCnt <= (others => '0') after TPD_G;
          elsif stateCntEn = '1' then
-            stateCnt <= stateCnt + 1 after tpd;
+            stateCnt <= stateCnt + 1 after TPD_G;
          end if;
       end if;
    end process;
@@ -602,18 +602,18 @@ begin
    process(sysClk) begin
       if rising_edge(sysClk) then
          if sysClkRst = '1' then
-            readValidDelayed <= (others => (others => '0')) after tpd;     
+            readValidDelayed <= (others => (others => '0')) after TPD_G;     
          elsif (adcClkEdge = '1') then
             --Shift register to allow picking off delayed samples
             for i in 1 to 127 loop
                for j in 15 downto 0 loop
-                  readValidDelayed(j)(i) <= readValidDelayed(j)(i-1) after tpd; 
+                  readValidDelayed(j)(i) <= readValidDelayed(j)(i-1) after TPD_G; 
                end loop;
             end loop;
             --Assignment of shifted-in bits
             --Test mode can only use the first oversampling shift register
             for j in 15 downto 0 loop
-               readValidDelayed(j)(0) <= iReadValid after tpd;
+               readValidDelayed(j)(0) <= iReadValid after TPD_G;
             end loop;
          end if;
       end if;
@@ -691,6 +691,66 @@ begin
          end if;
       end if;
    end process; 
+   
+   -- generate external adjustable injection trigger within ACQ pulse
+   process(sysClk)
+   begin
+      if rising_edge(sysClk) then
+         
+         if sysClkRst = '1' then
+            injSkipCnt <= (others=>'0') after TPD_G;
+         elsif risingAcq = '1' then
+            if injSkipCnt > 0 then
+               injSkipCnt <= injSkipCnt - 1 after TPD_G;
+            else
+               injSkipCnt <= epixConfigExt.injSkip after TPD_G;
+            end if;
+         end if;
+         
+         if sysClkRst = '1' then
+            injStartCnt <= (others=>'0') after TPD_G;
+         elsif risingAcq = '1' then
+            injStartCnt <= epixConfigExt.injStartDly after TPD_G;
+         elsif injStartCnt /= 0 then
+            injStartCnt <= injStartCnt - 1 after TPD_G;
+         end if;
+         
+         if sysClkRst = '1' then
+            injStartEn  <= '0' after TPD_G;
+         elsif epixConfigExt.injStartDly = 0 and risingAcq = '1' then
+            injStartEn <= '1' after TPD_G;
+         elsif injStartCnt = 1 then
+            injStartEn <= '1' after TPD_G;
+         else
+            injStartEn <= '0' after TPD_G;
+         end if;
+         
+         if sysClkRst = '1' then
+            injStopCnt <= (others=>'0') after TPD_G;
+         elsif risingAcq = '1' then
+            injStopCnt <= epixConfigExt.injStopDly after TPD_G;
+         elsif injStopCnt /= 0 then
+            injStopCnt <= injStopCnt - 1 after TPD_G;
+         end if;
+         
+         if sysClkRst = '1' then
+            injStopEn  <= '0' after TPD_G;
+         elsif injStopCnt = 1 then
+            injStopEn <= '1' after TPD_G;
+         else
+            injStopEn <= '0' after TPD_G;
+         end if;
+         
+         if sysClkRst = '1' then
+            injAcq <= '0' after TPD_G;
+         elsif injStartEn = '1' and injStopEn = '0' and epixConfigExt.injStopDly /= 0 and injSkipCnt = 0 then
+            injAcq <= '1' after TPD_G;
+         elsif injStopEn = '1' then
+            injAcq <= '0' after TPD_G;
+         end if;
+         
+      end if;
+   end process;
 
 
 end AcqControl;

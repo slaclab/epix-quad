@@ -130,6 +130,7 @@ architecture rtl of AsicCore is
    signal iAsicGrst  : sl;
    signal iAsicRoClk : sl;
    signal iAsicSync  : sl;
+   signal iInjAcq    : sl;
    
    signal doutOut    : Slv2Array(15 downto 0);
    signal doutRd     : slv(15 downto 0);
@@ -189,6 +190,7 @@ begin
       iAsicSync            when epixConfigExt.dbgReg = "00101" else
       iAsicR0              when epixConfigExt.dbgReg = "00110" else
       iAsicRoClk           when epixConfigExt.dbgReg = "00111" else
+      iInjAcq              when epixConfigExt.dbgReg = "01000" else     -- this is debug pulse to trigger exernal source within ACQ pulse
       '0';
    
    -- Triggers in
@@ -267,7 +269,8 @@ begin
    --------------------------------------------   
    U_RegExtControl : entity work.RegExtControl
    generic map (
-      TPD_G           => TPD_G
+      TPD_G             => TPD_G,
+      FPGA_BASE_CLOCK_G => FPGA_BASE_CLOCK_G
    )
    port map (
       -- Global Signals
@@ -348,6 +351,7 @@ begin
       adcPulse        => adcPulse,
       readTps         => readTps,
       roClkTail       => roClkTail,
+      injAcq          => iInjAcq,
       epixConfig      => epixConfig,
       epixConfigExt   => epixConfigExt,
       asicR0          => iAsicR0,

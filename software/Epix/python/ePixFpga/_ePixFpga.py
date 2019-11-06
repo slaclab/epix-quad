@@ -706,12 +706,35 @@ class EpixFpgaExtRegisters(pr.Device):
       """Create the configuration device for Epix"""
       super().__init__(description='Epix Extended Configuration Registers', **kwargs)
       
+      def getFreqMHz(var):
+         x = var.dependencies[0].value()
+         return x / 1000000.0
+      
+      def getPerUs(var):
+         x = var.dependencies[0].value()
+         return x / (self.BaseClock.get()/1000000.0)
+               
+      def setPerUs(deps):
+         def setUsValue(var, value, write):
+            rawVal = int(round(value*(self.BaseClock.get()/1000000.0)))
+            deps[0].set(rawVal,write)            
+         return setUsValue
+      
+      
       #In order to easely compare GedDAQ address map with the eprix rogue address map 
       #it is defined the addrSize RemoteVariable
       addrSize = 4	
       
       self.add(pr.RemoteVariable(name='GhostCorrEn',         description='GhostCorrEn',      offset=0x00000000*addrSize, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='BaseClock',           description='FPGA base clock frequency',                               offset=0x00000001*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
+      self.add(pr.LinkVariable(  name='BaseClockMHz',        dependencies=[self.BaseClock], mode='RO', units='MHz', linkedGet=getFreqMHz, disp='{:1.6f}')) 
+      
       self.add(pr.RemoteVariable(name='DebugOut',            description='DebugOut',         offset=0x00000200*addrSize, bitSize=5,  bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='InjStartDly',         description='InjStartDly',      offset=0x00000201*addrSize, bitSize=16, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.LinkVariable(  name='InjStartDlyUs',       dependencies=[self.InjStartDly], mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.InjStartDly]), disp='{:1.5f}')) 
+      self.add(pr.RemoteVariable(name='InjStopDly',          description='InjStopDly',       offset=0x00000202*addrSize, bitSize=16, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.LinkVariable(  name='InjStopDlyUs',        dependencies=[self.InjStopDly], mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.InjStopDly]), disp='{:1.5f}')) 
+      self.add(pr.RemoteVariable(name='InjSkip',             description='InjSkip',          offset=0x00000203*addrSize, bitSize=8,  bitOffset=0, base=pr.UInt, mode='RW'))
       
       self.add(pr.RemoteVariable(name='BankPipelineDly00',   description='BankDly00',        offset=0x00000300*addrSize, bitSize=7,  bitOffset=0, base=pr.UInt, mode='RW'))
       self.add(pr.RemoteVariable(name='BankPipelineDly01',   description='BankDly01',        offset=0x00000301*addrSize, bitSize=7,  bitOffset=0, base=pr.UInt, mode='RW'))
