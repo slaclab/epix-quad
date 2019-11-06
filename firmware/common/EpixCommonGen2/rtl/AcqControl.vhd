@@ -699,7 +699,7 @@ begin
          
          if sysClkRst = '1' then
             injSkipCnt <= (others=>'0') after TPD_G;
-         elsif risingAcq = '1' then
+         elsif risingAcq = '1' and dummyAcq = '0' then
             if injSkipCnt > 0 then
                injSkipCnt <= injSkipCnt - 1 after TPD_G;
             else
@@ -707,7 +707,7 @@ begin
             end if;
          end if;
          
-         if sysClkRst = '1' then
+         if sysClkRst = '1' or dummyAcq = '1' then
             injStartCnt <= (others=>'0') after TPD_G;
          elsif risingAcq = '1' then
             injStartCnt <= epixConfigExt.injStartDly after TPD_G;
@@ -715,7 +715,7 @@ begin
             injStartCnt <= injStartCnt - 1 after TPD_G;
          end if;
          
-         if sysClkRst = '1' then
+         if sysClkRst = '1' or dummyAcq = '1' then
             injStartEn  <= '0' after TPD_G;
          elsif epixConfigExt.injStartDly = 0 and risingAcq = '1' then
             injStartEn <= '1' after TPD_G;
@@ -725,7 +725,7 @@ begin
             injStartEn <= '0' after TPD_G;
          end if;
          
-         if sysClkRst = '1' then
+         if sysClkRst = '1' or dummyAcq = '1' then
             injStopCnt <= (others=>'0') after TPD_G;
          elsif risingAcq = '1' then
             injStopCnt <= epixConfigExt.injStopDly after TPD_G;
@@ -733,7 +733,7 @@ begin
             injStopCnt <= injStopCnt - 1 after TPD_G;
          end if;
          
-         if sysClkRst = '1' then
+         if sysClkRst = '1' or dummyAcq = '1' then
             injStopEn  <= '0' after TPD_G;
          elsif injStopCnt = 1 then
             injStopEn <= '1' after TPD_G;
@@ -741,7 +741,7 @@ begin
             injStopEn <= '0' after TPD_G;
          end if;
          
-         if sysClkRst = '1' then
+         if sysClkRst = '1' or dummyAcq = '1' then
             injAcq <= '0' after TPD_G;
          elsif injStartEn = '1' and injStopEn = '0' and epixConfigExt.injStopDly /= 0 and injSkipCnt = 0 then
             injAcq <= '1' after TPD_G;
