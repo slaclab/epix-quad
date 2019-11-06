@@ -23,13 +23,11 @@ ePixBoard:
       AutoRunEnable: False
       AutoRunPeriod: 0x325aa0
       AutoDaqEnable: False
-      OutPipelineDelay: 0x0
       AcqToAsicR0Delay: 0x960
       AsicR0ToAsicAcq: 0xfa0
       AsicAcqWidth: 0xfa0
       AsicAcqLToPPmatL: 0xc8
       AsicRoClkT: 0x00000003
-      AdcReadsPerPixel: 0x1
       AdcClkHalfT: 0x1
       TotalPixelsToRead: 0x8580
       AsicGR: False

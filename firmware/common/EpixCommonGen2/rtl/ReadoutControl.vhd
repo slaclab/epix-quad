@@ -605,8 +605,5 @@ begin
       end if;
    end process;
    
-   -- use as dout roClk skew setting for dout deserializer
-   -- epixConfig.doutPipelineDelay(6 downto 0)
-   
 end ReadoutControl;
 

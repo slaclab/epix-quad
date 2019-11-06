@@ -187,13 +187,11 @@ begin
       axiSlaveRegister (regCon, x"011" & "00",  0, v.epixRegOut.autoRunEn);
       axiSlaveRegister (regCon, x"012" & "00",  0, v.epixRegOut.autoTrigPeriod);
       axiSlaveRegister (regCon, x"013" & "00",  0, v.epixRegOut.autoDaqEn);
-      axiSlaveRegister (regCon, x"01F" & "00",  0, v.epixRegOut.doutPipelineDelay);
       axiSlaveRegister (regCon, x"020" & "00",  0, v.epixRegOut.acqToAsicR0Delay);
       axiSlaveRegister (regCon, x"021" & "00",  0, v.epixRegOut.asicR0ToAsicAcq);
       axiSlaveRegister (regCon, x"022" & "00",  0, v.epixRegOut.asicAcqWidth);
       axiSlaveRegister (regCon, x"023" & "00",  0, v.epixRegOut.asicAcqLToPPmatL);
       axiSlaveRegister (regCon, x"024" & "00",  0, v.epixRegOut.asicRoClkT);
-      axiSlaveRegister (regCon, x"025" & "00",  0, v.epixRegOut.adcReadsPerPixel);  -- must be set to 1 (default). To be removed.
       axiSlaveRegister (regCon, x"026" & "00",  0, v.epixRegOut.adcClkHalfT);
       axiSlaveRegister (regCon, x"027" & "00",  0, v.epixRegOut.totalPixelsToRead);
       axiSlaveRegister (regCon, x"029" & "00",  0, v.epixRegOut.asicPins);

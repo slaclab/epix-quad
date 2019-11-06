@@ -34,7 +34,6 @@ package EpixPkgGen2 is
       autoRunEn          : sl;
       autoTrigPeriod     : slv(31 downto 0);
       autoDaqEn          : sl;
-      doutPipelineDelay  : slv(31 downto 0);
       acqToAsicR0Delay   : slv(31 downto 0);
       asicR0ToAsicAcq    : slv(31 downto 0);
       asicAcqWidth       : slv(31 downto 0);
@@ -42,7 +41,6 @@ package EpixPkgGen2 is
       asicRoClkT         : slv(15 downto 0);
       asicRoClkHalfT     : slv(31 downto 0);
       asicPreAcqTime     : slv(31 downto 0);
-      adcReadsPerPixel   : slv(31 downto 0);
       adcClkHalfT        : slv(31 downto 0);
       totalPixelsToRead  : slv(31 downto 0);
       asicPins           : slv( 5 downto 0);
@@ -75,7 +73,6 @@ package EpixPkgGen2 is
       autoRunEn          => '0',
       autoTrigPeriod     => (others => '0'),
       autoDaqEn          => '0',
-      doutPipelineDelay  => (others => '0'),
       acqToAsicR0Delay   => (others => '0'),
       asicR0ToAsicAcq    => (others => '0'),
       asicAcqWidth       => (others => '0'),
@@ -83,7 +80,6 @@ package EpixPkgGen2 is
       asicRoClkT         => x"0014",
       asicRoClkHalfT     => x"00000000",
       asicPreAcqTime     => (others => '0'),
-      adcReadsPerPixel   => x"00000001",
       adcClkHalfT        => x"00000001",
       totalPixelsToRead  => x"000084C0",
       asicPins           => (others => '0'),

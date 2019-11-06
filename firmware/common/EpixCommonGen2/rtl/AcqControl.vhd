@@ -531,11 +531,11 @@ begin
          iReadValid <= '0';
          if ASIC_TYPE_G = EPIX10KA_C then
             -- in epix10ka analog output is valid after 4 readout clocks
-            if adcSampCnt < ePixConfig.adcReadsPerPixel and firstPixel = '0' and pixelCnt(1 downto 0) = 3 then
+            if adcSampCnt < 1 and firstPixel = '0' and pixelCnt(1 downto 0) = 3 then
                iReadValid <= '1' after tpd;
             end if;
          else
-            if adcSampCnt < ePixConfig.adcReadsPerPixel and firstPixel = '0' then
+            if adcSampCnt < 1 and firstPixel = '0' then
                iReadValid <= '1' after tpd;
             end if;
          end if;
