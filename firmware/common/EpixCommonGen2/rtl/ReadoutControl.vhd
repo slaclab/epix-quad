@@ -64,7 +64,6 @@ entity ReadoutControl is
       readDone            : out   sl;
       acqBusy             : in    sl;
       dataSend            : in    sl;
-      readTps             : in    sl;
 
       -- ADC Data
       adcPulse            : in    sl;
@@ -177,8 +176,6 @@ architecture ReadoutControl of ReadoutControl is
    signal asicOrder      : chanMap;
    signal channelValid   : slv(15 downto 0);
 
-   signal tpsAdcData     : Slv16Array(3 downto 0);
-
    attribute dont_touch : string;
    attribute dont_touch of r : signal is "true";
    
@@ -287,7 +284,7 @@ begin
    --------------------------------------------------
    comb : process (r,epixConfig,acqCount,intSeqCount,adcFifoRdData,adcFifoRdValid,doutValid,
                    channelOrder,doutOrder,fifoEmptyAll,acqBusy,adcMemOflowAny,fifoOflowAny,
-                   envData,tpsAdcData,acqStartEdge,dataSendEdge,adcFifoEmpty,
+                   envData,tpsData,acqStartEdge,dataSendEdge,adcFifoEmpty,
                    sysClkRst,mAxisSlave, adcData, channelValid, opCode,
                    doutOut) 
       variable v : RegType;
@@ -426,9 +423,9 @@ begin
                v.wordCnt         := r.wordCnt + 1;
                v.mAxisMaster.tValid := '1';
                if (r.wordCnt = 0) then
-                  v.mAxisMaster.tData(31 downto 0) := tpsAdcData(1) & tpsAdcData(0);
+                  v.mAxisMaster.tData(31 downto 0) := tpsData(1) & tpsData(0);
                elsif (r.wordCnt = 1) then
-                  v.mAxisMaster.tData(31 downto 0) := tpsAdcData(3) & tpsAdcData(2);            
+                  v.mAxisMaster.tData(31 downto 0) := tpsData(3) & tpsData(2);            
                end if;
                if (r.wordCnt = 1) then
                   v.state := FOOTER_S;
@@ -466,17 +463,6 @@ begin
       end if;
    end process seq;
    
-   --Register the TPS ADC data when readTps is high
-   process(sysClk) 
-   begin
-      if rising_edge(sysClk) then
-         for i in 0 to 3 loop
-            if readTps = '1' then
-               tpsAdcData(i) <= tpsData(i);
-            end if;
-         end loop;
-      end if;
-   end process;
    --Sequence/frame counter
    process ( sysClk, sysClkRst ) begin
       if ( sysClkRst = '1' ) then

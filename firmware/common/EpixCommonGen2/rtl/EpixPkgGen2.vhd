@@ -52,8 +52,6 @@ package EpixPkgGen2 is
       pipelineDelayA2    : slv(31 downto 0);
       pipelineDelayA3    : slv(31 downto 0);
       asicPpmatToReadout : slv(31 downto 0);
-      tpsDelay           : slv(15 downto 0);
-      tpsEdge            : sl;
       requestStartupCal  : sl;
       startupAck         : sl;
       startupFail        : sl;
@@ -91,8 +89,6 @@ package EpixPkgGen2 is
       pipelineDelayA2    => (others => '0'),
       pipelineDelayA3    => (others => '0'),
       asicPpmatToReadout => (others => '0'),
-      tpsDelay           => (others => '0'),
-      tpsEdge            => '0',
       requestStartupCal  => '1',
       startupAck         => '0',
       startupFail        => '0',

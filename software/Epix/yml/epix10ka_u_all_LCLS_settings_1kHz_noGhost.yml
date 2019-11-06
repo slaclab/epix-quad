@@ -46,8 +46,6 @@ ePixBoard:
       AsicR0Width: 0x1e
       AsicPPmatToReadout: 0x0
       PgpTrigEn: False
-      TpsTiming: 0x0
-      TpsEdge: False
       RequestStartup: False
       AdcPipelineDelayA0: 0x1d
       AdcPipelineDelayA1: 0x1d

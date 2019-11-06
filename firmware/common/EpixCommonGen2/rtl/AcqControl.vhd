@@ -51,7 +51,6 @@ entity AcqControl is
       readDone            : in    std_logic;
       readValid           : out   slv(15 downto 0);
       adcPulse            : out   std_logic;
-      readTps             : out   std_logic;
       roClkTail           : in    std_logic_vector(7 downto 0);
       injAcq              : out   std_logic;
 
@@ -118,16 +117,12 @@ architecture AcqControl of AcqControl is
    signal firstPixelRst      : sl := '0';
    signal iAcqBusy           : sl := '0';
    signal risingAcq          : sl := '0';
-   signal fallingAcq         : sl := '0';
-   signal iTpsDelayed        : sl := '0';
-   signal iTps               : sl := '0';
 
    -- Multiplexed ASIC outputs.  These versions are the
    -- automatic ones controlled by state machine.
    -- You can override them with the manualPinControl config bits.
    signal iAsicR0          : std_logic := '0';
    signal iAsicPpmat       : std_logic := '0';
-   signal iAsicPpmatRising : std_logic := '0';
    signal iAsicPpbe        : std_logic := '0';
    signal iAsicGlblRst     : std_logic := '0';
    signal iAsicAcq         : std_logic := '0';
@@ -194,9 +189,6 @@ begin
    
    --Outputs not incorporated into state machine at the moment
    iAsicPpbe    <= '1'; 
-
-   --Read TPS signal
-   readTps <= iTpsDelayed;
 
    --Busy is internal busy or data left in the pipeline
    acqBusy <= '1' when iAcqBusy = '1' or iReadValidWaiting /= 0 else '0';
@@ -649,48 +641,15 @@ begin
          dataIn     => adcClk,
          risingEdge => adcClkEdge
       );
-   -- We want the possibility to drive out the asic Sync signal
-   -- at a delay relative to the rising edge of R0
-   U_R0Edge : entity work.SynchronizerEdge
-      port map (
-         clk        => sysClk,
-         rst        => sysClkRst,
-         dataIn     => iAsicPpmat,
-         risingEdge => iAsicPpmatRising
-      );
 
-   -- TPS can trigger on either rising or falling edge of Acq
+   -- rising edge of Acq
    U_AcqEdge : entity work.SynchronizerEdge
       port map (
          clk         => sysClk,
          rst         => sysClkRst,
          dataIn      => iAsicAcq,
-         risingEdge  => risingAcq,
-         fallingEdge => fallingAcq
+         risingEdge  => risingAcq
       );
-   -- Choose which edge here
-   iTps <= risingAcq  when ePixConfig.tpsEdge = '1' else
-           fallingAcq when ePixConfig.tpsEdge = '0' else
-           'X';
-   -- Get the delayed version of iTps here
-   PROC_TPS_DELAY : process(sysClk) 
-      variable delay : unsigned(15 downto 0) := (others => '0');
-   begin
-      if rising_edge(sysClk) then
-         iTpsDelayed <= '0';
-         if iTps = '1' then 
-            delay := (others => '0');
-         else
-            iTpsDelayed <= '0';
-            if (delay = unsigned(epixConfig.tpsDelay)) then
-               iTpsDelayed <= '1';
-               delay := delay + 1; --Add one so this only occurs for one cycle
-            elsif (delay < unsigned(ePixConfig.tpsDelay)) then
-               delay := delay + 1;
-            end if;
-         end if;
-      end if;
-   end process; 
    
    -- generate external adjustable injection trigger within ACQ pulse
    process(sysClk)

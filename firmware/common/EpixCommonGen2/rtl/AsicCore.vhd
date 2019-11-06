@@ -150,7 +150,6 @@ architecture rtl of AsicCore is
    signal readDone           : sl;
    signal readValid          : slv(15 downto 0);
    signal adcPulse           : sl;
-   signal readTps            : sl;
    
    -- Configuration and status
    signal epixStatus       : EpixStatusType;
@@ -349,7 +348,6 @@ begin
       adcClkP         => adcClkP,
       adcClkM         => adcClkN,
       adcPulse        => adcPulse,
-      readTps         => readTps,
       roClkTail       => roClkTail,
       injAcq          => iInjAcq,
       epixConfig      => epixConfig,
@@ -385,7 +383,6 @@ begin
       readDone       => readDone,
       acqBusy        => acqBusy,
       dataSend       => dataSend,
-      readTps        => readTps,
       adcPulse       => adcPulse,
       adcValid       => adcValid,
       adcData        => adcData,

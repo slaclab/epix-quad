@@ -208,8 +208,6 @@ begin
       axiSlaveRegisterR(regCon, x"03B" & "00",  0, r.idValues(2)(31 downto  0)); --Carrier card ID low
       axiSlaveRegisterR(regCon, x"03C" & "00",  0, r.idValues(2)(63 downto 32)); --Carrier card ID high
       axiSlaveRegister (regCon, x"03D" & "00",  0, v.epixRegOut.pgpTrigEn);
-      axiSlaveRegister (regCon, x"040" & "00",  0, v.epixRegOut.tpsDelay);
-      axiSlaveRegister (regCon, x"040" & "00", 16, v.epixRegOut.tpsEdge);
       axiSlaveRegister (regCon, x"080" & "00",  0, v.epixRegOut.requestStartupCal);
       axiSlaveRegister (regCon, x"080" & "00",  1, v.epixRegOut.startupAck);          -- set by Microblaze
       axiSlaveRegister (regCon, x"080" & "00",  2, v.epixRegOut.startupFail);         -- set by Microblaze

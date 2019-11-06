@@ -666,8 +666,6 @@ class EpixFpgaRegisters(pr.Device):
       self.add(pr.RemoteVariable(name='CarrierCardId0',      description='Carrier Card Serial Number (low 32 bits)',                offset=0x0000003B*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
       self.add(pr.RemoteVariable(name='CarrierCardId1',      description='Carrier Card Serial Number (high 32 bits)',               offset=0x0000003C*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
       self.add(pr.RemoteVariable(name='PgpTrigEn',           description='Set to enable triggering over PGP. Disables the TTL trigger input', offset=0x0000003D*addrSize, bitSize=1, bitOffset=0, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='TpsTiming',           description='Delay TPS signal',                                        offset=0x00000040*addrSize, bitSize=16, bitOffset=0, base=pr.UInt,  mode='RW'))
-      self.add(pr.RemoteVariable(name='TpsEdge',             description='Sync TPS to rising or falling edge of Acq',               offset=0x00000040*addrSize, bitSize=1,  bitOffset=16,base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='RequestStartup',      description='Request startup sequence',                                offset=0x00000080*addrSize, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='StartupDone',         description='Startup sequence done',                                   offset=0x00000080*addrSize, bitSize=1,  bitOffset=1, base=pr.Bool, mode='RO'))
       self.add(pr.RemoteVariable(name='StartupFail',         description='Startup sequence failed',                                 offset=0x00000080*addrSize, bitSize=1,  bitOffset=2, base=pr.Bool, mode='RO'))
