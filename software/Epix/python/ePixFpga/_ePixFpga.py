@@ -566,7 +566,11 @@ class EpixFpgaRegisters(pr.Device):
          
       def getPerUs(var):
          x = var.dependencies[0].value()
-         return x / (self.BaseClock.get()/1000000.0)
+         baseClk = self.BaseClock.get()
+         if baseClk > 0:
+            return x / (baseClk/1000000.0)
+         else:
+            return 0
                
       def setPerUs(deps):
          def setUsValue(var, value, write):
@@ -576,7 +580,11 @@ class EpixFpgaRegisters(pr.Device):
       
       def getPerMs(var):
          x = var.dependencies[0].value()
-         return x / (self.BaseClock.get()/1000.0)
+         baseClk = self.BaseClock.get()
+         if baseClk > 0:
+            return x / (baseClk/1000.0)
+         else:
+            return 0
                
       def setPerMs(deps):
          def setMsValue(var, value, write):
@@ -712,7 +720,11 @@ class EpixFpgaExtRegisters(pr.Device):
       
       def getPerUs(var):
          x = var.dependencies[0].value()
-         return x / (self.BaseClock.get()/1000000.0)
+         baseClk = self.BaseClock.get()
+         if baseClk > 0:
+            return x / (baseClk/1000000.0)
+         else:
+            return 0
                
       def setPerUs(deps):
          def setUsValue(var, value, write):
