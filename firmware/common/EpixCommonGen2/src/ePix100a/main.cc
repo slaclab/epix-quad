@@ -80,7 +80,7 @@ int main() {
       //wait until ADC alignment requested
       while (1) {
          
-         //usleep(200);
+         //usleep(200000);
          
          // poll ADC align request flag
          if (adcReq) {
@@ -108,7 +108,7 @@ void hwInit() {
    // enable the power supply
    Xil_Out32( EPIX_PWR_REG, 0x7);
    // let the power settle
-   usleep(1000);
+   usleep(1000000);
    
 }
 
@@ -118,7 +118,7 @@ void adcInit() {
    Xil_Out32( ADC0_PWRMOD_REG, 3);
    Xil_Out32( ADC1_PWRMOD_REG, 3);
    Xil_Out32( ADC2_PWRMOD_REG, 3);
-   usleep(10);
+   usleep(10000);
    Xil_Out32( ADC0_PWRMOD_REG, 0);
    Xil_Out32( ADC1_PWRMOD_REG, 0);
    Xil_Out32( ADC2_PWRMOD_REG, 0);
@@ -194,7 +194,7 @@ uint32_t adcAlign(uint32_t adcNo, uint32_t maxCh) {
       Xil_Out32(cntLocRstAdc[adcNo], 1);
       Xil_Out32(cntLocRstAdc[adcNo], 0);
       //wait
-      usleep(100);
+      usleep(100000);
       //check if locked bit is 1 and lock fall out counter is 0
       if (Xil_In32(frmLocAdc[adcNo]) == 0x10000) {
          //log message
