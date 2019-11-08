@@ -25,7 +25,7 @@ import os
 import ePixAsics as epix
 import surf.axi as axi
 import surf.protocols.pgp as pgp
-import surf.devices.analog_devices as analog_devices
+import surf.devices.analog_devices as ad
 import surf.misc
 from surf.devices.micron._AxiMicronN25Q import *
 import surf
@@ -75,12 +75,12 @@ class EpixM32Array(pr.Device):
             SlowAdcRegisters(name="SlowAdcRegisters", offset=0x03000000, expand=False),
             OscilloscopeRegisters(name='Oscilloscope', offset=0x0B000000, enabled=False, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum),
             pgp.Pgp2bAxi(name='Pgp2bAxi', offset=0x04000000, expand=False),
-            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[0]', offset=0x07000000, channels=8, enabled=False, expand=False),
-            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[1]', offset=0x08000000, channels=8, enabled=False, expand=False),
-            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]', offset=0x09000000, enabled=False, expand=False),
-            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]', offset=0x09000800, enabled=False, expand=False),
+            ad.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[0]', offset=0x07000000, channels=8, enabled=False, expand=False),
+            ad.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[1]', offset=0x08000000, channels=8, enabled=False, expand=False),
+            ad.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]', offset=0x09000000, enabled=False, expand=False),
+            ad.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]', offset=0x09000800, enabled=False, expand=False),
             AxiMicronN25Q(name='MicronN25Q',              offset=0x05000000, expand=False, hidden=False),
-            #analog_devices.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]', offset=0x09001000, enabled=False, expand=False),
+            #ad.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]', offset=0x09001000, enabled=False, expand=False),
             #axi.AxiStreamMonitoring(name='RdoutStreamMonitoring', offset=0x0C000000, enabled=True, expand=False, numberLanes=2),
             MicroblazeLog(name='MicroblazeLog', offset=0x0A000000, enabled=False, expand=False)))
       
@@ -177,10 +177,10 @@ class Cpix2(pr.Device):
             epix.Cpix2Asic(                   name='Cpix2Asic1',              offset=0x04400000, size=0x3fffff, enabled=False, expand=False),
             pgp.Pgp2bAxi(                     name='Pgp2bAxi',                offset=0x06000000, enabled=False, expand=False),
             AxiMicronN25Q(                    name='MicronN25Q',              offset=0x07000000, expand=False, hidden=False),
-            analog_devices.Ad9249ReadoutGroup(name='Ad9249Rdout[1].Adc[0]',   offset=0x09000000, channels=4, enabled=False, expand=False),
-            #analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]', offset=0x0A000000),    # not used in tixel, disabled by microblaze
-            #analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]', offset=0x0A000800),    # not used in tixel, disabled by microblaze
-            analog_devices.Ad9249ConfigGroup( name='Ad9249Config[1].Adc[0]',  offset=0x0A001000, enabled=False, expand=False),
+            ad.Ad9249ReadoutGroup(name='Ad9249Rdout[1].Adc[0]',   offset=0x09000000, channels=4, enabled=False, expand=False),
+            #ad.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]', offset=0x0A000000),    # not used in tixel, disabled by microblaze
+            #ad.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]', offset=0x0A000800),    # not used in tixel, disabled by microblaze
+            ad.Ad9249ConfigGroup( name='Ad9249Config[1].Adc[0]',  offset=0x0A001000, enabled=False, expand=False),
             MicroblazeLog(                    name='MicroblazeLog',           offset=0x0B000000, enabled=False, expand=False),
             OscilloscopeRegisters(            name='Oscilloscope',            offset=0x0C000000, enabled=False, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum),
             MMCM7Registers(                   name='MMCM7Registers',          offset=0x0D000000, enabled=False, expand=False),
@@ -341,8 +341,8 @@ class HrPrototype(pr.Device):
             AsicPktRegistersHr(               name='Asic0PktRegisters',        offset=0x12000000, enabled=False, expand=False),
             AsicPktRegistersHr(               name='Asic1PktRegisters',        offset=0x13000000, enabled=False, expand=False),
             pgp.Pgp2bAxi(                     name='Pgp2bAxi',                 offset=0x06000000, enabled=False, expand=False),
-            analog_devices.Ad9249ReadoutGroup(name='Ad9249Rdout[1].Adc[0]',    offset=0x09000000, channels=4, enabled=False, expand=False),
-            analog_devices.Ad9249ConfigGroup( name='Ad9249Config[1].Adc[0]',   offset=0x0A000000, enabled=False, expand=False),
+            ad.Ad9249ReadoutGroup(name='Ad9249Rdout[1].Adc[0]',    offset=0x09000000, channels=4, enabled=False, expand=False),
+            ad.Ad9249ConfigGroup( name='Ad9249Config[1].Adc[0]',   offset=0x0A000000, enabled=False, expand=False),
             OscilloscopeRegisters(            name='Oscilloscope',             offset=0x0C000000, enabled=False, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum),
             HighSpeedDacRegisters(            name='HighSpeedDAC',             offset=0x0D000000, enabled=False, expand=False, HsDacEnum = HsDacEnum),
             #pr.MemoryDevice(                  name='WaveformMem',              offset=0x0E000000, wordBitSize=16, stride=4, size=1024*4),
@@ -486,27 +486,64 @@ class Epix100a(pr.Device):
       addrSize = 4	
       
       super(self.__class__, self).__init__(**kwargs)
-      self.add((
-            axi.AxiVersion(offset=0x00000000, expand=False),
-            EpixFpgaRegisters(name="EpixFpgaRegisters", offset=0x01000000),
-            EpixFpgaExtRegisters(name="EpixFpgaExtRegisters", offset=0x01100000, enabled=False, expand=False),
-            OscilloscopeRegisters(name='Oscilloscope', offset=0x01200000, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum),
-            Epix10kADouts(name="Epix10kADouts", offset=0x01300000, expand=False),
-            epix.Epix10kaAsic(name='Epix10kaAsic0', offset=0x02000000, enabled=False, expand=False),
-            epix.Epix10kaAsic(name='Epix10kaAsic1', offset=0x02400000, enabled=False, expand=False),
-            epix.Epix10kaAsic(name='Epix10kaAsic2', offset=0x02800000, enabled=False, expand=False),
-            epix.Epix10kaAsic(name='Epix10kaAsic3', offset=0x02C00000, enabled=False, expand=False),
-            pgp.Pgp2bAxi(name='Pgp2bAxi', offset=0x03000000, expand=False),
-            SlowAdcRegisters(name="SlowAdcRegisters", offset=0x04000000, enabled=False, expand=False),
-            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[0]', offset=0x05100000, channels=8, enabled=False, expand=False),
-            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[1]', offset=0x05200000, channels=8, enabled=False, expand=False),
-            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[1].Adc[0]', offset=0x05300000, channels=4, enabled=False, expand=False),
-            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]',   offset=0x05400000, enabled=False, expand=False),
-            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]',   offset=0x05400800, enabled=False, expand=False),
-            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]',   offset=0x05401000, enabled=False, expand=False),
-            AxiMicronN25Q(name='MicronN25Q', offset=0x06000000, expand=False, hidden=False),
-            MicroblazeLog(name='MicroblazeLog', offset=0x07000000, enabled=False, expand=False)))
       
+      self.add(axi.AxiVersion             (name="AxiVersion",           offset=0x00000000, expand=False))
+      self.add(EpixFpgaRegisters          (name="EpixFpgaRegisters",    offset=0x01000000))
+      self.add(EpixFpgaExtRegisters       (name="EpixFpgaExtRegisters", offset=0x01100000, enabled=False, expand=False))
+      self.add(OscilloscopeRegisters      (name='Oscilloscope',         offset=0x01200000, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum))
+      for i in range(4):
+         self.add(epix.Epix10kaAsic       (name=('Epix10kaAsic[%d]'%i), offset=(0x02000000+i*0x400000), enabled=False, expand=False))
+      self.add(pgp.Pgp2bAxi               (name='Pgp2bAxi',             offset=0x03000000, expand=False))
+      self.add(SlowAdcRegisters           (name="SlowAdcRegisters",     offset=0x04000000, enabled=False, expand=False))
+      for i in range(3):
+         if i == 2:
+            channels = 4
+         else:
+            channels = 8
+         self.add(ad.Ad9249ReadoutGroup   (name = ('Ad9249RdoutAdc[%d]'%i),   offset=(0x05100000+i*0x100000), channels=channels, enabled=False, expand=False))
+      for i in range(3):
+         self.add(ad.Ad9249ConfigGroup    (name = ('Ad9249ConfigAdc[%d]'%i),  offset=(0x05400000+i*0x000800), enabled=False, expand=False))
+      self.add(AxiMicronN25Q              (name='MicronN25Q',           offset=0x06000000, expand=False, hidden=False))
+      self.add(MicroblazeLog              (name='MicroblazeLog',        offset=0x07000000, enabled=False, expand=False))
+      
+   def writeBlocks(self, force=False, recurse=True, variable=None, checkEach=False):
+      """
+      Write all of the blocks held by this Device to memory
+      """
+      if not self.enable.get(): return
+      
+      # Process local blocks.
+      if variable is not None:
+         variable._block.startTransaction(rim.Write, check=checkEach)
+      else:
+         for block in self._blocks:
+            if force or block.stale:
+                  if block.bulkEn:
+                     block.startTransaction(rim.Write, check=checkEach)
+      
+      # Retire any in-flight transactions before starting next sequence
+      self._root.checkBlocks(recurse=True)
+      
+      self.asicMask = self.EpixFpgaRegisters.AsicMask.get()
+      
+      # Load all the registers
+      self.AxiVersion.writeBlocks            ( force=force, recurse=recurse, variable=variable)   
+      self.EpixFpgaRegisters.writeBlocks     ( force=force, recurse=recurse, variable=variable)   
+      self.EpixFpgaExtRegisters.writeBlocks  ( force=force, recurse=recurse, variable=variable)   
+      self.Oscilloscope.writeBlocks          ( force=force, recurse=recurse, variable=variable)   
+      for i in range(4):
+         if self.asicMask&(1<<i) != 0:
+            self.Epix10kaAsic[i].writeBlocks    ( force=force, recurse=recurse, variable=variable)   
+         else:
+            self.Epix10kaAsic[i].enable.set(False)
+      
+      self.Pgp2bAxi.writeBlocks              ( force=force, recurse=recurse, variable=variable)   
+      self.SlowAdcRegisters.writeBlocks      ( force=force, recurse=recurse, variable=variable)   
+      for i in range(3):
+         self.Ad9249RdoutAdc[i].writeBlocks     ( force=force, recurse=recurse, variable=variable) 
+         self.Ad9249ConfigAdc[i].writeBlocks    ( force=force, recurse=recurse, variable=variable) 
+      self.MicronN25Q.writeBlocks            ( force=force, recurse=recurse, variable=variable) 
+      self.MicroblazeLog.writeBlocks         ( force=force, recurse=recurse, variable=variable)    
 
 ################################################################################################
 ##
@@ -533,27 +570,67 @@ class Epix10ka(pr.Device):
             14:'ASIC3_B0',  13:'ASIC3_B1',  12:'ASIC3_B2',  11:'ASIC3_B3', 
             17:'ASIC0_TPS', 19:'ASIC1_TPS', 18:'ASIC2_TPS', 16:'ASIC3_TPS'}
       super(self.__class__, self).__init__(**kwargs)
-      self.add((
-            axi.AxiVersion(offset=0x00000000, expand=False),
-            EpixFpgaRegisters(name="EpixFpgaRegisters", offset=0x01000000),
-            EpixFpgaExtRegisters(name="EpixFpgaExtRegisters", offset=0x01100000, enabled=False, expand=False),
-            OscilloscopeRegisters(name='Oscilloscope', offset=0x01200000, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum),
-            Epix10kADouts(name="Epix10kADouts", offset=0x01300000, expand=False),
-            epix.Epix10kaAsic(name='Epix10kaAsic0', offset=0x02000000, enabled=False, expand=False),
-            epix.Epix10kaAsic(name='Epix10kaAsic1', offset=0x02400000, enabled=False, expand=False),
-            epix.Epix10kaAsic(name='Epix10kaAsic2', offset=0x02800000, enabled=False, expand=False),
-            epix.Epix10kaAsic(name='Epix10kaAsic3', offset=0x02C00000, enabled=False, expand=False),
-            pgp.Pgp2bAxi(name='Pgp2bAxi', offset=0x03000000, expand=False),
-            SlowAdcRegisters(name="SlowAdcRegisters", offset=0x04000000, enabled=False, expand=False),
-            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[0]', offset=0x05100000, channels=8, enabled=False, expand=False),
-            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[0].Adc[1]', offset=0x05200000, channels=8, enabled=False, expand=False),
-            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[1].Adc[0]', offset=0x05300000, channels=4, enabled=False, expand=False),
-            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]',   offset=0x05400000, enabled=False, expand=False),
-            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]',   offset=0x05400800, enabled=False, expand=False),
-            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]',   offset=0x05401000, enabled=False, expand=False),
-            AxiMicronN25Q(name='MicronN25Q', offset=0x06000000, expand=False, hidden=False),
-            MicroblazeLog(name='MicroblazeLog', offset=0x07000000, enabled=False, expand=False)))
       
+      self.add(axi.AxiVersion                (name="AxiVersion",           offset=0x00000000, expand=False))
+      self.add(EpixFpgaRegisters             (name="EpixFpgaRegisters",    offset=0x01000000))
+      self.add(EpixFpgaExtRegisters          (name="EpixFpgaExtRegisters", offset=0x01100000, enabled=False, expand=False))
+      self.add(OscilloscopeRegisters         (name='Oscilloscope',         offset=0x01200000, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum))
+      self.add(Epix10kADouts                 (name="Epix10kADouts",        offset=0x01300000, expand=False))
+      for i in range(4):
+         self.add(epix.Epix10kaAsic          (name=('Epix10kaAsic[%d]'%i), offset=(0x02000000+i*0x400000), enabled=False, expand=False))
+      self.add(pgp.Pgp2bAxi                  (name='Pgp2bAxi',             offset=0x03000000, expand=False))
+      self.add(SlowAdcRegisters              (name="SlowAdcRegisters",     offset=0x04000000, enabled=False, expand=False))
+      for i in range(3):
+         if i == 2:
+            channels = 4
+         else:
+            channels = 8
+         self.add(ad.Ad9249ReadoutGroup      (name = ('Ad9249RdoutAdc[%d]'%i),   offset=(0x05100000+i*0x100000), channels=channels, enabled=False, expand=False))
+      for i in range(3):
+         self.add(ad.Ad9249ConfigGroup       (name = ('Ad9249ConfigAdc[%d]'%i),  offset=(0x05400000+i*0x000800), enabled=False, expand=False))
+      self.add(AxiMicronN25Q                 (name='MicronN25Q',           offset=0x06000000, expand=False, hidden=False))
+      self.add(MicroblazeLog                 (name='MicroblazeLog',        offset=0x07000000, enabled=False, expand=False))
+            
+            
+   def writeBlocks(self, force=False, recurse=True, variable=None, checkEach=False):
+      """
+      Write all of the blocks held by this Device to memory
+      """
+      if not self.enable.get(): return
+      
+      # Process local blocks.
+      if variable is not None:
+         variable._block.startTransaction(rim.Write, check=checkEach)
+      else:
+         for block in self._blocks:
+            if force or block.stale:
+                  if block.bulkEn:
+                     block.startTransaction(rim.Write, check=checkEach)
+      
+      # Retire any in-flight transactions before starting next sequence
+      self._root.checkBlocks(recurse=True)
+      
+      self.asicMask = self.EpixFpgaRegisters.AsicMask.get()
+      
+      # Load all the registers
+      self.AxiVersion.writeBlocks            ( force=force, recurse=recurse, variable=variable)   
+      self.EpixFpgaRegisters.writeBlocks     ( force=force, recurse=recurse, variable=variable)   
+      self.EpixFpgaExtRegisters.writeBlocks  ( force=force, recurse=recurse, variable=variable)   
+      self.Oscilloscope.writeBlocks          ( force=force, recurse=recurse, variable=variable)   
+      self.Epix10kADouts.writeBlocks         ( force=force, recurse=recurse, variable=variable)   
+      for i in range(4):
+         if self.asicMask&(1<<i) != 0:
+            self.Epix10kaAsic[i].writeBlocks    ( force=force, recurse=recurse, variable=variable)   
+         else:
+            self.Epix10kaAsic[i].enable.set(False)
+      
+      self.Pgp2bAxi.writeBlocks              ( force=force, recurse=recurse, variable=variable)   
+      self.SlowAdcRegisters.writeBlocks      ( force=force, recurse=recurse, variable=variable)   
+      for i in range(3):
+         self.Ad9249RdoutAdc[i].writeBlocks     ( force=force, recurse=recurse, variable=variable) 
+         self.Ad9249ConfigAdc[i].writeBlocks    ( force=force, recurse=recurse, variable=variable) 
+      self.MicronN25Q.writeBlocks            ( force=force, recurse=recurse, variable=variable) 
+      self.MicroblazeLog.writeBlocks         ( force=force, recurse=recurse, variable=variable) 
 
 class EpixFpgaRegisters(pr.Device):
    def __init__(self, **kwargs):
@@ -813,10 +890,10 @@ class Tixel(pr.Device):
             AsicPktRegisters(name='Asic0PktRegisters', offset=0x10000000, expand=False),
             AsicPktRegisters(name='Asic1PktRegisters', offset=0x11000000, expand=False),
             pgp.Pgp2bAxi(name='Pgp2bAxi', offset=0x06000000, expand=False),
-            analog_devices.Ad9249ReadoutGroup(name = 'Ad9249Rdout[1].Adc[0]', offset=0x09000000, channels=4, enabled=False, expand=False),
-            #analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]', offset=0x0A000000),    # not used in tixel, disabled by microblaze
-            #analog_devices.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]', offset=0x0A000800),    # not used in tixel, disabled by microblaze
-            analog_devices.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]', offset=0x0A001000, enabled=False, expand=False),
+            ad.Ad9249ReadoutGroup(name = 'Ad9249Rdout[1].Adc[0]', offset=0x09000000, channels=4, enabled=False, expand=False),
+            #ad.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[0]', offset=0x0A000000),    # not used in tixel, disabled by microblaze
+            #ad.Ad9249ConfigGroup(name='Ad9249Config[0].Adc[1]', offset=0x0A000800),    # not used in tixel, disabled by microblaze
+            ad.Ad9249ConfigGroup(name='Ad9249Config[1].Adc[0]', offset=0x0A001000, enabled=False, expand=False),
             OscilloscopeRegisters(name='Oscilloscope', offset=0x0C000000, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum),
             MicroblazeLog(name='MicroblazeLog', offset=0x0B000000, expand=False),
             MMCM7Registers(name='MMCM7Registers', offset=0x0D000000, enabled=False, expand=False)))

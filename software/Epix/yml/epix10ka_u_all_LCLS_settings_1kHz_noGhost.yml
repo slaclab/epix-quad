@@ -21,11 +21,11 @@ ePixBoard:
       FpgaOutputEnable: True
       IDelayCtrlRdy: 0x1
       AutoRunEnable: False
-      AutoRunPeriod: 0x325aa0
+      AutoRunPeriod: 0x107d99
       AutoDaqEnable: False
-      AcqToAsicR0Delay: 0x960
-      AsicR0ToAsicAcq: 0xfa0
-      AsicAcqWidth: 0xfa0
+      AcqToAsicR0Delay: 0x0
+      AsicR0ToAsicAcq: 0x32a9
+      AsicAcqWidth: 0x32a9
       AsicAcqLToPPmatL: 0xc8
       AsicRoClkT: 0x00000003
       AdcClkHalfT: 0x1
@@ -98,7 +98,7 @@ ePixBoard:
       LocData: 0x0
       LocDataEn: False
       AutoStatus: False
-    Epix10kaAsic0:
+    Epix10kaAsic[0]:
       enable: True
       CompTH_DAC: 0x22
       CompEn0: False
@@ -165,7 +165,7 @@ ePixBoard:
       S2d2Dac: 0x12
       S2d3TcDac: 0x1
       S2d3Dac: 0x12
-    Epix10kaAsic1:
+    Epix10kaAsic[1]:
       enable: True
       CompTH_DAC: 0x22
       CompEn0: False
@@ -232,7 +232,7 @@ ePixBoard:
       S2d2Dac: 0x12
       S2d3TcDac: 0x1
       S2d3Dac: 0x12
-    Epix10kaAsic2:
+    Epix10kaAsic[2]:
       enable: True
       CompTH_DAC: 0x22
       CompEn0: False
@@ -299,7 +299,7 @@ ePixBoard:
       S2d2Dac: 0x12
       S2d3TcDac: 0x1
       S2d3Dac: 0x12
-    Epix10kaAsic3:
+    Epix10kaAsic[3]:
       enable: True
       CompTH_DAC: 0x22
       CompEn0: False
@@ -375,95 +375,6 @@ ePixBoard:
     MicronN25Q:
       enable: True
       Test: 0x0
-    Ad9249Rdout[0].Adc[0]:
-      enable: False
-      ChannelDelay[0]: 0x0
-      ChannelDelay[1]: 0x0
-      ChannelDelay[2]: 0x0
-      ChannelDelay[3]: 0x0
-      ChannelDelay[4]: 0x0
-      ChannelDelay[5]: 0x0
-      ChannelDelay[6]: 0x0
-      ChannelDelay[7]: 0x0
-      FrameDelay: 0x0
-      Invert: False
-    Ad9249Rdout[0].Adc[1]:
-      enable: False
-      ChannelDelay[0]: 0x0
-      ChannelDelay[1]: 0x0
-      ChannelDelay[2]: 0x0
-      ChannelDelay[3]: 0x0
-      ChannelDelay[4]: 0x0
-      ChannelDelay[5]: 0x0
-      ChannelDelay[6]: 0x0
-      ChannelDelay[7]: 0x0
-      FrameDelay: 0x0
-      Invert: False
-    Ad9249Rdout[1].Adc[0]:
-      enable: False
-      ChannelDelay[0]: 0x0
-      ChannelDelay[1]: 0x0
-      ChannelDelay[2]: 0x0
-      ChannelDelay[3]: 0x0
-      FrameDelay: 0x0
-      Invert: False
-    Ad9249Config[0].Adc[0]:
-      enable: False
-      ExternalPdwnMode: Full Power Down
-      InternalPdwnMode: Chip Run
-      DutyCycleStabilizer: 'Off'
-      ClockDivide: Divide by 1
-      ChopMode: 'Off'
-      DevIndexMask[7:0]: 0b0
-      DevIndexMask[DCO:FCO]: 0b0
-      UserTestModeCfg: single
-      OutputTestMode: 'Off'
-      OffsetAdjust: 0x0
-      OutputInvert: False
-      OutputFormat: Offset Binary
-      UserPatt1Lsb: 0x0
-      UserPatt1Msb: 0x0
-      UserPatt2Lsb: 0x0
-      UserPatt2Msb: 0x0
-      LvdsLsbFirst: False
-    Ad9249Config[0].Adc[1]:
-      enable: False
-      ExternalPdwnMode: Full Power Down
-      InternalPdwnMode: Chip Run
-      DutyCycleStabilizer: 'Off'
-      ClockDivide: Divide by 1
-      ChopMode: 'Off'
-      DevIndexMask[7:0]: 0b0
-      DevIndexMask[DCO:FCO]: 0b0
-      UserTestModeCfg: single
-      OutputTestMode: 'Off'
-      OffsetAdjust: 0x0
-      OutputInvert: False
-      OutputFormat: Offset Binary
-      UserPatt1Lsb: 0x0
-      UserPatt1Msb: 0x0
-      UserPatt2Lsb: 0x0
-      UserPatt2Msb: 0x0
-      LvdsLsbFirst: False
-    Ad9249Config[1].Adc[0]:
-      enable: False
-      ExternalPdwnMode: Full Power Down
-      InternalPdwnMode: Chip Run
-      DutyCycleStabilizer: 'Off'
-      ClockDivide: Divide by 1
-      ChopMode: 'Off'
-      DevIndexMask[7:0]: 0b0
-      DevIndexMask[DCO:FCO]: 0b0
-      UserTestModeCfg: single
-      OutputTestMode: 'Off'
-      OffsetAdjust: 0x0
-      OutputInvert: False
-      OutputFormat: Offset Binary
-      UserPatt1Lsb: 0x0
-      UserPatt1Msb: 0x0
-      UserPatt2Lsb: 0x0
-      UserPatt2Msb: 0x0
-      LvdsLsbFirst: False
     MicroblazeLog:
       enable: False
   runControl:
