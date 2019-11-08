@@ -31,11 +31,12 @@ import h5py
 #matplotlib.pyplot.ion()
 MAX_NUMBER_OF_FRAMES_PER_BATCH  = 8000
 
+
 ##################################################
 # Global variables
 ##################################################
 cameraType = 'ePix10ka'
-bitMask = 0x3fff
+bitMask = 0x7fff
 PLOT_IMAGE = False
 PLOT_IMAGE_DARKSUB = False
 SAVEHDF5              = True
@@ -86,6 +87,7 @@ print("numberOfFrames in the 3D array: " ,numberOfFrames)
 if(numberOfFrames==1):
     [frameComplete, readyForDisplay, rawImgFrame] = currentCam.buildImageFrame(currentRawData = [], newRawData = allFrames[0])
     imgDesc = np.array([currentCam.descrambleImage(bytearray(rawImgFrame.tobytes()))])
+    imgTrig = np.array([0xffff&rawImgFrame[1]])
 else:
     for i in range(0, numberOfFrames):
         #get an specific frame
@@ -94,8 +96,11 @@ else:
         #get descrambled image from camera
         if (i==0):
             imgDesc = np.array([currentCam.descrambleImage(bytearray(rawImgFrame.tobytes()))])
+            imgTrig = np.array([0xffff&rawImgFrame[1]])
         else:
             imgDesc = np.concatenate((imgDesc, np.array([currentCam.descrambleImage(bytearray(rawImgFrame.tobytes()))])),0)
+            imgTrig = np.concatenate((imgTrig, np.array([0xffff&rawImgFrame[1]])),0)
+        #print(0xffff&rawImgFrame[1])
 
 
 ##################################################
@@ -128,6 +133,7 @@ if(SAVEHDF5):
     print("Saving Hdf5")
     index_h5 ='data'
     f_h5[index_h5] = imgDesc.astype('uint16')
+    f_h5['acqCnt'] = imgTrig.astype('uint16')
 f_h5.close()
 
 # the histogram of the data
