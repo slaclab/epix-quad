@@ -11,8 +11,7 @@
 ## Timing Constraints                ##
 #######################################
 
-create_clock -name gtRefClk0P   -period  6.400 [get_ports gtRefClk0P]
-create_clock -name pgpClk       -period  6.400 [get_pins {U_EpixCore/G_PGP2B.U_PgpFrontEnd/G_PGP.U_Pgp2bVarLatWrapper/Pgp2bGtp7VarLat_Inst/MuliLane_Inst/GTP7_CORE_GEN[0].Gtp7Core_Inst/gtpe2_i/TXOUTCLK}]
+create_clock -name pgpClk       -period  6.400 [get_ports {gtRefClk0P}]
 create_clock -name adc0DoClkP   -period  2.857 [get_ports {adcDoClkP[0]}]
 create_clock -name adc1DoClkP   -period  2.857 [get_ports {adcDoClkP[1]}]
 create_clock -name adcMonDoClkP -period  2.857 [get_ports {adcDoClkP[2]}]
@@ -29,7 +28,6 @@ set_clock_groups -asynchronous \
    -group [get_clocks -include_generated_clocks pgpClk] \
    -group [get_clocks -include_generated_clocks coreClk] \
    -group [get_clocks -include_generated_clocks delayCtrlClk] \
-   -group [get_clocks -include_generated_clocks gtRefClk0P] \
    -group [get_clocks -include_generated_clocks adc0DoClkP] \
    -group [get_clocks -include_generated_clocks adc1DoClkP] \
    -group [get_clocks -include_generated_clocks adcMonDoClkP] \

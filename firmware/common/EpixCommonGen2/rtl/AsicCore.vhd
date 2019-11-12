@@ -27,7 +27,6 @@ use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
 use work.SsiCmdMasterPkg.all;
 use work.EpixPkgGen2.all;
-use work.Pgp2bPkg.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -45,7 +44,6 @@ entity AsicCore is
       -- Clock and Reset
       sysClk               : in    sl;
       sysRst               : in    sl;
-      pgpClk               : in    sl;
       axiRst               : out   sl;
       -- ADC signals
       adcStreams           : in    AxiStreamMasterArray(19 downto 0);
@@ -82,8 +80,9 @@ entity AsicCore is
       mpsOut               : out sl;
       triggerOut           : out sl;
       -- SW and fiber trigger
-      ssiCmd               : in  SsiCmdMasterType;
-      pgpRxOut             : in  Pgp2bRxOutType;
+      swRun                : in  sl;
+      pgpOpCode            : in  slv(7 downto 0);
+      pgpOpCodeEn          : in  sl;
       -- Power enables
       digitalPowerEn       : out sl;
       analogPowerEn        : out sl;
@@ -141,7 +140,6 @@ architecture rtl of AsicCore is
    signal iDaqTrigger      : sl;
    signal iRunTrigger      : sl;
    signal opCode           : slv(7 downto 0);
-   signal pgpOpCodeOneShot : sl;
    
    -- Interfaces between blocks
    signal acqStart           : sl;
@@ -179,17 +177,17 @@ begin
    ledEn          <= epixConfig.powerEnable(3);
    
    -- Triggers out
-   triggerOut     <= iAsicAcq;
-   mpsOut         <= 
-      pgpOpCodeOneShot     when epixConfigExt.dbgReg = "00000" else
-      acqStart             when epixConfigExt.dbgReg = "00001" else
-      dataSend             when epixConfigExt.dbgReg = "00010" else
-      acqBusy              when epixConfigExt.dbgReg = "00011" else
-      readDone             when epixConfigExt.dbgReg = "00100" else
-      iAsicSync            when epixConfigExt.dbgReg = "00101" else
-      iAsicR0              when epixConfigExt.dbgReg = "00110" else
-      iAsicRoClk           when epixConfigExt.dbgReg = "00111" else
-      iInjAcq              when epixConfigExt.dbgReg = "01000" else     -- this is debug pulse to trigger exernal source within ACQ pulse
+   triggerOut  <= iAsicAcq;
+   mpsOut      <= 
+      iInjAcq     when epixConfigExt.dbgReg = "00000" else
+      acqStart    when epixConfigExt.dbgReg = "00001" else
+      dataSend    when epixConfigExt.dbgReg = "00010" else
+      acqBusy     when epixConfigExt.dbgReg = "00011" else
+      readDone    when epixConfigExt.dbgReg = "00100" else
+      iAsicSync   when epixConfigExt.dbgReg = "00101" else
+      iAsicR0     when epixConfigExt.dbgReg = "00110" else
+      iAsicRoClk  when epixConfigExt.dbgReg = "00111" else
+      iInjAcq     when epixConfigExt.dbgReg = "01000" else     -- this is debug pulse to trigger exernal source within ACQ pulse
       '0';
    
    -- Triggers in
@@ -293,16 +291,13 @@ begin
       -- Core clock, reset
       sysClk         => sysClk,
       sysClkRst      => iAxiRst,
-      -- PGP clock, reset
-      pgpClk         => pgpClk,
-      pgpClkRst      => sysRst,
       -- TTL triggers in 
       runTrigger     => iRunTrigger,
       daqTrigger     => iDaqTrigger,
       -- SW trigger in (from VC)
-      ssiCmd         => ssiCmd,
-      -- PGP RxOutType (to trigger from sideband)
-      pgpRxOut       => pgpRxOut,
+      swRun          => swRun,
+      pgpOpCode      => pgpOpCode,
+      pgpOpCodeEn    => pgpOpCodeEn,
       -- Opcode associated with this trigger
       opCodeOut      => opCode,
       -- Configuration
@@ -313,23 +308,6 @@ begin
       acqStart       => acqStart,
       dataSend       => dataSend
    );   
-   
-      -- Temporary one-shot for grabbing PGP op code
-   U_OpCodeEnOneShot : entity work.SynchronizerOneShot
-   generic map (
-      TPD_G           => TPD_G,
-      RST_POLARITY_G  => '1',
-      RST_ASYNC_G     => false,
-      BYPASS_SYNC_G   => true,
-      RELEASE_DELAY_G => 10,
-      IN_POLARITY_G   => '1',
-      OUT_POLARITY_G  => '1')
-   port map (
-      clk     => pgpClk,
-      rst     => '0',
-      dataIn  => pgpRxOut.opCodeEn,
-      dataOut => pgpOpCodeOneShot
-   );
    
    ---------------------------------------------------------------
    -- Acquisition core

@@ -28,8 +28,6 @@ use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 use work.StdRtlPkg.all;
 use work.EpixPkgGen2.all;
-use work.SsiCmdMasterPkg.all;
-use work.Pgp2bPkg.all;
 library UNISIM;
 use UNISIM.vcomponents.all;
 
@@ -39,14 +37,12 @@ entity TrigControl is
       -- Master system clock
       sysClk        : in  std_logic;
       sysClkRst     : in  std_logic;
-      -- PGP clocks and reset
-      pgpClk        : in  sl;
-      pgpClkRst     : in  sl;
       -- Inputs
       runTrigger    : in  std_logic;
       daqTrigger    : in  std_logic;
-      ssiCmd        : in  SsiCmdMasterType;
-      pgpRxOut      : in  Pgp2bRxOutType;
+      swRun         : in   sl;
+      pgpOpCode     : in   slv(7 downto 0);
+      pgpOpCodeEn   : in   sl;
       -- Fiducial code output
       opCodeOut     : out slv(7 downto 0);
       -- Configuration
@@ -63,12 +59,8 @@ end TrigControl;
 architecture TrigControl of TrigControl is
 
    -- Local Signals
-   signal pgpSidebandRun  : sl;
-   signal pgpSidebandDaq  : sl;
    signal coreSidebandRun : sl;
    signal coreSidebandDaq : sl;
-   signal ttlSidebandRun  : sl;
-   signal ttlSidebandDaq  : sl;   
    signal combinedRunTrig : sl;
    signal combinedDaqTrig : sl;
    
@@ -80,7 +72,6 @@ architecture TrigControl of TrigControl is
    signal daqTriggerOut   : std_logic;
    signal countEnable     : std_logic;
    signal intCount        : std_logic_vector(31 downto 0);
-   signal swRun           : std_logic;
    signal swRead          : std_logic;
    signal iRunTrigOut     : std_logic;
    signal iDaqTrigOut     : std_logic;
@@ -89,38 +80,17 @@ architecture TrigControl of TrigControl is
    signal autoRunEn     : std_logic;
    signal autoDaqEn     : std_logic;
    signal pgpTrigEn     : std_logic;
-
-   -- Op code signals
-   signal pgpOpCode  : slv(7 downto 0) := (others => '0');
-   signal syncOpCode : slv(7 downto 0);
    
    -- Register delay for simulation
    constant tpd:time := 0.5 ns;
 
 begin
-
+   
    -----------------------------------
    -- SW Triggers:
-   --   Run trigger is opCode x00
-   --   DAQ trigger trails by 1 clock
+   -- Run trigger is opCode x00
    -----------------------------------
-   U_TrigPulser : entity work.SsiCmdMasterPulser
-      generic map (
-         OUT_POLARITY_G => '1',
-         PULSE_WIDTH_G  => 1
-      )
-      port map (
-          -- Local command signal
-         cmdSlaveOut => ssiCmd,
-         --addressed cmdOpCode
-         opCode      => x"00",
-         -- output pulse to sync module
-         syncPulse   => swRun,
-         -- Local clock and reset
-         locClk      => sysClk,
-         locRst      => sysClkRst              
-      );
-   process(sysClk,sysClkRst) begin
+   process(sysClk) begin
       if rising_edge(sysClk) then
          if sysClkRst = '1' then
             swRead <= '0' after tpd;
@@ -132,32 +102,18 @@ begin
 
    -----------------------------------------
    -- PGP Sideband Triggers:
-   --   Any op code is a trigger, actual op
-   --   code is the fiducial.
+   -- Any op code is a trigger, 
+   -- actual opcode is the fiducial.
    -----------------------------------------
-   U_PgpSideBandTrigger : entity work.SynchronizerFifo
-      generic map (
-         TPD_G        => tpd,
-         DATA_WIDTH_G => 8
-      )
-      port map (
-         rst    => pgpClkRst,
-         wr_clk => pgpClk,
-         wr_en  => pgpRxOut.opCodeEn,
-         din    => pgpRxOut.opCode,
-         rd_clk => sysClk,
-         rd_en  => '1',
-         valid  => coreSidebandRun,
-         dout   => syncOpCode
-      );
    -- Map op code to output port
    -- Have sideband DAQ lag 1 cycle behind sideband run
+   coreSidebandRun <= pgpOpCodeEn;
    process(sysClk) begin
       if rising_edge(sysClk) then
          if sysClkRst = '1' then
             opCodeOut <= (others => '0') after tpd;
          elsif coreSidebandRun = '1' then
-            opCodeOut <= syncOpCode after tpd;
+            opCodeOut <= pgpOpCode after tpd;
          end if;
          coreSidebandDaq <= coreSidebandRun;
       end if;

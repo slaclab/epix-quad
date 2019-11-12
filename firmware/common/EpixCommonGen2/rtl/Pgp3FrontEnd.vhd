@@ -1,15 +1,15 @@
 -------------------------------------------------------------------------------
--- Title      : PgpFrontEnd for ePix Gen 2
+-- Title      : Pgp3FrontEnd for ePix Gen 2
 -------------------------------------------------------------------------------
--- File       : PgpFrontEnd.vhd
--- Author     : Kurtis Nishimura  <kurtisn@slac.stanford.edu>
+-- File       : Pgp3FrontEnd.vhd
+-- Author     : Maciej Kwiatkowski  <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2014-12-11
--- Last update: 2014-12-11
--- Platform   : Vivado 2014.4
+-- Created    : 2019-12-11
+-- Last update: 2019-12-11
+-- Platform   : Vivado 2018.3
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
--- Description: PgpFrontEnd for generation 2 ePix digital card
+-- Description: Pgp3FrontEnd for generation 2 ePix digital card
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Development Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
@@ -25,16 +25,18 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
 use work.StdRtlPkg.all;
-use work.Pgp2bPkg.all;
+use work.Pgp3Pkg.all;
 use work.AxiLitePkg.all;
 use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
 use work.SsiCmdMasterPkg.all;
 
-entity PgpFrontEnd is
+entity Pgp3FrontEnd is
    generic (
-      TPD_G          : time      := 1 ns;
-      SIMULATION_G   : boolean   := false
+      TPD_G             : time            := 1 ns;
+      SIMULATION_G      : boolean         := false;
+      AXI_CLK_FREQ_G    : real            := 100.00E+6;
+      AXI_BASE_ADDR_G   : slv(31 downto 0) := (others => '0')
    );
    port (
       -- GTX 7 Ports
@@ -80,135 +82,95 @@ entity PgpFrontEnd is
       pgpOpCode         : out  slv(7 downto 0);
       pgpOpCodeEn       : out  sl
    );        
-end PgpFrontEnd;
+end Pgp3FrontEnd;
 
-architecture mapping of PgpFrontEnd is
+architecture mapping of Pgp3FrontEnd is
 
-   signal iStableClk : sl;
-   signal stableRst  : sl;
-   signal powerUpRst : sl;
-   signal iPgpClk    : sl;
-
-   -- TX Interfaces - 1 lane, 4 VCs
+   signal iPgpClk       : sl;
+   signal iPgpRst       : sl;
+   signal pgpRefClk     : sl;
+   signal pgpRefClkBufg : sl;
+   signal pgpRefClkRst  : sl;
+   
    signal pgpTxMasters : AxiStreamMasterArray(3 downto 0);
    signal pgpTxSlaves  : AxiStreamSlaveArray(3 downto 0);
-   -- RX Interfaces - 1 lane, 4 VCs
    signal pgpRxMasters : AxiStreamMasterArray(3 downto 0);
    signal pgpRxCtrl    : AxiStreamCtrlArray(3 downto 0);
    -- for simulation only
    signal pgpRxSlaves  : AxiStreamSlaveArray(3 downto 0);
-
-   -- Pgp Rx/Tx types
-   signal pgpRxIn     : Pgp2bRxInType;
-   signal iPgpRxOut   : Pgp2bRxOutType;
-   signal pgpTxIn     : Pgp2bTxInType;
-   signal pgpTxOut    : Pgp2bTxOutType;
    
    signal iSsiCmd      : SsiCmdMasterType;
+   signal iPgpRxOut    : Pgp3RxOutType;
    
 begin
    
-   -- Map to signals out
-   pgpClk      <= iPgpClk;
-
-   -------------------------------
-   --       PGP Core            --
-   -------------------------------
    
-   G_PGP : if SIMULATION_G = false generate
-      
-      -- Generate stable reset signal
-      U_PwrUpRst : entity work.PwrUpRst
-         port map (
-            clk    => iStableClk,
-            rstOut => powerUpRst
-         ); 
-      stableRst <= powerUpRst or powerBad;
-      
-      U_Pgp2bVarLatWrapper : entity work.EpixPgp2bGtp7Wrapper
-         generic map (
-            TPD_G                => TPD_G,
-            -- MMCM Configurations (Defaults: gtClkP = 125 MHz Configuration)
-            CLKIN_PERIOD_G       => 6.4, -- gtClkP/2
-            DIVCLK_DIVIDE_G      => 1,
-            CLKFBOUT_MULT_F_G    => 6.375,
-            CLKOUT0_DIVIDE_F_G   => 6.375,
-            -- Quad PLL Configurations
-            QPLL_REFCLK_SEL_G    => "001",
-            QPLL_FBDIV_IN_G      => 4,
-            QPLL_FBDIV_45_IN_G   => 5,
-            QPLL_REFCLK_DIV_IN_G => 1,
-            -- MGT Configurations
-            RXOUT_DIV_G          => 2,
-            TXOUT_DIV_G          => 2,
-            -- Configure Number of Lanes
-            NUM_VC_EN_G          => 4,
-            -- Interleave configure
-            VC_INTERLEAVE_G      => 0
-         )
-         port map (
-            -- Manual Reset
-            extRst           => stableRst,
-            -- Clocks and Reset
-            pgpClk           => iPgpClk,
-            pgpRst           => pgpRst,
-            stableClk        => iStableClk,
-            -- Non VC Tx Signals
-            pgpTxIn          => pgpTxIn,
-            pgpTxOut         => pgpTxOut,
-            -- Non VC Rx Signals
-            pgpRxIn          => pgpRxIn,
-            pgpRxOut         => iPgpRxOut,
-            -- Frame Transmit Interface - 1 Lane, Array of 4 VCs
-            pgpTxMasters     => pgpTxMasters,
-            pgpTxSlaves      => pgpTxSlaves,
-            -- Frame Receive Interface - 1 Lane, Array of 4 VCs
-            pgpRxMasters     => pgpRxMasters,
-            pgpRxCtrl        => pgpRxCtrl,
-            -- GT Pins
-            gtClkP           => gtClkP,
-            gtClkN           => gtClkN,
-            gtTxP            => gtTxP,
-            gtTxN            => gtTxN,
-            gtRxP            => gtRxP,
-            gtRxN            => gtRxN
-         ); 
-   end generate G_PGP;
+   U_BUFG : BUFG
+      port map (
+         I => pgpRefClk,
+         O => pgpRefClkBufg);
    
-   G_PGP_SIM : if SIMULATION_G = true generate
-      
-      -- Generate stable reset signal
-      U_PwrUpRst : entity work.PwrUpRst
-         generic map (
-            SIM_SPEEDUP_G => true
-         )
-         port map (
-            clk    => iPgpClk,
-            rstOut => stableRst
-         ); 
-      
-      pgpRst <= stableRst;
-      
-      U_PGP_SIM : entity work.RoguePgp2bSim
-         generic map (
-            TPD_G           => TPD_G,
-            USER_ID_G       => 2,
-            NUM_VC_EN_G     => 4
-         )
-         port map (
-            refClkP        => gtClkP,
-            refClkM        => gtClkN,
-            pgpTxClk       => iPgpClk,
-            pgpTxIn        => pgpTxIn,
-            pgpTxOut       => pgpTxOut,
-            pgpTxMasters   => pgpTxMasters,
-            pgpTxSlaves    => pgpTxSlaves,
-            pgpRxIn        => pgpRxIn,
-            pgpRxOut       => iPgpRxOut,
-            pgpRxMasters   => pgpRxMasters,
-            pgpRxSlaves    => pgpRxSlaves
-         );
-   end generate G_PGP_SIM;
+   pgpClk <= pgpRefClkBufg;
+   pgpRst <= pgpRefClkRst;
+   
+   U_PwrUpRst : entity work.PwrUpRst
+      generic map(
+         TPD_G         => TPD_G,
+         SIM_SPEEDUP_G => SIMULATION_G)
+      port map (
+         clk    => pgpRefClkBufg,
+         rstOut => pgpRefClkRst
+      );
+   
+   U_Pgp3Gtp7Wrapper : entity work.Pgp3Gtp7Wrapper
+      generic map (
+         TPD_G                       => TPD_G,
+         ROGUE_SIM_EN_G              => SIMULATION_G,
+         ROGUE_SIM_PORT_NUM_G        => 8000,
+         RATE_G                      => "6.25Gbps",
+         REFCLK_TYPE_G               => PGP3_REFCLK_156_C,
+         EN_PGP_MON_G                => true,
+         EN_GTH_DRP_G                => false,
+         EN_QPLL_DRP_G               => false,
+         AXIL_BASE_ADDR_G            => AXI_BASE_ADDR_G,
+         AXIL_CLK_FREQ_G             => AXI_CLK_FREQ_G
+      )
+      port map (
+         -- Stable Clock and Reset
+         stableClk         => axiClk,
+         stableRst         => axiRst,
+         -- Gt Serial IO
+         pgpGtTxP(0)       => gtTxP,
+         pgpGtTxN(0)       => gtTxN,
+         pgpGtRxP(0)       => gtRxP,
+         pgpGtRxN(0)       => gtRxN,
+         -- GT Clocking
+         pgpRefClkP        => gtClkP,
+         pgpRefClkN        => gtClkN,
+         pgpRefClkOut      => pgpRefClk,
+         -- Clocking
+         pgpClk(0)         => iPgpClk,
+         pgpClkRst(0)      => iPgpRst,
+         -- Non VC Rx Signals
+         pgpRxIn(0)        => PGP3_RX_IN_INIT_C,
+         pgpRxOut(0)       => iPgpRxOut,
+         -- Non VC Tx Signals
+         pgpTxIn(0)        => PGP3_TX_IN_INIT_C,
+         pgpTxOut(0)       => open,
+         -- Frame Transmit Interface
+         pgpTxMasters      => pgpTxMasters,
+         pgpTxSlaves       => pgpTxSlaves,
+         -- Frame Receive Interface
+         pgpRxMasters      => pgpRxMasters,
+         pgpRxCtrl         => pgpRxCtrl,
+         -- AXI-Lite Register Interface (axilClk domain)
+         axilClk           => axiClk,
+         axilRst           => axiRst,
+         axilReadMaster    => sAxiLiteReadMaster,
+         axilReadSlave     => sAxiLiteReadSlave,
+         axilWriteMaster   => sAxiLiteWriteMaster,
+         axilWriteSlave    => sAxiLiteWriteSlave
+      );
    
    -----------------------------------------
    -- PGP Sideband Triggers:
@@ -221,56 +183,34 @@ begin
          DATA_WIDTH_G => 8
       )
       port map (
-         rst    => stableRst,
+         rst    => iPgpRst,
          wr_clk => iPgpClk,
          wr_en  => iPgpRxOut.opCodeEn,
-         din    => iPgpRxOut.opCode,
+         din    => iPgpRxOut.opCodeData(7 downto 0), -- this needs to be revised when PGP3 is used for triggernig
          rd_clk => axiClk,
          rd_en  => '1',
          valid  => pgpOpCodeEn,
          dout   => pgpOpCode
       );
    
-   U_Pgp2bAxi : entity work.Pgp2bAxi
-   generic map (
-      AXI_CLK_FREQ_G     => 100.0E+6
-   )
-   port map (
-      pgpTxClk         => iPgpClk,
-      pgpTxClkRst      => stableRst,
-      pgpTxIn          => pgpTxIn,
-      pgpTxOut         => pgpTxOut,
-      pgpRxClk         => iPgpClk,
-      pgpRxClkRst      => stableRst,
-      pgpRxIn          => pgpRxIn,
-      pgpRxOut         => iPgpRxOut,
-      axilClk          => axiClk,
-      axilRst          => axiRst,
-      axilReadMaster   => sAxiLiteReadMaster,
-      axilReadSlave    => sAxiLiteReadSlave,
-      axilWriteMaster  => sAxiLiteWriteMaster,
-      axilWriteSlave   => sAxiLiteWriteSlave
-   );   
-   
-   
    -- Lane 0, VC0 RX/TX, Register access control        
    U_Vc0AxiMasterRegisters : entity work.SsiAxiLiteMaster 
       generic map (
          USE_BUILT_IN_G      => false,
          EN_32BIT_ADDR_G     => true,
-         AXI_STREAM_CONFIG_G => SSI_PGP2B_CONFIG_C,
+         AXI_STREAM_CONFIG_G => PGP3_AXIS_CONFIG_C,
          SLAVE_READY_EN_G    => SIMULATION_G
       )
       port map (
          -- Streaming Slave (Rx) Interface (sAxisClk domain) 
          sAxisClk    => iPgpClk,
-         sAxisRst    => stableRst,
+         sAxisRst    => iPgpRst,
          sAxisMaster => pgpRxMasters(0),
          sAxisSlave  => pgpRxSlaves(0),
          sAxisCtrl   => pgpRxCtrl(0),
          -- Streaming Master (Tx) Data Interface (mAxisClk domain)
          mAxisClk    => iPgpClk,
-         mAxisRst    => stableRst,
+         mAxisRst    => iPgpRst,
          mAxisMaster => pgpTxMasters(0),
          mAxisSlave  => pgpTxSlaves(0),
          -- AXI Lite Bus (axiLiteClk domain)
@@ -283,7 +223,7 @@ begin
       );
    
    -- Lane 0, VC1 TX, streaming data out 
-   U_Vc1SsiTxFifo : entity work.AxiStreamFifo
+   U_Vc0SsiTxFifo : entity work.AxiStreamFifo
       generic map (
          --EN_FRAME_FILTER_G   => true,
          CASCADE_SIZE_G      => 1,
@@ -294,7 +234,7 @@ begin
          FIFO_FIXED_THRESH_G => true,
          FIFO_PAUSE_THRESH_G => 128,    
          SLAVE_AXI_CONFIG_G  => ssiAxiStreamConfig(4, TKEEP_COMP_C),
-         MASTER_AXI_CONFIG_G => SSI_PGP2B_CONFIG_C) 
+         MASTER_AXI_CONFIG_G => PGP3_AXIS_CONFIG_C) 
       port map (   
          -- Slave Port
          sAxisClk    => axiClk,
@@ -303,18 +243,18 @@ begin
          sAxisSlave  => dataAxisSlave,
          -- Master Port
          mAxisClk    => iPgpClk,
-         mAxisRst    => stableRst,
+         mAxisRst    => iPgpRst,
          mAxisMaster => pgpTxMasters(1),
          mAxisSlave  => pgpTxSlaves(1));     
    -- Lane 0, VC1 RX, Command processor
-   U_Vc1SsiCmdMaster : entity work.SsiCmdMaster
+   U_Vc0SsiCmdMaster : entity work.SsiCmdMaster
       generic map (
          SLAVE_READY_EN_G    => SIMULATION_G,
-         AXI_STREAM_CONFIG_G => SSI_PGP2B_CONFIG_C)   
+         AXI_STREAM_CONFIG_G => PGP3_AXIS_CONFIG_C)   
       port map (
          -- Streaming Data Interface
          axisClk     => iPgpClk,
-         axisRst     => stableRst,
+         axisRst     => iPgpRst,
          sAxisMaster => pgpRxMasters(1),
          sAxisSlave  => pgpRxSlaves(1),
          sAxisCtrl   => pgpRxCtrl(1),
@@ -323,7 +263,6 @@ begin
          cmdRst      => axiRst,
          cmdMaster   => iSsiCmd
       );
-   
    -----------------------------------
    -- SW Triggers:
    -- Run trigger is opCode x00
@@ -357,7 +296,7 @@ begin
          FIFO_FIXED_THRESH_G => true,
          FIFO_PAUSE_THRESH_G => 128,    
          SLAVE_AXI_CONFIG_G  => ssiAxiStreamConfig(4),
-         MASTER_AXI_CONFIG_G => SSI_PGP2B_CONFIG_C) 
+         MASTER_AXI_CONFIG_G => PGP3_AXIS_CONFIG_C) 
       port map (   
          -- Slave Port
          sAxisClk    => axiClk,
@@ -366,7 +305,7 @@ begin
          sAxisSlave  => scopeAxisSlave,
          -- Master Port
          mAxisClk    => iPgpClk,
-         mAxisRst    => stableRst,
+         mAxisRst    => iPgpRst,
          mAxisMaster => pgpTxMasters(2),
          mAxisSlave  => pgpTxSlaves(2));     
    
@@ -382,7 +321,7 @@ begin
       FIFO_FIXED_THRESH_G => true,
       FIFO_PAUSE_THRESH_G => 128,    
       SLAVE_AXI_CONFIG_G  => ssiAxiStreamConfig(4),
-      MASTER_AXI_CONFIG_G => SSI_PGP2B_CONFIG_C) 
+      MASTER_AXI_CONFIG_G => PGP3_AXIS_CONFIG_C) 
    port map (   
       -- Slave Port
       sAxisClk    => axiClk,
@@ -391,7 +330,7 @@ begin
       sAxisSlave  => monitorAxisSlave,
       -- Master Port
       mAxisClk    => iPgpClk,
-      mAxisRst    => stableRst,
+      mAxisRst    => iPgpRst,
       mAxisMaster => pgpTxMasters(3),
       mAxisSlave  => pgpTxSlaves(3)
    );
@@ -406,12 +345,12 @@ begin
       FIFO_ADDR_WIDTH_G   => 9,
       FIFO_FIXED_THRESH_G => true,
       FIFO_PAUSE_THRESH_G => 128,    
-      SLAVE_AXI_CONFIG_G  => SSI_PGP2B_CONFIG_C,
+      SLAVE_AXI_CONFIG_G  => PGP3_AXIS_CONFIG_C,
       MASTER_AXI_CONFIG_G => ssiAxiStreamConfig(4)) 
    port map (   
       -- Slave Port
       sAxisClk    => iPgpClk,
-      sAxisRst    => stableRst,
+      sAxisRst    => iPgpRst,
       sAxisMaster => pgpRxMasters(3),
       sAxisSlave  => open,
       -- Master Port

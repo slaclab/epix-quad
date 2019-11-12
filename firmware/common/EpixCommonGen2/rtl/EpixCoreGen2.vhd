@@ -33,7 +33,6 @@ use work.AxiLitePkg.all;
 use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
 use work.SsiCmdMasterPkg.all;
-use work.Pgp2bPkg.all;
 use work.Ad9249Pkg.all;
 
 library unisim;
@@ -42,6 +41,7 @@ use unisim.vcomponents.all;
 entity EpixCoreGen2 is
    generic (
       TPD_G             : time := 1 ns;
+      PGP_VER           : string          := "PGP2B";       -- "PGP2B" or "PGP3"
       ASIC_TYPE_G       : AsicType;
       BUILD_INFO_G      : BuildInfoType;
       ADC0_INVERT_CH    : slv(7 downto 0) := "00000000";
@@ -168,13 +168,9 @@ architecture top_level of EpixCoreGen2 is
    signal pgpClk      : sl;
    signal sysRst      : sl;
    signal axiRst      : sl;
-   signal txLinkReady : sl;
-   signal rxLinkReady : sl;
    
    signal iDelayCtrlClk : sl;
    signal iDelayCtrlRst : sl;
-   
-   signal pgpRxOut      : Pgp2bRxOutType;
    
    -- AXI Signals
    signal axiReadMaster   : AxiReadMasterType;
@@ -206,10 +202,10 @@ architecture top_level of EpixCoreGen2 is
    
    
    -- Command interface
-   signal ssiCmd           : SsiCmdMasterType;
+   signal swRun               : sl;
+   signal pgpOpCode           : slv(7 downto 0);
+   signal pgpOpCodeEn         : sl;
    
-   signal rxReady          : sl;
-   signal txReady          : sl;
    signal delayCtrlRdy     : sl;
    
    -- Power up reset to SERDES block
@@ -222,7 +218,6 @@ architecture top_level of EpixCoreGen2 is
    signal slowAdcData : Slv24Array(8 downto 0);
    
    signal acqStart   : sl;
-   signal refClk     : sl;
    signal ddrClk     : sl;
    signal ddrRst     : sl;
    signal calibComplete : sl;
@@ -317,57 +312,115 @@ begin
    ---------------------
    -- PGP Front end   --
    ---------------------
-   U_PgpFrontEnd : entity work.PgpFrontEnd
-   generic map (
-      TPD_G          => TPD_G,
-      SIMULATION_G   => SIMULATION_G
-   )
-   port map (
-      -- GTX 7 Ports
-      gtClkP      => gtRefClk0P,
-      gtClkN      => gtRefClk0N,
-      gtRxP       => gtDataRxP,
-      gtRxN       => gtDataRxN,
-      gtTxP       => gtDataTxP,
-      gtTxN       => gtDataTxN,
-      -- Input power status
-      powerBad    => powerBad,
-      -- Output reset
-      pgpRst      => sysRst,
-      -- Output status
-      rxLinkReady => rxReady,
-      txLinkReady => txReady,
-      -- Output clocking
-      pgpClk      => pgpClk,
-      refClk      => refClk,
-      -- AXI clocking
-      axiClk     => coreClk,
-      axiRst     => axiRst,
-      -- Axi Master Interface - Registers (axiClk domain)
-      mAxiLiteReadMaster  => sAxiReadMaster(0),
-      mAxiLiteReadSlave   => sAxiReadSlave(0),
-      mAxiLiteWriteMaster => sAxiWriteMaster(0),
-      mAxiLiteWriteSlave  => sAxiWriteSlave(0),
-      -- Axi Slave Interface - PGP Status Registers (axiClk domain)
-      sAxiLiteReadMaster  => mAxiReadMasters(PGPSTAT_INDEX_C),
-      sAxiLiteReadSlave   => mAxiReadSlaves(PGPSTAT_INDEX_C),
-      sAxiLiteWriteMaster => mAxiWriteMasters(PGPSTAT_INDEX_C),
-      sAxiLiteWriteSlave  => mAxiWriteSlaves(PGPSTAT_INDEX_C),
-      -- Streaming data Links (axiClk domain)      
-      dataAxisMaster    => dataAxisMaster,
-      dataAxisSlave     => dataAxisSlave,
-      scopeAxisMaster   => scopeAxisMaster,
-      scopeAxisSlave    => scopeAxisSlave,
-      monitorAxisMaster => monitorAxisMaster,
-      monitorAxisSlave  => monitorAxisSlave,
-      -- Monitoring enable command incoming stream
-      monEnAxisMaster   => monEnAxisMaster,
-      -- Command interface
-      ssiCmd              => ssiCmd,
-      -- Sideband interface
-      pgpRxOut            => pgpRxOut
-   );
-   powerBad <= not powerGood;
+   
+   G_PGP2B : if PGP_VER = "PGP2B" generate
+   
+      U_PgpFrontEnd : entity work.PgpFrontEnd
+      generic map (
+         TPD_G          => TPD_G,
+         SIMULATION_G   => SIMULATION_G
+      )
+      port map (
+         -- GTX 7 Ports
+         gtClkP      => gtRefClk0P,
+         gtClkN      => gtRefClk0N,
+         gtRxP       => gtDataRxP,
+         gtRxN       => gtDataRxN,
+         gtTxP       => gtDataTxP,
+         gtTxN       => gtDataTxN,
+         -- Input power status
+         powerBad    => powerBad,
+         -- Output reset
+         pgpRst      => sysRst,
+         -- Output clocking
+         pgpClk      => pgpClk,
+         -- AXI clocking
+         axiClk     => coreClk,
+         axiRst     => axiRst,
+         -- Axi Master Interface - Registers (axiClk domain)
+         mAxiLiteReadMaster  => sAxiReadMaster(0),
+         mAxiLiteReadSlave   => sAxiReadSlave(0),
+         mAxiLiteWriteMaster => sAxiWriteMaster(0),
+         mAxiLiteWriteSlave  => sAxiWriteSlave(0),
+         -- Axi Slave Interface - PGP Status Registers (axiClk domain)
+         sAxiLiteReadMaster  => mAxiReadMasters(PGPSTAT_INDEX_C),
+         sAxiLiteReadSlave   => mAxiReadSlaves(PGPSTAT_INDEX_C),
+         sAxiLiteWriteMaster => mAxiWriteMasters(PGPSTAT_INDEX_C),
+         sAxiLiteWriteSlave  => mAxiWriteSlaves(PGPSTAT_INDEX_C),
+         -- Streaming data Links (axiClk domain)      
+         dataAxisMaster    => dataAxisMaster,
+         dataAxisSlave     => dataAxisSlave,
+         scopeAxisMaster   => scopeAxisMaster,
+         scopeAxisSlave    => scopeAxisSlave,
+         monitorAxisMaster => monitorAxisMaster,
+         monitorAxisSlave  => monitorAxisSlave,
+         -- Monitoring enable command incoming stream
+         monEnAxisMaster   => monEnAxisMaster,
+         -- Command interface
+         swRun             => swRun,
+         -- To access sideband commands
+         pgpOpCode         => pgpOpCode,
+         pgpOpCodeEn       => pgpOpCodeEn
+      );
+      powerBad <= not powerGood;
+   
+   end generate;
+   
+   G_PGP3 : if PGP_VER = "PGP3" generate
+      
+      U_Pgp3FrontEnd : entity work.Pgp3FrontEnd
+      generic map (
+         TPD_G             => TPD_G,
+         SIMULATION_G      => SIMULATION_G,
+         AXI_CLK_FREQ_G    => AXI_CLK_FREQ_C,
+         AXI_BASE_ADDR_G   => AXI_CONFIG_C(PGPSTAT_INDEX_C).baseAddr
+      )
+      port map (
+         -- GTX 7 Ports
+         gtClkP      => gtRefClk0P,
+         gtClkN      => gtRefClk0N,
+         gtRxP       => gtDataRxP,
+         gtRxN       => gtDataRxN,
+         gtTxP       => gtDataTxP,
+         gtTxN       => gtDataTxN,
+         -- Input power status
+         powerBad    => powerBad,
+         -- Output reset
+         pgpRst      => sysRst,
+         -- Output clocking
+         pgpClk      => pgpClk,
+         -- AXI clocking
+         axiClk     => coreClk,
+         axiRst     => axiRst,
+         -- Axi Master Interface - Registers (axiClk domain)
+         mAxiLiteReadMaster  => sAxiReadMaster(0),
+         mAxiLiteReadSlave   => sAxiReadSlave(0),
+         mAxiLiteWriteMaster => sAxiWriteMaster(0),
+         mAxiLiteWriteSlave  => sAxiWriteSlave(0),
+         -- Axi Slave Interface - PGP Status Registers (axiClk domain)
+         sAxiLiteReadMaster  => mAxiReadMasters(PGPSTAT_INDEX_C),
+         sAxiLiteReadSlave   => mAxiReadSlaves(PGPSTAT_INDEX_C),
+         sAxiLiteWriteMaster => mAxiWriteMasters(PGPSTAT_INDEX_C),
+         sAxiLiteWriteSlave  => mAxiWriteSlaves(PGPSTAT_INDEX_C),
+         -- Streaming data Links (axiClk domain)      
+         dataAxisMaster    => dataAxisMaster,
+         dataAxisSlave     => dataAxisSlave,
+         scopeAxisMaster   => scopeAxisMaster,
+         scopeAxisSlave    => scopeAxisSlave,
+         monitorAxisMaster => monitorAxisMaster,
+         monitorAxisSlave  => monitorAxisSlave,
+         -- Monitoring enable command incoming stream
+         monEnAxisMaster   => monEnAxisMaster,
+         -- Command interface
+         swRun             => swRun,
+         -- To access sideband commands
+         pgpOpCode         => pgpOpCode,
+         pgpOpCodeEn       => pgpOpCodeEn
+      );
+      powerBad <= not powerGood;
+   
+   end generate;
+   
    ---------------------------------------------
    -- Microblaze based ePix Startup Sequencer --
    ---------------------------------------------
@@ -428,7 +481,6 @@ begin
       -- Clock and Reset
       sysClk               => coreClk,
       sysRst               => sysRst,
-      pgpClk               => pgpClk,
       axiRst               => axiRst,
       -- ADC signals
       adcStreams           => adcStreams,
@@ -465,8 +517,9 @@ begin
       mpsOut               => mpsOut    ,
       triggerOut           => triggerOut,
       -- SW and fiber trigger
-      ssiCmd               => ssiCmd  ,
-      pgpRxOut             => pgpRxOut,
+      swRun                => swRun,
+      pgpOpCode            => pgpOpCode,
+      pgpOpCodeEn          => pgpOpCodeEn,
       -- Power enables
       digitalPowerEn       => digitalPowerEn   ,
       analogPowerEn        => analogPowerEn    ,
