@@ -493,7 +493,8 @@ class Epix100a(pr.Device):
       self.add(OscilloscopeRegisters      (name='Oscilloscope',         offset=0x01200000, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum))
       for i in range(4):
          self.add(epix.Epix10kaAsic       (name=('Epix10kaAsic[%d]'%i), offset=(0x02000000+i*0x400000), enabled=False, expand=False))
-      self.add(pgp.Pgp2bAxi               (name='Pgp2bAxi',             offset=0x03000000, expand=False))
+      self.add(pgp.Pgp2bAxi               (name='Pgp2bAxi',             offset=0x03000000, expand=False, enabled=False))
+      self.add(pgp.Pgp3Axi                (name='Pgp3AxiL',             offset=0x03000000, expand=False, enabled=False))
       self.add(SlowAdcRegisters           (name="SlowAdcRegisters",     offset=0x04000000, enabled=False, expand=False))
       for i in range(3):
          if i == 2:
