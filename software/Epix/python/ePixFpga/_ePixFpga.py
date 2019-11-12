@@ -494,7 +494,7 @@ class Epix100a(pr.Device):
       for i in range(4):
          self.add(epix.Epix10kaAsic       (name=('Epix10kaAsic[%d]'%i), offset=(0x02000000+i*0x400000), enabled=False, expand=False))
       self.add(pgp.Pgp2bAxi               (name='Pgp2bAxi',             offset=0x03000000, expand=False, enabled=False))
-      self.add(pgp.Pgp3Axi                (name='Pgp3AxiL',             offset=0x03000000, expand=False, enabled=False))
+      self.add(pgp.Pgp3AxiL               (name='Pgp3Axi',              offset=0x03000000, expand=False, enabled=False))
       self.add(SlowAdcRegisters           (name="SlowAdcRegisters",     offset=0x04000000, enabled=False, expand=False))
       for i in range(3):
          if i == 2:
@@ -580,7 +580,7 @@ class Epix10ka(pr.Device):
       for i in range(4):
          self.add(epix.Epix10kaAsic          (name=('Epix10kaAsic[%d]'%i), offset=(0x02000000+i*0x400000), enabled=False, expand=False))
       self.add(pgp.Pgp2bAxi                  (name='Pgp2bAxi',             offset=0x03000000, expand=False, enabled=False))
-      self.add(pgp.Pgp3Axi                   (name='Pgp3AxiL',             offset=0x03000000, expand=False, enabled=False))
+      self.add(pgp.Pgp3AxiL                  (name='Pgp3Axi',              offset=0x03000000, expand=False, enabled=False))
       self.add(SlowAdcRegisters              (name="SlowAdcRegisters",     offset=0x04000000, enabled=False, expand=False))
       for i in range(3):
          if i == 2:
