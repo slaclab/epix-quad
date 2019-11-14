@@ -127,10 +127,15 @@ PRINT_VERBOSE = args.verbose
 
 # Create the PGP interfaces for ePix camera
 if args.simulation:
-   pgpVc1 = pr.interfaces.simulation.StreamSim(host='localhost', dest=0, uid=2, ssi=True)
-   pgpVc0 = pr.interfaces.simulation.StreamSim(host='localhost', dest=1, uid=2, ssi=True)
-   pgpVc2 = pr.interfaces.simulation.StreamSim(host='localhost', dest=2, uid=2, ssi=True)
-   pgpVc3 = pr.interfaces.simulation.StreamSim(host='localhost', dest=3, uid=2, ssi=True)   
+   pgpVc1 = rogue.interfaces.stream.TcpClient('localhost',8000)
+   pgpVc0 = rogue.interfaces.stream.TcpClient('localhost',8002)
+   pgpVc2 = rogue.interfaces.stream.TcpClient('localhost',8004)
+   pgpVc3 = rogue.interfaces.stream.TcpClient('localhost',8006)
+   
+   #pgpVc1 = pr.interfaces.simulation.StreamSim(host='localhost', dest=0, uid=2, ssi=True)
+   #pgpVc0 = pr.interfaces.simulation.StreamSim(host='localhost', dest=1, uid=2, ssi=True)
+   #pgpVc2 = pr.interfaces.simulation.StreamSim(host='localhost', dest=2, uid=2, ssi=True)
+   #pgpVc3 = pr.interfaces.simulation.StreamSim(host='localhost', dest=3, uid=2, ssi=True)   
 else:
    pgpVc1 = rogue.hardware.pgp.PgpCard(args.pgp,0,0) # Data & cmds
    pgpVc0 = rogue.hardware.pgp.PgpCard(args.pgp,0,1) # Registers for ePix board

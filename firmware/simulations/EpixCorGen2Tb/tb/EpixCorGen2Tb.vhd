@@ -125,6 +125,7 @@ begin
    U_EpixCore : entity work.EpixCoreGen2
       generic map (
          TPD_G             => TPD_C,
+         PGP_VER           => "PGP3",
          BUILD_INFO_G      => toSlv (BUILD_INFO_TB_C),
          ASIC_TYPE_G       => EPIX10KA_C,
          -- Polarity of selected LVDS data lanes is swapped on gen2 ADC board

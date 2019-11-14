@@ -31,6 +31,9 @@ use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
 use work.SsiCmdMasterPkg.all;
 
+library unisim;
+use unisim.vcomponents.all;
+
 entity PgpFrontEnd is
    generic (
       TPD_G          : time      := 1 ns;
@@ -189,16 +192,22 @@ begin
       
       pgpRst <= stableRst;
       
+      U_Sim_IBUFDS : IBUFDS_GTE2
+      port map (
+         I     => gtClkP,
+         IB    => gtClkN,
+         CEB   => '0', 
+         O     => iPgpClk);  
+      
       U_PGP_SIM : entity work.RoguePgp2bSim
          generic map (
             TPD_G           => TPD_G,
-            USER_ID_G       => 2,
-            NUM_VC_EN_G     => 4
+            PORT_NUM_G      => 8000,
+            NUM_VC_G        => 4
          )
          port map (
-            refClkP        => gtClkP,
-            refClkM        => gtClkN,
-            pgpTxClk       => iPgpClk,
+            pgpClk         => iPgpClk,
+            pgpClkRst      => stableRst,
             pgpTxIn        => pgpTxIn,
             pgpTxOut       => pgpTxOut,
             pgpTxMasters   => pgpTxMasters,
@@ -208,6 +217,7 @@ begin
             pgpRxMasters   => pgpRxMasters,
             pgpRxSlaves    => pgpRxSlaves
          );
+      
    end generate G_PGP_SIM;
    
    -----------------------------------------
