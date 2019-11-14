@@ -31,6 +31,9 @@ use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
 use work.SsiCmdMasterPkg.all;
 
+library unisim;
+use unisim.vcomponents.all;
+
 entity Pgp3FrontEnd is
    generic (
       TPD_G             : time            := 1 ns;
@@ -127,7 +130,7 @@ begin
          TPD_G                       => TPD_G,
          ROGUE_SIM_EN_G              => SIMULATION_G,
          ROGUE_SIM_PORT_NUM_G        => 8000,
-         RATE_G                      => "6.25Gbps",
+         RATE_G                      => "3.125Gbps",
          REFCLK_TYPE_G               => PGP3_REFCLK_156_C,
          EN_PGP_MON_G                => true,
          EN_GTH_DRP_G                => false,
