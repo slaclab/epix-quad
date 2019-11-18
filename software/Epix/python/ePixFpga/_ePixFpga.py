@@ -538,7 +538,7 @@ class Epix100a(pr.Device):
          else:
             self.Epix10kaAsic[i].enable.set(False)
       
-      self.Pgp2bAxi.writeBlocks              ( force=force, recurse=recurse, variable=variable)   
+      #self.Pgp2bAxi.writeBlocks              ( force=force, recurse=recurse, variable=variable)   
       self.SlowAdcRegisters.writeBlocks      ( force=force, recurse=recurse, variable=variable)   
       for i in range(3):
          self.Ad9249RdoutAdc[i].writeBlocks     ( force=force, recurse=recurse, variable=variable) 
@@ -626,7 +626,7 @@ class Epix10ka(pr.Device):
          else:
             self.Epix10kaAsic[i].enable.set(False)
       
-      self.Pgp2bAxi.writeBlocks              ( force=force, recurse=recurse, variable=variable)   
+      #self.Pgp2bAxi.writeBlocks              ( force=force, recurse=recurse, variable=variable)   
       self.SlowAdcRegisters.writeBlocks      ( force=force, recurse=recurse, variable=variable)   
       for i in range(3):
          self.Ad9249RdoutAdc[i].writeBlocks     ( force=force, recurse=recurse, variable=variable) 
@@ -815,8 +815,10 @@ class EpixFpgaExtRegisters(pr.Device):
       addrSize = 4	
       
       self.add(pr.RemoteVariable(name='GhostCorrEn',         description='GhostCorrEn',      offset=0x00000000*addrSize, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='BaseClock',           description='FPGA base clock frequency',                               offset=0x00000001*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
+      self.add(pr.RemoteVariable(name='BaseClock',           description='FPGA base clock frequency', offset=0x00000001*addrSize, bitSize=32, bitOffset=0, base=pr.UInt,  mode='RO'))
       self.add(pr.LinkVariable(  name='BaseClockMHz',        dependencies=[self.BaseClock], mode='RO', units='MHz', linkedGet=getFreqMHz, disp='{:1.6f}')) 
+      self.add(pr.RemoteVariable(name='OversampleEn',        description='OversampleEn',     offset=0x00000002*addrSize, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='OversampleSize',      description='OversampleSize',   offset=0x00000003*addrSize, bitSize=3,  bitOffset=0, base=pr.UInt, mode='RW'))
       
       self.add(pr.RemoteVariable(name='DebugOut',            description='DebugOut',         offset=0x00000200*addrSize, bitSize=5,  bitOffset=0, base=pr.UInt, mode='RW'))
       self.add(pr.RemoteVariable(name='InjStartDly',         description='InjStartDly',      offset=0x00000201*addrSize, bitSize=16, bitOffset=0, base=pr.UInt, mode='RW'))

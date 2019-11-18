@@ -135,6 +135,8 @@ begin
       -- Map out standard registers    
       axiSlaveRegister (regCon, x"000" & "00",  0, v.epixRegOut.ghostCorr);
       axiSlaveRegisterR(regCon, x"001" & "00",  0, FPGA_BASE_CLOCK_G);
+      axiSlaveRegister (regCon, x"002" & "00",  0, v.epixRegOut.oversampleEn);
+      axiSlaveRegister (regCon, x"003" & "00",  0, v.epixRegOut.oversampleSize);
       
       axiSlaveRegister (regCon, x"200" & "00",  0, v.epixRegOut.dbgReg);
       axiSlaveRegister (regCon, x"201" & "00",  0, v.epixRegOut.injStartDly);

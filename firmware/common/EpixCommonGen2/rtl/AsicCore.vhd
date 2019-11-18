@@ -353,6 +353,7 @@ begin
       sysClk         => sysClk,
       sysClkRst      => iAxiRst,
       epixConfig     => epixConfig,
+      epixConfigExt  => epixConfigExt,
       acqCount       => epixStatus.acqCount,
       seqCount       => epixStatus.seqCount,
       opCode         => opCode,

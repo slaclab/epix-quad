@@ -102,6 +102,8 @@ package EpixPkgGen2 is
       injSkip            : slv(7 downto 0);
       ghostCorr          : sl;
       pipelineDelay      : Slv7Array(15 downto 0);
+      oversampleSize     : slv(2 downto 0);
+      oversampleEn       : sl;
    end record;
    type EpixConfigExtArray is array (natural range <>) of EpixConfigExtType;
    constant EPIX_CONFIG_EXT_INIT_C : EpixConfigExtType := (
@@ -110,7 +112,9 @@ package EpixPkgGen2 is
       injStopDly         => (others => '0'),
       injSkip            => (others => '0'),
       ghostCorr          => '1',
-      pipelineDelay      => (others => (others => '0'))
+      pipelineDelay      => (others => (others => '0')),
+      oversampleSize     => (others => '0'),
+      oversampleEn       => '0'
    );
    
    type EpixStatusType is record

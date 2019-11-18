@@ -48,6 +48,7 @@ entity ReadoutControl is
 
       -- Configuration
       epixConfig          : in    EpixConfigType;
+      epixConfigExt       : in    EpixConfigExtType;
 
       -- Data for headers
       acqCount            : in    slv(31 downto 0);
@@ -175,6 +176,8 @@ architecture ReadoutControl of ReadoutControl is
    signal doutOrder      : chanMap;
    signal asicOrder      : chanMap;
    signal channelValid   : slv(15 downto 0);
+   
+   signal adcDataOvs     : Slv16Array(15 downto 0);
 
    attribute dont_touch : string;
    attribute dont_touch of r : signal is "true";
@@ -185,9 +188,27 @@ architecture ReadoutControl of ReadoutControl is
    attribute keep of adcFifoRdValid : signal is "true";
    attribute keep of adcFifoRdEn : signal is "true";
    
-   
 begin
-
+   
+   -- moving average on ADC data for optional oversampling
+   G_Ovs: for i in 0 to 15 generate
+      U_MovingAvg : entity work.MovingAvg
+      generic map (
+         TPD_G          => TPD_G,
+         DATA_BITS_G    => 16
+      )
+      port map (
+         clk            => sysClk,
+         rst            => sysClkRst,
+         sizeCtrl       => epixConfigExt.oversampleSize,
+         dataIn         => adcData(i),
+         dataInValid    => adcValid(i),
+         dataOut        => adcDataOvs(i),
+         dataOutValid   => open
+      );
+   end generate;
+   
+   
    -- Counter output to register control
    seqCount <= intSeqCount;
    -- Channel Order for ASIC readout (last downto first)
@@ -282,10 +303,10 @@ begin
    --------------------------------------------------
    -- Simple state machine to just send ADC values --
    --------------------------------------------------
-   comb : process (r,epixConfig,acqCount,intSeqCount,adcFifoRdData,adcFifoRdValid,doutValid,
+   comb : process (r,epixConfig,epixConfigExt,acqCount,intSeqCount,adcFifoRdData,adcFifoRdValid,doutValid,
                    channelOrder,doutOrder,fifoEmptyAll,acqBusy,adcMemOflowAny,fifoOflowAny,
                    envData,tpsData,acqStartEdge,dataSendEdge,adcFifoEmpty,
-                   sysClkRst,mAxisSlave, adcData, channelValid, opCode,
+                   sysClkRst,mAxisSlave, adcData, adcDataOvs, channelValid, opCode,
                    doutOut) 
       variable v : RegType;
    begin
@@ -300,7 +321,15 @@ begin
       doutRd      <= (others=>'0');
 
       -- Always grab latest adc data
-      for i in 0 to 19 loop
+      for i in 0 to 15 loop
+         if epixConfigExt.oversampleEn = '0' then
+            v.adcData(i) := adcData(i);
+         else
+            v.adcData(i) := adcDataOvs(i);
+         end if;
+      end loop;
+      -- TPS data (no oversampling)
+      for i in 16 to 19 loop
          v.adcData(i) := adcData(i);
       end loop;
       

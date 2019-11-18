@@ -12,9 +12,9 @@
 #######################################
 
 create_clock -name pgpClk       -period  6.400 [get_ports {gtRefClk0P}]
-create_clock -name adc0DoClkP   -period  2.857 [get_ports {adcDoClkP[0]}]
-create_clock -name adc1DoClkP   -period  2.857 [get_ports {adcDoClkP[1]}]
-create_clock -name adcMonDoClkP -period  2.857 [get_ports {adcDoClkP[2]}]
+create_clock -name adc0DoClkP   -period  2.203 [get_ports {adcDoClkP[0]}]
+create_clock -name adc1DoClkP   -period  2.203 [get_ports {adcDoClkP[1]}]
+create_clock -name adcMonDoClkP -period  2.203 [get_ports {adcDoClkP[2]}]
 
 create_generated_clock -name coreClk      [get_pins {U_EpixCore/U_CoreClockGen0/MmcmGen.U_Mmcm/CLKOUT0}]
 create_generated_clock -name delayCtrlClk [get_pins {U_EpixCore/U_CoreClockGen1/MmcmGen.U_Mmcm/CLKOUT0}]

@@ -92,12 +92,6 @@ ePixBoard:
       InputChannelA: ASIC1_B0
       InputChannelB: ASIC0_B0
       TriggerDelay: 2970
-    Pgp2bAxi:
-      enable: True
-      Loopback: 'No'
-      LocData: 0x0
-      LocDataEn: False
-      AutoStatus: False
     Epix10kaAsic[0]:
       enable: True
       CompTH_DAC: 0x22

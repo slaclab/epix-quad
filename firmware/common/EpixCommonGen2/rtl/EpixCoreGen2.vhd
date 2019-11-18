@@ -243,6 +243,9 @@ architecture top_level of EpixCoreGen2 is
    
    constant SACI_CLK_PERIOD_C : real := saciClkPeriod(ASIC_TYPE_G);
    
+   attribute keep : boolean;
+   attribute keep of coreClk : signal is true;
+   
 begin
 
    
