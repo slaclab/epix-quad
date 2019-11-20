@@ -7,10 +7,10 @@
 ## may be copied, modified, propagated, or distributed except according to 
 ## the terms contained in the LICENSE.txt file.
 ##############################################################################
-### User Debug Script
-#
+#### User Debug Script
+##
 ### Open the run
-open_run synth_1
+#open_run synth_1
 #
 ### Configure the Core
 #set ilaName u_ila_0
@@ -33,7 +33,25 @@ open_run synth_1
 ###
 ##
 ##ConfigProbe ${ilaName} {U_EpixCore/G_AdcReadout[0].U_AdcReadout/adcFrame[*]}
-##ConfigProbe ${ilaName} {U_EpixCore/G_AdcReadout[0].U_AdcReadout/adcR[slip]}
+#
+#
+#ConfigProbe ${ilaName} {U_EpixCore/U_AsicCore/U_ReadoutControl/G_Ovs[0].U_MovingAvg/reg[state][*]}
+#ConfigProbe ${ilaName} {U_EpixCore/U_AsicCore/U_ReadoutControl/G_Ovs[0].U_MovingAvg/reg[accCnt][*]}
+#ConfigProbe ${ilaName} {U_EpixCore/U_AsicCore/U_ReadoutControl/G_Ovs[0].U_MovingAvg/reg[accReg][*]}
+#ConfigProbe ${ilaName} {U_EpixCore/U_AsicCore/U_ReadoutControl/G_Ovs[0].U_MovingAvg/reg[dataOutValid]}
+#ConfigProbe ${ilaName} {U_EpixCore/U_AsicCore/U_ReadoutControl/G_Ovs[0].U_MovingAvg/reg[memWrAddr][*]}
+#ConfigProbe ${ilaName} {U_EpixCore/U_AsicCore/U_ReadoutControl/G_Ovs[0].U_MovingAvg/reg[memRdAddr][*]}
+#ConfigProbe ${ilaName} {U_EpixCore/U_AsicCore/U_ReadoutControl/r[adcData][0][*]}
+#
+#ConfigProbe ${ilaName} {U_EpixCore/U_AsicCore/U_ReadoutControl/G_Ovs[8].U_MovingAvg/reg[state][*]}
+#ConfigProbe ${ilaName} {U_EpixCore/U_AsicCore/U_ReadoutControl/G_Ovs[8].U_MovingAvg/reg[accCnt][*]}
+#ConfigProbe ${ilaName} {U_EpixCore/U_AsicCore/U_ReadoutControl/G_Ovs[8].U_MovingAvg/reg[accReg][*]}
+#ConfigProbe ${ilaName} {U_EpixCore/U_AsicCore/U_ReadoutControl/G_Ovs[8].U_MovingAvg/reg[dataOutValid]}
+#ConfigProbe ${ilaName} {U_EpixCore/U_AsicCore/U_ReadoutControl/G_Ovs[8].U_MovingAvg/reg[memWrAddr][*]}
+#ConfigProbe ${ilaName} {U_EpixCore/U_AsicCore/U_ReadoutControl/G_Ovs[8].U_MovingAvg/reg[memRdAddr][*]}
+#ConfigProbe ${ilaName} {U_EpixCore/U_AsicCore/U_ReadoutControl/r[adcData][8][*]}
+#
+#
 ##ConfigProbe ${ilaName} {U_EpixCore/G_AdcReadout[0].U_AdcReadout/adcR[locked]}
 ##ConfigProbe ${ilaName} {U_EpixCore/G_AdcReadout[0].U_AdcReadout/adcR[count][*]}
 ##
@@ -121,4 +139,4 @@ open_run synth_1
 ####delete_debug_port [get_debug_ports [GetCurrentProbe ${ilaName1}]]
 ###
 ##### Write the port map file
-##
+#

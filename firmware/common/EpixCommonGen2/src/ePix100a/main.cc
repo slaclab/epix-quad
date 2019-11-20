@@ -103,8 +103,6 @@ int main() {
 
 void hwInit() {
    
-   //set ADC clock to 50 MHz
-   Xil_Out32( EPIX_ADCCLK_REG, 0x1);
    // enable the power supply
    Xil_Out32( EPIX_PWR_REG, 0x7);
    // let the power settle
