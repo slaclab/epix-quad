@@ -115,7 +115,6 @@ begin
       ------------------------------------------------------------------------------------------------
       
       -- Determine the AXI-Lite transaction
-      v.axiReadSlave.rdata := (others => '0');
       axiSlaveWaitTxn(regCon, axiWriteMaster, axiReadMaster, v.axiWriteSlave, v.axiReadSlave);
 
       axiSlaveRegister (regCon, x"000", 0, v.i2cRegMasterIn.i2cAddr);

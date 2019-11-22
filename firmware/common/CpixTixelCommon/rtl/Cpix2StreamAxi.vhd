@@ -342,7 +342,6 @@ begin
       
       -- axi lite logic 
       rv.rstCnt := r.rstCnt(1 downto 0) & '0';
-      rv.sAxilReadSlave.rdata := (others => '0');
       axiSlaveWaitTxn(regCon, sAxilWriteMaster, sAxilReadMaster, rv.sAxilWriteSlave, rv.sAxilReadSlave);
       
       axiSlaveRegisterR(regCon, x"00", 0, r.frmCnt);

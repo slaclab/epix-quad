@@ -360,7 +360,6 @@ begin
       end if;
 
       -- Determine the AXI-Lite transaction
-      v.sAxilReadSlave.rdata := (others => '0');
       axiSlaveWaitTxn(regCon, sAxilWriteMaster, sAxilReadMaster, v.sAxilWriteSlave, v.sAxilReadSlave);
 
       axiSlaveRegister (regCon, x"000", 0, v.usrRstShift(0));

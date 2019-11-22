@@ -187,7 +187,6 @@ begin
       --------------------------------------------------
       
       -- Determine the AXI-Lite transaction
-      v.sAxilReadSlave.rdata := (others => '0');
       axiSlaveWaitTxn(regCon, sAxilWriteMaster, sAxilReadMaster, v.sAxilWriteSlave, v.sAxilReadSlave);
 
       axiSlaveRegisterR(regCon, x"000", 0, r.acqCount          );

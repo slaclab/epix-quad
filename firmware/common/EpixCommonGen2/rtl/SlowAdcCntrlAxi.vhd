@@ -247,7 +247,6 @@ begin
    begin
       v := r;
       
-      v.sAxilReadSlave.rdata := (others => '0');
       axiSlaveWaitTxn(regCon, sAxilWriteMaster, sAxilReadMaster, v.sAxilWriteSlave, v.sAxilReadSlave);
       
       -- dedicated axi stream channel to set or clear monitorEnable register

@@ -155,7 +155,6 @@ begin
    begin
       fv := f;
       
-      fv.sAxilReadSlave.rdata := (others => '0');
       axiSlaveWaitTxn(regCon, sAxilWriteMaster, sAxilReadMaster, fv.sAxilWriteSlave, fv.sAxilReadSlave);
       
       axiSlaveRegister (regCon, x"00",  0, fv.rdoClkDelay);
