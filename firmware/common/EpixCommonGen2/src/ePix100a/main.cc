@@ -12,6 +12,7 @@
 #include "xil_types.h"
 #include "xil_io.h"
 #include "xintc.h"
+#include "xtmrctr.h"
 #include "xparameters.h"
 #include "microblaze_sleep.h"
 #include "xil_printf.h"
@@ -21,6 +22,7 @@
 #define CLEAR_ASIC_MATRIX_ON_STARTUP 1
 #define FRM_DLY_START 12
 #define FRM_DLY_STOP 18
+#define TIMER_1SEC_INTEVAL 129687500
 
 
 void hwInit(void);
@@ -28,7 +30,9 @@ void adcInit(void);
 void findAsics(void);
 void asicInit(void);
 uint32_t adcAlign(uint32_t, uint32_t);
+volatile uint32_t timer;
 
+static XTmrCtr  tmrctr;
 static XIntc intc;
 
 void calibReqHandler(void * data) {
@@ -42,17 +46,46 @@ void calibReqHandler(void * data) {
 }
 
 
+void timerIntHandler(void * data, unsigned char num ) {
+   uint32_t * request = (uint32_t *)data;
+   
+   (*request) = 1; 
+   
+   XIntc_Acknowledge(&intc, 8);
+   
+}
+
+void waitTimer(u32 timerInterval) {
+   // clear interrupt flag
+   timer = 0;
+   // set interval
+   XTmrCtr_SetResetValue(&tmrctr,0,timerInterval); 
+   // start timer
+   XTmrCtr_Start(&tmrctr,0);
+   // wait for timer to roll
+   while (timer == 0);
+}
+
 int main() { 
    
    uint32_t res, i, adcReqNo = 0;
    volatile uint32_t adcReq = 0;
+   timer = 0;
    
    Xil_Out32(EPIX_ADC_ALIGN_REG, 0x00000000);
+   
+   XTmrCtr_Initialize(&tmrctr,0); 
+   
    XIntc_Initialize(&intc,XPAR_AXI_INTC_0_DEVICE_ID);
    microblaze_enable_interrupts();
    XIntc_Connect(&intc,0,(XInterruptHandler)calibReqHandler,(void*)&adcReq);
+   XIntc_Connect(&intc,8,XTmrCtr_InterruptHandler,&tmrctr);
    XIntc_Start(&intc,XIN_REAL_MODE);
    XIntc_Enable(&intc,0);
+   XIntc_Enable(&intc,8);
+   
+   XTmrCtr_SetHandler(&tmrctr,timerIntHandler,(void*)&timer);
+   XTmrCtr_SetOptions(&tmrctr,0,XTC_DOWN_COUNT_OPTION | XTC_INT_MODE_OPTION );
    
    ssi_printf_init(LOG_MEM_OFFSET, 1024*4);
    
@@ -80,8 +113,6 @@ int main() {
       //wait until ADC alignment requested
       while (1) {
          
-         //usleep(200000);
-         
          // poll ADC align request flag
          if (adcReq) {
             //reset ADCs
@@ -106,8 +137,7 @@ void hwInit() {
    // enable the power supply
    Xil_Out32( EPIX_PWR_REG, 0x7);
    // let the power settle
-   usleep(1000000);
-   
+   waitTimer(TIMER_1SEC_INTEVAL);
 }
 
 void adcInit() {
@@ -116,7 +146,7 @@ void adcInit() {
    Xil_Out32( ADC0_PWRMOD_REG, 3);
    Xil_Out32( ADC1_PWRMOD_REG, 3);
    Xil_Out32( ADC2_PWRMOD_REG, 3);
-   usleep(10000);
+   waitTimer(TIMER_1SEC_INTEVAL/100);
    Xil_Out32( ADC0_PWRMOD_REG, 0);
    Xil_Out32( ADC1_PWRMOD_REG, 0);
    Xil_Out32( ADC2_PWRMOD_REG, 0);
@@ -192,7 +222,7 @@ uint32_t adcAlign(uint32_t adcNo, uint32_t maxCh) {
       Xil_Out32(cntLocRstAdc[adcNo], 1);
       Xil_Out32(cntLocRstAdc[adcNo], 0);
       //wait
-      usleep(100000);
+      waitTimer(TIMER_1SEC_INTEVAL/10);
       //check if locked bit is 1 and lock fall out counter is 0
       if (Xil_In32(frmLocAdc[adcNo]) == 0x10000) {
          //log message
