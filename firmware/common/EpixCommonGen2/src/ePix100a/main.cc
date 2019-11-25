@@ -14,7 +14,6 @@
 #include "xintc.h"
 #include "xtmrctr.h"
 #include "xparameters.h"
-#include "microblaze_sleep.h"
 #include "xil_printf.h"
 #include "regs.h"
 #include "ssi_printf.h"
@@ -72,8 +71,6 @@ int main() {
    volatile uint32_t adcReq = 0;
    timer = 0;
    
-   Xil_Out32(EPIX_ADC_ALIGN_REG, 0x00000000);
-   
    XTmrCtr_Initialize(&tmrctr,0); 
    
    XIntc_Initialize(&intc,XPAR_AXI_INTC_0_DEVICE_ID);
@@ -81,11 +78,13 @@ int main() {
    XIntc_Connect(&intc,0,(XInterruptHandler)calibReqHandler,(void*)&adcReq);
    XIntc_Connect(&intc,8,XTmrCtr_InterruptHandler,&tmrctr);
    XIntc_Start(&intc,XIN_REAL_MODE);
-   XIntc_Enable(&intc,0);
    XIntc_Enable(&intc,8);
    
    XTmrCtr_SetHandler(&tmrctr,timerIntHandler,(void*)&timer);
    XTmrCtr_SetOptions(&tmrctr,0,XTC_DOWN_COUNT_OPTION | XTC_INT_MODE_OPTION );
+   
+   waitTimer(TIMER_1SEC_INTEVAL);
+   XIntc_Enable(&intc,0);
    
    ssi_printf_init(LOG_MEM_OFFSET, 1024*4);
    
@@ -133,7 +132,8 @@ int main() {
 }
 
 void hwInit() {
-   
+   // clear out ADC status flags
+   Xil_Out32(EPIX_ADC_ALIGN_REG, 0x00000000);
    // enable the power supply
    Xil_Out32( EPIX_PWR_REG, 0x7);
    // let the power settle
@@ -210,7 +210,8 @@ void asicInit(void) {
 
 uint32_t adcAlign(uint32_t adcNo, uint32_t maxCh) {
    
-   uint32_t delay, adcCh, debugSample, fail = 0;
+   uint32_t delay, adcCh, fail = 0;
+   uint32_t debugSample = 0;
    int firstDly;
    int lastDly;
    

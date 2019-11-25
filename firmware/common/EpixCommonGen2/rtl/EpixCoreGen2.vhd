@@ -227,6 +227,7 @@ architecture top_level of EpixCoreGen2 is
    signal iSaciCmd   : sl;
    signal iSaciRsp   : sl;
    
+   signal mbRst    : sl;
    signal powerBad : sl;
    
    signal adcStreams          : AxiStreamMasterArray(19 downto 0);
@@ -427,6 +428,13 @@ begin
    ---------------------------------------------
    -- Microblaze based ePix Startup Sequencer --
    ---------------------------------------------
+   U_MbRst : entity work.PwrUpRst
+      port map (
+         clk      => coreClk,
+         arst     => axiRst,
+         rstOut   => mbRst
+      ); 
+   
    U_CPU : entity work.MicroblazeBasicCoreWrapper
    generic map (
       TPD_G            => TPD_G)
@@ -441,7 +449,7 @@ begin
       interrupt(0)            => requestStartupCal,
       -- Clock and Reset
       clk              => coreClk,
-      rst              => axiRst
+      rst              => mbRst
    );
    
    --------------------------------------------

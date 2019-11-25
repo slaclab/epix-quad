@@ -89,7 +89,7 @@ package EpixPkgGen2 is
       pipelineDelayA2    => (others => '0'),
       pipelineDelayA3    => (others => '0'),
       asicPpmatToReadout => (others => '0'),
-      requestStartupCal  => '1',
+      requestStartupCal  => '0',
       startupAck         => '0',
       startupFail        => '0',
       pgpTrigEn          => '0'
