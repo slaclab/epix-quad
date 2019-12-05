@@ -23,8 +23,8 @@ use ieee.std_logic_unsigned.all;
 
 use work.StdRtlPkg.all;
 use work.AxiLitePkg.all;
-use work.SsiCmdMasterPkg.all;
-use work.Pgp2bPkg.all;
+library UNISIM;
+use UNISIM.vcomponents.all;
 
 entity TrigControlAxi is
    generic (
@@ -46,9 +46,11 @@ entity TrigControlAxi is
       pgpClk        : in  sl;
       pgpClkRst     : in  sl;
       -- Software trigger
-      ssiCmd        : in  SsiCmdMasterType;
+      swRun         : in   sl;
       -- Fiber optic trigger
-      pgpRxOut      : in  Pgp2bRxOutType;
+      pgpOpCode     : in   slv(7 downto 0);
+      pgpOpCodeEn   : in   sl;
+      
       -- Fiducial code output
       opCodeOut     : out slv(7 downto 0);
       
@@ -127,7 +129,6 @@ architecture rtl of TrigControlAxi is
    signal countEnable     : std_logic;
    signal acqCount        : std_logic_vector(31 downto 0);
    signal acqCountSync    : std_logic_vector(31 downto 0);
-   signal swRun           : std_logic;
    signal swRead          : std_logic;
    signal iRunTrigOut     : std_logic;
    signal iDaqTrigOut     : std_logic;
@@ -136,8 +137,6 @@ architecture rtl of TrigControlAxi is
    signal autoRunEn     : std_logic;
    signal autoDaqEn     : std_logic;
 
-   -- Op code signals
-   signal syncOpCode : slv(7 downto 0);
    
    signal trigSync : TriggerType;
    
@@ -148,22 +147,6 @@ begin
    --   Run trigger is opCode x00
    --   DAQ trigger trails by 1 clock
    -----------------------------------
-   U_TrigPulser : entity work.SsiCmdMasterPulser
-   generic map (
-      OUT_POLARITY_G => '1',
-      PULSE_WIDTH_G  => 1
-   )
-   port map (
-       -- Local command signal
-      cmdSlaveOut => ssiCmd,
-      --addressed cmdOpCode
-      opCode      => x"00",
-      -- output pulse to sync module
-      syncPulse   => swRun,
-      -- Local clock and reset
-      locClk      => sysClk,
-      locRst      => sysRst              
-   );
    process(sysClk) begin
       if rising_edge(sysClk) then
          if sysRst = '1' then
@@ -179,29 +162,15 @@ begin
    --   Any op code is a trigger, actual op
    --   code is the fiducial.
    -----------------------------------------
-   U_PgpSideBandTrigger : entity work.SynchronizerFifo
-   generic map (
-      TPD_G        => TPD_G,
-      DATA_WIDTH_G => 8
-   )
-   port map (
-      rst    => pgpClkRst,
-      wr_clk => pgpClk,
-      wr_en  => pgpRxOut.opCodeEn,
-      din    => pgpRxOut.opCode,
-      rd_clk => sysClk,
-      rd_en  => '1',
-      valid  => coreSidebandRun,
-      dout   => syncOpCode
-   );
    -- Map op code to output port
    -- Have sideband DAQ lag 1 cycle behind sideband run
+   coreSidebandRun <= pgpOpCodeEn;
    process(sysClk) begin
       if rising_edge(sysClk) then
          if sysRst = '1' then
             opCodeOut <= (others => '0') after TPD_G;
          elsif coreSidebandRun = '1' then
-            opCodeOut <= syncOpCode after TPD_G;
+            opCodeOut <= pgpOpCode after TPD_G;
          end if;
          coreSidebandDaq <= coreSidebandRun;
       end if;

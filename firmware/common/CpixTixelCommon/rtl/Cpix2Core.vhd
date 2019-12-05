@@ -31,8 +31,6 @@ use work.Cpix2Pkg.all;
 use work.AxiLitePkg.all;
 use work.AxiStreamPkg.all;
 use work.SsiPkg.all;
-use work.SsiCmdMasterPkg.all;
-use work.Pgp2bPkg.all;
 use work.Ad9249Pkg.all;
 use work.Code8b10bPkg.all;
 
@@ -182,8 +180,6 @@ architecture top_level of Cpix2Core is
    signal powerBad      : sl;
    signal errInhibit    : sl;
    
-   signal pgpRxOut      : Pgp2bRxOutType;
-   
    -- AXI-Lite Signals
    signal sAxiReadMaster  : AxiLiteReadMasterArray(CPIX2_NUM_AXI_SLAVE_SLOTS_C-1 downto 0);
    signal sAxiReadSlave   : AxiLiteReadSlaveArray(CPIX2_NUM_AXI_SLAVE_SLOTS_C-1 downto 0);
@@ -204,14 +200,15 @@ architecture top_level of Cpix2Core is
    signal scopeAxisSlave      : AxiStreamSlaveType;
    signal monitorAxisMaster   : AxiStreamMasterType;
    signal monitorAxisSlave    : AxiStreamSlaveType;
+   signal monEnAxisMaster     : AxiStreamMasterType;
    
    -- Command interface
-   signal ssiCmd           : SsiCmdMasterType;
+   signal swRun               : sl;
+   signal pgpOpCode           : slv(7 downto 0);
+   signal pgpOpCodeEn         : sl;
    
    -- Configuration and status
    signal cpix2Config      : Cpix2ConfigType;
-   signal rxReady          : sl;
-   signal txReady          : sl;
    
    -- ADC signals
    signal adcValid         : slv(19 downto 0);
@@ -222,7 +219,6 @@ architecture top_level of Cpix2Core is
    signal iDaqTrigger      : sl;
    signal iRunTrigger      : sl;
    signal opCode           : slv(7 downto 0);
-   signal pgpOpCodeOneShot : sl;
    
    signal acqStart           : sl;
    signal dataSend           : sl;
@@ -286,8 +282,6 @@ begin
    iRunTrigger    <= runTrigger;
    iDaqTrigger    <= daqTrigger;
    -- Triggers out
-   --triggerOut     <= iAsicAcq;
-   --mpsOut         <= pgpOpCodeOneShot;
    triggerOut     <= tgOutMux;
    mpsOut         <= mpsOutMux;
    -- SACI signals
@@ -336,30 +330,15 @@ begin
       serialReSync      when cpix2Config.cpix2DbgSel2 = "10000" else
       '0';
    
-   -- Temporary one-shot for grabbing PGP op code
-   U_OpCodeEnOneShot : entity work.SynchronizerOneShot
-      generic map (
-         TPD_G           => TPD_G,
-         RST_POLARITY_G  => '1',
-         RST_ASYNC_G     => false,
-         BYPASS_SYNC_G   => true,
-         RELEASE_DELAY_G => 10,
-         IN_POLARITY_G   => '1',
-         OUT_POLARITY_G  => '1')
-      port map (
-         clk     => pgpClk,
-         rst     => '0',
-         dataIn  => pgpRxOut.opCodeEn,
-         dataOut => pgpOpCodeOneShot);
 
    
    ---------------------
    -- Diagnostic LEDs --
    ---------------------
-   led(3) <= pwrEnableAck;
-   led(2) <= rxReady;
-   led(1) <= txReady;
-   led(0) <= heartBeat;
+   led(3) <= '0';
+   led(2) <= '0';
+   led(1) <= '0';
+   led(0) <= '0';
    ---------------------
    -- Heart beat LED  --
    ---------------------
@@ -375,6 +354,7 @@ begin
    ---------------------
    -- PGP Front end   --
    ---------------------
+   
    U_PgpFrontEnd : entity work.PgpFrontEnd
       generic map (
          SIMULATION_G => SIMULATION_G
@@ -391,9 +371,6 @@ begin
          powerBad    => powerBad,
          -- Output reset
          pgpRst      => sysRst,
-         -- Output status
-         rxLinkReady => rxReady,
-         txLinkReady => txReady,
          -- Output clocking
          pgpClk      => pgpClk,
          -- AXI clocking
@@ -417,11 +394,12 @@ begin
          monitorAxisMaster => monitorAxisMaster,
          monitorAxisSlave  => monitorAxisSlave,
          -- Monitoring enable command incoming stream
-         monEnAxisMaster   => open,
+         monEnAxisMaster   => monEnAxisMaster,
          -- Command interface
-         ssiCmd              => ssiCmd,
-         -- Sideband interface
-         pgpRxOut            => pgpRxOut
+         swRun             => swRun,
+         -- To access sideband commands
+         pgpOpCode         => pgpOpCode,
+         pgpOpCodeEn       => pgpOpCodeEn
       );
    
    powerBad <= not powerGood;
@@ -803,9 +781,9 @@ begin
       pgpClk         => pgpClk,
       pgpClkRst      => sysRst,
       -- SW trigger in (from VC)
-      ssiCmd         => ssiCmd,
-      -- PGP RxOutType (to trigger from sideband)
-      pgpRxOut       => pgpRxOut,
+      swRun          => swRun,
+      pgpOpCode      => pgpOpCode,
+      pgpOpCodeEn    => pgpOpCodeEn,
       -- Opcode associated with this trigger
       opCodeOut      => opCode,
       
@@ -940,6 +918,9 @@ begin
       -- Trigger Control
       adcStart          => acqStart,
       
+      -- Monitoring enable command incoming stream
+      monEnAxisMaster   => monEnAxisMaster,
+      
       -- AXI lite slave port for register access
       axilClk           => coreClk,
       axilRst           => axiRst,
@@ -1035,38 +1016,33 @@ begin
    -- Virtual oscilloscope                   --
    --------------------------------------------
    
-   U_PseudoScope : entity work.PseudoScopeAxi
+   U_PseudoScope : entity work.PseudoScopeCore
    generic map (
-     TPD_G                      => TPD_G,
-     MASTER_AXI_STREAM_CONFIG_G => ssiAxiStreamConfig(4, TKEEP_COMP_C)      
+      TPD_G             => TPD_G,
+      INPUT_CHANNELS_G  => 20,
+      EXTTRIG_IN_G      => 8
    )
    port map ( 
-      
-      sysClk         => coreClk,
-      sysClkRst      => axiRst,
-      adcData        => adcData,
-      adcValid       => adcValid,
-      arm            => acqStart,
-      acqStart       => acqStart,
-      asicAcq        => iAsicAcq,
-      asicR0         => iAsicR0,
-      asicPpmat      => iAsicEnA,
-      asicPpbe       => iAsicEnB,
-      asicSync       => iAsicSync,
-      asicGr         => iAsicGrst,
-      asicRoClk      => asicRdClk,
-      asicSaciSel(1 downto 0) => iSaciSelL,
-      asicSaciSel(3 downto 2) => "00",
-      mAxisMaster    => scopeAxisMaster,
-      mAxisSlave     => scopeAxisSlave,
-      -- AXI lite slave port for register access
+      sysClk            => coreClk,
+      sysClkRst         => axiRst,
+      adcStream         => adcStreams,
+      arm               => acqStart,
+      trigIn(0)         => acqStart,
+      trigIn(1)         => iAsicAcq,
+      trigIn(2)         => iAsicR0,
+      trigIn(3)         => iAsicEnA,
+      trigIn(4)         => iAsicEnB,
+      trigIn(5)         => iAsicSync,
+      trigIn(6)         => iAsicGrst,
+      trigIn(7)         => asicRdClk,
+      mAxisMaster       => scopeAxisMaster,
+      mAxisSlave        => scopeAxisSlave,
       axilClk           => coreClk,
       axilRst           => axiRst,
       sAxilWriteMaster  => mAxiWriteMasters(SCOPE_REG_AXI_INDEX_C),
       sAxilWriteSlave   => mAxiWriteSlaves(SCOPE_REG_AXI_INDEX_C),
       sAxilReadMaster   => mAxiReadMasters(SCOPE_REG_AXI_INDEX_C),
       sAxilReadSlave    => mAxiReadSlaves(SCOPE_REG_AXI_INDEX_C)
-
    );
    
    GenAdcStr : for i in 0 to 19 generate 
