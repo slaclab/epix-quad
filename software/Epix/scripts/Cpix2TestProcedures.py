@@ -411,7 +411,17 @@ def asic1ModifyBitPixel(x, y, val, offset, size):
    pix = pix | ((val<<offset) & mask)
    Cpix2Asic._rawWrite(0x00005000*addrSize, pix)
    print('Set ASIC pixel (%d, %d) to %d'%(x,y,pix))
-   
+
+def setAsicMatrixMaskGrid22(x, y):
+   addrSize=4
+   Cpix2Asic._rawWrite(0x00000000*addrSize,0)
+   Cpix2Asic._rawWrite(0x00008000*addrSize,0)
+   for i in range(48):
+      for j in range(48):
+         if (i % 2 == x) and (j % 2 == y):
+            asic1ModifyBitPixel(i, j, 1, 1, 1)
+   Cpix2Asic._rawWrite(0x00000000*addrSize,0)
+
 def setAsic1MatrixGrid66(x, y):
    addrSize=4
    Cpix2Asic._rawWrite(0x00000000*addrSize,0)
@@ -2713,89 +2723,101 @@ if args.test == 12:
       
       addrSize=4
       
-      for VtrimB in range(4):
+      for VtrimB in range(3,4,1):
          for TrimBits in range(0,16,1):
+            for Mask_x in range(2):
+               for Mask_y in range(2):
             
-            gr_fail = True
-            while gr_fail:
-               try:
-                  print('Setting Vtrim_b to %d'%(VtrimB))
-                  Cpix2Asic.Vtrim_b.set(VtrimB)
-                  gr_fail = False
-               except:
                   gr_fail = True
-            
-            gr_fail = True
-            while gr_fail:
-               try:
-                  while True:
-                     print('Setting ASIC %d matrix to %x'%(args.asic,(TrimBits<<2)))
-                     # set all pixels trim bits
-                     Cpix2Asic._rawWrite(0x00008000*addrSize,0)
-                     Cpix2Asic._rawWrite(0x00004000*addrSize,TrimBits<<2)
-                     
-                     # verify one pixel that the write matrix worked
-                     Cpix2Asic.RowCounter(1)
-                     Cpix2Asic.ColCounter(1)
-                     rdBack = Cpix2Asic._rawRead(0x00005000*addrSize)
-                     rdBack = rdBack & 0x3C
-                     
-                     if rdBack != TrimBits<<2:
-                        print('Failed to set the pixel configuration. Expected %x, read %x'%(TrimBits<<2, rdBack))
-                     else:
-                        break
+                  while gr_fail:
+                     try:
+                        print('Setting Vtrim_b to %d'%(VtrimB))
+                        Cpix2Asic.Vtrim_b.set(VtrimB)
+                        gr_fail = False
+                     except:
+                        gr_fail = True
                   
-                  gr_fail = False
-               except:
                   gr_fail = True
-            
-            maskedPixel = np.zeros([48, 48], dtype=int)
-            for threshold_1 in range(1023,0,-1):
-               
-               Cpix2Asic.MSBCompTH1_DAC.set(threshold_1 >> 6) # 4 bit MSB
-               Cpix2Asic.CompTH1_DAC.set(threshold_1 & 0x3F) # 6 bit LSB
-               print('Acquiring %d frames with Threshold_1=%d' %(framesPerThreshold, threshold_1))
-               
-               # acquire frames
-               frmCnt = 0
-               mult = 1
-               
-               # eanble automatic readout 
-               ePixBoard.Cpix2.Cpix2FpgaRegisters.EnAllFrames.set(True)
-               ePixBoard.Cpix2.Cpix2FpgaRegisters.EnSingleFrame.set(True)
+                  while gr_fail:
+                     try:
+                        while True:
+                           print('Setting ASIC %d matrix to %x'%(args.asic,(TrimBits<<2)))
+                           # set all pixels trim bits
+                           Cpix2Asic._rawWrite(0x00008000*addrSize,0)
+                           Cpix2Asic._rawWrite(0x00004000*addrSize,TrimBits<<2)
+                           
+                           # verify one pixel that the write matrix worked
+                           Cpix2Asic.RowCounter(1)
+                           Cpix2Asic.ColCounter(1)
+                           rdBack = Cpix2Asic._rawRead(0x00005000*addrSize)
+                           rdBack = rdBack & 0x3C
+                           
+                           if rdBack != TrimBits<<2:
+                              print('Failed to set the pixel configuration. Expected %x, read %x'%(TrimBits<<2, rdBack))
+                           else:
+                              break
+                        
+                        gr_fail = False
+                     except:
+                        gr_fail = True
                   
-               # acquire images
-               while imgProc.frameNum < framesPerThreshold:
+                  gr_fail = True
+                  while gr_fail:
+                     try:
+                        print('Set ASIC %d matrix to 22%d%d mask pattern'%(args.asic,Mask_x,Mask_y))
+                        setAsicMatrixMaskGrid22(Mask_x,Mask_y)
+                        gr_fail = False
+                     except:
+                        gr_fail = True
                   
-                  # sleep for ACQ time
-                  time.sleep(totalTimeSec)
                   
-                  
-               # stop triggering data
-               ePixBoard.Cpix2.Cpix2FpgaRegisters.EnAllFrames.set(False)
-               ePixBoard.Cpix2.Cpix2FpgaRegisters.EnSingleFrame.set(False)
-               
-               # calculate median
-               pixMedian = np.median(a=imgProc.frameBuf, axis=0)
-               #pixMedian = np.amax(a=imgProc.frameBuf, axis=0)
-               
-               # subtract previously masked (should give -1)
-               # and save median
-               fileName = args.dir + '/ACQ' + '{:04d}'.format(framesPerThreshold) + '_VTRIMB' + '{:1d}'.format(VtrimB) + '_TH1' + '{:04d}'.format(threshold_1) + '_TH2' + '{:04d}'.format(threshold_2) + '_P' + '{:04d}'.format(Pulser) + '_N' + '{:05d}'.format(Npulse) + '_TrimBits' + '{:02d}'.format(TrimBits) + '_median.npy'
-               #fileName = args.dir + '/ACQ' + '{:04d}'.format(framesPerThreshold) + '_VTRIMB' + '{:1d}'.format(VtrimB) + '_TH1' + '{:04d}'.format(threshold_1) + '_TH2' + '{:04d}'.format(threshold_2) + '_P' + '{:04d}'.format(Pulser) + '_N' + '{:05d}'.format(Npulse) + '_TrimBits' + '{:02d}'.format(TrimBits) + '_max.npy'
-               np.save(fileName, im=pixMedian-maskedPixel)
-               
-               # mask pixels that are above the median threshold
-               pixToMask = np.argwhere(pixMedian >= medThr)
-               for i in range(pixToMask.shape[0]):
-                  #if maskedPixel[pixToMask[i,0], pixToMask[i,1]] == 0:
-                  asic1ModifyBitPixel(x=int(pixToMask[i,0]), y=int(pixToMask[i,1]), val=1, offset=1, size=1)
-                  maskedPixel[pixToMask[i,0], pixToMask[i,1]] = 1
-               
-               
-               
-               # reset image processor for next run
-               imgProc.frameNum = 0
+                  maskedPixel = np.zeros([48, 48], dtype=int)
+                  for threshold_1 in range(1023,0,-1):
+                     
+                     Cpix2Asic.MSBCompTH1_DAC.set(threshold_1 >> 6) # 4 bit MSB
+                     Cpix2Asic.CompTH1_DAC.set(threshold_1 & 0x3F) # 6 bit LSB
+                     print('Acquiring %d frames with Threshold_1=%d' %(framesPerThreshold, threshold_1))
+                     
+                     # acquire frames
+                     frmCnt = 0
+                     mult = 1
+                     
+                     # eanble automatic readout 
+                     ePixBoard.Cpix2.Cpix2FpgaRegisters.EnAllFrames.set(True)
+                     ePixBoard.Cpix2.Cpix2FpgaRegisters.EnSingleFrame.set(True)
+                        
+                     # acquire images
+                     while imgProc.frameNum < framesPerThreshold:
+                        
+                        # sleep for ACQ time
+                        time.sleep(totalTimeSec)
+                        
+                        
+                     # stop triggering data
+                     ePixBoard.Cpix2.Cpix2FpgaRegisters.EnAllFrames.set(False)
+                     ePixBoard.Cpix2.Cpix2FpgaRegisters.EnSingleFrame.set(False)
+                     
+                     # calculate median
+                     #pixMedian = np.median(a=imgProc.frameBuf, axis=0)
+                     pixMedian = np.sum(a=imgProc.frameBuf, axis=0)
+                     
+                     # subtract previously masked (should give -1)
+                     # and save median
+                     fileName = args.dir + '/ACQ' + '{:04d}'.format(framesPerThreshold) + '_VTRIMB' + '{:1d}'.format(VtrimB) + '_TH1' + '{:04d}'.format(threshold_1) + '_TH2' + '{:04d}'.format(threshold_2) + '_P' + '{:04d}'.format(Pulser) + '_N' + '{:05d}'.format(Npulse) + '_TrimBits' + '{:02d}'.format(TrimBits) + '_22' + '{:1d}'.format(Mask_x) + '{:1d}'.format(Mask_y) + '_sum'
+                     
+                     np.savez_compressed(fileName, im=pixMedian-maskedPixel)
+                     
+                     # mask pixels that are above the median threshold
+                     pixToMask = np.argwhere(pixMedian >= medThr)
+                     for i in range(pixToMask.shape[0]):
+                        #if maskedPixel[pixToMask[i,0], pixToMask[i,1]] == 0:
+                        asic1ModifyBitPixel(x=int(pixToMask[i,0]), y=int(pixToMask[i,1]), val=1, offset=1, size=1)
+                        maskedPixel[pixToMask[i,0], pixToMask[i,1]] = 1
+                     
+                     
+                     
+                     # reset image processor for next run
+                     imgProc.frameNum = 0
                
          
    
