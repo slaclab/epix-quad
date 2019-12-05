@@ -716,7 +716,7 @@ else:
 if args.test == 1:
    
    # test specific settings
-   framesPerThreshold = 10
+   framesPerThreshold = 1000
    Pulser = 0
    Npulse = 1000
    
@@ -820,7 +820,7 @@ if args.test == 1:
       Cpix2Asic.Pixel_FB.set(7)
       
       #for threshold_2 in range(1023,-1,-1):
-      for threshold_1 in range(255,1024,1):
+      for threshold_1 in range(0x13f,0x100,-1):
          
          while True:
          
@@ -2610,8 +2610,12 @@ if args.test == 12:
    
    if os.path.isdir(args.dir):
       
+
       print('Setting camera registers')
-      setAsicAsyncModeRegisters()
+      ePixBoard.ReadConfig(args.c)
+
+      #print('Setting camera registers')
+      #setAsicAsyncModeRegisters()
       ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.set(Npulse)
       print('Enable only counter A readout')
       Cpix2Asic.Pix_Count_T.set(False)
@@ -2648,7 +2652,7 @@ if args.test == 12:
       print('Sync time set is %d ns' %syncTime)
       saciSyncTime = (
          ePixBoard.Cpix2.Cpix2FpgaRegisters.SaciSyncDelay.get() +
-         ePixBoard.Cpix2.Cpix2FpgaRegisters.SaciSyncWidth.get()) * 10
+         ePixBoard.Cpix2.Cpix2FpgaRegisters.SaciSyncWidth.get()) * 100
       print('SACI sync time set is %d ns' %saciSyncTime)
       totalTime = acqTime + max([rdoutTime, syncTime, saciSyncTime])
       totalTimeSec = (totalTime*1e-9)
@@ -2779,7 +2783,7 @@ if args.test == 12:
                # and save median
                fileName = args.dir + '/ACQ' + '{:04d}'.format(framesPerThreshold) + '_VTRIMB' + '{:1d}'.format(VtrimB) + '_TH1' + '{:04d}'.format(threshold_1) + '_TH2' + '{:04d}'.format(threshold_2) + '_P' + '{:04d}'.format(Pulser) + '_N' + '{:05d}'.format(Npulse) + '_TrimBits' + '{:02d}'.format(TrimBits) + '_median.npy'
                #fileName = args.dir + '/ACQ' + '{:04d}'.format(framesPerThreshold) + '_VTRIMB' + '{:1d}'.format(VtrimB) + '_TH1' + '{:04d}'.format(threshold_1) + '_TH2' + '{:04d}'.format(threshold_2) + '_P' + '{:04d}'.format(Pulser) + '_N' + '{:05d}'.format(Npulse) + '_TrimBits' + '{:02d}'.format(TrimBits) + '_max.npy'
-               np.save(fileName, pixMedian-maskedPixel)
+               np.save(fileName, im=pixMedian-maskedPixel)
                
                # mask pixels that are above the median threshold
                pixToMask = np.argwhere(pixMedian >= medThr)

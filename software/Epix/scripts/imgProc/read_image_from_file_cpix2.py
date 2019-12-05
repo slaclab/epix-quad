@@ -179,14 +179,17 @@ for i in range(filesNum):
                   if (numberOfFrames == 0):
                      if args.cnt == 1: # counter A - take 1st packet with the same sequence
                         allFrames = [prevPayload.copy()]
+                        allSeq = np.array([hdrSeq])
                      else:             # counter B - take 2nd packet with the same sequence
                         allFrames = [newPayload.copy()]
+                        allSeq = np.array([hdrSeq])
                   else:
                      if args.cnt == 1: # counter A - take 1st packet with the same sequence
                         newFrame  = [prevPayload.copy()]
                      else:             # counter B - take 2nd packet with the same sequence
                         newFrame  = [newPayload.copy()]
                      allFrames = np.append(allFrames, newFrame, axis = 0)
+                     allSeq = np.append(allSeq, hdrSeq)
                   numberOfFrames = numberOfFrames + 1 
             
                #print('Prev seq %d, curr seq %d'%(prevSeq, hdrSeq))
@@ -198,9 +201,11 @@ for i in range(filesNum):
                if len(newPayload) == 1155:
                   if (numberOfFrames == 0):
                      allFrames = [newPayload.copy()]
+                     allSeq = np.array([hdrSeq])
                   else:
                      newFrame  = [newPayload.copy()]
                      allFrames = np.append(allFrames, newFrame, axis = 0)
+                     allSeq = np.append(allSeq, hdrSeq)
                   numberOfFrames = numberOfFrames + 1 
             
                #print('Prev seq %d, curr seq %d'%(prevSeq, hdrSeq))
@@ -208,9 +213,9 @@ for i in range(filesNum):
                
       except Exception: 
          pass
-         #e = sys.exc_info()[0]
-         #print ("Message\n", e)
-         #print("numberOfFrames read: " ,numberOfFrames)
+         e = sys.exc_info()[0]
+         print ("Message\n", e)
+         print("numberOfFrames read: " ,numberOfFrames)
 
    f.close()
    ###################################################
