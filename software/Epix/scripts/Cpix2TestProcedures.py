@@ -419,6 +419,8 @@ def setAsicMatrixMaskGrid22(x, y):
    for i in range(48):
       for j in range(48):
          if (i % 2 == x) and (j % 2 == y):
+            pass
+         else:
             asic1ModifyBitPixel(i, j, 1, 1, 1)
    Cpix2Asic._rawWrite(0x00000000*addrSize,0)
 
@@ -731,6 +733,15 @@ if args.test == 1:
    Npulse = 1000
    
    
+   thStart = args.thStart              # first threshold
+   thStop = args.thStop               # last threshold
+   
+   if thStart > thStop:
+      thDir = -1
+   else:
+      thDir = 1
+   
+   
    if os.path.isdir(args.dir):
       
       print('Setting camera registers')
@@ -798,6 +809,20 @@ if args.test == 1:
       print('Clearing ASIC %d matrix'%(args.asic))
       Cpix2Asic.ClearMatrix()
       
+      if args.trim == ' ':
+         print('Missing --trim argument')
+         exit()
+      else:
+         gr_fail = True
+         while gr_fail:
+            try:
+               print('Setting ASIC %d pixel trim bits'%(args.asic))
+               #Cpix2Asic.SetPixelBitmap(args.trim)
+               Cpix2Asic.fnSetPixelBitmap(cmd=cmd, dev=Cpix2Asic, arg=args.trim)
+               gr_fail = False
+            except:
+               gr_fail = True
+      
       print('Disabling pulser')
       Cpix2Asic.Pulser.set(Pulser)
       Cpix2Asic.test.set(False)
@@ -830,7 +855,8 @@ if args.test == 1:
       Cpix2Asic.Pixel_FB.set(7)
       
       #for threshold_2 in range(1023,-1,-1):
-      for threshold_1 in range(0x13f,0x100,-1):
+      #for threshold_1 in range(319,256,-1):
+      for threshold_1 in range(thStart,thStop-1,thDir):
          
          while True:
          
