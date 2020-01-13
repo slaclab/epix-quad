@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
--- Title         : Tixel and cPix serial stream de-serializer
--- Project       : Tixel/cPix Detector
+-- Title      : Tixel and cPix serial stream de-serializer
+-- Project    : Tixel/cPix Detector
 -------------------------------------------------------------------------------
--- File          : Deserializer.vhd
+-- File       : Deserializer.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
