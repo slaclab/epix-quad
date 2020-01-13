@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
--- Title         : EPIX Core Block
--- Project       : EPIX Readout
+-- Title      : EPIX Core Block
+-- Project    : EPIX Readout
 -------------------------------------------------------------------------------
--- File          : EpixCore.vhd
+-- File       : EpixCore.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
