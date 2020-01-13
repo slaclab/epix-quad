@@ -1,14 +1,13 @@
 -------------------------------------------------------------------------------
--- Title         : Cpix2StreamAxi
--- Project       : Cpix2 Detector
+-- Title      : Cpix2StreamAxi
+-- Project    : Cpix2 Detector
 -------------------------------------------------------------------------------
--- File          : AsicStreamAxi.vhd
--- Author        : Maciej Kwiatkowski, mkwiatko@slac.stanford.edu
--- Created       : 4/27/2017
+-- File       : AsicStreamAxi.vhd
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -------------------------------------------------------------------------------
--- This file is part of 'Tixel Development Firmware'.
+-- This file is part of 'EPIX Development Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
 -- top-level directory of this distribution and at: 
 --    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
@@ -16,19 +15,17 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 4/27/2017: created.
--------------------------------------------------------------------------------
 
 LIBRARY ieee;
-use work.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
-use work.SsiPkg.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
+use surf.SsiPkg.all;
 
 entity Cpix2StreamAxi is 
    generic (
@@ -206,7 +203,7 @@ begin
    rxValidCs <= rxValid;   -- for chipscope
    
    -- synchronizers
-   Sync1_U : entity work.Synchronizer
+   Sync1_U : entity surf.Synchronizer
    port map (
       clk     => rxClk,
       rst     => rxRst,
@@ -215,7 +212,7 @@ begin
    );
    
    -- 8b10b decoder with SSP output
-   Dec8b10b_U : entity work.SspDecoder8b10b
+   Dec8b10b_U : entity surf.SspDecoder8b10b
    generic map (
       RST_POLARITY_G => '1'
    )
@@ -254,7 +251,7 @@ begin
    -- async fifo for data
    -- for synchronization and small data pipeline
    -- not to store the whole frame
-   DataFifo_U : entity work.FifoCascade
+   DataFifo_U : entity surf.FifoCascade
    generic map (
       GEN_SYNC_FIFO_G   => false,
       FWFT_EN_G         => true,
@@ -279,7 +276,7 @@ begin
    
    -- axi stream fifo
    -- must be able to store whole frame if AXIS is muxed
-   AxisFifo_U: entity work.AxiStreamFifo
+   AxisFifo_U: entity surf.AxiStreamFifoV2
    generic map(
       GEN_SYNC_FIFO_G      => false,
       FIFO_ADDR_WIDTH_G    => 13,
@@ -299,7 +296,7 @@ begin
 
    -- implements a state machine to keep track of which counter is being readout
    -- or if we lost a sof then a error bit is raised
-   CounterABStatus_U : entity Cpix2CountersABStatus
+   CounterABStatus_U : entity work.Cpix2CountersABStatus
    port map( 
       Clk               => axisClk,
       Rst               => axisRst, 

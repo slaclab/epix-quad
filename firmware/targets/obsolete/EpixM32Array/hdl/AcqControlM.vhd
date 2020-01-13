@@ -1,17 +1,14 @@
 -------------------------------------------------------------------------------
 -- File       : AcqControlM.vhd
--- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2017-07-14
--- Last update: 2017-07-14
 -------------------------------------------------------------------------------
 -- Description:
 -------------------------------------------------------------------------------
--- This file is part of ''Epix Test Stand Firmware'.
+-- This file is part of 'EPIX Development Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
 -- top-level directory of this distribution and at: 
 --    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'SLAC Firmware Standard Library', including this file, 
+-- No part of 'EPIX Development Firmware', including this file, 
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
@@ -21,9 +18,10 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-use work.StdRtlPkg.all;
-use work.AxiStreamPkg.all;
-use work.SsiPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiStreamPkg.all;
+use surf.SsiPkg.all;
 
 entity AcqControlM is
    generic (
@@ -221,7 +219,7 @@ begin
    
    fifoRst <= '1' when rst = '1' or asicGlblRst = '0' else '0';
    
-   U_AxisOut : entity work.AxiStreamFifoV2
+   U_AxisOut : entity surf.AxiStreamFifoV2
    generic map (
       -- General Configurations
       TPD_G               => TPD_G,
@@ -229,8 +227,7 @@ begin
       SLAVE_READY_EN_G    => true,
       VALID_THOLD_G       => 1,     -- =0 = only when frame ready
       -- FIFO configurations
-      BRAM_EN_G           => true,
-      USE_BUILT_IN_G      => false,
+      MEMORY_TYPE_G       => "block",
       GEN_SYNC_FIFO_G     => false,
       CASCADE_SIZE_G      => 1,
       FIFO_ADDR_WIDTH_G   => 12,

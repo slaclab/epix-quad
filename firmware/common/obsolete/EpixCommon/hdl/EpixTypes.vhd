@@ -1,10 +1,9 @@
 -------------------------------------------------------------------------------
--- Title         : EPIX Project Types
--- Project       : EPIX Readout
+-- Title      : EPIX Project Types
+-- Project    : EPIX Readout
 -------------------------------------------------------------------------------
--- File          : EpixTypes.vhd
--- Author        : Ryan Herbst, rherbst@slac.stanford.edu
--- Created       : 05/14/2013
+-- File       : EpixTypes.vhd
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -- Epix Project Types
@@ -17,9 +16,7 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 05/13/2013: created.
--------------------------------------------------------------------------------
+
 LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
 

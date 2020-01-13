@@ -1,10 +1,9 @@
 -------------------------------------------------------------------------------
--- Title         : DoutDeserializer
--- Project       : Epix10ka Detector
+-- Title      : DoutDeserializer
+-- Project    : Epix10ka Detector
 -------------------------------------------------------------------------------
--- File          : DoutDeserializer.vhd
--- Author        : Maciej Kwiatkowski, mkwiatko@slac.stanford.edu
--- Created       : 6/16/2017
+-- File       : DoutDeserializer.vhd
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description: Deserializes EPIX10KA digital outputs. The ASIC has one output per 
 -- 4 banks therefore 4 readout clock cycles are needed to output digital data.
@@ -36,17 +35,15 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 6/16/2017: created.
--------------------------------------------------------------------------------
 
 LIBRARY ieee;
-use work.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
 
 entity DoutDeserializer is 
    generic (
@@ -302,7 +299,7 @@ begin
    G_TWO_BIT_OUT : if FOUR_BIT_OUT_G = false generate
       -- data out FIFOs
       G_DoutFifos : for i in 0 to 15 generate
-         DoutFifo_U : entity work.FifoMux
+         DoutFifo_U : entity surf.FifoMux
          generic map (
             WR_DATA_WIDTH_G   => 1,
             RD_DATA_WIDTH_G   => FIFO_OUT_WIDTH,
@@ -329,7 +326,7 @@ begin
    G_FOUR_BIT_OUT : if FOUR_BIT_OUT_G = true generate
       -- data out FIFOs
       G_DoutFifos : for i in 0 to 15 generate
-         DoutFifo_U : entity work.FifoMux
+         DoutFifo_U : entity surf.FifoMux
          generic map (
             WR_DATA_WIDTH_G   => 1,
             RD_DATA_WIDTH_G   => FIFO_OUT_WIDTH,

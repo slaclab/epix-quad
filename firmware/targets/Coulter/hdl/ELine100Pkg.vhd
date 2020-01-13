@@ -1,30 +1,25 @@
 -------------------------------------------------------------------------------
--- Title      : 
--------------------------------------------------------------------------------
 -- File       : ELine100Pkg.vhd
--- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2016-05-16
--- Last update: 2017-03-10
--- Platform   : 
--- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- This file is part of <PROJECT_NAME>. It is subject to
--- the license terms in the LICENSE.txt file found in the top-level directory
--- of this distribution and at:
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
--- No part of <PROJECT_NAME>, including this file, may be
--- copied, modified, propagated, or distributed except according to the terms
--- contained in the LICENSE.txt file.
+-- This file is part of 'EPIX Development Firmware'.
+-- It is subject to the license terms in the LICENSE.txt file found in the 
+-- top-level directory of this distribution and at: 
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
+-- No part of 'EPIX Development Firmware', including this file, 
+-- may be copied, modified, propagated, or distributed except according to 
+-- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 
-use work.StdRtlPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
 
 package ELine100Pkg is
 

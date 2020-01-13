@@ -2,29 +2,25 @@
 -- Title      : Testbench for design "AcquisitionControl"
 -------------------------------------------------------------------------------
 -- File       : AcquisitionControlTb.vhd
--- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2016-09-21
--- Last update: 2016-09-21
--- Platform   : 
--- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- This file is part of <PROJECT_NAME>. It is subject to
--- the license terms in the LICENSE.txt file found in the top-level directory
--- of this distribution and at:
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
--- No part of <PROJECT_NAME>, including this file, may be
--- copied, modified, propagated, or distributed except according to the terms
--- contained in the LICENSE.txt file.
+-- This file is part of 'EPIX Development Firmware'.
+-- It is subject to the license terms in the LICENSE.txt file found in the 
+-- top-level directory of this distribution and at: 
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
+-- No part of 'EPIX Development Firmware', including this file, 
+-- may be copied, modified, propagated, or distributed except according to 
+-- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
 library ieee;
 use ieee.std_logic_1164.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
 
 ----------------------------------------------------------------------------------------------------
 
@@ -84,7 +80,7 @@ begin
          adcClkRst       => adcClkRst);       -- [out]
 
    
-   U_ClkRst_AXIL : entity work.ClkRst
+   U_ClkRst_AXIL : entity surf.ClkRst
       generic map (
          CLK_PERIOD_G      => 6.4 ns,
          CLK_DELAY_G       => 1 ns,
@@ -95,7 +91,7 @@ begin
          clkP => axilClk,
          rst  => axilRst);
    
-   U_ClkRst_250 : entity work.ClkRst
+   U_ClkRst_250 : entity surf.ClkRst
       generic map (
          CLK_PERIOD_G      => 4 ns,
          CLK_DELAY_G       => 1 ns,
@@ -106,7 +102,7 @@ begin
          clkP => clk250,
          rst  => rst250);
 
-   U_ClkRst_trig : entity work.ClkRst
+   U_ClkRst_trig : entity surf.ClkRst
       generic map (
          CLK_PERIOD_G      => 6.4 ns,
          CLK_DELAY_G       => 1 ns,

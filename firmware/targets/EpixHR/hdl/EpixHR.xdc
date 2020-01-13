@@ -13,7 +13,8 @@
 
 create_clock -name gtRefClk0P   -period  6.400 [get_ports gtRefClk0P]
 create_clock -name pgpClk       -period  6.400 [get_pins {U_EpixHR/U_PgpFrontEnd/G_PGP.U_Pgp2bVarLatWrapper/Pgp2bGtp7VarLat_Inst/MuliLane_Inst/GTP7_CORE_GEN[0].Gtp7Core_Inst/gtpe2_i/TXOUTCLK}]
-create_clock -name adcDoClkP    -period  2.857 [get_ports {adcDoClkP[2]}]
+#create_clock -name adcDoClkP    -period  2.857 [get_ports {adcDoClkP[2]}]
+create_clock -name adcDoClkP    -period  2.857 [get_ports {adcDoClkP}]
 
 create_generated_clock -name iDelayCtrlClk [get_pins {U_EpixHR/U_CoreClockGen/MmcmGen.U_Mmcm/CLKOUT4}]
 create_generated_clock -name coreClk       [get_pins {U_EpixHR/U_CoreClockGen/MmcmGen.U_Mmcm/CLKOUT1}]
@@ -25,6 +26,10 @@ create_generated_clock -name progClk      [get_pins {U_EpixHR/U_Iprog7Series/DIV
 create_generated_clock -name adcMonBitClkR [get_pins {U_EpixHR/U_MonAdcReadout/U_AdcBitClkR/O}]
 
 set_clock_groups -asynchronous -group [get_clocks -include_generated_clocks pgpClk] -group [get_clocks -include_generated_clocks gtRefClk0P] -group [get_clocks -include_generated_clocks coreClk] -group [get_clocks -include_generated_clocks iDelayCtrlClk] -group [get_clocks -include_generated_clocks bitClk] -group [get_clocks -include_generated_clocks asicRdClk] -group [get_clocks -include_generated_clocks asicRefClk] -group [get_clocks -include_generated_clocks byteClk] -group [get_clocks -include_generated_clocks adcMonDoClkP] -group [get_clocks -include_generated_clocks adcMonBitClkR] -group [get_clocks -include_generated_clocks progClk]
+
+set_clock_groups -asynchronous -group [get_clocks -of_objects [get_pins U_EpixHR/U_CoreClockGen/MmcmGen.U_Mmcm/CLKOUT1]] -group [get_clocks -of_objects [get_pins U_EpixHR/U_Iprog7Series/DIVCLK_GEN.BUFR_ICPAPE2/O]]
+set_clock_groups -asynchronous -group [get_clocks -of_objects [get_pins U_EpixHR/U_CoreClockGen/MmcmGen.U_Mmcm/CLKOUT1]] -group [get_clocks -of_objects [get_pins U_EpixHR/U_RegControlEpixHR/GEN_DEVICE_DNA.G_DEVICE_DNA/GEN_7SERIES.DeviceDna7Series_Inst/BUFR_Inst/O]]
+set_clock_groups -asynchronous -group [get_clocks -of_objects [get_pins U_EpixHR/U_RegControlEpixHR/GEN_DEVICE_DNA.G_DEVICE_DNA/GEN_7SERIES.DeviceDna7Series_Inst/DNA_CLK_INV_BUFR/O]] -group [get_clocks -of_objects [get_pins U_EpixHR/U_RegControlEpixHR/GEN_DEVICE_DNA.G_DEVICE_DNA/GEN_7SERIES.DeviceDna7Series_Inst/BUFR_Inst/O]]
 
 #######################################
 ## Pin locations, IO standards, etc. ##

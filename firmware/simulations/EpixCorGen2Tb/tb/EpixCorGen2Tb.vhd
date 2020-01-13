@@ -1,17 +1,14 @@
 -------------------------------------------------------------------------------
 -- File       : EpixCorGen2Tb.vhd
--- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2017-07-05
--- Last update: 2017-07-06
 -------------------------------------------------------------------------------
 -- Description: Simulation Testbed for EpixQuad top module
 -------------------------------------------------------------------------------
--- This file is part of 'EPIX'.
+-- This file is part of 'EPIX Development Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
 -- top-level directory of this distribution and at: 
 --    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX', including this file, 
+-- No part of 'EPIX Development Firmware', including this file, 
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
@@ -22,10 +19,12 @@ use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 use ieee.math_real.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
-use work.AxiPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
+use surf.AxiPkg.all;
+
 use work.ad9249_pkg.all;
 use work.EpixPkgGen2.all;
 
@@ -108,7 +107,7 @@ architecture testbed of EpixCorGen2Tb is
 
 begin
    
-   PgpClk_Inst : entity work.ClkRst
+   PgpClk_Inst : entity surf.ClkRst
       generic map (
          CLK_PERIOD_G      => PGPCLK_PER_C,
          RST_START_DELAY_G => 0 ns,  -- Wait this long into simulation before asserting reset
@@ -257,7 +256,7 @@ begin
    
    -- need Pll to create ADC readout clock (350 MHz)
    -- must be in phase with adcClk (50 MHz)
-   U_PLLAdc : entity work.ClockManager7
+   U_PLLAdc : entity surf.ClockManager7
    generic map(
       INPUT_BUFG_G       => true,
       FB_BUFG_G          => true,

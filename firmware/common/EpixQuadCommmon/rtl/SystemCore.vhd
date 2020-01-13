@@ -1,16 +1,14 @@
 -------------------------------------------------------------------------------
 -- File       : SystemCore.vhd
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2017-02-04
--- Last update: 2017-10-10
 -------------------------------------------------------------------------------
 -- Description: EPIX Quad Target's Top Level
 -------------------------------------------------------------------------------
--- This file is part of 'EPIX Firmware'.
+-- This file is part of 'EPIX Development Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
 -- top-level directory of this distribution and at: 
 --    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Firmware', including this file, 
+-- No part of 'EPIX Development Firmware', including this file, 
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
@@ -20,12 +18,13 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 
-use work.StdRtlPkg.all;
-use work.AxiPkg.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
-use work.I2cPkg.all;
-use work.SsiPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
+use surf.I2cPkg.all;
+use surf.SsiPkg.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -194,7 +193,7 @@ begin
    ---------------------
    -- AXI-Lite: Crossbar
    ---------------------
-   U_XBAR0 : entity work.AxiLiteCrossbar
+   U_XBAR0 : entity surf.AxiLiteCrossbar
       generic map (
          TPD_G              => TPD_G,
          NUM_SLAVE_SLOTS_G  => 1,
@@ -216,7 +215,7 @@ begin
    --------------------------
    -- AXI-Lite Version Module
    --------------------------          
-   U_AxiVersion : entity work.AxiVersion
+   U_AxiVersion : entity surf.AxiVersion
       generic map (
          TPD_G           => TPD_G,
          BUILD_INFO_G    => BUILD_INFO_G,
@@ -321,7 +320,7 @@ begin
    ------------------------------
    -- AXI-Lite: Boot Flash Module
    ------------------------------
-   U_BootProm : entity work.AxiMicronN25QCore
+   U_BootProm : entity surf.AxiMicronN25QCore
       generic map (
          TPD_G            => TPD_G,
          MEM_ADDR_MASK_G  => x"00000000",  -- Using hardware write protection
@@ -372,7 +371,7 @@ begin
    ----------------------------------------
    -- DDR memory tester
    ----------------------------------------
-   U_AxiMemTester : entity work.AxiMemTester
+   U_AxiMemTester : entity surf.AxiMemTester
       generic map (
          TPD_G        => TPD_G,
          START_ADDR_G => START_ADDR_C,
@@ -399,7 +398,7 @@ begin
    
    G_MIG_CORE : if MIG_CORE_EN = true generate
    
-      Sync_0 : entity work.Synchronizer
+      Sync_0 : entity surf.Synchronizer
          generic map (
             TPD_G => TPD_G)
          port map (
@@ -568,7 +567,7 @@ begin
    ------------------------------------------------
    -- Vguard DAC interface
    ------------------------------------------------
-   U_VdacI2C : entity work.AxiI2cRegMaster
+   U_VdacI2C : entity surf.AxiI2cRegMaster
    generic map (
       DEVICE_MAP_G     => I2C_DAC_CONFIG_C,
       AXI_CLK_FREQ_G   => AXI_CLK_FREQ_G,

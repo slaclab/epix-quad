@@ -1,13 +1,6 @@
 -------------------------------------------------------------------------------
--- Title      : 
--------------------------------------------------------------------------------
 -- File       : Coulter.vhd
--- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 09/30/2015
--- Last update: 2017-03-08
--- Platform   : Vivado 2014.4
--- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
@@ -25,15 +18,14 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 
--- Surf Packages
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
-use work.SsiPkg.all;
-use work.SsiCmdMasterPkg.all;
-use work.Ad9249Pkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
+use surf.SsiPkg.all;
+use surf.SsiCmdMasterPkg.all;
+use surf.Ad9249Pkg.all;
 
--- Coulter Packages
 use work.AcquisitionControlPkg.all;
 
 library unisim;
@@ -212,7 +204,7 @@ architecture top_level of Coulter is
    attribute mark_debug of elineSdo  : signal is "TRUE";
 begin
 
-   U_Heartbeat_stableClk : entity work.Heartbeat
+   U_Heartbeat_stableClk : entity surf.Heartbeat
       generic map (
          TPD_G        => TPD_G,
          PERIOD_IN_G  => 6.4e-9,
@@ -221,7 +213,7 @@ begin
          clk => stableClk,              -- [in]
          o   => led(1));                -- [out]
 
-   U_Heartbeat_1 : entity work.Heartbeat
+   U_Heartbeat_1 : entity surf.Heartbeat
       generic map (
          TPD_G        => TPD_G,
          PERIOD_IN_G  => 8.0e-9,
@@ -231,7 +223,7 @@ begin
          rst => axilRst,                -- [in]
          o   => led(0));                -- [out]
 
-   U_Heartbeat_2 : entity work.Heartbeat
+   U_Heartbeat_2 : entity surf.Heartbeat
       generic map (
          TPD_G        => TPD_G,
          PERIOD_IN_G  => 8.0e-9,
@@ -285,9 +277,9 @@ begin
          debug            => debug);
 
    -------------------------------------------------------------------------------------------------
-   -- Clock Manager (create 250 Mhz clock and 200 MHz clock)
+   -- Clock Manager (create 250 MHz clock and 200 MHz clock)
    -------------------------------------------------------------------------------------------------
-   U_CtrlClockManager7 : entity work.ClockManager7
+   U_CtrlClockManager7 : entity surf.ClockManager7
       generic map (
          TPD_G              => TPD_G,
          TYPE_G             => "MMCM",
@@ -315,7 +307,7 @@ begin
    -------------------------------------------------------------------------------------------------
    -- Crossbar
    -------------------------------------------------------------------------------------------------
-   U_AxiLiteCrossbar_1 : entity work.AxiLiteCrossbar
+   U_AxiLiteCrossbar_1 : entity surf.AxiLiteCrossbar
       generic map (
          TPD_G              => TPD_G,
          NUM_SLAVE_SLOTS_G  => 1,
@@ -338,11 +330,10 @@ begin
    -------------------------------------------------------------------------------------------------
    -- Version (12-bits)
    -------------------------------------------------------------------------------------------------
-   U_AxiVersion_1 : entity work.AxiVersion
+   U_AxiVersion_1 : entity surf.AxiVersion
       generic map (
          TPD_G            => TPD_G,
          BUILD_INFO_G     => BUILD_INFO_G,
-         AXI_ERROR_RESP_G => AXI_RESP_DECERR_C,
          CLK_PERIOD_G     => AXIL_CLK_PERIOD_C,
          XIL_DEVICE_G     => "7SERIES",
          EN_DEVICE_DNA_G  => true,
@@ -361,7 +352,7 @@ begin
          slowClk        => clk100,
          fdSerSdio      => snIoAdcCard);
 
---    U_AxiLiteEmpty_1 : entity work.AxiLiteEmpty
+--    U_AxiLiteEmpty_1 : entity surf.AxiLiteEmpty
 --       generic map (
 --          TPD_G            => TPD_G,
 --          AXI_ERROR_RESP_G => AXI_ERROR_RESP_G,
@@ -408,14 +399,13 @@ begin
    -- Adc Config (12 bits total)
    -------------------------------------------------------------------------------------------------
    ADC_CONFIG_NO_PULLUP : if (ADC_CONFIG_NO_PULLUP_G) generate
-      U_Ad9249Config_1 : entity work.Ad9249ConfigNoPullup
+      U_Ad9249Config_1 : entity surf.Ad9249ConfigNoPullup
          generic map (
             TPD_G           => TPD_G,
             NUM_CHIPS_G     => 1,
             DEN_POLARITY_G  => '0',
             CLK_EN_PERIOD_G => AXIL_CLK_PERIOD_C*2.0,
-            CLK_PERIOD_G    => AXIL_CLK_PERIOD_C,
-            AXIL_ERR_RESP_G => AXI_RESP_DECERR_C)
+            CLK_PERIOD_G    => AXIL_CLK_PERIOD_C)
          port map (
             axilClk         => axilClk,                                 -- [in]
             axilRst         => axilRst,                                 -- [in]
@@ -443,13 +433,12 @@ begin
    end generate ADC_CONFIG_NO_PULLUP;
 
    ADC_CONFIG_NORMAL : if (not ADC_CONFIG_NO_PULLUP_G) generate
-      U_Ad9249Config_2 : entity work.Ad9249Config
+      U_Ad9249Config_2 : entity surf.Ad9249Config
          generic map (
             TPD_G             => TPD_G,
             NUM_CHIPS_G       => 1,
             SCLK_PERIOD_G     => ADC_SCLK_PERIOD_C,
-            AXIL_CLK_PERIOD_G => AXIL_CLK_PERIOD_C,
-            AXIL_ERR_RESP_G   => AXI_RESP_DECERR_C)
+            AXIL_CLK_PERIOD_G => AXIL_CLK_PERIOD_C)
          port map (
             axilClk         => axilClk,                                 -- [in]
             axilRst         => axilRst,                                 -- [in]
@@ -481,7 +470,7 @@ begin
          REFCLK => clk200,
          RST    => rst200);
 
-   U_Ad9249ReadoutGroup_0 : entity work.Ad9249ReadoutGroup
+   U_Ad9249ReadoutGroup_0 : entity surf.Ad9249ReadoutGroup
       generic map (
          TPD_G             => TPD_G,
          NUM_CHANNELS_G    => 6,
@@ -501,7 +490,7 @@ begin
          adcStreamClk           => clk250,                                     -- [in]
          adcStreams(5 downto 0) => adcStreams(5 downto 0));                    -- [out]
 
-   U_Ad9249ReadoutGroup_1 : entity work.Ad9249ReadoutGroup
+   U_Ad9249ReadoutGroup_1 : entity surf.Ad9249ReadoutGroup
       generic map (
          TPD_G             => TPD_G,
          NUM_CHANNELS_G    => 6,
@@ -522,10 +511,10 @@ begin
          adcStreams(5 downto 0) => adcStreams(11 downto 6));                   -- [out]
 
    bufDataValid <= adcStreams(0).tvalid and toSl(adcStreams(0).tdata(15 downto 0) /= X"2000");
-   U_AxiLiteRingBuffer_1 : entity work.AxiLiteRingBuffer
+   U_AxiLiteRingBuffer_1 : entity surf.AxiLiteRingBuffer
       generic map (
          TPD_G            => TPD_G,
-         BRAM_EN_G        => true,
+         MEMORY_TYPE_G    => "block",
          REG_EN_G         => true,
          DATA_WIDTH_G     => 16,
          RAM_ADDR_WIDTH_G => 5)
@@ -614,7 +603,7 @@ begin
          O  => adcClkP,
          OB => adcClkM);
 
-   U_XadcSimpleCore_1 : entity work.XadcSimpleCore
+   U_XadcSimpleCore_1 : entity surf.XadcSimpleCore
       generic map (
          TPD_G                => TPD_G,
          SEQUENCER_MODE_G     => "DEFAULT",

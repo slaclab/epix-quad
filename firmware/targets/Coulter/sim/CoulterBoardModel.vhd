@@ -1,35 +1,29 @@
 -------------------------------------------------------------------------------
--- Title      : 
--------------------------------------------------------------------------------
 -- File       : CoulterBoardModel.vhd
--- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2016-11-14
--- Last update: 2017-03-02
--- Platform   : 
--- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- This file is part of 'Coulter'. It is subject to
--- the license terms in the LICENSE.txt file found in the top-level directory
--- of this distribution and at:
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
--- No part of 'Coulter', including this file, may be
--- copied, modified, propagated, or distributed except according to the terms
--- contained in the LICENSE.txt file.
+-- This file is part of 'EPIX Development Firmware'.
+-- It is subject to the license terms in the LICENSE.txt file found in the 
+-- top-level directory of this distribution and at: 
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
+-- No part of 'EPIX Development Firmware', including this file, 
+-- may be copied, modified, propagated, or distributed except according to 
+-- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
 library ieee;
 use ieee.std_logic_1164.all;
 
+library surf;
+use surf.StdRtlPkg.all;
+use surf.Pgp2bPkg.all;
+use surf.AxiStreamPkg.all;
+use surf.Gtp7CfgPkg.all;
+
 library UNISIM;
 use UNISIM.vcomponents.all;
-
-use work.StdRtlPkg.all;
-use work.Pgp2bPkg.all;
-use work.AxiStreamPkg.all;
-use work.Gtp7CfgPkg.all;
 
 entity CoulterBoardModel is
 
@@ -106,7 +100,7 @@ begin
    -------------------------------------------------------------------------------------------------
    -- 156.25 MHZ oscillator
    -------------------------------------------------------------------------------------------------
-   U_ClkRst_1 : entity work.ClkRst
+   U_ClkRst_1 : entity surf.ClkRst
       generic map (
          CLK_PERIOD_G      => 6.4 ns,
          CLK_DELAY_G       => 0 ns,
@@ -176,7 +170,7 @@ begin
    -- Pullups for adcSpi
    adcSpiData <= 'H';
 
-   U_Ad9249_1 : entity work.Ad9249
+   U_Ad9249_1 : entity surf.Ad9249
       generic map (
          TPD_G            => TPD_G,
          CLK_PERIOD_G     => 100 ns,
@@ -210,7 +204,7 @@ begin
    -------------------------------------------------------------------------------------------------
    -- PGP
    -------------------------------------------------------------------------------------------------
---    U_ClkRst_2 : entity work.ClkRst
+--    U_ClkRst_2 : entity surf.ClkRst
 --       generic map (
 --          CLK_PERIOD_G      => 6.4 ns,
 --          CLK_DELAY_G       => 1 ns,
@@ -221,7 +215,7 @@ begin
 --          clkP => gtRefClkP,             -- [out]
 --          clkN => gtRefClkN);            -- [out]
 
-   PwrUpRst_Inst : entity work.PwrUpRst
+   PwrUpRst_Inst : entity surf.PwrUpRst
       generic map (
          TPD_G          => TPD_G,
          SIM_SPEEDUP_G  => true,
@@ -233,7 +227,7 @@ begin
          rstOut => stableRst);
 
 
-   U_Pgp2bGtp7FixedLatWrapper_1 : entity work.Pgp2bGtp7FixedLatWrapper
+   U_Pgp2bGtp7FixedLatWrapper_1 : entity surf.Pgp2bGtp7FixedLatWrapper
       generic map (
          TPD_G                   => TPD_G,
          SIM_GTRESET_SPEEDUP_G   => true,

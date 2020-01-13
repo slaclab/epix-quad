@@ -1,36 +1,32 @@
 -------------------------------------------------------------------------------
--- Title         : Test-bench of CpixLUT unit
--- Project       : Cpix Detector
+-- Title      : Test-bench of CpixLUT unit
+-- Project    : Cpix Detector
 -------------------------------------------------------------------------------
--- File          : TB_CpixLUT.vhd
--- Author        : Maciej Kwiatkowski, mkwiatko@slac.stanford.edu
--- Created       : 01/19/2016
+-- File       : TB_CpixLUT.vhd
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -------------------------------------------------------------------------------
--- This file is part of 'CPIX Development Firmware'.
+-- This file is part of 'EPIX Development Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
 -- top-level directory of this distribution and at: 
 --    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'CPIX Development Firmware', including this file, 
+-- No part of 'EPIX Development Firmware', including this file, 
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 03/10/2016: created.
--------------------------------------------------------------------------------
 
 LIBRARY ieee;
-use work.all;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-library unisim;
-use unisim.vcomponents.all;
+library surf;
+use surf.StdRtlPkg.all;
 
-use work.StdRtlPkg.all;
 use work.CpixLUTPkg.all;
 
+library unisim;
+use unisim.vcomponents.all;
 
 entity TB_CpixLUT is 
 

@@ -1,10 +1,9 @@
 -------------------------------------------------------------------------------
--- Title         : EPIX Digital Test Top Level Block
--- Project       : EPXI Readout
+-- Title      : EPIX Digital Test Top Level Block
+-- Project    : EPXI Readout
 -------------------------------------------------------------------------------
--- File          : EpixDigTop.vhd
--- Author        : Ryan Herbst, rherbst@slac.stanford.edu
--- Created       : 06/03/2013
+-- File       : EpixDigTop.vhd
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -- EPIX Digital Test Top Level Block
@@ -17,15 +16,12 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 06/03/2013: created.
--------------------------------------------------------------------------------
 
 LIBRARY ieee;
-use work.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
+
 library UNISIM;
 use UNISIM.vcomponents.all;
 

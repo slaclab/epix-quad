@@ -1,10 +1,9 @@
 -------------------------------------------------------------------------------
--- Title         : Version File
--- Project       : ePix Generation 2 Digital Card Firmware
+-- Title      : Version File
+-- Project    : ePix Generation 2 Digital Card Firmware
 -------------------------------------------------------------------------------
--- File          : Version.vhd
--- Author        : Kurtis Nishimura, kurtisn@slac.stanford.edu
--- Created       : 02/05/2015
+-- File       : Version.vhd
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -- Version Constant Module.
@@ -17,9 +16,7 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 02/05/2015: created.
--------------------------------------------------------------------------------
+
 LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
 

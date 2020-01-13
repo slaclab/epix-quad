@@ -3,8 +3,7 @@
 -- Project       : EPIX Readout
 -------------------------------------------------------------------------------
 -- File          : ReadoutControl.vhd
--- Author        : Kurtis Nishimura, kurtisn@slac.stanford.edu
--- Created       : 12/08/2011
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -- Readout control block
@@ -17,19 +16,18 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 12/08/2011: created.
--- 07/07/2014: Updated style of primary state machine
--------------------------------------------------------------------------------
 
 LIBRARY ieee;
-use work.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+
 use work.EpixTypes.all;
 use work.VcPkg.all;
-use work.StdRtlPkg.all;
+
 library UNISIM;
 use UNISIM.vcomponents.all;
 
@@ -235,14 +233,14 @@ begin
    end generate;
 
    -- Edge detection for signals that interface with other blocks
-   U_DataSendEdge : entity work.SynchronizerEdge
+   U_DataSendEdge : entity surf.SynchronizerEdge
       port map (
          clk        => sysClk,
          rst        => sysClkRst,
          dataIn     => dataSend,
          risingEdge => dataSendEdge
       );
-   U_ReadStartEdge : entity work.SynchronizerEdge
+   U_ReadStartEdge : entity surf.SynchronizerEdge
       port map (
          clk        => sysClk,
          rst        => sysClkRst,
@@ -566,15 +564,13 @@ begin
    -- Instantiate FIFOs
    G_AdcFifos : for i in 0 to 15 generate
       --Instantiate the FIFOs
-      U_AdcFifo : entity work.FifoMux
+      U_AdcFifo : entity surf.FifoMux
          generic map(
             WR_DATA_WIDTH_G => 16,
             RD_DATA_WIDTH_G => 32,
             GEN_SYNC_FIFO_G => true,
             ADDR_WIDTH_G    => CH_FIFO_ADDR_WIDTH_C,
             FWFT_EN_G       => true,
-            USE_BUILT_IN_G  => false,
-            XIL_DEVICE_G    => "VIRTEX5",
             EMPTY_THRES_G   => 1,
             LITTLE_ENDIAN_G => true
          )

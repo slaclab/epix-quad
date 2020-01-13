@@ -1,8 +1,9 @@
 ------------------------------------------------------------------------------
--- Title         : DAC 8812 Axi Module 
--- Project       : ePix HR Detector
+-- Title      : DAC 8812 Axi Module 
+-- Project    : ePix HR Detector
 -------------------------------------------------------------------------------
--- File          : Dac8812Axi.vhd
+-- File       : Dac8812Axi.vhd
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -- DAC Controller.
@@ -15,22 +16,20 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 08/09/2011: created as DacCntrl.vhd by Ryan
--- 05/19/2017: modifed to Dac8812Cntrl.vhd by Dionisio
--------------------------------------------------------------------------------
 
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiStreamPkg.all;
+use surf.AxiLitePkg.all;
+use surf.SsiPkg.all;
+
 use work.EpixHRPkg.all;
 use work.Dac8812Pkg.all;
-use work.StdRtlPkg.all;
-use work.AxiStreamPkg.all;
-use work.AxiLitePkg.all;
-use work.SsiPkg.all;
-
 
 entity Dac8812Axi is
    generic (

@@ -1,21 +1,14 @@
 -------------------------------------------------------------------------------
--- Title      : 
--------------------------------------------------------------------------------
 -- File       : Epix100aGen2.vhd
--- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 09/30/2015
--- Last update: 09/30/2015
--- Platform   : Vivado 2014.4
--- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- This file is part of 'SLAC Firmware Standard Library'.
+-- This file is part of 'EPIX Development Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
 -- top-level directory of this distribution and at: 
 --    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'SLAC Firmware Standard Library', including this file, 
+-- No part of 'EPIX Development Firmware', including this file, 
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
@@ -24,13 +17,14 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-use work.StdRtlPkg.all;
-use work.EpixPkgGen2.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
-use work.SsiPkg.all;
-use work.SsiCmdMasterPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
+use surf.SsiPkg.all;
+use surf.SsiCmdMasterPkg.all;
 
+use work.EpixPkgGen2.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -137,9 +131,10 @@ entity Epix100aGen2 is
 end Epix100aGen2;
 
 architecture top_level of Epix100aGen2 is
-   signal iLed          : slv(3 downto 0);
-   signal iFpgaOutputEn : sl;
-   signal iLedEn        : sl;
+   signal iLed           : slv(3 downto 0);
+   signal iFpgaOutputEn  : sl;
+   signal iFpgaOutputEnL : sl;
+   signal iLedEn         : sl;
    
    -- Internal versions of signals so that we don't
    -- drive anything unpowered until the components
@@ -197,7 +192,7 @@ begin
       generic map (
          TPD_G => TPD_G,
          ASIC_TYPE_G => EPIX100A_C,
-         FPGA_BASE_CLOCK_G => FPGA_BASE_CLOCK_G,
+--         FPGA_BASE_CLOCK_G => FPGA_BASE_CLOCK_G,
          BUILD_INFO_G => BUILD_INFO_G,
          -- Polarity of selected LVDS data lanes is swapped on gen2 ADC board
          ADC1_INVERT_CH    => "10000000",
@@ -350,7 +345,7 @@ begin
 --   end generate;
    -- ASIC control signals (differential)
    G_ROCLK : for i in 0 to 3 generate
-      U_ASIC_ROCLK_OBUFTDS : OBUFTDS port map ( I => iAsicRoClk, T => not(iFpgaOutputEn), O => asicRoClkP(i), OB => asicRoClkM(i) );
+      U_ASIC_ROCLK_OBUFTDS : OBUFTDS port map ( I => iAsicRoClk, T => iFpgaOutputEnL, O => asicRoClkP(i), OB => asicRoClkM(i) );
    end generate;
    -- ASIC control signals (single ended)
    asicR0      <= iAsicR0      when iFpgaOutputEn = '1' else 'Z';
@@ -361,5 +356,7 @@ begin
    -- On this carrier ASIC digital monitors are shared with SN device
    --iAsicDm1    <= snIoCarrier;
    --iAsicDm2    <= snIoCarrier;
+   
+   iFpgaOutputEnL <= not(iFpgaOutputEn);
    
 end top_level;

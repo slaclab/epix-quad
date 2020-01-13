@@ -12,8 +12,8 @@
 ##############################
 # Get variables and procedures
 ##############################
-source -quiet $::env(RUCKUS_DIR)/vivado_env_var.tcl
-source -quiet $::env(RUCKUS_DIR)/vivado_proc.tcl
+source -quiet $::env(RUCKUS_DIR)/vivado/env_var.tcl
+source -quiet $::env(RUCKUS_DIR)/vivado/proc.tcl
 
 ############################
 ## Open the synthesis design
@@ -59,7 +59,7 @@ SetDebugCoreClk ${ilaName} {U_EpixHR/coreClk}
 ConfigProbe ${ilaName} {U_EpixHR/iasicTsSync}
 ConfigProbe ${ilaName} {U_EpixHR/iasicTsData[*]}
 ConfigProbe ${ilaName} {U_EpixHR/acqStart}
-ConfigProbe ${ilaName} {U_EpixHR/byteClk}
+#ConfigProbe ${ilaName} {U_EpixHR/byteClk}
 #ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[0].U_AXI_Framer/dFifoOut[*]}
 #ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[0].U_AXI_Framer/dFifoSof}
 #ConfigProbe ${ilaName} {U_EpixHR/G_ASIC[0].U_AXI_Framer/dFifoEof}

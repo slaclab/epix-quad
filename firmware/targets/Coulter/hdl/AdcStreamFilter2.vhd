@@ -2,12 +2,7 @@
 -- Title      : AdcStreamFilter2
 -------------------------------------------------------------------------------
 -- File       : AdcStreamFilter2.vhd
--- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2016-09-22
--- Last update: 2017-03-07
--- Platform   : 
--- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: Filters samples out of an ADC stream based on direction from
 -- an AcquisitionControl block.
@@ -26,10 +21,11 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-use work.StdRtlPkg.all;
-use work.AxiStreamPkg.all;
-use work.AxiLitePkg.all;
-use work.Ad9249Pkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiStreamPkg.all;
+use surf.AxiLitePkg.all;
+use surf.Ad9249Pkg.all;
 
 use work.AcquisitionControlPkg.all;
 
@@ -97,7 +93,7 @@ architecture rtl of AdcStreamFilter2 is
 
 begin
 
-   U_SynchronizerVector_1 : entity work.SynchronizerVector
+   U_SynchronizerVector_1 : entity surf.SynchronizerVector
       generic map (
          TPD_G    => TPD_G,
          STAGES_G => 2,
@@ -108,7 +104,7 @@ begin
          dataIn  => acqStatus.cfgMckCount,  -- [in]
          dataOut => cfgMckCount);           -- [out]
 
-   U_SynchronizerFifo_1 : entity work.SynchronizerFifo
+   U_SynchronizerFifo_1 : entity surf.SynchronizerFifo
       generic map (
          TPD_G        => TPD_G,
          COMMON_CLK_G => false,
@@ -204,16 +200,14 @@ begin
       end if;
    end process seq;
 
-   U_AxiStreamFifoV2_1 : entity work.AxiStreamFifoV2
+   U_AxiStreamFifoV2_1 : entity surf.AxiStreamFifoV2
       generic map (
          TPD_G                  => TPD_G,
          INT_PIPE_STAGES_G      => 0,
          PIPE_STAGES_G          => 1,
          SLAVE_READY_EN_G       => true,
          VALID_THOLD_G          => 0,
-         BRAM_EN_G              => false,
-         XIL_DEVICE_G           => "7Series",
-         USE_BUILT_IN_G         => false,
+         MEMORY_TYPE_G          => "distributed",
          GEN_SYNC_FIFO_G        => false,
          FIFO_ADDR_WIDTH_G      => 5,
          INT_WIDTH_SELECT_G     => "WIDE",

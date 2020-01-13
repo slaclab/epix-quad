@@ -1,13 +1,6 @@
 -------------------------------------------------------------------------------
--- Title      : 
--------------------------------------------------------------------------------
 -- File       : AdcDeserializer.vhd
--- Author     : Kurtis Nishimura <kurtisn@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2015-03-12
--- Last update: 2015-03-12
--- Platform   : 
--- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 14 bit DDR deserializer using 7 series IDELAYE2 and ISERDESE2.
 --              Initial version taken from Ben Reese's HPS AdcDeserializer.vhd
@@ -24,7 +17,10 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
-use work.StdRtlPkg.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+
 library UNISIM;
 use UNISIM.vcomponents.all;
 

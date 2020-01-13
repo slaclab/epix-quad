@@ -3,8 +3,7 @@
 -- Project       : EPIX 
 -------------------------------------------------------------------------------
 -- File          : PseudoScopeCore.vhd
--- Author        : Kurtis Nishimura, kurtisn@slac.stanford.edu
--- Created       : 03/10/2014
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -- Pseudo-oscilloscope interface for ADC channels, similar to chipscope.
@@ -17,22 +16,16 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 03/10/2014: created.
--- 04/07/2015: migrated to gen2 digital card (A7)
--- 07/11/2016: added trigger delay (Maciej Kwiatkowski)
--- 04/07/2017: added AXI Lite for the register access (Maciej Kwiatkowski)
--- 09/13/2018: added generic configuration, redefined regster addresses 
---             and renamed to PseudoScopeCore (Maciej Kwiatkowski)
--------------------------------------------------------------------------------
 
 LIBRARY ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
-use work.StdRtlPkg.all;
-use work.AxiStreamPkg.all;
-use work.AxiLitePkg.all;
-use work.SsiPkg.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiStreamPkg.all;
+use surf.AxiLitePkg.all;
+use surf.SsiPkg.all;
 
 entity PseudoScopeCore is
    generic (
@@ -220,7 +213,7 @@ begin
    trigger <= trigger_sel and scopeSync.scopeEnable;
 
    -- Generate edges of the possible trigger signals
-   U_RunEdge : entity work.SynchronizerEdge 
+   U_RunEdge : entity surf.SynchronizerEdge 
       port map (
          clk         => sysClk,
          rst         => sysClkRst,
@@ -255,7 +248,7 @@ begin
    
    triggerDelayed <= '1' when trigDelCnt = 0 else '0';
    
-   U_DelEdge : entity work.SynchronizerEdge 
+   U_DelEdge : entity surf.SynchronizerEdge 
       port map (
          clk         => sysClk,
          rst         => sysClkRst,
@@ -291,7 +284,7 @@ begin
    -- Instantiate ring buffers for storing the ADC data
    RingBufferA : entity work.RingBuffer
       generic map(
-         BRAM_EN_G    => true,
+         MEMORY_TYPE_G=> "block",
          DATA_WIDTH_G => 16,
          ADDR_WIDTH_G => 13)
       port map (
@@ -312,7 +305,7 @@ begin
       );
    RingBufferB : entity work.RingBuffer
       generic map(
-         BRAM_EN_G    => true,
+         MEMORY_TYPE_G=> "block",
          DATA_WIDTH_G => 16,
          ADDR_WIDTH_G => 13)
       port map (

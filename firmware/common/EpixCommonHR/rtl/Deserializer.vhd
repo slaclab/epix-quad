@@ -3,33 +3,29 @@
 -- Project       : Tixel/cPix Detector
 -------------------------------------------------------------------------------
 -- File          : Deserializer.vhd
--- Author        : Maciej Kwiatkowski, mkwiatko@slac.stanford.edu
--- Created       : 11/23/2015
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -- This block is responsible for deserialization of the 10b encoded
 -- serial output data of the Tixel or Cpix ASIC.
 -------------------------------------------------------------------------------
--- This file is part of 'CPIX Development Firmware'.
+-- This file is part of 'EPIX Development Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
 -- top-level directory of this distribution and at: 
 --    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'CPIX Development Firmware', including this file, 
+-- No part of 'EPIX Development Firmware', including this file, 
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 11/23/2015: created.
--------------------------------------------------------------------------------
 
 LIBRARY ieee;
-use work.all;
 use ieee.std_logic_1164.all;
 use IEEE.NUMERIC_STD.all;
 
-use work.StdRtlPkg.all;
-use work.AxiStreamPkg.all;
-use work.AxiLitePkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiStreamPkg.all;
+use surf.AxiLitePkg.all;
 
 library UNISIM;
 use UNISIM.vcomponents.all;

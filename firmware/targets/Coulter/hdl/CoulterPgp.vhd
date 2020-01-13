@@ -1,41 +1,36 @@
 -------------------------------------------------------------------------------
--- Title      : Coulter PGP 
--------------------------------------------------------------------------------
 -- File       : CoulterPgp.vhd
--- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2016-06-03
--- Last update: 2017-03-13
--- Platform   : 
--- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
--- Description: 
+-- Description: Coulter PGP 
 -------------------------------------------------------------------------------
--- This file is part of Coulter. It is subject to
--- the license terms in the LICENSE.txt file found in the top-level directory
--- of this distribution and at:
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
--- No part of Coulter, including this file, may be
--- copied, modified, propagated, or distributed except according to the terms
--- contained in the LICENSE.txt file.
--------------------------------------------------------------------------------
+-- This file is part of 'EPIX Development Firmware'.
+-- It is subject to the license terms in the LICENSE.txt file found in the 
+-- top-level directory of this distribution and at: 
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
+-- No part of 'EPIX Development Firmware', including this file, 
+-- may be copied, modified, propagated, or distributed except according to 
+-- the terms contained in the LICENSE.txt file.
+------------------------------------------------------------------------------
+
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 
-library unisim;
-use unisim.vcomponents.all;
-
-use work.StdRtlPkg.all;
-use work.Gtp7CfgPkg.all;
-use work.Pgp2bPkg.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
-use work.SsiPkg.all;
-use work.SsiCmdMasterPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.Gtp7CfgPkg.all;
+use surf.Pgp2bPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
+use surf.SsiPkg.all;
+use surf.SsiCmdMasterPkg.all;
 
 use work.CoulterPkg.all;
+
+library unisim;
+use unisim.vcomponents.all;
 
 entity CoulterPgp is
    generic (
@@ -152,7 +147,7 @@ begin
    -------------------------------------------------------------------------------------------------
    -- AXI Lite crossbar
    -------------------------------------------------------------------------------------------------
-   U_AxiLiteCrossbar_1 : entity work.AxiLiteCrossbar
+   U_AxiLiteCrossbar_1 : entity surf.AxiLiteCrossbar
       generic map (
          TPD_G              => TPD_G,
          NUM_SLAVE_SLOTS_G  => 1,
@@ -179,7 +174,7 @@ begin
 
 
       FIXED_LATENCY_PGP : if (FIXED_LATENCY_G) generate
-         U_Pgp2bGtp7FixedLatWrapper_1 : entity work.Pgp2bGtp7FixedLatWrapper
+         U_Pgp2bGtp7FixedLatWrapper_1 : entity surf.Pgp2bGtp7FixedLatWrapper
             generic map (
                TPD_G                   => TPD_G,
                SIM_GTRESET_SPEEDUP_G   => SIMULATION_G,
@@ -188,7 +183,7 @@ begin
                VC_INTERLEAVE_G         => 0,
                PAYLOAD_CNT_TOP_G       => 7,
                NUM_VC_EN_G             => 2,
-               AXIL_ERROR_RESP_G       => AXI_RESP_DECERR_C,
+--             AXIL_ERROR_RESP_G       => AXI_RESP_DECERR_C,
                AXIL_BASE_ADDR_G        => AXIL_XBAR_CFG_C(GTP_AXI_INDEX_C).baseAddr,
                EXT_RST_POLARITY_G      => '1',
                TX_ENABLE_G             => true,
@@ -251,7 +246,7 @@ begin
 
       VARIABLE_LATENCY_PGP : if (FIXED_LATENCY_G = false) generate
 
-         PwrUpRst_Inst : entity work.PwrUpRst
+         PwrUpRst_Inst : entity surf.PwrUpRst
             generic map (
                TPD_G          => TPD_G,
                SIM_SPEEDUP_G  => SIMULATION_G,
@@ -263,7 +258,7 @@ begin
                rstOut => stableRst);
 
 
-         U_Pgp2bGtp7VarLatWrapper_1 : entity work.Pgp2bGtp7VarLatWrapper
+         U_Pgp2bGtp7VarLatWrapper_1 : entity surf.Pgp2bGtp7VarLatWrapper
             generic map (
                TPD_G                => TPD_G,
                SIMULATION_G         => SIMULATION_G,
@@ -327,7 +322,7 @@ begin
       signal txOutClkN : sl;
    begin
       -- Clock manager to simulate GTP gtrefclk->txoutclk | 156.25->125
-      U_SIM_GTP_PLL : entity work.ClockManager7
+      U_SIM_GTP_PLL : entity surf.ClockManager7
          generic map (
             TPD_G              => TPD_G,
             TYPE_G             => "MMCM",
@@ -352,7 +347,7 @@ begin
             ob => txOutClkN);
 
 
-      U_RoguePgpSim_1 : entity work.RoguePgpSim
+      U_RoguePgpSim_1 : entity surf.RoguePgpSim
          generic map (
             TPD_G       => TPD_G,
             FIXED_LAT_G => true,
@@ -380,7 +375,7 @@ begin
 -------------------------------------------------------------------------------------------------
 -- PGP monitor
 -------------------------------------------------------------------------------------------------
-   CntlPgp2bAxi : entity work.Pgp2bAxi
+   CntlPgp2bAxi : entity surf.Pgp2bAxi
       generic map (
          TPD_G              => TPD_G,
          COMMON_TX_CLK_G    => true,
@@ -388,8 +383,7 @@ begin
          WRITE_EN_G         => false,
          AXI_CLK_FREQ_G     => 125.0E+6,
          STATUS_CNT_WIDTH_G => 32,
-         ERROR_CNT_WIDTH_G  => 16,
-         AXI_ERROR_RESP_G   => AXI_RESP_DECERR_C)
+         ERROR_CNT_WIDTH_G  => 16)
       port map (
          pgpTxClk        => pgpTxClk,                              -- [in]
          pgpTxClkRst     => pgpTxRst,                              -- [in]
@@ -407,13 +401,12 @@ begin
          axilWriteSlave  => locAxilWriteSlaves(PGP_AXI_INDEX_C));  -- [out]
 
 -- Lane 0, VC0 RX/TX, Register access control        
-   U_Vc0AxiMasterRegisters : entity work.SrpV0AxiLite
+   U_Vc0AxiMasterRegisters : entity surf.SrpV0AxiLite
       generic map (
          TPD_G               => TPD_G,
          RESP_THOLD_G        => 1,
          SLAVE_READY_EN_G    => false,
          EN_32BIT_ADDR_G     => false,
-         USE_BUILT_IN_G      => false,
          GEN_SYNC_FIFO_G     => false,
          FIFO_ADDR_WIDTH_G   => 9,
          FIFO_PAUSE_THRESH_G => 2**8,
@@ -440,7 +433,7 @@ begin
          mAxiLiteReadSlave   => mAxilReadSlave);
 
 -- Lane 0, VC1 TX, streaming data out
-   U_AxiStreamFifoV2_1 : entity work.AxiStreamFifoV2
+   U_AxiStreamFifoV2_1 : entity surf.AxiStreamFifoV2
       generic map (
          TPD_G                  => TPD_G,
          INT_PIPE_STAGES_G      => 1,
@@ -448,9 +441,7 @@ begin
          SLAVE_READY_EN_G       => false,
          VALID_THOLD_G          => 1,
          VALID_BURST_MODE_G     => false,
-         BRAM_EN_G              => true,
-         USE_BUILT_IN_G         => false,
-         GEN_SYNC_FIFO_G        => true,
+         MEMORY_TYPE_G          => "block",
          CASCADE_SIZE_G         => 8,
          CASCADE_PAUSE_SEL_G    => 1,
          FIFO_ADDR_WIDTH_G      => 11,       --13,
@@ -473,12 +464,11 @@ begin
          mAxisSlave  => pgpTxSlaves(1));    -- [in]
 
 
---    U_Vc1SsiTxFifo : entity work.AxiStreamFifo
+--    U_Vc1SsiTxFifo : entity surf.AxiStreamFifoV2
 --       generic map (
 --          --EN_FRAME_FILTER_G   => true,
 --          CASCADE_SIZE_G      => 1,
---          BRAM_EN_G           => true,
---          USE_BUILT_IN_G      => false,
+--          MEMORY_TYPE_G       => "block",
 --          GEN_SYNC_FIFO_G     => true,
 --          FIFO_ADDR_WIDTH_G   => 14,
 --          FIFO_FIXED_THRESH_G => true,
@@ -499,11 +489,11 @@ begin
 --          mAxisSlave  => pgpTxSlaves(1));
 
 -- Lane 0, VC1 RX, Command processor
-   U_Vc1SsiCmdMaster : entity work.SsiCmdMaster
+   U_Vc1SsiCmdMaster : entity surf.SsiCmdMaster
       generic map (
          TPD_G               => TPD_G,
          SLAVE_READY_EN_G    => false,
-         BRAM_EN_G           => false,
+         MEMORY_TYPE_G       => "distributed",
          GEN_SYNC_FIFO_G     => false,
          FIFO_ADDR_WIDTH_G   => 4,
          FIFO_FIXED_THRESH_G => true,
@@ -523,12 +513,11 @@ begin
 
 
 -- Lane 0, VC2 Loopback
---    U_Vc2SsiLoopbackFifo : entity work.AxiStreamFifo
+--    U_Vc2SsiLoopbackFifo : entity surf.AxiStreamFifoV2
 --       generic map (
 --          --EN_FRAME_FILTER_G   => true,
 --          CASCADE_SIZE_G      => 1,
---          BRAM_EN_G           => true,
---          USE_BUILT_IN_G      => false,
+--          MEMORY_TYPE_G       => "block",
 --          GEN_SYNC_FIFO_G     => false,
 --          FIFO_ADDR_WIDTH_G   => 9,
 --          FIFO_FIXED_THRESH_G => true,
@@ -549,12 +538,11 @@ begin
 --          mAxisSlave  => pgpTxSlaves(2));
 
 -- -- Lane 0, VC3 TX/RX loopback (reserved for telemetry)
---    U_Vc3SsiLoopbackFifo : entity work.AxiStreamFifo
+--    U_Vc3SsiLoopbackFifo : entity surf.AxiStreamFifoV2
 --       generic map (
 --          --EN_FRAME_FILTER_G   => true,
 --          CASCADE_SIZE_G      => 1,
---          BRAM_EN_G           => true,
---          USE_BUILT_IN_G      => false,
+--          MEMORY_TYPE_G       => "block",
 --          GEN_SYNC_FIFO_G     => false,
 --          FIFO_ADDR_WIDTH_G   => 9,
 --          FIFO_FIXED_THRESH_G => true,

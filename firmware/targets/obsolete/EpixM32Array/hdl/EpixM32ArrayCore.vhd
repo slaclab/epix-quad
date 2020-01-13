@@ -1,38 +1,31 @@
 -------------------------------------------------------------------------------
--- Title      : 
--------------------------------------------------------------------------------
 -- File       : EpixM32ArrayCore.vhd
--- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2015-03-17
--- Last update: 2016-08-07
--- Platform   : Vivado 2016.1
--- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- This file is part of 'SLAC Firmware Standard Library'.
+-- This file is part of 'EPIX Development Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
 -- top-level directory of this distribution and at: 
 --    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'SLAC Firmware Standard Library', including this file, 
+-- No part of 'EPIX Development Firmware', including this file, 
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
---
 
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-use work.StdRtlPkg.all;
-use work.AxiPkg.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
-use work.SsiPkg.all;
-use work.SsiCmdMasterPkg.all;
-use work.Pgp2bPkg.all;
-use work.Ad9249Pkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
+use surf.SsiPkg.all;
+use surf.SsiCmdMasterPkg.all;
+use surf.Pgp2bPkg.all;
+use surf.Ad9249Pkg.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -120,6 +113,7 @@ architecture top_level of EpixM32ArrayCore is
    signal txLinkReady : sl;
    signal rxLinkReady : sl;
    signal monitorTrig : sl;
+   signal powerBad    : sl;
 
    signal adcClk      : sl := '0';
    
@@ -335,6 +329,8 @@ architecture top_level of EpixM32ArrayCore is
    signal tixelDbgSel1     : slv(4 downto 0);
    signal tixelDbgSel2     : slv(4 downto 0);
    
+   signal adcMarker : slv(19 downto 0) := (others=>'0');   
+   
    attribute keep : boolean;
    attribute keep of coreClk : signal is true;
    attribute keep of acqStart : signal is true;
@@ -393,7 +389,7 @@ begin
    
 
    -- Temporary one-shot for grabbing PGP op code
-   U_OpCodeEnOneShot : entity work.SynchronizerOneShot
+   U_OpCodeEnOneShot : entity surf.SynchronizerOneShot
    generic map (
       TPD_G           => TPD_G,
       RST_POLARITY_G  => '1',
@@ -415,7 +411,7 @@ begin
    -- clkIn     : 156.25 MHz PGP
    -- clkOut(0) : 100.00 MHz system clock
    -- clkOut(1) : 200.00 MHz IDELAYCTRL clock
-   U_CoreClockGen : entity work.ClockManager7
+   U_CoreClockGen : entity surf.ClockManager7
    generic map (
       INPUT_BUFG_G         => false,
       FB_BUFG_G            => true,
@@ -451,7 +447,7 @@ begin
    ---------------------
    -- Heart beat LED  --
    ---------------------
-   U_Heartbeat : entity work.Heartbeat
+   U_Heartbeat : entity surf.Heartbeat
    generic map(
       PERIOD_IN_G => 10.0E-9
    )   
@@ -473,7 +469,7 @@ begin
       gtTxP       => gtDataTxP,
       gtTxN       => gtDataTxN,
       -- Input power status
-      powerBad    => not(powerGood),
+      powerBad    => powerBad,
       -- Output reset
       pgpRst      => sysRst,
       -- Output status
@@ -510,10 +506,12 @@ begin
       pgpRxOut          => pgpRxOut
    );
    
+   powerBad <= not(powerGood);
+   
    ---------------------------------------------
    -- Microblaze based ePix Startup Sequencer --
    ---------------------------------------------
-   U_CPU : entity work.MicroblazeBasicCoreWrapper
+   U_CPU : entity surf.MicroblazeBasicCoreWrapper
    generic map (
       TPD_G            => TPD_G)
    port map (
@@ -534,7 +532,7 @@ begin
    -- Master 0 : PGP front end controller
    -- Master 1 : Microblaze startup controller
    --------------------------------------------
-   U_AxiLiteCrossbar : entity work.AxiLiteCrossbar
+   U_AxiLiteCrossbar : entity surf.AxiLiteCrossbar
    generic map (
       NUM_SLAVE_SLOTS_G  => NUM_AXI_SLAVE_SLOTS_C,
       NUM_MASTER_SLOTS_G => NUM_AXI_MASTER_SLOTS_C,
@@ -635,7 +633,7 @@ begin
    
    iAsicReady <= iAsicReady0 and iAsicReady1;
    
-   U_AxiStreamMux : entity work.AxiStreamMux
+   U_AxiStreamMux : entity surf.AxiStreamMux
    generic map(
       NUM_SLAVES_G   => 2
    )
@@ -717,7 +715,7 @@ begin
       asicAdc(i).chP   <= adcChP((i*8)+7 downto i*8);
       asicAdc(i).chN   <= adcChN((i*8)+7 downto i*8);
       
-      U_AdcReadout : entity work.Ad9249ReadoutGroup
+      U_AdcReadout : entity surf.Ad9249ReadoutGroup
       generic map (
          TPD_G             => TPD_G,
          NUM_CHANNELS_G    => 8,
@@ -754,7 +752,7 @@ begin
    -- Give a special reset to the SERDES blocks when power
    -- is turned on to ADC card.
    adcCardPowerUp <= powerEnable(0) and powerEnable(1) and powerEnable(2);
-   U_AdcCardPowerUpRisingEdge : entity work.SynchronizerEdge
+   U_AdcCardPowerUpRisingEdge : entity surf.SynchronizerEdge
    generic map (
       TPD_G       => TPD_G)
    port map (
@@ -762,7 +760,7 @@ begin
       dataIn      => adcCardPowerUp,
       risingEdge  => adcCardPowerUpEdge
    );
-   U_AdcCardPowerUpReset : entity work.RstSync
+   U_AdcCardPowerUpReset : entity surf.RstSync
    generic map (
       TPD_G           => TPD_G,
       RELEASE_DELAY_G => 50
@@ -777,7 +775,7 @@ begin
    -- ADC stream pattern tester              --
    --------------------------------------------
    
-   U_AdcTester : entity work.StreamPatternTester
+   U_AdcTester : entity surf.StreamPatternTester
    generic map (
       TPD_G             => TPD_G,
       NUM_CHANNELS_G    => 16
@@ -799,7 +797,7 @@ begin
    --     Fast ADC Config                    --
    --------------------------------------------
       
-   U_AdcConf : entity work.Ad9249Config
+   U_AdcConf : entity surf.Ad9249Config
    generic map (
       TPD_G             => TPD_G,
       AXIL_CLK_PERIOD_G => 10.0e-9,
@@ -868,7 +866,7 @@ begin
    ---------------------------------------------
    -- Microblaze log memory                   --
    ---------------------------------------------
-   U_LogMem : entity work.AxiDualPortRam
+   U_LogMem : entity surf.AxiDualPortRam
    generic map (
       TPD_G            => TPD_G,
       ADDR_WIDTH_G     => 10,
@@ -910,7 +908,7 @@ begin
       sysClkRst      => axiRst,
       adcData        => adcData,
       adcValid       => adcValid,
-      adcMarker      => (others=>iAsicSample),
+      adcMarker      => adcMarker,
       arm            => acqStart,
       acqStart       => acqStart,
       asicAcq        => acqStart,
@@ -934,10 +932,12 @@ begin
 
    );
    
+   adcMarker <= (others=>iAsicSample);
+   
    --------------------------
    -- AXI-Lite Version Module
    --------------------------          
-   U_AxiVersion : entity work.AxiVersion
+   U_AxiVersion : entity surf.AxiVersion
    generic map (
       TPD_G           => TPD_G,
       BUILD_INFO_G    => BUILD_INFO_G,
@@ -957,7 +957,7 @@ begin
    ---------------------
    -- FPGA Reboot Module
    ---------------------
-   U_Iprog7Series : entity work.Iprog7Series
+   U_Iprog7Series : entity surf.Iprog7Series
    generic map (
       TPD_G => TPD_G)   
    port map (
@@ -990,7 +990,7 @@ begin
    --------------------
    -- Boot Flash Module
    --------------------
-   U_AxiMicronN25QCore : entity work.AxiMicronN25QCore
+   U_AxiMicronN25QCore : entity surf.AxiMicronN25QCore
    generic map (
       TPD_G          => TPD_G,
       AXI_CLK_FREQ_G => 100.0E+6,   -- units of Hz
@@ -1017,7 +1017,7 @@ begin
    ---------------------------------------------------------------
    -- ASIC Stream Monitor
    --------------------- ------------------------------------------
-   U_AXIS_MON : entity work.AxiStreamMonAxiL
+   U_AXIS_MON : entity surf.AxiStreamMonAxiL
       generic map(
          TPD_G             => TPD_G,
          COMMON_CLK_G      => true,
@@ -1029,8 +1029,8 @@ begin
          -- AXIS Stream Interface
          axisClk           => coreClk,
          axisRst           => axiRst,
-         axisMaster        => doutAxisMaster,
-         axisSlave         => doutAxisSlave,
+         axisMasters       => doutAxisMaster,
+         axisSlaves        => doutAxisSlave,
          -- AXI lite slave port for register access
          axilClk           => coreClk,
          axilRst           => axiRst,

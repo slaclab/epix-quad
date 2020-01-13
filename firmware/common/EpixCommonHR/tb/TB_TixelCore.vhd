@@ -3,40 +3,37 @@
 -- Project       : Tixel Detector
 -------------------------------------------------------------------------------
 -- File          : TB_TixelCore.vhd
--- Author        : Maciej Kwiatkowski, mkwiatko@slac.stanford.edu
--- Created       : 01/19/2016
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -------------------------------------------------------------------------------
--- This file is part of 'CPIX Development Firmware'.
+-- This file is part of 'EPIX Development Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
 -- top-level directory of this distribution and at: 
 --    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'CPIX Development Firmware', including this file, 
+-- No part of 'EPIX Development Firmware', including this file, 
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 01/19/2016: created.
--------------------------------------------------------------------------------
 
 LIBRARY ieee;
-use work.all;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
+library surf;
+use surf.StdRtlPkg.all;
+use surf.Code8b10bPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
+use surf.SsiPkg.all;
+use surf.SsiCmdMasterPkg.all;
+use surf.Pgp2bPkg.all;
+
+use work.EpixPkgGen2.all;
+use work.TixelPkg.all;
+
 library unisim;
 use unisim.vcomponents.all;
-
-use work.StdRtlPkg.all;
-use work.Code8b10bPkg.all;
-use work.EpixPkgGen2.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
-use work.SsiPkg.all;
-use work.SsiCmdMasterPkg.all;
-use work.Pgp2bPkg.all;
-use work.TixelPkg.all;
 
 entity TB_TixelCore is 
 
@@ -354,7 +351,7 @@ begin
       CLR => '0'
    );
    
-   U_RdPwrUpRst : entity work.PwrUpRst
+   U_RdPwrUpRst : entity surf.PwrUpRst
    generic map (
       DURATION_G => 20000000,
       SIM_SPEEDUP_G => true
@@ -505,7 +502,7 @@ begin
    -------------------------------------------------------
    -- AXI stream mux
    -------------------------------------------------------
-   U_AxiStreamMux : entity work.AxiStreamMux
+   U_AxiStreamMux : entity surf.AxiStreamMux
    generic map(
       NUM_SLAVES_G   => NUMBER_OF_ASICS
    )

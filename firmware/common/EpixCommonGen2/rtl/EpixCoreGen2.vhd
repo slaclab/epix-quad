@@ -1,13 +1,6 @@
 -------------------------------------------------------------------------------
--- Title      : 
--------------------------------------------------------------------------------
 -- File       : EpixCoreGen2.vhd
--- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2015-03-17
--- Last update: 2016-08-07
--- Platform   : Vivado 2016.1
--- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
@@ -26,14 +19,16 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use IEEE.MATH_REAL.all;
 
-use work.StdRtlPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
+use surf.SsiPkg.all;
+use surf.SsiCmdMasterPkg.all;
+use surf.Ad9249Pkg.all;
+
 use work.EpixPkgGen2.all;
-use work.AxiPkg.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
-use work.SsiPkg.all;
-use work.SsiCmdMasterPkg.all;
-use work.Ad9249Pkg.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -265,7 +260,7 @@ begin
    ------------------------------------------
    -- clkIn     : 156.25 MHz PGP
    -- clkOut(0) : 129.6875 MHz system clock (Modify AXI_CLK_FREQ_C when changed)
-   U_CoreClockGen0 : entity work.ClockManager7
+   U_CoreClockGen0 : entity surf.ClockManager7
    generic map (
       INPUT_BUFG_G         => false,
       FB_BUFG_G            => true,
@@ -288,7 +283,7 @@ begin
    
    -- clkIn     : 156.25 MHz PGP
    -- clkOut(0) : 200.0 MHz IDELAYCTRL clock
-   U_CoreClockGen1 : entity work.ClockManager7
+   U_CoreClockGen1 : entity surf.ClockManager7
    generic map (
       INPUT_BUFG_G         => false,
       FB_BUFG_G            => true,
@@ -428,14 +423,14 @@ begin
    ---------------------------------------------
    -- Microblaze based ePix Startup Sequencer --
    ---------------------------------------------
-   U_MbRst : entity work.PwrUpRst
+   U_MbRst : entity surf.PwrUpRst
       port map (
          clk      => coreClk,
          arst     => axiRst,
          rstOut   => mbRst
       ); 
    
-   U_CPU : entity work.MicroblazeBasicCoreWrapper
+   U_CPU : entity surf.MicroblazeBasicCoreWrapper
    generic map (
       TPD_G            => TPD_G)
    port map (
@@ -458,7 +453,7 @@ begin
    -- Master 1 : Microblaze startup controller
    -- Master 2 : SACI multipixel controller
    --------------------------------------------
-   U_AxiLiteCrossbar : entity work.AxiLiteCrossbar
+   U_AxiLiteCrossbar : entity surf.AxiLiteCrossbar
    generic map (
       NUM_SLAVE_SLOTS_G  => 3,
       NUM_MASTER_SLOTS_G => NUM_AXI_MASTERS_C,
@@ -553,7 +548,7 @@ begin
    --------------------------------------------
    -- SACI interface controller              --
    -------------------------------------------- 
-   U_AxiLiteSaciMaster : entity work.AxiLiteSaciMaster
+   U_AxiLiteSaciMaster : entity surf.AxiLiteSaciMaster
    generic map (
       AXIL_CLK_PERIOD_G  => 1.0/AXI_CLK_FREQ_C, -- In units of seconds
       AXIL_TIMEOUT_G     => 1.0E-3,  -- In units of seconds
@@ -583,7 +578,7 @@ begin
    ---------------------------------------------
    G_MULTIPIX_EPIX10KA : if ASIC_TYPE_G = EPIX100A_C generate
    
-      U_SaciMultiPixel : entity work.SaciMultiPixel
+      U_SaciMultiPixel : entity surf.SaciMultiPixel
       generic map (
          MASK_REG_ADDR_G   => x"01000034",
          SACI_BASE_ADDR_G  => x"02000000"
@@ -711,7 +706,7 @@ begin
    ---------------------------------------------
    -- Microblaze log memory                   --
    ---------------------------------------------
-   U_LogMem : entity work.AxiDualPortRam
+   U_LogMem : entity surf.AxiDualPortRam
    generic map (
       TPD_G            => TPD_G,
       ADDR_WIDTH_G     => 10,
@@ -741,7 +736,7 @@ begin
    --------------------------
    -- AXI-Lite Version Module
    --------------------------          
-   U_AxiVersion : entity work.AxiVersion
+   U_AxiVersion : entity surf.AxiVersion
    generic map (
       TPD_G           => TPD_G,
       BUILD_INFO_G    => BUILD_INFO_G,
@@ -761,7 +756,7 @@ begin
    ---------------------
    -- FPGA Reboot Module
    ---------------------
-   U_Iprog7Series : entity work.Iprog7Series
+   U_Iprog7Series : entity surf.Iprog7Series
    generic map (
       TPD_G => TPD_G)   
    port map (
@@ -794,7 +789,7 @@ begin
    --------------------
    -- Boot Flash Module
    --------------------
-   U_AxiMicronN25QCore : entity work.AxiMicronN25QCore
+   U_AxiMicronN25QCore : entity surf.AxiMicronN25QCore
    generic map (
       TPD_G          => TPD_G,
       AXI_CLK_FREQ_G => AXI_CLK_FREQ_C,   -- units of Hz
@@ -855,7 +850,7 @@ begin
 --      calibComplete     => calibComplete
 --   );
 --   
---   U_AxiMemTester : entity work.AxiMemTester
+--   U_AxiMemTester : entity surf.AxiMemTester
 --   generic map (
 --      TPD_G            => TPD_G,
 --      START_ADDR_G     => START_ADDR_C,

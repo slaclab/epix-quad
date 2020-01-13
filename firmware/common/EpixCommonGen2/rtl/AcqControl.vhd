@@ -1,10 +1,9 @@
 -------------------------------------------------------------------------------
--- Title         : Acquisition Control Block
--- Project       : EPIX Readout
+-- Title      : Acquisition Control Block
+-- Project    : EPIX Readout
 -------------------------------------------------------------------------------
--- File          : AcqControl.vhd
--- Author        : Ryan Herbst, rherbst@slac.stanford.edu
--- Created       : 12/08/2011
+-- File       : AcqControl.vhd
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -- Acquisition control block
@@ -17,18 +16,15 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 12/08/2011: created.
--- [MK] 01/14/2016 - Removed unused sync modes and reset prepulse. 
--------------------------------------------------------------------------------
 
 LIBRARY ieee;
-use work.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
-use work.EpixPkgGen2.all;
-use work.StdRtlPkg.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+
 use work.EpixPkgGen2.all;
 
 library UNISIM;
@@ -196,7 +192,7 @@ begin
    -- ADC pulse signal allows counting of adc cycles in other blocks
    adcPulse <= adcClkEdge;
    
-   U_ReadStartEdge : entity work.SynchronizerEdge
+   U_ReadStartEdge : entity surf.SynchronizerEdge
       port map (
          clk        => sysClk,
          rst        => sysClkRst,
@@ -634,7 +630,7 @@ begin
    end process;
 
    -- Edge detection for signals that interface with other blocks
-   U_DataSendEdge : entity work.SynchronizerEdge
+   U_DataSendEdge : entity surf.SynchronizerEdge
       port map (
          clk        => sysClk,
          rst        => sysClkRst,
@@ -643,7 +639,7 @@ begin
       );
 
    -- rising edge of Acq
-   U_AcqEdge : entity work.SynchronizerEdge
+   U_AcqEdge : entity surf.SynchronizerEdge
       port map (
          clk         => sysClk,
          rst         => sysClkRst,

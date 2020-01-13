@@ -3,8 +3,7 @@
 -- Project       : CSPAD Detector
 -------------------------------------------------------------------------------
 -- File          : AdcCntrl.vhd
--- Author        : Ryan Herbst, rherbst@slac.stanford.edu
--- Created       : 09/27/2012
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -- This block is responsible for reading the strongback temperatures 
@@ -19,15 +18,12 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 09/27/2012: created.
--------------------------------------------------------------------------------
 
 LIBRARY ieee;
-use work.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
+
 use work.EpixTypes.all;
 
 entity AdcCntrl is 

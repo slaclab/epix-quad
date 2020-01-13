@@ -1,10 +1,9 @@
 -------------------------------------------------------------------------------
--- Title         : ADC Readout Control
--- Project       : ePixGen2
+-- Title      : ADC Readout Control
+-- Project    : ePixGen2
 -------------------------------------------------------------------------------
--- File          : AdcReadout.vhd
--- Author        : Kurtis Nishimura <kurtisn@slac.stanford.edu>
--- Created       : 2015-03-12
+-- File       : AdcReadout.vhd
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -- ADC Readout Controller
@@ -26,8 +25,9 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
 
 library UNISIM;
 use UNISIM.vcomponents.all;
@@ -142,7 +142,7 @@ begin
       );
 
    -- Regional clock reset
-   ADC_BITCLK_RST_SYNC : entity work.RstSync
+   ADC_BITCLK_RST_SYNC : entity surf.RstSync
       generic map (
          TPD_G           => TPD_G,
          RELEASE_DELAY_G => 5
@@ -273,10 +273,9 @@ begin
    --------------------------------------
    G_DataFifo : for i in 0 to NUM_CHANNELS_G-1 generate
       adcValid(i) <= iAdcValid(i);
-      U_DataFifo : entity work.SynchronizerFifo
+      U_DataFifo : entity surf.SynchronizerFifo
          generic map (
             TPD_G         => TPD_G,
-            BRAM_EN_G     => false,
             DATA_WIDTH_G  => 16,
             ADDR_WIDTH_G  => 4,
             INIT_G        => "0"

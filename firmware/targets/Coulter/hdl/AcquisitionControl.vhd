@@ -2,22 +2,17 @@
 -- Title      : Coulter Acquisition Control
 -------------------------------------------------------------------------------
 -- File       : AcquisitionControl.vhd
--- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2016-05-31
--- Last update: 2017-03-13
--- Platform   : 
--- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: Controls ASIC clocking for the ELINE100 ASIC.
 -------------------------------------------------------------------------------
--- This file is part of Coulter. It is subject to
--- the license terms in the LICENSE.txt file found in the top-level directory
--- of this distribution and at:
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
--- No part of Coulter, including this file, may be
--- copied, modified, propagated, or distributed except according to the terms
--- contained in the LICENSE.txt file.
+-- This file is part of 'EPIX Development Firmware'.
+-- It is subject to the license terms in the LICENSE.txt file found in the 
+-- top-level directory of this distribution and at: 
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
+-- No part of 'EPIX Development Firmware', including this file, 
+-- may be copied, modified, propagated, or distributed except according to 
+-- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
 library ieee;
@@ -25,12 +20,11 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
--- Surf packages
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
 
--- Coulter packages
 use work.AcquisitionControlPkg.all;
 
 entity AcquisitionControl is
@@ -164,7 +158,7 @@ architecture rtl of AcquisitionControl is
 begin
 
    -- Synchronize the Axi lite bus to distClk
-   U_AxiLiteAsync_1 : entity work.AxiLiteAsync
+   U_AxiLiteAsync_1 : entity surf.AxiLiteAsync
       generic map (
          TPD_G => TPD_G)
       port map (
@@ -182,7 +176,7 @@ begin
          mAxiWriteSlave  => r.axilWriteSlave);   -- [in]
 
    -- Synchronize trigger to distClk
-   U_SynchronizerEdge_1 : entity work.SynchronizerEdge
+   U_SynchronizerEdge_1 : entity surf.SynchronizerEdge
       generic map (
          TPD_G => TPD_G)
       port map (
@@ -193,7 +187,7 @@ begin
          risingEdge  => triggerRise,    -- [out]
          fallingEdge => open);          -- [out]
 
-   U_ClockDivider_SC : entity work.ClockDivider
+   U_ClockDivider_SC : entity surf.ClockDivider
       generic map (
          TPD_G => TPD_G)
       port map (
@@ -207,7 +201,7 @@ begin
          preFall    => scPreFall);        -- [out]
 
 
-   U_ClockDivider_MCK : entity work.ClockDivider
+   U_ClockDivider_MCK : entity surf.ClockDivider
       generic map (
          TPD_G => TPD_G)
       port map (
@@ -220,7 +214,7 @@ begin
          preRise    => mckPreRise,         --[out]
          preFall    => mckPreFall);        --[out]
 
-   U_ClockDivider_ADCCLK : entity work.ClockDivider
+   U_ClockDivider_ADCCLK : entity surf.ClockDivider
       generic map (
          TPD_G => TPD_G)
       port map (
@@ -231,7 +225,7 @@ begin
          delayCount => r.cfg.adcClkDelay,     -- [in]
          divClk     => iAdcClk);              -- [out]
 
-   U_SlvDelay_AdcWindow : entity work.SlvDelay
+   U_SlvDelay_AdcWindow : entity surf.SlvDelay
       generic map (
          TPD_G        => TPD_G,
          SRL_EN_G     => true,
@@ -244,7 +238,7 @@ begin
          din(0)  => r.acqStatus.adcWindow,  -- [in]
          dout(0) => acqStatus.adcWindow);   -- [out]
 
-   U_SlvDelay_AdcLast : entity work.SlvDelay
+   U_SlvDelay_AdcLast : entity surf.SlvDelay
       generic map (
          TPD_G        => TPD_G,
          SRL_EN_G     => true,

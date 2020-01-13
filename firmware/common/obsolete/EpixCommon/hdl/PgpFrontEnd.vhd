@@ -3,8 +3,7 @@
 -- Project       : General Purpose Core
 -------------------------------------------------------------------------------
 -- File          : PgpFrontEnd.vhd
--- Author        : Ryan Herbst, rherbst@slac.stanford.edu
--- Created       : 03/29/2011
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -- Wrapper for front end logic connection to the PGP card.
@@ -17,17 +16,18 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 03/29/2011: created.
--------------------------------------------------------------------------------
 
 LIBRARY ieee;
-use work.all;
-use work.VcPkg.all;
-use work.Pgp2CoreTypesPkg.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+
+use work.VcPkg.all;
+use work.Pgp2CoreTypesPkg.all;
+
 library UNISIM;
 use UNISIM.vcomponents.all;
 
@@ -110,7 +110,7 @@ begin
 
    -- Synchronize the register reset
    iresetReq <= resetReq or not(iPllLocked);
-   U_SyncReset : entity work.Synchronizer
+   U_SyncReset : entity surf.Synchronizer
       generic map (
          TPD_G          => 1 ns,
          RST_POLARITY_G => '1',
@@ -286,11 +286,6 @@ begin
          DEST_ID_G       => 0,
          DEST_MASK_G     => 0,
          GEN_SYNC_FIFO_G => false,
-         USE_DSP48_G     => "no",
-         ALTERA_SYN_G    => false,
-         ALTERA_RAM_G    => "M9K",
-         USE_BUILT_IN_G  => false,
-         XIL_DEVICE_G    => "VIRTEX5",   
          SYNC_STAGES_G   => 3,
          ETH_MODE_G      => false
       )
@@ -317,14 +312,9 @@ begin
          RST_ASYNC_G        => false,
          TX_LANES_G         => 1,
          GEN_SYNC_FIFO_G    => false,
-         BRAM_EN_G          => true,
-         FIFO_ADDR_WIDTH_G  => 9,
-         USE_DSP48_G        => "no",
-         ALTERA_SYN_G       => false,
-         ALTERA_RAM_G       => "M9K",
-         USE_BUILT_IN_G     => false, 
+         MEMORY_TYPE_G      => "block",
+         FIFO_ADDR_WIDTH_G  => 9, 
          LITTLE_ENDIAN_G    => false,
-         XIL_DEVICE_G       => "VIRTEX5",    
          FIFO_SYNC_STAGES_G => 3,
          FIFO_INIT_G        => "0",
          FIFO_FULL_THRES_G  => 256,  -- Almost full at 1/2 capacity
@@ -353,12 +343,7 @@ begin
          LANE_G          => 0,
          RST_ASYNC_G     => false,
          GEN_SYNC_FIFO_G => false,
-         BRAM_EN_G       => true,
-         USE_DSP48_G     => "no",
-         ALTERA_SYN_G    => false,
-         ALTERA_RAM_G    => "M9K",
-         USE_BUILT_IN_G  => false,
-         XIL_DEVICE_G    => "VIRTEX5",
+         MEMORY_TYPE_G   => "block",
          SYNC_STAGES_G   => 3,
          ETH_MODE_G      => false
       )
@@ -382,21 +367,16 @@ begin
          vcRxClk       => ipgpClk,
          vcRxRst       => ipgpClkRst);
 
-   -- Lane 0, VC2, Virtual oscillope channel
+   -- Lane 0, VC2, Virtual oscilloscope channel
    U_ScopeBuff : entity work.VcUsBuff32
       generic map (
          TPD_G              => 1 ns,
          RST_ASYNC_G        => false,
          TX_LANES_G         => 1,
          GEN_SYNC_FIFO_G    => false,
-         BRAM_EN_G          => true,
-         FIFO_ADDR_WIDTH_G  => 9,
-         USE_DSP48_G        => "no",
-         ALTERA_SYN_G       => false,
-         ALTERA_RAM_G       => "M9K",
-         USE_BUILT_IN_G     => false, 
+         MEMORY_TYPE_G      => "block",
+         FIFO_ADDR_WIDTH_G  => 9, 
          LITTLE_ENDIAN_G    => false,
-         XIL_DEVICE_G       => "VIRTEX5",    
          FIFO_SYNC_STAGES_G => 3,
          FIFO_INIT_G        => "0",
          FIFO_FULL_THRES_G  => 256,  -- Almost full at 1/2 capacity

@@ -1,10 +1,9 @@
 -------------------------------------------------------------------------------
--- Title         : ADC Readout Control
--- Project       : EPIX Readout
+-- Title      : ADC Readout Control
+-- Project    : EPIX Readout
 -------------------------------------------------------------------------------
--- File          : AdcReadout3x.vhd
--- Author        : Ryan Herbst, rherbst@slac.stanford.edu
--- Created       : 12/08/2011
+-- File       : AdcReadout3x.vhd
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -- ADC Readout Controller
@@ -17,18 +16,15 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 12/08/2011: created.
--- 03/12/2015: Adapted by Kurtis for ePix Gen2, 7 series interface.
--------------------------------------------------------------------------------
 
 LIBRARY ieee;
-use work.all;
 use ieee.std_logic_1164.all;
---use ieee.std_logic_arith.all;
---use ieee.std_logic_unsigned.all;
-use work.StdRtlPkg.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+
 use work.EpixPkgGen2.all;
+
 library UNISIM;
 use UNISIM.vcomponents.all;
 

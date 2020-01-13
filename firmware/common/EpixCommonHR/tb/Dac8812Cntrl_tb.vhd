@@ -1,29 +1,25 @@
 -------------------------------------------------------------------------------
--- Title      : Testbench for design "Dac8812Cntrl"
--- Project    : 
--------------------------------------------------------------------------------
 -- File       : Dac8812Cntrl_tb.vhd
--- Author     : Dionisio Doering  <ddoering@tid-pc94280.slac.stanford.edu>
--- Company    : 
--- Created    : 2017-05-22
--- Last update: 2017-05-22
--- Platform   : 
--- Standard   : VHDL'87
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
--- Description: 
+-- Description: Testbench for design "Dac8812Cntrl"
 -------------------------------------------------------------------------------
--- Copyright (c) 2017 
--------------------------------------------------------------------------------
--- Revisions  :
--- Date        Version  Author  Description
--- 2017-05-22  1.0      ddoering	Created
+-- This file is part of 'EPIX Development Firmware'.
+-- It is subject to the license terms in the LICENSE.txt file found in the 
+-- top-level directory of this distribution and at: 
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
+-- No part of 'EPIX Development Firmware', including this file, 
+-- may be copied, modified, propagated, or distributed except according to 
+-- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 
-use work.StdRtlPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+
 use work.EpixHRPkg.all;
 
 -------------------------------------------------------------------------------

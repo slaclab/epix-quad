@@ -1,24 +1,14 @@
 -------------------------------------------------------------------------------
--- Title      : 
--------------------------------------------------------------------------------
 -- File       : RegControlCpix.vhd
--- Author     : Maciej Kwiatkowski  <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 04/26/2016
--- Last update: 04/26/2016
--- Platform   : Vivado 2014.4
--- Standard   : VHDL'93/02
--------------------------------------------------------------------------------
--- Change log:
--- [MK] 04/26/2016 - Created
 -------------------------------------------------------------------------------
 -- Description: Cpix register controller
 -------------------------------------------------------------------------------
--- This file is part of 'CPIX Development Firmware'.
+-- This file is part of 'EPIX Development Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
 -- top-level directory of this distribution and at: 
 --    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'CPIX Development Firmware', including this file, 
+-- No part of 'EPIX Development Firmware', including this file, 
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
@@ -28,8 +18,10 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+
 use work.CpixPkg.all;
 
 library unisim;

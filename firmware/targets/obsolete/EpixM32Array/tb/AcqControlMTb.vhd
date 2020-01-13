@@ -1,16 +1,14 @@
 -------------------------------------------------------------------------------
 -- File       : AcqControlMTb.vhd
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2014-08-27
--- Last update: 2016-09-06
 -------------------------------------------------------------------------------
 -- Description: Testbench for design "AxiAds42lb69Core"
 -------------------------------------------------------------------------------
--- This file is part of 'SLAC Firmware Standard Library'.
+-- This file is part of 'EPIX Development Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
 -- top-level directory of this distribution and at: 
 --    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'SLAC Firmware Standard Library', including this file, 
+-- No part of 'EPIX Development Firmware', including this file, 
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
@@ -20,9 +18,10 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
 
 ----------------------------------------------------------------------------------------------------
 
@@ -153,7 +152,7 @@ begin
    
    iAsicReady <= iAsicReady0 and iAsicReady1;
    
-   U_AxiStreamMux : entity work.AxiStreamMux
+   U_AxiStreamMux : entity surf.AxiStreamMux
    generic map(
       NUM_SLAVES_G   => 2
    )

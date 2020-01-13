@@ -1,21 +1,14 @@
 -------------------------------------------------------------------------------
--- Title      : 
--------------------------------------------------------------------------------
 -- File       : PgpWrapper.vhd
--- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2017-01-25
--- Last update: 2017-01-27
--- Platform   : 
--- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- This file is part of 'Example Project Firmware'.
+-- This file is part of 'EPIX Development Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
 -- top-level directory of this distribution and at: 
 --    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'Example Project Firmware', including this file, 
+-- No part of 'EPIX Development Firmware', including this file, 
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
@@ -25,12 +18,14 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-use work.StdRtlPkg.all;
-use work.Pgp2bPkg.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
-use work.SsiPkg.all;
-use work.SsiCmdMasterPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.Pgp2bPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
+use surf.SsiPkg.all;
+use surf.SsiCmdMasterPkg.all;
+
 use work.EpixPkgGen2.all;
 
 entity PgpWrapper is
@@ -106,7 +101,7 @@ begin
    rxIn     <= pgpRxIn;
    pgpRxOut <= rxOut;
 
-   U_Pgp2bGtx7VarLat : entity work.Pgp2bGtx7VarLat
+   U_Pgp2bGtx7VarLat : entity surf.Pgp2bGtx7VarLat
       generic map (
          TPD_G             => TPD_G,
          -- CPLL Configurations
@@ -177,13 +172,12 @@ begin
          txDiffCtrl       => "1111");
 
    -- Lane 0, VC0 TX, streaming data out 
-   U_Vc0SsiTxFifo : entity work.AxiStreamFifo
+   U_Vc0SsiTxFifo : entity surf.AxiStreamFifoV2
       generic map (
          TPD_G               => TPD_G,
          --EN_FRAME_FILTER_G   => true,
          CASCADE_SIZE_G      => 1,
-         BRAM_EN_G           => true,
-         USE_BUILT_IN_G      => false,
+         MEMORY_TYPE_G       => "block",
          GEN_SYNC_FIFO_G     => true,
          FIFO_ADDR_WIDTH_G   => 14,
          FIFO_FIXED_THRESH_G => true,
@@ -203,11 +197,10 @@ begin
          mAxisSlave  => pgpTxSlaves(0));
 
    -- Lane 0, VC1 RX/TX, Register access control        
-   U_Vc1AxiMasterRegisters : entity work.SsiAxiLiteMaster
+   U_Vc1AxiMasterRegisters : entity surf.SsiAxiLiteMaster
       generic map (
          TPD_G               => TPD_G,
          GEN_SYNC_FIFO_G     => true,
-         USE_BUILT_IN_G      => false,
          EN_32BIT_ADDR_G     => true,
          AXI_STREAM_CONFIG_G => SSI_PGP2B_CONFIG_C)
       port map (
@@ -230,7 +223,7 @@ begin
          mAxiLiteReadMaster  => sAxilReadMasters(0),
          mAxiLiteReadSlave   => sAxilReadSlaves(0));
 
-   U_XBAR : entity work.AxiLiteCrossbar
+   U_XBAR : entity surf.AxiLiteCrossbar
       generic map (
          TPD_G              => TPD_G,
          DEC_ERROR_RESP_G   => AXI_ERROR_RESP_G,
@@ -282,11 +275,11 @@ begin
          -- 1-wire board ID interfaces
          serialIdIo      => serialIdIo);
 
-   U_SaciPrepRdout : entity work.AxiDualPortRam
+   U_SaciPrepRdout : entity surf.AxiDualPortRam
       generic map (
          TPD_G            => TPD_G,
          AXI_ERROR_RESP_G => AXI_ERROR_RESP_G,
-         BRAM_EN_G        => true,
+         MEMORY_TYPE_G    => "block",
          REG_EN_G         => true,
          ADDR_WIDTH_G     => RAM_WIDTH_C,
          DATA_WIDTH_G     => 32)
@@ -298,11 +291,11 @@ begin
          axiWriteMaster => mAxilWriteMasters(PREPRDOUT_AXI_INDEX_C),
          axiWriteSlave  => mAxilWriteSlaves(PREPRDOUT_AXI_INDEX_C));
 
-   U_SaciMultiPixel : entity work.AxiDualPortRam
+   U_SaciMultiPixel : entity surf.AxiDualPortRam
       generic map (
          TPD_G            => TPD_G,
          AXI_ERROR_RESP_G => AXI_ERROR_RESP_G,
-         BRAM_EN_G        => true,
+         MEMORY_TYPE_G    => "block",
          REG_EN_G         => true,
          ADDR_WIDTH_G     => RAM_WIDTH_C,
          DATA_WIDTH_G     => 32)
@@ -314,7 +307,7 @@ begin
          axiWriteMaster => mAxilWriteMasters(MULTIPIX_AXI_INDEX_C),
          axiWriteSlave  => mAxilWriteSlaves(MULTIPIX_AXI_INDEX_C));
 
-   U_Pgp2bAxi : entity work.Pgp2bAxi
+   U_Pgp2bAxi : entity surf.Pgp2bAxi
       generic map (
          TPD_G            => TPD_G,
          AXI_ERROR_RESP_G => AXI_ERROR_RESP_G,
@@ -335,11 +328,11 @@ begin
          axilWriteMaster => mAxilWriteMasters(PGPSTAT_AXI_INDEX_C),
          axilWriteSlave  => mAxilWriteSlaves(PGPSTAT_AXI_INDEX_C));
 
-   U_AxiLiteSaciMaster : entity work.AxiDualPortRam
+   U_AxiLiteSaciMaster : entity surf.AxiDualPortRam
       generic map (
          TPD_G            => TPD_G,
          AXI_ERROR_RESP_G => AXI_ERROR_RESP_G,
-         BRAM_EN_G        => true,
+         MEMORY_TYPE_G    => "block",
          REG_EN_G         => true,
          ADDR_WIDTH_G     => RAM_WIDTH_C,
          DATA_WIDTH_G     => 32)
@@ -351,7 +344,7 @@ begin
          axiWriteMaster => mAxilWriteMasters(SACIREGS_AXI_INDEX_C),
          axiWriteSlave  => mAxilWriteSlaves(SACIREGS_AXI_INDEX_C));
 
-   U_AxiVersion : entity work.AxiVersion
+   U_AxiVersion : entity surf.AxiVersion
       generic map (
          TPD_G            => TPD_G,
          BUILD_INFO_G     => BUILD_INFO_G,
@@ -367,7 +360,7 @@ begin
          axiClk         => clk,
          axiRst         => rst);
 
-   U_AxiMicronN25QCore : entity work.AxiMicronN25QCore
+   U_AxiMicronN25QCore : entity surf.AxiMicronN25QCore
       generic map (
          TPD_G            => TPD_G,
          AXI_ERROR_RESP_G => AXI_ERROR_RESP_G,
@@ -408,11 +401,11 @@ begin
 
    GEN_ADC :
    for i in 2 downto 0 generate
-      U_ADC : entity work.AxiDualPortRam
+      U_ADC : entity surf.AxiDualPortRam
          generic map (
             TPD_G            => TPD_G,
             AXI_ERROR_RESP_G => AXI_ERROR_RESP_G,
-            BRAM_EN_G        => true,
+            MEMORY_TYPE_G    => "block",
             REG_EN_G         => true,
             ADDR_WIDTH_G     => RAM_WIDTH_C,
             DATA_WIDTH_G     => 32)
@@ -425,11 +418,11 @@ begin
             axiWriteSlave  => mAxilWriteSlaves(ADC0_RD_AXI_INDEX_C+i));
    end generate GEN_ADC;
 
-   U_AdcConf : entity work.AxiDualPortRam
+   U_AdcConf : entity surf.AxiDualPortRam
       generic map (
          TPD_G            => TPD_G,
          AXI_ERROR_RESP_G => AXI_ERROR_RESP_G,
-         BRAM_EN_G        => true,
+         MEMORY_TYPE_G    => "block",
          REG_EN_G         => true,
          ADDR_WIDTH_G     => RAM_WIDTH_C,
          DATA_WIDTH_G     => 32)
@@ -441,13 +434,13 @@ begin
          axiWriteMaster => mAxilWriteMasters(ADC_CFG_AXI_INDEX_C),
          axiWriteSlave  => mAxilWriteSlaves(ADC_CFG_AXI_INDEX_C));
 
-   U_LogMem : entity work.AxiDualPortRam
+   U_LogMem : entity surf.AxiDualPortRam
       generic map (
          TPD_G            => TPD_G,
          AXI_ERROR_RESP_G => AXI_ERROR_RESP_G,
-         BRAM_EN_G        => true,
+         MEMORY_TYPE_G    => "block",
          REG_EN_G         => true,
-         ADDR_WIDTH_G     => 10,        -- only 10-bits in orginal code
+         ADDR_WIDTH_G     => 10,        -- only 10-bits in original code
          DATA_WIDTH_G     => 32)
       port map (
          axiClk         => clk,
@@ -457,7 +450,7 @@ begin
          axiWriteMaster => mAxilWriteMasters(MEM_LOG_AXI_INDEX_C),
          axiWriteSlave  => mAxilWriteSlaves(MEM_LOG_AXI_INDEX_C));
 
-   U_StartupInit : entity work.SlvArraytoAxiLite
+   U_StartupInit : entity surf.SlvArraytoAxiLite
       generic map (
          TPD_G        => TPD_G,
          COMMON_CLK_G => true,

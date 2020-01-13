@@ -2,14 +2,9 @@
 -- Title      : ReadoutControl
 -------------------------------------------------------------------------------
 -- File       : ReadoutControl.vhd
--- Author     : Benjamin Reese  <bareese@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2016-09-22
--- Last update: 2017-03-13
--- Platform   : 
--- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
--- Description: Filters incomming ADC data from multiple channels and builds
+-- Description: Filters incoming ADC data from multiple channels and builds
 -- event frames.
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Development Firmware'. It is subject to
@@ -26,10 +21,11 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
-use work.SsiPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
+use surf.SsiPkg.all;
 
 use work.AcquisitionControlPkg.all;
 use work.CoulterPkg.all;
@@ -57,9 +53,9 @@ entity ReadoutControl is
       dataAxisCtrl   : in  AxiStreamCtrlType;
 
       axilReadMaster  : in  AxiLiteReadMasterType  := AXI_LITE_READ_MASTER_INIT_C;
-      axilReadSlave   : out AxiLiteReadSlaveType;
+      axilReadSlave   : out AxiLiteReadSlaveType   := AXI_LITE_READ_SLAVE_EMPTY_DECERR_C;
       axilWriteMaster : in  AxiLiteWriteMasterType := AXI_LITE_WRITE_MASTER_INIT_C;
-      axilWriteSlave  : out AxiLiteWriteSlaveType);
+      axilWriteSlave  : out AxiLiteWriteSlaveType  := AXI_LITE_WRITE_SLAVE_EMPTY_DECERR_C);
 
 end entity ReadoutControl;
 
@@ -119,7 +115,7 @@ architecture rtl of ReadoutControl is
 begin
 
    -- Synchronize the Axi lite bus to adc stream clk
---    U_AxiLiteAsync_1 : entity work.AxiLiteAsync
+--    U_AxiLiteAsync_1 : entity surf.AxiLiteAsync
 --       generic map (
 --          TPD_G => TPD_G)
 --       port map (
@@ -136,7 +132,7 @@ begin
 --          mAxiWriteMaster => syncAxilWriteMaster,  -- [out]
 --          mAxiWriteSlave  => syncAxilWriteSlave);  -- [in]
 
---    U_AxiLiteCrossbar_1 : entity work.AxiLiteCrossbar
+--    U_AxiLiteCrossbar_1 : entity surf.AxiLiteCrossbar
 --       generic map (
 --          TPD_G              => TPD_G,
 --          NUM_SLAVE_SLOTS_G  => 1,
@@ -156,23 +152,23 @@ begin
 --          mAxiReadMasters     => locAxilReadMasters,   -- [out]
 --          mAxiReadSlaves      => locAxilReadSlaves);   -- [in]
 
-   U_AxiLiteEmpty_1 : entity work.AxiLiteEmpty
-      generic map (
-         TPD_G => TPD_G)
-      port map (
-         axiClk         => clk,              -- [in]
-         axiClkRst      => rst,              -- [in]
-         axiReadMaster  => axilReadMaster,   -- [in]
-         axiReadSlave   => axilReadSlave,    -- [out]
-         axiWriteMaster => axilWriteMaster,  -- [in]
-         axiWriteSlave  => axilWriteSlave);  -- [out]
+--   U_AxiLiteEmpty_1 : entity surf.AxiLiteEmpty
+--      generic map (
+--         TPD_G => TPD_G)
+--      port map (
+--         axiClk         => clk,              -- [in]
+--         axiClkRst      => rst,              -- [in]
+--         axiReadMaster  => axilReadMaster,   -- [in]
+--         axiReadSlave   => axilReadSlave,    -- [out]
+--         axiWriteMaster => axilWriteMaster,  -- [in]
+--         axiWriteSlave  => axilWriteSlave);  -- [out]
 
 
-   U_SynchronizerFifo_1 : entity work.SynchronizerFifo
+   U_SynchronizerFifo_1 : entity surf.SynchronizerFifo
       generic map (
          TPD_G        => TPD_G,
          COMMON_CLK_G => false,
-         BRAM_EN_G    => false,
+         MEMORY_TYPE_G=> "distributed",
          DATA_WIDTH_G => 1,
          ADDR_WIDTH_G => 4)
       port map (
@@ -210,7 +206,7 @@ begin
             filteredAxisSlave  => filteredAxisSlaves(i));  -- [in]
    end generate;
 
-   U_AxiStreamMux_1 : entity work.AxiStreamMux
+   U_AxiStreamMux_1 : entity surf.AxiStreamMux
       generic map (
          TPD_G         => TPD_G,
          NUM_SLAVES_G  => ADC_CHANNELS_C,

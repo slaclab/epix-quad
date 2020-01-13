@@ -2,40 +2,35 @@
 -- Title      : Cpix Detector Readout System Core
 -------------------------------------------------------------------------------
 -- File       : CpixCore.vhd
--- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 03/02/2016
--- Last update: 03/02/2016
--- Platform   : Vivado 2014.4
--- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- This file is part of 'CPIX Development Firmware'.
+-- This file is part of 'EPIX Development Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
 -- top-level directory of this distribution and at: 
 --    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'CPIX Development Firmware', including this file, 
+-- No part of 'EPIX Development Firmware', including this file, 
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
---
-
 
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-use work.StdRtlPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
+use surf.SsiPkg.all;
+use surf.SsiCmdMasterPkg.all;
+use surf.Pgp2bPkg.all;
+use surf.Ad9249Pkg.all;
+
 use work.EpixPkgGen2.all;
 use work.CpixPkg.all;
 use work.ScopeTypes.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
-use work.SsiPkg.all;
-use work.SsiCmdMasterPkg.all;
-use work.Pgp2bPkg.all;
-use work.Ad9249Pkg.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -302,7 +297,7 @@ begin
    saciSelL       <= iSaciSelL;
 
    -- Temporary one-shot for grabbing PGP op code
-   U_OpCodeEnOneShot : entity work.SynchronizerOneShot
+   U_OpCodeEnOneShot : entity surf.SynchronizerOneShot
       generic map (
          TPD_G           => TPD_G,
          RST_POLARITY_G  => '1',
@@ -328,7 +323,7 @@ begin
    ---------------------
    -- Heart beat LED  --
    ---------------------
-   U_Heartbeat : entity work.Heartbeat
+   U_Heartbeat : entity surf.Heartbeat
       generic map(
          PERIOD_IN_G => 10.0E-9
       )   
@@ -396,7 +391,7 @@ begin
    -- clkOut(1) : 200 MHz Idelaye2 calibration clock
    -- clkOut(2) : 100 MHz serial data bit clock
    -- clkOut(3) : 5 MHz ASIC readout clock
-   U_CoreClockGen : entity work.ClockManager7
+   U_CoreClockGen : entity surf.ClockManager7
    generic map (
       INPUT_BUFG_G         => false,
       FB_BUFG_G            => true,
@@ -447,7 +442,7 @@ begin
       CLR => '0'
    );
    
-   U_RdPwrUpRst : entity work.PwrUpRst
+   U_RdPwrUpRst : entity surf.PwrUpRst
    generic map (
       DURATION_G => 20000000
    )
@@ -570,7 +565,7 @@ begin
    -------------------------------------------------------
    -- AXI stream mux
    -------------------------------------------------------
-   U_AxiStreamMux : entity work.AxiStreamMux
+   U_AxiStreamMux : entity surf.AxiStreamMux
    generic map(
       NUM_SLAVES_G   => NUMBER_OF_ASICS
    )
@@ -653,7 +648,7 @@ begin
    -- Master 0 : PGP register controller     --
    -- Master 1 : Microblaze reg controller    --
    --------------------------------------------
-   U_AxiLiteCrossbar : entity work.AxiLiteCrossbar
+   U_AxiLiteCrossbar : entity surf.AxiLiteCrossbar
       generic map (
          NUM_SLAVE_SLOTS_G  => CPIX_NUM_AXI_SLAVE_SLOTS_C,
          NUM_MASTER_SLOTS_G => CPIX_NUM_AXI_MASTER_SLOTS_C,
@@ -670,7 +665,7 @@ begin
          axiClk              => coreClk,
          axiClkRst           => axiRst);
    
-   U_AxiLiteEmpty0 : entity work.AxiLiteEmpty
+   U_AxiLiteEmpty0 : entity surf.AxiLiteEmpty
       generic map (
          TPD_G            => TPD_G,
          AXI_ERROR_RESP_G => AXI_RESP_DECERR_C)
@@ -682,7 +677,7 @@ begin
          axiWriteMaster => mAxiWriteMasters(ADC0_RD_AXI_INDEX_C),
          axiWriteSlave  => mAxiWriteSlaves(ADC0_RD_AXI_INDEX_C));   
          
-   U_AxiLiteEmpty1 : entity work.AxiLiteEmpty
+   U_AxiLiteEmpty1 : entity surf.AxiLiteEmpty
       generic map (
          TPD_G            => TPD_G,
          AXI_ERROR_RESP_G => AXI_RESP_DECERR_C)
@@ -822,7 +817,7 @@ begin
    monAdc.chP   <= adcChP(19 downto 16);
    monAdc.chN   <= adcChN(19 downto 16);
       
-   U_MonAdcReadout : entity work.Ad9249ReadoutGroup
+   U_MonAdcReadout : entity surf.Ad9249ReadoutGroup
    generic map (
       TPD_G             => TPD_G,
       NUM_CHANNELS_G    => 4,
@@ -856,7 +851,7 @@ begin
    -- Give a special reset to the SERDES blocks when power
    -- is turned on to ADC card.
    adcCardPowerUp <= epixConfig.powerEnable(0) and epixConfig.powerEnable(1) and epixConfig.powerEnable(2);
-   U_AdcCardPowerUpRisingEdge : entity work.SynchronizerEdge
+   U_AdcCardPowerUpRisingEdge : entity surf.SynchronizerEdge
    generic map (
       TPD_G       => TPD_G)
    port map (
@@ -864,7 +859,7 @@ begin
       dataIn      => adcCardPowerUp,
       risingEdge  => adcCardPowerUpEdge
    );
-   U_AdcCardPowerUpReset : entity work.RstSync
+   U_AdcCardPowerUpReset : entity surf.RstSync
    generic map (
       TPD_G           => TPD_G,
       RELEASE_DELAY_G => 50
@@ -879,7 +874,7 @@ begin
    --     Fast ADC Config                    --
    --------------------------------------------
       
-   U_AdcConf : entity work.Ad9249ConfigNoPullup
+   U_AdcConf : entity surf.Ad9249ConfigNoPullup
    generic map (
       TPD_G             => TPD_G,
       CLK_PERIOD_G      => 10.0e-9,
@@ -936,7 +931,7 @@ begin
    );
    
    --------------------------------------------
-   --    Environmental data convertion LUTs  --
+   --    Environmental data conversion LUTs  --
    -------------------------------------------- 
    
    U_AdcEnv : entity work.SlowAdcLUT

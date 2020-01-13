@@ -1,13 +1,10 @@
 -------------------------------------------------------------------------------
--- Title         : AsicStreamAxi
--- Project       : Tixel Detector
--------------------------------------------------------------------------------
--- File          : TestStructureHrAsicStreamAxi.vhd
--- Created       : 8/27/2017
+-- File       : TestStructureHrAsicStreamAxi.vhd
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -------------------------------------------------------------------------------
--- This file is part of 'Tixel Development Firmware'.
+-- This file is part of 'EPIX Development Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
 -- top-level directory of this distribution and at: 
 --    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
@@ -15,19 +12,17 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 8/27/2017: created.
--------------------------------------------------------------------------------
 
 LIBRARY ieee;
-use work.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
-use work.SsiPkg.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
+use surf.SsiPkg.all;
 
 entity TestStructureHrAsicStreamAxi is 
    generic (
@@ -202,7 +197,7 @@ begin
    rxValidCs <= rxValid;   -- for chipscope
    
    -- synchronizers
-   Sync1_U : entity work.Synchronizer
+   Sync1_U : entity surf.Synchronizer
    port map (
       clk     => rxClk,
       rst     => rxRst,
@@ -235,7 +230,7 @@ begin
    -- async fifo for data
    -- for synchronization and small data pipeline
    -- not to store the whole frame
-   DataFifo_U : entity work.FifoCascade
+   DataFifo_U : entity surf.FifoCascade
    generic map (
       GEN_SYNC_FIFO_G   => false,
       FWFT_EN_G         => true,
@@ -263,7 +258,7 @@ begin
    
    -- axi stream fifo
    -- must be able to store whole frame if AXIS is muxed
-   AxisFifo_U: entity work.AxiStreamFifo
+   AxisFifo_U: entity surf.AxiStreamFifoV2
    generic map(
       GEN_SYNC_FIFO_G      => false,
       FIFO_ADDR_WIDTH_G    => 13,

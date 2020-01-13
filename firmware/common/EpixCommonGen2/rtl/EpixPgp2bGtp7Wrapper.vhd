@@ -2,12 +2,7 @@
 -- Title      : Example Code
 -------------------------------------------------------------------------------
 -- File       : EpixPgp2bGtp7Wrapper.vhd
--- Author     : Kurtis Nishimura <kurtisn@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2015-01-29
--- Last update: 2015-01-30
--- Platform   : 
--- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: Example PGP2b front end wrapper
 -- Note: Kurtis forked this from Larry's version of Pgp2bGtp7VarLatWrapper.vhd
@@ -25,9 +20,10 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-use work.StdRtlPkg.all;
-use work.AxiStreamPkg.all;
-use work.Pgp2bPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiStreamPkg.all;
+use surf.Pgp2bPkg.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -125,7 +121,7 @@ begin
          I => refClkDiv2,
          O => stableClock);          
 
-   RstSync_Inst : entity work.RstSync
+   RstSync_Inst : entity surf.RstSync
       generic map(
          TPD_G => TPD_G)   
       port map (
@@ -138,7 +134,7 @@ begin
          I => pgpTxRecClock,
          O => pgpClock);
          
-   -- ClockManager7_Inst : entity work.ClockManager7
+   -- ClockManager7_Inst : entity surf.ClockManager7
       -- generic map(
          -- TPD_G              => TPD_G,
          -- TYPE_G             => "MMCM",
@@ -168,7 +164,7 @@ begin
    pllLockDetClk(1) <= stableClock;
    qPllReset(1)     <= pgpReset or gtQPllReset(1);
 
-   Quad_Pll_Inst : entity work.Gtp7QuadPll
+   Quad_Pll_Inst : entity surf.Gtp7QuadPll
       generic map (
          TPD_G                => TPD_G,
          PLL0_REFCLK_SEL_G    => QPLL_REFCLK_SEL_G,
@@ -188,7 +184,7 @@ begin
          qPllRefClkLost => gtQPllRefClkLost,
          qPllReset      => qPllReset);            
 
-   Pgp2bGtp7VarLat_Inst : entity work.Pgp2bGtp7VarLat
+   Pgp2bGtp7VarLat_Inst : entity surf.Pgp2bGtp7VarLat
       generic map (
          TPD_G            => TPD_G,
          -- MGT Configurations

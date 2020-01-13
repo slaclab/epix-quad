@@ -1,15 +1,14 @@
 -------------------------------------------------------------------------------
 -- File       : EpixQuadCore.vhd
--- Created    : 2017-06-09
--- Last update: 2017-10-13
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description: EpixQuadCore Target's Top Level
 -------------------------------------------------------------------------------
--- This file is part of 'EPIX Firmware'.
+-- This file is part of 'EPIX Development Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
 -- top-level directory of this distribution and at: 
 --    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Firmware', including this file, 
+-- No part of 'EPIX Development Firmware', including this file, 
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
@@ -19,10 +18,11 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 
-use work.StdRtlPkg.all;
-use work.AxiPkg.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -265,7 +265,7 @@ begin
    --------------------------------
    -- Microblaze Embedded Processor
    --------------------------------
-   U_CPU : entity work.MicroblazeBasicCoreWrapper
+   U_CPU : entity surf.MicroblazeBasicCoreWrapper
       generic map (
          TPD_G           => TPD_G,
          AXIL_ADDR_MSB_C => false)      -- false = [0x00000000:0xFFFFFFFF]
@@ -281,14 +281,14 @@ begin
          clk              => sysClk,
          rst              => sysRst);
    
-   U_AdcStartEdge : entity work.SynchronizerEdge
+   U_AdcStartEdge : entity surf.SynchronizerEdge
       port map (
          clk         => sysClk,
          rst         => sysRst,
          dataIn      => adcReqStart,
          risingEdge  => iAdcReqStart);
          
-   U_DcdcEnEdge : entity work.SynchronizerEdge
+   U_DcdcEnEdge : entity surf.SynchronizerEdge
       port map (
          clk         => sysClk,
          rst         => sysRst,
@@ -296,7 +296,7 @@ begin
          risingEdge  => iDcDcEn2);
    mbIrq(0) <= iDcDcEn2 or iAdcReqStart;
    
-   U_AdcTestEdge : entity work.SynchronizerEdge
+   U_AdcTestEdge : entity surf.SynchronizerEdge
       port map (
          clk         => sysClk,
          rst         => sysRst,
@@ -308,7 +308,7 @@ begin
    --------------------------------------------------------
    -- AXI-Lite: Crossbar
    --------------------------------------------------------
-   U_XBAR0 : entity work.AxiLiteCrossbar
+   U_XBAR0 : entity surf.AxiLiteCrossbar
       generic map (
          TPD_G              => TPD_G,
          NUM_SLAVE_SLOTS_G  => 2,
@@ -557,7 +557,7 @@ begin
    
    GEN_VEC2 : for i in 1 downto 0 generate
       
-      U_RoClkOutBufDiff : entity work.OutputBufferReg
+      U_RoClkOutBufDiff : entity surf.OutputBufferReg
       generic map (
          TPD_G       => TPD_G,
          DIFF_PAIR_G => true
@@ -603,7 +603,7 @@ begin
    
    GEN_VEC5 : for i in 4 downto 0 generate
       
-      U_AdcClkOutBufDiff : entity work.OutputBufferReg
+      U_AdcClkOutBufDiff : entity surf.OutputBufferReg
       generic map (
          TPD_G       => TPD_G,
          DIFF_PAIR_G => true

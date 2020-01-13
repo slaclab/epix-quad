@@ -3,25 +3,30 @@
 -- Project       : EPIX Readout
 -------------------------------------------------------------------------------
 -- File          : EpixStartupGen2.vhd
--- Author        : Kurtis Nishimura, kurtisn@slac.stanford.edu
--- Created       : 04/09/2015
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -- Epix startup calibrations
 -------------------------------------------------------------------------------
--- Copyright (c) 2015 by SLAC. All rights reserved.
--------------------------------------------------------------------------------
--- Modification history:
--- 04/06/2015: created.
+-- This file is part of 'EPIX Development Firmware'.
+-- It is subject to the license terms in the LICENSE.txt file found in the 
+-- top-level directory of this distribution and at: 
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
+-- No part of 'EPIX Development Firmware', including this file, 
+-- may be copied, modified, propagated, or distributed except according to 
+-- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
 LIBRARY ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
-use work.StdRtlPkg.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+
 use work.EpixPkgGen2.all;
-use work.AxiLitePkg.all;
 
 entity EpixStartupGen2 is
    generic (

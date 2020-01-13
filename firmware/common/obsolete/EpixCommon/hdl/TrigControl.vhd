@@ -1,10 +1,9 @@
 -------------------------------------------------------------------------------
--- Title         : Trigger Control
--- Project       : EPIX Readout
+-- Title      : Trigger Control
+-- Project    : EPIX Readout
 -------------------------------------------------------------------------------
--- File          : TrigControl.vhd
--- Author        : Ryan Herbst, rherbst@slac.stanford.edu
--- Created       : 05/21/2013
+-- File       : TrigControl.vhd
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -- Trigger control block
@@ -17,17 +16,18 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 12/08/2011: created.
--------------------------------------------------------------------------------
 
 LIBRARY ieee;
-use work.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+
 use work.EpixTypes.all;
 use work.VcPkg.all;
+
 library UNISIM;
 use UNISIM.vcomponents.all;
 
@@ -126,7 +126,7 @@ begin
    --------------------------------
 
    -- Edge Detect
-   U_RunEdge : entity work.SynchronizerEdge 
+   U_RunEdge : entity surf.SynchronizerEdge 
       port map (
          clk        => sysClk,
          rst        => sysClkRst,
@@ -179,7 +179,7 @@ begin
    --------------------------------
 
    -- Edge Detect
-   U_AcqEdge : entity work.SynchronizerEdge 
+   U_AcqEdge : entity surf.SynchronizerEdge 
       port map (
          clk        => sysClk,
          rst        => sysClkRst,

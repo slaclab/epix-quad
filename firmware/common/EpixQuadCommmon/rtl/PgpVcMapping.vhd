@@ -1,16 +1,14 @@
 -------------------------------------------------------------------------------
 -- File       : PgpVcMapping.vhd
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2015-01-30
--- Last update: 2017-10-13
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- This file is part of 'EPIX Firmware'.
+-- This file is part of 'EPIX Development Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
 -- top-level directory of this distribution and at: 
 --    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Firmware', including this file, 
+-- No part of 'EPIX Development Firmware', including this file, 
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
@@ -18,12 +16,13 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-use work.StdRtlPkg.all;
-use work.AxiStreamPkg.all;
-use work.SsiPkg.all;
-use work.AxiLitePkg.all;
-use work.Pgp2bPkg.all;
-use work.SsiCmdMasterPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiStreamPkg.all;
+use surf.SsiPkg.all;
+use surf.AxiLitePkg.all;
+use surf.Pgp2bPkg.all;
+use surf.SsiCmdMasterPkg.all;
 
 entity PgpVcMapping is
    generic (
@@ -75,7 +74,7 @@ architecture mapping of PgpVcMapping is
 begin
    
    -- VC1 RX/TX, SRPv3 Register Module    
-   U_VC1 : entity work.SrpV3AxiLite
+   U_VC1 : entity surf.SrpV3AxiLite
       generic map (
          TPD_G               => TPD_G,
          SLAVE_READY_EN_G    => SIMULATION_G,
@@ -102,7 +101,7 @@ begin
          mAxilWriteSlave  => axilWriteSlave);
 
    -- VC0 TX, Image Data
-   U_VC0_TX : entity work.AxiStreamFifoV2
+   U_VC0_TX : entity surf.AxiStreamFifoV2
       generic map (
          -- General Configurations
          TPD_G               => TPD_G,
@@ -110,8 +109,7 @@ begin
          SLAVE_READY_EN_G    => true,
          VALID_THOLD_G       => 1,
          -- FIFO configurations
-         BRAM_EN_G           => true,
-         USE_BUILT_IN_G      => false,
+         MEMORY_TYPE_G       => "block",
          GEN_SYNC_FIFO_G     => false,
          CASCADE_SIZE_G      => 1,
          FIFO_ADDR_WIDTH_G   => 10,
@@ -134,7 +132,7 @@ begin
 
 
    -- VC0 RX, Command processor
-   U_VC0_RX : entity work.SsiCmdMaster
+   U_VC0_RX : entity surf.SsiCmdMaster
       generic map (
          SLAVE_READY_EN_G    => SIMULATION_G,
          AXI_STREAM_CONFIG_G => AXI_STREAM_CONFIG_G)
@@ -151,7 +149,7 @@ begin
          cmdMaster   => ssiCmdVc0
          );
    -- Command opCode x00 - SW trigger
-   U_TrigPulser : entity work.SsiCmdMasterPulser
+   U_TrigPulser : entity surf.SsiCmdMasterPulser
       generic map (
          TPD_G          => TPD_G,
          OUT_POLARITY_G => '1',
@@ -171,7 +169,7 @@ begin
    -- VC2 TX, Scope Data
    rxCtrl(2)   <= AXI_STREAM_CTRL_UNUSED_C;
    rxSlaves(2) <= AXI_STREAM_SLAVE_INIT_C;
-   U_VC2 : entity work.AxiStreamFifoV2
+   U_VC2 : entity surf.AxiStreamFifoV2
       generic map (
          -- General Configurations
          TPD_G               => TPD_G,
@@ -179,8 +177,7 @@ begin
          SLAVE_READY_EN_G    => true,
          VALID_THOLD_G       => 1,
          -- FIFO configurations
-         BRAM_EN_G           => true,
-         USE_BUILT_IN_G      => false,
+         MEMORY_TYPE_G       => "block",
          GEN_SYNC_FIFO_G     => false,
          CASCADE_SIZE_G      => 1,
          FIFO_ADDR_WIDTH_G   => 10,
@@ -202,7 +199,7 @@ begin
          mAxisSlave  => txSlaves(2));
 
    -- VC3 TX, Monitor Data
-   U_VC3 : entity work.AxiStreamFifoV2
+   U_VC3 : entity surf.AxiStreamFifoV2
       generic map (
          -- General Configurations
          TPD_G               => TPD_G,
@@ -210,8 +207,7 @@ begin
          SLAVE_READY_EN_G    => true,
          VALID_THOLD_G       => 1,
          -- FIFO configurations
-         BRAM_EN_G           => true,
-         USE_BUILT_IN_G      => false,
+         MEMORY_TYPE_G       => "block",
          GEN_SYNC_FIFO_G     => false,
          CASCADE_SIZE_G      => 1,
          FIFO_ADDR_WIDTH_G   => 10,
@@ -233,7 +229,7 @@ begin
          mAxisSlave  => txSlaves(3));
    
    -- VC3 RX, Command processor
-   U_VC3_RX : entity work.SsiCmdMaster
+   U_VC3_RX : entity surf.SsiCmdMaster
       generic map (
          SLAVE_READY_EN_G    => SIMULATION_G,
          AXI_STREAM_CONFIG_G => AXI_STREAM_CONFIG_G
@@ -251,7 +247,7 @@ begin
          cmdMaster   => ssiCmdVc3
          );
    -- Command opCode x00 - Disable Monitor Stream
-   U_MonDisPulser : entity work.SsiCmdMasterPulser
+   U_MonDisPulser : entity surf.SsiCmdMasterPulser
       generic map (
          TPD_G          => TPD_G,
          OUT_POLARITY_G => '1',
@@ -268,7 +264,7 @@ begin
          locRst      => sysRst);
    
    -- Command opCode x01 - Enable Monitor Stream
-   U_MonEnPulser : entity work.SsiCmdMasterPulser
+   U_MonEnPulser : entity surf.SsiCmdMasterPulser
       generic map (
          TPD_G          => TPD_G,
          OUT_POLARITY_G => '1',

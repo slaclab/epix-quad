@@ -67,6 +67,7 @@ set_clock_groups -asynchronous \
     -group [get_clocks {axilClk}] \    
     -group [get_clocks {dnaClkInv}] \
 
+set_clock_groups -asynchronous -group [get_clocks -of_objects [get_pins U_CtrlClockManager7/MmcmGen.U_Mmcm/CLKOUT2]] -group [get_clocks dnaClkInv]
 
 #######################################
 ## Pin locations, IO standards, etc. ##
