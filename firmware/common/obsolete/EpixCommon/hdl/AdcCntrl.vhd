@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
--- Title         : AD7490/Adc7928 ADC Controller
--- Project       : CSPAD Detector
+-- Title      : AD7490/Adc7928 ADC Controller
+-- Project    : CSPAD Detector
 -------------------------------------------------------------------------------
--- File          : AdcCntrl.vhd
+-- File       : AdcCntrl.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
