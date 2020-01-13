@@ -27,7 +27,7 @@ puts "PrjTclPath: ${PrjTclPath}"
 set SDK_PRJ_RDY false
 set SDK_RETRY_CNT 0
 while { ${SDK_PRJ_RDY} != true } {
-   set src_rc [catch {exec xsdk -batch -source ${PrjTclPath}/vivado/sdk_prj.tcl >@stdout}]
+   set src_rc [catch {exec xsdk -batch -source ${PrjTclPath}/MicroblazeBasicCore/sdk/prj.tcl >@stdout}]
    if {$src_rc} {
       puts "\n********************************************************"
       puts "Retrying to build SDK project"
