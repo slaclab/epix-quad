@@ -1,10 +1,9 @@
 -------------------------------------------------------------------------------
--- Title         : DelayManager
--- Project       : EPIX Readout
+-- Title      : DelayManager
+-- Project    : EPIX Readout
 -------------------------------------------------------------------------------
--- File          : DelayManager.vhd
--- Author        : Kurtis Nishimura, kurtisn@slac.stanford.edu
--- Created       : 12/08/2011
+-- File       : DelayManager.vhd
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -- IDELAY/ODELAY interface for Virtex 5.
@@ -17,17 +16,17 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 07/23/2014: created.
--------------------------------------------------------------------------------
 
 LIBRARY ieee;
-use work.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
-use work.StdRtlPkg.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+
 use work.EpixTypes.all;
+
 library UNISIM;
 use UNISIM.vcomponents.all;
 

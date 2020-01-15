@@ -1,4 +1,4 @@
-export GIT_BYPASS = 0
+#export GIT_BYPASS = 0
 
 # Use the PGPv3 6G core
 export INCLUDE_PGP3_6G = 1

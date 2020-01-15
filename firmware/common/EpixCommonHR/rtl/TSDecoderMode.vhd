@@ -1,18 +1,16 @@
 -------------------------------------------------------------------------------
 -- File       : TSDecoderMode.vhd
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2014-07-14
--- Last update: 2018-06-29
 -------------------------------------------------------------------------------
 -- Description: The test structure sends data in different way depending on the
 -- selected mode (using SACI registers). This modules adapts the data from the
 -- TS to the same format as the serial streaming used by the regular dataout.
 -------------------------------------------------------------------------------
--- This file is part of 'SLAC Firmware Standard Library'.
+-- This file is part of 'EPIX Development Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
 -- top-level directory of this distribution and at: 
 --    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'SLAC Firmware Standard Library', including this file, 
+-- No part of 'EPIX Development Firmware', including this file, 
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
@@ -22,7 +20,8 @@ use ieee.std_logic_1164.all;
 use IEEE.STD_LOGIC_UNSIGNED.all;
 use IEEE.STD_LOGIC_ARITH.all;
 
-use work.StdRtlPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
 
 entity TSDecoderMode is
 
@@ -90,7 +89,7 @@ begin
 
   validOut  <= validOutOneShot;
   
-  Sync1_U : entity work.Synchronizer
+  Sync1_U : entity surf.Synchronizer
    port map (
       clk     => clk,
       rst     => rst,
@@ -98,7 +97,7 @@ begin
       dataOut => validInSync
    );
 
-  Sync2_U : entity work.SynchronizerVector
+  Sync2_U : entity surf.SynchronizerVector
    port map (
       clk     => clk,
       rst     => rst,
@@ -106,7 +105,7 @@ begin
       dataOut => dataInSync
    );
 
-   Sync3_U : entity work.SynchronizerOneShot
+   Sync3_U : entity surf.SynchronizerOneShot
    port map (
       clk     => clk,
       rst     => rst,

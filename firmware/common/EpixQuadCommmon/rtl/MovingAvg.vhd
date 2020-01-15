@@ -1,16 +1,14 @@
 -------------------------------------------------------------------------------
 -- File       : MovingAvg.vhd
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2017-07-14
--- Last update: 2017-07-14
 -------------------------------------------------------------------------------
 -- Description:
 -------------------------------------------------------------------------------
--- This file is part of 'LZ Test Stand Firmware'.
+-- This file is part of 'EPIX Development Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
 -- top-level directory of this distribution and at: 
 --    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'LZ Test Stand Firmware', including this file, 
+-- No part of 'EPIX Development Firmware', including this file, 
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
@@ -20,7 +18,8 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 
-use work.StdRtlPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
 
 entity MovingAvg is
    generic (
@@ -203,7 +202,7 @@ begin
    -- Streaming out FIFO
    ----------------------------------------------------------------------
    
-   U_FifoCascade : entity work.FifoCascade
+   U_FifoCascade : entity surf.FifoCascade
    generic map (
       TPD_G                => TPD_G,
       CASCADE_SIZE_G       => 1,

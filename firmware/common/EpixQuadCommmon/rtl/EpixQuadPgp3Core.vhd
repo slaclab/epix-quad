@@ -1,16 +1,14 @@
 -------------------------------------------------------------------------------
 -- File       : EpixQuadPgp3Core.vhd
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2018-02-04
--- Last update: 2018-10-05
 -------------------------------------------------------------------------------
 -- Description: EPIX EpixQuadPgp3Core Target's Top Level
 -------------------------------------------------------------------------------
--- This file is part of 'EPIX Firmware'.
+-- This file is part of 'EPIX Development Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
 -- top-level directory of this distribution and at: 
 --    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Firmware', including this file, 
+-- No part of 'EPIX Development Firmware', including this file, 
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
@@ -20,10 +18,11 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
-use work.Pgp3Pkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
+use surf.Pgp3Pkg.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -120,7 +119,7 @@ begin
          DIV     => "000",              -- Divide by 1
          O       => fabClk);            -- 156.25MHz (Divide by 1)
 
-   U_PwrUpRst : entity work.PwrUpRst
+   U_PwrUpRst : entity surf.PwrUpRst
       generic map (
          TPD_G          => TPD_G,
          SIM_SPEEDUP_G  => SIM_SPEEDUP_G,
@@ -131,7 +130,7 @@ begin
          rstOut => fabRst);
    
    -- clkOut(0) - 100.00 MHz
-   U_PLL1 : entity work.ClockManagerUltraScale
+   U_PLL1 : entity surf.ClockManagerUltraScale
       generic map(
          TPD_G             => TPD_G,
          TYPE_G            => "MMCM",
@@ -158,7 +157,7 @@ begin
    sysClk <= iSysClk;
    sysRst <= iSysRst;
 
-   U_RstPipeline : entity work.RstPipeline
+   U_RstPipeline : entity surf.RstPipeline
       generic map (
          TPD_G => TPD_G)
       port map (
@@ -174,7 +173,7 @@ begin
       signal qpllRst    : Slv2Array(3 downto 0) := (others => "00");
    begin
       
-      U_QPLL : entity work.Pgp3GthUsQpll
+      U_QPLL : entity surf.Pgp3GthUsQpll
          generic map (
             TPD_G       => TPD_G,
             RATE_G      => RATE_G, -- "10.3125Gbps" or "6.25Gbps"    
@@ -192,7 +191,7 @@ begin
             qpllRst     => qpllRst
          );
    
-      U_PGP : entity work.Pgp3GthUs
+      U_PGP : entity surf.Pgp3GthUs
          generic map (
             TPD_G             => TPD_G,
             RATE_G            => RATE_G,
@@ -244,7 +243,7 @@ begin
       
    G_PGP_SIM : if SIMULATION_G = true generate
       G_DESTS : for j in 3 downto 0 generate
-         U_PGP_SIM : entity work.RogueStreamSimWrap
+         U_PGP_SIM : entity surf.RogueStreamSimWrap
             generic map (
                TPD_G               => TPD_G,
                DEST_ID_G           => j,
@@ -268,7 +267,7 @@ begin
       end generate G_DESTS;
          
       -- clkOut(0) - 156.25 MHz
-      U_PLL0 : entity work.ClockManagerUltraScale
+      U_PLL0 : entity surf.ClockManagerUltraScale
          generic map(
             TPD_G             => TPD_G,
             TYPE_G            => "PLL",
@@ -338,7 +337,7 @@ begin
    -- Any op code is a trigger, actual op
    -- code is the fiducial.
    -----------------------------------------
-   U_PgpSideBandTrigger : entity work.SynchronizerFifo
+   U_PgpSideBandTrigger : entity surf.SynchronizerFifo
       generic map (
          TPD_G        => TPD_G,
          DATA_WIDTH_G => 8

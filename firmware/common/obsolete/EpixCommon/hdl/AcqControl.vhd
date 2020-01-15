@@ -3,8 +3,7 @@
 -- Project       : EPIX Readout
 -------------------------------------------------------------------------------
 -- File          : AcqControl.vhd
--- Author        : Ryan Herbst, rherbst@slac.stanford.edu
--- Created       : 12/08/2011
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -- Acquisition control block
@@ -17,17 +16,17 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 12/08/2011: created.
--------------------------------------------------------------------------------
 
 LIBRARY ieee;
-use work.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+
 use work.EpixTypes.all;
-use work.StdRtlPkg.all;
+
 library UNISIM;
 use UNISIM.vcomponents.all;
 
@@ -655,7 +654,7 @@ begin
    end process;
 
    -- Edge detection for signals that interface with other blocks
-   U_DataSendEdge : entity work.SynchronizerEdge
+   U_DataSendEdge : entity surf.SynchronizerEdge
       port map (
          clk        => sysClk,
          rst        => sysClkRst,
@@ -664,7 +663,7 @@ begin
       );
    -- We want the possibility to drive out the asic Sync signal
    -- at a delay relative to the rising edge of R0
-   U_R0Edge : entity work.SynchronizerEdge
+   U_R0Edge : entity surf.SynchronizerEdge
       port map (
          clk        => sysClk,
          rst        => sysClkRst,
@@ -701,7 +700,7 @@ begin
    end process;
 
    -- TPS can trigger on either rising or falling edge of Acq
-   U_AcqEdge : entity work.SynchronizerEdge
+   U_AcqEdge : entity surf.SynchronizerEdge
       port map (
          clk         => sysClk,
          rst         => sysClkRst,

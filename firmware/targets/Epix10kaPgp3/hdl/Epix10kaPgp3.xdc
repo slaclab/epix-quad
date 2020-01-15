@@ -36,6 +36,19 @@ set_clock_groups -asynchronous \
    -group [get_clocks -include_generated_clocks adcMonBitClkR] \
    -group [get_clocks -include_generated_clocks progClk]
 
+set_clock_groups -asynchronous -group [get_clocks -of_objects [get_pins {U_EpixCore/G_PGP3.U_Pgp3FrontEnd/U_Pgp3Gtp7Wrapper/REAL_PGP.GEN_LANE[0].U_Pgp/U_Pgp3Gtp7IpWrapper/U_RX_PLL/CLKOUT1}]] -group [get_clocks -of_objects [get_pins U_EpixCore/U_CoreClockGen0/MmcmGen.U_Mmcm/CLKOUT0]]
+set_clock_groups -asynchronous -group [get_clocks -of_objects [get_pins U_EpixCore/G_PGP3.U_Pgp3FrontEnd/U_Pgp3Gtp7Wrapper/REAL_PGP.U_TX_PLL/CLKOUT0]] -group [get_clocks -of_objects [get_pins U_EpixCore/U_CoreClockGen0/MmcmGen.U_Mmcm/CLKOUT0]]
+set_clock_groups -asynchronous -group [get_clocks -of_objects [get_pins {U_EpixCore/G_PGP3.U_Pgp3FrontEnd/U_Pgp3Gtp7Wrapper/REAL_PGP.GEN_LANE[0].U_Pgp/U_Pgp3Gtp7IpWrapper/U_RX_PLL/CLKOUT2}]] -group [get_clocks -of_objects [get_pins U_EpixCore/U_CoreClockGen0/MmcmGen.U_Mmcm/CLKOUT0]]
+set_clock_groups -asynchronous -group [get_clocks -of_objects [get_pins U_EpixCore/G_PGP3.U_Pgp3FrontEnd/U_Pgp3Gtp7Wrapper/REAL_PGP.U_TX_PLL/CLKOUT1]] -group [get_clocks -of_objects [get_pins U_EpixCore/U_CoreClockGen0/MmcmGen.U_Mmcm/CLKOUT0]]
+set_clock_groups -asynchronous -group [get_clocks -of_objects [get_pins U_EpixCore/G_PGP3.U_Pgp3FrontEnd/U_Pgp3Gtp7Wrapper/REAL_PGP.U_TX_PLL/CLKOUT2]] -group [get_clocks -of_objects [get_pins U_EpixCore/U_CoreClockGen0/MmcmGen.U_Mmcm/CLKOUT0]]
+set_clock_groups -asynchronous -group [get_clocks {U_EpixCore/G_PGP3.U_Pgp3FrontEnd/U_Pgp3Gtp7Wrapper/REAL_PGP.GEN_LANE[0].U_Pgp/U_Pgp3Gtp7IpWrapper/GEN_3G.U_Pgp3Gtp7Ip3G/U0/Pgp3Gtp7Ip3G_i/gt0_Pgp3Gtp7Ip3G_i/gtpe2_i/RXOUTCLK}] -group [get_clocks -of_objects [get_pins U_EpixCore/U_CoreClockGen0/MmcmGen.U_Mmcm/CLKOUT0]]
+set_clock_groups -asynchronous -group [get_clocks pgpClk] -group [get_clocks -of_objects [get_pins U_EpixCore/G_PGP3.U_Pgp3FrontEnd/U_Pgp3Gtp7Wrapper/REAL_PGP.U_TX_PLL/CLKOUT0]]
+set_clock_groups -asynchronous -group [get_clocks -of_objects [get_pins U_EpixCore/G_PGP3.U_Pgp3FrontEnd/U_Pgp3Gtp7Wrapper/REAL_PGP.U_TX_PLL/CLKOUT0]] -group [get_clocks -of_objects [get_pins {U_EpixCore/G_PGP3.U_Pgp3FrontEnd/U_Pgp3Gtp7Wrapper/REAL_PGP.GEN_LANE[0].U_Pgp/U_Pgp3Gtp7IpWrapper/U_RX_PLL/CLKOUT2}]]
+
+set_clock_groups -asynchronous -group [get_clocks -of_objects [get_pins U_EpixCore/U_CoreClockGen0/MmcmGen.U_Mmcm/CLKOUT0]] -group [get_clocks -of_objects [get_pins U_EpixCore/U_Iprog7Series/DIVCLK_GEN.BUFR_ICPAPE2/O]]
+set_clock_groups -asynchronous -group [get_clocks -of_objects [get_pins U_EpixCore/U_AsicCore/U_RegControl/GEN_DEVICE_DNA.G_DEVICE_DNA/GEN_7SERIES.DeviceDna7Series_Inst/BUFR_Inst/O]] -group [get_clocks -of_objects [get_pins U_EpixCore/U_AsicCore/U_RegControl/GEN_DEVICE_DNA.G_DEVICE_DNA/GEN_7SERIES.DeviceDna7Series_Inst/DNA_CLK_INV_BUFR/O]]
+set_clock_groups -asynchronous -group [get_clocks pgpClk] -group [get_clocks -of_objects [get_pins U_EpixCore/U_AsicCore/U_RegControl/GEN_DEVICE_DNA.G_DEVICE_DNA/GEN_7SERIES.DeviceDna7Series_Inst/BUFR_Inst/O]]
+set_clock_groups -asynchronous -group [get_clocks pgpClk] -group [get_clocks -of_objects [get_pins U_EpixCore/U_Iprog7Series/DIVCLK_GEN.BUFR_ICPAPE2/O]]
 
 #######################################
 ## Pin locations, IO standards, etc. ##

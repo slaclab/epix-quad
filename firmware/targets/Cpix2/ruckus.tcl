@@ -7,5 +7,8 @@ loadRuckusTcl $::env(PROJ_DIR)/../../common/EpixCommonGen2
 loadRuckusTcl $::env(PROJ_DIR)/../../common/CpixTixelCommon
 
 # Load local source Code and constraints
-loadSource      -dir "$::DIR_PATH/hdl/"
-loadConstraints -dir "$::DIR_PATH/hdl/"
+loadSource      -dir "$::DIR_PATH/hdl"
+loadConstraints -dir "$::DIR_PATH/hdl"
+
+set_property strategy Performance_ExplorePostRoutePhysOpt [get_runs impl_1]
+

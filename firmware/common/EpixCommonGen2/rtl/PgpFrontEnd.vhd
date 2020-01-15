@@ -2,12 +2,7 @@
 -- Title      : PgpFrontEnd for ePix Gen 2
 -------------------------------------------------------------------------------
 -- File       : PgpFrontEnd.vhd
--- Author     : Kurtis Nishimura  <kurtisn@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2014-12-11
--- Last update: 2014-12-11
--- Platform   : Vivado 2014.4
--- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: PgpFrontEnd for generation 2 ePix digital card
 -------------------------------------------------------------------------------
@@ -24,12 +19,13 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-use work.StdRtlPkg.all;
-use work.Pgp2bPkg.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
-use work.SsiPkg.all;
-use work.SsiCmdMasterPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.Pgp2bPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
+use surf.SsiPkg.all;
+use surf.SsiCmdMasterPkg.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -40,6 +36,9 @@ entity PgpFrontEnd is
       SIMULATION_G   : boolean   := false
    );
    port (
+      -- Output status
+      rxLinkReady : out sl;
+      txLinkReady : out sl;
       -- GTX 7 Ports
       gtClkP      : in  sl;
       gtClkN      : in  sl;
@@ -79,6 +78,10 @@ entity PgpFrontEnd is
       monEnAxisMaster   : out AxiStreamMasterType;
       -- VC Command interface
       swRun             : out sl;
+      -- Command Interface
+      ssiCmd            : out SsiCmdMasterType;
+      -- Sideband interface
+      pgpRxOut          : out Pgp2bRxOutType;
       -- To access sideband commands
       pgpOpCode         : out  slv(7 downto 0);
       pgpOpCodeEn       : out  sl
@@ -113,6 +116,13 @@ begin
    
    -- Map to signals out
    pgpClk      <= iPgpClk;
+   
+   rxLinkReady <= iPgpRxOut.linkReady;
+   txLinkReady <= pgpTxOut.linkReady;   
+   
+   ssiCmd <= iSsiCmd;   
+   
+   pgpRxOut <= iPgpRxOut;   
 
    -------------------------------
    --       PGP Core            --
@@ -121,7 +131,7 @@ begin
    G_PGP : if SIMULATION_G = false generate
       
       -- Generate stable reset signal
-      U_PwrUpRst : entity work.PwrUpRst
+      U_PwrUpRst : entity surf.PwrUpRst
          port map (
             clk    => iStableClk,
             rstOut => powerUpRst
@@ -181,7 +191,7 @@ begin
    G_PGP_SIM : if SIMULATION_G = true generate
       
       -- Generate stable reset signal
-      U_PwrUpRst : entity work.PwrUpRst
+      U_PwrUpRst : entity surf.PwrUpRst
          generic map (
             SIM_SPEEDUP_G => true
          )
@@ -199,7 +209,7 @@ begin
          CEB   => '0', 
          O     => iPgpClk);  
       
-      U_PGP_SIM : entity work.RoguePgp2bSim
+      U_PGP_SIM : entity surf.RoguePgp2bSim
          generic map (
             TPD_G           => TPD_G,
             PORT_NUM_G      => 8000,
@@ -225,7 +235,7 @@ begin
    -- Any op code is a trigger
    -- actual opcode is the fiducial.
    -----------------------------------------
-   U_PgpSideBandTrigger : entity work.SynchronizerFifo
+   U_PgpSideBandTrigger : entity surf.SynchronizerFifo
       generic map (
          TPD_G        => TPD_G,
          DATA_WIDTH_G => 8
@@ -241,7 +251,7 @@ begin
          dout   => pgpOpCode
       );
    
-   U_Pgp2bAxi : entity work.Pgp2bAxi
+   U_Pgp2bAxi : entity surf.Pgp2bAxi
    generic map (
       AXI_CLK_FREQ_G     => 100.0E+6
    )
@@ -264,9 +274,8 @@ begin
    
    
    -- Lane 0, VC0 RX/TX, Register access control        
-   U_Vc0AxiMasterRegisters : entity work.SsiAxiLiteMaster 
+   U_Vc0AxiMasterRegisters : entity surf.SsiAxiLiteMaster 
       generic map (
-         USE_BUILT_IN_G      => false,
          EN_32BIT_ADDR_G     => true,
          AXI_STREAM_CONFIG_G => SSI_PGP2B_CONFIG_C,
          SLAVE_READY_EN_G    => SIMULATION_G
@@ -293,12 +302,11 @@ begin
       );
    
    -- Lane 0, VC1 TX, streaming data out 
-   U_Vc1SsiTxFifo : entity work.AxiStreamFifo
+   U_Vc1SsiTxFifo : entity surf.AxiStreamFifoV2
       generic map (
          --EN_FRAME_FILTER_G   => true,
          CASCADE_SIZE_G      => 1,
-         BRAM_EN_G           => true,
-         USE_BUILT_IN_G      => false,  
+         MEMORY_TYPE_G       => "block",
          GEN_SYNC_FIFO_G     => false,
          FIFO_ADDR_WIDTH_G   => 14,
          FIFO_FIXED_THRESH_G => true,
@@ -317,7 +325,7 @@ begin
          mAxisMaster => pgpTxMasters(1),
          mAxisSlave  => pgpTxSlaves(1));     
    -- Lane 0, VC1 RX, Command processor
-   U_Vc1SsiCmdMaster : entity work.SsiCmdMaster
+   U_Vc1SsiCmdMaster : entity surf.SsiCmdMaster
       generic map (
          SLAVE_READY_EN_G    => SIMULATION_G,
          AXI_STREAM_CONFIG_G => SSI_PGP2B_CONFIG_C)   
@@ -338,7 +346,7 @@ begin
    -- SW Triggers:
    -- Run trigger is opCode x00
    -----------------------------------
-   U_TrigPulser : entity work.SsiCmdMasterPulser
+   U_TrigPulser : entity surf.SsiCmdMasterPulser
       generic map (
          OUT_POLARITY_G => '1',
          PULSE_WIDTH_G  => 1
@@ -356,12 +364,11 @@ begin
       );
       
    -- Lane 0, VC2 TX oscilloscope data stream
-   U_Vc2SsiOscilloscopeFifo : entity work.AxiStreamFifo
+   U_Vc2SsiOscilloscopeFifo : entity surf.AxiStreamFifoV2
       generic map (
          --EN_FRAME_FILTER_G   => true,
          CASCADE_SIZE_G      => 1,
-         BRAM_EN_G           => true,
-         USE_BUILT_IN_G      => false,  
+         MEMORY_TYPE_G       => "block",
          GEN_SYNC_FIFO_G     => false,    
          FIFO_ADDR_WIDTH_G   => 14,
          FIFO_FIXED_THRESH_G => true,
@@ -381,12 +388,11 @@ begin
          mAxisSlave  => pgpTxSlaves(2));     
    
    -- Lane 0, VC3 TX monitoring data stream
-   U_Vc3SsiMonitorFifo : entity work.AxiStreamFifo
+   U_Vc3SsiMonitorFifo : entity surf.AxiStreamFifoV2
    generic map (
       --EN_FRAME_FILTER_G   => true,
       CASCADE_SIZE_G      => 1,
-      BRAM_EN_G           => true,
-      USE_BUILT_IN_G      => false,  
+      MEMORY_TYPE_G       => "block",
       GEN_SYNC_FIFO_G     => false,    
       FIFO_ADDR_WIDTH_G   => 9,
       FIFO_FIXED_THRESH_G => true,
@@ -406,12 +412,11 @@ begin
       mAxisSlave  => pgpTxSlaves(3)
    );
    -- Lane 0, VC3 RX monitoring stream enable command fifo
-   U_Vc3SsiMonitorCmd : entity work.AxiStreamFifo
+   U_Vc3SsiMonitorCmd : entity surf.AxiStreamFifoV2
    generic map (
       --EN_FRAME_FILTER_G   => true,
       CASCADE_SIZE_G      => 1,
-      BRAM_EN_G           => true,
-      USE_BUILT_IN_G      => false,  
+      MEMORY_TYPE_G       => "block",
       GEN_SYNC_FIFO_G     => false,    
       FIFO_ADDR_WIDTH_G   => 9,
       FIFO_FIXED_THRESH_G => true,

@@ -1,16 +1,14 @@
 -------------------------------------------------------------------------------
 -- File       : AdcCore.vhd
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2017-02-04
--- Last update: 2017-10-10
 -------------------------------------------------------------------------------
 -- Description: EPIX Quad Target's Top Level
 -------------------------------------------------------------------------------
--- This file is part of 'EPIX Firmware'.
+-- This file is part of 'EPIX Development Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
 -- top-level directory of this distribution and at: 
 --    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Firmware', including this file, 
+-- No part of 'EPIX Development Firmware', including this file, 
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
@@ -20,11 +18,12 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 
-use work.StdRtlPkg.all;
-use work.Ad9249Pkg.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
-use work.SsiPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.Ad9249Pkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
+use surf.SsiPkg.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -98,7 +97,7 @@ begin
    ---------------------
    -- AXI-Lite: Crossbar
    ---------------------
-   U_XBAR0 : entity work.AxiLiteCrossbar
+   U_XBAR0 : entity surf.AxiLiteCrossbar
       generic map (
          TPD_G              => TPD_G,
          NUM_SLAVE_SLOTS_G  => 1,
@@ -129,7 +128,7 @@ begin
       asicAdc(i).chP   <= adcChP(i);
       asicAdc(i).chN   <= adcChN(i);
       
-      U_AdcReadout : entity work.Ad9249ReadoutGroup
+      U_AdcReadout : entity surf.Ad9249ReadoutGroup
       generic map (
          SIM_SPEEDUP_G     => SIM_SPEEDUP_G,
          F_DELAY_CASCADE_G => false,
@@ -151,7 +150,7 @@ begin
    end generate;
    
    G_AdcConf : for i in 0 to 1 generate 
-      U_AdcConf : entity work.Ad9249Config
+      U_AdcConf : entity surf.Ad9249Config
          generic map (
             TPD_G             => TPD_G,
             AXIL_CLK_PERIOD_G => (1.0/AXI_CLK_FREQ_G),
@@ -172,7 +171,7 @@ begin
          );
    end generate;
    
-   U_MonConf : entity work.Ad9249Config
+   U_MonConf : entity surf.Ad9249Config
       generic map (
          TPD_G             => TPD_G,
          AXIL_CLK_PERIOD_G => (1.0/AXI_CLK_FREQ_G),
@@ -192,7 +191,7 @@ begin
          adcCsb            => adcCsb(9 downto 8)
       );
       
-   U_AdcTester : entity work.StreamPatternTester
+   U_AdcTester : entity surf.StreamPatternTester
    generic map (
       TPD_G             => TPD_G,
       NUM_CHANNELS_G    => 80

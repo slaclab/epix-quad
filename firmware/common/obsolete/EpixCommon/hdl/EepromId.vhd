@@ -1,10 +1,9 @@
 ------------------------------------------------------------------------------
--- Title         : Petacache SliceCore FPGA, FMC Dimm ID Prom Block
--- Project       : Petacache RCE Board
+-- Title      : Petacache SliceCore FPGA, FMC Dimm ID Prom Block
+-- Project    : Petacache RCE Board
 -------------------------------------------------------------------------------
--- File          : EeproId.vhd
--- Author        : Ryan Herbst, rherbst@slac.stanford.edu
--- Created       : 12/19/2007
+-- File       : EeproId.vhd
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -- Contains controller for DS2411 serial ID Prom On Flash DIMM.
@@ -18,12 +17,8 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 12/19/2007: created.
--------------------------------------------------------------------------------
 
 LIBRARY ieee;
-use work.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;

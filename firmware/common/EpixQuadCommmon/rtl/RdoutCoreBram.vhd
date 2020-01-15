@@ -1,16 +1,14 @@
 -------------------------------------------------------------------------------
 -- File       : RdoutCoreBram.vhd
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2017-07-07
--- Last update: 2017-07-14
 -------------------------------------------------------------------------------
 -- Description:
 -------------------------------------------------------------------------------
--- This file is part of 'EPIX Firmware'.
+-- This file is part of 'EPIX Development Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
 -- top-level directory of this distribution and at: 
 --    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Firmware', including this file, 
+-- No part of 'EPIX Development Firmware', including this file, 
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
@@ -20,10 +18,11 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
-use work.SsiPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
+use surf.SsiPkg.all;
 
 entity RdoutCoreBram is
    generic (
@@ -385,7 +384,7 @@ begin
    -- Data storage and readout FSMs
    --------------------------------------------------
    
-   U_ReadStartEdge : entity work.SynchronizerEdge
+   U_ReadStartEdge : entity surf.SynchronizerEdge
       port map (
          clk        => sysClk,
          rst        => sysRst,
@@ -845,7 +844,7 @@ begin
             "00" & r.adcDataBuf0(i*16+j) &
             "00" & muxStrMap(i*16+j).tData(13 downto 0);
          
-         U_BankBufRam: entity work.DualPortRam
+         U_BankBufRam: entity surf.DualPortRam
          generic map (
             TPD_G          => TPD_G,
             DATA_WIDTH_G   => 64,
@@ -935,7 +934,7 @@ begin
    -- the FIFO will fit whole image
    
    
-   U_AxisOut0 : entity work.AxiStreamFifoV2
+   U_AxisOut0 : entity surf.AxiStreamFifoV2
    generic map (
       -- General Configurations
       TPD_G               => TPD_G,
@@ -965,7 +964,7 @@ begin
    
    
    
-   U_AxisOut1 : entity work.AxiStreamFifoV2
+   U_AxisOut1 : entity surf.AxiStreamFifoV2
    generic map (
       -- General Configurations
       TPD_G               => TPD_G,

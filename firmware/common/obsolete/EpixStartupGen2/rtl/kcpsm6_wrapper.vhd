@@ -1,18 +1,20 @@
 -------------------------------------------------------------------------------
--- Title         : KCPSM6 Wrapper
--- Project       : EPIX Readout
+-- Title      : KCPSM6 Wrapper
+-- Project    : EPIX Readout
 -------------------------------------------------------------------------------
--- File          : kcpsm6_wrapper.vhd
--- Author        : Kurtis Nishimura, kurtisn@slac.stanford.edu
--- Created       : 04/09/2015
+-- File       : kcpsm6_wrapper.vhd
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -- Wrapper for KCPSM6, including the processor and the ROM.
 -------------------------------------------------------------------------------
--- Copyright (c) 2015 by SLAC. All rights reserved.
--------------------------------------------------------------------------------
--- Modification history:
--- 04/06/2015: created.
+-- This file is part of 'EPIX Development Firmware'.
+-- It is subject to the license terms in the LICENSE.txt file found in the 
+-- top-level directory of this distribution and at: 
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
+-- No part of 'EPIX Development Firmware', including this file, 
+-- may be copied, modified, propagated, or distributed except according to 
+-- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
 library IEEE;
@@ -20,7 +22,8 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.STD_LOGIC_ARITH.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 
-use work.StdRtlPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
 
 entity kcpsm6_wrapper is
    Generic (

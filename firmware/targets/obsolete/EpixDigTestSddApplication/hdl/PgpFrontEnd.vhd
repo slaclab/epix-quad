@@ -1,10 +1,9 @@
 -------------------------------------------------------------------------------
--- Title         : Pretty Good Protocol Applications, Front End Wrapper
--- Project       : General Purpose Core
+-- Title      : Pretty Good Protocol Applications, Front End Wrapper
+-- Project    : General Purpose Core
 -------------------------------------------------------------------------------
--- File          : PgpFrontEnd.vhd
--- Author        : Ryan Herbst, rherbst@slac.stanford.edu
--- Created       : 03/29/2011
+-- File       : PgpFrontEnd.vhd
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -- Wrapper for front end logic connection to the PGP card.
@@ -17,17 +16,18 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 03/29/2011: created.
--------------------------------------------------------------------------------
 
 library ieee;
-use work.all;
-use work.Pgp2AppTypesPkg.all;
-use work.Pgp2CoreTypesPkg.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+
+use work.Pgp2AppTypesPkg.all;
+use work.Pgp2CoreTypesPkg.all;
+
 library UNISIM;
 use UNISIM.vcomponents.all;
 
@@ -168,7 +168,7 @@ begin
          I => clkFx,
          O => isysClk);
 
-   RstSync_Inst : entity work.RstSync
+   RstSync_Inst : entity surf.RstSync
       port map (
          clk      => isysClk,
          asyncRst => userReset,

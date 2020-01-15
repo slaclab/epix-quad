@@ -1,10 +1,9 @@
 -------------------------------------------------------------------------------
--- Title         : EPIX Core Block
--- Project       : EPIX Readout
+-- Title      : EPIX Core Block
+-- Project    : EPIX Readout
 -------------------------------------------------------------------------------
--- File          : EpixCore.vhd
--- Author        : Ryan Herbst, rherbst@slac.stanford.edu
--- Created       : 12/08/2011
+-- File       : EpixCore.vhd
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -- EPIX Core Block
@@ -17,18 +16,16 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 12/08/2011: created.
--------------------------------------------------------------------------------
 
 LIBRARY ieee;
-use work.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
+
 use work.EpixTypes.all;
 use work.ScopeTypes.all;
 use work.VcPkg.all;
+
 library UNISIM;
 use UNISIM.vcomponents.all;
 

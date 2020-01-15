@@ -1,10 +1,9 @@
 -------------------------------------------------------------------------------
--- Title         : ADC Readout Control
--- Project       : EPXI Readout
+-- Title      : ADC Readout Control
+-- Project    : EPXI Readout
 -------------------------------------------------------------------------------
--- File          : AdcReadout.vhd
--- Author        : Ryan Herbst, rherbst@slac.stanford.edu
--- Created       : 12/08/2011
+-- File       : AdcReadout.vhd
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -- ADC Readout Controller
@@ -17,17 +16,17 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 12/08/2011: created.
--------------------------------------------------------------------------------
 
 LIBRARY ieee;
-use work.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
-use work.StdRtlPkg.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+
 use work.EpixTypes.all;
+
 library UNISIM;
 use UNISIM.vcomponents.all;
 
@@ -432,7 +431,7 @@ begin
       end process;
 
       -- Data FIFO
-      U_DataFifo : entity work.FifoMux
+      U_DataFifo : entity surf.FifoMux
          generic map (
             TPD_G              => tpd,
             CASCADE_SIZE_G     => 1, 
@@ -440,13 +439,8 @@ begin
             RST_POLARITY_G     => '1', 
             RST_ASYNC_G        => false,
             GEN_SYNC_FIFO_G    => false,
-            BRAM_EN_G          => false,
+            MEMORY_TYPE_G      => "distributed",
             FWFT_EN_G          => true,
-            USE_DSP48_G        => "no",
-            ALTERA_SYN_G       => false,
-            ALTERA_RAM_G       => "M9K",
-            USE_BUILT_IN_G     => false,
-            XIL_DEVICE_G       => "VIRTEX5",
             SYNC_STAGES_G      => 3,
             PIPE_STAGES_G      => 0,
             WR_DATA_WIDTH_G    => 16,

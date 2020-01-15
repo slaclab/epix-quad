@@ -3,8 +3,7 @@
 -- Project       : CSPAD Detector
 -------------------------------------------------------------------------------
 -- File          : DacCntrl.vhd
--- Author        : Ryan Herbst, rherbst@slac.stanford.edu
--- Created       : 08/09/2011
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -- DAC Controller.
@@ -17,16 +16,13 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 08/09/2011: created.
--------------------------------------------------------------------------------
 
 LIBRARY ieee;
-use work.all;
-use work.EpixTypes.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
+
+use work.EpixTypes.all;
 
 entity DacCntrl is 
    port ( 

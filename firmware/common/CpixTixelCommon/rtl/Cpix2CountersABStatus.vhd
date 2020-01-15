@@ -1,14 +1,13 @@
 -------------------------------------------------------------------------------
--- Title         : Cpix2StreamAxi
--- Project       : Cpix2 Detector
+-- Title      : Cpix2StreamAxi
+-- Project    : Cpix2 Detector
 -------------------------------------------------------------------------------
--- File          : AsicStreamAxi.vhd
--- Author        : Maciej Kwiatkowski, mkwiatko@slac.stanford.edu
--- Created       : 4/27/2017
+-- File       : AsicStreamAxi.vhd
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -------------------------------------------------------------------------------
--- This file is part of 'Tixel Development Firmware'.
+-- This file is part of 'EPIX Development Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
 -- top-level directory of this distribution and at: 
 --    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
@@ -16,16 +15,14 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 4/27/2017: created.
--------------------------------------------------------------------------------
 
 LIBRARY ieee;
-use work.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
-use work.StdRtlPkg.all;
+
+library surf;
+use surf.StdRtlPkg.all;
 
 entity Cpix2CountersABStatus is 
    generic (
@@ -82,7 +79,7 @@ begin
    --------------------------------------
    -- synchronizers
    --------------------------------------
-   Sync_SRO_U : entity work.Synchronizer
+   Sync_SRO_U : entity surf.Synchronizer
    port map (
       clk     => Clk,
       rst     => Rst,
@@ -90,7 +87,7 @@ begin
       dataOut => asicSR0_i
    );
 
-   Sync_SYNC_U : entity work.Synchronizer
+   Sync_SYNC_U : entity surf.Synchronizer
    port map (
       clk     => Clk,
       rst     => Rst,
@@ -98,7 +95,7 @@ begin
       dataOut => asicSync_i
    );
 
-   Sync_SOF_U : entity work.Synchronizer
+   Sync_SOF_U : entity surf.Synchronizer
    port map (
       clk     => Clk,
       rst     => Rst,

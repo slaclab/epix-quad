@@ -1,11 +1,9 @@
-
 -------------------------------------------------------------------------------
--- Title         : Acquisition Control Block
--- Project       : EPIX Readout
+-- Title      : Acquisition Control Block
+-- Project    : EPIX Readout
 -------------------------------------------------------------------------------
--- File          : BurstBuffer.vhd
--- Author        : Ryan Herbst, rherbst@slac.stanford.edu
--- Created       : 12/08/2011
+-- File       : BurstBuffer.vhd
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -- Acquisition control block
@@ -18,16 +16,14 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 12/08/2011: created.
--------------------------------------------------------------------------------
 
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-use work.StdRtlPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
 
 entity BurstBuffer is
    generic (
@@ -65,9 +61,9 @@ architecture rtl of BurstBuffer is
    
 begin
 
-   SimpleDualPortRam_Inst : entity work.SimpleDualPortRam
+   SimpleDualPortRam_Inst : entity surf.SimpleDualPortRam
       generic map(
-         BRAM_EN_G    => true,
+         MEMORY_TYPE_G=> "block",
          DATA_WIDTH_G => 16,
          ADDR_WIDTH_G => ADDR_WIDTH_G)
       port map (

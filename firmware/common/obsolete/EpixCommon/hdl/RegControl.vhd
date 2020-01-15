@@ -3,8 +3,7 @@
 -- Project       : EPIX Readout
 -------------------------------------------------------------------------------
 -- File          : RegControl.vhd
--- Author        : Ryan Herbst, rherbst@slac.stanford.edu
--- Created       : 05/21/2013
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -- Register control block
@@ -17,20 +16,20 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 12/08/2011: created.
--------------------------------------------------------------------------------
 
 LIBRARY ieee;
-use work.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+use surf.SaciMasterPkg.all;
+
 use work.EpixTypes.all;
 use work.ScopeTypes.all;
 use work.VcPkg.all;
-use work.SaciMasterPkg.all;
-use work.StdRtlPkg.all;
+
 library UNISIM;
 use UNISIM.vcomponents.all;
 
@@ -1198,7 +1197,7 @@ begin
       end if;
    end process;
    --Edge detect for SACI clk
-   U_DataSaciClkEdge : entity work.SynchronizerEdge
+   U_DataSaciClkEdge : entity surf.SynchronizerEdge
       port map (
          clk        => sysClk,
          rst        => sysClkRst,
@@ -1228,7 +1227,7 @@ begin
    U_SaciClk: bufg port map ( I => sacibit , O => intClk );
 
    -- Controller
-   U_Saci : entity work.SaciMaster 
+   U_Saci : entity surf.SaciMaster 
      port map (
        clk           => intClk,
        rst           => saciRst,
@@ -1301,7 +1300,7 @@ begin
          writeReq  => memWriteReq
       );
    --Falling edge of startup sequencer can trigger ID chip reads
-   U_StartupDoneEdge : entity work.SynchronizerEdge
+   U_StartupDoneEdge : entity surf.SynchronizerEdge
       port map (
          clk         => sysClk,
          rst         => sysClkRst,
@@ -1310,7 +1309,7 @@ begin
       );
    --Edge detect for the valid signals
    G_DataSendEdgeSer : for i in 0 to 2 generate
-      U_DataSendEdgeSer : entity work.SynchronizerEdge
+      U_DataSendEdgeSer : entity surf.SynchronizerEdge
          port map (
             clk        => sysClk,
             rst        => sysClkRst,
@@ -1331,7 +1330,7 @@ begin
       end loop;
    end process;
    --Edge detect for the valid signals
-   U_DataSendEdgeMem : entity work.SynchronizerEdge
+   U_DataSendEdgeMem : entity surf.SynchronizerEdge
       port map (
          clk        => sysClk,
          rst        => sysClkRst,

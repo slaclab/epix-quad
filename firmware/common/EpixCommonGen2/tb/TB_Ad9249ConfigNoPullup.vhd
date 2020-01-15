@@ -1,12 +1,8 @@
 -------------------------------------------------------------------------------
--- Title         : Test-bench of TB_Ad9249ConfigNoPullup Unit
--- Project       : 
+-- File       : TB_Ad9249ConfigNoPullup.vhd
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
--- File          : TB_Ad9249ConfigNoPullup.vhd
--- Author        : Maciej Kwiatkowski, mkwiatko@slac.stanford.edu
--- Created       : 06/30/2016
--------------------------------------------------------------------------------
--- Description:
+-- Description: Test-bench of TB_Ad9249ConfigNoPullup Unit
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Development Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
@@ -16,24 +12,22 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 06/30/2016: created.
--------------------------------------------------------------------------------
 
 LIBRARY ieee;
-use work.all;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-use work.StdRtlPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
+use surf.SsiPkg.all;
+use surf.SsiCmdMasterPkg.all;
+use surf.Ad9249Pkg.all;
+use surf.AxiPkg.all;
+
 use work.EpixPkgGen2.all;
 use work.ScopeTypes.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
-use work.SsiPkg.all;
-use work.SsiCmdMasterPkg.all;
-use work.Ad9249Pkg.all;
-use work.AxiPkg.all;
 
 entity TB_Ad9249ConfigNoPullup is 
 
@@ -92,7 +86,7 @@ begin
    end process;
    
    
-   U_AxiToAxiLite : entity work.AxiToAxiLite
+   U_AxiToAxiLite : entity surf.AxiToAxiLite
    port map (
       -- Clocks & Reset
       axiClk             => sysClk,
@@ -109,7 +103,7 @@ begin
       axilWriteSlave     => sAxiWriteSlave(0)
    );
 
-   U_AxiSimMasterWrap : entity work.AxiSimMasterWrap
+   U_AxiSimMasterWrap : entity surf.AxiSimMasterWrap
    port map (
       -- AXI Clock/Rst
       axiClk            => sysClk,
@@ -126,7 +120,7 @@ begin
    -- Master 0 : PGP register controller     --
    -- Master 1 : Microblaze reg controller    --
    --------------------------------------------
-   U_AxiLiteCrossbar : entity work.AxiLiteCrossbar
+   U_AxiLiteCrossbar : entity surf.AxiLiteCrossbar
       generic map (
          NUM_SLAVE_SLOTS_G  => NUM_AXI_SLAVE_SLOTS_C,
          NUM_MASTER_SLOTS_G => NUM_AXI_MASTER_SLOTS_C,
@@ -147,7 +141,7 @@ begin
    sAxiWriteMaster(1) <= AXI_LITE_WRITE_MASTER_INIT_C;
    sAxiReadMaster(1) <= AXI_LITE_READ_MASTER_INIT_C;
    
-   U_AdcConf : entity work.Ad9249ConfigNoPullup
+   U_AdcConf : entity surf.Ad9249ConfigNoPullup
    generic map (
       TPD_G             => TPD_C,
       CLK_PERIOD_G      => 10.0e-9,

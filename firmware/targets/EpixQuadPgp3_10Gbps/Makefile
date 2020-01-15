@@ -1,3 +1,5 @@
+#export GIT_BYPASS = 0
+
 # Use the PGPv3 10G core
 export INCLUDE_PGP3_10G = 1
 

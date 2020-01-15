@@ -1,10 +1,9 @@
 -------------------------------------------------------------------------------
--- Title         : ADC Shift Controller
--- Project       : Heavy Photon Test Board
+-- Title      : ADC Shift Controller
+-- Project    : Heavy Photon Test Board
 -------------------------------------------------------------------------------
--- File          : AdcConfig.vhd
--- Author        : Ryan Herbst, rherbst@slac.stanford.edu
--- Created       : 03/29/2011
+-- File       : AdcConfig.vhd
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -- This block controls shift of data in and out of the external ADC
@@ -17,17 +16,14 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 03/29/2011: created.
--------------------------------------------------------------------------------
 
 LIBRARY ieee;
-
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-use work.StdRtlPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
 
 entity AdcConfig is
    generic (

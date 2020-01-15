@@ -1,36 +1,30 @@
 -------------------------------------------------------------------------------
--- Title      : 
--------------------------------------------------------------------------------
 -- File       : AdcPhyTop.vhd
--- Author     : Maciej Kwiatkowski <mkwiatko@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2015-03-17
--- Last update: 2016-08-07
--- Platform   : Vivado 2016.1
--- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- This file is part of 'SLAC Firmware Standard Library'.
+-- This file is part of 'EPIX Development Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
 -- top-level directory of this distribution and at: 
 --    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'SLAC Firmware Standard Library', including this file, 
+-- No part of 'EPIX Development Firmware', including this file, 
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
---
 
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 
-use work.StdRtlPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
+use surf.Ad9249Pkg.all;
+
 use work.EpixPkgGen2.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
-use work.Ad9249Pkg.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -153,7 +147,7 @@ begin
    -- AXI Lite Crossbar 
    --------------------------------------------
    
-   U_AxiLiteCrossbar : entity work.AxiLiteCrossbar
+   U_AxiLiteCrossbar : entity surf.AxiLiteCrossbar
    generic map (
       NUM_SLAVE_SLOTS_G  => 1,
       NUM_MASTER_SLOTS_G => NUM_AXI_MASTER_SLOTS_C,
@@ -192,7 +186,7 @@ begin
       asicAdc(i).chP   <= adcChP((i*8)+7 downto i*8);
       asicAdc(i).chN   <= adcChN((i*8)+7 downto i*8);
       
-      U_AdcReadout : entity work.Ad9249ReadoutGroup
+      U_AdcReadout : entity surf.Ad9249ReadoutGroup
       generic map (
          TPD_G             => TPD_G,
          NUM_CHANNELS_G    => 8,
@@ -232,7 +226,7 @@ begin
    monAdc.chP(3 downto 0) <= adcChP(19 downto 16);
    monAdc.chN(3 downto 0) <= adcChN(19 downto 16);
       
-   U_MonAdcReadout : entity work.Ad9249ReadoutGroup
+   U_MonAdcReadout : entity surf.Ad9249ReadoutGroup
    generic map (
       TPD_G             => TPD_G,
       NUM_CHANNELS_G    => 4,
@@ -264,7 +258,7 @@ begin
 
    -- Give a special reset to the SERDES blocks when power
    -- is turned on to ADC card.
-   U_AdcCardPowerUpRisingEdge : entity work.SynchronizerEdge
+   U_AdcCardPowerUpRisingEdge : entity surf.SynchronizerEdge
    generic map (
       TPD_G       => TPD_G)
    port map (
@@ -272,7 +266,7 @@ begin
       dataIn      => adcCardPowerUp,
       risingEdge  => adcCardPowerUpEdge
    );
-   U_AdcCardPowerUpReset : entity work.RstSync
+   U_AdcCardPowerUpReset : entity surf.RstSync
    generic map (
       TPD_G           => TPD_G,
       RELEASE_DELAY_G => 50
@@ -287,7 +281,7 @@ begin
    -- ADC stream pattern tester              --
    --------------------------------------------
    
-   U_AdcTester : entity work.StreamPatternTester
+   U_AdcTester : entity surf.StreamPatternTester
    generic map (
       TPD_G             => TPD_G,
       NUM_CHANNELS_G    => 20
@@ -309,7 +303,7 @@ begin
    --     Fast ADC Config                    --
    --------------------------------------------
       
-   U_AdcConf : entity work.Ad9249ConfigNoPullup
+   U_AdcConf : entity surf.Ad9249ConfigNoPullup
    generic map (
       TPD_G             => TPD_G,
       CLK_PERIOD_G      => CLK_PERIOD_G,

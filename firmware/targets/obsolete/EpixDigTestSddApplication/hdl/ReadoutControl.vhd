@@ -1,10 +1,9 @@
 -------------------------------------------------------------------------------
--- Title         : Acquisition Control Block
--- Project       : EPIX Readout
+-- Title      : Acquisition Control Block
+-- Project    : EPIX Readout
 -------------------------------------------------------------------------------
--- File          : ReadoutControl.vhd
--- Author        : Ryan Herbst, rherbst@slac.stanford.edu
--- Created       : 12/08/2011
+-- File       : ReadoutControl.vhd
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -- Acquisition control block
@@ -17,18 +16,17 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 12/08/2011: created.
--------------------------------------------------------------------------------
 
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-use work.StdRtlPkg.all;
-use work.EpixTypes.all;
+library surf;
+use surf.StdRtlPkg.all;
+
 use work.Pgp2AppTypesPkg.all;
+use work.EpixTypes.all;
 
 entity ReadoutControl is
    generic (
@@ -90,7 +88,7 @@ begin
    mpsOut <= '0';
 
    -- Edge detection for signals that interface with other blocks
-   U_DataSendEdge : entity work.SynchronizerEdge
+   U_DataSendEdge : entity surf.SynchronizerEdge
       port map (
          clk        => sysClk,
          rst        => sysClkRst,

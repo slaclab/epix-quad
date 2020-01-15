@@ -1,10 +1,9 @@
 -------------------------------------------------------------------------------
--- Title         : Version Constant File
--- Project       : Epix 10k Test
+-- Title      : Version Constant File
+-- Project    : Epix 10k Test
 -------------------------------------------------------------------------------
--- File          : Version.vhd
--- Author        : Kurtis Nishimura
--- Created       : 02/07/2013
+-- File       : Version.vhd
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -- Version Constant Module
@@ -17,6 +16,7 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
+
 LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
 

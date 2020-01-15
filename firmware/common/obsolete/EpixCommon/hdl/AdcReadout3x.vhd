@@ -1,10 +1,9 @@
 -------------------------------------------------------------------------------
--- Title         : ADC Readout Control
--- Project       : EPIX Readout
+-- Title      : ADC Readout Control
+-- Project    : EPIX Readout
 -------------------------------------------------------------------------------
--- File          : AdcReadout3x.vhd
--- Author        : Ryan Herbst, rherbst@slac.stanford.edu
--- Created       : 12/08/2011
+-- File       : AdcReadout3x.vhd
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -- ADC Readout Controller
@@ -17,16 +16,17 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 12/08/2011: created.
--------------------------------------------------------------------------------
 
 LIBRARY ieee;
-use work.all;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+
 use work.EpixTypes.all;
+
 library UNISIM;
 use UNISIM.vcomponents.all;
 
@@ -129,7 +129,7 @@ begin
          RDY    => iDelayCtrlRdy
       );
    --Generate a longer reset for IDELAYCTRL (minimum is 50 ns)
-   U_IDelayRst : entity work.RstSync
+   U_IDelayRst : entity surf.RstSync
       generic map (
          TPD_G           => ns,
          IN_POLARITY_G   => '1',

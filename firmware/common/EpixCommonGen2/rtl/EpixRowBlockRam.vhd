@@ -1,10 +1,9 @@
 -------------------------------------------------------------------------------
--- Title         : Ping pong readout buffer
--- Project       : EPIX Readout
+-- Title      : Ping pong readout buffer
+-- Project    : EPIX Readout
 -------------------------------------------------------------------------------
--- File          : EpixRowBlockRam.vhd
--- Author        : Kurtis Nishimura, kurtisn@slac.stanford.edu
--- Created       : 11/1/2013
+-- File       : EpixRowBlockRam.vhd
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -- Block ram to handle a row.
@@ -19,16 +18,16 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 11/01/2013: created.
--------------------------------------------------------------------------------
 
 LIBRARY ieee;
-use work.all;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+
 use work.EpixPkgGen2.all;
-use work.StdRtlPkg.all;
+
 library UNISIM;
 use UNISIM.vcomponents.all;
 
@@ -209,7 +208,7 @@ begin
    end process;
 
    --Edge detection for changing rows 
-   U_RowChangeEdge : entity work.SynchronizerEdge
+   U_RowChangeEdge : entity surf.SynchronizerEdge
       port map (
          clk         => sysClk,
          rst         => sysClkRst,
@@ -218,7 +217,7 @@ begin
          fallingEdge => iWrRowFalling
       );
    --Edge detection for read initiation
-   U_StartReadEdge : entity work.SynchronizerEdge
+   U_StartReadEdge : entity surf.SynchronizerEdge
       port map (
          clk         => sysClk,
          rst         => sysClkRst,
@@ -254,7 +253,7 @@ begin
    --Instantiate a blockram for the ping-pong scheme
    --Size is minimum 2 * 96 = 192 values (ePix 100)
    --                2 * 48 = 96 values (ePix 10k)
-   U_RowBuffer : entity work.SimpleDualPortRam
+   U_RowBuffer : entity surf.SimpleDualPortRam
       generic map (
          DATA_WIDTH_G => 16,
          ADDR_WIDTH_G => 8

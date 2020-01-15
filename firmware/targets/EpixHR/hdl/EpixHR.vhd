@@ -1,12 +1,6 @@
 -------------------------------------------------------------------------------
--- Title      : 
--------------------------------------------------------------------------------
 -- File       : EpixHR.vhd
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 2014-12-11
--- Last update: 2018-05-14
--- Platform   : Vivado 2014.4
--- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
@@ -18,26 +12,22 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
--- Modification history:
--- 09/01/2015: created.
--- 5/11/2017: Modified form the tPix project to fit the epixHR prototype analog
---            board. 
--------------------------------------------------------------------------------
 
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 
-use work.StdRtlPkg.all;
-use work.EpixPkgGen2.all;
-use work.EpixHRPkg.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
-use work.SsiPkg.all;
-use work.SsiCmdMasterPkg.all;
-use work.SaciMasterPkg.all;
-use work.Pgp2bPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
+use surf.SsiPkg.all;
+use surf.SsiCmdMasterPkg.all;
+use surf.SaciMasterPkg.all;
+use surf.Pgp2bPkg.all;
 
+use work.EpixHRPkg.all;
+use work.EpixPkgGen2.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -148,7 +138,8 @@ end EpixHR;
 
 architecture RTL of EpixHR is
 
-   signal iFpgaOutputEn : sl;
+   signal iFpgaOutputEn  : sl;
+   signal iFpgaOutputEnL : sl;
    
    -- Internal versions of signals so that we don't
    -- drive anything unpowered until the components
@@ -353,8 +344,8 @@ begin
    
    -- ASIC control signals (differential)
    G_ROCLK : for i in 0 to 1 generate
-      U_ASIC_ROCLK_OBUFTDS : OBUFTDS port map ( I => iAsicRoClk(i), T => not(iFpgaOutputEn), O => asicRoClkP(i), OB => asicRoClkM(i) );
-      U_ASIC_RFCLK_OBUFTDS : OBUFTDS port map ( I => iAsicRefClk(i), T => not(iFpgaOutputEn), O => asicRefClkP(i), OB => asicRefClkM(i) );
+      U_ASIC_ROCLK_OBUFTDS : OBUFTDS port map ( I => iAsicRoClk(i), T => iFpgaOutputEnL, O => asicRoClkP(i), OB => asicRoClkM(i) );
+      U_ASIC_RFCLK_OBUFTDS : OBUFTDS port map ( I => iAsicRefClk(i), T => iFpgaOutputEnL, O => asicRefClkP(i), OB => asicRefClkM(i) );
    end generate;
    -- ASIC control signals (single ended)
    asicSR0        <= iAsicSR0      when iFpgaOutputEn = '1' else 'Z';
@@ -370,5 +361,6 @@ begin
    asicTsAdcClk   <= iasicTsAdcClk when iFpgaOutputEn = '1' else 'Z';  
    asicTsShClk    <= iasicTsShClk  when iFpgaOutputEn = '1' else 'Z';  
 
+   iFpgaOutputEnL <= not (iFpgaOutputEn);
    
 end RTL;

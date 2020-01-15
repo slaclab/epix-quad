@@ -1,17 +1,14 @@
 -------------------------------------------------------------------------------
 -- File       : TrigControlAxi.vhd
--- Author     : Maciej Kwiatkowski, mkwiatko@slac.stanford.edu
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 04/07/2017
--- Last update: 04/07/2017
 -------------------------------------------------------------------------------
 -- Description: 
 -------------------------------------------------------------------------------
--- This file is part of 'SLAC Firmware Standard Library'.
+-- This file is part of 'EPIX Development Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
 -- top-level directory of this distribution and at: 
 --    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'SLAC Firmware Standard Library', including this file, 
+-- No part of 'EPIX Development Firmware', including this file, 
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
@@ -21,8 +18,10 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+
 library UNISIM;
 use UNISIM.vcomponents.all;
 
@@ -186,7 +185,7 @@ begin
    -- Run Input
    --------------------------------   
    -- Edge Detect
-   U_RunEdge : entity work.SynchronizerEdge 
+   U_RunEdge : entity surf.SynchronizerEdge 
       port map (
          clk        => sysClk,
          rst        => sysRst,
@@ -239,7 +238,7 @@ begin
    --------------------------------
 
    -- Edge Detect
-   U_AcqEdge : entity work.SynchronizerEdge 
+   U_AcqEdge : entity surf.SynchronizerEdge 
       port map (
          clk        => sysClk,
          rst        => sysRst,

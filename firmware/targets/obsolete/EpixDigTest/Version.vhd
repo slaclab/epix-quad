@@ -3,8 +3,7 @@
 -- Project       : COB Zynq DTM
 -------------------------------------------------------------------------------
 -- File          : Version.vhd
--- Author        : Ryan Herbst, rherbst@slac.stanford.edu
--- Created       : 05/07/2013
+-- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
 -- Version Constant Module
@@ -17,6 +16,7 @@
 -- may be copied, modified, propagated, or distributed except according to 
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
+
 LIBRARY ieee;
 USE ieee.std_logic_1164.ALL;
 

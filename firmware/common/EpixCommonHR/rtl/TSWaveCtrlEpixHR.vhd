@@ -1,16 +1,6 @@
 -------------------------------------------------------------------------------
--- Title      : 
--------------------------------------------------------------------------------
 -- File       : TSWaveCtrlEpixHR.vhd
 -- Company    : SLAC National Accelerator Laboratory
--- Created    : 07/20/2018
--- Last update: 2018-07-24
--- Platform   : Vivado 2017.4
--- Standard   : VHDL'93/02
--------------------------------------------------------------------------------
--- Change log:
--- [DD] 07/20/2018 - Created
--------------------------------------------------------------------------------
 -- Description: Test Structure External clock waveform register controller
 -------------------------------------------------------------------------------
 -- This file is part of 'EpixHR Development Firmware'.
@@ -27,8 +17,10 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+
 use work.EpixHRPkg.all;
 
 library unisim;
