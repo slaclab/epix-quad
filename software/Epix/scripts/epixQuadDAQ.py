@@ -55,6 +55,14 @@ parser.add_argument(
 )  
 
 parser.add_argument(
+    "--type", 
+    type     = str,
+    required = False,
+    default  = 'pgp3_cardG3',
+    help     = "Data card type pgp3_cardG3, datadev or simulation)",
+)  
+
+parser.add_argument(
     "--pgp", 
     type     = str,
     required = False,
@@ -75,7 +83,7 @@ args = parser.parse_args()
 #################################################################
 
 # Set base
-base = quad.Top(hwType='pgp3_cardG3', dev=args.pgp, lane=args.l,)    
+base = quad.Top(hwType=args.type, dev=args.pgp, lane=args.l,)    
 
 # Start the system
 base.start(

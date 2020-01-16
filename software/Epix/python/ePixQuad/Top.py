@@ -17,6 +17,7 @@ import rogue.utilities.fileio
 import pyrogue
 import pyrogue as pr
 import pyrogue.protocols
+import pyrogue.utilities.prbs
 import pyrogue.utilities.fileio
 import pyrogue.interfaces.simulation
 import time
@@ -25,6 +26,7 @@ import surf.axi                     as axi
 import surf.devices.analog_devices  as analog_devices
 import surf.devices.cypress         as cypress
 import surf.xilinx                  as xil
+import surf.protocols.ssi           as ssi
 
 import ePixAsics as epix
 
@@ -77,6 +79,10 @@ class Top(pr.Root):
         pyrogue.streamConnect(cmdVc1, self.pgpVc1)
         cmdVc3 = rogue.protocols.srp.Cmd()
         pyrogue.streamConnect(cmdVc3, self.pgpVc3)
+        
+        prbsRx = pyrogue.utilities.prbs.PrbsRx(name='PrbsRx')
+        pyrogue.streamConnect(self.pgpVc1,prbsRx)
+        self.add(prbsRx)
         
         @self.command()
         def ClearAsicMatrix():
@@ -135,6 +141,14 @@ class Top(pr.Root):
             memBase = memMap, 
             offset  = 0x01300000, 
             expand  = False,
+        ))
+        
+        self.add(ssi.SsiPrbsTx(
+            name    = 'PrbsTx',
+            memBase = memMap, 
+            offset  = 0x01400000, 
+            expand  = False, 
+            enabled = False,
         ))
         
         self.add(ePixQuad.PseudoScopeCore( 
