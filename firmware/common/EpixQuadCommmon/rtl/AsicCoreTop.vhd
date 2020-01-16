@@ -81,12 +81,13 @@ architecture rtl of AsicCoreTop is
    
    constant LINE_REVERSE_C       : slv(3 downto 0) := "1010";
    
-   constant NUM_AXI_MASTERS_C    : natural := 4;
+   constant NUM_AXI_MASTERS_C    : natural := 5;
 
    constant ASIC_ACQ_INDEX_C     : natural := 0;
    constant ASIC_RDOUT_INDEX_C   : natural := 1;
    constant SCOPE_INDEX_C        : natural := 2;
    constant AXIS_MON_INDEX_C     : natural := 3;
+   constant AXIS_PRBS_INDEX_C    : natural := 4;
 
    constant AXI_CONFIG_C   : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := genAxiLiteConfig(NUM_AXI_MASTERS_C, AXI_BASE_ADDR_G, 24, 20);
 
@@ -111,7 +112,13 @@ architecture rtl of AsicCoreTop is
    signal roClkTail        : slv(7 downto 0);
    signal asicDoutTest     : slv(15 downto 0);
    
-   signal iDataTxMaster     : AxiStreamMasterType;
+   signal iDataTxMaster    : AxiStreamMasterType;
+   signal axisMasterPRBS   : AxiStreamMasterType;
+   signal axisMasterASIC   : AxiStreamMasterType;
+   signal axisSlavePRBS    : AxiStreamSlaveType;
+   signal axisSlaveASIC    : AxiStreamSlaveType;
+   
+   constant MASTER_AXI_CONFIG_C  : AxiStreamConfigType := ssiAxiStreamConfig(8);
    
 begin
    
@@ -227,11 +234,9 @@ begin
       -- Frame stream output (axisClk domain)
       axisClk              => sysClk,
       axisRst              => sysRst,
-      axisMaster           => iDataTxMaster,
-      axisSlave            => dataTxSlave 
+      axisMaster           => axisMasterASIC,
+      axisSlave            => axisSlaveASIC 
    );
-   
-   dataTxMaster   <= iDataTxMaster;
    
    
    ---------------------------------------------------------------
@@ -345,6 +350,54 @@ begin
          sAxilWriteMaster  => axilWriteMasters(AXIS_MON_INDEX_C),
          sAxilWriteSlave   => axilWriteSlaves(AXIS_MON_INDEX_C)
       );
+   
+   
+   ---------------------------------------------------------------
+   -- PRBS Tx generator
+   --------------------- -----------------------------------------
+   U_AXI_PRBS : entity surf.SsiPrbsTx 
+   generic map(         
+      TPD_G                      => TPD_G,
+      MASTER_AXI_PIPE_STAGES_G   => 1,
+      PRBS_SEED_SIZE_G           => 128,
+      MASTER_AXI_STREAM_CONFIG_G => MASTER_AXI_CONFIG_C
+   )
+   port map(
+      -- Master Port (mAxisClk)
+      mAxisClk        => sysClk,
+      mAxisRst        => sysRst,
+      mAxisMaster     => axisMasterPRBS,
+      mAxisSlave      => axisSlavePRBS,
+      -- Trigger Signal (locClk domain)
+      locClk          => sysClk,
+      locRst          => sysRst,
+      trig            => acqStart,
+      packetLength    => x"FFFFFFFF",
+      busy            => open,
+      -- Optional: Axi-Lite Register Interface (locClk domain)
+      axilReadMaster  => axilReadMasters(AXIS_PRBS_INDEX_C),
+      axilReadSlave   => axilReadSlaves(AXIS_PRBS_INDEX_C),
+      axilWriteMaster => axilWriteMasters(AXIS_PRBS_INDEX_C),
+      axilWriteSlave  => axilWriteSlaves(AXIS_PRBS_INDEX_C)
+   );
+   
+   U_STREAM_MUX : entity surf.AxiStreamMux 
+      generic map(
+         TPD_G             => TPD_G,
+         NUM_SLAVES_G      => 2
+         )
+      port map(
+         axisClk           => sysClk,
+         axisRst           => sysRst,
+         sAxisMasters(0)   => axisMasterPRBS,
+         sAxisMasters(1)   => axisMasterASIC,
+         sAxisSlaves(0)    => axisSlavePRBS,
+         sAxisSlaves(1)    => axisSlaveASIC,
+         mAxisMaster       => iDataTxMaster,
+         mAxisSlave        => dataTxSlave
+      );
+   
+   dataTxMaster   <= iDataTxMaster;
    
    
 end rtl;

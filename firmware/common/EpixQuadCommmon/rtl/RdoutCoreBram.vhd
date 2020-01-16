@@ -218,8 +218,6 @@ architecture rtl of RdoutCoreBram is
    
    signal doutRd           : Slv16Array(3 downto 0);
    
-   signal overSampleSizeAct : Slv2Array(63 downto 0);
-   
 begin
    --r.rowCount(BUFF_BITS_C-1 downto 0)
    assert ROWS_BITS_C >= BUFF_BITS_C
@@ -363,19 +361,17 @@ begin
       
       U_MovingAvg : entity work.MovingAvg
       generic map (
-         TPD_G             => TPD_G,
-         CTRL_BITS_G       => 2,
-         DATA_BITS_G       => 14
+         TPD_G          => TPD_G,
+         DATA_BITS_G    => 14
       )
-      port map ( 
-         clk               => sysClk,
-         rst               => sysRst,
-         sizeCtrl          => r.overSampleSize(1 downto 0),
-         sizeCtrlSet       => r.overSampleSize(2),
-         actSizeCtrl       => overSampleSizeAct(i),
-         dataIn            => adcStream(i).tData(13 downto 0),
-         dataOut           => adcStreamOvs(i).tData(13 downto 0),
-         dataOutValid      => open
+      port map (
+         clk            => sysClk,
+         rst            => sysRst,
+         sizeCtrl       => r.overSampleSize,
+         dataIn         => adcStream(i).tData(13 downto 0),
+         dataInValid    => adcStream(i).tValid,
+         dataOut        => adcStreamOvs(i).tData(13 downto 0),
+         dataOutValid   => adcStreamOvs(i).tValid
       );
    
    end generate;
@@ -394,7 +390,7 @@ begin
    
    comb : process (sysRst, sAxilReadMaster, sAxilWriteMaster, txSlave, r,
       acqBusyEdge, acqBusy, acqCount, acqSmplEn, memRdData, opCode, muxStrMap, tpsStream,
-      doutValid, doutOut, doutCount, monData, overSampleSizeAct) is
+      doutValid, doutOut, doutCount, monData) is
       variable v      : RegType;
       variable regCon : AxiLiteEndPointType;
       variable sRowCountVar : integer;
@@ -436,7 +432,6 @@ begin
       
       axiSlaveRegister (regCon, x"024", 0, v.overSampleEn      );
       axiSlaveRegister (regCon, x"028", 0, v.overSampleSize    );
-      axiSlaveRegisterR(regCon, x"028", 0, overSampleSizeAct(0));
       
       
       -- Close out the AXI-Lite transaction

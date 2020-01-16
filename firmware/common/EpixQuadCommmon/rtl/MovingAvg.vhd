@@ -24,19 +24,15 @@ use surf.StdRtlPkg.all;
 entity MovingAvg is
    generic (
       TPD_G          : time  := 1 ns;
-      CTRL_BITS_G    : natural range 1 to 4 := 3;
       DATA_BITS_G    : natural range 1 to 32 := 16
    );
    port (
       clk            : in  sl;
       rst            : in  sl;
-      -- moving window size is 2**(sizeCtrl+1)
-      sizeCtrl       : in  slv(CTRL_BITS_G-1 downto 0);
-      sizeCtrlSet    : in  sl;
-      -- minimum size is restriced by FIFO latency
-      -- actSizeCtrl read back actual window size
-      actSizeCtrl    : out slv(CTRL_BITS_G-1 downto 0);
+      -- moving window size is 2**(sizeCtrl)
+      sizeCtrl       : in  slv(2 downto 0);
       dataIn         : in  slv(DATA_BITS_G-1 downto 0);
+      dataInValid    : in  sl := '1';
       dataOut        : out slv(DATA_BITS_G-1 downto 0);
       dataOutValid   : out sl
    );
@@ -44,38 +40,32 @@ end MovingAvg;
 
 architecture rtl of MovingAvg is
    
-   constant SIZE_BITS_C : natural := 2**CTRL_BITS_G;
-   constant ACC_BITS_C  : natural := SIZE_BITS_C + DATA_BITS_G;
+   constant ACC_BITS_C  : natural := 8 + DATA_BITS_G;
    
    type StateType is (
       IDLE_S,
       FILL_S,
-      EMPTY_S,
       RUN_S
    );
    
    type RegType is record
       state          : StateType;
-      rstCnt         : slv(1 downto 0);
+      sizeCtrl       : slv(2 downto 0);
       accReg         : slv(ACC_BITS_C-1 downto 0);
-      accCnt         : slv(SIZE_BITS_C-1 downto 0);
-      fifoWr         : sl;
-      fifoRd         : sl;
-      fifoRst        : sl;
-      fifoOut        : slv(DATA_BITS_G-1 downto 0);
+      accCnt         : slv(7 downto 0);
+      memWrAddr      : slv(7 downto 0);
+      memRdAddr      : slv(7 downto 0);
       dataOut        : slv(DATA_BITS_G-1 downto 0);
       dataOutValid   : sl;
    end record RegType;
    
    constant REG_INIT_C : RegType := (
       state          => IDLE_S,
-      rstCnt         => (others => '1'),
+      sizeCtrl       => (others => '0'),
       accReg         => (others => '0'),
       accCnt         => (others => '0'),
-      fifoWr         => '0',
-      fifoRd         => '0',
-      fifoRst        => '0',
-      fifoOut        => (others => '0'),
+      memWrAddr      => (others => '0'),
+      memRdAddr      => (others => '0'),
       dataOut        => (others => '0'),
       dataOutValid   => '0'
    );
@@ -83,74 +73,91 @@ architecture rtl of MovingAvg is
    signal reg     : RegType   := REG_INIT_C;
    signal regIn   : RegType;
    
-   signal fifoOut    : slv(DATA_BITS_G-1 downto 0);
+   signal memRdData    : slv(DATA_BITS_G-1 downto 0);
+   
+   attribute keep : boolean;
+   attribute keep of reg : signal is true;
    
 begin
    
    -- register logic
-   comb : process (rst, reg, dataIn, fifoOut, sizeCtrl, sizeCtrlSet) is
+   comb : process (rst, reg, dataIn, dataInValid, memRdData, sizeCtrl) is
       variable vreg : RegType;
       variable accSize : natural;
-      variable actSize : natural;
+      variable shiftSize : natural;
    begin
       -- Latch the current value
       vreg := reg;
       
-      vreg.fifoRst := '0';
-      vreg.fifoOut := fifoOut;
+      ----------------------------------------------------------------------
+      -- power of two look up table
+      ----------------------------------------------------------------------
+      if sizeCtrl = 0 then
+         accSize := 1;
+      elsif sizeCtrl = 1 then
+         accSize := 2;
+      elsif sizeCtrl = 2 then
+         accSize := 4;
+      elsif sizeCtrl = 3 then
+         accSize := 8;
+      elsif sizeCtrl = 4 then
+         accSize := 16;
+      elsif sizeCtrl = 5 then
+         accSize := 32;
+      elsif sizeCtrl = 6 then
+         accSize := 64;
+      else
+         accSize := 128;
+      end if;
+      
+      shiftSize := conv_integer(sizeCtrl);
+      
+      ----------------------------------------------------------------------
+      -- always write dataIn to ring buffer
+      -- read shifted by the size of the avg window
+      ----------------------------------------------------------------------
+      if dataInValid = '1' then
+         vreg.memWrAddr := reg.memWrAddr + 1;
+         vreg.memRdAddr := reg.memWrAddr - accSize + 1;
+      end if;
       
       ----------------------------------------------------------------------
       -- moving average state machine
       ----------------------------------------------------------------------
       
-      for i in 0 to 2**CTRL_BITS_G-1 loop
-         -- minimum window size due to FIFO latency
-         if sizeCtrl = i and i < 1 then
-            accSize := 3;
-            actSize := 1;
-         -- all other window sizes
-         elsif sizeCtrl = i then
-            accSize := 2**(i+1)-1;
-            actSize := i;
-         else -- avoids inferring latch
-            accSize := 3;
-            actSize := 1;
-         end if;
-      end loop;
-      
       case reg.state is
          
          when IDLE_S =>
-            vreg.rstCnt := reg.rstCnt - 1;
-            vreg.fifoRd := '0';
-            vreg.fifoWr := '0';
-            vreg.fifoRst := '0';
+            vreg.memWrAddr := (others=>'0');
             vreg.dataOutValid := '0';
             vreg.accReg := (others=>'0');
-            vreg.accCnt := (others=>'0');
-            if reg.rstCnt = "11" then
-               vreg.fifoRst := '1';
-            elsif reg.rstCnt = 0 then
+            vreg.accCnt := (others => '0');
+            if accSize > 1 then
                vreg.state := FILL_S;
-               vreg.fifoWr := '1';
-            end if;
-         
-         when FILL_S =>
-            vreg.accReg := reg.accReg + dataIn;
-            vreg.accCnt := reg.accCnt + 1;
-            if reg.accCnt = accSize-1 then
-               -- start reading and buffering to avoid overflow when accSize is max (= FIFO size)
-               vreg.fifoRd := '1';
-            elsif reg.accCnt = accSize then
-               vreg.accCnt := reg.accCnt;
+            else
                vreg.state := RUN_S;
             end if;
          
+         when FILL_S =>
+            if dataInValid = '1' then
+               vreg.accReg := reg.accReg + dataIn;
+               vreg.accCnt := reg.accCnt + 1;
+               if reg.accCnt = accSize-1 then
+                  vreg.accCnt := reg.accCnt;
+                  vreg.state := RUN_S;
+               end if;
+            end if;
+         
          when RUN_S =>
-            vreg.accReg := reg.accReg + dataIn - reg.fifoOut;
-            vreg.dataOutValid := '1';
-            if sizeCtrlSet = '1' then
-               vreg.state := IDLE_S;
+            if dataInValid = '1' then
+               if accSize > 1 then
+                  vreg.accReg := reg.accReg + dataIn - memRdData;
+               else
+                  vreg.accReg := resize(dataIn, ACC_BITS_C);
+               end if;
+               vreg.dataOutValid := '1';
+            else
+               vreg.dataOutValid := '0';
             end if;
          
          when others =>
@@ -158,24 +165,13 @@ begin
          
       end case;
       
-      -- divide ACC by set window size
-      for i in 0 to 2**CTRL_BITS_G-1 loop
-         -- minimum window size due to FIFO latency
-         if sizeCtrl = i and i < 1 then
-            vreg.dataOut := reg.accReg(DATA_BITS_G-1+2 downto 0+2);
-            -- add 1 if reminder is > 0.5
-            if reg.accReg(1 downto 0) > 2 then
-               vreg.dataOut := vreg.dataOut + 1;
-            end if;
-         -- all other window sizes
-         elsif sizeCtrl = i then
-            vreg.dataOut := reg.accReg(DATA_BITS_G-1+i+1 downto 0+i+1);
-            -- add 1 if reminder is > 0.5
-            if reg.accReg(i downto 0) > 2**i then
-               vreg.dataOut := vreg.dataOut + 1;
-            end if;
-         end if;
-      end loop;
+      -- store size control
+      -- reset FSM if size changed
+      vreg.sizeCtrl := sizeCtrl;
+      if sizeCtrl /= reg.sizeCtrl then
+         vreg.state := IDLE_S;
+         vreg.dataOutValid := '0';
+      end if;
       
       
       -- Reset      
@@ -184,10 +180,9 @@ begin
       end if;
 
       -- Register the variable for next clock cycle      
-      regIn <= vreg;
-      actSizeCtrl    <= toSlv(actSize, CTRL_BITS_G);
+      regIn          <= vreg;
       dataOutValid   <= reg.dataOutValid;
-      dataOut        <= reg.dataOut;
+      dataOut        <= reg.accReg(DATA_BITS_G-1+shiftSize downto 0+shiftSize);
       
    end process comb;
 
@@ -199,27 +194,27 @@ begin
    end process seq;
    
    ----------------------------------------------------------------------
-   -- Streaming out FIFO
+   -- Moving avg buffer
    ----------------------------------------------------------------------
    
-   U_FifoCascade : entity surf.FifoCascade
+   U_DualPortRam: entity surf.DualPortRam
    generic map (
-      TPD_G                => TPD_G,
-      CASCADE_SIZE_G       => 1,
-      LAST_STAGE_ASYNC_G   => false, 
-      GEN_SYNC_FIFO_G      => true,
-      FWFT_EN_G            => true,
-      DATA_WIDTH_G         => DATA_BITS_G,
-      ADDR_WIDTH_G         => SIZE_BITS_C
+      TPD_G          => TPD_G,
+      DATA_WIDTH_G   => DATA_BITS_G,
+      ADDR_WIDTH_G   => 8
    )
    port map (
-      rst           => regIn.fifoRst,
-      wr_clk        => clk,
-      wr_en         => reg.fifoWr,
-      din           => dataIn,
-      rd_clk        => clk,
-      rd_en         => reg.fifoRd,
-      dout          => fifoOut
+      -- Port A     
+      clka    => clk,
+      wea     => dataInValid,
+      rsta    => '0',
+      addra   => reg.memWrAddr,
+      dina    => dataIn,
+      -- Port B
+      clkb    => clk,
+      rstb    => '0',
+      addrb   => reg.memRdAddr,
+      doutb   => memRdData
    );
    
 end rtl;
