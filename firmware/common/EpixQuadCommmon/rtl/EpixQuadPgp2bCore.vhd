@@ -239,22 +239,26 @@ begin
    G_PGP_SIM : if SIMULATION_G = true generate
       U_PGP_SIM : entity surf.RoguePgp2bSim
          generic map (
-            TPD_G           => TPD_G,
-            USER_ID_G       => 1,
-            NUM_VC_EN_G     => 4
+            TPD_G      => TPD_G,
+            PORT_NUM_G => 8000,
+            NUM_VC_G   => 4
          )
          port map (
-            refClkP        => pgpClkP,
-            refClkM        => pgpClkN,
-            pgpTxClk       => pgpRefClkDiv2,
-            pgpTxIn        => pgpTxIn,
-            pgpTxOut       => pgpTxOut,
-            pgpTxMasters   => txMasters,
-            pgpTxSlaves    => txSlaves,
-            pgpRxIn        => pgpRxIn,
-            pgpRxOut       => pgpRxOut,
-            pgpRxMasters   => rxMasters,
-            pgpRxSlaves    => rxSlaves
+            -- PGP Clock and Reset
+            pgpClk            => fabClk,
+            pgpClkRst         => fabRst,
+            -- Non VC Rx Signals
+            pgpRxIn           => PGP2B_RX_IN_INIT_C,
+            pgpRxOut          => pgpRxOut,
+            -- Non VC Tx Signals
+            pgpTxIn           => PGP2B_TX_IN_INIT_C,
+            pgpTxOut          => open,
+            -- Frame Transmit Interface
+            pgpTxMasters    => txMasters,
+            pgpTxSlaves     => txSlaves,
+            -- Frame Receive Interface
+            pgpRxMasters    => rxMasters,
+            pgpRxSlaves     => rxSlaves
          );
       pgpRefClk <= '0';
    end generate G_PGP_SIM;

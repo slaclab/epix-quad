@@ -306,7 +306,8 @@ begin
             GEN_SYNC_FIFO_G   => true,
             ADDR_WIDTH_G      => 8,
             FWFT_EN_G         => true,
-            LITTLE_ENDIAN_G   => true
+            LITTLE_ENDIAN_G   => true,
+            SYNTH_MODE_G      => "xpm"
          )
          port map (
             rst               => f.fifoRst,
@@ -333,7 +334,8 @@ begin
             GEN_SYNC_FIFO_G   => true,
             ADDR_WIDTH_G      => 8,
             FWFT_EN_G         => true,
-            LITTLE_ENDIAN_G   => true
+            LITTLE_ENDIAN_G   => true,
+            SYNTH_MODE_G      => "xpm"
          )
          port map (
             rst               => f.fifoRst,

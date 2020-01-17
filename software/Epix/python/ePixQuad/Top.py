@@ -49,10 +49,14 @@ class Top(pr.Root):
         ######################################################################          
         
         if (hwType == 'simulation'):
-            self.pgpVc0 = pr.interfaces.simulation.StreamSim(host='localhost', dest=0, uid=1, ssi=True)
-            self.pgpVc1 = pr.interfaces.simulation.StreamSim(host='localhost', dest=1, uid=1, ssi=True)
-            self.pgpVc2 = pr.interfaces.simulation.StreamSim(host='localhost', dest=2, uid=1, ssi=True)
-            self.pgpVc3 = pr.interfaces.simulation.StreamSim(host='localhost', dest=3, uid=1, ssi=True)      
+            #self.pgpVc0 = pr.interfaces.simulation.StreamSim(host='localhost', dest=0, uid=1, ssi=True)
+            #self.pgpVc1 = pr.interfaces.simulation.StreamSim(host='localhost', dest=1, uid=1, ssi=True)
+            #self.pgpVc2 = pr.interfaces.simulation.StreamSim(host='localhost', dest=2, uid=1, ssi=True)
+            #self.pgpVc3 = pr.interfaces.simulation.StreamSim(host='localhost', dest=3, uid=1, ssi=True)
+            self.pgpVc0 = rogue.interfaces.stream.TcpClient('localhost',8000)
+            self.pgpVc1 = rogue.interfaces.stream.TcpClient('localhost',8002)
+            self.pgpVc2 = rogue.interfaces.stream.TcpClient('localhost',8004)
+            self.pgpVc3 = rogue.interfaces.stream.TcpClient('localhost',8006)            
         elif (hwType == 'datadev'):
             self.pgpVc0 = rogue.hardware.axi.AxiStreamDma(dev,32*lane+0,True) # Data & cmds
             self.pgpVc1 = rogue.hardware.axi.AxiStreamDma(dev,32*lane+1,True) # Registers for ePix board

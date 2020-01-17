@@ -242,53 +242,32 @@ begin
    end generate G_PGP;   
       
    G_PGP_SIM : if SIMULATION_G = true generate
-      G_DESTS : for j in 3 downto 0 generate
-         U_PGP_SIM : entity surf.RogueStreamSimWrap
-            generic map (
-               TPD_G               => TPD_G,
-               DEST_ID_G           => j,
-               USER_ID_G           => 1,
-               COMMON_MASTER_CLK_G => true,
-               COMMON_SLAVE_CLK_G  => true,
-               AXIS_CONFIG_G       => PGP3_AXIS_CONFIG_C
-            )
-            port map (
-               clk         => pgpClk,           
-               rst         => pgpRst,           
-               sAxisClk    => pgpClk,           
-               sAxisRst    => pgpRst,           
-               sAxisMaster => txMasters(j),
-               sAxisSlave  => txSlaves(j), 
-               mAxisClk    => pgpClk,           
-               mAxisRst    => pgpRst,           
-               mAxisMaster => rxMasters(j),
-               mAxisSlave  => rxSlaves(j)
-            );  
-      end generate G_DESTS;
-         
-      -- clkOut(0) - 156.25 MHz
-      U_PLL0 : entity surf.ClockManagerUltraScale
+      
+      U_Rogue : entity surf.RoguePgp3Sim
          generic map(
-            TPD_G             => TPD_G,
-            TYPE_G            => "PLL",
-            INPUT_BUFG_G      => true,
-            FB_BUFG_G         => true,
-            RST_IN_POLARITY_G => '1',
-            NUM_CLOCKS_G      => 1,
-            -- MMCM attributes
-            BANDWIDTH_G       => "OPTIMIZED",
-            CLKIN_PERIOD_G    => 6.4,
-            DIVCLK_DIVIDE_G   => 1,
-            CLKFBOUT_MULT_G   => 4,
-            CLKOUT0_DIVIDE_G  => 4)
+            TPD_G      => TPD_G,
+            PORT_NUM_G => 8000,
+            NUM_VC_G   => 4
+         )
          port map(
-            -- Clock Input
-            clkIn     => fabClk,
-            rstIn     => fabRst,
-            -- Clock Outputs
-            clkOut(0) => pgpClk,
-            -- Reset Outputs
-            rstOut(0) => pgpReset);
+            -- GT Ports
+            pgpRefClk       => pgpRefClk,
+            -- PGP Clock and Reset
+            pgpClk          => pgpClk,
+            pgpClkRst       => pgpRst,
+            -- Non VC Rx Signals
+            pgpRxIn           => PGP3_RX_IN_INIT_C,
+            pgpRxOut          => pgpRxOut,
+            -- Non VC Tx Signals
+            pgpTxIn           => PGP3_TX_IN_INIT_C,
+            pgpTxOut          => open,
+            -- Frame Transmit Interface
+            pgpTxMasters    => txMasters,
+            pgpTxSlaves     => txSlaves,
+            -- Frame Receive Interface
+            pgpRxMasters    => rxMasters,
+            pgpRxSlaves     => rxSlaves
+         );
             
    end generate G_PGP_SIM;
    

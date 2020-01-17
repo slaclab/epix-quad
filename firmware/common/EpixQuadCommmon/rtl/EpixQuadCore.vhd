@@ -281,6 +281,7 @@ begin
          clk              => sysClk,
          rst              => sysRst);
    
+   
    U_AdcStartEdge : entity surf.SynchronizerEdge
       port map (
          clk         => sysClk,
