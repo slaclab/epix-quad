@@ -197,7 +197,7 @@ for adc in range(args.adcStart, args.adcStop+1):
    
    if len(lockData) > 0:
       maxCount = lockData['Count'].max()
-      maxIndex = lockData['Count'].idxmax()
+      maxIndex = lockData['Count'].astype(int).idxmax()
       frameDlySet = lockData.loc[maxIndex]['Start'] + round(maxCount/2)
       QuadTop.Ad9249Readout[adc].FrameDelay.set(0x200+frameDlySet)
       
@@ -262,7 +262,7 @@ for adc in range(args.adcStart, args.adcStop+1):
          print(test)
       if len(passData) > 0:
          maxCount = passData['Count'].max()
-         maxIndex = passData['Count'].idxmax()
+         maxIndex = passData['Count'].astype(int).idxmax()
          chanDlySet = passData.loc[maxIndex]['Start'] + round(maxCount/2)
          QuadTop.Ad9249Readout[adc].ChannelDelay[channel].set(0x200+chanDlySet)
          if args.diff:
