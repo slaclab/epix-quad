@@ -383,9 +383,16 @@ begin
    
    U_STREAM_MUX : entity surf.AxiStreamMux 
       generic map(
-         TPD_G             => TPD_G,
-         NUM_SLAVES_G      => 2
-         )
+         TPD_G                => TPD_G,
+         NUM_SLAVES_G         => 2,
+         PIPE_STAGES_G        => 0,
+         MODE_G               =>"ROUTED",
+         TDEST_ROUTES_G       => (0=>x"01", 1=>x"00"),
+         TDEST_LOW_G          => 0,
+         ILEAVE_EN_G          => false,
+         ILEAVE_ON_NOTVALID_G => false,
+         ILEAVE_REARB_G       => 0
+      )
       port map(
          axisClk           => sysClk,
          axisRst           => sysRst,
