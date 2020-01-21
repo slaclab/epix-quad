@@ -1,12 +1,17 @@
 Top:
   enable: True
   ForceWrite: False
+  InitAfterConfig: False
+  PollEn: False
   StreamWriter:
     enable: True
     dataFile: ''
     open: False
     bufferSize: 0
     maxFileSize: 0
+  PrbsRx:
+    enable: True
+    checkPayload: True
   AxiVersion:
     enable: True
     ScratchPad: 0x000000
@@ -64,14 +69,28 @@ Top:
     AsicPpmatValue: True
     AsicSyncValue: False
     AsicRoClkValue: False
+    DummyAcqEn: True
   RdoutCore:
     enable: True
     RdoutEn: True
     SeqCountReset: False
     AdcPipelineDelay: 0x5a
     TestData: False
+    OverSampleEn: False
+    OverSampleSize: 0x0
   RdoutStreamMonitoring:
     enable: True
+    Ch[0]:
+      enable: True
+  PrbsTx:
+    enable: False
+    AxiEn: False
+    TxEn: False
+    FwCnt: False
+    PacketLength: 0x0
+    tDest: 0x0
+    tId: 0x0
+    TrigDly: 0x0
   PseudoScopeCore:
     enable: True
     Arm: False
@@ -166,7 +185,9 @@ Top:
     SlvdsBit: False
     FELmode: False
     CompEnOn: False
+    RowStartAddr: 0x0
     RowStopAddr: 0x0
+    ColStartAddr: 0x0
     ColStopAddr: 0x0
     S2d1Gr: 0x0
     S2d2Gr: 0x0
@@ -233,7 +254,9 @@ Top:
     SlvdsBit: False
     FELmode: False
     CompEnOn: False
+    RowStartAddr: 0x0
     RowStopAddr: 0x0
+    ColStartAddr: 0x0
     ColStopAddr: 0x0
     S2d1Gr: 0x0
     S2d2Gr: 0x0
@@ -300,7 +323,9 @@ Top:
     SlvdsBit: False
     FELmode: False
     CompEnOn: False
+    RowStartAddr: 0x0
     RowStopAddr: 0x0
+    ColStartAddr: 0x0
     ColStopAddr: 0x0
     S2d1Gr: 0x0
     S2d2Gr: 0x0
@@ -367,7 +392,9 @@ Top:
     SlvdsBit: False
     FELmode: False
     CompEnOn: False
+    RowStartAddr: 0x0
     RowStopAddr: 0x0
+    ColStartAddr: 0x0
     ColStopAddr: 0x0
     S2d1Gr: 0x0
     S2d2Gr: 0x0
@@ -434,7 +461,9 @@ Top:
     SlvdsBit: False
     FELmode: False
     CompEnOn: False
+    RowStartAddr: 0x0
     RowStopAddr: 0x0
+    ColStartAddr: 0x0
     ColStopAddr: 0x0
     S2d1Gr: 0x0
     S2d2Gr: 0x0
@@ -501,7 +530,9 @@ Top:
     SlvdsBit: False
     FELmode: False
     CompEnOn: False
+    RowStartAddr: 0x0
     RowStopAddr: 0x0
+    ColStartAddr: 0x0
     ColStopAddr: 0x0
     S2d1Gr: 0x0
     S2d2Gr: 0x0
@@ -568,7 +599,9 @@ Top:
     SlvdsBit: False
     FELmode: False
     CompEnOn: False
+    RowStartAddr: 0x0
     RowStopAddr: 0x0
+    ColStartAddr: 0x0
     ColStopAddr: 0x0
     S2d1Gr: 0x0
     S2d2Gr: 0x0
@@ -635,7 +668,9 @@ Top:
     SlvdsBit: False
     FELmode: False
     CompEnOn: False
+    RowStartAddr: 0x0
     RowStopAddr: 0x0
+    ColStartAddr: 0x0
     ColStopAddr: 0x0
     S2d1Gr: 0x0
     S2d2Gr: 0x0
@@ -702,7 +737,9 @@ Top:
     SlvdsBit: False
     FELmode: False
     CompEnOn: False
+    RowStartAddr: 0x0
     RowStopAddr: 0x0
+    ColStartAddr: 0x0
     ColStopAddr: 0x0
     S2d1Gr: 0x0
     S2d2Gr: 0x0
@@ -769,7 +806,9 @@ Top:
     SlvdsBit: False
     FELmode: False
     CompEnOn: False
+    RowStartAddr: 0x0
     RowStopAddr: 0x0
+    ColStartAddr: 0x0
     ColStopAddr: 0x0
     S2d1Gr: 0x0
     S2d2Gr: 0x0
@@ -836,7 +875,9 @@ Top:
     SlvdsBit: False
     FELmode: False
     CompEnOn: False
+    RowStartAddr: 0x0
     RowStopAddr: 0x0
+    ColStartAddr: 0x0
     ColStopAddr: 0x0
     S2d1Gr: 0x0
     S2d2Gr: 0x0
@@ -903,7 +944,9 @@ Top:
     SlvdsBit: False
     FELmode: False
     CompEnOn: False
+    RowStartAddr: 0x0
     RowStopAddr: 0x0
+    ColStartAddr: 0x0
     ColStopAddr: 0x0
     S2d1Gr: 0x0
     S2d2Gr: 0x0
@@ -917,12 +960,12 @@ Top:
     S2d3Dac: 0x0
   Epix10kaSaci[12]:
     enable: False
-    CompTH_DAC: 0x2a
+    CompTH_DAC: 0x0
     CompEn0: False
     CompEn1: False
     CompEn2: False
     PulserSync: False
-    PixelDummy: 0x2a
+    PixelDummy: 0x0
     Pulser: 0x0
     pbit: False
     atest: False
@@ -931,65 +974,67 @@ Top:
     hrtest: False
     PulserR: False
     DigMon1: 0x0
-    DigMon2: 0x1
-    PulserDac: 0x3
+    DigMon2: 0x0
+    PulserDac: 0x0
     MonostPulser: 0x0
     Dm1En: False
     Dm2En: False
     emph_bd: 0x0
     emph_bc: 0x0
-    VRef: 0x16
-    VRefLow: 0x3
-    TpsTComp: True
+    VRef: 0x0
+    VRefLow: 0x0
+    TpsTComp: False
     TpsMux: 0x0
-    RoMonost: 0x3
-    TpsGr: 0x3
-    S2d0Gr: 0x3
-    PpOcbS2d: True
-    Ocb: 0x3
-    Monost: 0x3
-    FastppEnable: True
-    Preamp: 0x4
-    PixelCb: 0x4
-    Vld1_b: 0x1
-    S2dTComp: True
-    FilterDac: 0x21
+    RoMonost: 0x0
+    TpsGr: 0x0
+    S2d0Gr: 0x0
+    PpOcbS2d: False
+    Ocb: 0x0
+    Monost: 0x0
+    FastppEnable: False
+    Preamp: 0x0
+    PixelCb: 0x0
+    Vld1_b: 0x0
+    S2dTComp: False
+    FilterDac: 0x0
     TestLVDTransmitter: False
     TC: 0x0
-    S2d: 0x3
-    S2dDacBias: 0x3
+    S2d: 0x0
+    S2dDacBias: 0x0
     TpsTcDac: 0x0
-    TpsDac: 0x16
-    S2d0TcDac: 0x1
-    S2d0Dac: 0x16
+    TpsDac: 0x0
+    S2d0TcDac: 0x0
+    S2d0Dac: 0x0
     TestBe: False
     IsEn: False
     DelExec: False
     DelCckRef: False
-    RO_rst_en: True
-    SlvdsBit: True
+    RO_rst_en: False
+    SlvdsBit: False
     FELmode: False
     CompEnOn: False
-    RowStopAddr: 0xb1
-    ColStopAddr: 0x2f
-    S2d1Gr: 0x3
-    S2d2Gr: 0x3
-    S2d3Gr: 0x3
+    RowStartAddr: 0x0
+    RowStopAddr: 0x0
+    ColStartAddr: 0x0
+    ColStopAddr: 0x0
+    S2d1Gr: 0x0
+    S2d2Gr: 0x0
+    S2d3Gr: 0x0
     trbit: False
-    S2d1TcDac: 0x1
-    S2d1Dac: 0x16
-    S2d2TcDac: 0x1
-    S2d2Dac: 0x16
-    S2d3TcDac: 0x1
-    S2d3Dac: 0x16
+    S2d1TcDac: 0x0
+    S2d1Dac: 0x0
+    S2d2TcDac: 0x0
+    S2d2Dac: 0x0
+    S2d3TcDac: 0x0
+    S2d3Dac: 0x0
   Epix10kaSaci[13]:
     enable: False
-    CompTH_DAC: 0x2a
+    CompTH_DAC: 0x0
     CompEn0: False
     CompEn1: False
     CompEn2: False
     PulserSync: False
-    PixelDummy: 0x2a
+    PixelDummy: 0x0
     Pulser: 0x0
     pbit: False
     atest: False
@@ -998,65 +1043,67 @@ Top:
     hrtest: False
     PulserR: False
     DigMon1: 0x0
-    DigMon2: 0x1
-    PulserDac: 0x3
+    DigMon2: 0x0
+    PulserDac: 0x0
     MonostPulser: 0x0
     Dm1En: False
     Dm2En: False
     emph_bd: 0x0
     emph_bc: 0x0
-    VRef: 0x16
-    VRefLow: 0x3
-    TpsTComp: True
+    VRef: 0x0
+    VRefLow: 0x0
+    TpsTComp: False
     TpsMux: 0x0
-    RoMonost: 0x3
-    TpsGr: 0x3
-    S2d0Gr: 0x3
-    PpOcbS2d: True
-    Ocb: 0x3
-    Monost: 0x3
-    FastppEnable: True
-    Preamp: 0x4
-    PixelCb: 0x4
-    Vld1_b: 0x1
-    S2dTComp: True
-    FilterDac: 0x21
+    RoMonost: 0x0
+    TpsGr: 0x0
+    S2d0Gr: 0x0
+    PpOcbS2d: False
+    Ocb: 0x0
+    Monost: 0x0
+    FastppEnable: False
+    Preamp: 0x0
+    PixelCb: 0x0
+    Vld1_b: 0x0
+    S2dTComp: False
+    FilterDac: 0x0
     TestLVDTransmitter: False
     TC: 0x0
-    S2d: 0x3
-    S2dDacBias: 0x3
+    S2d: 0x0
+    S2dDacBias: 0x0
     TpsTcDac: 0x0
-    TpsDac: 0x16
-    S2d0TcDac: 0x1
-    S2d0Dac: 0x16
+    TpsDac: 0x0
+    S2d0TcDac: 0x0
+    S2d0Dac: 0x0
     TestBe: False
     IsEn: False
     DelExec: False
     DelCckRef: False
-    RO_rst_en: True
-    SlvdsBit: True
+    RO_rst_en: False
+    SlvdsBit: False
     FELmode: False
     CompEnOn: False
-    RowStopAddr: 0xb1
-    ColStopAddr: 0x2f
-    S2d1Gr: 0x3
-    S2d2Gr: 0x3
-    S2d3Gr: 0x3
+    RowStartAddr: 0x0
+    RowStopAddr: 0x0
+    ColStartAddr: 0x0
+    ColStopAddr: 0x0
+    S2d1Gr: 0x0
+    S2d2Gr: 0x0
+    S2d3Gr: 0x0
     trbit: False
-    S2d1TcDac: 0x1
-    S2d1Dac: 0x16
-    S2d2TcDac: 0x1
-    S2d2Dac: 0x16
-    S2d3TcDac: 0x1
-    S2d3Dac: 0x16
+    S2d1TcDac: 0x0
+    S2d1Dac: 0x0
+    S2d2TcDac: 0x0
+    S2d2Dac: 0x0
+    S2d3TcDac: 0x0
+    S2d3Dac: 0x0
   Epix10kaSaci[14]:
     enable: False
-    CompTH_DAC: 0x2a
+    CompTH_DAC: 0x0
     CompEn0: False
     CompEn1: False
     CompEn2: False
     PulserSync: False
-    PixelDummy: 0x2a
+    PixelDummy: 0x0
     Pulser: 0x0
     pbit: False
     atest: False
@@ -1065,65 +1112,67 @@ Top:
     hrtest: False
     PulserR: False
     DigMon1: 0x0
-    DigMon2: 0x1
-    PulserDac: 0x3
+    DigMon2: 0x0
+    PulserDac: 0x0
     MonostPulser: 0x0
     Dm1En: False
     Dm2En: False
     emph_bd: 0x0
     emph_bc: 0x0
-    VRef: 0x16
-    VRefLow: 0x3
-    TpsTComp: True
+    VRef: 0x0
+    VRefLow: 0x0
+    TpsTComp: False
     TpsMux: 0x0
-    RoMonost: 0x3
-    TpsGr: 0x3
-    S2d0Gr: 0x3
-    PpOcbS2d: True
-    Ocb: 0x3
-    Monost: 0x3
-    FastppEnable: True
-    Preamp: 0x4
-    PixelCb: 0x4
-    Vld1_b: 0x1
-    S2dTComp: True
-    FilterDac: 0x21
+    RoMonost: 0x0
+    TpsGr: 0x0
+    S2d0Gr: 0x0
+    PpOcbS2d: False
+    Ocb: 0x0
+    Monost: 0x0
+    FastppEnable: False
+    Preamp: 0x0
+    PixelCb: 0x0
+    Vld1_b: 0x0
+    S2dTComp: False
+    FilterDac: 0x0
     TestLVDTransmitter: False
     TC: 0x0
-    S2d: 0x3
-    S2dDacBias: 0x3
+    S2d: 0x0
+    S2dDacBias: 0x0
     TpsTcDac: 0x0
-    TpsDac: 0x16
-    S2d0TcDac: 0x1
-    S2d0Dac: 0x16
+    TpsDac: 0x0
+    S2d0TcDac: 0x0
+    S2d0Dac: 0x0
     TestBe: False
     IsEn: False
     DelExec: False
     DelCckRef: False
-    RO_rst_en: True
-    SlvdsBit: True
+    RO_rst_en: False
+    SlvdsBit: False
     FELmode: False
     CompEnOn: False
-    RowStopAddr: 0xb1
-    ColStopAddr: 0x2f
-    S2d1Gr: 0x3
-    S2d2Gr: 0x3
-    S2d3Gr: 0x3
+    RowStartAddr: 0x0
+    RowStopAddr: 0x0
+    ColStartAddr: 0x0
+    ColStopAddr: 0x0
+    S2d1Gr: 0x0
+    S2d2Gr: 0x0
+    S2d3Gr: 0x0
     trbit: False
-    S2d1TcDac: 0x1
-    S2d1Dac: 0x16
-    S2d2TcDac: 0x1
-    S2d2Dac: 0x16
-    S2d3TcDac: 0x1
-    S2d3Dac: 0x16
+    S2d1TcDac: 0x0
+    S2d1Dac: 0x0
+    S2d2TcDac: 0x0
+    S2d2Dac: 0x0
+    S2d3TcDac: 0x0
+    S2d3Dac: 0x0
   Epix10kaSaci[15]:
     enable: False
-    CompTH_DAC: 0x2a
+    CompTH_DAC: 0x0
     CompEn0: False
     CompEn1: False
     CompEn2: False
     PulserSync: False
-    PixelDummy: 0x2a
+    PixelDummy: 0x0
     Pulser: 0x0
     pbit: False
     atest: False
@@ -1132,57 +1181,64 @@ Top:
     hrtest: False
     PulserR: False
     DigMon1: 0x0
-    DigMon2: 0x1
-    PulserDac: 0x3
+    DigMon2: 0x0
+    PulserDac: 0x0
     MonostPulser: 0x0
     Dm1En: False
     Dm2En: False
     emph_bd: 0x0
     emph_bc: 0x0
-    VRef: 0x16
-    VRefLow: 0x3
-    TpsTComp: True
+    VRef: 0x0
+    VRefLow: 0x0
+    TpsTComp: False
     TpsMux: 0x0
-    RoMonost: 0x3
-    TpsGr: 0x3
-    S2d0Gr: 0x3
-    PpOcbS2d: True
-    Ocb: 0x3
-    Monost: 0x3
-    FastppEnable: True
-    Preamp: 0x4
-    PixelCb: 0x4
-    Vld1_b: 0x1
-    S2dTComp: True
-    FilterDac: 0x21
+    RoMonost: 0x0
+    TpsGr: 0x0
+    S2d0Gr: 0x0
+    PpOcbS2d: False
+    Ocb: 0x0
+    Monost: 0x0
+    FastppEnable: False
+    Preamp: 0x0
+    PixelCb: 0x0
+    Vld1_b: 0x0
+    S2dTComp: False
+    FilterDac: 0x0
     TestLVDTransmitter: False
     TC: 0x0
-    S2d: 0x3
-    S2dDacBias: 0x3
+    S2d: 0x0
+    S2dDacBias: 0x0
     TpsTcDac: 0x0
-    TpsDac: 0x16
-    S2d0TcDac: 0x1
-    S2d0Dac: 0x16
+    TpsDac: 0x0
+    S2d0TcDac: 0x0
+    S2d0Dac: 0x0
     TestBe: False
     IsEn: False
     DelExec: False
     DelCckRef: False
-    RO_rst_en: True
-    SlvdsBit: True
+    RO_rst_en: False
+    SlvdsBit: False
     FELmode: False
     CompEnOn: False
-    RowStopAddr: 0xb1
-    ColStopAddr: 0x2f
-    S2d1Gr: 0x3
-    S2d2Gr: 0x3
-    S2d3Gr: 0x3
+    RowStartAddr: 0x0
+    RowStopAddr: 0x0
+    ColStartAddr: 0x0
+    ColStopAddr: 0x0
+    S2d1Gr: 0x0
+    S2d2Gr: 0x0
+    S2d3Gr: 0x0
     trbit: False
-    S2d1TcDac: 0x1
-    S2d1Dac: 0x16
-    S2d2TcDac: 0x1
-    S2d2Dac: 0x16
-    S2d3TcDac: 0x1
-    S2d3Dac: 0x16
+    S2d1TcDac: 0x0
+    S2d1Dac: 0x0
+    S2d2TcDac: 0x0
+    S2d2Dac: 0x0
+    S2d3TcDac: 0x0
+    S2d3Dac: 0x0
+  SaciConfigCore:
+    enable: True
+    ConfWrReq: False
+    ConfRdReq: False
+    ConfSel: 0x0
   Ad9249Config[0]:
     enable: False
     ExternalPdwnMode: Full Power Down
@@ -1197,6 +1253,11 @@ Top:
     OffsetAdjust: 0x0
     OutputInvert: False
     OutputFormat: Offset Binary
+    UserPatt1Lsb: 0x0
+    UserPatt1Msb: 0x0
+    UserPatt2Lsb: 0x0
+    UserPatt2Msb: 0x0
+    LvdsLsbFirst: False
   Ad9249Config[1]:
     enable: False
     ExternalPdwnMode: Full Power Down
@@ -1211,6 +1272,11 @@ Top:
     OffsetAdjust: 0x0
     OutputInvert: False
     OutputFormat: Offset Binary
+    UserPatt1Lsb: 0x0
+    UserPatt1Msb: 0x0
+    UserPatt2Lsb: 0x0
+    UserPatt2Msb: 0x0
+    LvdsLsbFirst: False
   Ad9249Config[2]:
     enable: False
     ExternalPdwnMode: Full Power Down
@@ -1225,6 +1291,11 @@ Top:
     OffsetAdjust: 0x0
     OutputInvert: False
     OutputFormat: Offset Binary
+    UserPatt1Lsb: 0x0
+    UserPatt1Msb: 0x0
+    UserPatt2Lsb: 0x0
+    UserPatt2Msb: 0x0
+    LvdsLsbFirst: False
   Ad9249Config[3]:
     enable: False
     ExternalPdwnMode: Full Power Down
@@ -1239,6 +1310,11 @@ Top:
     OffsetAdjust: 0x0
     OutputInvert: False
     OutputFormat: Offset Binary
+    UserPatt1Lsb: 0x0
+    UserPatt1Msb: 0x0
+    UserPatt2Lsb: 0x0
+    UserPatt2Msb: 0x0
+    LvdsLsbFirst: False
   Ad9249Config[4]:
     enable: False
     ExternalPdwnMode: Full Power Down
@@ -1253,6 +1329,11 @@ Top:
     OffsetAdjust: 0x0
     OutputInvert: False
     OutputFormat: Offset Binary
+    UserPatt1Lsb: 0x0
+    UserPatt1Msb: 0x0
+    UserPatt2Lsb: 0x0
+    UserPatt2Msb: 0x0
+    LvdsLsbFirst: False
   Ad9249Config[5]:
     enable: False
     ExternalPdwnMode: Full Power Down
@@ -1267,6 +1348,11 @@ Top:
     OffsetAdjust: 0x0
     OutputInvert: False
     OutputFormat: Offset Binary
+    UserPatt1Lsb: 0x0
+    UserPatt1Msb: 0x0
+    UserPatt2Lsb: 0x0
+    UserPatt2Msb: 0x0
+    LvdsLsbFirst: False
   Ad9249Config[6]:
     enable: False
     ExternalPdwnMode: Full Power Down
@@ -1281,6 +1367,11 @@ Top:
     OffsetAdjust: 0x0
     OutputInvert: False
     OutputFormat: Offset Binary
+    UserPatt1Lsb: 0x0
+    UserPatt1Msb: 0x0
+    UserPatt2Lsb: 0x0
+    UserPatt2Msb: 0x0
+    LvdsLsbFirst: False
   Ad9249Config[7]:
     enable: False
     ExternalPdwnMode: Full Power Down
@@ -1295,6 +1386,11 @@ Top:
     OffsetAdjust: 0x0
     OutputInvert: False
     OutputFormat: Offset Binary
+    UserPatt1Lsb: 0x0
+    UserPatt1Msb: 0x0
+    UserPatt2Lsb: 0x0
+    UserPatt2Msb: 0x0
+    LvdsLsbFirst: False
   Ad9249Config[8]:
     enable: False
     ExternalPdwnMode: Full Power Down
@@ -1309,6 +1405,11 @@ Top:
     OffsetAdjust: 0x0
     OutputInvert: False
     OutputFormat: Offset Binary
+    UserPatt1Lsb: 0x0
+    UserPatt1Msb: 0x0
+    UserPatt2Lsb: 0x0
+    UserPatt2Msb: 0x0
+    LvdsLsbFirst: False
   Ad9249Config[9]:
     enable: False
     ExternalPdwnMode: Full Power Down
@@ -1323,116 +1424,11 @@ Top:
     OffsetAdjust: 0x0
     OutputInvert: False
     OutputFormat: Offset Binary
-  Ad9249Readout[0]:
-    enable: False
-    ChannelDelay[0]: 0x0
-    ChannelDelay[1]: 0x0
-    ChannelDelay[2]: 0x0
-    ChannelDelay[3]: 0x0
-    ChannelDelay[4]: 0x0
-    ChannelDelay[5]: 0x0
-    ChannelDelay[6]: 0x0
-    ChannelDelay[7]: 0x0
-    FrameDelay: 0x0
-  Ad9249Readout[1]:
-    enable: False
-    ChannelDelay[0]: 0x0
-    ChannelDelay[1]: 0x0
-    ChannelDelay[2]: 0x0
-    ChannelDelay[3]: 0x0
-    ChannelDelay[4]: 0x0
-    ChannelDelay[5]: 0x0
-    ChannelDelay[6]: 0x0
-    ChannelDelay[7]: 0x0
-    FrameDelay: 0x0
-  Ad9249Readout[2]:
-    enable: False
-    ChannelDelay[0]: 0x0
-    ChannelDelay[1]: 0x0
-    ChannelDelay[2]: 0x0
-    ChannelDelay[3]: 0x0
-    ChannelDelay[4]: 0x0
-    ChannelDelay[5]: 0x0
-    ChannelDelay[6]: 0x0
-    ChannelDelay[7]: 0x0
-    FrameDelay: 0x0
-  Ad9249Readout[3]:
-    enable: False
-    ChannelDelay[0]: 0x0
-    ChannelDelay[1]: 0x0
-    ChannelDelay[2]: 0x0
-    ChannelDelay[3]: 0x0
-    ChannelDelay[4]: 0x0
-    ChannelDelay[5]: 0x0
-    ChannelDelay[6]: 0x0
-    ChannelDelay[7]: 0x0
-    FrameDelay: 0x0
-  Ad9249Readout[4]:
-    enable: False
-    ChannelDelay[0]: 0x0
-    ChannelDelay[1]: 0x0
-    ChannelDelay[2]: 0x0
-    ChannelDelay[3]: 0x0
-    ChannelDelay[4]: 0x0
-    ChannelDelay[5]: 0x0
-    ChannelDelay[6]: 0x0
-    ChannelDelay[7]: 0x0
-    FrameDelay: 0x0
-  Ad9249Readout[5]:
-    enable: False
-    ChannelDelay[0]: 0x0
-    ChannelDelay[1]: 0x0
-    ChannelDelay[2]: 0x0
-    ChannelDelay[3]: 0x0
-    ChannelDelay[4]: 0x0
-    ChannelDelay[5]: 0x0
-    ChannelDelay[6]: 0x0
-    ChannelDelay[7]: 0x0
-    FrameDelay: 0x0
-  Ad9249Readout[6]:
-    enable: False
-    ChannelDelay[0]: 0x0
-    ChannelDelay[1]: 0x0
-    ChannelDelay[2]: 0x0
-    ChannelDelay[3]: 0x0
-    ChannelDelay[4]: 0x0
-    ChannelDelay[5]: 0x0
-    ChannelDelay[6]: 0x0
-    ChannelDelay[7]: 0x0
-    FrameDelay: 0x0
-  Ad9249Readout[7]:
-    enable: False
-    ChannelDelay[0]: 0x0
-    ChannelDelay[1]: 0x0
-    ChannelDelay[2]: 0x0
-    ChannelDelay[3]: 0x0
-    ChannelDelay[4]: 0x0
-    ChannelDelay[5]: 0x0
-    ChannelDelay[6]: 0x0
-    ChannelDelay[7]: 0x0
-    FrameDelay: 0x0
-  Ad9249Readout[8]:
-    enable: False
-    ChannelDelay[0]: 0x0
-    ChannelDelay[1]: 0x0
-    ChannelDelay[2]: 0x0
-    ChannelDelay[3]: 0x0
-    ChannelDelay[4]: 0x0
-    ChannelDelay[5]: 0x0
-    ChannelDelay[6]: 0x0
-    ChannelDelay[7]: 0x0
-    FrameDelay: 0x0
-  Ad9249Readout[9]:
-    enable: False
-    ChannelDelay[0]: 0x0
-    ChannelDelay[1]: 0x0
-    ChannelDelay[2]: 0x0
-    ChannelDelay[3]: 0x0
-    ChannelDelay[4]: 0x0
-    ChannelDelay[5]: 0x0
-    ChannelDelay[6]: 0x0
-    ChannelDelay[7]: 0x0
-    FrameDelay: 0x0
+    UserPatt1Lsb: 0x0
+    UserPatt1Msb: 0x0
+    UserPatt2Lsb: 0x0
+    UserPatt2Msb: 0x0
+    LvdsLsbFirst: False
   Ad9249Tester:
     enable: False
     TestChannel: 0x0
@@ -1443,4 +1439,3 @@ Top:
     TestRequest: False
   CypressS25Fl:
     enable: True
-    Test: 0x0
