@@ -84,7 +84,7 @@ class Top(pr.Root):
         cmdVc3 = rogue.protocols.srp.Cmd()
         pyrogue.streamConnect(cmdVc3, self.pgpVc3)
         
-        prbsRx = pyrogue.utilities.prbs.PrbsRx(name='PrbsRx')
+        prbsRx = pyrogue.utilities.prbs.PrbsRx(name='PrbsRx', width=128)
         pyrogue.streamConnect(self.pgpVc1,prbsRx)
         self.add(prbsRx)
         
