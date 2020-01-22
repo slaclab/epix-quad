@@ -65,6 +65,14 @@ parser.add_argument(
 )  
 
 parser.add_argument(
+    "--type", 
+    type     = str,
+    required = False,
+    default  = 'pgp3_cardG3',
+    help     = "Data card type pgp3_cardG3, datadev or simulation)",
+)  
+
+parser.add_argument(
     "--pgp", 
     type     = str,
     required = False,
@@ -110,7 +118,7 @@ args = parser.parse_args()
 #################################################################
 
 # Set base
-QuadTop = quad.Top(hwType='pgp3_cardG3', dev=args.pgp, lane=args.l)    
+QuadTop = quad.Top(hwType=args.type, dev=args.pgp, lane=args.l)    
 
 # Start the system
 QuadTop.start(
@@ -154,59 +162,69 @@ for adc in range(args.adcStart, args.adcStop+1):
    
    f.write('    {')
    
-   lockData = pd.DataFrame(columns=['Start', 'Count'])
-   lockStart = 0
-   lockCounter = 0
-   lockIndex = 0
-   locked = 0
-   test = [0] * 512
-   frameDlySet = -1
-   if args.diff:
-      prevDly = QuadTop.Ad9249Readout[adc].FrameDelay.get()
-   for delay in range(512):
-      # Set frame delay
-      QuadTop.Ad9249Readout[adc].FrameDelay.set(0x200+delay)
-      # Reset lost lock counter
-      QuadTop.Ad9249Readout[adc].LostLockCountReset()
-      # Wait 1 ms
-      time.sleep(0.001)
-      # Check lock status
-      lostLockCountReg = QuadTop.Ad9249Readout[adc].LostLockCount.get()
-      lockedReg = QuadTop.Ad9249Readout[adc].Locked.get()
-      
-      # Find and save lock intervals (start index and length count)
-      if (lostLockCountReg == 0) and (lockedReg == 1) and (locked == 0):
-         locked = 1
-         lockStart = delay
-         
-      if ((lostLockCountReg != 0) or (lockedReg == 0) or (delay == 511)) and (locked == 1):
-         locked = 0
-         lockData.loc[lockIndex] = [lockStart, lockCounter]
-         lockCounter = 0
-         lockIndex = lockIndex + 1
-      
-      if locked == 1:
-         lockCounter = lockCounter + 1
-      
-      if (lostLockCountReg == 0) and (lockedReg == 1):
-         test[delay] = 1
-   
-   if args.ver:
-      print(lockData)
-      print(test)
-   
-   if len(lockData) > 0:
-      maxCount = lockData['Count'].max()
-      maxIndex = lockData['Count'].astype(int).idxmax()
-      frameDlySet = lockData.loc[maxIndex]['Start'] + round(maxCount/2)
-      QuadTop.Ad9249Readout[adc].FrameDelay.set(0x200+frameDlySet)
-      
+   while True:
+      lockData = pd.DataFrame(columns=['Start', 'Count'])
+      lockStart = 0
+      lockCounter = 0
+      lockIndex = 0
+      locked = 0
+      test = [0] * 512
+      frameDlySet = -1
       if args.diff:
-         print('ADC[%d] frame delay set to %d (diff %d)'%(adc, frameDlySet, frameDlySet-prevDly))
+         prevDly = QuadTop.Ad9249Readout[adc].FrameDelay.get()
+      for delay in range(512):
+         # Set frame delay
+         QuadTop.Ad9249Readout[adc].FrameDelay.set(0x200+delay)
+         # Reset lost lock counter
+         QuadTop.Ad9249Readout[adc].LostLockCountReset()
+         # Wait 1 ms
+         time.sleep(0.001)
+         # Check lock status
+         lostLockCountReg = QuadTop.Ad9249Readout[adc].LostLockCount.get()
+         lockedReg = QuadTop.Ad9249Readout[adc].Locked.get()
+         
+         # Find and save lock intervals (start index and length count)
+         if (lostLockCountReg == 0) and (lockedReg == 1) and (locked == 0):
+            locked = 1
+            lockStart = delay
+            
+         if ((lostLockCountReg != 0) or (lockedReg == 0) or (delay == 511)) and (locked == 1):
+            locked = 0
+            lockData.loc[lockIndex] = [lockStart, lockCounter]
+            lockCounter = 0
+            lockIndex = lockIndex + 1
+         
+         if locked == 1:
+            lockCounter = lockCounter + 1
+         
+         if (lostLockCountReg == 0) and (lockedReg == 1):
+            test[delay] = 1
+      
+      if args.ver:
+         print(lockData)
+         print(test)
+      
+      if len(lockData) > 0:
+         maxCount = lockData['Count'].max()
+         maxIndex = lockData['Count'].astype(int).idxmax()
+         frameDlySet = lockData.loc[maxIndex]['Start'] + round(maxCount/2)
+         QuadTop.Ad9249Readout[adc].FrameDelay.set(0x200+frameDlySet)
+         
+         if args.diff:
+            print('ADC[%d] frame delay set to %d (diff %d)'%(adc, frameDlySet, frameDlySet-prevDly))
+         else:
+            print('ADC[%d] frame delay set to %d'%(adc, frameDlySet))
+         break
       else:
-         print('ADC[%d] frame delay set to %d'%(adc, frameDlySet))
-   else:
-      print('ADC[%d] frame delay failed %x'%(adc,  QuadTop.Ad9249Readout[adc].AdcFrame.get()))
+         print('ADC[%d] frame delay failed %x'%(adc,  QuadTop.Ad9249Readout[adc].AdcFrame.get()))
+         print('Reseting ADC')
+         QuadTop.Ad9249Config[adc].InternalPdwnMode.set(3)
+         # Wait 1 s
+         time.sleep(1.0)
+         QuadTop.Ad9249Config[adc].InternalPdwnMode.set(0)
+         # Wait 1 s
+         time.sleep(1.0)
+         print('Repeating frame delay training')
       
    f.write('%d, ' %(frameDlySet))
    

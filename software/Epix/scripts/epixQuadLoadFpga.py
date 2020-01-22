@@ -34,13 +34,6 @@ import ePixQuad as quad
 parser = argparse.ArgumentParser()
 
 # Add arguments
-parser.add_argument(
-    "--type", 
-    type     = str,
-    required = False,
-    default  = 'pgp3_cardG3',
-    help     = "define the PCIe card type (either pgp-gen3 or datadev)",
-)  
 
 parser.add_argument(
     "--l", 
@@ -55,6 +48,14 @@ parser.add_argument(
     required = True,
     help     = "path to mcs file",
 )
+
+parser.add_argument(
+    "--type", 
+    type     = str,
+    required = False,
+    default  = 'pgp3_cardG3',
+    help     = "Data card type pgp3_cardG3, datadev or simulation)",
+)  
 
 parser.add_argument(
     "--pgp", 

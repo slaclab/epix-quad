@@ -209,6 +209,7 @@ class Top(pr.Root):
                   offset  = asicSaciAddr[i], 
                   enabled = False,
                   expand  = False,
+                  size    = 0x3fffff,
             ))
         
         self.add(ePixQuad.SaciConfigCore( 

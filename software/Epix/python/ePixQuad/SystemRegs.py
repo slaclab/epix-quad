@@ -316,7 +316,7 @@ class SystemRegs(pr.Device):
       
       for i in range(4):      
          self.add(pr.RemoteVariable(
-            name       = ('Carrier[%d]IdLow'%i),
+            name       = ('CarrierIdLow[%d]'%i),
             description= ('Carrier[%d] ID Lower Word'%i),
             offset     = (0x00000030+i*8), 
             bitSize    = 32, 
@@ -325,7 +325,7 @@ class SystemRegs(pr.Device):
             mode       = 'RO',
          ))
          self.add(pr.RemoteVariable(
-            name       = ('Carrier[%d]IdHigh'%i),
+            name       = ('CarrierIdHigh[%d]'%i),
             description= ('Carrier[%d] ID Upper Word'%i),
             offset     = (0x00000034+i*8), 
             bitSize    = 32, 
