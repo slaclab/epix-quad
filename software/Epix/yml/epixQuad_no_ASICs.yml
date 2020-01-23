@@ -115,21 +115,6 @@ Top:
     enable: True
     MonitorEn: True
     TrigPrescaler: 0x0
-  AxiI2cMaster:
-    enable: True
-    i2cAddr: 0x51
-    tenbit: False
-    regAddr: 0x68
-    regWrData: 0xa5
-    regAddrSize: 0x0
-    regAddrSkip: False
-    regDataSize: 0x1
-    endianness: True
-    repeatStart: False
-    regOp: False
-    regReq: False
-  AxiMemTester:
-    enable: True
   Epix10kaSaci[0]:
     enable: False
     CompTH_DAC: 0x0
@@ -1429,13 +1414,5 @@ Top:
     UserPatt2Lsb: 0x0
     UserPatt2Msb: 0x0
     LvdsLsbFirst: False
-  Ad9249Tester:
-    enable: False
-    TestChannel: 0x0
-    TestDataMask: 0x0
-    TestPattern: 0x0
-    TestSamples: 0x0
-    TestTimeout: 0x0
-    TestRequest: False
   CypressS25Fl:
     enable: True
