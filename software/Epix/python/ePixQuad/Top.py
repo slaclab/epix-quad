@@ -353,7 +353,7 @@ class Top(pr.Root):
                         self.allDelays[adc*9+lane+1] = newDly
                
                if result < 9:
-                  print('ADC %d failed. Retrying forever.')
+                  print('ADC %d failed. Retrying forever.'%(adc))
                   result = 0
                else:
                   break
