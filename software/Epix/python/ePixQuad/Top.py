@@ -57,10 +57,10 @@ class Top(pr.Root):
          self.pgpVc2 = rogue.interfaces.stream.TcpClient('localhost',8004)
          self.pgpVc3 = rogue.interfaces.stream.TcpClient('localhost',8006)            
       elif (hwType == 'datadev'):
-         self.pgpVc0 = rogue.hardware.axi.AxiStreamDma(dev,32*lane+0,True) # Data & cmds
-         self.pgpVc1 = rogue.hardware.axi.AxiStreamDma(dev,32*lane+1,True) # Registers for ePix board
-         self.pgpVc2 = rogue.hardware.axi.AxiStreamDma(dev,32*lane+2,True) # PseudoScope
-         self.pgpVc3 = rogue.hardware.axi.AxiStreamDma(dev,32*lane+3,True) # Monitoring (Slow ADC)        
+         self.pgpVc0 = rogue.hardware.axi.AxiStreamDma(dev,256*lane+0,True) # Data & cmds
+         self.pgpVc1 = rogue.hardware.axi.AxiStreamDma(dev,256*lane+1,True) # Registers for ePix board
+         self.pgpVc2 = rogue.hardware.axi.AxiStreamDma(dev,256*lane+2,True) # PseudoScope
+         self.pgpVc3 = rogue.hardware.axi.AxiStreamDma(dev,256*lane+3,True) # Monitoring (Slow ADC)        
       else:
          self.pgpVc0 = rogue.hardware.pgp.PgpCard(dev,lane,0) # Data & cmds
          self.pgpVc1 = rogue.hardware.pgp.PgpCard(dev,lane,1) # Registers for ePix board
