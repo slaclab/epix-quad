@@ -70,7 +70,6 @@ end RdoutCoreBram;
 architecture rtl of RdoutCoreBram is
    
    -- ASIC settings
-   constant DOUT_COLS_C    : natural := BANK_COLS_G/8 - 1;  -- fifo in dout deserializer is resizing thereofe count is divided by 2
    constant BANK_COLS_C    : natural := BANK_COLS_G/4 - 1;
    constant BANK_ROWS_C    : natural := BANK_ROWS_G - 1;
    constant COLS_BITS_C    : natural := log2(BANK_COLS_G/4);   -- div by 4 for 64 bit packed 4 pixels
@@ -598,7 +597,7 @@ begin
                v.colCount  := 0;
                v.bankCount := 0;
                v.rdState   := FOOTER_S;
-            elsif v.lineBufValid(r.sRowCount)(conv_integer(r.rowCount(BUFF_BITS_C-1 downto 0))) = '1' and doutValid(r.sRowCount)(r.bankCount) = '1' and doutCount(r.sRowCount, r.bankCount) >= DOUT_COLS_C then
+            elsif v.lineBufValid(r.sRowCount)(conv_integer(r.rowCount(BUFF_BITS_C-1 downto 0))) = '1' and doutValid(r.sRowCount)(r.bankCount) = '1' and doutCount(r.sRowCount, r.bankCount) >= BANK_COLS_C then
                if LINE_REVERSE_G(r.sRowCount) = '0' then
                   v.lineRdAddr := r.lineRdAddr + 1;
                else
