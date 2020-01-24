@@ -21,6 +21,13 @@ export PROM_FSBL = 1
 # Define if you want to remove unused source code
 export REMOVE_UNUSED_CODE = 0
 
+# Define the Microblaze proc name
+ifeq ($(BUILD_MIG_CORE), 0)
+   export EMBED_PROC = microblaze_0
+else
+   export EMBED_PROC = U_CORE_U_CPU_U_Microblaze_microblaze_0
+endif
+
 # Define target output
 target: prom
 
