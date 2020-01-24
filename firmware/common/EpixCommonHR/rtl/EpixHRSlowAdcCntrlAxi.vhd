@@ -2,7 +2,7 @@
 -- Title      : ADS1217 ADC Controller
 -- Project    : EPIX Detector
 -------------------------------------------------------------------------------
--- File       : SlowAdcCntrlAxi.vhd
+-- File       : EpixHRSlowAdcCntrlAxi.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
@@ -31,7 +31,7 @@ use surf.AxiLitePkg.all;
 use surf.AxiStreamPkg.all;
 use surf.SsiPkg.all;
 
-entity SlowAdcCntrlAxi is 
+entity EpixHRSlowAdcCntrlAxi is 
    generic (
       TPD_G           	: time := 1 ns;
       SYS_CLK_PERIOD_G  : real := 10.0E-9;   -- 100MHz
@@ -69,11 +69,11 @@ entity SlowAdcCntrlAxi is
       adcCsL            : out sl;
       adcDin            : out sl
    );
-end SlowAdcCntrlAxi;
+end EpixHRSlowAdcCntrlAxi;
 
 
 -- Define architecture
-architecture RTL of SlowAdcCntrlAxi is
+architecture RTL of EpixHRSlowAdcCntrlAxi is
 
    constant r0_speed :     std_logic_vector(0 downto 0) := "0";      -- "0" - fosc/128, "1" - fosc/256
    constant r0_refhi :     std_logic_vector(0 downto 0) := "0";      -- "0" - Vref 1.25, "1" - Vref 2.5

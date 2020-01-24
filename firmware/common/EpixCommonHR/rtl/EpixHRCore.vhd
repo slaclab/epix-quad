@@ -994,7 +994,7 @@ begin
    --     Slow ADC Readout  --
    -------------------------------------------- 
    
-   U_AdcCntrl: entity work.SlowAdcCntrlAxi
+   U_AdcCntrl: entity work.EpixHRSlowAdcCntrlAxi
    generic map (
       SYS_CLK_PERIOD_G  => 10.0E-9,	   -- 100MHz
       ADC_CLK_PERIOD_G  => 200.0E-9,	-- 5MHz
