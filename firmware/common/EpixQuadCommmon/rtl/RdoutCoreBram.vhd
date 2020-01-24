@@ -81,8 +81,15 @@ architecture rtl of RdoutCoreBram is
    constant TIMEOUT_C      : integer := 500000;  -- 5ms
    
    -- Stream settings
-   constant SLAVE_AXI_CONFIG_C   : AxiStreamConfigType := ssiAxiStreamConfig(8);
-   constant MASTER_AXI_CONFIG_C  : AxiStreamConfigType := ssiAxiStreamConfig(8);
+   constant SLAVE_AXI_CONFIG_C : AxiStreamConfigType := (
+      TSTRB_EN_C    => false, --  unused
+      TDATA_BYTES_C => 8, -- 8byte (64-bit) interface
+      TDEST_BITS_C  => 0, -- Unused at this layer and overwritten by AxisMux in upper layer
+      TID_BITS_C    => 0, --  unused
+      TKEEP_MODE_C  => TKEEP_FIXED_C, -- always 64-bit transactions (BRAM optimization)
+      TUSER_BITS_C  => 2, --  SSI EOFE and SOF used
+      TUSER_MODE_C  => TUSER_FIRST_LAST_C);   
+   constant MASTER_AXI_CONFIG_C  : AxiStreamConfigType := SLAVE_AXI_CONFIG_C;
    
    constant LANE_C         : slv( 1 downto 0) := "00";
    constant VC_C           : slv( 1 downto 0) := "00";
@@ -928,21 +935,19 @@ begin
    -- the frame size 48 cols * 178 rows * 64 banks * 2 bytes = 1093632 bytes
    -- the FIFO will fit whole image
    
-   
    U_AxisOut0 : entity surf.AxiStreamFifoV2
    generic map (
       -- General Configurations
       TPD_G               => TPD_G,
-      PIPE_STAGES_G       => 1,
-      SLAVE_READY_EN_G    => true,
-      VALID_THOLD_G       => 1,     -- =0 = only when frame ready
+      SYNTH_MODE_G        => "xpm",
+      MEMORY_TYPE_G       => "block",
       -- FIFO configurations
       GEN_SYNC_FIFO_G     => true,
       CASCADE_SIZE_G      => 4,
       FIFO_ADDR_WIDTH_G   => 15,
       -- AXI Stream Port Configurations
       SLAVE_AXI_CONFIG_G  => SLAVE_AXI_CONFIG_C,
-      MASTER_AXI_CONFIG_G => MASTER_AXI_CONFIG_C
+      MASTER_AXI_CONFIG_G => SLAVE_AXI_CONFIG_C
    )
    port map (
       -- Slave Port
@@ -957,15 +962,12 @@ begin
       mAxisSlave  => axisCascSlave
    );
    
-   
-   
    U_AxisOut1 : entity surf.AxiStreamFifoV2
    generic map (
       -- General Configurations
       TPD_G               => TPD_G,
-      PIPE_STAGES_G       => 1,
-      SLAVE_READY_EN_G    => true,
-      VALID_THOLD_G       => 1,     -- =0 = only when frame ready
+      SYNTH_MODE_G        => "xpm",
+      MEMORY_TYPE_G       => "block",
       -- FIFO configurations
       GEN_SYNC_FIFO_G     => false,
       CASCADE_SIZE_G      => 1,
