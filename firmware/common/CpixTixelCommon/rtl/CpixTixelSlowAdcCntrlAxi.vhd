@@ -47,6 +47,9 @@ entity CpixTixelSlowAdcCntrlAxi is
       -- Trigger Control
       adcStart          : in  sl;
       
+      -- external enable strobe
+      monEnAxisMaster   : in  AxiStreamMasterType;      
+      
       -- AXI lite slave port for register access
       axilClk           : in  sl;
       axilRst           : in  sl;

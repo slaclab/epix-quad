@@ -215,6 +215,7 @@ architecture top_level of EpixHRCore is
    signal scopeAxisSlave      : AxiStreamSlaveType;
    signal monitorAxisMaster   : AxiStreamMasterType;
    signal monitorAxisSlave    : AxiStreamSlaveType;
+   signal monEnAxisMaster     : AxiStreamMasterType;
    
    -- Command interface
    signal ssiCmd           : SsiCmdMasterType;
@@ -455,7 +456,7 @@ begin
          monitorAxisMaster => monitorAxisMaster,
          monitorAxisSlave  => monitorAxisSlave,
          -- Monitoring enable command incoming stream
-         monEnAxisMaster   => open,
+         monEnAxisMaster   => monEnAxisMaster,
          -- Command interface
          ssiCmd              => ssiCmd,
          -- Sideband interface
@@ -1007,6 +1008,9 @@ begin
       
       -- Trigger Control
       adcStart          => acqStart,
+      
+      -- Monitoring enable command incoming stream
+      monEnAxisMaster   => monEnAxisMaster,      
       
       -- AXI lite slave port for register access
       axilClk           => coreClk,
