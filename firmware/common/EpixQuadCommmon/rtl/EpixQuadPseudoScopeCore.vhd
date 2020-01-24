@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
--- Title         : Pseudo Oscilloscope Interface
--- Project       : EPIX 
+-- Title      : Pseudo Oscilloscope Interface
+-- Project    : EPIX 
 -------------------------------------------------------------------------------
--- File          : PseudoScopeCore.vhd
+-- File       : EpixQuadPseudoScopeCore.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
@@ -27,7 +27,7 @@ use surf.AxiStreamPkg.all;
 use surf.AxiLitePkg.all;
 use surf.SsiPkg.all;
 
-entity PseudoScopeCore is
+entity EpixQuadPseudoScopeCore is
    generic (
       TPD_G                      : time                     := 1 ns;
       MASTER_AXI_STREAM_CONFIG_G : AxiStreamConfigType      := ssiAxiStreamConfig(4, TKEEP_COMP_C);
@@ -62,11 +62,11 @@ entity PseudoScopeCore is
       sAxilReadSlave    : out AxiLiteReadSlaveType
 
    );
-end PseudoScopeCore;
+end EpixQuadPseudoScopeCore;
 
 
 -- Define architecture
-architecture rtl of PseudoScopeCore is
+architecture rtl of EpixQuadPseudoScopeCore is
    signal overThresholdA   : sl := '0';
    signal overThresholdB   : sl := '0';
    signal autoTrigger      : sl := '0';

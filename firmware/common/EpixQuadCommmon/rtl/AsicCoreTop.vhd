@@ -242,7 +242,7 @@ begin
    ---------------------------------------------------------------
    -- PseudoScope Core
    --------------------- ------------------------------------------
-   U_PseudoScopeCore : entity work.PseudoScopeCore
+   U_PseudoScopeCore : entity work.EpixQuadPseudoScopeCore
    generic map (
       TPD_G             => TPD_G,
       INPUT_CHANNELS_G  => 80,
