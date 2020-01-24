@@ -359,7 +359,7 @@ begin
    G_OVERSAMPLE_AVG : for i in 63 downto 0 generate
    begin
       
-      U_MovingAvg : entity work.MovingAvg
+      U_MovingAvg : entity work.EpixQuadMovingAvg
       generic map (
          TPD_G          => TPD_G,
          DATA_BITS_G    => 14

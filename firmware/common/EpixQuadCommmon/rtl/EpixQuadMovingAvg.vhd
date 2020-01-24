@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
--- File       : MovingAvg.vhd
+-- File       : EpixQuadMovingAvg.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
@@ -21,7 +21,7 @@ use ieee.std_logic_arith.all;
 library surf;
 use surf.StdRtlPkg.all;
 
-entity MovingAvg is
+entity EpixQuadMovingAvg is
    generic (
       TPD_G          : time  := 1 ns;
       DATA_BITS_G    : natural range 1 to 32 := 16
@@ -36,9 +36,9 @@ entity MovingAvg is
       dataOut        : out slv(DATA_BITS_G-1 downto 0);
       dataOutValid   : out sl
    );
-end MovingAvg;
+end EpixQuadMovingAvg;
 
-architecture rtl of MovingAvg is
+architecture rtl of EpixQuadMovingAvg is
    
    constant ACC_BITS_C  : natural := 8 + DATA_BITS_G;
    
