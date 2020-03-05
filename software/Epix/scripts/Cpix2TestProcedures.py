@@ -40,6 +40,7 @@ import ePixViewer as vi
 import ePixFpga as fpga
 import os
 import datetime
+from datetime import datetime
 import numpy as np
 
 try:
@@ -690,10 +691,11 @@ class ImgProc(rogue.interfaces.stream.Slave):
       rogue.interfaces.stream.Slave.__init__(self)
       self.frameNum = 0
       self.reqFrames = reqFrames
+      self.badFrames = 0
       self.frameBuf = np.empty((reqFrames, 48, 48))
    
-   def __del__(self):
-      rogue.interfaces.stream.Slave.__del__(self)
+   #def __del__(self):
+   #   rogue.interfaces.stream.Slave.__del__(self)
    
    def _acceptFrame(self,frame):
       cframe = bytearray(frame.getPayload())
@@ -702,6 +704,8 @@ class ImgProc(rogue.interfaces.stream.Slave):
          self.frameBuf[self.frameNum] = np.frombuffer(cframe, dtype=np.uint16, count=-1, offset=12).reshape(48,48)
          self.frameNum = self.frameNum + 1
          #print(self.frameNum)
+      else:
+         self.badFrames = self.badFrames + 1
          
 
 
@@ -2845,6 +2849,187 @@ if args.test == 12:
                      # reset image processor for next run
                      imgProc.frameNum = 0
                
+         
+   
+   else:
+      print('Directory %s does not exist'%args.dir)
+
+
+
+if args.test == 13:
+   
+   
+   # test specific settings
+   framesPerThreshold = 2
+   Pulser = 800
+   Npulse = 1000
+   medThr = 3
+   pix_x = 5
+   pix_y = 5
+   TrimBits = 0
+   
+   
+   if os.path.isdir(args.dir):
+      
+
+      print('Setting camera registers')
+      ePixBoard.LoadConfig(args.c)
+
+      #print('Setting camera registers')
+      #setAsicAsyncModeRegisters()
+      ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.set(Npulse)
+      print('Enable only counter A readout')
+      Cpix2Asic.Pix_Count_T.set(False)
+      Cpix2Asic.Pix_Count_sel.set(False)
+      
+      # that was too long delay in all other settings (?)
+      # this should be long enough to read one frame (1/500mbps * 48 * 48 ~= 5000 ns)
+      # setting to 10000 ns to double this time for safety
+      print('Speedup sync pulse')
+      #ePixBoard.Cpix2.Cpix2FpgaRegisters.SyncDelay.set(1000)
+      ePixBoard.Cpix2.Cpix2FpgaRegisters.SyncDelay.set(1000000)
+      ePixBoard.Cpix2.Cpix2FpgaRegisters.SyncWidth.set(1)
+      
+      # that was too long delay in all other settings (?)
+      print('Speedup 1st readout pulse')
+      ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Delay1.set(10000)
+      ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Width1.set(5)
+      
+      print('Disable 2nd readout pulse')
+      ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Delay2.set(0)
+      ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Width2.set(0)
+      
+      acqTime = ePixBoard.Cpix2.TriggerRegisters.AutoTrigPeriod.get() * (ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqWidth1.get() + ePixBoard.Cpix2.Cpix2FpgaRegisters.AcqDelay1.get()) * ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
+      print('Acquisition time set is %d ns' %acqTime)
+      rdoutTime = (
+         ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Delay1.get() +
+         ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Width1.get() +
+         ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Delay2.get() +
+         ePixBoard.Cpix2.Cpix2FpgaRegisters.SR0Width2.get()) * 10 * 2
+      print('Readout time set is %d ns' %rdoutTime)
+      syncTime = (
+         ePixBoard.Cpix2.Cpix2FpgaRegisters.SyncDelay.get() +
+         ePixBoard.Cpix2.Cpix2FpgaRegisters.SyncWidth.get()) * 10
+      print('Sync time set is %d ns' %syncTime)
+      saciSyncTime = (
+         ePixBoard.Cpix2.Cpix2FpgaRegisters.SaciSyncDelay.get() +
+         ePixBoard.Cpix2.Cpix2FpgaRegisters.SaciSyncWidth.get()) * 100
+      print('SACI sync time set is %d ns' %saciSyncTime)
+      totalTime = acqTime + max([rdoutTime, syncTime, saciSyncTime])
+      totalTimeSec = (totalTime*1e-9)
+      print('Total time set is %f seconds' %totalTimeSec)
+      print('Maximum frame rate is %f fps' %(1.0/totalTimeSec))
+      
+      
+      # resync ASIC
+      print('Synchronizing ASIC %d'%(args.asic))
+      rsyncTry = 1
+      AsicDeserializer.Resync.set(True)
+      time.sleep(1)
+      while rsyncTry < 10 and AsicDeserializer.Locked.get() == False:
+         rsyncTry = rsyncTry + 1
+         AsicDeserializer.Resync.set(True)
+         time.sleep(1)
+      if AsicDeserializer.Locked.get() == False:
+         print('Failed to synchronize ASIC %d after %d tries'%(args.asic,rsyncTry))
+         exit()
+      else:
+         print('ASIC %d synchronized after %d tries'%(args.asic,rsyncTry))
+      
+      print('Clearing ASIC %d matrix'%(args.asic))
+      Cpix2Asic.ClearMatrix()
+      
+      print('Enabling pulser')
+      Cpix2Asic.Pulser.set(Pulser)
+      Cpix2Asic.test.set(True)
+      Cpix2Asic.atest.set(False)
+      
+      print('Setting TH2 to maximum')
+      threshold_2 = 1023
+      Cpix2Asic.MSBCompTH2_DAC.set(threshold_2 >> 6) # 4 bit MSB
+      Cpix2Asic.CompTH2_DAC.set(threshold_2 & 0x3F) # 6 bit LSB
+      
+      print('Setting TH1 to maximum')
+      threshold_1 = 1023
+      Cpix2Asic.MSBCompTH1_DAC.set(threshold_1 >> 6) # 4 bit MSB
+      Cpix2Asic.CompTH1_DAC.set(threshold_1 & 0x3F) # 6 bit LSB
+      
+      # dummy readout to flush
+      time.sleep(totalTimeSec+totalTimeSec*0.1)
+      ePixBoard.Trigger()
+      
+      # enable packetizer to monitor that the data is still coming
+      AsicPktRegisters.enable.set(True)
+      AsicPktRegisters.ResetCounters.set(True)
+      AsicPktRegisters.ResetCounters.set(False)
+      
+      # get settings for the file name
+      VtrimB = Cpix2Asic.Vtrim_b.get() & 0x3
+      Pulser = Cpix2Asic.Pulser.get() & 0x3FF
+      Npulse = ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.get()
+      
+      # connect ImageProc
+      imgProc = ImgProc(framesPerThreshold)
+      pyrogue.streamTap(pgpVc0, imgProc)
+      
+      addrSize=4
+      
+      print('Acquiring %d frames with Threshold_1=%d' %(framesPerThreshold, threshold_1))
+      threshold_1 = 300
+      Cpix2Asic.MSBCompTH1_DAC.set(threshold_1 >> 6) # 4 bit MSB
+      Cpix2Asic.CompTH1_DAC.set(threshold_1 & 0x3F) # 6 bit LSB
+      
+      for pix_y in range(48):
+         #if pix_x%2:
+         asic1SetPixel(pix_x, pix_y, 1)
+      pix_x = pix_x + 2
+      for pix_y in range(48):
+         #if pix_x%2:
+         asic1SetPixel(pix_x, pix_y, 1)
+      print('Pulsing pixel x=%d, y=%d' %(pix_x, pix_y))
+      
+      
+      #Nmax=32768
+      Step=10
+      Nmax=5000
+      imgScan = np.zeros((int(Nmax*framesPerThreshold/Step)+1,48,48),dtype=np.uint16)
+      badFrms = np.zeros((int(Nmax/Step)+1,1),dtype=np.uint16)
+      i=0
+      for Npulse in range(0,Nmax,Step):
+         
+         # set number of pulser pulses
+         print('Setting pulser pulses to %d' %(Npulse))
+         ePixBoard.Cpix2.Cpix2FpgaRegisters.ReqTriggerCnt.set(Npulse)
+         
+         # eanble automatic readout 
+         ePixBoard.Cpix2.Cpix2FpgaRegisters.EnAllFrames.set(True)
+         #ePixBoard.Cpix2.Cpix2FpgaRegisters.EnSingleFrame.set(True)
+            
+         # acquire images
+         while imgProc.frameNum < framesPerThreshold:
+            
+            # sleep for ACQ time
+            time.sleep(totalTimeSec)
+            
+            
+         # stop triggering data
+         ePixBoard.Cpix2.Cpix2FpgaRegisters.EnAllFrames.set(False)
+         #ePixBoard.Cpix2.Cpix2FpgaRegisters.EnSingleFrame.set(False)
+         
+         # move data from img buffer
+         imgScan[i*framesPerThreshold:(i+1)*framesPerThreshold] = imgProc.frameBuf
+         badFrms[i] = imgProc.badFrames
+         i = i + 1
+         
+         # reset image processor for next run
+         imgProc.frameNum = 0
+         imgProc.badFrames = 0
+         
+      
+      now = datetime.now()
+      fileName = args.dir + '/ACQ' + '{:04d}'.format(framesPerThreshold) + '_VTRIMB' + '{:1d}'.format(VtrimB) + '_TH1' + '{:04d}'.format(threshold_1) + '_TH2' + '{:04d}'.format(threshold_2) + '_P' + '{:04d}'.format(Pulser) + '_N' + '{:05d}'.format(Npulse) + '_TrimBits' + '{:02d}'.format(TrimBits) + '_' + now.strftime("%m%d%Y_%H%M%S")
+      np.save(fileName, arr=imgScan)
+      np.save(fileName + '_bad_frames', arr=badFrms)
          
    
    else:
