@@ -32,20 +32,6 @@ Top:
     AsicAnaEn: True
     AsicDigEn: True
     AdcClkRst: 0x0
-    AdcReqStart: False
-    AdcReqTest: False
-    AdcTestDone: True
-    AdcTestFailed: False
-    Adc[0]ChannelFail: 0x0
-    Adc[1]ChannelFail: 0x0
-    Adc[2]ChannelFail: 0x0
-    Adc[3]ChannelFail: 0x0
-    Adc[4]ChannelFail: 0x0
-    Adc[5]ChannelFail: 0x0
-    Adc[6]ChannelFail: 0x0
-    Adc[7]ChannelFail: 0x0
-    Adc[8]ChannelFail: 0x0
-    Adc[9]ChannelFail: 0x0
     DdrVttEn: False
     LatchTempFault: True
     CarrierIdRst: False
