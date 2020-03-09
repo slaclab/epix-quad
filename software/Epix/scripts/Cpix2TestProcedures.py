@@ -2864,8 +2864,6 @@ if args.test == 13:
    Pulser = 800
    Npulse = 1000
    medThr = 3
-   pix_x = 5
-   pix_y = 5
    TrimBits = 0
    
    
@@ -2979,21 +2977,50 @@ if args.test == 13:
       Cpix2Asic.MSBCompTH1_DAC.set(threshold_1 >> 6) # 4 bit MSB
       Cpix2Asic.CompTH1_DAC.set(threshold_1 & 0x3F) # 6 bit LSB
       
-      for pix_y in range(48):
-         #if pix_x%2:
-         asic1SetPixel(pix_x, pix_y, 1)
-      pix_x = pix_x + 2
-      for pix_y in range(48):
-         #if pix_x%2:
-         asic1SetPixel(pix_x, pix_y, 1)
-      print('Pulsing pixel x=%d, y=%d' %(pix_x, pix_y))
       
+      # row pattern
+      pattern = "twoCols"
+      pix_x = 5
+      pix_y = 5
       
-      #Nmax=32768
-      Step=10
-      Nmax=5000
-      imgScan = np.zeros((int(Nmax*framesPerThreshold/Step)+1,48,48),dtype=np.uint16)
-      badFrms = np.zeros((int(Nmax/Step)+1,1),dtype=np.uint16)
+      if pattern == "twoRows":
+         for pix_y in range(48):
+            asic1SetPixel(pix_x, pix_y, 1)
+         pix_x = pix_x + 2
+         for pix_y in range(48):
+            asic1SetPixel(pix_x, pix_y, 1)
+         print('Pulsing %s x=%d, y=%d' %(pattern, pix_x, pix_y))
+      if pattern == "twoCols":
+         for pix_x in range(48):
+            asic1SetPixel(pix_x, pix_y, 1)
+         pix_y = pix_y + 2
+         for pix_x in range(48):
+            asic1SetPixel(pix_x, pix_y, 1)
+         print('Pulsing %s x=%d, y=%d' %(pattern, pix_x, pix_y))
+      if pattern == "twoRowsDotted":
+         for pix_y in range(48):
+            if pix_y%2:
+               asic1SetPixel(pix_x, pix_y, 1)
+         pix_x = pix_x + 2
+         for pix_y in range(48):
+            if pix_y%2:
+               asic1SetPixel(pix_x, pix_y, 1)
+         print('Pulsing dotted rows x=%d, y=%d' %(pix_x, pix_y))
+      if pattern == "twoColsDotted":
+         for pix_x in range(48):
+            if pix_x%2:
+               asic1SetPixel(pix_x, pix_y, 1)
+         pix_y = pix_y + 2
+         for pix_x in range(48):
+            if pix_x%2:
+               asic1SetPixel(pix_x, pix_y, 1)
+         print('Pulsing dotted rows x=%d, y=%d' %(pix_x, pix_y))
+      
+      Nmax=32768
+      Step=20
+      #Nmax=5000
+      imgScan = np.zeros((int(Nmax*framesPerThreshold/Step)+framesPerThreshold,48,48),dtype=np.uint16)
+      badFrms = np.zeros((int(Nmax/Step)+framesPerThreshold,1),dtype=np.uint16)
       i=0
       for Npulse in range(0,Nmax,Step):
          
@@ -3011,6 +3038,10 @@ if args.test == 13:
             # sleep for ACQ time
             time.sleep(totalTimeSec)
             
+            if imgProc.badFrames > 50:
+               print('Timeout')
+               break
+            
             
          # stop triggering data
          ePixBoard.Cpix2.Cpix2FpgaRegisters.EnAllFrames.set(False)
@@ -3027,7 +3058,7 @@ if args.test == 13:
          
       
       now = datetime.now()
-      fileName = args.dir + '/ACQ' + '{:04d}'.format(framesPerThreshold) + '_VTRIMB' + '{:1d}'.format(VtrimB) + '_TH1' + '{:04d}'.format(threshold_1) + '_TH2' + '{:04d}'.format(threshold_2) + '_P' + '{:04d}'.format(Pulser) + '_N' + '{:05d}'.format(Npulse) + '_TrimBits' + '{:02d}'.format(TrimBits) + '_' + now.strftime("%m%d%Y_%H%M%S")
+      fileName = args.dir + '/ACQ' + '{:04d}'.format(framesPerThreshold) + '_VTRIMB' + '{:1d}'.format(VtrimB) + '_TH1' + '{:04d}'.format(threshold_1) + '_TH2' + '{:04d}'.format(threshold_2) + '_P' + '{:04d}'.format(Pulser) + '_N' + '{:05d}'.format(Npulse) + '_TrimBits' + '{:02d}'.format(TrimBits) + '_' + now.strftime("%m%d%Y_%H%M%S") +'_' +pattern
       np.save(fileName, arr=imgScan)
       np.save(fileName + '_bad_frames', arr=badFrms)
          
