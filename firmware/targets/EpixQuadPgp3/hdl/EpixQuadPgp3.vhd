@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
--- File       : EpixQuadPgp3.vhd
+-- File       : EpixQuadPgp3_6Gbps.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
--- Description: EpixQuadPgp3 Target's Top Level
+-- Description: EpixQuadPgp3_6Gbps Target's Top Level
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Development Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
@@ -27,7 +27,7 @@ use surf.AxiStreamPkg.all;
 library unisim;
 use unisim.vcomponents.all;
 
-entity EpixQuadPgp3 is
+entity EpixQuadPgp3_6Gbps is
    generic (
       TPD_G             : time            := 1 ns;
       BUILD_INFO_G      : BuildInfoType;
@@ -115,9 +115,9 @@ entity EpixQuadPgp3 is
       adcSdio           : inout slv(2 downto 0);
       adcCsb            : out   slv(9 downto 0)
    );
-end EpixQuadPgp3;
+end EpixQuadPgp3_6Gbps;
 
-architecture top_level of EpixQuadPgp3 is
+architecture top_level of EpixQuadPgp3_6Gbps is
    
 begin
 
