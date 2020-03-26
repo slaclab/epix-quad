@@ -64,10 +64,6 @@ Top:
     TestData: False
     OverSampleEn: False
     OverSampleSize: 0x0
-  RdoutStreamMonitoring:
-    enable: True
-    Ch[0]:
-      enable: True
   PrbsTx:
     enable: False
     AxiEn: False
