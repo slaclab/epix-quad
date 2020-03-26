@@ -107,7 +107,7 @@ if args.viewer:
    gui.eventReader.frameIndex = 0
    #gui.eventReaderImage.VIEW_DATA_CHANNEL_ID = 0
    gui.setReadDelay(0)
-   pyrogue.streamTap(base.pgpVc1, gui.eventReader) 
+   pyrogue.streamTap(base.pgpVc0, gui.eventReader) 
    pyrogue.streamTap(base.pgpVc2, gui.eventReaderScope)# PseudoScope
    pyrogue.streamTap(base.pgpVc3, gui.eventReaderMonitoring) # Slow Monitoring
 
