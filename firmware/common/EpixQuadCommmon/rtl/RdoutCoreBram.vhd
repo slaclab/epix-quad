@@ -145,6 +145,7 @@ architecture rtl of RdoutCoreBram is
       monData              : Slv16Array(37 downto 0);
       overSampleEn         : sl;
       overSampleSize       : slv(2 downto 0);
+      overSampleSizePwr    : slv(6 downto 0);
    end record RegType;
 
    constant REG_INIT_C : RegType := (
@@ -185,7 +186,8 @@ architecture rtl of RdoutCoreBram is
       sAxilReadSlave       => AXI_LITE_READ_SLAVE_INIT_C,
       monData              => (others=>(others=>'0')),
       overSampleEn         => '0',
-      overSampleSize       => (others=>'0')
+      overSampleSize       => (others=>'0'),
+      overSampleSizePwr    => (others=>'0')
    );
 
    signal r                : RegType := REG_INIT_C;
@@ -357,22 +359,53 @@ begin
    -- Instantiate Moving Average cores for oversampling
    --------------------------------------------------
    G_OVERSAMPLE_AVG : for i in 63 downto 0 generate
+      signal avgDataTmp       : Slv21Array(63 downto 0);
+      signal avgDataTmpValid  : slv(63 downto 0);
+      signal avgDataMux       : Slv14Array(63 downto 0);
    begin
       
-      U_MovingAvg : entity work.MovingAvg
-      generic map (
-         TPD_G          => TPD_G,
-         DATA_BITS_G    => 14
-      )
-      port map (
-         clk            => sysClk,
-         rst            => sysRst,
-         sizeCtrl       => r.overSampleSize,
-         dataIn         => adcStream(i).tData(13 downto 0),
-         dataInValid    => adcStream(i).tValid,
-         dataOut        => adcStreamOvs(i).tData(13 downto 0),
-         dataOutValid   => adcStreamOvs(i).tValid
-      );
+      U_MovingAvg : entity surf.BoxcarIntegrator
+         generic map (
+            TPD_G        => TPD_G,
+            DATA_WIDTH_G => 14,
+            ADDR_WIDTH_G => 7
+         )
+         port map (
+            clk      => sysClk,
+            rst      => sysRst,
+            -- Configuration, intCount is 0 based, 0 = 1, 1 = 2, 1023 = 1024
+            intCount => r.overSampleSizePwr,
+            -- Inbound Interface
+            ibValid  => adcStream(i).tValid,
+            ibData   => adcStream(i).tData(13 downto 0),
+            -- Outbound Interface
+            obValid  => avgDataTmpValid(i),
+            obData   => avgDataTmp(i)
+         );
+
+      avgDataMux(i) <= 
+         avgDataTmp(i)(20 downto 7) when r.overSampleSize = 7 else
+         avgDataTmp(i)(19 downto 6) when r.overSampleSize = 6 else
+         avgDataTmp(i)(18 downto 5) when r.overSampleSize = 5 else
+         avgDataTmp(i)(17 downto 4) when r.overSampleSize = 4 else
+         avgDataTmp(i)(16 downto 3) when r.overSampleSize = 3 else
+         avgDataTmp(i)(15 downto 2) when r.overSampleSize = 2 else
+         avgDataTmp(i)(14 downto 1) when r.overSampleSize = 1 else
+         avgDataTmp(i)(13 downto 0);
+      
+      U_Reg : entity surf.RegisterVector
+         generic map (
+            TPD_G       => TPD_G,
+            WIDTH_G     => 15
+         )
+         port map (
+            clk         => sysClk,
+            rst         => sysRst,
+            sig_i(14)   => avgDataTmpValid(i),
+            sig_i(13 downto 0) => avgDataMux(i),
+            reg_o(14)   => adcStreamOvs(i).tValid,
+            reg_o(13 downto 0) => adcStreamOvs(i).tData(13 downto 0)
+         );
    
    end generate;
    
@@ -432,6 +465,24 @@ begin
       
       axiSlaveRegister (regCon, x"024", 0, v.overSampleEn      );
       axiSlaveRegister (regCon, x"028", 0, v.overSampleSize    );
+      
+      if r.overSampleSize = 0 then
+         v.overSampleSizePwr   := "0000000";
+      elsif r.overSampleSize = 1 then
+         v.overSampleSizePwr   := "0000001";
+      elsif r.overSampleSize = 2 then
+         v.overSampleSizePwr   := "0000011";
+      elsif r.overSampleSize = 3 then
+         v.overSampleSizePwr   := "0000111";
+      elsif r.overSampleSize = 4 then
+         v.overSampleSizePwr   := "0001111";
+      elsif r.overSampleSize = 5 then
+         v.overSampleSizePwr   := "0011111";
+      elsif r.overSampleSize = 6 then
+         v.overSampleSizePwr   := "0111111";
+      else
+         v.overSampleSizePwr   := "1111111";
+      end if;
       
       
       -- Close out the AXI-Lite transaction
