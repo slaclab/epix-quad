@@ -1,13 +1,21 @@
-export GIT_BYPASS = 1
+export GIT_BYPASS = 0
 
-# Use the PGPv3 6G core
-export INCLUDE_PGP3_6G = 1
+# Define target output
+target: prom
 
 # Define Firmware Version Number
 export PRJ_VERSION = 0xEA05000C
 
+# Use the PGPv3 6G core
+export INCLUDE_PGP3_6G = 1
+
+# Define release
+ifndef RELEASE
+export RELEASE = all
+endif
+
 # Define the Microblaze source path
-export SDK_SRC_PATH = $(PROJ_DIR)/../../common/EpixQuadCommmon/src/
+export SDK_SRC_PATH = $(PROJ_DIR)/../../common/EpixQuadCommmon/src
 
 # Define if you want to build the user Microblaze core
 export BUILD_MB_CORE = 1
@@ -20,9 +28,6 @@ export PROM_FSBL = 1
 
 # Define if you want to remove unused source code
 export REMOVE_UNUSED_CODE = 0
-
-# Define target output
-target: prom
 
 # Define target part
 export PRJ_PART = XCKU035-SFVA784-1-C
