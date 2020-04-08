@@ -47,8 +47,8 @@ entity SlowAdcCntrlAxi is
       -- Trigger Control
       adcStart          : in  sl;
       
-      -- external enable strobe
-      monEnAxisMaster   : in  AxiStreamMasterType;
+      -- external enable strobe (optional)
+      monEnAxisMaster   : in  AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
       
       -- Env data outputs
       envData           : out Slv32Array(8 downto 0);
