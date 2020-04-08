@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
--- File       : TrigControlAxi.vhd
+-- File       : TrigControlHrAxi.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description: 
@@ -24,7 +24,7 @@ use surf.AxiLitePkg.all;
 use surf.SsiCmdMasterPkg.all;
 use surf.Pgp2bPkg.all;
 
-entity TrigControlAxi is
+entity TrigControlHrAxi is
    generic (
       TPD_G              : time             := 1 ns;
       AXIL_ERR_RESP_G    : slv(1 downto 0)  := AXI_RESP_DECERR_C
@@ -59,9 +59,9 @@ entity TrigControlAxi is
       sAxilReadSlave    : out AxiLiteReadSlaveType
    );
 
-end TrigControlAxi;
+end TrigControlHrAxi;
 
-architecture rtl of TrigControlAxi is
+architecture rtl of TrigControlHrAxi is
    
    
    type TriggerType is record

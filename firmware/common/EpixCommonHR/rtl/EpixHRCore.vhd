@@ -855,7 +855,7 @@ begin
    -- Trig control    --
    ---------------------
    
-   U_TrigControl : entity work.TrigControlAxi
+   U_TrigControl : entity work.TrigControlHrAxi
    port map (
       -- Trigger outputs
       sysClk         => coreClk,
