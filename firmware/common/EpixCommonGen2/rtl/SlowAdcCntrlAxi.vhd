@@ -50,7 +50,7 @@ entity SlowAdcCntrlAxi is
       -- external enable strobe (optional)
       monEnAxisMaster   : in  AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
       
-      -- Env data outputs
+      -- Raw env data outputs (optional)
       envData           : out Slv32Array(8 downto 0);
       
       -- AXI lite slave port for register access
