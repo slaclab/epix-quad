@@ -31,28 +31,22 @@ entity TrigControlAxi is
       AXIL_ERR_RESP_G    : slv(1 downto 0)  := AXI_RESP_DECERR_C
    );
    port (
-      -- Trigger outputs
+      -- global clk
       sysClk        : in  sl;
       sysRst        : in  sl;
+      -- Outputs
       acqStart      : out sl;
       dataSend      : out sl;
-      
       -- External trigger inputs
       runTrigger    : in  sl;
       daqTrigger    : in  sl;
-      
-      -- PGP clocks and reset
-      pgpClk        : in  sl;
-      pgpClkRst     : in  sl;
       -- Software trigger
       swRun         : in   sl;
       -- Fiber optic trigger
       pgpOpCode     : in   slv(7 downto 0);
       pgpOpCodeEn   : in   sl;
-      
       -- Fiducial code output
       opCodeOut     : out slv(7 downto 0);
-      
       -- AXI lite slave port for register access
       axilClk           : in  sl;
       axilRst           : in  sl;
