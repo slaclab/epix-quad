@@ -644,8 +644,6 @@ begin
       adcSpiCsb           => adcSpiCsb,
       adcPdwn             => adcPdwn,
       -- Fast ADC readoutCh
-      adcClkP             => adcClkP,
-      adcClkN             => adcClkN,
       adcFClkP            => adcFClkP,
       adcFClkN            => adcFClkN,
       adcDClkP            => adcDClkP,

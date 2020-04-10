@@ -61,8 +61,6 @@ entity AdcPhyTop is
       adcSpiCsb           : out slv(2 downto 0);
       adcPdwn             : out slv(2 downto 0);
       -- Fast ADC readoutCh
-      adcClkP             : out slv( 2 downto 0);
-      adcClkN             : out slv( 2 downto 0);
       adcFClkP            : in  slv( 2 downto 0);
       adcFClkN            : in  slv( 2 downto 0);
       adcDClkP            : in  slv( 2 downto 0);
