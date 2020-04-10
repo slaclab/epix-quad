@@ -24,8 +24,6 @@ use surf.AxiLitePkg.all;
 use surf.AxiStreamPkg.all;
 use surf.Ad9249Pkg.all;
 
-use work.EpixPkgGen2.all;
-
 library unisim;
 use unisim.vcomponents.all;
 
