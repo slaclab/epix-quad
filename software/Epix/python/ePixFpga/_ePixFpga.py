@@ -1221,20 +1221,24 @@ class OscilloscopeRegisters(pr.Device):
       
       #Setup registers & RemoteVariables
       
-      self.add(pr.RemoteVariable(name='ArmReg',          description='Arm',               offset=0x00000000, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='TrigReg',         description='Trig',              offset=0x00000004, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='ScopeEnable',     description='ScopeEnable',       offset=0x00000008, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='TriggerEdge',     description='TriggerEdge',       offset=0x0000000C, bitSize=1,  bitOffset=0, mode='RW', enum={0:'Falling', 1:'Rising'}))
-      self.add(pr.RemoteVariable(name='TriggerChannel',  description='TriggerChannel',    offset=0x00000010, bitSize=4,  bitOffset=0, mode='RW', enum=trigChEnum))
-      self.add(pr.RemoteVariable(name='TriggerMode'   ,  description='TriggerMode',       offset=0x00000014, bitSize=2,  bitOffset=0, mode='RW', enum={0:'Never', 1:'ArmReg', 2:'AcqStart', 3:'Always'}))
-      self.add(pr.RemoteVariable(name='TriggerAdcThresh',description='TriggerAdcThresh',  offset=0x00000018, bitSize=16, bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
-      #self.add(pr.RemoteVariable(name='TriggerHoldoff',  description='TriggerHoldoff',    offset=0x0000001C, bitSize=13, bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
-      self.add(pr.RemoteVariable(name='TriggerOffset',   description='TriggerOffset',     offset=0x00000020, bitSize=13, bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
-      self.add(pr.RemoteVariable(name='TraceLength',     description='TraceLength',       offset=0x00000024, bitSize=13, bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
-      self.add(pr.RemoteVariable(name='SkipSamples',     description='SkipSamples',       offset=0x00000028, bitSize=13, bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
-      self.add(pr.RemoteVariable(name='InputChannelA',   description='InputChannelA',     offset=0x0000002C, bitSize=5,  bitOffset=0, mode='RW', enum=inChaEnum))
-      self.add(pr.RemoteVariable(name='InputChannelB',   description='InputChannelB',     offset=0x00000030, bitSize=5,  bitOffset=0, mode='RW', enum=inChbEnum))
-      self.add(pr.RemoteVariable(name='TriggerDelay',    description='TriggerDelay',      offset=0x00000034, bitSize=13, bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
+      self.add(pr.RemoteVariable(name='ArmReg',          description='Arm',               offset=0x00000000, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW', verify=False, pollInterval = 1))
+      self.add(pr.RemoteVariable(name='TrigReg',         description='Trig',              offset=0x00000004, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW', verify=False, pollInterval = 1))
+      self.add((
+         pr.RemoteVariable(name='ScopeEnable',     description='Setting1', offset=0x00000008, bitSize=1,  bitOffset=0,  base=pr.Bool, mode='RW'),
+         pr.RemoteVariable(name='TriggerEdge',     description='Setting1', offset=0x00000008, bitSize=1,  bitOffset=1,  mode='RW', enum={0:'Falling', 1:'Rising'}),
+         pr.RemoteVariable(name='TriggerChannel',  description='Setting1', offset=0x00000008, bitSize=4,  bitOffset=2,  mode='RW', enum=trigChEnum),
+         pr.RemoteVariable(name='TriggerMode',     description='Setting1', offset=0x00000008, bitSize=2,  bitOffset=6,  mode='RW', enum={0:'Never', 1:'ArmReg', 2:'AcqStart', 3:'Always'}),
+         pr.RemoteVariable(name='TriggerAdcThresh',description='Setting1', offset=0x00000008, bitSize=16, bitOffset=16, base=pr.UInt, disp = '{}', mode='RW')))
+      self.add((
+         pr.RemoteVariable(name='TriggerHoldoff',  description='Setting2', offset=0x0000000C, bitSize=13, bitOffset=0,  base=pr.UInt, disp = '{}', mode='RW'),
+         pr.RemoteVariable(name='TriggerOffset',   description='Setting2', offset=0x0000000C, bitSize=13, bitOffset=13, base=pr.UInt, disp = '{}', mode='RW')))
+      self.add((
+         pr.RemoteVariable(name='TraceLength',     description='Setting3', offset=0x00000010, bitSize=13, bitOffset=0,  base=pr.UInt, disp = '{}', mode='RW'),
+         pr.RemoteVariable(name='SkipSamples',     description='Setting3', offset=0x00000010, bitSize=13, bitOffset=13, base=pr.UInt, disp = '{}', mode='RW')))
+      self.add((
+         pr.RemoteVariable(name='InputChannelA',   description='Setting4', offset=0x00000014, bitSize=2,  bitOffset=0,  mode='RW', enum=inChaEnum),       
+         pr.RemoteVariable(name='InputChannelB',   description='Setting4', offset=0x00000014, bitSize=2,  bitOffset=5,  mode='RW', enum=inChbEnum)))
+      self.add(pr.RemoteVariable(name='TriggerDelay',    description='TriggerDelay',      offset=0x00000018, bitSize=13, bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
       
       #####################################
       # Create commands
