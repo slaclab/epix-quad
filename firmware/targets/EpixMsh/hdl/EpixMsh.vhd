@@ -251,7 +251,7 @@ begin
    adcSpiCsb(1)  <= iAdcSpiCsb(1) when iFpgaOutputEn = '1' else 'Z';
    adcSpiCsb(2)  <= iAdcSpiCsb(2) when iFpgaOutputEn = '1' else 'Z';
    adcPdwn01     <= iAdcPdwn(0) when iFpgaOutputEn = '1' else '0';
-   adcPdwnMon    <= '0';
+   adcPdwnMon    <= iAdcPdwn(1) when iFpgaOutputEn = '1' else '0';
    
    -- ASIC control signals (single ended)
    asicGR       <= iAsicGR       when iFpgaOutputEn = '1' else 'Z';
