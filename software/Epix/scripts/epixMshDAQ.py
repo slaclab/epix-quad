@@ -283,7 +283,7 @@ guiTop.resize(1000,800)
 
 # Viewer gui
 if START_VIEWER:
-   gui = vi.Window(cameraType = 'ePix10ka')
+   gui = vi.Window(cameraType = 'ePixMsh')
    gui.eventReader.frameIndex = 0
    #gui.eventReaderImage.VIEW_DATA_CHANNEL_ID = 0
    gui.setReadDelay(0)
