@@ -94,11 +94,12 @@ end AsicCore;
 
 architecture rtl of AsicCore is
    
-   constant NUM_AXI_MASTERS_C    : natural := 3;
+   constant NUM_AXI_MASTERS_C    : natural := 4;
 
    constant REGS_INDEX_C         : natural := 0;
    constant TRIG_INDEX_C         : natural := 1;
    constant SCOPE_INDEX_C        : natural := 2;
+   constant DAC_INDEX_C          : natural := 3;
 
    constant AXI_CONFIG_C   : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := genAxiLiteConfig(NUM_AXI_MASTERS_C, AXI_BASE_ADDR_G, 24, 20);
 
@@ -296,6 +297,34 @@ begin
       sAxilWriteSlave   => mAxiWriteSlaves(SCOPE_INDEX_C),
       sAxilReadMaster   => mAxiReadMasters(SCOPE_INDEX_C),
       sAxilReadSlave    => mAxiReadSlaves(SCOPE_INDEX_C)
+   );
+   
+   ---------------------------------------------------------------
+   -- SPI Core for carrier's DACs
+   --------------------- ------------------------------------------
+   U_AxiSpiMaster : entity surf.AxiSpiMaster
+   generic map (
+      TPD_G             => TPD_G,
+      ADDRESS_SIZE_G    => 4,
+      DATA_SIZE_G       => 12,
+      MODE_G            => "WO",
+      CLK_PERIOD_G      => 1.0/AXI_CLK_FREQ_G,
+      SPI_SCLK_PERIOD_G => 100.0E-6,
+      SPI_NUM_CHIPS_G   => 2
+   )
+   port map (
+      -- AXI-Lite Interface
+      axiClk            => sysClk,
+      axiRst            => sysRst,
+      axiWriteMaster    => mAxiWriteMasters(DAC_INDEX_C),
+      axiWriteSlave     => mAxiWriteSlaves(DAC_INDEX_C),
+      axiReadMaster     => mAxiReadMasters(DAC_INDEX_C),
+      axiReadSlave      => mAxiReadSlaves(DAC_INDEX_C),
+      -- SPI Interface
+      coreSclk          => dacSclk,
+      coreSDin          => '0',
+      coreSDout         => dacDin,
+      coreMCsb          => dacCs
    );
    
 end rtl;
