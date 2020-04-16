@@ -169,6 +169,8 @@ class EpixMsh(pr.Device):
       super(self.__class__, self).__init__(**kwargs)
       self.add(axi.AxiVersion(offset=0x00000000, expand=False))
       self.add(EpixMshFpgaRegisters(name="EpixMshFpgaRegisters", offset=0x01000000, expand=True))
+      self.add(EpixMshDACs(name="EpixMshDACs[0]", offset=0x01300000, expand=False, DACaName='ASIC_Vthr', DACbName='ASIC_V_precharge'))
+      self.add(EpixMshDACs(name="EpixMshDACs[1]", offset=0x01300040, expand=False, DACaName='ASIC_V_Inj', DACbName='spare'))
       self.add(TriggerRegisters(name="TriggerRegisters", offset=0x01100000, expand=False, BaseClock=100000000))
       self.add(SlowAdcRegisters(name="SlowAdcRegisters", offset=0x03000000, expand=False))
       self.add(OscilloscopeRegisters(name='Oscilloscope', offset=0x01200000, enabled=False, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum))
@@ -277,19 +279,26 @@ class EpixMshDACs(pr.Device):
    def __init__(self, DACaName = 'DAC_A', DACbName = 'DAC_B', **kwargs):
       """Create the configuration device for EpixMsh carrier DACs"""
       super().__init__(description='EpixMsh DACs Configuration Registers', **kwargs)	
-               
+      
       def setVolt(deps):
          def setUsValue(var, value, write):
-            rawVal = int(round(value/(2**12-1)*1.8))
+            rawVal = int(round(value/1.8*(2**12-1)))
             deps[0].set(rawVal,write)            
          return setUsValue
+      
+      def getVolt(var):
+         x = var.dependencies[0].value()
+         return x/(2**12-1)*1.8
       
       #############################################
       # Create block / RemoteVariable combinations
       #############################################
-      self.add(pr.RemoteVariable(name=DACaName                 description=DACaName,              offset=0x00000009*4, bitSize=12,  bitOffset=0, base=pr.UInt, mode='WO'))
-      self.add(pr.LinkVariable(name=DACaName+'_V'              dependencies=[self.[DACaName]],    mode='WO', linkedSet=setVolt([self.[DACaName]]), disp='{:1.2f}'))
+      self.add(pr.RemoteVariable(name=DACaName,    description=DACaName, offset=0x00000009*4, bitSize=12,  bitOffset=0, base=pr.UInt, mode='WO'))
+      self.add(pr.LinkVariable(name=DACaName+'_V', dependencies=[getattr(self, DACaName)],    mode='WO', linkedGet=getVolt, linkedSet=setVolt([getattr(self, DACaName)]), disp='{:1.2f}', units='V'))
       
+      self.add(pr.RemoteVariable(name=DACbName,    description=DACbName, offset=0x0000000A*4, bitSize=12,  bitOffset=0, base=pr.UInt, mode='WO'))
+      self.add(pr.LinkVariable(name=DACbName+'_V', dependencies=[getattr(self, DACbName)],    mode='WO', linkedGet=getVolt, linkedSet=setVolt([getattr(self, DACbName)]), disp='{:1.2f}', units='V'))
+
 
 ################################################################################################
 ##
