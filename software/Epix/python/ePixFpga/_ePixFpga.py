@@ -273,7 +273,23 @@ class EpixMshFpgaRegisters(pr.Device):
          return '{:.3f} kHz'.format(1/(self.clkPeriod * self._count(var.dependencies)) * 1e-3)
       return func
 
-
+class EpixMshDACs(pr.Device):
+   def __init__(self, DACaName = 'DAC_A', DACbName = 'DAC_B', **kwargs):
+      """Create the configuration device for EpixMsh carrier DACs"""
+      super().__init__(description='EpixMsh DACs Configuration Registers', **kwargs)	
+               
+      def setVolt(deps):
+         def setUsValue(var, value, write):
+            rawVal = int(round(value/(2**12-1)*1.8))
+            deps[0].set(rawVal,write)            
+         return setUsValue
+      
+      #############################################
+      # Create block / RemoteVariable combinations
+      #############################################
+      self.add(pr.RemoteVariable(name=DACaName                 description=DACaName,              offset=0x00000009*4, bitSize=12,  bitOffset=0, base=pr.UInt, mode='WO'))
+      self.add(pr.LinkVariable(name=DACaName+'_V'              dependencies=[self.[DACaName]],    mode='WO', linkedSet=setVolt([self.[DACaName]]), disp='{:1.2f}'))
+      
 
 ################################################################################################
 ##
