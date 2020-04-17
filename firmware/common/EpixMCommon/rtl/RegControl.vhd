@@ -141,15 +141,15 @@ architecture rtl of RegControl is
       compOut           : sl;
       state             : StateType;
       wordCnt           : slv(15 downto 0);
-      iRegCnt           : slv(6 dwonto 0);
-      iRegClkCnt        : slv(15 dwonto 0);
+      iRegCnt           : slv(6 downto 0);
+      iRegClkCnt        : slv(15 downto 0);
       iRegEn            : sl;
       iRegTrig          : sl;
-      iRegDly           : slv(30 dwonto 0);
-      iRegClkHalfPer    : slv(15 dwonto 0);
-      iRegDreg          : slv(47 dwonto 0);
-      iRegDregLow       : slv(31 dwonto 0);
-      iRegDregHigh      : slv(15 dwonto 0);
+      iRegDly           : slv(30 downto 0);
+      iRegClkHalfPer    : slv(15 downto 0);
+      iRegDreg          : slv(47 downto 0);
+      iRegDregLow       : slv(31 downto 0);
+      iRegDregHigh      : slv(15 downto 0);
    end record RegType;
    
    constant REG_INIT_C : RegType := (
@@ -371,7 +371,7 @@ begin
       -- injection shift register
       v.iRegDreg := r.iRegDregHigh & r.iRegDregLow;
       v.asicDinjEn := r.iRegDreg(conv_integer(r.iRegCnt(6 downto 1)));
-      if iRegTrig = '1' then
+      if r.iRegTrig = '1' then
         v.iRegCnt := toSlv(95, 7);
         v.iRegClkCnt := r.iRegClkHalfPer;
         v.asicCKinjEn := '0';

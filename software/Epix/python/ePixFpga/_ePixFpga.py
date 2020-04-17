@@ -251,10 +251,24 @@ class EpixMshFpgaRegisters(pr.Device):
       self.add(pr.RemoteVariable(name='AsicSampleNWidth',      description='AsicSampleNWidth',        offset=0x0000012C, bitSize=31, bitOffset=0, base=pr.UInt, mode='RW'))
       self.add(pr.LinkVariable(  name='AsicSampleNWidthUs',    dependencies=[self.AsicSampleNWidth],  mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.AsicSampleNWidth]), disp='{:1.5f}')) 
       
+      self.add(pr.RemoteVariable(name='AsicGRPol',             description='AsicGRPol',               offset=0x00000130, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='AsicGRDly',             description='AsicGRDly',               offset=0x00000134, bitSize=31, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.LinkVariable(  name='AsicGRDlyUs',           dependencies=[self.AsicGRDly],         mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.AsicGRDly]), disp='{:1.5f}')) 
+      self.add(pr.RemoteVariable(name='AsicGRWidth',           description='AsicGRWidth',             offset=0x00000138, bitSize=31, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.LinkVariable(  name='AsicGRWidthUs',         dependencies=[self.AsicGRWidth],       mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.AsicGRWidth]), disp='{:1.5f}')) 
+      
       self.add(pr.RemoteVariable(name='AsicRdDly',             description='AsicRdDly',               offset=0x00000200, bitSize=31, bitOffset=0, base=pr.UInt, mode='RW'))
       self.add(pr.LinkVariable(  name='AsicRdDlyUs',           dependencies=[self.AsicRdDly],         mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.AsicRdDly]), disp='{:1.5f}')) 
       self.add(pr.RemoteVariable(name='AsicRdHalfPer',         description='AsicRdHalfPer',           offset=0x00000204, bitSize=16, bitOffset=0, base=pr.UInt, mode='RW'))
       self.add(pr.LinkVariable(  name='AsicRdHalfPerUs',       dependencies=[self.AsicRdHalfPer],     mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.AsicRdHalfPer]), disp='{:1.5f}')) 
+      
+      self.add(pr.RemoteVariable(name='IRegEn',                description='IRegEn',                  offset=0x00000210, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='IRegDly',               description='IRegDly',                 offset=0x00000214, bitSize=31, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.LinkVariable(  name='IRegDlyUs',             dependencies=[self.IRegDly],           mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.IRegDly]), disp='{:1.5f}')) 
+      self.add(pr.RemoteVariable(name='IRegClkHalfPer',        description='IRegClkHalfPer',          offset=0x00000218, bitSize=16, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.LinkVariable(  name='IRegClkHalfPerUs',      dependencies=[self.IRegClkHalfPer],    mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.IRegClkHalfPer]), disp='{:1.5f}')) 
+      self.add(pr.RemoteVariable(name='IRegDregLow',           description='IRegDregLow',             offset=0x0000021C, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='IRegDregHigh',          description='IRegDregHigh',            offset=0x00000220, bitSize=16, bitOffset=0, base=pr.UInt, mode='RW'))
       
       for i in range(9):
          self.add(pr.RemoteVariable(name=('EnvData[%d]'%i),    description=('EnvData[%d]'%i),         offset=(0x00000300+i*4), bitSize=32, bitOffset=0, base=pr.UInt, mode='RO'))

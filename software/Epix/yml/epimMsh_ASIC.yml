@@ -11,12 +11,6 @@ ePixBoard:
     maxFileSize: 0
   EpixMsh:
     enable: True
-    AxiVersion:
-      enable: True
-      ScratchPad: 0x000000
-      FpgaReloadHalt: 0x0
-      FpgaReloadAddress: 0x0
-      UserReset: 0x0
     EpixMshFpgaRegisters:
       enable: True
       DigPowerEn: True
