@@ -95,7 +95,6 @@ architecture rtl of RegControl is
       anaPowerEn        : sl;
       fpgaOutEn         : sl;
       ledEn             : sl;
-      asicGRCnt         : slv(7 downto 0);
       asicGR            : sl;
       asicCk            : sl;
       asicRst           : sl;
@@ -105,6 +104,9 @@ architecture rtl of RegControl is
       asicDinjEn        : sl;
       asicCKinjEn       : sl;
       asicCnt           : slv(31 downto 0);
+      asicGRPol         : sl;
+      asicGRDly         : slv(30 downto 0);
+      asicGRWidth       : slv(30 downto 0);
       asicRstPol        : sl;
       asicRstDly        : slv(30 downto 0);
       asicRstWidth      : slv(30 downto 0);
@@ -139,6 +141,15 @@ architecture rtl of RegControl is
       compOut           : sl;
       state             : StateType;
       wordCnt           : slv(15 downto 0);
+      iRegCnt           : slv(6 dwonto 0);
+      iRegClkCnt        : slv(15 dwonto 0);
+      iRegEn            : sl;
+      iRegTrig          : sl;
+      iRegDly           : slv(30 dwonto 0);
+      iRegClkHalfPer    : slv(15 dwonto 0);
+      iRegDreg          : slv(47 dwonto 0);
+      iRegDregLow       : slv(31 dwonto 0);
+      iRegDregHigh      : slv(15 dwonto 0);
    end record RegType;
    
    constant REG_INIT_C : RegType := (
@@ -150,7 +161,6 @@ architecture rtl of RegControl is
       anaPowerEn        => '0',
       fpgaOutEn         => '0',
       ledEn             => '0',
-      asicGRCnt         => (others=>'0'),
       asicGR            => '0',
       asicCk            => '0',
       asicRst           => '0',
@@ -159,7 +169,10 @@ architecture rtl of RegControl is
       asicSampleN       => '0',
       asicDinjEn        => '0',
       asicCKinjEn       => '0',
-      asicCnt           => (others=>'0'),
+      asicCnt           => (others=>'1'),
+      asicGRPol         => '0',
+      asicGRDly         => (others=>'0'),
+      asicGRWidth       => (others=>'0'),
       asicRstPol        => '0',
       asicRstDly        => (others=>'0'),
       asicRstWidth      => (others=>'0'),
@@ -193,7 +206,16 @@ architecture rtl of RegControl is
       compOutThreshold  => (others=>'0'),
       compOut           => '0',
       state             => IDLE_S,
-      wordCnt           => (others=>'0')
+      wordCnt           => (others=>'0'),
+      iRegCnt           => (others=>'0'),
+      iRegClkCnt        => (others=>'0'),
+      iRegEn            => '0',
+      iRegTrig          => '0',
+      iRegDly           => (others=>'0'),
+      iRegClkHalfPer    => (others=>'0'),
+      iRegDreg          => (others=>'0'),
+      iRegDregLow       => (others=>'0'),
+      iRegDregHigh      => (others=>'0')
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -259,9 +281,18 @@ begin
       axiSlaveRegister (regCon, x"124",  0, v.asicSampleNPol);
       axiSlaveRegister (regCon, x"128",  0, v.asicSampleNDly);
       axiSlaveRegister (regCon, x"12C",  0, v.asicSampleNWidth);
+      axiSlaveRegister (regCon, x"130",  0, v.asicGRPol);
+      axiSlaveRegister (regCon, x"134",  0, v.asicGRDly);
+      axiSlaveRegister (regCon, x"138",  0, v.asicGRWidth);
       
       axiSlaveRegister (regCon, x"200",  0, v.asicRdDly);
       axiSlaveRegister (regCon, x"204",  0, v.asicRdHalfPer);
+      
+      axiSlaveRegister (regCon, x"210",  0, v.iRegEn);
+      axiSlaveRegister (regCon, x"214",  0, v.iRegDly);
+      axiSlaveRegister (regCon, x"218",  0, v.iRegClkHalfPer);
+      axiSlaveRegister (regCon, x"21C",  0, v.iRegDregLow);
+      axiSlaveRegister (regCon, x"220",  0, v.iRegDregHigh);
       
       for i in 0 to 8 loop
          axiSlaveRegisterR(regCon, x"300"+toSlv(i*4,12),  0, envData(i));
@@ -269,33 +300,19 @@ begin
       
       axiSlaveDefault(regCon, v.axiWriteSlave, v.axiReadSlave, AXI_ERROR_RESP_G);
       
-      -- ASIC's global reset
-      if r.digPowerEn = '0' or r.anaPowerEn = '0' then
-         -- reset when no power
-         v.asicGRCnt := (others=>'0');
-         v.asicGR    := '0';
-      elsif r.asicGRCnt /= x"FF" then
-         -- keep reset longer
-         v.asicGRCnt := r.asicGRCnt + 1;
-         v.asicGR    := '0';
-      else
-         -- un-reset
-         v.asicGR    := '1';
-      end if;
-      
       -- ASIC waveforms
       -- programmable ASIC acquisition waveform
       
       v.asicRdStart := '0';
+      v.iRegTrig    := '0';
       v.adcSample   := r.adcSample(254 downto 0) & '0';
       
-      if r.asicGR = '0' then
-         v.asicCnt      := (others=>'1');
-      elsif acqStart = '1' then
+      if acqStart = '1' then
          
          v.asicCnt      := (others=>'0');
          
          v.asicRst      := r.asicRstPol;
+         v.asicGR       := r.asicGRPol;
          v.asicCdsBline := r.asicCdsBlinePol;
          v.asicRstComp  := r.asicRstCompPol;
          v.asicSampleN  := r.asicSampleNPol;
@@ -303,6 +320,13 @@ begin
       elsif r.asicCnt /= x"FFFFFFFF" then
          
          v.asicCnt := r.asicCnt + 1;
+         
+         if r.asicCnt >= r.asicGRDly and r.asicGRDly /= 0 then
+            v.asicGR := not r.asicGRPol;
+            if r.asicCnt >= (r.asicGRDly + r.asicGRWidth) then
+               v.asicGR := r.asicGRPol;
+            end if;
+         end if;
          
          if r.asicCnt >= r.asicRstDly and r.asicRstDly /= 0 then
             v.asicRst := not r.asicRstPol;
@@ -332,11 +356,34 @@ begin
             end if;
          end if;
          
+         -- start the readout
          if r.asicCnt = r.asicRdDly and r.asicRdDly /= 0 then
             v.asicRdStart := '1';
          end if;
          
+         -- start the inj register shifting
+         if r.iRegEn = '1' and r.asicCnt = r.iRegDly and r.iRegDly /= 0 then
+            v.iRegTrig := '1';
+         end if;
+         
       end if;
+      
+      -- injection shift register
+      v.iRegDreg := r.iRegDregHigh & r.iRegDregLow;
+      v.asicDinjEn := r.iRegDreg(conv_integer(r.iRegCnt(6 downto 1)));
+      if iRegTrig = '1' then
+        v.iRegCnt := toSlv(95, 7);
+        v.iRegClkCnt := r.iRegClkHalfPer;
+        v.asicCKinjEn := '0';
+      end if;      
+      if r.iRegCnt > 0 then
+         if r.iRegClkCnt = 0 then
+            v.iRegCnt := r.iRegCnt - 1;
+            v.iRegClkCnt := r.iRegClkHalfPer;
+            v.asicCKinjEn := not r.asicCKinjEn;
+         end if;
+      end if;
+
       
       -- readout clock generation
       if r.asicRdStart = '1' then
