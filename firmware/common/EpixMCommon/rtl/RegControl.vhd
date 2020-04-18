@@ -141,6 +141,7 @@ architecture rtl of RegControl is
       compOut           : sl;
       state             : StateType;
       wordCnt           : slv(15 downto 0);
+      iShCnt            : slv(5 downto 0);
       iRegCnt           : slv(6 downto 0);
       iRegClkCnt        : slv(15 downto 0);
       iRegEn            : sl;
@@ -207,6 +208,7 @@ architecture rtl of RegControl is
       compOut           => '0',
       state             => IDLE_S,
       wordCnt           => (others=>'0'),
+      iShCnt            => (others=>'0'),
       iRegCnt           => (others=>'0'),
       iRegClkCnt        => (others=>'0'),
       iRegEn            => '0',
@@ -370,17 +372,24 @@ begin
       
       -- injection shift register
       v.iRegDreg := r.iRegDregHigh & r.iRegDregLow;
-      v.asicDinjEn := r.iRegDreg(conv_integer(r.iRegCnt(6 downto 1)));
+      v.asicDinjEn := r.iRegDreg(conv_integer(r.iShCnt));
       if r.iRegTrig = '1' then
-        v.iRegCnt := toSlv(95, 7);
-        v.iRegClkCnt := r.iRegClkHalfPer;
+        v.iRegCnt := toSlv(96, 7);
+        v.iRegClkCnt := r.iRegClkHalfPer - 1;
         v.asicCKinjEn := '0';
+        v.iShCnt := (others=>'0');
       end if;      
-      if r.iRegCnt > 0 then
-         if r.iRegClkCnt = 0 then
+      if r.iRegCnt /= 0 then
+         if r.iRegClkCnt /= 0 then
+            v.iRegClkCnt := r.iRegClkCnt - 1;
+         else
             v.iRegCnt := r.iRegCnt - 1;
-            v.iRegClkCnt := r.iRegClkHalfPer;
+            v.iRegClkCnt := r.iRegClkHalfPer - 1;
             v.asicCKinjEn := not r.asicCKinjEn;
+            -- shift reg clock falling edge
+            if v.asicCKinjEn = '0' and r.asicCKinjEn = '1' and r.iShCnt < 47 then
+               v.iShCnt := r.iShCnt + 1;
+            end if;
          end if;
       end if;
 
