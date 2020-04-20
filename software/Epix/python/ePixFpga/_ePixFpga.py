@@ -270,6 +270,9 @@ class EpixMshFpgaRegisters(pr.Device):
       self.add(pr.RemoteVariable(name='IRegDregLow',           description='IRegDregLow',             offset=0x0000021C, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
       self.add(pr.RemoteVariable(name='IRegDregHigh',          description='IRegDregHigh',            offset=0x00000220, bitSize=16, bitOffset=0, base=pr.UInt, mode='RW'))
       
+      self.add(pr.RemoteVariable(name='FpgaOutEn',             description='FpgaOutEn',               offset=0x00000230, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='DbgMux0',               description='DbgMux0',                 offset=0x00000234, bitSize=8,  bitOffset=0, base=pr.UInt, mode='RW'))
+      
       for i in range(9):
          self.add(pr.RemoteVariable(name=('EnvData[%d]'%i),    description=('EnvData[%d]'%i),         offset=(0x00000300+i*4), bitSize=32, bitOffset=0, base=pr.UInt, mode='RO'))
       
