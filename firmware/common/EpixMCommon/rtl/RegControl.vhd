@@ -151,6 +151,9 @@ architecture rtl of RegControl is
       iRegDreg          : slv(47 downto 0);
       iRegDregLow       : slv(31 downto 0);
       iRegDregHigh      : slv(15 downto 0);
+      overSampleEn      : sl;
+      overSampleSize    : slv(2 downto 0);
+      overSampleSizePwr : slv(6 downto 0);
    end record RegType;
    
    constant REG_INIT_C : RegType := (
@@ -217,7 +220,10 @@ architecture rtl of RegControl is
       iRegClkHalfPer    => (others=>'0'),
       iRegDreg          => (others=>'0'),
       iRegDregLow       => (others=>'0'),
-      iRegDregHigh      => (others=>'0')
+      iRegDregHigh      => (others=>'0'),
+      overSampleEn      => '0',
+      overSampleSize    => (others=>'0'),
+      overSampleSizePwr => (others=>'0')
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -229,6 +235,9 @@ architecture rtl of RegControl is
    signal txSlave                : AxiStreamSlaveType;
    signal sAxisCtrl              : AxiStreamCtrlType;
    
+   signal adcDataOvs             : Slv16Array(1 downto 0);
+   signal adcValidOvs            : slv(1 downto 0);
+   
    constant cLane     : slv( 1 downto 0) := "00";
    constant cVC       : slv( 1 downto 0) := "00";
    constant cQuad     : slv( 1 downto 0) := "00";
@@ -236,11 +245,67 @@ architecture rtl of RegControl is
    constant cZeroWord : slv(31 downto 0) := x"00000000";
    
 begin
+        
+   
+   --------------------------------------------------
+   -- Instantiate Moving Average cores for oversampling
+   --------------------------------------------------
+   G_OVERSAMPLE_AVG : for i in 1 downto 0 generate
+      signal avgDataTmp       : Slv21Array(1 downto 0);
+      signal avgDataTmpValid  : slv(1 downto 0);
+      signal avgDataMux       : Slv14Array(1 downto 0);
+   begin
+      
+      U_MovingAvg : entity surf.BoxcarIntegrator
+         generic map (
+            TPD_G        => TPD_G,
+            DATA_WIDTH_G => 14,
+            ADDR_WIDTH_G => 7
+         )
+         port map (
+            clk      => axiClk,
+            rst      => axiRst,
+            -- Configuration, intCount is 0 based, 0 = 1, 1 = 2, 1023 = 1024
+            intCount => r.overSampleSizePwr,
+            -- Inbound Interface
+            ibValid  => adcValid(i),
+            ibData   => adcData(i)(13 downto 0),
+            -- Outbound Interface
+            obValid  => avgDataTmpValid(i),
+            obData   => avgDataTmp(i)
+         );
+
+      avgDataMux(i) <= 
+         avgDataTmp(i)(20 downto 7) when r.overSampleSize = 7 else
+         avgDataTmp(i)(19 downto 6) when r.overSampleSize = 6 else
+         avgDataTmp(i)(18 downto 5) when r.overSampleSize = 5 else
+         avgDataTmp(i)(17 downto 4) when r.overSampleSize = 4 else
+         avgDataTmp(i)(16 downto 3) when r.overSampleSize = 3 else
+         avgDataTmp(i)(15 downto 2) when r.overSampleSize = 2 else
+         avgDataTmp(i)(14 downto 1) when r.overSampleSize = 1 else
+         avgDataTmp(i)(13 downto 0);
+      
+      U_Reg : entity surf.RegisterVector
+         generic map (
+            TPD_G       => TPD_G,
+            WIDTH_G     => 15
+         )
+         port map (
+            clk         => axiClk,
+            rst         => axiRst,
+            sig_i(14)   => avgDataTmpValid(i),
+            sig_i(13 downto 0) => avgDataMux(i),
+            reg_o(14)   => adcValidOvs(i),
+            reg_o(13 downto 0) => adcDataOvs(i)(13 downto 0)
+         );
+   
+   end generate;
+   
 
    -------------------------------
    -- Configuration Register
    -------------------------------  
-   comb : process (axiReadMaster, axiRst, axiWriteMaster, r, acqStart, envData, txSlave, adcValid, adcData) is
+   comb : process (axiReadMaster, axiRst, axiWriteMaster, r, acqStart, envData, txSlave, adcValid, adcData, adcValidOvs, adcDataOvs) is
       variable v        : RegType;
       variable regCon   : AxiLiteEndPointType;
    begin
@@ -295,6 +360,27 @@ begin
       axiSlaveRegister (regCon, x"218",  0, v.iRegClkHalfPer);
       axiSlaveRegister (regCon, x"21C",  0, v.iRegDregLow);
       axiSlaveRegister (regCon, x"220",  0, v.iRegDregHigh);
+      
+      axiSlaveRegister (regCon, x"300", 0, v.overSampleEn      );
+      axiSlaveRegister (regCon, x"304", 0, v.overSampleSize    );
+      
+      if r.overSampleSize = 0 then
+         v.overSampleSizePwr   := "0000000";
+      elsif r.overSampleSize = 1 then
+         v.overSampleSizePwr   := "0000001";
+      elsif r.overSampleSize = 2 then
+         v.overSampleSizePwr   := "0000011";
+      elsif r.overSampleSize = 3 then
+         v.overSampleSizePwr   := "0000111";
+      elsif r.overSampleSize = 4 then
+         v.overSampleSizePwr   := "0001111";
+      elsif r.overSampleSize = 5 then
+         v.overSampleSizePwr   := "0011111";
+      elsif r.overSampleSize = 6 then
+         v.overSampleSizePwr   := "0111111";
+      else
+         v.overSampleSizePwr   := "1111111";
+      end if;
       
       for i in 0 to 8 loop
          axiSlaveRegisterR(regCon, x"300"+toSlv(i*4,12),  0, envData(i));
@@ -461,8 +547,14 @@ begin
       --------------------------------------------------
       
       for i in 0 to 1 loop
-         if adcValid(i) = '1' then
-            v.adcData(i) := adcData(i)(13 downto 0);
+         if r.overSampleEn = '0' then
+            if adcValid(i) = '1' then
+               v.adcData(i) := adcData(i)(13 downto 0);
+            end if;
+         else
+            if adcValidOvs(i) = '1' then
+               v.adcData(i) := adcDataOvs(i)(13 downto 0);
+            end if;
          end if;
       end loop;
       
