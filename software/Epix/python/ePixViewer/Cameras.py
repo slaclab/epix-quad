@@ -71,7 +71,10 @@ class Camera():
     sensorWidth = 0
     sensorHeight = 0
     pixelDepth = 0
-    availableCameras = {  'ePix100a':  EPIX100A, 'ePix100p' : EPIX100P, 'Tixel48x48' : TIXEL48X48, 'ePix10ka' : EPIX10KA,  'Cpix2' : CPIX2, 'ePixM32Array' : EPIXM32, 'HrAdc32x32': HRADC32x32, 'ePixQuad' : EPIXQUAD, 'ePixQuadSim' : EPIXQUADSIM, 'ePixMsh' : EPIXMSH }
+    availableCameras = {  
+        'ePix100a':  EPIX100A, 'ePix100p' : EPIX100P, 'Tixel48x48' : TIXEL48X48, 'ePix10ka' : EPIX10KA,  
+        'Cpix2' : CPIX2, 'ePixM32Array' : EPIXM32, 'HrAdc32x32': HRADC32x32, 'ePixQuad' : EPIXQUAD, 
+        'ePixQuadSim' : EPIXQUADSIM, 'ePixMsh' : EPIXMSH }
     
 
     def __init__(self, cameraType = 'ePix100a') :
