@@ -5,12 +5,18 @@ ePixBoard:
   PollEn: False
   dataWriter:
     enable: True
-    dataFile: ''
+    dataFile: /u1/mkwiatko/ePixM_sh/04172020/ramp_0v0_1v8_0v05step/data.dat
     open: False
     bufferSize: 0
     maxFileSize: 0
   EpixMsh:
     enable: True
+    AxiVersion:
+      enable: True
+      ScratchPad: 0x000000
+      FpgaReloadHalt: 0x0
+      FpgaReloadAddress: 0x0
+      UserReset: 0x0
     EpixMshFpgaRegisters:
       enable: True
       DigPowerEn: True
@@ -44,10 +50,22 @@ ePixBoard:
       AsicSampleNDlyUs: 10.00000
       AsicSampleNWidth: 0x190
       AsicSampleNWidthUs: 4.00000
+      AsicGRPol: True
+      AsicGRDly: 0x4e2
+      AsicGRDlyUs: 12.50000
+      AsicGRWidth: 0x1f4
+      AsicGRWidthUs: 5.00000
       AsicRdDly: 0x834
       AsicRdDlyUs: 21.00000
       AsicRdHalfPer: 0x1f4
       AsicRdHalfPerUs: 5.00000
+      IRegEn: False
+      IRegDly: 0x7d0
+      IRegDlyUs: 20.00000
+      IRegClkHalfPer: 0xfa
+      IRegClkHalfPerUs: 2.50000
+      IRegDregLow: 0xcccccccc
+      IRegDregHigh: 0xcccc
     EpixMshDACs[0]:
       enable: True
       ASIC_Vthr: 0xb8e
@@ -56,8 +74,8 @@ ePixBoard:
       ASIC_V_precharge_V: 0.90
     EpixMshDACs[1]:
       enable: True
-      ASIC_V_Inj: 0x0
-      ASIC_V_Inj_V: 0.00
+      ASIC_V_Inj: 0xe38
+      ASIC_V_Inj_V: 1.60
       spare: 0x0
       spare_V: 0.00
     TriggerRegisters:
@@ -85,7 +103,7 @@ ePixBoard:
       ScopeEnable: True
       TriggerEdge: Rising
       TriggerChannel: AsicCk
-      TriggerMode: Always
+      TriggerMode: AcqStart
       TriggerAdcThresh: 0
       TriggerHoldoff: 0
       TriggerOffset: 0
