@@ -361,8 +361,8 @@ begin
       axiSlaveRegister (regCon, x"21C",  0, v.iRegDregLow);
       axiSlaveRegister (regCon, x"220",  0, v.iRegDregHigh);
       
-      axiSlaveRegister (regCon, x"300", 0, v.overSampleEn      );
-      axiSlaveRegister (regCon, x"304", 0, v.overSampleSize    );
+      axiSlaveRegister (regCon, x"230", 0, v.overSampleEn      );
+      axiSlaveRegister (regCon, x"234", 0, v.overSampleSize    );
       
       if r.overSampleSize = 0 then
          v.overSampleSizePwr   := "0000000";
