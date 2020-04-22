@@ -5,7 +5,7 @@ ePixBoard:
   PollEn: False
   dataWriter:
     enable: True
-    dataFile: /u1/mkwiatko/ePixM_sh/04172020/ramp_0v0_1v8_0v05step/data.dat
+    dataFile: ''
     open: False
     bufferSize: 0
     maxFileSize: 0
@@ -29,43 +29,45 @@ ePixBoard:
       StartupAck: True
       StartupFail: False
       CompOutThreshold: 0x2ee0
-      AdcPipelineDly: 0x14
+      AdcPipelineDly: 0x0
       AsicRstPol: True
       AsicRstDly: 0x3e8
       AsicRstDlyUs: 10.00000
       AsicRstWidth: 0x258
       AsicRstWidthUs: 6.00000
       AsicCdsBlinePol: True
-      AsicCdsBlineDly: 0x4b0
-      AsicCdsBlineDlyUs: 12.00000
+      AsicCdsBlineDly: 0x44c
+      AsicCdsBlineDlyUs: 11.00000
       AsicCdsBlineWidth: 0x190
       AsicCdsBlineWidthUs: 4.00000
       AsicRstCompPol: True
       AsicRstCompDly: 0x3e8
       AsicRstCompDlyUs: 10.00000
-      AsicRstCompWidth: 0x2333b8
-      AsicRstCompWidthUs: 23070.00000
+      AsicRstCompWidth: 0x3d090
+      AsicRstCompWidthUs: 2500.00000
       AsicSampleNPol: True
       AsicSampleNDly: 0x3e8
       AsicSampleNDlyUs: 10.00000
-      AsicSampleNWidth: 0x190
-      AsicSampleNWidthUs: 4.00000
+      AsicSampleNWidth: 0xc8
+      AsicSampleNWidthUs: 2.00000
       AsicGRPol: True
-      AsicGRDly: 0x4e2
-      AsicGRDlyUs: 12.50000
+      AsicGRDly: 0x456
+      AsicGRDlyUs: 11.10000
       AsicGRWidth: 0x1f4
       AsicGRWidthUs: 5.00000
       AsicRdDly: 0x834
       AsicRdDlyUs: 21.00000
-      AsicRdHalfPer: 0x1f4
-      AsicRdHalfPerUs: 5.00000
+      AsicRdHalfPer: 0x32
+      AsicRdHalfPerUs: 0.50000
       IRegEn: False
-      IRegDly: 0x7d0
-      IRegDlyUs: 20.00000
-      IRegClkHalfPer: 0xfa
-      IRegClkHalfPerUs: 2.50000
-      IRegDregLow: 0xcccccccc
-      IRegDregHigh: 0xcccc
+      IRegDly: 0x3a980
+      IRegDlyUs: 2400.00000
+      IRegClkHalfPer: 0x5
+      IRegClkHalfPerUs: 0.05000
+      IRegDregLow: 0xffffffff
+      IRegDregHigh: 0xffff
+      OverSampleEn: True
+      OverSampleSize: 0x3
     EpixMshDACs[0]:
       enable: True
       ASIC_Vthr: 0xb8e
@@ -74,8 +76,8 @@ ePixBoard:
       ASIC_V_precharge_V: 0.90
     EpixMshDACs[1]:
       enable: True
-      ASIC_V_Inj: 0xe38
-      ASIC_V_Inj_V: 1.60
+      ASIC_V_Inj: 0x555
+      ASIC_V_Inj_V: 0.60
       spare: 0x0
       spare_V: 0.00
     TriggerRegisters:
@@ -100,17 +102,17 @@ ePixBoard:
       enable: True
       ArmReg: False
       TrigReg: False
-      ScopeEnable: True
+      ScopeEnable: False
       TriggerEdge: Rising
-      TriggerChannel: AsicCk
+      TriggerChannel: AsicRst
       TriggerMode: AcqStart
       TriggerAdcThresh: 0
       TriggerHoldoff: 0
       TriggerOffset: 0
-      TraceLength: 2000
+      TraceLength: 8000
       SkipSamples: 0
-      InputChannelA: ASIC_COMPOUT
-      InputChannelB: ASIC_BUFOUT
+      InputChannelA: ASIC_BUFOUT
+      InputChannelB: ASIC_COMPOUT
       TriggerDelay: 0
     Pgp2bAxi:
       enable: False
