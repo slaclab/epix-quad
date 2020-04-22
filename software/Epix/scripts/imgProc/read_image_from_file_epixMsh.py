@@ -29,7 +29,7 @@ matplotlib.use('QT4Agg')
 import matplotlib.pyplot as plt
 import h5py
 #matplotlib.pyplot.ion()
-MAX_NUMBER_OF_FRAMES_PER_BATCH  = 8000
+MAX_NUMBER_OF_FRAMES_PER_BATCH  = 80000
 
 
 ##################################################
@@ -62,7 +62,7 @@ while ((len(file_header)>0) and (numberOfFrames<MAX_NUMBER_OF_FRAMES_PER_BATCH))
         #print ('size',  file_header)
         newPayload = np.fromfile(f, dtype='uint32', count=payloadSize) #(frame size splited by four to read 32 bit 
         
-        print('#################################### payloadSize %d'%payloadSize)
+        #print('#################################### payloadSize %d'%payloadSize)
         # filter out non image data (scope etc)
         if payloadSize == 1165:
         
