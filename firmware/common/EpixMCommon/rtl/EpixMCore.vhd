@@ -377,7 +377,8 @@ begin
       mAxilReadMaster  => sAxiReadMaster(1),
       mAxilReadSlave   => sAxiReadSlave(1),
       -- Interrupt Interface
-      interrupt(7 downto 1)   => "0000000",
+      interrupt(7 downto 2)   => "000000",
+      interrupt(1)            => acqStart,
       interrupt(0)            => requestStartupCal,
       -- Clock and Reset
       clk              => sysClk,

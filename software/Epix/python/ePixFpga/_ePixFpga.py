@@ -30,6 +30,7 @@ import surf.misc
 from surf.devices.micron._AxiMicronN25Q import *
 import surf
 import numpy as np
+import time
 
 try:
     from PyQt5.QtWidgets import *
@@ -186,6 +187,26 @@ class EpixMsh(pr.Device):
       self.add(AxiMicronN25Q(name='MicronN25Q',    offset=0x05000000, expand=False, hidden=False))
       self.add(MicroblazeLog(name='MicroblazeLog', offset=0x06000000, enabled=False, expand=False))
       
+      self.add(pr.LocalCommand(name='InjDacRamp',  description='[start, stop, step, points, dly]', value=[0,0,0,0,0] ,function=self.injDacRamp))
+   
+   def injDacRamp(self, dev, cmd, arg):
+      """InjDacRamp command function"""       
+      print("InjDacRamp started")
+      arguments = np.asarray(arg)
+      dacStart = arguments[0]
+      dacStop = arguments[1]
+      dacStep = arguments[2]
+      dacPoints = arguments[3]
+      dacDly = arguments[4]
+      for dacVal in range(dacStart, dacStop, dacStep):
+         print('Set DAC to %d'%dacVal)
+         self.EpixMshDACs[1].ASIC_V_Inj.set(int(dacVal))
+         for pts in range(dacPoints):
+            time.sleep(dacDly/1000) 
+            #print('trigger %d'%pts)
+            self.root.Trigger()
+   
+   
 
 class EpixMshFpgaRegisters(pr.Device):
    def __init__(self, **kwargs):
@@ -272,6 +293,12 @@ class EpixMshFpgaRegisters(pr.Device):
       
       self.add(pr.RemoteVariable(name='OverSampleEn',          description='OverSampleEn',            offset=0x00000230, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='OverSampleSize',        description='OverSampleSize',          offset=0x00000234, bitSize=3,  bitOffset=0, base=pr.UInt, mode='RW'))
+      
+      self.add(pr.RemoteVariable(name='IDacEn',                description='IDacEn',                  offset=0x00000240, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='IDacStart',             description='IDacStart',               offset=0x00000244, bitSize=12, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='IDacStop',              description='IDacStop',                offset=0x00000248, bitSize=12, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='IDacStep',              description='IDacStep',                offset=0x0000024C, bitSize=8,  bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='IDacPoints',            description='IDacPoints',              offset=0x00000250, bitSize=8,  bitOffset=0, base=pr.UInt, mode='RW'))
       
       for i in range(9):
          self.add(pr.RemoteVariable(name=('EnvData[%d]'%i),    description=('EnvData[%d]'%i),         offset=(0x00000300+i*4), bitSize=32, bitOffset=0, base=pr.UInt, mode='RO'))

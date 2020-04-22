@@ -154,6 +154,11 @@ architecture rtl of RegControl is
       overSampleEn      : sl;
       overSampleSize    : slv(2 downto 0);
       overSampleSizePwr : slv(6 downto 0);
+      injDacEn          : sl;
+      injDacStart       : slv(11 downto 0);
+      injDacStop        : slv(11 downto 0);
+      injDacStep        : slv(7 downto 0);
+      injDacPoints      : slv(7 downto 0);
    end record RegType;
    
    constant REG_INIT_C : RegType := (
@@ -223,7 +228,12 @@ architecture rtl of RegControl is
       iRegDregHigh      => (others=>'0'),
       overSampleEn      => '0',
       overSampleSize    => (others=>'0'),
-      overSampleSizePwr => (others=>'0')
+      overSampleSizePwr => (others=>'0'),
+      injDacEn          => '0',
+      injDacStart       => (others=>'0'),
+      injDacStop        => (others=>'0'),
+      injDacStep        => (others=>'0'),
+      injDacPoints      => (others=>'0')
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -363,6 +373,14 @@ begin
       
       axiSlaveRegister (regCon, x"230", 0, v.overSampleEn      );
       axiSlaveRegister (regCon, x"234", 0, v.overSampleSize    );
+      
+      -- automated inj DAC ramp
+      -- implemented by the Microblaze
+      axiSlaveRegister (regCon, x"240", 0, v.injDacEn    );
+      axiSlaveRegister (regCon, x"244", 0, v.injDacStart );
+      axiSlaveRegister (regCon, x"248", 0, v.injDacStop  );
+      axiSlaveRegister (regCon, x"24C", 0, v.injDacStep  );
+      axiSlaveRegister (regCon, x"250", 0, v.injDacPoints);
       
       if r.overSampleSize = 0 then
          v.overSampleSizePwr   := "0000000";

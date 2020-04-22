@@ -42,6 +42,42 @@ void calibReqHandler(void * data) {
 }
 
 
+uint16_t dacVal = 0;
+uint16_t dacPts = 0;
+
+void injDacHandler(void * data) {
+   uint32_t * request = (uint32_t *)data;
+   
+   if((Xil_In32(IDAC_EN_REG) & 0x1) == 1) {
+      
+      if (dacPts >= Xil_In8(IDAC_POINTS_REG)) {
+         dacPts = 0;
+         Xil_Out32(IDAC_VAL, dacVal);
+         dacVal += Xil_In8(IDAC_STEP_REG);
+         if (dacVal > (Xil_In16(IDAC_STOP_REG) & 0xfff)) {
+            dacVal = Xil_In16(IDAC_START_REG) & 0xfff;
+         }
+      }
+      else {
+         dacPts++;
+      }
+      
+      (*request) = 1; 
+   }
+   else {
+      // reset counters
+      dacVal = Xil_In16(IDAC_START_REG) & 0xfff;
+      dacPts = Xil_In8(IDAC_POINTS_REG);
+      (*request) = 0; 
+   }
+   
+ 
+   
+   
+   XIntc_Acknowledge(&intc, 1);
+}
+
+
 void timerIntHandler(void * data, unsigned char num ) {
    uint32_t * request = (uint32_t *)data;
    
@@ -66,6 +102,7 @@ int main() {
    
    uint32_t res, i, adcReqNo = 0;
    volatile uint32_t adcReq = 0;
+   volatile uint32_t injDac = 0;
    timer = 0;
    
    XTmrCtr_Initialize(&tmrctr,0); 
@@ -73,6 +110,7 @@ int main() {
    XIntc_Initialize(&intc,XPAR_AXI_INTC_0_DEVICE_ID);
    microblaze_enable_interrupts();
    XIntc_Connect(&intc,0,(XInterruptHandler)calibReqHandler,(void*)&adcReq);
+   XIntc_Connect(&intc,1,(XInterruptHandler)injDacHandler,(void*)&injDac);
    XIntc_Connect(&intc,8,XTmrCtr_InterruptHandler,&tmrctr);
    XIntc_Start(&intc,XIN_REAL_MODE);
    XIntc_Enable(&intc,8);
@@ -82,6 +120,7 @@ int main() {
    
    waitTimer(TIMER_1SEC_INTEVAL);
    XIntc_Enable(&intc,0);
+   XIntc_Enable(&intc,1);
    
    ssi_printf_init(LOG_MEM_OFFSET, 1024*4);
    
