@@ -123,6 +123,7 @@ architecture rtl of RegControl is
       asicRdDly         : slv(30 downto 0);
       asicRdTicksCnt    : slv(15 downto 0);
       asicRdHalfPer     : slv(15 downto 0);
+      asicRdDutyPer     : slv(15 downto 0);
       asicRdHalfPerCnt  : slv(15 downto 0);
       adcClk            : sl;
       adcClkCnt         : slv(7 downto 0);
@@ -198,6 +199,7 @@ architecture rtl of RegControl is
       asicRdDly         => (others=>'0'),
       asicRdTicksCnt    => (others=>'0'),
       asicRdHalfPer     => (others=>'0'),
+      asicRdDutyPer     => (others=>'0'),
       asicRdHalfPerCnt  => (others=>'0'),
       adcClk            => '0',
       adcClkCnt         => (others=>'0'),
@@ -364,6 +366,7 @@ begin
       
       axiSlaveRegister (regCon, x"200",  0, v.asicRdDly);
       axiSlaveRegister (regCon, x"204",  0, v.asicRdHalfPer);
+      axiSlaveRegister (regCon, x"208",  0, v.asicRdDutyPer);
       
       axiSlaveRegister (regCon, x"210",  0, v.iRegEn);
       axiSlaveRegister (regCon, x"214",  0, v.iRegDly);
@@ -509,7 +512,12 @@ begin
             v.asicRdHalfPerCnt := r.asicRdHalfPerCnt - 1;
          else
             v.asicCk := not r.asicCk;
-            v.asicRdHalfPerCnt := r.asicRdHalfPer - 1;
+            if r.asicCk = '1' or r.asicRdDutyPer = 0 then
+                v.asicRdHalfPerCnt := r.asicRdHalfPer - 1;
+            else
+                -- optional non 50% dutycycle in use when asicRdDutyPer register is not 0
+                v.asicRdHalfPerCnt := r.asicRdDutyPer - 1;
+            end if;
             v.asicRdTicksCnt := r.asicRdTicksCnt - 1;
             if r.asicCk = '0' then
                v.adcSample(0) := '1';
