@@ -40,11 +40,11 @@ ePixBoard:
       AsicCdsBlineDlyUs: 11.00000
       AsicCdsBlineWidth: 0x190
       AsicCdsBlineWidthUs: 4.00000
-      AsicRstCompPol: True
-      AsicRstCompDly: 0x3e8
-      AsicRstCompDlyUs: 10.00000
-      AsicRstCompWidth: 0x3d090
-      AsicRstCompWidthUs: 2500.00000
+      AsicRstCompPol: False
+      AsicRstCompDly: 0x0
+      AsicRstCompDlyUs: 0.00000
+      AsicRstCompWidth: 0x0
+      AsicRstCompWidthUs: 0.00000
       AsicSampleNPol: True
       AsicSampleNDly: 0x3e8
       AsicSampleNDlyUs: 10.00000
