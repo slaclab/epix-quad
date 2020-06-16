@@ -377,27 +377,37 @@ begin
    ---------------------------------------------------------------
    -- PseudoScope Core
    --------------------- ------------------------------------------
-   U_PseudoScopeCore : entity work.PseudoScopeCore
+   U_PseudoScopeCore : entity work.PseudoScope2Axi
    generic map (
-      TPD_G             => TPD_G,
-      INPUT_CHANNELS_G  => 20,
-      EXTTRIG_IN_G      => 8
+      TPD_G                      => TPD_G,
+      INPUTS_G                   => 20,
+      MASTER_AXI_STREAM_CONFIG_G => ssiAxiStreamConfig(4, TKEEP_COMP_C)
    )
    port map ( 
-      sysClk            => sysClk,
-      sysClkRst         => iAxiRst,
-      adcStream         => adcStreams,
+      -- system clock
+      clk               => sysClk,
+      rst               => iAxiRst,
+      -- input data
+      dataIn            => adcData,
+      dataValid         => adcValid,
+      -- arm signal
       arm               => acqStart,
-      trigIn(0)         => acqStart,
-      trigIn(1)         => iAsicAcq,
-      trigIn(2)         => iAsicR0,
-      trigIn(3)         => iAsicPpmat,
-      trigIn(4)         => iAsicPpbe,
-      trigIn(5)         => iAsicSync,
-      trigIn(6)         => iAsicGrst,
-      trigIn(7)         => iAsicRoClk,
-      mAxisMaster       => scopeAxisMaster,
-      mAxisSlave        => scopeAxisSlave,
+      -- input triggers
+      triggerIn(0)      => acqStart,
+      triggerIn(1)      => iAsicAcq,
+      triggerIn(2)      => iAsicR0,
+      triggerIn(3)      => iAsicPpmat,
+      triggerIn(4)      => iAsicPpbe,
+      triggerIn(5)      => iAsicSync,
+      triggerIn(6)      => iAsicGrst,
+      triggerIn(7)      => iAsicRoClk,
+      triggerIn(12 downto 8) => "0000",
+      -- AXI stream output
+      axisClk           => sysClk,
+      axisRst           => iAxiRst,
+      axisMaster        => scopeAxisMaster,
+      axisSlave         => scopeAxisSlave,
+      -- AXI lite for register access
       axilClk           => sysClk,
       axilRst           => iAxiRst,
       sAxilWriteMaster  => mAxiWriteMasters(SCOPE_INDEX_C),
