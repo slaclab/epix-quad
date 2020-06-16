@@ -23,13 +23,11 @@ ePixBoard:
       DaqTriggerEnable: True
       DaqTriggerDelay: 0x0
       DaqTriggerDelayUs: 0.00000
-      AcqCountReset: False
       DacData: 0x0
       DigitalPowerEnable: True
       AnalogPowerEnable: True
       FpgaOutputEnable: True
       IDelayCtrlRdy: 0x1
-      SeqCountReset: False
       AutoRunEnable: False
       AutoRunPeriod: 0x107d99
       AutoRunPeriodMs: 8.33333
