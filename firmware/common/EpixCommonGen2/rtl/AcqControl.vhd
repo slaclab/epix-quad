@@ -146,8 +146,8 @@ architecture AcqControl of AcqControl is
    signal curState           : state := IDLE_S;
    signal nxtState           : state := IDLE_S;
    
-   signal injStartCnt   : slv(15 downto 0);
-   signal injStopCnt    : slv(15 downto 0);
+   signal injStartCnt   : slv(31 downto 0);
+   signal injStopCnt    : slv(31 downto 0);
    signal injSkipCnt    : slv(7 downto 0);
    signal injStartEn    : sl;
    signal injStopEn     : sl;

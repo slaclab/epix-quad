@@ -1014,9 +1014,9 @@ class EpixFpgaExtRegisters(pr.Device):
       self.add(pr.RemoteVariable(name='OversampleSize',      description='OversampleSize',   offset=0x00000003*addrSize, bitSize=3,  bitOffset=0, base=pr.UInt, mode='RW'))
       
       self.add(pr.RemoteVariable(name='DebugOut',            description='DebugOut',         offset=0x00000200*addrSize, bitSize=5,  bitOffset=0, base=pr.UInt, mode='RW'))
-      self.add(pr.RemoteVariable(name='InjStartDly',         description='InjStartDly',      offset=0x00000201*addrSize, bitSize=16, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='InjStartDly',         description='InjStartDly',      offset=0x00000201*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
       self.add(pr.LinkVariable(  name='InjStartDlyUs',       dependencies=[self.InjStartDly], mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.InjStartDly]), disp='{:1.5f}')) 
-      self.add(pr.RemoteVariable(name='InjStopDly',          description='InjStopDly',       offset=0x00000202*addrSize, bitSize=16, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='InjStopDly',          description='InjStopDly',       offset=0x00000202*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
       self.add(pr.LinkVariable(  name='InjStopDlyUs',        dependencies=[self.InjStopDly], mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.InjStopDly]), disp='{:1.5f}')) 
       self.add(pr.RemoteVariable(name='InjSkip',             description='InjSkip',          offset=0x00000203*addrSize, bitSize=8,  bitOffset=0, base=pr.UInt, mode='RW'))
       

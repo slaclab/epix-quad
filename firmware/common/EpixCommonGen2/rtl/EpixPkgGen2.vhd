@@ -104,8 +104,8 @@ package EpixPkgGen2 is
    
    type EpixConfigExtType is record
       dbgReg             : slv(4 downto 0);
-      injStartDly        : slv(15 downto 0);
-      injStopDly         : slv(15 downto 0);
+      injStartDly        : slv(31 downto 0);
+      injStopDly         : slv(31 downto 0);
       injSkip            : slv(7 downto 0);
       injSyncEn          : sl;
       ghostCorr          : sl;
