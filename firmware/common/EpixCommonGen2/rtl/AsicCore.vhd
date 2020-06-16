@@ -401,7 +401,7 @@ begin
       triggerIn(5)      => iAsicSync,
       triggerIn(6)      => iAsicGrst,
       triggerIn(7)      => iAsicRoClk,
-      triggerIn(12 downto 8) => "0000",
+      triggerIn(12 downto 8) => "00000",
       -- AXI stream output
       axisClk           => sysClk,
       axisRst           => iAxiRst,
