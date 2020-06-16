@@ -282,8 +282,6 @@ class EpixMshFpgaRegisters(pr.Device):
       self.add(pr.LinkVariable(  name='AsicRdDlyUs',           dependencies=[self.AsicRdDly],         mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.AsicRdDly]), disp='{:1.5f}')) 
       self.add(pr.RemoteVariable(name='AsicRdHalfPer',         description='AsicRdHalfPer',           offset=0x00000204, bitSize=16, bitOffset=0, base=pr.UInt, mode='RW'))
       self.add(pr.LinkVariable(  name='AsicRdHalfPerUs',       dependencies=[self.AsicRdHalfPer],     mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.AsicRdHalfPer]), disp='{:1.5f}')) 
-      self.add(pr.RemoteVariable(name='AsicRdDutyPer',         description='AsicRdDutyPer',           offset=0x00000208, bitSize=16, bitOffset=0, base=pr.UInt, mode='RW'))
-      self.add(pr.LinkVariable(  name='AsicRdDutyPerUs',       dependencies=[self.AsicRdDutyPer],     mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.AsicRdDutyPer]), disp='{:1.5f}')) 
       
       self.add(pr.RemoteVariable(name='IRegEn',                description='IRegEn',                  offset=0x00000210, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='IRegDly',               description='IRegDly',                 offset=0x00000214, bitSize=31, bitOffset=0, base=pr.UInt, mode='RW'))
@@ -1019,6 +1017,7 @@ class EpixFpgaExtRegisters(pr.Device):
       self.add(pr.RemoteVariable(name='InjStopDly',          description='InjStopDly',       offset=0x00000202*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
       self.add(pr.LinkVariable(  name='InjStopDlyUs',        dependencies=[self.InjStopDly], mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.InjStopDly]), disp='{:1.5f}')) 
       self.add(pr.RemoteVariable(name='InjSkip',             description='InjSkip',          offset=0x00000203*addrSize, bitSize=8,  bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='InjSyncEn',           description='InjSyncEn',        offset=0x00000204*addrSize, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
       
       self.add(pr.RemoteVariable(name='BankPipelineDly00',   description='BankDly00',        offset=0x00000300*addrSize, bitSize=7,  bitOffset=0, base=pr.UInt, mode='RW'))
       self.add(pr.RemoteVariable(name='BankPipelineDly01',   description='BankDly01',        offset=0x00000301*addrSize, bitSize=7,  bitOffset=0, base=pr.UInt, mode='RW'))
