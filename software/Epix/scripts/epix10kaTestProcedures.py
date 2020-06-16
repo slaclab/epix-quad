@@ -292,9 +292,15 @@ if args.test == 1:
       ePixBoard.Epix10ka.EpixFpgaRegisters.AutoDaqEnable.set(True)
       ePixBoard.Epix10ka.EpixFpgaRegisters.AutoRunEnable.set(False)
       
-      print('Set integration time to %d'%(args.acqWidth))
-      ePixBoard.Epix10ka.EpixFpgaRegisters.AsicAcqWidth.set(args.acqWidth)
-      ePixBoard.Epix10ka.EpixFpgaRegisters.AsicR0ToAsicAcq.set(args.acqWidth)
+      print('Set integration time to %d MICROSECONDS!!!!!!!!!!!!!!!!!!!!!!!'%(args.acqWidth))
+      #ePixBoard.Epix10ka.EpixFpgaRegisters.AsicAcqWidth.set(args.acqWidth)
+      #ePixBoard.Epix10ka.EpixFpgaRegisters.AsicR0ToAsicAcq.set(args.acqWidth)
+      ePixBoard.Epix10ka.EpixFpgaRegisters.AsicAcqWidthUs.set(args.acqWidth)
+      ePixBoard.Epix10ka.EpixFpgaRegisters.AsicR0ToAsicAcqUs.set(args.acqWidth)
+      print('Set injection pulse shifted by 10 us')
+      ePixBoard.Epix10ka.EpixFpgaExtRegisters.InjStartDlyUs.set(10)
+      ePixBoard.Epix10ka.EpixFpgaExtRegisters.InjStopDlyUs.set(args.acqWidth+10)
+      ePixBoard.Epix10ka.EpixFpgaExtRegisters.InjSyncEn.set(True)
       
       for trbit in range(2):
          
