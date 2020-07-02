@@ -106,6 +106,12 @@ architecture RTL of AcqCore is
       sAxilReadSlave       : AxiLiteReadSlaveType;
       dummyAcqEn           : sl;
       dummyAcq             : sl;
+      asicSyncInj          : sl;
+      asicSyncInjEn        : sl;
+      asicSyncInjSt        : sl;
+      asicSyncInjDCnt      : slv(31 downto 0);
+      asicSyncInjWCnt      : slv(31 downto 0);
+      asicSyncInjDly       : slv(31 downto 0);
    end record RegType;
 
    constant REG_INIT_C : RegType := (
@@ -136,7 +142,13 @@ architecture RTL of AcqCore is
       sAxilWriteSlave      => AXI_LITE_WRITE_SLAVE_INIT_C,
       sAxilReadSlave       => AXI_LITE_READ_SLAVE_INIT_C,
       dummyAcqEn           => '1',
-      dummyAcq             => '0'
+      dummyAcq             => '0',
+      asicSyncInj          => '0',
+      asicSyncInjEn        => '1',
+      asicSyncInjSt        => '0',
+      asicSyncInjDCnt      => (others=>'0'),
+      asicSyncInjWCnt      => (others=>'0'),
+      asicSyncInjDly       => toSlv(10000, 32)
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -205,6 +217,9 @@ begin
       
       axiSlaveRegister (regCon, x"100", 0, v.dummyAcqEn        );
       
+      axiSlaveRegister (regCon, x"110", 0, v.asicSyncInjEn     );
+      axiSlaveRegister (regCon, x"114", 0, v.asicSyncInjDly    );
+      
       -- Close out the AXI-Lite transaction
       axiSlaveDefault(regCon, v.sAxilWriteSlave, v.sAxilReadSlave, AXI_RESP_DECERR_C);
       
@@ -218,14 +233,15 @@ begin
       -- Based on small EPIX camera implementation by Kurtis
       --------------------------------------------------
       
-      v.stateCnt  := r.stateCnt + 1;
-      v.acqBusy   := '1';
-      v.asicAcq   := '0';
-      v.asicR0    := '1';
-      v.asicSync  := '0';
-      v.asicPpmat := '0';
-      v.asicRoClk := '0';
-      v.acqSmplEn := '0';
+      v.stateCnt        := r.stateCnt + 1;
+      v.acqBusy         := '1';
+      v.asicAcq         := '0';
+      v.asicR0          := '1';
+      v.asicSync        := '0';
+      v.asicSyncInjSt   := '0';
+      v.asicPpmat       := '0';
+      v.asicRoClk       := '0';
+      v.acqSmplEn       := '0';
       
       -- sum all delay leading to ACQ pulse
       v.asicPreAcqTime := r.acqToAsicR0Delay + r.asicR0Width + r.asicR0ToAsicAcq;
@@ -284,6 +300,7 @@ begin
                if r.stateCnt >= r.asicR0ToAsicAcq then
                   v.stateCnt := (others=>'0');
                   v.acqState := ACQ_S;
+                  v.asicSyncInjSt := '1';
                end if;
             end if;
          
@@ -500,7 +517,27 @@ begin
             v.acqState := IDLE_S;
             
       end case;
-         
+      
+      -- logic to create sync injection pulse delayed to the acq pulse
+      -- this is an alternate way to use sync and injection circuit
+      -- ASIC's configuration has to be changed appropriately with this option change
+      if r.asicSyncInjSt = '1' then
+         v.asicSyncInjDCnt := r.asicSyncInjDly;
+      elsif r.asicSyncInjDCnt /= 0 then
+         v.asicSyncInjDCnt := r.asicSyncInjDCnt - 1;
+      end if;
+      -- delay must be greater or equal to 1 to make the sync inj pulse
+      -- width of the pulse is the same as the ACQ pulse
+      if r.asicSyncInjDCnt = 1 then
+         v.asicSyncInjWCnt := r.asicAcqWidth;
+         v.asicSyncInj := '1';
+      elsif vrasicSyncInjWCnt /= 0 then
+         v.asicSyncInjWCnt := r.asicSyncInjWCnt - 1;
+      else
+         v.asicSyncInj := '0';
+      end if;
+      
+      
       if (sysRst = '1') then
          v := REG_INIT_C;
       end if;
@@ -519,7 +556,8 @@ begin
    asicAcq     <= r.asicAcq   when r.asicPinForce(0) = '0' else r.asicPinValue(0);
    asicR0      <= r.asicR0    when r.asicPinForce(1) = '0' else r.asicPinValue(1);
    asicPpmat   <= r.asicPpmat when r.asicPinForce(2) = '0' else r.asicPinValue(2);
-   asicSync    <= r.asicSync  when r.asicPinForce(3) = '0' else r.asicPinValue(3);
+   --asicSync    <= r.asicSync  when r.asicPinForce(3) = '0' else r.asicPinValue(3);
+   asicSync    <= r.asicSync  when r.asicSyncInjEn = '0'   else r.asicSyncInj;
    asicRoClk   <= r.asicRoClk when r.asicPinForce(4) = '0' else r.asicPinValue(4);
 
    seq : process (sysClk) is
