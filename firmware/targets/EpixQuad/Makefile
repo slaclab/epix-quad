@@ -7,7 +7,7 @@
 export PRJ_VERSION = 0xEA04000C
 
 # Define the Microblaze source path
-export SDK_SRC_PATH = $(PROJ_DIR)/../../common/EpixQuadCommmon/src/
+export SDK_SRC_PATH = $(PROJ_DIR)/../../common/EpixQuadCommon/src/
 
 # Define if you want to build the user Microblaze core
 export BUILD_MB_CORE = 1
