@@ -531,7 +531,7 @@ begin
       if r.asicSyncInjDCnt = 1 then
          v.asicSyncInjWCnt := r.asicAcqWidth;
          v.asicSyncInj := '1';
-      elsif vrasicSyncInjWCnt /= 0 then
+      elsif r.asicSyncInjWCnt /= 0 then
          v.asicSyncInjWCnt := r.asicSyncInjWCnt - 1;
       else
          v.asicSyncInj := '0';
