@@ -119,8 +119,8 @@ architecture rtl of AsicCoreTop is
    signal axisSlaveASIC    : AxiStreamSlaveType;
    
    -- ADC signals
-   signal adcValid         : slv(79 downto 0);
-   signal adcData          : Slv16Array(79 downto 0);
+   signal adcValid         : slv(31 downto 0);
+   signal adcData          : Slv16Array(31 downto 0);
    
    constant MASTER_AXI_CONFIG_C  : AxiStreamConfigType := ssiAxiStreamConfig(8);
    
@@ -283,9 +283,13 @@ begin
       sAxilReadSlave    => axilReadSlaves(SCOPE_INDEX_C)
    );
    
-   GenAdcStr : for i in 0 to 79 generate 
-      adcData(i)  <= adcStream(i).tData(15 downto 0);
-      adcValid(i) <= adcStream(i).tValid;
+   GenAdcTps : for i in 0 to 15 generate 
+      adcData(i)  <= adcStream(64+i).tData(15 downto 0);
+      adcValid(i) <= adcStream(64+i).tValid;
+   end generate;
+   GenAdcBanks : for i in 0 to 15 generate 
+      adcData(16+i)  <= adcStream(i*8).tData(15 downto 0);
+      adcValid(16+i) <= adcStream(i*8).tValid;
    end generate;
    
    ---------------------------------------------------------------
