@@ -287,9 +287,11 @@ begin
       adcData(i)  <= adcStream(64+i).tData(15 downto 0);
       adcValid(i) <= adcStream(64+i).tValid;
    end generate;
-   GenAdcBanks : for i in 0 to 15 generate 
-      adcData(16+i)  <= adcStream(i*8).tData(15 downto 0);
-      adcValid(16+i) <= adcStream(i*8).tValid;
+   GenAdcBanks : for i in 0 to 8 generate 
+      adcData(16+i)    <= adcStream(i*8).tData(15 downto 0);
+      adcValid(16+i)   <= adcStream(i*8).tValid;
+      adcData(16+i+1)  <= adcStream(i*8+1).tData(15 downto 0);
+      adcValid(16+i+1) <= adcStream(i*8+1).tValid;
    end generate;
    
    ---------------------------------------------------------------
