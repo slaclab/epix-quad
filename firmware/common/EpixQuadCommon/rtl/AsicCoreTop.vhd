@@ -249,7 +249,7 @@ begin
    U_PseudoScopeCore : entity work.PseudoScope2Axi
    generic map (
       TPD_G                      => TPD_G,
-      INPUTS_G                   => 80,
+      INPUTS_G                   => 32,
       MASTER_AXI_STREAM_CONFIG_G => ssiAxiStreamConfig(4, TKEEP_COMP_C)
    )
    port map ( 
