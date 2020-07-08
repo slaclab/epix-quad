@@ -579,6 +579,7 @@ begin
             dbgOut(i) <= r.adcClk;
          else
             dbgOut(i) <= r.acqSmplEn;
+         end if;
       end loop;
 
    end process comb;
