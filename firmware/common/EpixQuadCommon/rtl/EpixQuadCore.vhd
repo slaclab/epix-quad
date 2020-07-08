@@ -213,6 +213,8 @@ architecture rtl of EpixQuadCore is
    
    signal monData       : Slv16Array(37 downto 0);
    
+   signal iDbgOut       : slv(2 downto 0);
+   
 begin
 
    --------------------------------------------------------
@@ -475,7 +477,7 @@ begin
          asicRoClk            => iAsicRoClk,
          asicDout             => iAsicDout,
          -- debug outputs
-         dbgOut               => dbgOut,
+         dbgOut               => iDbgOut,
          -- ADC Clock Output
          adcClk               => iAdcClk,
          -- Image Data Stream
@@ -485,6 +487,10 @@ begin
          scopeTxMaster        => scopeTxMaster,
          scopeTxSlave         => scopeTxSlave
       );
+   
+   dbgOut(0) <= not iDbgOut(0);
+   dbgOut(1) <= not iDbgOut(1);
+   dbgOut(2) <= not iDbgOut(2);
    
    ----------------------------------------------------
    -- SACI Core
