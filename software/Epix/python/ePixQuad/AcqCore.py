@@ -259,6 +259,37 @@ class AcqCore(pr.Device):
          mode       = 'RW',
       ))
       
+      self.add(pr.RemoteVariable(
+         name       = 'AsicSyncInjEn',     
+         description= 'Enable Sync as Pulser Injection Trigger',
+         offset     = 0x00000110, 
+         bitSize    = 1, 
+         bitOffset  = 0,  
+         base       = pr.Bool, 
+         mode       = 'RW',
+      ))
+      
+      self.add(pr.RemoteVariable(
+         name       = 'AsicSyncInjDly',     
+         description= 'Delay Sync in respect to Acq when used as Pulser Injection Trigger',
+         offset     = 0x00000114, 
+         bitSize    = 32, 
+         bitOffset  = 0,  
+         base       = pr.UInt, 
+         mode       = 'RW',
+      ))
+      
+      for i in range(3):      
+         self.add(pr.RemoteVariable(
+            name       = ('DbgOutSel[%d]'%i),
+            description= ('Select debug signal on output[%d]'%i),
+            offset     = (0x00000120+i*4), 
+            bitSize    = 4, 
+            bitOffset  = 0,  
+            base       = pr.UInt, 
+            mode       = 'RW',
+         ))
+      
       #####################################
       # Create commands
       #####################################

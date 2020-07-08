@@ -66,6 +66,8 @@ entity AsicCoreTop is
       asicPpmat            : out   sl;
       asicRoClk            : out   sl;
       asicDout             : in    slv(15 downto 0);
+      -- debug outputs
+      dbgOut               : out   slv(2 downto 0);
       -- ADC Clock Output
       adcClk               : out   sl;
       -- Image Data Stream
@@ -182,6 +184,8 @@ begin
       asicSync          => iAsicSync,
       asicPpmat         => iAsicPpmat,
       asicRoClk         => iAsicRoClk,
+      -- debug outputs
+      dbgOut            => dbgOut,
       -- ADC Clock Output
       adcClk            => adcClk
    );

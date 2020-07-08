@@ -113,7 +113,9 @@ entity EpixQuad is
       -- Fast ADC Config SPI
       adcSclk           : out   slv(2 downto 0);
       adcSdio           : inout slv(2 downto 0);
-      adcCsb            : out   slv(9 downto 0)
+      adcCsb            : out   slv(9 downto 0);
+      -- debug outputs
+      dbgOut            : out   slv(2 downto 0)
    );
 end EpixQuad;
 
@@ -209,7 +211,9 @@ begin
          -- Fast ADC Config SPI
          adcSclk           => adcSclk,
          adcSdio           => adcSdio,
-         adcCsb            => adcCsb 
+         adcCsb            => adcCsb,
+         -- debug outputs
+         dbgOut            => dbgOut
       );
 
 end top_level;

@@ -117,7 +117,9 @@ entity EpixQuadCore is
       -- Fast ADC Config SPI
       adcSclk           : out   slv(2 downto 0);
       adcSdio           : inout slv(2 downto 0);
-      adcCsb            : out   slv(9 downto 0)
+      adcCsb            : out   slv(9 downto 0);
+      -- debug outputs
+      dbgOut            : out   slv(2 downto 0)
    );
 end EpixQuadCore;
 
@@ -472,6 +474,8 @@ begin
          asicPpmat            => iAsicPpmat,
          asicRoClk            => iAsicRoClk,
          asicDout             => iAsicDout,
+         -- debug outputs
+         dbgOut               => dbgOut,
          -- ADC Clock Output
          adcClk               => iAdcClk,
          -- Image Data Stream

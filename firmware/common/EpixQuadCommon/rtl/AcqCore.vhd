@@ -51,6 +51,8 @@ entity AcqCore is
       asicSync          : out   sl;
       asicPpmat         : out   sl;
       asicRoClk         : out   sl;
+      -- debug outputs
+      dbgOut            : out   slv(2 downto 0);
       -- ADC Clock Output
       adcClk            : out   sl
    );
@@ -112,6 +114,7 @@ architecture RTL of AcqCore is
       asicSyncInjDCnt      : slv(31 downto 0);
       asicSyncInjWCnt      : slv(31 downto 0);
       asicSyncInjDly       : slv(31 downto 0);
+      dbgOutSel            : Slv4Array(2 downto 0);
    end record RegType;
 
    constant REG_INIT_C : RegType := (
@@ -148,7 +151,8 @@ architecture RTL of AcqCore is
       asicSyncInjSt        => '0',
       asicSyncInjDCnt      => (others=>'0'),
       asicSyncInjWCnt      => (others=>'0'),
-      asicSyncInjDly       => toSlv(10000, 32)
+      asicSyncInjDly       => toSlv(10000, 32),
+      dbgOutSel            => (others=>(others=>'0'))
    );
 
    signal r   : RegType := REG_INIT_C;
@@ -219,6 +223,10 @@ begin
       
       axiSlaveRegister (regCon, x"110", 0, v.asicSyncInjEn     );
       axiSlaveRegister (regCon, x"114", 0, v.asicSyncInjDly    );
+      
+      axiSlaveRegister (regCon, x"120", 0, v.dbgOutSel(0)      );
+      axiSlaveRegister (regCon, x"124", 0, v.dbgOutSel(1)      );
+      axiSlaveRegister (regCon, x"128", 0, v.dbgOutSel(2)      );
       
       -- Close out the AXI-Lite transaction
       axiSlaveDefault(regCon, v.sAxilWriteSlave, v.sAxilReadSlave, AXI_RESP_DECERR_C);
@@ -550,6 +558,28 @@ begin
       adcClk            <= r.adcClk;
       acqCount          <= r.acqCount;
       acqSmplEn         <= r.acqSmplEn;
+      
+      -- debug outputs
+      for i in 0 to 2 loop
+         if r.dbgOutSel(i) = 0 then
+            dbgOut(i) <= r.asicAcq;
+         elsif r.dbgOutSel(i) = 1 then
+            dbgOut(i) <= r.asicR0;
+         elsif r.dbgOutSel(i) = 2 then
+            dbgOut(i) <= r.asicPpmat
+         elsif r.dbgOutSel(i) = 3 then
+            dbgOut(i) <= r.asicSync
+         elsif r.dbgOutSel(i) = 4 then
+            dbgOut(i) <= r.asicSyncInj;
+         elsif r.dbgOutSel(i) = 5 then
+            dbgOut(i) <= r.asicRoClk
+         elsif r.dbgOutSel(i) = 6 then
+            dbgOut(i) <= r.acqBusy
+         elsif r.dbgOutSel(i) = 7 then
+            dbgOut(i) <= r.adcClk
+         else
+            dbgOut(i) <= r.acqSmplEn
+      end loop;
 
    end process comb;
    
