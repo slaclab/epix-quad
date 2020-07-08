@@ -151,7 +151,7 @@ architecture RTL of AcqCore is
       asicSyncInjSt        => '0',
       asicSyncInjDCnt      => (others=>'0'),
       asicSyncInjWCnt      => (others=>'0'),
-      asicSyncInjDly       => toSlv(10000, 32),
+      asicSyncInjDly       => toSlv(1000, 32),
       dbgOutSel            => (others=>(others=>'0'))
    );
 
