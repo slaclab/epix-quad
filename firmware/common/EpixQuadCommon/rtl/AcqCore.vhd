@@ -566,19 +566,19 @@ begin
          elsif r.dbgOutSel(i) = 1 then
             dbgOut(i) <= r.asicR0;
          elsif r.dbgOutSel(i) = 2 then
-            dbgOut(i) <= r.asicPpmat
+            dbgOut(i) <= r.asicPpmat;
          elsif r.dbgOutSel(i) = 3 then
-            dbgOut(i) <= r.asicSync
+            dbgOut(i) <= r.asicSync;
          elsif r.dbgOutSel(i) = 4 then
             dbgOut(i) <= r.asicSyncInj;
          elsif r.dbgOutSel(i) = 5 then
-            dbgOut(i) <= r.asicRoClk
+            dbgOut(i) <= r.asicRoClk;
          elsif r.dbgOutSel(i) = 6 then
-            dbgOut(i) <= r.acqBusy
+            dbgOut(i) <= r.acqBusy;
          elsif r.dbgOutSel(i) = 7 then
-            dbgOut(i) <= r.adcClk
+            dbgOut(i) <= r.adcClk;
          else
-            dbgOut(i) <= r.acqSmplEn
+            dbgOut(i) <= r.acqSmplEn;
       end loop;
 
    end process comb;
