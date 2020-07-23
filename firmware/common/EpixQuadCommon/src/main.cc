@@ -328,7 +328,7 @@ void adcStartup(int adc) {
    
 }
 
-uint32_t adcTest(int adc) {
+uint32_t adcTest(int adc, int pattern) {
    int channel;
    uint32_t failed = 0;
    uint32_t failedCh = 0;
@@ -336,13 +336,19 @@ uint32_t adcTest(int adc) {
    
    // set up ADC tester
    Xil_Out32(ADC_TEST_MASK, 0x3FFF);
-   Xil_Out32(ADC_TEST_PATT, 0x2867);
+   if (pattern==0)
+      Xil_Out32(ADC_TEST_PATT, 0x2867);
+   else
+      Xil_Out32(ADC_TEST_PATT, 0x2000);
    Xil_Out32(ADC_TEST_SMPL, 10000);
    Xil_Out32(ADC_TEST_TOUT, 10000);
    
    // Enable mixed frequency test pattern
    regIn = Xil_In32(adcOutTestModeAddr[adc]);
-   regIn |= 0x0C;
+   if (pattern==0)
+      regIn |= 0x0C;
+   else
+      regIn |= 0x01;
    Xil_Out32(adcOutTestModeAddr[adc], regIn);
    
    // test all channels
@@ -501,7 +507,8 @@ int main() {
          adcStartup(i);
          // do the initial ADC test
          failed &= ~(1<<i);
-         failed |= (adcTest(i))<<i;
+         failed |= (adcTest(i,0))<<i;
+         failed |= (adcTest(i,1))<<i;
          // retry N times
          tryCnt++;
       } while ((failed & (1<<i)) != 0 and tryCnt < ADC_STARTUP_RETRY);
@@ -529,7 +536,8 @@ int main() {
                adcStartup(i);
                // do the initial ADC test
                failed &= ~(1<<i);
-               failed |= (adcTest(i))<<i;
+               failed |= (adcTest(i,0))<<i;
+               failed |= (adcTest(i,1))<<i;
                // retry N times
                tryCnt++;
             } while ((failed & (1<<i)) != 0 and tryCnt < ADC_STARTUP_RETRY);
@@ -544,8 +552,10 @@ int main() {
          // call ADC test routine
          clearTestResult();
          failed = 0;
-         for (i=0; i<10; i++)
-            failed |= adcTest(i);
+         for (i=0; i<10; i++) {
+            failed |= adcTest(i,0);
+            failed |= adcTest(i,1);
+         }
          setTestResult(failed);
       }
       
