@@ -252,7 +252,7 @@ class Top(pr.Root):
          offset  = 0x02D00000, 
          enabled = False,
          expand  = False,
-         hidden  = True,
+         hidden  = False,
       ))
                
       if (hwType != 'simulation'):
@@ -305,7 +305,7 @@ class Top(pr.Root):
          # test ADCs and reset if needed
          for adc in range(10):
             while True:
-               if self.testAdc(self, adc) < 0:
+               if self.testAdc(self, adc, 0) < 0 or self.testAdc(self, adc, 1) < 0:
                   self.resetAdc(self, adc)
                else:
                   break
@@ -503,7 +503,7 @@ class Top(pr.Root):
       return delaySet
    
    @staticmethod
-   def testAdc(self, adc):
+   def testAdc(self, adc, pattern):
       print('ADC %d testing'%adc)
       
       result = 0
@@ -522,10 +522,16 @@ class Top(pr.Root):
       
       
       # enable mixed bit frequency pattern
-      self.Ad9249Config[adc].OutputTestMode.set(12)
+      if pattern == 0:
+         self.Ad9249Config[adc].OutputTestMode.set(12)
+      else:
+         self.Ad9249Config[adc].OutputTestMode.set(1)
       # set the pattern tester
       self.Ad9249Tester.TestDataMask.set(0x3FFF)
-      self.Ad9249Tester.TestPattern.set(0x2867)
+      if pattern == 0:
+         self.Ad9249Tester.TestPattern.set(0x2867)
+      else:
+         self.Ad9249Tester.TestPattern.set(0x2000)
       self.Ad9249Tester.TestSamples.set(10000)
       self.Ad9249Tester.TestTimeout.set(10000)
       for lane in range(8):
