@@ -414,8 +414,9 @@ void adcStartup(int skipReset) {
    Xil_Out32(SYSTEM_ADCTESTFAIL, 0x0);
    
    // load trained delays
-   for (i=0; i<10; i++)
-      adcInit(i);
+   if (skipReset == 0)
+      for (i=0; i<10; i++)
+         adcInit(i);
    
    // test and reset ADCs as needed
    passed = 0;
