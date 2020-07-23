@@ -314,15 +314,15 @@ void adcInit(int adc) {
    
    // Reset FPGA deserializers
    Xil_Out32(SYSTEM_ADCCLKRST, 1<<adc);
-   waitTimer(TIMER_10MS_INTEVAL);
+   waitTimer(TIMER_50MS_INTEVAL);
    Xil_Out32(SYSTEM_ADCCLKRST, 0);
-   waitTimer(TIMER_10MS_INTEVAL);
+   waitTimer(TIMER_50MS_INTEVAL);
    
    // Reset ADC
    Xil_Out32(adcPdwnModeAddr[adc], 0x3);
-   waitTimer(TIMER_10MS_INTEVAL);
+   waitTimer(TIMER_50MS_INTEVAL);
    Xil_Out32(adcPdwnModeAddr[adc], 0x0);
-   waitTimer(TIMER_10MS_INTEVAL);
+   waitTimer(TIMER_50MS_INTEVAL);
    
    // Enable offset binary output
    regIn = Xil_In32(adcOutModeAddr[adc]);
@@ -338,15 +338,15 @@ void adcReset(int adc) {
    
    // Reset FPGA deserializers
    Xil_Out32(SYSTEM_ADCCLKRST, 1<<adc);
-   waitTimer(TIMER_10MS_INTEVAL);
+   waitTimer(TIMER_50MS_INTEVAL);
    Xil_Out32(SYSTEM_ADCCLKRST, 0);
-   waitTimer(TIMER_10MS_INTEVAL);
+   waitTimer(TIMER_50MS_INTEVAL);
    
    // Reset ADC
    Xil_Out32(adcPdwnModeAddr[adc], 0x3);
-   waitTimer(TIMER_10MS_INTEVAL);
+   waitTimer(TIMER_50MS_INTEVAL);
    Xil_Out32(adcPdwnModeAddr[adc], 0x0);
-   waitTimer(TIMER_10MS_INTEVAL);
+   waitTimer(TIMER_50MS_INTEVAL);
    
    // Enable offset binary output
    regIn = Xil_In32(adcOutModeAddr[adc]);
