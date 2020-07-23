@@ -316,7 +316,6 @@ void adcInit(int adc) {
 
 void adcReset(int adc) {
    
-   int j;
    uint32_t regIn = 0;
    
    // Reset FPGA deserializers
