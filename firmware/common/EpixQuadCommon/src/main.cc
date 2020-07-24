@@ -22,6 +22,7 @@
 #include "adcDelays.h"
 
 #define TIMER_10MS_INTEVAL  1000000
+#define TIMER_15MS_INTEVAL  1500000
 #define TIMER_50MS_INTEVAL  5000000
 #define TIMER_250MS_INTEVAL 25000000
 #define TIMER_500MS_INTEVAL 50000000
@@ -314,15 +315,15 @@ void adcInit(int adc) {
    
    // Reset FPGA deserializers
    Xil_Out32(SYSTEM_ADCCLKRST, 1<<adc);
-   waitTimer(TIMER_50MS_INTEVAL);
+   waitTimer(TIMER_15MS_INTEVAL);
    Xil_Out32(SYSTEM_ADCCLKRST, 0);
-   waitTimer(TIMER_50MS_INTEVAL);
+   waitTimer(TIMER_15MS_INTEVAL);
    
    // Reset ADC
    Xil_Out32(adcPdwnModeAddr[adc], 0x3);
-   waitTimer(TIMER_50MS_INTEVAL);
+   waitTimer(TIMER_15MS_INTEVAL);
    Xil_Out32(adcPdwnModeAddr[adc], 0x0);
-   waitTimer(TIMER_50MS_INTEVAL);
+   waitTimer(TIMER_15MS_INTEVAL);
    
    // Enable offset binary output
    regIn = Xil_In32(adcOutModeAddr[adc]);
@@ -338,15 +339,15 @@ void adcReset(int adc) {
    
    // Reset FPGA deserializers
    Xil_Out32(SYSTEM_ADCCLKRST, 1<<adc);
-   waitTimer(TIMER_50MS_INTEVAL);
+   waitTimer(TIMER_15MS_INTEVAL);
    Xil_Out32(SYSTEM_ADCCLKRST, 0);
-   waitTimer(TIMER_50MS_INTEVAL);
+   waitTimer(TIMER_15MS_INTEVAL);
    
    // Reset ADC
    Xil_Out32(adcPdwnModeAddr[adc], 0x3);
-   waitTimer(TIMER_50MS_INTEVAL);
+   waitTimer(TIMER_15MS_INTEVAL);
    Xil_Out32(adcPdwnModeAddr[adc], 0x0);
-   waitTimer(TIMER_50MS_INTEVAL);
+   waitTimer(TIMER_15MS_INTEVAL);
    
    // Enable offset binary output
    regIn = Xil_In32(adcOutModeAddr[adc]);
@@ -525,6 +526,11 @@ int main() {
    XTmrCtr_SetHandler(&tmrctr,timerIntHandler,(void*)&timer);
    XTmrCtr_SetOptions(&tmrctr,0,XTC_DOWN_COUNT_OPTION | XTC_INT_MODE_OPTION );
    
+   // preset ADC and ASIC clock frequencies
+   // this should always be changed together
+   Xil_Out32(RDOUT_ADC_PIPELINE, 0xAAAA005A);
+   Xil_Out32(ACQ_ASIC_ROCLK_H,   0xAAAA0005);
+   
    // Enable DCDCs
    Xil_Out32(SYSTEM_DCDCEN, 0xf);
    
@@ -542,11 +548,6 @@ int main() {
    
    // initialize ASIC core settings
    initAsics();
-   
-   // preset ADC and ASIC clock frequencies
-   // this should always be changed together
-   Xil_Out32(RDOUT_ADC_PIPELINE, 0xAAAA005A);
-   Xil_Out32(ACQ_ASIC_ROCLK_H,   0xAAAA0005);
    
    // re-read carrier ID after ASIC's DMs are disabled
    Xil_Out32( SYSTEM_IDRST, 0x1);
