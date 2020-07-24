@@ -308,27 +308,15 @@ void adcInit(int adc) {
    int j;
    uint32_t regIn = 0;
    
-   // Apply pre-trained delays
-   for (j=0; j<9; j++) {
-      Xil_Out32(adcDelayAddr[adc][j], (512+adcDelays[adc][j]));
-   }
-   
-   // Reset FPGA deserializers
-   Xil_Out32(SYSTEM_ADCCLKRST, 1<<adc);
-   waitTimer(TIMER_15MS_INTEVAL);
-   Xil_Out32(SYSTEM_ADCCLKRST, 0);
-   waitTimer(TIMER_15MS_INTEVAL);
-   
-   // Reset ADC
-   Xil_Out32(adcPdwnModeAddr[adc], 0x3);
-   waitTimer(TIMER_15MS_INTEVAL);
-   Xil_Out32(adcPdwnModeAddr[adc], 0x0);
-   waitTimer(TIMER_15MS_INTEVAL);
-   
    // Enable offset binary output
    regIn = Xil_In32(adcOutModeAddr[adc]);
    regIn &= ~(0x1);
    Xil_Out32(adcOutModeAddr[adc], regIn);
+   
+   // Apply pre-trained delays
+   for (j=0; j<9; j++) {
+      Xil_Out32(adcDelayAddr[adc][j], (512+adcDelays[adc][j]));
+   }
    
 }
 
