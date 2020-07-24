@@ -571,7 +571,7 @@ begin
    adcCsb   <= iAdcCsb;
    
    -- channel 5 debug
-   spareIo2v5(0) <= adcSdio(1);
+   --spareIo2v5(0) <= adcSdio(1);
    spareIo2v5(1) <= iAdcSclk(1);
    spareIo2v5(2) <= iAdcCsb(5);
    spareIo2v5(3) <= adcClkRst(5);
