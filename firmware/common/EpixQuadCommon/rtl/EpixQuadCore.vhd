@@ -119,7 +119,8 @@ entity EpixQuadCore is
       adcSdio           : inout slv(2 downto 0);
       adcCsb            : out   slv(9 downto 0);
       -- debug outputs
-      dbgOut            : out   slv(2 downto 0)
+      dbgOut            : out   slv(2 downto 0);
+      spareIo2v5        : out   slv(4 downto 0)
    );
 end EpixQuadCore;
 
@@ -214,6 +215,9 @@ architecture rtl of EpixQuadCore is
    signal monData       : Slv16Array(37 downto 0);
    
    signal iDbgOut       : slv(2 downto 0);
+   
+   signal iAdcSclk      : slv(2 downto 0);
+   signal iAdcCsb       : slv(9 downto 0);
    
 begin
 
@@ -490,7 +494,8 @@ begin
    
    dbgOut(0) <= not iDbgOut(0);
    dbgOut(1) <= not iDbgOut(1);
-   dbgOut(2) <= not iDbgOut(2);
+   --dbgOut(2) <= not iDbgOut(2);
+   dbgOut(2) <= not iAdcClk;
    
    ----------------------------------------------------
    -- SACI Core
@@ -548,9 +553,9 @@ begin
          mAxilWriteMaster     => axilWriteMasters(ADC_INDEX_C),
          mAxilWriteSlave      => axilWriteSlaves(ADC_INDEX_C),
          -- Fast ADC Config SPI
-         adcSclk              => adcSclk,
+         adcSclk              => iAdcSclk,
          adcSdio              => adcSdio,
-         adcCsb               => adcCsb,
+         adcCsb               => iAdcCsb,
          -- Fast ADC Signals
          adcFClkP             => adcFClkP,
          adcFClkN             => adcFClkN,
@@ -561,6 +566,15 @@ begin
          -- ADC Output Streams
          adcStream            => adcStream
       );
+   
+   adcSclk  <= iAdcSclk;
+   adcCsb   <= iAdcCsb;
+   
+   -- channel 5 debug
+   spareIo2v5(0) <= adcSdio(1);
+   spareIo2v5(1) <= iAdcSclk(1);
+   spareIo2v5(2) <= iAdcCsb(5);
+   spareIo2v5(3) <= adcClkRst(5);
    
    --------------------------------------------------------
    -- ASIC Buffers (with tri-state outputs)
