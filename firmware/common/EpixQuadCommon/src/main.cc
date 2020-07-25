@@ -21,7 +21,7 @@
 #include "regs.h"
 #include "adcDelays.h"
 
-#define TIMER_1MS_INTEVAL   100000
+#define TIMER_3MS_INTEVAL   300000
 #define TIMER_10MS_INTEVAL  1000000
 #define TIMER_50MS_INTEVAL  5000000
 #define TIMER_250MS_INTEVAL 25000000
@@ -374,7 +374,7 @@ uint32_t adcTest(int adc, int pattern) {
       Xil_Out32(ADC_TEST_REQ, 0x0);
       // wait completed
       while (Xil_In32(ADC_TEST_PASS) != 0x1 && Xil_In32(ADC_TEST_FAIL) != 0x1) {
-         waitTimer(TIMER_1MS_INTEVAL);
+         waitTimer(TIMER_3MS_INTEVAL);
       };
       // set flag
       if (Xil_In32(ADC_TEST_FAIL) == 0x1) {
