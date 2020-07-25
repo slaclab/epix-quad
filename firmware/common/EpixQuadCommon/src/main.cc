@@ -338,6 +338,7 @@ void adcReset(int adc) {
    regIn = Xil_In32(adcOutModeAddr[adc]);
    regIn &= ~(0x1);
    Xil_Out32(adcOutModeAddr[adc], regIn);
+   waitTimer(TIMER_10MS_INTEVAL);
    
 }
 
