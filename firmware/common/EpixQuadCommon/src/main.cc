@@ -427,8 +427,11 @@ void adcStartup(int skipReset) {
             break;
          }
          else {
-            // load trained delays
-            adcInit(i);
+            // load trained delays one every 10 resets
+            // this is for wrong power sequence (DVDD first)
+            if ((tryCnt%10) == 0)
+               adcInit(i);
+            // reset ADCs
             adcReset(i);
          }
       } while (tryCnt < ADC_STARTUP_RETRY);
