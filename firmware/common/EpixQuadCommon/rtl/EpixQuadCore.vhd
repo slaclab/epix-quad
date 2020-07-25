@@ -494,8 +494,7 @@ begin
    
    dbgOut(0) <= not iDbgOut(0);
    dbgOut(1) <= not iDbgOut(1);
-   --dbgOut(2) <= not iDbgOut(2);
-   dbgOut(2) <= not iAdcClk;
+   dbgOut(2) <= not iDbgOut(2);
    
    ----------------------------------------------------
    -- SACI Core
@@ -570,11 +569,10 @@ begin
    adcSclk  <= iAdcSclk;
    adcCsb   <= iAdcCsb;
    
-   -- channel 5 debug
-   --spareIo2v5(0) <= adcSdio(1);
-   spareIo2v5(1) <= iAdcSclk(1);
-   spareIo2v5(2) <= iAdcCsb(5);
-   spareIo2v5(3) <= adcClkRst(5);
+   spareIo2v5(0) <= '0';
+   spareIo2v5(1) <= '0'; --iAdcSclk(1);
+   spareIo2v5(2) <= '0'; --iAdcCsb(5);
+   spareIo2v5(3) <= '0'; --adcClkRst(5);
    
    --------------------------------------------------------
    -- ASIC Buffers (with tri-state outputs)
