@@ -22,7 +22,6 @@
 #include "adcDelays.h"
 
 #define TIMER_10MS_INTEVAL  1000000
-#define TIMER_15MS_INTEVAL  1500000
 #define TIMER_50MS_INTEVAL  5000000
 #define TIMER_250MS_INTEVAL 25000000
 #define TIMER_500MS_INTEVAL 50000000
@@ -308,11 +307,6 @@ void adcInit(int adc) {
    int j;
    uint32_t regIn = 0;
    
-   // Enable offset binary output
-   regIn = Xil_In32(adcOutModeAddr[adc]);
-   regIn &= ~(0x1);
-   Xil_Out32(adcOutModeAddr[adc], regIn);
-   
    // Apply pre-trained delays
    for (j=0; j<9; j++) {
       Xil_Out32(adcDelayAddr[adc][j], (512+adcDelays[adc][j]));
@@ -327,15 +321,20 @@ void adcReset(int adc) {
    
    // Reset FPGA deserializers
    Xil_Out32(SYSTEM_ADCCLKRST, 1<<adc);
-   waitTimer(TIMER_15MS_INTEVAL);
+   waitTimer(TIMER_10MS_INTEVAL);
    Xil_Out32(SYSTEM_ADCCLKRST, 0);
-   waitTimer(TIMER_15MS_INTEVAL);
+   waitTimer(TIMER_10MS_INTEVAL);
    
    // Reset ADC
-   Xil_Out32(adcPdwnModeAddr[adc], 0x3);
-   waitTimer(TIMER_15MS_INTEVAL);
-   Xil_Out32(adcPdwnModeAddr[adc], 0x0);
-   waitTimer(TIMER_15MS_INTEVAL);
+   regIn = Xil_In32(adcPdwnModeAddr[adc]);
+   regIn |= 0x3;
+   Xil_Out32(adcPdwnModeAddr[adc], regIn);
+   waitTimer(TIMER_10MS_INTEVAL);
+   
+   regIn = Xil_In32(adcPdwnModeAddr[adc]);
+   regIn &= ~(0x03);
+   Xil_Out32(adcPdwnModeAddr[adc], regIn);
+   waitTimer(TIMER_10MS_INTEVAL);
    
    // Enable offset binary output
    regIn = Xil_In32(adcOutModeAddr[adc]);
@@ -374,7 +373,9 @@ uint32_t adcTest(int adc, int pattern) {
       Xil_Out32(ADC_TEST_REQ, 0x1);
       Xil_Out32(ADC_TEST_REQ, 0x0);
       // wait completed
-      while (Xil_In32(ADC_TEST_PASS) != 0x1 && Xil_In32(ADC_TEST_FAIL) != 0x1);
+      while (Xil_In32(ADC_TEST_PASS) != 0x1 && Xil_In32(ADC_TEST_FAIL) != 0x1) {
+         waitTimer(TIMER_10MS_INTEVAL);
+      };
       // set flag
       if (Xil_In32(ADC_TEST_FAIL) == 0x1) {
          failedCh |= (0x1<<channel);
@@ -496,6 +497,7 @@ int main() {
    volatile uint32_t adcStartupInt = 0;
    volatile uint32_t adcTestInt = 0;
    volatile uint32_t sensorsInt = 0;
+   int i;
    
    
    XTmrCtr_Initialize(&tmrctr,0);   
@@ -541,6 +543,8 @@ int main() {
    Xil_Out32( SYSTEM_IDRST, 0x1);
    
    // do initial power on ADC startup
+   for (i = 0; i < 10; i++)
+      adcReset(i);
    adcStartup(0);
    
    // enable sensors interrupt after initial startup
