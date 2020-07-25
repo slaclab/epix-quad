@@ -427,6 +427,8 @@ void adcStartup(int skipReset) {
             break;
          }
          else {
+            // load trained delays
+            adcInit(i);
             adcReset(i);
          }
       } while (tryCnt < ADC_STARTUP_RETRY);
