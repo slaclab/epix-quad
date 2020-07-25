@@ -305,7 +305,6 @@ void waitTimer(u32 timerInterval) {
 void adcInit(int adc) {
    
    int j;
-   uint32_t regIn = 0;
    
    // Apply pre-trained delays
    for (j=0; j<9; j++) {
