@@ -314,7 +314,7 @@ void adcInit(int adc) {
    
 }
 
-void adcReset(int adc) {
+void adcReset(int adc, int hardReset) {
    
    uint32_t regIn = 0;
    
@@ -326,7 +326,10 @@ void adcReset(int adc) {
    
    // Reset ADC
    regIn = Xil_In32(adcPdwnModeAddr[adc]);
-   regIn |= 0x3;
+   if (hardReset == 0)
+      regIn |= 0x3;
+   else
+      regIn |= 0x1;
    Xil_Out32(adcPdwnModeAddr[adc], regIn);
    waitTimer(TIMER_10MS_INTEVAL);
    
@@ -428,11 +431,16 @@ void adcStartup(int skipReset) {
          }
          else {
             // load trained delays one every 10 resets
+            // do power cycle of the ADC (hard reset)
             // this is for wrong power sequence (DVDD first)
-            if ((tryCnt%10) == 0)
+            if ((tryCnt%10) == 0) {
                adcInit(i);
+               adcReset(i, 1);
+            }
             // reset ADCs
-            adcReset(i);
+            else {
+               adcReset(i, 0);
+            }
          }
       } while (tryCnt < ADC_STARTUP_RETRY);
    }
@@ -549,7 +557,7 @@ int main() {
    
    // do initial power on ADC startup
    for (i = 0; i < 10; i++)
-      adcReset(i);
+      adcReset(i, 0);
    adcStartup(0);
    
    // enable sensors interrupt after initial startup
