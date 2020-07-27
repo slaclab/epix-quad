@@ -29,8 +29,6 @@
 #define TIMER_750MS_INTEVAL 75000000
 #define TIMER_1SEC_INTEVAL 100000000
 
-#define ADC_STARTUP_RETRY 500
-
 
 static XIntc    intc;
 static XTmrCtr  tmrctr;
@@ -395,7 +393,7 @@ uint32_t adcTest(int adc, int pattern) {
    
 }
 
-void adcStartup(int skipReset) {
+void adcStartup(int skipReset, int retryCnt) {
    
    uint32_t passed = 0;
    uint32_t failed = 0;
@@ -442,7 +440,7 @@ void adcStartup(int skipReset) {
                adcReset(i, 0);
             }
          }
-      } while (tryCnt < ADC_STARTUP_RETRY);
+      } while (tryCnt < retryCnt);
    }
    
    // set result flags
@@ -546,6 +544,20 @@ int main() {
    // wait for power to settle
    waitTimer(TIMER_500MS_INTEVAL);   
    
+   // do initial power on ADC startup
+   for (i = 0; i < 10; i++)
+      adcReset(i, 0);
+   // do a lot of re-tries in case the AVDD is still off
+   adcStartup(0, 10000);
+   
+   // it might be better to detect and config ASICs 
+   // as well as trigger module IDs readout
+   // after the ADC startup is done
+   // the startup will try to initialize ADCs for several minutes
+   // if the power sequence is wrong (DVDD first) the startup will block
+   // the exectution until AVDD is turned on
+   // the AVDD is needed for ASICs and IDs initialization below
+   
    // detect ASICs
    findAsics();
    
@@ -554,11 +566,6 @@ int main() {
    
    // re-read carrier ID after ASIC's DMs are disabled
    Xil_Out32( SYSTEM_IDRST, 0x1);
-   
-   // do initial power on ADC startup
-   for (i = 0; i < 10; i++)
-      adcReset(i, 0);
-   adcStartup(0);
    
    // enable sensors interrupt after initial startup
    XIntc_Enable(&intc,2);
@@ -571,7 +578,7 @@ int main() {
          // clear interrupt flag
          adcStartupInt = 0;
          // call ADC startup routine
-         adcStartup(0);
+         adcStartup(0, 500);
       }
       
       // poll ADC test interrupt flag
@@ -579,7 +586,7 @@ int main() {
          // clear interrupt flag
          adcTestInt = 0;
          // call ADC test routine
-         adcStartup(1);
+         adcStartup(1, 500);
       }
       
    }
