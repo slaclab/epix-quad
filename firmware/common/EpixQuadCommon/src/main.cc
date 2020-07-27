@@ -393,7 +393,7 @@ uint32_t adcTest(int adc, int pattern) {
    
 }
 
-void adcStartup(int skipReset, int retryCnt) {
+void adcStartup(int skipReset, uint32_t retryCnt) {
    
    uint32_t passed = 0;
    uint32_t failed = 0;
