@@ -175,6 +175,12 @@ set_property -dict { PACKAGE_PIN M25  IOSTANDARD LVCMOS12 } [get_ports {dbgOut[0
 set_property -dict { PACKAGE_PIN M28  IOSTANDARD LVCMOS12 } [get_ports {dbgOut[1]}]
 set_property -dict { PACKAGE_PIN L28  IOSTANDARD LVCMOS12 } [get_ports {dbgOut[2]}]
 
+set_property -dict { PACKAGE_PIN AC8  IOSTANDARD LVCMOS25 } [get_ports {spareIo2v5[0]}]
+set_property -dict { PACKAGE_PIN AD15 IOSTANDARD LVCMOS25 } [get_ports {spareIo2v5[1]}]
+set_property -dict { PACKAGE_PIN AH12 IOSTANDARD LVCMOS25 } [get_ports {spareIo2v5[2]}]
+set_property -dict { PACKAGE_PIN AF12 IOSTANDARD LVCMOS25 } [get_ports {spareIo2v5[3]}]
+set_property -dict { PACKAGE_PIN AF14 IOSTANDARD LVCMOS25 } [get_ports {spareIo2v5[4]}]
+
 set_property -dict { PACKAGE_PIN AH9  IOSTANDARD LVCMOS25 } [get_ports {asicSaciResp[3]}]
 set_property -dict { PACKAGE_PIN AH8  IOSTANDARD LVCMOS25 } [get_ports {asicSaciResp[2]}]
 set_property -dict { PACKAGE_PIN AG11 IOSTANDARD LVCMOS25 } [get_ports {asicSaciResp[1]}]
