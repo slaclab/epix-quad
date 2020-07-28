@@ -461,8 +461,8 @@ void adcStartup(int skipReset, uint32_t retryCnt) {
    Xil_Out32(SYSTEM_ADCTESTDONE, 0x1);
    
    // restore acq force and value registers
-   Xil_Out32(ACQ_ASIC_FORCE, acqForce);
-   Xil_Out32(ACQ_ASIC_VALUE, acqValue);
+   //Xil_Out32(ACQ_ASIC_FORCE, acqForce);
+   //Xil_Out32(ACQ_ASIC_VALUE, acqValue);
    
 }
 
