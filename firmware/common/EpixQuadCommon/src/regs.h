@@ -225,3 +225,5 @@ static uint8_t adcChMap[16] = {
 
 #define ACQ_CORE           (BUS_OFFSET+0x01000000)
 #define ACQ_ASIC_ROCLK_H   (ACQ_CORE+0x020)
+#define ACQ_ASIC_FORCE     (ACQ_CORE+0x02C)
+#define ACQ_ASIC_VALUE     (ACQ_CORE+0x030)
