@@ -393,7 +393,7 @@ uint32_t adcTest(int adc, int pattern) {
    
 }
 
-void adcStartup(int skipReset, uint32_t retryCnt) {
+void adcStartup(int skipReset, uint32_t retryCnt, void * intFlag) {
    
    uint32_t passed = 0;
    uint32_t failed = 0;
@@ -401,6 +401,8 @@ void adcStartup(int skipReset, uint32_t retryCnt) {
    //uint32_t acqForce = 0;
    //uint32_t acqValue = 0;
    int i;
+        
+   uint32_t * request = (uint32_t *)intFlag;
 
    // force ASIC's PPMAT pin high
    // the high current draw seem to affect the ADC startup
@@ -436,6 +438,11 @@ void adcStartup(int skipReset, uint32_t retryCnt) {
          }
          else if (skipReset == 1) {
             break;
+         }
+         else if ((*request) == 1) {
+            // break the startup on next interrupt
+            // gives a way out if this is infinite long
+            (*request) = 0;
          }
          else {
             // load trained delays one every 10 resets
@@ -562,7 +569,8 @@ int main() {
    for (i = 0; i < 10; i++)
       adcReset(i, 0);
    // do a lot of re-tries in case the AVDD is still off
-   adcStartup(0, 10000);
+   adcStartupInt = 0;
+   adcStartup(0, 10000, (void*)&adcStartupInt);
    
    // it might be better to detect and config ASICs 
    // as well as trigger module IDs readout
@@ -592,7 +600,7 @@ int main() {
          // clear interrupt flag
          adcStartupInt = 0;
          // call ADC startup routine
-         adcStartup(0, 500);
+         adcStartup(0, 500, (void*)&adcStartupInt);
       }
       
       // poll ADC test interrupt flag
@@ -600,7 +608,7 @@ int main() {
          // clear interrupt flag
          adcTestInt = 0;
          // call ADC test routine
-         adcStartup(1, 500);
+         adcStartup(1, 500, (void*)&adcTestInt);
       }
       
    }
