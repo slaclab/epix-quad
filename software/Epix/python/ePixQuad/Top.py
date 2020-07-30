@@ -284,9 +284,57 @@ class Top(pr.Root):
       def AdcStartup():
          self.SystemRegs.enable.set(True)
          self.Ad9249Tester.enable.set(True)
+         self.RdoutCore.enable.set(True)
+         self.AcqCore.enable.set(True)
+         self.PseudoScopeCore.enable.set(True)
          for adc in range(10):
             self.Ad9249Readout[adc].enable.set(True)
             self.Ad9249Config[adc].enable.set(True)
+         
+         
+         # store settings and make the ACQ FSM run the ASIC readout constantly
+         TrigSrcSel           = self.SystemRegs.TrigSrcSel.get()
+         AutoTrigEn           = self.SystemRegs.AutoTrigEn.get()
+         AutoTrigPer          = self.SystemRegs.AutoTrigPer.get()
+         AcqToAsicR0Delay     = self.AcqCore.AcqToAsicR0Delay.get()
+         AsicR0Width          = self.AcqCore.AsicR0Width.get()
+         AsicR0ToAsicAcq      = self.AcqCore.AsicR0ToAsicAcq.get()
+         AsicAcqWidth         = self.AcqCore.AsicAcqWidth.get()
+         AsicAcqLToPPmatL     = self.AcqCore.AsicAcqLToPPmatL.get()
+         AsicPpmatToReadout   = self.AcqCore.AsicPpmatToReadout.get()
+         AsicRoClkHalfT       = self.AcqCore.AsicRoClkHalfT.get()
+         AsicPpmatForce       = self.AcqCore.AsicPpmatForce.get()
+         AsicPpmatValue       = self.AcqCore.AsicPpmatValue.get()
+         DummyAcqEn           = self.AcqCore.DummyAcqEn.get()
+         RdoutEn              = self.RdoutCore.RdoutEn.get()
+         ScopeEn              = self.PseudoScopeCore.ScopeEn.get()
+         
+         # turn off all data streams
+         self.RdoutCore.RdoutEn.set(False)
+         self.PseudoScopeCore.ScopeEn.set(False)
+         
+         # switch to internal trigger maximum rate
+         # turn the trigger off for now
+         self.SystemRegs.AutoTrigEn.set(False)
+         self.SystemRegs.TrigSrcSel.set(0x3)
+         self.SystemRegs.AutoTrigPer.set(486000) # 290.7 Hz (max for the ACQ settings below)
+         
+         # set the ACQ FSM
+         self.AcqCore.AcqToAsicR0Delay.set(0)
+         self.AcqCore.AsicR0Width.set(100)
+         self.AcqCore.AsicR0ToAsicAcq.set(100)
+         self.AcqCore.AsicAcqWidth.set(100)
+         self.AcqCore.AsicAcqLToPPmatL.set(100)
+         self.AcqCore.AsicPpmatToReadout.set(0)
+         self.AcqCore.AsicPpmatForce.set(True)
+         self.AcqCore.AsicPpmatValue.set(True)
+         self.AcqCore.AsicRoClkHalfT.set(0xaaaa0005)
+         
+         # turn the trigger on
+         self.SystemRegs.AutoTrigEn.set(True)
+         # wait for 1 trigger period
+         time.sleep(0.004)
+         
          
          #load trained delays
          for adc in range(10):
@@ -310,6 +358,29 @@ class Top(pr.Root):
                else:
                   break
             
+         
+         # turn the trigger off
+         self.SystemRegs.AutoTrigEn.set(False)
+         # wait for 1 trigger period
+         time.sleep(0.004)
+         
+         # restore settings
+         self.AcqCore.AcqToAsicR0Delay.set(AcqToAsicR0Delay)
+         self.AcqCore.AsicR0Width.set(AsicR0Width)
+         self.AcqCore.AsicR0ToAsicAcq.set(AsicR0ToAsicAcq)
+         self.AcqCore.AsicAcqWidth.set(AsicAcqWidth)
+         self.AcqCore.AsicAcqLToPPmatL.set(AsicAcqLToPPmatL)
+         self.AcqCore.AsicPpmatToReadout.set(AsicPpmatToReadout)
+         self.AcqCore.AsicRoClkHalfT.set(AsicRoClkHalfT)
+         self.AcqCore.AsicPpmatForce.set(AsicPpmatForce)
+         self.AcqCore.AsicPpmatValue.set(AsicPpmatValue)
+         self.AcqCore.DummyAcqEn.set(DummyAcqEn)
+         self.RdoutCore.RdoutEn.set(RdoutEn)
+         self.PseudoScopeCore.ScopeEn.set(ScopeEn)
+         self.SystemRegs.AutoTrigEn.set(AutoTrigEn)
+         self.SystemRegs.AutoTrigPer.set(AutoTrigPer)
+         self.SystemRegs.TrigSrcSel.set(TrigSrcSel)
+         
          
          self.Ad9249Tester.enable.set(False)
          print('Done')
@@ -506,8 +577,8 @@ class Top(pr.Root):
    def testAdc(self, adc, pattern):
       print('ADC %d testing'%adc)
       
-      result = 0
       
+      result = 0
       # Reset lost lock counter
       self.Ad9249Readout[adc].LostLockCountReset()
       # Wait 1 ms
@@ -525,14 +596,16 @@ class Top(pr.Root):
       if pattern == 0:
          self.Ad9249Config[adc].OutputTestMode.set(12)
       else:
-         self.Ad9249Config[adc].OutputTestMode.set(1)
+         self.Ad9249Config[adc].OutputTestMode.set(8)
+         self.Ad9249Config[adc].UserPatt1Lsb.set(0x00)
+         self.Ad9249Config[adc].UserPatt1Msb.set(0x60)
       # set the pattern tester
       self.Ad9249Tester.TestDataMask.set(0x3FFF)
       if pattern == 0:
          self.Ad9249Tester.TestPattern.set(0x2867)
       else:
-         self.Ad9249Tester.TestPattern.set(0x2000)
-      self.Ad9249Tester.TestSamples.set(10000)
+         self.Ad9249Tester.TestPattern.set(0x1800)
+      self.Ad9249Tester.TestSamples.set(100000)
       self.Ad9249Tester.TestTimeout.set(10000)
       for lane in range(8):
          self.Ad9249Tester.TestChannel.set(adc*8+lane)
@@ -551,6 +624,7 @@ class Top(pr.Root):
          
       # disable mixed bit frequency pattern
       self.Ad9249Config[adc].OutputTestMode.set(0)
+      
       
       if result < 9:
          return -1
