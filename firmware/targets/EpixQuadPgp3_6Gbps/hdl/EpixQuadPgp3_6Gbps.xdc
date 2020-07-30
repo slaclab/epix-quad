@@ -15,18 +15,10 @@
 create_clock -name pgpClkP   -period 6.400 [get_ports {pgpClkP}]
 create_clock -name ddrClkP   -period 5.000 [get_ports {c0_sys_clk_p}]
 
-create_clock -name adc0DClk -period 2.850 [get_ports {adcDClkP[0]}]
-create_clock -name adc1DClk -period 2.850 [get_ports {adcDClkP[1]}]
-create_clock -name adc2DClk -period 2.850 [get_ports {adcDClkP[2]}]
-create_clock -name adc3DClk -period 2.850 [get_ports {adcDClkP[3]}]
-create_clock -name adc4DClk -period 2.850 [get_ports {adcDClkP[4]}]
-create_clock -name adc5DClk -period 2.850 [get_ports {adcDClkP[5]}]
-create_clock -name adc6DClk -period 2.850 [get_ports {adcDClkP[6]}]
-create_clock -name adc7DClk -period 2.850 [get_ports {adcDClkP[7]}]
-create_clock -name adc8DClk -period 2.850 [get_ports {adcDClkP[8]}]
-create_clock -name adc9DClk -period 2.850 [get_ports {adcDClkP[9]}]
-
-create_generated_clock -name sysClk    [get_pins {U_CORE/U_PGP/G_PGPv3.U_PGP/U_PLL1/MmcmGen.U_Mmcm/CLKOUT0}]
+create_generated_clock -name sysClk          [get_pins {U_CORE/U_PGP/G_PGPv3.U_PGP/U_PLL1/MmcmGen.U_Mmcm/CLKOUT0}]
+create_generated_clock -name adcBitClk       [get_pins {U_CORE/U_AdcCore/U_PLLAdc/MmcmGen.U_Mmcm/CLKOUT0}]
+create_generated_clock -name adcBitClkDiv4   [get_pins {U_CORE/U_AdcCore/U_PLLAdc/MmcmGen.U_Mmcm/CLKOUT1}]
+create_generated_clock -name adcBitClkDiv7   [get_pins {U_CORE/U_AdcCore/U_PLLAdc/MmcmGen.U_Mmcm/CLKOUT2}]
 
 create_clock -name pgp3PhyRxClk -period 5.280 [get_pins {U_CORE/U_PGP/G_PGPv3.U_PGP/G_PGP.U_PGP/U_Pgp3GthUsIpWrapper_1/GEN_6G.U_Pgp3GthUsIp/inst/gen_gtwizard_gthe3_top.Pgp3GthUsIp6G_gtwizard_gthe3_inst/gen_gtwizard_gthe3.gen_channel_container[2].gen_enabled_channel.gthe3_channel_wrapper_inst/channel_inst/gthe3_channel_gen.gen_gthe3_channel_inst[0].GTHE3_CHANNEL_PRIM_INST/RXOUTCLK}]
 create_clock -name pgp3PhyTxClk -period 5.280 [get_pins {U_CORE/U_PGP/G_PGPv3.U_PGP/G_PGP.U_PGP/U_Pgp3GthUsIpWrapper_1/GEN_6G.U_Pgp3GthUsIp/inst/gen_gtwizard_gthe3_top.Pgp3GthUsIp6G_gtwizard_gthe3_inst/gen_gtwizard_gthe3.gen_channel_container[2].gen_enabled_channel.gthe3_channel_wrapper_inst/channel_inst/gthe3_channel_gen.gen_gthe3_channel_inst[0].GTHE3_CHANNEL_PRIM_INST/TXOUTCLK}]
@@ -37,80 +29,9 @@ set_clock_groups -asynchronous \
    -group [get_clocks -include_generated_clocks {pgpClkP}] \
    -group [get_clocks -include_generated_clocks {ddrClkP}] \
    -group [get_clocks -include_generated_clocks {sysClk}] \
-   -group [get_clocks -include_generated_clocks {adc0DClk}] \
-   -group [get_clocks -include_generated_clocks {adc1DClk}] \
-   -group [get_clocks -include_generated_clocks {adc2DClk}] \
-   -group [get_clocks -include_generated_clocks {adc3DClk}] \
-   -group [get_clocks -include_generated_clocks {adc4DClk}] \
-   -group [get_clocks -include_generated_clocks {adc5DClk}] \
-   -group [get_clocks -include_generated_clocks {adc6DClk}] \
-   -group [get_clocks -include_generated_clocks {adc7DClk}] \
-   -group [get_clocks -include_generated_clocks {adc8DClk}] \
-   -group [get_clocks -include_generated_clocks {adc9DClk}]
-
-create_generated_clock -name adcBitClk0R    [get_pins {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/U_AdcBitClkR/O}]
-create_generated_clock -name adcBitClk0R    [get_pins {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/U_AdcBitClkR/O}]
-create_generated_clock -name adcBitClk0RD4  [get_pins {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/U_AdcBitClkRD4/O}]
-create_generated_clock -name adcBitClk1R    [get_pins {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/U_AdcBitClkR/O}]
-create_generated_clock -name adcBitClk1RD4  [get_pins {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/U_AdcBitClkRD4/O}]
-create_generated_clock -name adcBitClk2R    [get_pins {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/U_AdcBitClkR/O}]
-create_generated_clock -name adcBitClk2RD4  [get_pins {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/U_AdcBitClkRD4/O}]
-create_generated_clock -name adcBitClk3R    [get_pins {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/U_AdcBitClkR/O}]
-create_generated_clock -name adcBitClk3RD4  [get_pins {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/U_AdcBitClkRD4/O}]
-create_generated_clock -name adcBitClk4R    [get_pins {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/U_AdcBitClkR/O}]
-create_generated_clock -name adcBitClk4RD4  [get_pins {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/U_AdcBitClkRD4/O}]
-create_generated_clock -name adcBitClk5R    [get_pins {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/U_AdcBitClkR/O}]
-create_generated_clock -name adcBitClk5RD4  [get_pins {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/U_AdcBitClkRD4/O}]
-create_generated_clock -name adcBitClk6R    [get_pins {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/U_AdcBitClkR/O}]
-create_generated_clock -name adcBitClk6RD4  [get_pins {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/U_AdcBitClkRD4/O}]
-create_generated_clock -name adcBitClk7R    [get_pins {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/U_AdcBitClkR/O}]
-create_generated_clock -name adcBitClk7RD4  [get_pins {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/U_AdcBitClkRD4/O}]
-create_generated_clock -name adcBitClk8R    [get_pins {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/U_AdcBitClkR/O}]
-create_generated_clock -name adcBitClk8RD4  [get_pins {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/U_AdcBitClkRD4/O}]
-create_generated_clock -name adcBitClk9R    [get_pins {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/U_AdcBitClkR/O}]
-create_generated_clock -name adcBitClk9RD4  [get_pins {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/U_AdcBitClkRD4/O}]
-
-set_clock_groups -asynchronous \
-   -group [get_clocks -include_generated_clocks {adc0DClk}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk0R}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk0RD4}] 
-set_clock_groups -asynchronous \
-   -group [get_clocks -include_generated_clocks {adc1DClk}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk1R}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk1RD4}] 
-set_clock_groups -asynchronous \
-   -group [get_clocks -include_generated_clocks {adc2DClk}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk2R}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk2RD4}] 
-set_clock_groups -asynchronous \
-   -group [get_clocks -include_generated_clocks {adc3DClk}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk3R}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk3RD4}] 
-set_clock_groups -asynchronous \
-   -group [get_clocks -include_generated_clocks {adc4DClk}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk4R}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk4RD4}] 
-set_clock_groups -asynchronous \
-   -group [get_clocks -include_generated_clocks {adc5DClk}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk5R}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk5RD4}] 
-set_clock_groups -asynchronous \
-   -group [get_clocks -include_generated_clocks {adc6DClk}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk6R}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk6RD4}] 
-set_clock_groups -asynchronous \
-   -group [get_clocks -include_generated_clocks {adc7DClk}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk7R}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk7RD4}] 
-set_clock_groups -asynchronous \
-   -group [get_clocks -include_generated_clocks {adc8DClk}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk8R}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk8RD4}] 
-set_clock_groups -asynchronous \
-   -group [get_clocks -include_generated_clocks {adc9DClk}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk9R}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk9RD4}] 
-
+   -group [get_clocks -include_generated_clocks {adcBitClk}] \
+   -group [get_clocks -include_generated_clocks {adcBitClkDiv4}] \
+   -group [get_clocks -include_generated_clocks {adcBitClkDiv7}] 
 
 
 ############################
