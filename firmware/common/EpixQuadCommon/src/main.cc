@@ -442,7 +442,9 @@ void adcStartup(int skipReset, uint32_t retryCnt, void * intFlag) {
          else if ((*request) == 1) {
             // break the startup on next interrupt
             // gives a way out if this is infinite long
+            passed = 0;
             (*request) = 0;
+            break;
          }
          else {
             // load trained delays one every 10 resets
