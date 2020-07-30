@@ -15,7 +15,7 @@ source -quiet $::env(RUCKUS_DIR)/vivado/env_var.tcl
 source -quiet $::env(RUCKUS_DIR)/vivado/proc.tcl
 
 # Bypass the debug chipscope generation
-return
+# return
 
 ############################
 ## Open the synthesis design
@@ -41,7 +41,7 @@ set_property C_DATA_DEPTH 2048 [get_debug_cores ${ilaName}]
 ## Set the clock for the ILA core
 #################################
 #SetDebugCoreClk ${ilaName} {U_FadcPhy/U_Jesd/U_Jesd204bRx/generateRxLanes[0].JesdRx_INST/devClk_i}
-SetDebugCoreClk ${ilaName} {adcClk}
+SetDebugCoreClk ${ilaName} {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/adcBitClkR}
 #SetDebugCoreClk ${ilaName} {U_Core/U_LztsSynchronizer/muxClk}
 
 #######################
@@ -58,14 +58,17 @@ SetDebugCoreClk ${ilaName} {adcClk}
 
 
 
-ConfigProbe ${ilaName} {U_FadcBuffer/GEN_VEC[0].U_FadcChannel/trig[trigState][*]}
-ConfigProbe ${ilaName} {U_FadcBuffer/GEN_VEC[0].U_FadcChannel/trig[buffSel][*]}
-ConfigProbe ${ilaName} {U_FadcBuffer/GEN_VEC[0].U_FadcChannel/trig[buffCnt][*]}
-ConfigProbe ${ilaName} {U_FadcBuffer/GEN_VEC[0].U_FadcChannel/trig[buffAddr][*]}
-ConfigProbe ${ilaName} {U_FadcBuffer/GEN_VEC[0].U_FadcChannel/trig[samplesBuff][*]}
-ConfigProbe ${ilaName} {U_FadcBuffer/GEN_VEC[0].U_FadcChannel/trig[actPreDelay][*]}
-ConfigProbe ${ilaName} {U_FadcBuffer/GEN_VEC[0].U_FadcChannel/trig[buffSwitch]}
-ConfigProbe ${ilaName} {U_FadcBuffer/GEN_VEC[0].U_FadcChannel/trig[buffRdDone]}
+ConfigProbe ${ilaName} {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/adcR[fifoWrData][0][*]}
+
+
+#ConfigProbe ${ilaName} {U_FadcBuffer/GEN_VEC[0].U_FadcChannel/trig[trigState][*]}
+#ConfigProbe ${ilaName} {U_FadcBuffer/GEN_VEC[0].U_FadcChannel/trig[buffSel][*]}
+#ConfigProbe ${ilaName} {U_FadcBuffer/GEN_VEC[0].U_FadcChannel/trig[buffCnt][*]}
+#ConfigProbe ${ilaName} {U_FadcBuffer/GEN_VEC[0].U_FadcChannel/trig[buffAddr][*]}
+#ConfigProbe ${ilaName} {U_FadcBuffer/GEN_VEC[0].U_FadcChannel/trig[samplesBuff][*]}
+#ConfigProbe ${ilaName} {U_FadcBuffer/GEN_VEC[0].U_FadcChannel/trig[actPreDelay][*]}
+#ConfigProbe ${ilaName} {U_FadcBuffer/GEN_VEC[0].U_FadcChannel/trig[buffSwitch]}
+#ConfigProbe ${ilaName} {U_FadcBuffer/GEN_VEC[0].U_FadcChannel/trig[buffRdDone]}
 
 
 #ConfigProbe ${ilaName} {U_SadcBuffer/GEN_VEC[0].U_Writer/trig[trigState][*]}
