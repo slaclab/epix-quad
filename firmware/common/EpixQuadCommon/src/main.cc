@@ -406,8 +406,8 @@ void adcStartup(int skipReset, uint32_t retryCnt) {
    // the high current draw seem to affect the ADC startup
    //acqForce = Xil_In32(ACQ_ASIC_FORCE);
    //acqValue = Xil_In32(ACQ_ASIC_VALUE);
-   Xil_Out32(ACQ_ASIC_FORCE, 0x4);
-   Xil_Out32(ACQ_ASIC_VALUE, 0x4);
+   //Xil_Out32(ACQ_ASIC_FORCE, 0x4);
+   //Xil_Out32(ACQ_ASIC_VALUE, 0x4);
    
    
    // clear test status flags
