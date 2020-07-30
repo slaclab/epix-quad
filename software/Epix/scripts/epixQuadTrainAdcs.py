@@ -251,7 +251,7 @@ for adc in range(args.adcStart, args.adcStop+1):
          # Set channel delay
          QuadTop.Ad9249Readout[adc].ChannelDelay[channel].set(0x200+delay)
          # Wait 10 ms
-         time.sleep(0.01)
+         # time.sleep(0.01)
          # sSet tester channel and start testing
          QuadTop.Ad9249Tester.TestChannel.set(adc*8+channel)
          QuadTop.Ad9249Tester.TestRequest.set(True)
