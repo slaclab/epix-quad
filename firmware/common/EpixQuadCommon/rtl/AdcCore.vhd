@@ -58,6 +58,8 @@ entity AdcCore is
       adcDClkN             : in    slv(9 downto 0);
       adcChP               : in    Slv8Array(9 downto 0);
       adcChN               : in    Slv8Array(9 downto 0);
+      adcClkP              : out   slv(4 downto 0);
+      adcClkN              : out   slv(4 downto 0);
       -- ADC Output Streams
       adcStream            : out AxiStreamMasterArray(79 downto 0)
    );
@@ -91,6 +93,15 @@ architecture top_level of AdcCore is
 
    signal asicAdc          : Ad9249SerialGroupArray(9 downto 0);
    signal iAdcStream       : AxiStreamMasterArray(79 downto 0);
+   
+   signal adcBitClkIn      : sl;
+   signal adcBitClkDiv4In  : sl;
+   signal adcBitClkDiv7In  : sl;
+   signal adcBitRstIn      : sl;
+   signal adcBitRstDiv4In  : sl;
+   signal adcBitRstDiv7In  : sl;
+   
+   signal adcClk           : slv(4 downto 0);
 
 begin
    
@@ -115,6 +126,65 @@ begin
          mAxiReadMasters     => axilReadMasters,
          mAxiReadSlaves      => axilReadSlaves);
    
+   ------------------------------------------------
+   -- Generate ADC and deserializer clocks
+   ------------------------------------------------
+   -- clkIn     - 100.00 MHz
+   -- clkOut(0) - 350.00 MHz
+   -- clkOut(1) -  87.50 MHz
+   -- clkOut(2) -  50.00 MHz
+   U_PLLAdc : entity surf.ClockManagerUltraScale
+   generic map(
+      TPD_G             => TPD_G,
+      TYPE_G            => "MMCM",
+      INPUT_BUFG_G      => true,
+      FB_BUFG_G         => true,
+      RST_IN_POLARITY_G => '1',
+      NUM_CLOCKS_G      => 3,
+      -- MMCM attributes
+      BANDWIDTH_G       => "OPTIMIZED",
+      CLKIN_PERIOD_G    => 10.0,
+      DIVCLK_DIVIDE_G   => 1,
+      CLKFBOUT_MULT_G   => 7,
+      CLKOUT0_DIVIDE_G  => 2,
+      CLKOUT1_DIVIDE_G  => 8,
+      CLKOUT2_DIVIDE_G  => 14
+   )
+   port map(
+      -- Clock Input
+      clkIn     => sysClk,
+      -- Clock Outputs
+      clkOut(0) => adcBitClkIn,
+      clkOut(1) => adcBitClkDiv4In,
+      clkOut(2) => adcBitClkDiv7In,
+      rstOut(0) => adcBitRstIn,
+      rstOut(1) => adcBitRstDiv4In,
+      rstOut(2) => adcBitRstDiv7In
+   );
+   
+   ------------------------------------------------
+   -- Generate ADC output clocks
+   ------------------------------------------------
+   GEN_VEC5 : for i in 4 downto 0 generate
+   
+      U_ODDR : ODDRE1
+      port map (
+         Q  => adcClk(i),      
+         C  => adcBitRstDiv7In,
+         D1 => '1',            
+         D2 => '0',            
+         SR => '0'
+      );
+      
+      U_OBUFDS : OBUFTDS
+      port map (
+         I  => adcClk(i),
+         T  => '0',
+         O  => adcClkP(i),
+         OB => adcClkN(i)
+      );
+   
+   end generate GEN_VEC5;
    
    ------------------------------------------------
    -- ADC Readout Modules
@@ -142,6 +212,12 @@ begin
          axilWriteMaster   => axilWriteMasters(ADC0_RDOUT_INDEX_C+i),
          axilWriteSlave    => axilWriteSlaves(ADC0_RDOUT_INDEX_C+i),
          adcClkRst         => adcClkRst(i),
+         adcBitClkIn       => adcBitClkIn,
+         adcBitClkDiv4In   => adcBitClkDiv4In,
+         adcBitClkDiv7In   => adcBitClkDiv7In,
+         adcBitRstIn       => adcBitRstIn,
+         adcBitRstDiv4In   => adcBitRstDiv4In,
+         adcBitRstDiv7In   => adcBitRstDiv7In,
          adcSerial         => asicAdc(i),
          adcStreamClk      => sysClk,
          adcStreams        => iAdcStream((i*8)+7 downto i*8)

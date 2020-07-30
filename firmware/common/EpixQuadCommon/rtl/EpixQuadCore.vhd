@@ -562,6 +562,8 @@ begin
          adcDClkN             => adcDClkN,
          adcChP               => adcChP,
          adcChN               => adcChN,
+         adcClkP              => adcClkP,
+         adcClkN              => adcClkN,
          -- ADC Output Streams
          adcStream            => adcStream
       );
@@ -620,25 +622,25 @@ begin
       
    end generate GEN_VEC16;
    
-   --------------------------------------------------------
-   -- ADC Clock Output Buffers
-   --------------------------------------------------------
-   
-   GEN_VEC5 : for i in 4 downto 0 generate
-      
-      U_AdcClkOutBufDiff : entity surf.OutputBufferReg
-      generic map (
-         TPD_G       => TPD_G,
-         DIFF_PAIR_G => true
-      )
-      port map (
-         I     => iAdcClk,
-         C     => sysClk,
-         O     => adcClkP(i),
-         OB    => adcClkN(i)
-      );
-      
-   end generate GEN_VEC5;
+   ----------------------------------------------------------
+   ---- ADC Clock Output Buffers
+   ----------------------------------------------------------
+   --
+   --GEN_VEC5 : for i in 4 downto 0 generate
+   --   
+   --   U_AdcClkOutBufDiff : entity surf.OutputBufferReg
+   --   generic map (
+   --      TPD_G       => TPD_G,
+   --      DIFF_PAIR_G => true
+   --   )
+   --   port map (
+   --      I     => iAdcClk,
+   --      C     => sysClk,
+   --      O     => adcClkP(i),
+   --      OB    => adcClkN(i)
+   --   );
+   --   
+   --end generate GEN_VEC5;
    
 
 end rtl;
