@@ -170,7 +170,7 @@ begin
       U_ODDR : ODDRE1
       port map (
          Q  => adcClk(i),      
-         C  => adcBitRstDiv7In,
+         C  => adcBitClkDiv7In,
          D1 => '1',            
          D2 => '0',            
          SR => '0'
