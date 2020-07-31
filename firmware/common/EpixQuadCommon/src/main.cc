@@ -468,6 +468,9 @@ void adcStartup(int skipReset, uint32_t retryCnt) {
    uint32_t tryCnt = 0;
    int i;
    
+   // read ADC constants from PROM
+   promReadCmd(PROM_ADC_DATA_ADDR);
+   promReadData();
    
    // clear test status flags
    Xil_Out32(SYSTEM_ADCTESTDONE, 0x0);
@@ -605,10 +608,8 @@ int main() {
    XTmrCtr_SetHandler(&tmrctr,timerIntHandler,(void*)&timer);
    XTmrCtr_SetOptions(&tmrctr,0,XTC_DOWN_COUNT_OPTION | XTC_INT_MODE_OPTION );
    
-   // read ADC constants from PROM
+   // reset PROM
    promReset();
-   promReadCmd(PROM_ADC_DATA_ADDR);
-   promReadData();
    
    // preset ADC and ASIC clock frequencies
    // this should always be changed together
