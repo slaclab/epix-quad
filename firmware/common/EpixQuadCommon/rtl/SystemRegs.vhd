@@ -104,6 +104,7 @@ architecture RTL of SystemRegs is
       usrRst            : sl;
       adcClkRst         : slv(9 downto 0);
       adcReqStart       : sl;
+      adcBypass         : sl;
       adcReqTest        : sl;
       adcTestDone       : sl;
       adcTestFailed     : sl;
@@ -153,6 +154,7 @@ architecture RTL of SystemRegs is
       usrRst            => '0',
       adcClkRst         => (others=>'0'),
       adcReqStart       => '0',
+      adcBypass         => '0',
       adcReqTest        => '0',
       adcTestDone       => '0',
       adcTestFailed     => '0',
@@ -397,6 +399,7 @@ begin
       axiSlaveRegisterR(regCon, x"418", 0, r.trigPerMin);
       axiSlaveRegisterR(regCon, x"41C", 0, r.trigPerMax);
       
+      -- group of Microblaze ADC startup registers
       axiSlaveRegister (regCon, x"500", 0, v.adcClkRst);
       axiSlaveRegister (regCon, x"504", 0, v.adcReqStart);
       axiSlaveRegister (regCon, x"508", 0, v.adcReqTest);
@@ -405,6 +408,7 @@ begin
       for i in 9 downto 0 loop
          axiSlaveRegister(regCon, x"514"+toSlv(i*4, 12), 0, v.adcChanFailed(i));
       end loop;
+      axiSlaveRegister (regCon, x"540", 0, v.adcBypass);
       
 
       -- Close out the AXI-Lite transaction

@@ -19,8 +19,8 @@
 #include "ssi_printf.h"
 #include "xtmrctr.h"
 #include "regs.h"
-#include "adcDelays.h"
 
+#define TIMER_1MS_INTEVAL   100000
 #define TIMER_3MS_INTEVAL   300000
 #define TIMER_10MS_INTEVAL  1000000
 #define TIMER_50MS_INTEVAL  5000000
@@ -33,6 +33,18 @@
 static XIntc    intc;
 static XTmrCtr  tmrctr;
 
+int adcDelays[10][9] = {
+    {0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 0, 0, 0, 0}
+};
 
 
 typedef struct timerStruct {
@@ -301,17 +313,74 @@ void waitTimer(u32 timerInterval) {
    while (timer.flag == 0);
 }
 
+void promWaitReady(void) {
+   uint32_t status = 0;
+   do {
+      Xil_Out32(PROM_CMD_REG, PROM_READ_MASK|PROM_FLAG_STATUS_REG|0x1);
+      status = (Xil_In32(PROM_CMD_REG) & 0xFF);
+   } while((status & PROM_FLAG_STATUS_RDY) != 0);
+}
+
+void promSetCmd(uint32_t value) {
+   if (value&PROM_WRITE_MASK) {
+      promWaitReady();
+      Xil_Out32(PROM_CMD_REG, PROM_WRITE_MASK|PROM_WRITE_ENABLE_CMD);
+      Xil_Out32(PROM_CMD_REG, value);
+   }
+   else {
+      Xil_Out32(PROM_CMD_REG, value);
+   }
+}
+
+void promReset(void) {
+   // Send the "Mode Bit Reset" command
+   Xil_Out32(PROM_CMD_REG, PROM_WRITE_MASK|(0xFF << 16));
+   waitTimer(TIMER_1MS_INTEVAL);
+   // Send the "Software Reset" Command
+   Xil_Out32(PROM_CMD_REG, PROM_WRITE_MASK|(0xF0 << 16));
+   waitTimer(TIMER_1MS_INTEVAL);
+   // Set the addressing mode to 32 bit
+   Xil_Out32(PROM_MOD_REG, 0x1);
+   // Check the address mode
+   promSetCmd(PROM_WRITE_MASK|PROM_BRAC_CMD|0x80);
+   
+}
+
+
+void promReadCmd(uint32_t address) {
+   Xil_Out32(PROM_ADDR_REG, address);
+   promSetCmd(PROM_READ_MASK|PROM_READ_4BYTE_CMD|0x104);
+}
+
+void promReadData(void) {
+   // read the PROM to adcDelays array
+   uint32_t values[45] = 0;
+   int adc, j;
+   for (j=0; j<45; j++)
+      values[j] = Xil_In32(PROM_DATA_REG+j*4);
+   for (adc=0; adc<10; adc++) {
+      // frame delay
+      adcDelays[adc][0] = ( (values[adc*9/2] >> (((adc*9)%2)*16) ) & 0xffff );
+      // 8 lane delays
+      for (j=0; j<8; j++) {
+         adcDelays[adc][j+1] = ( (values[(adc*9+j+1)/2] >> (((adc*9+j+1)%2)*16) ) & 0xffff );
+      }
+   }
+}
+
+
 void adcInit(int adc) {
    
-   int j;
+   int j, wordCnt, shiftCnt;
+   uint32_t values[64] = 0;
    
    // Apply pre-trained delays
    for (j=0; j<9; j++) {
       Xil_Out32(adcDelayAddr[adc][j], (512+adcDelays[adc][j]));
    }
    
-}
-
+}    
+            
 void adcReset(int adc, int hardReset) {
    
    uint32_t regIn = 0;
@@ -406,15 +475,25 @@ void adcStartup(int skipReset, uint32_t retryCnt) {
    Xil_Out32(SYSTEM_ADCTESTFAIL, 0x0);
    
    // load trained delays
-   if (skipReset == 0)
+   if (skipReset == 0 && (Xil_In32(SYSTEM_ADCBYPASS) & 0x1) == 0x0)
       for (i=0; i<10; i++)
          adcInit(i);
    
    // test and reset ADCs as needed
    passed = 0;
    for (i=0; i<10; i++) {
+      
+      // bypass ADC startup
+      if ((Xil_In32(SYSTEM_ADCBYPASS) & 0x1) == 0x1)
+         break;
+      
       tryCnt = 0;
       do {
+         
+         // bypass ADC startup
+         if ((Xil_In32(SYSTEM_ADCBYPASS) & 0x1) == 0x1)
+            break;
+         
          failed = 0;
          failed |= adcTest(i,0);
          failed |= adcTest(i,1);
@@ -511,7 +590,6 @@ int main() {
    volatile uint32_t sensorsInt = 0;
    int i;
    
-   
    XTmrCtr_Initialize(&tmrctr,0);   
    
    XIntc_Initialize(&intc,XPAR_AXI_INTC_0_DEVICE_ID);
@@ -527,6 +605,11 @@ int main() {
    
    XTmrCtr_SetHandler(&tmrctr,timerIntHandler,(void*)&timer);
    XTmrCtr_SetOptions(&tmrctr,0,XTC_DOWN_COUNT_OPTION | XTC_INT_MODE_OPTION );
+   
+   // read ADC constants from PROM
+   promReset();
+   promReadCmd(PROM_ADC_DATA_ADDR);
+   promReadData();
    
    // preset ADC and ASIC clock frequencies
    // this should always be changed together
