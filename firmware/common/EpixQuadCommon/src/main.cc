@@ -393,23 +393,12 @@ uint32_t adcTest(int adc, int pattern) {
    
 }
 
-void adcStartup(int skipReset, uint32_t retryCnt, void * intFlag) {
+void adcStartup(int skipReset, uint32_t retryCnt) {
    
    uint32_t passed = 0;
    uint32_t failed = 0;
    uint32_t tryCnt = 0;
-   //uint32_t acqForce = 0;
-   //uint32_t acqValue = 0;
    int i;
-        
-   uint32_t * request = (uint32_t *)intFlag;
-
-   // force ASIC's PPMAT pin high
-   // the high current draw seem to affect the ADC startup
-   //acqForce = Xil_In32(ACQ_ASIC_FORCE);
-   //acqValue = Xil_In32(ACQ_ASIC_VALUE);
-   //Xil_Out32(ACQ_ASIC_FORCE, 0x4);
-   //Xil_Out32(ACQ_ASIC_VALUE, 0x4);
    
    
    // clear test status flags
@@ -439,13 +428,6 @@ void adcStartup(int skipReset, uint32_t retryCnt, void * intFlag) {
          else if (skipReset == 1) {
             break;
          }
-         else if ((*request) == 1) {
-            // break the startup on next interrupt
-            // gives a way out if this is infinite long
-            passed = 0;
-            (*request) = 0;
-            break;
-         }
          else {
             // load trained delays one every 10 resets
             // do power cycle of the ADC (hard reset)
@@ -468,10 +450,6 @@ void adcStartup(int skipReset, uint32_t retryCnt, void * intFlag) {
    else
       Xil_Out32(SYSTEM_ADCTESTFAIL, 0x1);
    Xil_Out32(SYSTEM_ADCTESTDONE, 0x1);
-   
-   // restore acq force and value registers
-   //Xil_Out32(ACQ_ASIC_FORCE, acqForce);
-   //Xil_Out32(ACQ_ASIC_VALUE, acqValue);
    
 }
 
@@ -571,8 +549,7 @@ int main() {
    for (i = 0; i < 10; i++)
       adcReset(i, 0);
    // do a lot of re-tries in case the AVDD is still off
-   adcStartupInt = 0;
-   adcStartup(0, 10000, (void*)&adcStartupInt);
+   adcStartup(0, 10000);
    
    // it might be better to detect and config ASICs 
    // as well as trigger module IDs readout
@@ -602,7 +579,7 @@ int main() {
          // clear interrupt flag
          adcStartupInt = 0;
          // call ADC startup routine
-         adcStartup(0, 500, (void*)&adcStartupInt);
+         adcStartup(0, 500);
       }
       
       // poll ADC test interrupt flag
@@ -610,7 +587,7 @@ int main() {
          // clear interrupt flag
          adcTestInt = 0;
          // call ADC test routine
-         adcStartup(1, 500, (void*)&adcTestInt);
+         adcStartup(1, 500);
       }
       
    }
