@@ -354,7 +354,7 @@ void promReadCmd(uint32_t address) {
 
 void promReadData(void) {
    // read the PROM to adcDelays array
-   uint32_t values[45] = 0;
+   uint32_t values[45];
    int adc, j;
    for (j=0; j<45; j++)
       values[j] = Xil_In32(PROM_DATA_REG+j*4);
@@ -371,8 +371,7 @@ void promReadData(void) {
 
 void adcInit(int adc) {
    
-   int j, wordCnt, shiftCnt;
-   uint32_t values[64] = 0;
+   int j;
    
    // Apply pre-trained delays
    for (j=0; j<9; j++) {
