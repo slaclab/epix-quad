@@ -372,6 +372,10 @@ void promReadData(void) {
 void adcInit(int adc) {
    
    int j;
+        
+   // read ADC constants from PROM
+   promReadCmd(PROM_ADC_DATA_ADDR);
+   promReadData();
    
    // Apply pre-trained delays
    for (j=0; j<9; j++) {
@@ -467,10 +471,6 @@ void adcStartup(int skipReset, uint32_t retryCnt) {
    uint32_t failed = 0;
    uint32_t tryCnt = 0;
    int i;
-   
-   // read ADC constants from PROM
-   promReadCmd(PROM_ADC_DATA_ADDR);
-   promReadData();
    
    // clear test status flags
    Xil_Out32(SYSTEM_ADCTESTDONE, 0x0);
