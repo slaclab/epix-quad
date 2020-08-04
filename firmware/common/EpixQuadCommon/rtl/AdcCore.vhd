@@ -99,7 +99,6 @@ architecture top_level of AdcCore is
    signal adcBitClkDiv7In  : sl;
    signal adcBitRstIn      : sl;
    signal adcBitRstDiv4In  : sl;
-   signal adcBitRstDiv7In  : sl;
    
    signal adcClk           : slv(4 downto 0);
 
@@ -159,7 +158,7 @@ begin
       clkOut(2) => adcBitClkDiv7In,
       rstOut(0) => adcBitRstIn,
       rstOut(1) => adcBitRstDiv4In,
-      rstOut(2) => adcBitRstDiv7In
+      rstOut(2) => open
    );
    
    ------------------------------------------------
@@ -214,10 +213,8 @@ begin
          adcClkRst         => adcClkRst(i),
          adcBitClkIn       => adcBitClkIn,
          adcBitClkDiv4In   => adcBitClkDiv4In,
-         adcBitClkDiv7In   => adcBitClkDiv7In,
          adcBitRstIn       => adcBitRstIn,
          adcBitRstDiv4In   => adcBitRstDiv4In,
-         adcBitRstDiv7In   => adcBitRstDiv7In,
          adcSerial         => asicAdc(i),
          adcStreamClk      => sysClk,
          adcStreams        => iAdcStream((i*8)+7 downto i*8)
