@@ -386,6 +386,50 @@ class Top(pr.Root):
          # re-enable internal ADC startup
          self.SystemRegs.AdcBypass.set(False)
    
+      @self.command()
+      def ClearAdcProm():
+         self.CypressS25Fl.enable.set(True)
+         self.CypressS25Fl.resetFlash()
+         # erase 64kB per sector ERASE_SIZE = 0x10000
+         # use space at 48MB (mcs size 16MB)
+         # mcs end 0xf43efc
+         self.CypressS25Fl.eraseCmd(0x3000000)
+         
+         # create empty prom data array
+         writeArray = [0] * 64
+         
+         self.CypressS25Fl.setDataReg(writeArray)
+         self.CypressS25Fl.writeCmd(0x3000000)
+         
+         # Wait for last transaction to finish
+         self.CypressS25Fl.waitForFlashReady()
+         
+         # Start address of a burst transfer
+         self.CypressS25Fl.readCmd(0x3000000)
+         # Get the data
+         readArray = self.CypressS25Fl.getDataReg()
+         
+         if readArray != writeArray:
+            click.secho(
+               "\n\n\
+               ***************************************************\n\
+               ***************************************************\n\
+               Writing ADC constants to PROM failed !!!!!!        \n\
+               ***************************************************\n\
+               ***************************************************\n\n"
+               , bg='red',
+            )
+         else:
+            click.secho(
+               "\n\n\
+               ***************************************************\n\
+               ***************************************************\n\
+               Writing ADC constants to PROM done       \n\
+               ***************************************************\n\
+               ***************************************************\n\n"
+               , bg='green',
+            )
+   
    @staticmethod
    def resetAdc(self, adc):
       
