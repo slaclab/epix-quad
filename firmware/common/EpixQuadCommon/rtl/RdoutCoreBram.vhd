@@ -117,6 +117,7 @@ architecture rtl of RdoutCoreBram is
       seqCount             : slv(31 downto 0);
       seqCountReset        : sl;
       adcPipelineDly       : slv(7 downto 0);
+      adcPipelineDlyDiv2   : slv(7 downto 0);
       adcPipelineDlyReg    : slv(31 downto 0);
       acqSmplEn            : slv(255 downto 0);
       readPend             : sl;
@@ -159,6 +160,7 @@ architecture rtl of RdoutCoreBram is
       seqCount             => (others=>'0'),
       seqCountReset        => '0',
       adcPipelineDly       => (others=>'0'),
+      adcPipelineDlyDiv2   => (others=>'0'),
       adcPipelineDlyReg    => (others=>'0'),
       acqSmplEn            => (others=>'0'),
       readPend             => '0',
@@ -492,6 +494,8 @@ begin
       if r.adcPipelineDlyReg(31 downto 16) = x"AAAA" then
          v.adcPipelineDly := r.adcPipelineDlyReg(7 downto 0);
       end if;
+      -- divide this internally to keep setting backwards compatible
+      v.adcPipelineDlyDiv2 := '0' & r.adcPipelineDly(7 downto 1);
       
       --------------------------------------------------
       -- Line buffers write FSM (64 bank channels)
@@ -515,7 +519,7 @@ begin
          -- buffer first sample for 32 bit write
          when BUFFER_S =>
             -- drive the buffer logic on delayed strobe
-            if r.acqSmplEn(conv_integer(r.adcPipelineDly)) = '1' then
+            if r.acqSmplEn(conv_integer(r.adcPipelineDlyDiv2)) = '1' then
                -- buffer incoming samples for 32 bit data packing
                for i in 63 downto 0 loop
                   v.adcDataBuf0(i) := muxStrMap(i).tData(13 downto 0);
@@ -537,7 +541,7 @@ begin
          when WRITE_S =>
             v.memWrAddr := r.lineWrBuff & r.lineWrAddr;
             -- drive the buffer logic on delayed strobe
-            if r.acqSmplEn(conv_integer(r.adcPipelineDly)) = '1' then
+            if r.acqSmplEn(conv_integer(r.adcPipelineDlyDiv2)) = '1' then
                if r.lineWrAddr = BANK_COLS_C then
                   -- move to next buffer
                   v.lineWrAddr := (others=>'0');
@@ -563,7 +567,8 @@ begin
       end case;
       
       -- shift the sample strobe
-      if r.readPend = '1' then
+      -- assuming all deserializer gearboxes are in sync (all tValid = '1' same time?)
+      if r.readPend = '1' and muxStrMap(0).tValid = '1' then
          v.acqSmplEn := r.acqSmplEn(254 downto 0) & acqSmplEn;
       else
          v.acqSmplEn := (others=>'0');
@@ -571,7 +576,7 @@ begin
       
       -- check for buffer overflow
       for i in 3 downto 0 loop
-         if r.acqSmplEn(conv_integer(r.adcPipelineDly)) = '1' and r.lineBufValid(i) = BUFF_MAX_C then
+         if r.acqSmplEn(conv_integer(r.adcPipelineDlyDiv2)) = '1' and r.lineBufValid(i) = BUFF_MAX_C then
             v.lineBufErrEn(i) := '1';
             v.buffErr         := '1';
          end if;
