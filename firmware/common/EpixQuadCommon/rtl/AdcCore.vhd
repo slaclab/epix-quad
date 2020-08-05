@@ -94,6 +94,7 @@ architecture top_level of AdcCore is
    signal axilReadSlaves   : AxiLiteReadSlaveArray(NUM_AXI_MASTERS_C-1 downto 0);
 
    signal asicAdc          : Ad9249SerialGroupArray(9 downto 0);
+   signal iAdcStreamValid  : slv(79 downto 0);
    signal iAdcStream       : AxiStreamMasterArray(79 downto 0);
    signal iAdcStreamReg    : AxiStreamMasterArray(79 downto 0);
    
@@ -234,19 +235,32 @@ begin
    end generate;
    
    G_AdcRegisters : for i in 0 to 79 generate 
-      U_Reg : entity surf.RegisterVector
+      U_Reg0 : entity surf.RegisterVector
       generic map (
          TPD_G    => TPD_G,
-         WIDTH_G  => 17
+         WIDTH_G  => 16
       )
       port map (
          clk      => sysClk,
          rst      => sysRst,
          en       => adcClkEn,
-         sig_i(15 downto 0) => iAdcStreamReg(i).tData(15 downto 0),
-         sig_i(16)          => iAdcStreamReg(i).tValid,
-         reg_o(15 downto 0) => iAdcStream(i).tData(15 downto 0),
-         reg_o(16)          => iAdcStream(i).tValid
+         sig_i    => iAdcStreamReg(i).tData(15 downto 0),
+         reg_o    => iAdcStream(i).tData(15 downto 0)
+      );
+      
+      iAdcStreamValid(i) <= iAdcStreamReg(i).tValid and adcClkEn;
+      
+      U_Reg1 : entity surf.RegisterVector
+      generic map (
+         TPD_G    => TPD_G,
+         WIDTH_G  => 1
+      )
+      port map (
+         clk      => sysClk,
+         rst      => sysRst,
+         en       => '1',
+         sig_i(0) => iAdcStreamValid(i),
+         reg_o(0) => iAdcStream(i).tValid
       );
    end generate;
    
