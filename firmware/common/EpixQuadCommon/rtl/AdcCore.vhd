@@ -63,7 +63,7 @@ entity AdcCore is
       -- ADC Output Streams
       adcStream            : out AxiStreamMasterArray(79 downto 0);
       -- ADC clk enable
-      adcClkEn             : in  sl;
+      adcClkEn             : in  sl
    );
 end AdcCore;
 
