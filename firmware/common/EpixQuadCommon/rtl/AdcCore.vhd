@@ -220,7 +220,14 @@ begin
          adcSerial         => asicAdc(i),
          adcStreamClk      => sysClk,
          adcStreams        => iAdcStream((i*8)+7 downto i*8),
-         adcReady          => (others => adcClkEn)
+         adcReady(0)       => adcClkEn,
+         adcReady(1)       => adcClkEn,
+         adcReady(2)       => adcClkEn,
+         adcReady(3)       => adcClkEn,
+         adcReady(4)       => adcClkEn,
+         adcReady(5)       => adcClkEn,
+         adcReady(6)       => adcClkEn,
+         adcReady(7)       => adcClkEn
       );
       
    end generate;
