@@ -67,6 +67,9 @@ architecture behav of ad9249_model is
    signal fco                 : sl;
    signal dIndex              : integer   := 13;
    signal pipeEn              : sl        := '0';
+   
+   signal aInSig              : real := 0.0;
+   signal digValSig           : slv(13 downto 0) := (others=>'0');
 
 begin
    
@@ -151,6 +154,10 @@ begin
          
          -- shift into pipeline
          digPipe <= digPipe(SAMPLE_PIPELINE_C-1 downto 0) & digVal;
+         
+         -- debug signals
+         aInSig <= aIn;
+         digValSig <= digVal;
          
          -- wait until falling edge 
          wait until falling_edge(fco);

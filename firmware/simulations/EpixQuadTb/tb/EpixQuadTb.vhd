@@ -112,6 +112,13 @@ architecture testbed of EpixQuadTb is
    signal asicSaciSelL     : slv(15 downto 0);
    signal iAasicSaciResp   : slv(15 downto 0);
    
+   signal aInP     : real;
+   signal aInN     : real;
+   signal aInArrP  : RealArray(7 downto 0);
+   signal aInArrN  : RealArray(7 downto 0);
+   
+   signal asicRoClkP : slv(1 downto 0);
+   
    constant ADC_BASELINE_C  : RealArray(79 downto 0)    := (
       0 =>0.5+0 *1.0/80, 1 =>0.5+1 *1.0/80, 2 =>0.5+2 *1.0/80, 3 =>0.5+3 *1.0/80, 4 =>0.5+4 *1.0/80, 5 =>0.5+5 *1.0/80, 6 =>0.5+6 *1.0/80, 7 =>0.5+7 *1.0/80,
       8 =>0.5+8 *1.0/80, 9 =>0.5+9 *1.0/80, 10=>0.5+10*1.0/80, 11=>0.5+11*1.0/80, 12=>0.5+12*1.0/80, 13=>0.5+13*1.0/80, 14=>0.5+14*1.0/80, 15=>0.5+15*1.0/80,
@@ -239,7 +246,7 @@ begin
       asicGr            => open,
       asicSync          => open,
       asicPpmat         => open,
-      asicRoClkP        => open,
+      asicRoClkP        => asicRoClkP,
       asicRoClkN        => open,
       asicDoutP         => x"0000",
       asicDoutN         => x"FFFF",
@@ -342,7 +349,8 @@ begin
    G_ADC : for i in 0 to 9 generate 
       U_ADC : entity work.ad9249_group
       generic map (
-         OUTPUT_TYPE_G     => (others=>COUNT_OUT),
+         --OUTPUT_TYPE_G     => (others=>COUNT_OUT),
+         OUTPUT_TYPE_G     => (others=>AIN_OUT),
          NOISE_BASELINE_G  => ADC_BASELINE_C(7+i*8 downto 0+i*8),
          NOISE_VPP_G       => (others=> 5.0e-3),
          PATTERN_G         => (others=>x"2F7C"),
@@ -352,8 +360,8 @@ begin
          INDEX_G           => i
       )
       port map (
-         aInP     => (others=>0.0),
-         aInN     => (others=>0.0),
+         aInP     => aInArrP,
+         aInN     => aInArrN,
          sClk     => adcClkP(0),
          dClk     => adcDoutClk,
          fcoP     => adcFClkP(i),
@@ -364,6 +372,52 @@ begin
          dN       => adcChN(i)
       );
    end generate;
+   
+   -----------------------------------------------------------------------
+   -- process to mimick ASIC analog signal
+   -----------------------------------------------------------------------
+   process(asicRoClkP(0), adcClkP(0))
+      constant aInPStart      : real := 0.0;
+      constant aInNStart      : real := 0.0;
+      constant digMax         : real := real(2**14-1);
+      constant aInStep        : real := 2.0/digMax/2.0;
+      variable clkDivCnt      : integer := 0;
+   begin
+      
+      if rising_edge(asicRoClkP(0)) then
+         if clkDivCnt = 0 then
+            aInP <= aInPStart;
+            aInN <= aInNStart;
+            clkDivCnt := clkDivCnt + 1;
+         else
+            if clkDivCnt < 3 then
+               clkDivCnt := clkDivCnt + 1;
+            else
+               clkDivCnt := 0;
+            end if;
+         end if;
+      elsif falling_edge(adcClkP(0)) then
+         aInP <= aInP + aInStep;
+         aInN <= aInN - aInStep;
+      end if;
+      
+   end process;
+   aInArrP(0) <= aInP;
+   aInArrP(1) <= aInP;
+   aInArrP(2) <= aInP;
+   aInArrP(3) <= aInP;
+   aInArrP(4) <= aInP;
+   aInArrP(5) <= aInP;
+   aInArrP(6) <= aInP;
+   aInArrP(7) <= aInP;
+   aInArrN(0) <= aInN;
+   aInArrN(1) <= aInN;
+   aInArrN(2) <= aInN;
+   aInArrN(3) <= aInN;
+   aInArrN(4) <= aInN;
+   aInArrN(5) <= aInN;
+   aInArrN(6) <= aInN;
+   aInArrN(7) <= aInN;
    
    -- need Pll to create ADC readout clock (350 MHz)
    -- must be in phase with adcClk (50 MHz)
