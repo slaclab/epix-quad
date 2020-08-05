@@ -61,7 +61,9 @@ entity AdcCore is
       adcClkP              : out   slv(4 downto 0);
       adcClkN              : out   slv(4 downto 0);
       -- ADC Output Streams
-      adcStream            : out AxiStreamMasterArray(79 downto 0)
+      adcStream            : out AxiStreamMasterArray(79 downto 0);
+      -- ADC clk enable
+      adcClkEn             : in  sl;
    );
 end AdcCore;
 
@@ -217,7 +219,8 @@ begin
          adcBitRstDiv4In   => adcBitRstDiv4In,
          adcSerial         => asicAdc(i),
          adcStreamClk      => sysClk,
-         adcStreams        => iAdcStream((i*8)+7 downto i*8)
+         adcStreams        => iAdcStream((i*8)+7 downto i*8),
+         adcReady          => (others => adcClkEn)
       );
       
    end generate;

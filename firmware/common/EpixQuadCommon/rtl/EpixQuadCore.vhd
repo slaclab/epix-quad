@@ -565,7 +565,9 @@ begin
          adcClkP              => adcClkP,
          adcClkN              => adcClkN,
          -- ADC Output Streams
-         adcStream            => adcStream
+         adcStream            => adcStream,
+         -- ADC clock enable
+         adcClkEn             => iAdcClk
       );
    
    adcSclk  <= iAdcSclk;
