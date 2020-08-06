@@ -613,7 +613,7 @@ int main() {
    
    // preset ADC and ASIC clock frequencies
    // this should always be changed together
-   Xil_Out32(RDOUT_ADC_PIPELINE, 0xAAAA005A);
+   Xil_Out32(RDOUT_ADC_PIPELINE, 0xAAAA004A);
    Xil_Out32(ACQ_ASIC_ROCLK_H,   0xAAAA0005);
    
    // Enable DCDCs
