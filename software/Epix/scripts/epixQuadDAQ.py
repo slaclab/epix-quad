@@ -77,13 +77,21 @@ parser.add_argument(
     help     = "PGP lane number [0 ~ 3]",
 )
 
+parser.add_argument(
+    "--adcCalib", 
+    type     = argBool,
+    required = False,
+    default  = False,
+    help     = "Enable ADC calibration write to PROM. Can corrupt the FPGA's image potentially!",
+)  
+
 # Get the arguments
 args = parser.parse_args()
 
 #################################################################
 
 # Set base
-base = quad.Top(hwType=args.type, dev=args.pgp, lane=args.l,)    
+base = quad.Top(hwType=args.type, dev=args.pgp, lane=args.l, promWrEn=args.adcCalib)    
 
 # Start the system
 base.start(

@@ -43,9 +43,12 @@ class Top(pr.Root):
          description = "Container for EpixQuad",
          dev         = '/dev/pgpcard_0',
          hwType      = 'pgp3_cardG3',
+         promWrEn    = False,
          lane        = 0,
          **kwargs):
       super().__init__(name=name, description=description, **kwargs)
+      
+      self._promWrEn = promWrEn
       
       # File writer
       dataWriter = pr.utilities.fileio.StreamWriter()
@@ -329,6 +332,27 @@ class Top(pr.Root):
       @self.command()
       def AdcTrain():
          
+         if self._promWrEn == False:
+            click.secho(
+               "\n\n\
+               ***************************************************\n\
+               ***************************************************\n\
+               Writing ADC constants to PROM disabled         \n\
+               ***************************************************\n\
+               ***************************************************\n\n"
+               , bg='red',
+            )
+         else:
+            click.secho(
+               "\n\n\
+               ***************************************************\n\
+               ***************************************************\n\
+               Writing ADC constants to PROM enabled        \n\
+               ***************************************************\n\
+               ***************************************************\n\n"
+               , bg='green',
+            )
+            
          self.SystemRegs.enable.set(True)
          self.Ad9249Tester.enable.set(True)
          for adc in range(10):
@@ -376,7 +400,8 @@ class Top(pr.Root):
          self.Ad9249Tester.enable.set(False)
          
          # flash training data
-         self.flashAdcDelays(self)
+         if self._promWrEn == True:
+            self.flashAdcDelays(self)
          
          # save training data
          with open('ePixQuadAdcTrainingData.txt', 'w') as f:
@@ -388,47 +413,60 @@ class Top(pr.Root):
    
       @self.command()
       def ClearAdcProm():
-         self.CypressS25Fl.enable.set(True)
-         self.CypressS25Fl.resetFlash()
-         # erase 64kB per sector ERASE_SIZE = 0x10000
-         # use space at 48MB (mcs size 16MB)
-         # mcs end 0xf43efc
-         self.CypressS25Fl.eraseCmd(0x3000000)
          
-         # create empty prom data array
-         writeArray = [0] * 64
-         
-         self.CypressS25Fl.setDataReg(writeArray)
-         self.CypressS25Fl.writeCmd(0x3000000)
-         
-         # Wait for last transaction to finish
-         self.CypressS25Fl.waitForFlashReady()
-         
-         # Start address of a burst transfer
-         self.CypressS25Fl.readCmd(0x3000000)
-         # Get the data
-         readArray = self.CypressS25Fl.getDataReg()
-         
-         if readArray != writeArray:
+         if self._promWrEn == False:
             click.secho(
                "\n\n\
                ***************************************************\n\
                ***************************************************\n\
-               Writing ADC constants to PROM failed !!!!!!        \n\
+               Writing ADC constants to PROM disabled         \n\
                ***************************************************\n\
                ***************************************************\n\n"
                , bg='red',
             )
          else:
-            click.secho(
-               "\n\n\
-               ***************************************************\n\
-               ***************************************************\n\
-               Writing ADC constants to PROM done       \n\
-               ***************************************************\n\
-               ***************************************************\n\n"
-               , bg='green',
-            )
+         
+            self.CypressS25Fl.enable.set(True)
+            self.CypressS25Fl.resetFlash()
+            # erase 64kB per sector ERASE_SIZE = 0x10000
+            # use space at 48MB (mcs size 16MB)
+            # mcs end 0xf43efc
+            self.CypressS25Fl.eraseCmd(0x3000000)
+            
+            # create empty prom data array
+            writeArray = [0] * 64
+            
+            self.CypressS25Fl.setDataReg(writeArray)
+            self.CypressS25Fl.writeCmd(0x3000000)
+            
+            # Wait for last transaction to finish
+            self.CypressS25Fl.waitForFlashReady()
+            
+            # Start address of a burst transfer
+            self.CypressS25Fl.readCmd(0x3000000)
+            # Get the data
+            readArray = self.CypressS25Fl.getDataReg()
+            
+            if readArray != writeArray:
+               click.secho(
+                  "\n\n\
+                  ***************************************************\n\
+                  ***************************************************\n\
+                  Writing ADC constants to PROM failed !!!!!!        \n\
+                  ***************************************************\n\
+                  ***************************************************\n\n"
+                  , bg='red',
+               )
+            else:
+               click.secho(
+                  "\n\n\
+                  ***************************************************\n\
+                  ***************************************************\n\
+                  Writing ADC constants to PROM done       \n\
+                  ***************************************************\n\
+                  ***************************************************\n\n"
+                  , bg='green',
+               )
    
    @staticmethod
    def resetAdc(self, adc):
