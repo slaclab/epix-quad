@@ -88,9 +88,9 @@ class Top(pr.Root):
       cmdVc3 = rogue.protocols.srp.Cmd()
       pyrogue.streamConnect(cmdVc3, self.pgpVc3)
       
-      prbsRx = pyrogue.utilities.prbs.PrbsRx(name='PrbsRx', width=128)
-      pyrogue.streamConnect(self.pgpVc0,prbsRx)
-      self.add(prbsRx)
+      #prbsRx = pyrogue.utilities.prbs.PrbsRx(name='PrbsRx', width=128)
+      #pyrogue.streamConnect(self.pgpVc0,prbsRx)
+      #self.add(prbsRx)
       
       @self.command()
       def SetAsicMatrixTest():
