@@ -93,6 +93,32 @@ class Top(pr.Root):
       self.add(prbsRx)
       
       @self.command()
+      def SetAsicMatrixTest():
+         # save TrigEn state and stop
+         self.SystemRegs.enable.set(True)
+         trigEn = self.SystemRegs.TrigEn.get()
+         self.SystemRegs.TrigEn.set(False)
+         # clear matrix in all enabled ASICs
+         for i in range(16):
+            # iterate through enabled (preset) ASICs
+            if self.Epix10kaSaci[i].enable.get() == True:
+               print('Setting pulsed region in ASIC %d'%i)
+               # enable automated pulser increment
+               self.Epix10kaSaci[i].atest.set(True)
+               self.Epix10kaSaci[i].test.set(True)
+               # toggle reset to make sure pulser starts from 0 everywhere
+               self.Epix10kaSaci[i].PulserR.set(True)
+               self.Epix10kaSaci[i].PulserR.set(False)
+               # pulse arbitrary square region of 3x3 pixels in each bank
+               for x in range(20,24):
+                  for y in range(5,8):
+                     self.Epix10kaSaci[i].RowCounter(x)
+                     self.Epix10kaSaci[i].ColCounter(y)
+                     self.Epix10kaSaci[i].WritePixelData(1)
+         # restore TrigEn state
+         self.SystemRegs.TrigEn.set(trigEn)
+      
+      @self.command()
       def ClearAsicMatrix():
          # save TrigEn state and stop
          self.SystemRegs.enable.set(True)
@@ -100,7 +126,10 @@ class Top(pr.Root):
          self.SystemRegs.TrigEn.set(False)
          # clear matrix in all enabled ASICs
          for i in range(16):
-            self.Epix10kaSaci[i].ClearMatrix()
+            if self.Epix10kaSaci[i].enable.get() == True:
+               self.Epix10kaSaci[i].atest.set(False)
+               self.Epix10kaSaci[i].test.set(False)
+               self.Epix10kaSaci[i].ClearMatrix()
          # restore TrigEn state
          self.SystemRegs.TrigEn.set(trigEn)
       
