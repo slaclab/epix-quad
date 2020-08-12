@@ -87,6 +87,10 @@ base.start(
 AxiVersion = base.AxiVersion
 PROM       = base.CypressS25Fl
 
+# disable and stop all internal ADC startup activity
+base.SystemRegs.enable.set(True)
+base.SystemRegs.AdcBypass.set(True)
+
 print ( '###################################################')
 print ( '#                 Old Firmware                    #')
 print ( '###################################################')
@@ -108,6 +112,9 @@ if(PROM._progDone):
     AxiVersion.printStatus()
 else:
     print('Failed to program FPGA')
+
+# re-enable internal ADC startup
+base.SystemRegs.AdcBypass.set(False)
 
 base.stop()
 exit()
