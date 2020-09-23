@@ -772,9 +772,6 @@ begin
       runTrigger     => iRunTrigger,
       daqTrigger     => iDaqTrigger,
       
-      -- PGP clocks and reset
-      pgpClk         => pgpClk,
-      pgpClkRst      => sysRst,
       -- SW trigger in (from VC)
       swRun          => swRun,
       pgpOpCode      => pgpOpCode,
@@ -1010,28 +1007,37 @@ begin
    --------------------------------------------
    -- Virtual oscilloscope                   --
    --------------------------------------------
-   
-   U_PseudoScope : entity work.PseudoScopeCore
+   U_PseudoScope : entity work.PseudoScope2Axi
    generic map (
-      TPD_G             => TPD_G,
-      INPUT_CHANNELS_G  => 20,
-      EXTTRIG_IN_G      => 8
+      TPD_G                      => TPD_G,
+      INPUTS_G                   => 20,
+      MASTER_AXI_STREAM_CONFIG_G => ssiAxiStreamConfig(4, TKEEP_COMP_C)
    )
    port map ( 
-      sysClk            => coreClk,
-      sysClkRst         => axiRst,
-      adcStream         => adcStreams,
+      -- system clock
+      clk               => coreClk,
+      rst               => axiRst,
+      -- input data
+      dataIn            => adcData,
+      dataValid         => adcValid,
+      -- arm signal
       arm               => acqStart,
-      trigIn(0)         => acqStart,
-      trigIn(1)         => iAsicAcq,
-      trigIn(2)         => iAsicR0,
-      trigIn(3)         => iAsicEnA,
-      trigIn(4)         => iAsicEnB,
-      trigIn(5)         => iAsicSync,
-      trigIn(6)         => iAsicGrst,
-      trigIn(7)         => asicRdClk,
-      mAxisMaster       => scopeAxisMaster,
-      mAxisSlave        => scopeAxisSlave,
+      -- input triggers
+      triggerIn(0)      => acqStart,
+      triggerIn(1)      => iAsicAcq,
+      triggerIn(2)      => iAsicR0,
+      triggerIn(3)      => iAsicEnA,
+      triggerIn(4)      => iAsicEnB,
+      triggerIn(5)      => iAsicSync,
+      triggerIn(6)      => iAsicGrst,
+      triggerIn(7)      => asicRdClk,
+      triggerIn(12 downto 8) => "00000",
+      -- AXI stream output
+      axisClk           => coreClk,
+      axisRst           => axiRst,
+      axisMaster        => scopeAxisMaster,
+      axisSlave         => scopeAxisSlave,
+      -- AXI lite for register access
       axilClk           => coreClk,
       axilRst           => axiRst,
       sAxilWriteMaster  => mAxiWriteMasters(SCOPE_REG_AXI_INDEX_C),
