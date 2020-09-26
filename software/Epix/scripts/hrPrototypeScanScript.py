@@ -11,12 +11,12 @@
 # Description:
 # Rogue interface to ePix 100a board
 #-----------------------------------------------------------------------------
-# This file is part of the rogue_example software. It is subject to 
-# the license terms in the LICENSE.txt file found in the top-level directory 
-# of this distribution and at: 
-#    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
-# No part of the rogue_example software, including this file, may be 
-# copied, modified, propagated, or distributed except according to the terms 
+# This file is part of the rogue_example software. It is subject to
+# the license terms in the LICENSE.txt file found in the top-level directory
+# of this distribution and at:
+#    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+# No part of the rogue_example software, including this file, may be
+# copied, modified, propagated, or distributed except according to the terms
 # contained in the LICENSE.txt file.
 #-----------------------------------------------------------------------------
 import rogue.hardware.pgp
@@ -69,7 +69,7 @@ TEST_SCAN_SDCLK_SD_RST = False
 TEST_S2D = True
 #############################################
 #Define driver used
-#DRIVER = 'pgp-gen3'  
+#DRIVER = 'pgp-gen3'
 DRIVER = 'kcu1500'
 #############################################
 if ( DRIVER == 'pgp-gen3' ):
@@ -130,7 +130,7 @@ class MyRunControl(pyrogue.RunControl):
     def __init__(self,name):
         pyrogue.RunControl.__init__(self,name=name,description='Run Controller HR prototype', rates={1:'1 Hz', 2:'2 Hz', 4:'4 Hz', 8:'8 Hz', 10:'10 Hz', 30:'30 Hz', 60:'60 Hz', 120:'120 Hz'})
         self._thread = None
-        
+
     def _setRunState(self,dev,var,value):
         if self._runState != value:
             self._runState = value
@@ -155,7 +155,7 @@ class MyRunControl(pyrogue.RunControl):
             if self._last != int(time.time()):
                 self._last = int(time.time())
                 self.runCount._updated()
-            
+
 ##############################
 # Set base
 ##############################
@@ -218,8 +218,7 @@ if (TEST_SCAN_SDCLK_SD_RST):
     #ePixBoard.hrFPGA.SetWaveform('ramp.csv')
     waveform = np.genfromtxt('ramp.csv', delimiter=',', dtype='uint16')
     if waveform.shape == (1024,):
-        for x in range (0, 1024):
-            ePixBoard.hrFPGA._rawWrite(offset = (0x0E000000 + x * 4),data =  int(waveform[x]))
+        ePixBoard.hrFPGA.WaveformMem.set(0,[int(waveform[x]) for x in range(0,1024)],write=True)
         print('Waveform file uploaded')
     else:
         print('wrong csv file format')
@@ -254,12 +253,12 @@ if (TEST_SCAN_SDCLK_SD_RST):
     ####
     FileNameRun = '_run' + str(10) + '.dat'
     ####
-    
+
     # enabling second order bit makes adc to send zeros all the time
     #ePixBoard.hrFPGA.HrAdcAsic0.SecondOrder.set(True)
 
     ePixBoard.hrFPGA.HrAdcAsic0.shvc_DAC.set(28) # default is 0x17 or 23
-    
+
     #config pixels
     for SDclk in range(0,16):
         for SDrst in range(0,16):
@@ -276,7 +275,7 @@ if (TEST_SCAN_SDCLK_SD_RST):
             time.sleep(1.0 / float(1))
 
             # gets data
-            for frames in range(0,2048):     
+            for frames in range(0,2048):
                 ePixBoard.Trigger()
                 time.sleep(1.0 / float(120))
 
@@ -291,8 +290,7 @@ if (TEST_S2D):
     #ePixBoard.hrFPGA.SetWaveform('ramp.csv')
     waveform = np.genfromtxt('ramp.csv', delimiter=',', dtype='uint16')
     if waveform.shape == (1024,):
-        for x in range (0, 1024):
-            ePixBoard.hrFPGA._rawWrite(offset = (0x0E000000 + x * 4),data =  int(waveform[x]))
+        ePixBoard.hrFPGA.WaveformMem.set(0,[int(waveform[x]) for x in range(0,1024)],write=True)
         print('Waveform file uploaded')
     else:
         print('wrong csv file format')
@@ -327,12 +325,12 @@ if (TEST_S2D):
     ####
     FileNameRun = '_run' + str(14) + '.dat'
     ####
-    
+
     # enabling second order bit makes adc to send zeros all the time
     #ePixBoard.hrFPGA.HrAdcAsic0.SecondOrder.set(True)
 
     ePixBoard.hrFPGA.HrAdcAsic0.shvc_DAC.set(28) # default is 0x17 or 23
-    
+
     #config pixels
     for SDclk in range(0,16):
         for S2D_1_b in range(0,8):
@@ -349,7 +347,7 @@ if (TEST_S2D):
             time.sleep(1.0 / float(1))
 
             # gets data
-            for frames in range(0,2048):     
+            for frames in range(0,2048):
                 ePixBoard.Trigger()
                 time.sleep(1.0 / float(120))
 
