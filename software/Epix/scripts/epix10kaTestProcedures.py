@@ -11,12 +11,12 @@
 # Description:
 # Rogue interface to epix board
 #-----------------------------------------------------------------------------
-# This file is part of the rogue_example software. It is subject to 
-# the license terms in the LICENSE.txt file found in the top-level directory 
-# of this distribution and at: 
-#    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
-# No part of the rogue_example software, including this file, may be 
-# copied, modified, propagated, or distributed except according to the terms 
+# This file is part of the rogue_example software. It is subject to
+# the license terms in the LICENSE.txt file found in the top-level directory
+# of this distribution and at:
+#    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+# No part of the rogue_example software, including this file, may be
+# copied, modified, propagated, or distributed except according to the terms
 # contained in the LICENSE.txt file.
 #-----------------------------------------------------------------------------
 import rogue.hardware.pgp
@@ -50,11 +50,11 @@ except ImportError:
 
 
 #################################################################
-   
+
 def setAsicMatrixGrid88(x, y, pix, dev):
    addrSize=4
-   dev._rawWrite(0x00000000*addrSize,0)
-   dev._rawWrite(0x00008000*addrSize,0)
+   dev.CmdPrepForRead()
+   dev.PrepareMultiConfig()
    for i in range(175):
       for j in range(192):
          if (i % 8 == x) and (j % 8 == y):
@@ -69,10 +69,10 @@ def setAsicMatrixGrid88(x, y, pix, dev):
                colToWrite = 0x380 + j%48;
             else:
                print('unexpected bank number')
-            dev._rawWrite(0x00006013*addrSize, colToWrite)
-            dev._rawWrite(0x00006011*addrSize, i)
-            dev._rawWrite(0x00005000*addrSize, pix)
-   dev._rawWrite(0x00000000*addrSize,0)
+            dev.ColCounter.set(colToWrite)
+            dev.RowCounter.set(i)
+            dev.PixelData.set(pix)
+   dev.CmdPrepForRead()
 
 #################################################################
 
@@ -84,40 +84,40 @@ argBool = lambda s: s.lower() in ['true', 't', 'yes', '1']
 
 # Add arguments
 parser.add_argument(
-    "--pollEn", 
+    "--pollEn",
     type     = argBool,
     required = False,
     default  = False,
     help     = "Enable auto-polling",
-) 
+)
 
 parser.add_argument(
-    "--initRead", 
+    "--initRead",
     type     = argBool,
     required = False,
     default  = False,
     help     = "Enable read all variables at start",
-)  
+)
 
 
 parser.add_argument(
-    "--type", 
+    "--type",
     type     = str,
     required = False,
     default  = 'pgp-gen3',
     help     = "PGP hardware type: pgp-gen3, kcu1500 or simulation",
-)  
+)
 
 parser.add_argument(
-    "--pgp", 
+    "--pgp",
     type     = str,
     required = False,
     default  = '/dev/pgpcard_0',
     help     = "PGP devide (default /dev/pgpcard_0)",
-)  
+)
 
 parser.add_argument(
-    "--l", 
+    "--l",
     type     = int,
     required = False,
     default  = 0,
@@ -125,7 +125,7 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--test", 
+    "--test",
     type     = int,
     required = True,
     default  = 0,
@@ -133,7 +133,7 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--dir", 
+    "--dir",
     type     = str,
     required = True,
     default  = './',
@@ -141,7 +141,7 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--c", 
+    "--c",
     type     = str,
     required = True,
     default  = './',
@@ -149,7 +149,7 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--acqWidth", 
+    "--acqWidth",
     type     = int,
     required = False,
     default  = 20000,
@@ -181,7 +181,7 @@ elif ( args.type == 'simulation' ):
     pgpVc1 = pr.interfaces.simulation.StreamSim(host='localhost', dest=0, uid=2, ssi=True)
     pgpVc0 = pr.interfaces.simulation.StreamSim(host='localhost', dest=1, uid=2, ssi=True)
     pgpVc2 = pr.interfaces.simulation.StreamSim(host='localhost', dest=2, uid=2, ssi=True)
-    pgpVc3 = pr.interfaces.simulation.StreamSim(host='localhost', dest=3, uid=2, ssi=True)      
+    pgpVc3 = pr.interfaces.simulation.StreamSim(host='localhost', dest=3, uid=2, ssi=True)
 else:
     raise ValueError("Invalid type (%s)" % (args.type) )
 
@@ -226,29 +226,29 @@ class MyRunControl(pyrogue.RunControl):
         self._thread = None
 
     def _setRunState(self,dev,var,value,changed):
-        if changed: 
-            if self.runState.get(read=False) == 'Running': 
-                self._thread = threading.Thread(target=self._run) 
-                self._thread.start() 
-            else: 
-                self._thread.join() 
-                self._thread = None 
+        if changed:
+            if self.runState.get(read=False) == 'Running':
+                self._thread = threading.Thread(target=self._run)
+                self._thread.start()
+            else:
+                self._thread.join()
+                self._thread = None
 
 
     def _run(self):
-        self.runCount.set(0) 
-        self._last = int(time.time()) 
- 
- 
-        while (self.runState.value() == 'Running'): 
-            delay = 1.0 / ({value: key for key,value in self.runRate.enum.items()}[self._runRate]) 
-            time.sleep(delay) 
-            self._root.ssiPrbsTx.oneShot() 
-  
-            self._runCount += 1 
-            if self._last != int(time.time()): 
-                self._last = int(time.time()) 
-                self.runCount._updated() 
+        self.runCount.set(0)
+        self._last = int(time.time())
+
+
+        while (self.runState.value() == 'Running'):
+            delay = 1.0 / ({value: key for key,value in self.runRate.enum.items()}[self._runRate])
+            time.sleep(delay)
+            self._root.ssiPrbsTx.oneShot()
+
+            self._runCount += 1
+            if self._last != int(time.time()):
+                self._last = int(time.time())
+                self.runCount._updated()
 
 ##############################
 # Set base
@@ -277,21 +277,21 @@ ePixBoard.start(pollEn=args.pollEn, initRead = args.initRead, timeout=3.0)
 # simple pulser scan
 # auto range high to low and medium to low gain
 if args.test == 1:
-   
-   
-   
+
+
+
    if os.path.isdir(args.dir):
-      
+
       print('Setting camera registers')
       ePixBoard.ReadConfig(args.c)
       #ePixBoard.setYaml(args.c, True)
       #ePixBoard.setYaml(yaml.safe_load(args.c), True)
-      
+
       print('Set auto-trigger to 60Hz')
       ePixBoard.Epix10ka.EpixFpgaRegisters.AutoRunPeriod.set(833333*2)
       ePixBoard.Epix10ka.EpixFpgaRegisters.AutoDaqEnable.set(True)
       ePixBoard.Epix10ka.EpixFpgaRegisters.AutoRunEnable.set(False)
-      
+
       print('Set integration time to %d MICROSECONDS!!!!!!!!!!!!!!!!!!!!!!!'%(args.acqWidth))
       #ePixBoard.Epix10ka.EpixFpgaRegisters.AsicAcqWidth.set(args.acqWidth)
       #ePixBoard.Epix10ka.EpixFpgaRegisters.AsicR0ToAsicAcq.set(args.acqWidth)
@@ -301,21 +301,21 @@ if args.test == 1:
       ePixBoard.Epix10ka.EpixFpgaExtRegisters.InjStartDlyUs.set(10)
       ePixBoard.Epix10ka.EpixFpgaExtRegisters.InjStopDlyUs.set(args.acqWidth+10)
       ePixBoard.Epix10ka.EpixFpgaExtRegisters.InjSyncEn.set(True)
-      
+
       for trbit in range(2):
-         
+
          print('Enable ASICs test')
          ePixBoard.Epix10ka.Epix10kaAsic[0].test.set(True)
          ePixBoard.Epix10ka.Epix10kaAsic[1].test.set(True)
          ePixBoard.Epix10ka.Epix10kaAsic[2].test.set(True)
          ePixBoard.Epix10ka.Epix10kaAsic[3].test.set(True)
-         
+
          print('Enable ASICs atest')
          ePixBoard.Epix10ka.Epix10kaAsic[0].atest.set(True)
          ePixBoard.Epix10ka.Epix10kaAsic[1].atest.set(True)
          ePixBoard.Epix10ka.Epix10kaAsic[2].atest.set(True)
          ePixBoard.Epix10ka.Epix10kaAsic[3].atest.set(True)
-         
+
          if trbit == 1:
             print('Setting trbit to 1 (high to low gain)')
             ePixBoard.Epix10ka.Epix10kaAsic[0].trbit.set(True)
@@ -328,7 +328,7 @@ if args.test == 1:
             ePixBoard.Epix10ka.Epix10kaAsic[1].trbit.set(False)
             ePixBoard.Epix10ka.Epix10kaAsic[2].trbit.set(False)
             ePixBoard.Epix10ka.Epix10kaAsic[3].trbit.set(False)
-         
+
          for x in range(8):
             for y in range(8):
                print('Clearing ASICs matrix (auto-range)')
@@ -341,7 +341,7 @@ if args.test == 1:
                setAsicMatrixGrid88(x, y, 1, ePixBoard.Epix10ka.Epix10kaAsic[1])
                setAsicMatrixGrid88(x, y, 1, ePixBoard.Epix10ka.Epix10kaAsic[2])
                setAsicMatrixGrid88(x, y, 1, ePixBoard.Epix10ka.Epix10kaAsic[3])
-               
+
                print('Reset pulser')
                ePixBoard.Epix10ka.Epix10kaAsic[0].PulserR.set(True)
                ePixBoard.Epix10ka.Epix10kaAsic[0].PulserR.set(False)
@@ -351,36 +351,36 @@ if args.test == 1:
                ePixBoard.Epix10ka.Epix10kaAsic[2].PulserR.set(False)
                ePixBoard.Epix10ka.Epix10kaAsic[3].PulserR.set(True)
                ePixBoard.Epix10ka.Epix10kaAsic[3].PulserR.set(False)
-               
+
                print('Open data file')
                ePixBoard.dataWriter.dataFile.set(args.dir + '/calib_acq_width' +  '{:06d}'.format(args.acqWidth) + '_trbit' + '{:1d}'.format(trbit) + '_88' + '{:1d}'.format(x) + '{:1d}'.format(y)  + '.dat')
                ePixBoard.dataWriter.open.set(True)
-               
+
                ePixBoard.Epix10ka.EpixFpgaRegisters.AutoRunEnable.set(True)
-               
+
                time.sleep(60)
-               
+
                ePixBoard.Epix10ka.EpixFpgaRegisters.AutoRunEnable.set(False)
-               
+
                print('Close data file')
                ePixBoard.dataWriter.open.set(False)
-         
-         
+
+
          # acquire dark frames in 5 modes before the pulser scan
-         
+
          print('Disable ASICs test for darks')
          ePixBoard.Epix10ka.Epix10kaAsic[0].test.set(False)
          ePixBoard.Epix10ka.Epix10kaAsic[1].test.set(False)
          ePixBoard.Epix10ka.Epix10kaAsic[2].test.set(False)
          ePixBoard.Epix10ka.Epix10kaAsic[3].test.set(False)
-         
+
          print('Disable ASICs atest for darks')
          ePixBoard.Epix10ka.Epix10kaAsic[0].atest.set(False)
          ePixBoard.Epix10ka.Epix10kaAsic[1].atest.set(False)
          ePixBoard.Epix10ka.Epix10kaAsic[2].atest.set(False)
          ePixBoard.Epix10ka.Epix10kaAsic[3].atest.set(False)
-         
-         
+
+
          print('Open dark file fixed medium')
          ePixBoard.Epix10ka.Epix10kaAsic[0].trbit.set(False)
          ePixBoard.Epix10ka.Epix10kaAsic[1].trbit.set(False)
@@ -401,7 +401,7 @@ if args.test == 1:
          ePixBoard.Epix10ka.EpixFpgaRegisters.AutoRunEnable.set(False)
          print('Close data file')
          ePixBoard.dataWriter.open.set(False)
-         
+
          print('Open dark file fixed high')
          ePixBoard.Epix10ka.Epix10kaAsic[0].trbit.set(True)
          ePixBoard.Epix10ka.Epix10kaAsic[1].trbit.set(True)
@@ -422,7 +422,7 @@ if args.test == 1:
          ePixBoard.Epix10ka.EpixFpgaRegisters.AutoRunEnable.set(False)
          print('Close data file')
          ePixBoard.dataWriter.open.set(False)
-         
+
          print('Open dark file fixed low')
          ePixBoard.Epix10ka.Epix10kaAsic[0].PrepareMultiConfig()
          ePixBoard.Epix10ka.Epix10kaAsic[0].WriteMatrixData(8)
@@ -439,7 +439,7 @@ if args.test == 1:
          ePixBoard.Epix10ka.EpixFpgaRegisters.AutoRunEnable.set(False)
          print('Close data file')
          ePixBoard.dataWriter.open.set(False)
-         
+
          print('Open dark file auto range high to low')
          ePixBoard.Epix10ka.Epix10kaAsic[0].trbit.set(True)
          ePixBoard.Epix10ka.Epix10kaAsic[1].trbit.set(True)
@@ -460,7 +460,7 @@ if args.test == 1:
          ePixBoard.Epix10ka.EpixFpgaRegisters.AutoRunEnable.set(False)
          print('Close data file')
          ePixBoard.dataWriter.open.set(False)
-         
+
          print('Open dark file auto range medium to low')
          ePixBoard.Epix10ka.Epix10kaAsic[0].trbit.set(False)
          ePixBoard.Epix10ka.Epix10kaAsic[1].trbit.set(False)
@@ -481,7 +481,7 @@ if args.test == 1:
          ePixBoard.Epix10ka.EpixFpgaRegisters.AutoRunEnable.set(False)
          print('Close data file')
          ePixBoard.dataWriter.open.set(False)
-         
+
    else:
       print('Directory %s does not exist'%args.dir)
 

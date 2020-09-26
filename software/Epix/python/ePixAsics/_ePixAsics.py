@@ -246,12 +246,9 @@ class Epix100aAsic(pr.Device):
             pr.RemoteCommand(name='WriteMatrixData', description='', offset=0x00004000*addrSize, bitSize=2, bitOffset=0, function=pr.Command.touch, hidden=False)))
 
         # CMD = 5, Addr = X  : Read/Write Pixel with data
+        # TODO: HOw many bits is this register?
         self.add(pr.RemoteVariable(name='PixelData',  description='PixelData',  offset=0x00005000*addrSize, bitSize=2, bitOffset=0, hidden=True, verify=False))
         self.add(pr.LocalCommand(name='WritePixelData',  description='WritePixelData', function=lambda arg: self.PixelData.set(arg), hidden=False))
-
-        self.add((
-            pr.RemoteVariable(name='Reg6011', description='', offset=0x00006011*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW', doUpdate=False, hidden=True),
-            pr.RemoteVariable(name='Reg6013', description='', offset=0x00006013*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW', doUpdate=False, hidden=True)))
 
         # CMD = 7, Addr = X  : Prepare to write chip ID
         #self.add((
@@ -321,8 +318,8 @@ class Epix100aAsic(pr.Device):
                                colToWrite = 0x380 + y%96;
                             else:
                                print('unexpected bank number')
-                            self.Reg6011.set(x)
-                            self.Reg6013.set(colToWrite)
+                            self.RowCounter.set(x)
+                            self.ColCounter.set(colToWrite)
                             self.PixelData.set((int(matrixCfg[x][y])))
                     self.CmdPrepForRead()
                 else:
@@ -365,8 +362,8 @@ class Epix100aAsic(pr.Device):
                          colToWrite = 0x380 + y%96;
                       else:
                          print('unexpected bank number')
-                      self.Reg6011.set(x)
-                      self.Reg6013.set(colToWrite)
+                      self.RowCounter.set(x)
+                      self.ColCounter.set(colToWrite)
                       readBack[x, y] = self.PixelData.get()
                 np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
         else:
@@ -605,12 +602,9 @@ class Epix10kaAsic(pr.Device):
             pr.RemoteCommand(name='WriteMatrixData', description='', offset=0x00004000*addrSize, bitSize=4, bitOffset=0, function=pr.Command.touch, hidden=False)))
 
         # CMD = 5, Addr = X  : Read/Write Pixel with data
+        # TODO: HOw many bits is this register?
         self.add(pr.RemoteVariable(name='PixelData',  description='PixelData',  offset=0x00005000*addrSize, bitSize=2, bitOffset=0, hidden=True, verify=False))
         self.add(pr.LocalCommand(name='WritePixelData',  description='WritePixelData', function=lambda arg: self.PixelData.set(arg), hidden=False))
-
-        self.add((
-            pr.RemoteVariable(name='Reg6011', description='', offset=0x00006011*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW', doUpdate=False, hidden=True),
-            pr.RemoteVariable(name='Reg6013', description='', offset=0x00006013*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW', doUpdate=False, hidden=True)))
 
         # CMD = 7, Addr = X  : Prepare to write chip ID
         #self.add((
@@ -683,8 +677,8 @@ class Epix10kaAsic(pr.Device):
                                colToWrite = 0x380 + y%48;
                             else:
                                print('unexpected bank number')
-                            self.Reg6011.set(x)
-                            self.Reg6013.set(colToWrite)
+                            self.RowCounter.set(x)
+                            self.ColCounter.set(colToWrite)
                             self.PixelData.set((int(matrixCfg[x][y])))
                     self.CmdPrepForRead()
                 else:
@@ -728,8 +722,8 @@ class Epix10kaAsic(pr.Device):
                          colToWrite = 0x380 + y%48;
                       else:
                          print('unexpected bank number')
-                      self.Reg6011.set(x)
-                      self.Reg6013.set(colToWrite)
+                      self.RowCounter.set(x)
+                      self.ColCounter.set(colToWrite)
                       readBack[x, y] = self.PixelData.get()
                 np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
         else:
@@ -880,6 +874,7 @@ class TixelAsic(pr.Device):
 
 
         # CMD = 5, Addr = X  : Read/Write Pixel with data
+        # TODO: HOw many bits is this register?
         self.add(pr.RemoteVariable(name='PixelData',  description='PixelData',  offset=0x00005000*addrSize, bitSize=2, bitOffset=0, hidden=True, verify=False))
         self.add(pr.LocalCommand(name='WritePixelData',  description='WritePixelData', function=lambda arg: self.PixelData.set(arg), hidden=False))
 
@@ -1121,10 +1116,11 @@ class Cpix2Asic(pr.Device):
         self.add((
             pr.RemoteCommand(name='WriteMatrixData', description='', offset=0x00004000*addrSize, bitSize=6, bitOffset=0, function=pr.Command.touch, hidden=False, overlapEn=True)))
 
-
         # CMD = 5, Addr = X  : Read/Write Pixel with data
+        # TODO: HOw many bits is this register?
         self.add(pr.RemoteVariable(name='PixelData',  description='PixelData',  offset=0x00005000*addrSize, bitSize=2, bitOffset=0, hidden=True, verify=False))
         self.add(pr.LocalCommand(name='WritePixelData',  description='WritePixelData', function=lambda arg: self.PixelData.set(arg), hidden=False))
+
 
         # CMD = 7, Addr = X  : Prepare to write chip ID
         #self.add((
@@ -1167,11 +1163,6 @@ class Cpix2Asic(pr.Device):
 #
 #        # CMD = 5, Addr = X  : Read/Write Pixel with data
 #        self.add(pr.RemoteCommand(name='WritePixelData',  description='WritePixelData',  offset=0x00005000*addrSize, bitSize=2, bitOffset=0, function=pr.Command.touch, hidden=False, overlapEn=True))
-
-        self.add((
-            pr.RemoteVariable(name='Reg6011', description='', offset=0x00006011*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW', doUpdate=False, hidden=True),
-            pr.RemoteVariable(name='Reg6013', description='', offset=0x00006013*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW', doUpdate=False, hidden=True)))
-
 #
 #        # CMD = 7, Addr = X  : Prepare to write chip ID
 #        self.add((
@@ -1232,8 +1223,8 @@ class Cpix2Asic(pr.Device):
                     self.PrepareMultiConfig()
                     for x in range (0, 48):
                         for y in range (0, 48):
-                            self.Reg6011.set(x)
-                            self.Reg6013.set(y)
+                            self.RowCounter.set(x)
+                            self.ColCounter.set(y)
                             self.PixelData.set((int(matrixCfg[x][y])))
                     self.CmdPrepForRead()
                 else:
@@ -1266,8 +1257,8 @@ class Cpix2Asic(pr.Device):
                 self.PrepareMultiConfig()
                 for x in range (0, 48):
                    for y in range (0, 48):
-                      self.Reg6011.set(x)
-                      self.Reg6013.set(y)
+                      self.RowCounter.set(x)
+                      self.ColCounter.set(y)
                       readBack[x, y] = self.PixelData.get()
                 np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
         else:
@@ -1508,12 +1499,9 @@ class EpixHrAdcAsic(pr.Device):
             pr.RemoteCommand(name='WriteMatrixData', description='', offset=0x00004000*addrSize, bitSize=4, bitOffset=0, function=pr.Command.touch, hidden=False)))
 
         # CMD = 5, Addr = X  : Read/Write Pixel with data
+        # TODO: HOw many bits is this register?
         self.add(pr.RemoteVariable(name='PixelData',  description='PixelData',  offset=0x00005000*addrSize, bitSize=2, bitOffset=0, hidden=True, verify=False))
         self.add(pr.LocalCommand(name='WritePixelData',  description='WritePixelData', function=lambda arg: self.PixelData.set(arg), hidden=False))
-
-        self.add((
-            pr.RemoteVariable(name='Reg6011', description='', offset=0x00006011*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW', doUpdate=False, hidden=True),
-            pr.RemoteVariable(name='Reg6013', description='', offset=0x00006013*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW', doUpdate=False, hidden=True)))
 
         # CMD = 7, Addr = X  : Prepare to write chip ID
         #self.add((
@@ -1584,8 +1572,8 @@ class EpixHrAdcAsic(pr.Device):
                                colToWrite = 0x380 + y%48;
                             else:
                                print('unexpected bank number')
-                            self.Reg6011.set(x)
-                            self.Reg6013.set(colToWrite)
+                            self.RowCounter.set(x)
+                            self.ColCounter.set(colToWrite)
                             self.PixelData.set((int(matrixCfg[x][y])))
                     self.CmdPrepForRead()
                 else:
@@ -1627,8 +1615,8 @@ class EpixHrAdcAsic(pr.Device):
                          colToWrite = 0x380 + y%48;
                       else:
                          print('unexpected bank number')
-                      self.Reg6011.set(x)
-                      self.Reg6013.set(colToWrite)
+                      self.RowCounter.set(x)
+                      self.ColCounter.set(colToWrite)
                       readBack[x, y] = self.PixelData.get()
                 np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
         else:

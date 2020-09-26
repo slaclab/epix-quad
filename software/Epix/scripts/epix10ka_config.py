@@ -140,22 +140,17 @@ def main():
         # set entire matrix to a certain value
         if args.setmatrix:
             mset = args.setmatrix[0] & 0xF  # value is only 4 bits
-            # targetASIC.PrepareMultiConfig()
-            targetASIC._rawWrite(0x00008000*4, 0)
-            # targetASIC.WriteMatrixData.set(mset)
-            targetASIC._rawWrite(0x00004000*4, mset)
+            targetASIC.PrepareMultiConfig()
+            targetASIC.WriteMatrixData(mset)
             conf_log.debug("Pixel Matrix is set to 0x%x" % (mset))
 
         # set entire row to a certain value
         if args.setrow:
             row = args.setrow[0] % EPIX10KAROWS  # wrap values in case they are invalid
             rset = args.setrow[1] & 0xF  # value is only 4 bits
-            # targetASIC.PrepareMultiConfig()
-            targetASIC._rawWrite(0x00008000*4, 0)
-            # targetASIC.RowCounter.set(row)
-            targetASIC._rawWrite(0x00006011*4, row)
-            # targetASIC.WriteRowData.set(rset)
-            targetASIC._rawWrite(0x00002000*4, rset)
+            targetASIC.PrepareMultiConfig()
+            targetASIC.RowCounter(row)
+            targetASIC.WriteRowData(rset)
             conf_log.debug("row %d is set to 0x%x" % (row, rset))
 
         # set entire column to a certain value
@@ -163,10 +158,8 @@ def main():
             col = args.setcol[0] % EPIX10KAROWS  # wrap values in case they are invalid
             cset = args.setcol[1] & 0xF  # value is only 4 bits
             bcol = getbcol(col)  # get column word
-            # targetASIC.PrepareMultiConfig()
-            targetASIC._rawWrite(0x00008000*4, 0)
-            # targetASIC.ColCounter.set(bcol)
-            targetASIC._rawWrite(0x00006013*4, bcol)
+            targetASIC.PrepareMultiConfig()
+            targetASIC.ColCounter(bcol)
             targetASIC.WriteColData.set(cset)
             conf_log.debug("row %d is set to 0x%x" % (col, cset))
 
@@ -176,22 +169,17 @@ def main():
             col = args.pixel[1] % EPIX10KACOLS  # wrap values in case they are invalid
             bcol = getbcol(col)  # get column word
 
-            # targetASIC.PrepareMultiConfig()
-            targetASIC._rawWrite(0x00008000*4, 0)
-            # targetASIC.RowCounter.set(row)
-            targetASIC._rawWrite(0x00006011*4, row)
-            # targetASIC.ColCounter.set(bcol)
-            targetASIC._rawWrite(0x00006013*4, bcol)
+            targetASIC.PrepareMultiConfig()
+            targetASIC.RowCounter(row)
+            targetASIC.ColCounter(bcol)
 
             if args.setpixel:  # write pixel config
                 config = args.setpixel[0] & 0xF  # value is only 4 bits
-                # targetASIC.WritePixelData.set(config)
-                targetASIC._rawWrite(0x00005000*4, config)
+                targetASIC.WritePixelData(config)
                 conf_log.info("(%d,%d) set value: 0x%x" % (row, col, config))
                 conf_log.debug("bcol: 0x%x" % (bcol))
             else:  # read pixel config
-                # config = targetASIC.WritePixelData.get()
-                config = targetASIC._rawRead(0x00005000*4)
+                config = targetASIC.PixelData.get()
                 conf_log.info("(%d,%d) got value: 0x%x" % (row, col, config))
                 conf_log.debug("bcol: 0x%x" % (bcol))
 
@@ -200,18 +188,14 @@ def main():
             # create zero matrix, size = rows x columns
             configmatrix = [[0 for x in range(EPIX10KACOLS)] for y in range(EPIX10KAROWS)]
             conf_log.info("dumping entire matrix config...")
-            # targetASIC.PrepareMultiConfig()
-            targetASIC._rawWrite(0x00008000*4, 0)
+            targetASIC.PrepareMultiConfig()
             for c in range(EPIX10KACOLS):  # loop column
                 ibcol = getbcol(c)  # get column word
                 for r in range(EPIX10KAROWS):  # loop row
                     # go thru pixel read sequence
-                    # targetASIC.RowCounter.set(r)
-                    targetASIC._rawWrite(0x00006011*4, r)
-                    # targetASIC.ColCounter.set(ibcol)
-                    targetASIC._rawWrite(0x00006013*4, ibcol)
-                    # configmatrix[r][c] = targetASIC.WritePixelData.get()
-                    configmatrix[r][c] = targetASIC._rawRead(0x00005000*4)
+                    targetASIC.RowCounter(r)
+                    targetASIC.ColCounter(ibcol)
+                    configmatrix[r][c] = targetASIC.PixelData.get()
             # write matrix to csv file
             try:
                 with open('matrixdump.csv', 'w') as mycsvfile:
@@ -234,18 +218,14 @@ def main():
                         return 1
 
                     conf_log.info("loading csv matrix config...")
-                    # targetASIC.PrepareMultiConfig()
-                    targetASIC._rawWrite(0x00008000*4, 0)
+                    targetASIC.PrepareMultiConfig()
                     for c in range(EPIX10KACOLS):  # loop column
                         ibcol = getbcol(c)  # get column word
                         for r in range(EPIX10KAROWS-1):  # loop row, except last row.
                             # go thru pixel read sequence
-                            # targetASIC.RowCounter.set(r)
-                            targetASIC._rawWrite(0x00006011*4, r)
-                            # targetASIC.ColCounter.set(ibcol)
-                            targetASIC._rawWrite(0x00006013*4, ibcol)
-                            # targetASIC.WritePixelData.set(config)
-                            targetASIC._rawWrite(0x00005000*4, (int(configmatrix[r][c])))
+                            targetASIC.RowCounter(r)
+                            targetASIC.ColCounter(ibcol)
+                            targetASIC.PixelData.set(config)
                     conf_log.info("csv matrix config is loaded")
             except IOError as e:
                 conf_log.error("cannot open csv matrix file [%s]", args.loadmatrix[0])

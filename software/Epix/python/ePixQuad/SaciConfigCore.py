@@ -2,19 +2,19 @@
 #-----------------------------------------------------------------------------
 # Title      : PyRogue AXI Version Module
 #-----------------------------------------------------------------------------
-# File       : 
+# File       :
 # Author     : Maciej Kwiatkowski
 # Created    : 2016-09-29
 # Last update: 2017-01-31
 #-----------------------------------------------------------------------------
 # Description:
 #-----------------------------------------------------------------------------
-# This file is part of the rogue software platform. It is subject to 
-# the license terms in the LICENSE.txt file found in the top-level directory 
-# of this distribution and at: 
-#    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
-# No part of the rogue software platform, including this file, may be 
-# copied, modified, propagated, or distributed except according to the terms 
+# This file is part of the rogue software platform. It is subject to
+# the license terms in the LICENSE.txt file found in the top-level directory
+# of this distribution and at:
+#    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+# No part of the rogue software platform, including this file, may be
+# copied, modified, propagated, or distributed except according to the terms
 # contained in the LICENSE.txt file.
 #-----------------------------------------------------------------------------
 import pyrogue as pr
@@ -36,85 +36,85 @@ class SaciConfigCore(pr.Device):
    def __init__(self, simSpeedup = False, **kwargs):
       """Create SaciConfigCore"""
       super().__init__(description='Readout Core Regsisters', **kwargs)
-      
+
       self.simSpeedup = simSpeedup
-      
+
       # Creation. memBase is either the register bus server (srp, rce mapped memory, etc) or the device which
-      # contains this object. In most cases the parent and memBase are the same but they can be 
+      # contains this object. In most cases the parent and memBase are the same but they can be
       # different in more complex bus structures. They will also be different for the top most node.
       # The setMemBase call can be used to update the memBase for this Device. All sub-devices and local
       # blocks will be updated.
-      
+
       #############################################
       # Create block / variable combinations
       #############################################
-      
-      
+
+
       #Setup registers & variables
-      
+
       self.add(pr.RemoteVariable(
-         name       = 'ConfWrReq',     
+         name       = 'ConfWrReq',
          description= 'Request Config Write to ASICs',
-         offset     = 0x00800000, 
-         bitSize    = 1, 
-         bitOffset  = 0,  
-         base       = pr.Bool, 
+         offset     = 0x00800000,
+         bitSize    = 1,
+         bitOffset  = 0,
+         base       = pr.Bool,
          mode       = 'RW',
          verify     = False,
-      ))   
-      
+      ))
+
       self.add(pr.RemoteVariable(
-         name       = 'ConfRdReq',     
+         name       = 'ConfRdReq',
          description= 'Request Config Read from ASICs',
-         offset     = 0x00800004, 
-         bitSize    = 1, 
-         bitOffset  = 0,  
-         base       = pr.Bool, 
+         offset     = 0x00800004,
+         bitSize    = 1,
+         bitOffset  = 0,
+         base       = pr.Bool,
          mode       = 'RW',
          verify     = False,
-      ))   
-      
+      ))
+
       self.add(pr.RemoteVariable(
-         name       = 'ConfSel',     
-         description= 'Select ASICs bit mask',     
-         offset     = 0x00800008, 
-         bitSize    = 16, 
-         bitOffset  = 0,  
-         base       = pr.UInt, 
+         name       = 'ConfSel',
+         description= 'Select ASICs bit mask',
+         offset     = 0x00800008,
+         bitSize    = 16,
+         bitOffset  = 0,
+         base       = pr.UInt,
          mode       = 'RW',
       ))
-      
+
       self.add(pr.RemoteVariable(
-         name       = 'ConfDoneAll',     
-         description= 'All ASICs configuration done',     
-         offset     = 0x0080000C, 
-         bitSize    = 1, 
-         bitOffset  = 0,  
-         base       = pr.Bool, 
+         name       = 'ConfDoneAll',
+         description= 'All ASICs configuration done',
+         offset     = 0x0080000C,
+         bitSize    = 1,
+         bitOffset  = 0,
+         base       = pr.Bool,
          mode       = 'RO',
       ))
-      
+
       self.add(pr.RemoteVariable(
-         name       = 'ConfFail',     
-         description= 'ASIC failed bit mask',     
-         offset     = 0x00800010, 
-         bitSize    = 16, 
-         bitOffset  = 0,  
-         base       = pr.UInt, 
+         name       = 'ConfFail',
+         description= 'ASIC failed bit mask',
+         offset     = 0x00800010,
+         bitSize    = 16,
+         bitOffset  = 0,
+         base       = pr.UInt,
          mode       = 'RO',
       ))
-      
-      for i in range(16):      
+
+      for i in range(16):
           self.add(pr.RemoteVariable(
-                 name       = ('MaxFreqConfAsic[%d]'%i),     
-                 description= ('Most frequent configuration ASIC[%d]'%i),     
-                 offset     = 0x00800020+i*4, 
-                 bitSize    = 4, 
-                 bitOffset  = 0,  
-                 base       = pr.UInt, 
+                 name       = ('MaxFreqConfAsic[%d]'%i),
+                 description= ('Most frequent configuration ASIC[%d]'%i),
+                 offset     = 0x00800020+i*4,
+                 bitSize    = 4,
+                 bitOffset  = 0,
+                 base       = pr.UInt,
                  mode       = 'RO',
               ))
-      
+
       #####################################
       # Create commands
       #####################################
@@ -123,17 +123,17 @@ class SaciConfigCore(pr.Device):
          description = 'Configure all ASICs matrix',
          function    = self.setAsicsMatrix,
       ))
-      
+
       # A command has an associated function. The function can be a series of
       # python commands in a string. Function calls are executed in the command scope
       # the passed arg is available as 'arg'. Use 'dev' to get to device scope.
       # A command can also be a call to a local function with local scope.
       # The command object and the arg are passed
-   
+
    # acelerated matrix configuration command
    def setAsicsMatrix(self, dev,cmd,arg):
       """SetAsicsMatrix command function"""
-      
+
       # simulation only test
       if self.simSpeedup:
          # write memory
@@ -149,14 +149,14 @@ class SaciConfigCore(pr.Device):
          while self.ConfDoneAll.get() != True:
             ti.sleep(1)
          return
-      
+
       if not isinstance(arg, str):
          arg = ''
       if len(arg) > 0:
          self.filename = arg
       else:
          self.filename = QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
-      
+
       # write csv to memory
       if os.path.splitext(self.filename)[1] == '.csv':
          matrixCfg = np.genfromtxt(self.filename, delimiter=',')
@@ -168,15 +168,14 @@ class SaciConfigCore(pr.Device):
                memArray = []
                for x in range (0, 177):
                   for y in range (0, 192):
-                     
+
                      if memAddr%8 == 0:
                         memData = 0
                      memData = memData | ( (int(matrixCfg[x][y]) & 0xF) << ((memAddr%8)*4) )
                      if memAddr%8 == 7:
-                        #self._rawWrite((asic*0x80000)+int(memAddr/8)*4, memData)
                         memArray.append(memData)
                         #print('BRAM[0x%X] = 0x%X'%((asic*0x80000)+int(memAddr/8)*4, memData))
-                     
+
                      memAddr = memAddr + 1
                # make sure to send a big chunk of data avoiding slow 32 bit transactions
                self._setError(0)
@@ -186,16 +185,16 @@ class SaciConfigCore(pr.Device):
             print('csv file must be 192x178 pixels')
       else:
             print("Not csv file : ", self.filename)
-      
+
       #request config write to ASICs and wait for completion
       self.ConfSel.set(0xffff)
       self.ConfWrReq.set(True)
       while self.ConfDoneAll.get() != True:
          ti.sleep(1)
-      
-   
-   @staticmethod   
+
+
+   @staticmethod
    def frequencyConverter(self):
-      def func(dev, var):         
+      def func(dev, var):
          return '{:.3f} kHz'.format(1/(self.clkPeriod * self._count(var.dependencies)) * 1e-3)
       return func

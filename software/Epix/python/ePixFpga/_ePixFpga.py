@@ -1580,10 +1580,10 @@ class AsicDeserHrRegisters(pr.Device):
          self.add(pr.RemoteVariable(name='IserdeseOut'+str(i),   description='IserdeseOut'+str(i),  offset=0x00000100+i*4, bitSize=10, bitOffset=0, base=pr.UInt, disp = '{:#x}', mode='RO'))
 
       self.add((
-         pr.RemoteVariable(name='Reg6011', description='', offset=0x00006011*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW', doUpdate=False, hidden=True),
-         pr.RemoteVariable(name='Reg6013', description='', offset=0x00006013*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW', doUpdate=False, hidden=True),
-         pr.RemoteVariable(name='Reg5000', description='', offset=0x00005000*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW', doUpdate=False, hidden=True),
-         pr.RemoteVariable(name='Reg8000', description='', offset=0x00008000*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW', doUpdate=False, hidden=True)))
+         pr.RemoteVariable(name='RowCounter', description='', offset=0x00006011*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW', doUpdate=False, hidden=True),
+         pr.RemoteVariable(name='ColCounter', description='', offset=0x00006013*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW', doUpdate=False, hidden=True),
+         pr.RemoteVariable(name='PixelData', description='', offset=0x00005000*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW', doUpdate=False, hidden=True),
+         pr.RemoteVariable(name='PrepareMultiConfig', description='', offset=0x00008000*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW', doUpdate=False, hidden=True)))
 
       #####################################
       # Create commands
@@ -1612,7 +1612,7 @@ class AsicDeserHrRegisters(pr.Device):
                 matrixCfg = np.genfromtxt(self.filename, delimiter=',')
                 if matrixCfg.shape == (354, 384):
                     self.Delay.set(0)
-                    self.Reg8000.set(0)
+                    self.PrepareMultiConfig.set(0)
                     for x in range (0, 354):
                         for y in range (0, 384):
                             bankToWrite = int(y/96);
@@ -1626,9 +1626,9 @@ class AsicDeserHrRegisters(pr.Device):
                                colToWrite = 0x380 + y%96;
                             else:
                                print('unexpected bank number')
-                            self.Reg6011.set(x)
-                            self.Reg6013.set(colToWrite)
-                            self.Reg5000.set(int(matrixCfg[x][y]))
+                            self.RowCounter.set(x)
+                            self.ColCounter.set(colToWrite)
+                            self.PixelData.set(int(matrixCfg[x][y]))
                     self.Delay.set(0)
                 else:
                     print('csv file must be 384x354 pixels')
@@ -1715,10 +1715,10 @@ class AsicDeserRegisters(pr.Device):
          self.add(pr.RemoteVariable(name='IserdeseOut'+str(i),   description='IserdeseOut'+str(i),  offset=0x00000100+i*4, bitSize=10, bitOffset=0, base=pr.UInt, disp = '{:#x}', mode='RO'))
 
       self.add((
-         pr.RemoteVariable(name='Reg6011', description='', offset=0x00006011*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW', doUpdate=False, hidden=True),
-         pr.RemoteVariable(name='Reg6013', description='', offset=0x00006013*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW', doUpdate=False, hidden=True),
-         pr.RemoteVariable(name='Reg5000', description='', offset=0x00005000*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW', doUpdate=False, hidden=True),
-         pr.RemoteVariable(name='Reg8000', description='', offset=0x00008000*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW', doUpdate=False, hidden=True)))
+         pr.RemoteVariable(name='RowCounter', description='', offset=0x00006011*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW', doUpdate=False, hidden=True),
+         pr.RemoteVariable(name='ColCounter', description='', offset=0x00006013*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW', doUpdate=False, hidden=True),
+         pr.RemoteVariable(name='PixelData', description='', offset=0x00005000*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW', doUpdate=False, hidden=True),
+         pr.RemoteVariable(name='PrepareMultiConfig', description='', offset=0x00008000*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW', doUpdate=False, hidden=True)))
 
       #####################################
       # Create commands
@@ -1747,7 +1747,7 @@ class AsicDeserRegisters(pr.Device):
                 matrixCfg = np.genfromtxt(self.filename, delimiter=',')
                 if matrixCfg.shape == (354, 384):
                     self.Delay.set(0)
-                    self.Reg8000.set(0)
+                    self.PrepareMultiConfig.set(0)
                     for x in range (0, 354):
                         for y in range (0, 384):
                             bankToWrite = int(y/96);
@@ -1761,9 +1761,9 @@ class AsicDeserRegisters(pr.Device):
                                colToWrite = 0x380 + y%96;
                             else:
                                print('unexpected bank number')
-                            self.Reg6011.set(x)
-                            self.Reg6013.set(colToWrite)
-                            self.Reg5000.set(int(matrixCfg[x][y]))
+                            self.RowCounter.set(x)
+                            self.ColCounter.set(colToWrite)
+                            self.PixelData.set(int(matrixCfg[x][y]))
                     self.Delay.set(0)
                 else:
                     print('csv file must be 384x354 pixels')
