@@ -81,15 +81,8 @@ architecture rtl of RdoutCoreBram is
    constant TIMEOUT_C      : integer := 500000;  -- 5ms
    
    -- Stream settings
-   constant SLAVE_AXI_CONFIG_C : AxiStreamConfigType := (
-      TSTRB_EN_C    => false, --  unused
-      TDATA_BYTES_C => 8, -- 8byte (64-bit) interface
-      TDEST_BITS_C  => 0, -- Unused at this layer and overwritten by AxisMux in upper layer
-      TID_BITS_C    => 0, --  unused
-      TKEEP_MODE_C  => TKEEP_FIXED_C, -- always 64-bit transactions (BRAM optimization)
-      TUSER_BITS_C  => 2, --  SSI EOFE and SOF used
-      TUSER_MODE_C  => TUSER_FIRST_LAST_C);   
-   constant MASTER_AXI_CONFIG_C  : AxiStreamConfigType := SLAVE_AXI_CONFIG_C;
+   constant SLAVE_AXI_CONFIG_C   : AxiStreamConfigType := ssiAxiStreamConfig(8);
+   constant MASTER_AXI_CONFIG_C  : AxiStreamConfigType := ssiAxiStreamConfig(8);
    
    constant LANE_C         : slv( 1 downto 0) := "00";
    constant VC_C           : slv( 1 downto 0) := "00";
@@ -152,6 +145,7 @@ architecture rtl of RdoutCoreBram is
       monData              : Slv16Array(37 downto 0);
       overSampleEn         : sl;
       overSampleSize       : slv(2 downto 0);
+      overSampleSizePwr    : slv(6 downto 0);
    end record RegType;
 
    constant REG_INIT_C : RegType := (
@@ -192,7 +186,8 @@ architecture rtl of RdoutCoreBram is
       sAxilReadSlave       => AXI_LITE_READ_SLAVE_INIT_C,
       monData              => (others=>(others=>'0')),
       overSampleEn         => '0',
-      overSampleSize       => (others=>'0')
+      overSampleSize       => (others=>'0'),
+      overSampleSizePwr    => (others=>'0')
    );
 
    signal r                : RegType := REG_INIT_C;
@@ -364,22 +359,53 @@ begin
    -- Instantiate Moving Average cores for oversampling
    --------------------------------------------------
    G_OVERSAMPLE_AVG : for i in 63 downto 0 generate
+      signal avgDataTmp       : Slv21Array(63 downto 0);
+      signal avgDataTmpValid  : slv(63 downto 0);
+      signal avgDataMux       : Slv14Array(63 downto 0);
    begin
       
-      U_MovingAvg : entity work.EpixQuadMovingAvg
-      generic map (
-         TPD_G          => TPD_G,
-         DATA_BITS_G    => 14
-      )
-      port map (
-         clk            => sysClk,
-         rst            => sysRst,
-         sizeCtrl       => r.overSampleSize,
-         dataIn         => adcStream(i).tData(13 downto 0),
-         dataInValid    => adcStream(i).tValid,
-         dataOut        => adcStreamOvs(i).tData(13 downto 0),
-         dataOutValid   => adcStreamOvs(i).tValid
-      );
+      U_MovingAvg : entity surf.BoxcarIntegrator
+         generic map (
+            TPD_G        => TPD_G,
+            DATA_WIDTH_G => 14,
+            ADDR_WIDTH_G => 7
+         )
+         port map (
+            clk      => sysClk,
+            rst      => sysRst,
+            -- Configuration, intCount is 0 based, 0 = 1, 1 = 2, 1023 = 1024
+            intCount => r.overSampleSizePwr,
+            -- Inbound Interface
+            ibValid  => adcStream(i).tValid,
+            ibData   => adcStream(i).tData(13 downto 0),
+            -- Outbound Interface
+            obValid  => avgDataTmpValid(i),
+            obData   => avgDataTmp(i)
+         );
+
+      avgDataMux(i) <= 
+         avgDataTmp(i)(20 downto 7) when r.overSampleSize = 7 else
+         avgDataTmp(i)(19 downto 6) when r.overSampleSize = 6 else
+         avgDataTmp(i)(18 downto 5) when r.overSampleSize = 5 else
+         avgDataTmp(i)(17 downto 4) when r.overSampleSize = 4 else
+         avgDataTmp(i)(16 downto 3) when r.overSampleSize = 3 else
+         avgDataTmp(i)(15 downto 2) when r.overSampleSize = 2 else
+         avgDataTmp(i)(14 downto 1) when r.overSampleSize = 1 else
+         avgDataTmp(i)(13 downto 0);
+      
+      U_Reg : entity surf.RegisterVector
+         generic map (
+            TPD_G       => TPD_G,
+            WIDTH_G     => 15
+         )
+         port map (
+            clk         => sysClk,
+            rst         => sysRst,
+            sig_i(14)   => avgDataTmpValid(i),
+            sig_i(13 downto 0) => avgDataMux(i),
+            reg_o(14)   => adcStreamOvs(i).tValid,
+            reg_o(13 downto 0) => adcStreamOvs(i).tData(13 downto 0)
+         );
    
    end generate;
    
@@ -439,6 +465,24 @@ begin
       
       axiSlaveRegister (regCon, x"024", 0, v.overSampleEn      );
       axiSlaveRegister (regCon, x"028", 0, v.overSampleSize    );
+      
+      if r.overSampleSize = 0 then
+         v.overSampleSizePwr   := "0000000";
+      elsif r.overSampleSize = 1 then
+         v.overSampleSizePwr   := "0000001";
+      elsif r.overSampleSize = 2 then
+         v.overSampleSizePwr   := "0000011";
+      elsif r.overSampleSize = 3 then
+         v.overSampleSizePwr   := "0000111";
+      elsif r.overSampleSize = 4 then
+         v.overSampleSizePwr   := "0001111";
+      elsif r.overSampleSize = 5 then
+         v.overSampleSizePwr   := "0011111";
+      elsif r.overSampleSize = 6 then
+         v.overSampleSizePwr   := "0111111";
+      else
+         v.overSampleSizePwr   := "1111111";
+      end if;
       
       
       -- Close out the AXI-Lite transaction
@@ -935,19 +979,21 @@ begin
    -- the frame size 48 cols * 178 rows * 64 banks * 2 bytes = 1093632 bytes
    -- the FIFO will fit whole image
    
+   
    U_AxisOut0 : entity surf.AxiStreamFifoV2
    generic map (
       -- General Configurations
       TPD_G               => TPD_G,
-      SYNTH_MODE_G        => "xpm",
-      MEMORY_TYPE_G       => "block",
+      PIPE_STAGES_G       => 1,
+      SLAVE_READY_EN_G    => true,
+      VALID_THOLD_G       => 1,     -- =0 = only when frame ready
       -- FIFO configurations
       GEN_SYNC_FIFO_G     => true,
       CASCADE_SIZE_G      => 4,
       FIFO_ADDR_WIDTH_G   => 15,
       -- AXI Stream Port Configurations
       SLAVE_AXI_CONFIG_G  => SLAVE_AXI_CONFIG_C,
-      MASTER_AXI_CONFIG_G => SLAVE_AXI_CONFIG_C
+      MASTER_AXI_CONFIG_G => MASTER_AXI_CONFIG_C
    )
    port map (
       -- Slave Port
@@ -962,12 +1008,15 @@ begin
       mAxisSlave  => axisCascSlave
    );
    
+   
+   
    U_AxisOut1 : entity surf.AxiStreamFifoV2
    generic map (
       -- General Configurations
       TPD_G               => TPD_G,
-      SYNTH_MODE_G        => "xpm",
-      MEMORY_TYPE_G       => "block",
+      PIPE_STAGES_G       => 1,
+      SLAVE_READY_EN_G    => true,
+      VALID_THOLD_G       => 1,     -- =0 = only when frame ready
       -- FIFO configurations
       GEN_SYNC_FIFO_G     => false,
       CASCADE_SIZE_G      => 1,

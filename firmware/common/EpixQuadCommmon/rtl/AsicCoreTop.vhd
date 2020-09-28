@@ -66,6 +66,8 @@ entity AsicCoreTop is
       asicPpmat            : out   sl;
       asicRoClk            : out   sl;
       asicDout             : in    slv(15 downto 0);
+      -- debug outputs
+      dbgOut               : out   slv(2 downto 0);
       -- ADC Clock Output
       adcClk               : out   sl;
       -- Image Data Stream
@@ -117,6 +119,10 @@ architecture rtl of AsicCoreTop is
    signal axisMasterASIC   : AxiStreamMasterType;
    signal axisSlavePRBS    : AxiStreamSlaveType;
    signal axisSlaveASIC    : AxiStreamSlaveType;
+   
+   -- ADC signals
+   signal adcValid         : slv(31 downto 0);
+   signal adcData          : Slv16Array(31 downto 0);
    
    constant MASTER_AXI_CONFIG_C  : AxiStreamConfigType := ssiAxiStreamConfig(8);
    
@@ -178,6 +184,8 @@ begin
       asicSync          => iAsicSync,
       asicPpmat         => iAsicPpmat,
       asicRoClk         => iAsicRoClk,
+      -- debug outputs
+      dbgOut            => dbgOut,
       -- ADC Clock Output
       adcClk            => adcClk
    );
@@ -242,25 +250,35 @@ begin
    ---------------------------------------------------------------
    -- PseudoScope Core
    --------------------- ------------------------------------------
-   U_PseudoScopeCore : entity work.EpixQuadPseudoScopeCore
+   U_PseudoScopeCore : entity work.PseudoScope2Axi
    generic map (
-      TPD_G             => TPD_G,
-      INPUT_CHANNELS_G  => 80,
-      EXTTRIG_IN_G      => 6
+      TPD_G                      => TPD_G,
+      INPUTS_G                   => 32,
+      MASTER_AXI_STREAM_CONFIG_G => ssiAxiStreamConfig(4, TKEEP_COMP_C)
    )
    port map ( 
-      sysClk            => sysClk,
-      sysClkRst         => sysRst,
-      adcStream         => adcStream,
+      -- system clock
+      clk               => sysClk,
+      rst               => sysRst,
+      -- input data
+      dataIn            => adcData,
+      dataValid         => adcValid,
+      -- arm signal
       arm               => acqStart,
-      trigIn(0)         => acqStart,
-      trigIn(1)         => iAsicAcq,
-      trigIn(2)         => iAsicR0,
-      trigIn(3)         => iAsicSync,
-      trigIn(4)         => iAsicPpmat,
-      trigIn(5)         => iAsicRoClk,
-      mAxisMaster       => scopeTxMaster,
-      mAxisSlave        => scopeTxSlave,
+      -- input triggers
+      triggerIn(0)      => acqStart,
+      triggerIn(1)      => iAsicAcq,
+      triggerIn(2)      => iAsicR0,
+      triggerIn(3)      => iAsicSync,
+      triggerIn(4)      => iAsicPpmat,
+      triggerIn(5)      => iAsicRoClk,
+      triggerIn(12 downto 6) => "0000000",
+      -- AXI stream output
+      axisClk           => sysClk,
+      axisRst           => sysRst,
+      axisMaster        => scopeTxMaster,
+      axisSlave         => scopeTxSlave,
+      -- AXI lite for register access
       axilClk           => sysClk,
       axilRst           => sysRst,
       sAxilWriteMaster  => axilWriteMasters(SCOPE_INDEX_C),
@@ -268,6 +286,17 @@ begin
       sAxilReadMaster   => axilReadMasters(SCOPE_INDEX_C),
       sAxilReadSlave    => axilReadSlaves(SCOPE_INDEX_C)
    );
+   
+   GenAdcTps : for i in 0 to 15 generate 
+      adcData(i)  <= adcStream(64+i).tData(15 downto 0);
+      adcValid(i) <= adcStream(64+i).tValid;
+   end generate;
+   GenAdcBanks : for i in 0 to 7 generate 
+      adcData(16+i*2)    <= adcStream(i*8).tData(15 downto 0);
+      adcValid(16+i*2)   <= adcStream(i*8).tValid;
+      adcData(16+i*2+1)  <= adcStream(i*8+1).tData(15 downto 0);
+      adcValid(16+i*2+1) <= adcStream(i*8+1).tValid;
+   end generate;
    
    ---------------------------------------------------------------
    -- ASIC Analog Test Data Generator
