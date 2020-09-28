@@ -35,15 +35,20 @@ import ePixQuad
 import os.path
 from os import path
 
+import click
+
 class Top(pr.Root):
    def __init__(   self,       
          name        = "Top",
          description = "Container for EpixQuad",
          dev         = '/dev/pgpcard_0',
          hwType      = 'pgp3_cardG3',
+         promWrEn    = False,
          lane        = 0,
          **kwargs):
       super().__init__(name=name, description=description, **kwargs)
+      
+      self._promWrEn = promWrEn
       
       # File writer
       dataWriter = pr.utilities.fileio.StreamWriter()
@@ -71,21 +76,47 @@ class Top(pr.Root):
       
       # Connect the SRPv3 to PGPv3.VC[0]
       memMap = rogue.protocols.srp.SrpV3()                
-      pr.streamConnectBiDir(self.pgpVc0, memMap)             
+      pr.streamConnectBiDir(self.pgpVc1, memMap)             
       
-      pyrogue.streamConnect(self.pgpVc1, dataWriter.getChannel(0x1))
+      pyrogue.streamConnect(self.pgpVc0, dataWriter.getChannel(0x1))
       # Add pseudoscope to file writer
       pyrogue.streamConnect(self.pgpVc2, dataWriter.getChannel(0x2))
       pyrogue.streamConnect(self.pgpVc3, dataWriter.getChannel(0x3))
       
       cmdVc1 = rogue.protocols.srp.Cmd()
-      pyrogue.streamConnect(cmdVc1, self.pgpVc1)
+      pyrogue.streamConnect(cmdVc1, self.pgpVc0)
       cmdVc3 = rogue.protocols.srp.Cmd()
       pyrogue.streamConnect(cmdVc3, self.pgpVc3)
       
       prbsRx = pyrogue.utilities.prbs.PrbsRx(name='PrbsRx', width=128)
-      pyrogue.streamConnect(self.pgpVc1,prbsRx)
+      #pyrogue.streamConnect(self.pgpVc0,prbsRx)
       self.add(prbsRx)
+      
+      @self.command()
+      def SetAsicMatrixTest():
+         # save TrigEn state and stop
+         self.SystemRegs.enable.set(True)
+         trigEn = self.SystemRegs.TrigEn.get()
+         self.SystemRegs.TrigEn.set(False)
+         # clear matrix in all enabled ASICs
+         for i in range(16):
+            # iterate through enabled (preset) ASICs
+            if self.Epix10kaSaci[i].enable.get() == True:
+               print('Setting pulsed region in ASIC %d'%i)
+               # enable automated pulser increment
+               self.Epix10kaSaci[i].atest.set(True)
+               self.Epix10kaSaci[i].test.set(True)
+               # toggle reset to make sure pulser starts from 0 everywhere
+               self.Epix10kaSaci[i].PulserR.set(True)
+               self.Epix10kaSaci[i].PulserR.set(False)
+               # pulse arbitrary square region of 3x3 pixels in each bank
+               for x in range(20,24):
+                  for y in range(5,8):
+                     self.Epix10kaSaci[i].RowCounter(x)
+                     self.Epix10kaSaci[i].ColCounter(y)
+                     self.Epix10kaSaci[i].WritePixelData(1)
+         # restore TrigEn state
+         self.SystemRegs.TrigEn.set(trigEn)
       
       @self.command()
       def ClearAsicMatrix():
@@ -95,7 +126,10 @@ class Top(pr.Root):
          self.SystemRegs.TrigEn.set(False)
          # clear matrix in all enabled ASICs
          for i in range(16):
-            self.Epix10kaSaci[i].ClearMatrix()
+            if self.Epix10kaSaci[i].enable.get() == True:
+               self.Epix10kaSaci[i].atest.set(False)
+               self.Epix10kaSaci[i].test.set(False)
+               self.Epix10kaSaci[i].ClearMatrix()
          # restore TrigEn state
          self.SystemRegs.TrigEn.set(trigEn)
       
@@ -252,7 +286,7 @@ class Top(pr.Root):
          offset  = 0x02D00000, 
          enabled = False,
          expand  = False,
-         hidden  = True,
+         hidden  = False,
       ))
                
       if (hwType != 'simulation'):
@@ -284,9 +318,17 @@ class Top(pr.Root):
       def AdcStartup():
          self.SystemRegs.enable.set(True)
          self.Ad9249Tester.enable.set(True)
+         self.RdoutCore.enable.set(True)
+         self.AcqCore.enable.set(True)
+         self.PseudoScopeCore.enable.set(True)
          for adc in range(10):
             self.Ad9249Readout[adc].enable.set(True)
             self.Ad9249Config[adc].enable.set(True)
+         
+         # disable and stop all internal ADC startup activity
+         self.SystemRegs.AdcBypass.set(True)
+         # Wait 100 ms
+         time.sleep(0.1)
          
          #load trained delays
          for adc in range(10):
@@ -305,11 +347,13 @@ class Top(pr.Root):
          # test ADCs and reset if needed
          for adc in range(10):
             while True:
-               if self.testAdc(self, adc) < 0:
+               if self.testAdc(self, adc, 0) < 0 or self.testAdc(self, adc, 1) < 0:
                   self.resetAdc(self, adc)
                else:
                   break
-            
+         
+         # re-enable internal ADC startup
+         self.SystemRegs.AdcBypass.set(False)
          
          self.Ad9249Tester.enable.set(False)
          print('Done')
@@ -317,13 +361,37 @@ class Top(pr.Root):
       @self.command()
       def AdcTrain():
          
+         if self._promWrEn == False:
+            click.secho(
+               "\n\n\
+               ***************************************************\n\
+               ***************************************************\n\
+               Writing ADC constants to PROM disabled         \n\
+               ***************************************************\n\
+               ***************************************************\n\n"
+               , bg='red',
+            )
+         else:
+            click.secho(
+               "\n\n\
+               ***************************************************\n\
+               ***************************************************\n\
+               Writing ADC constants to PROM enabled        \n\
+               ***************************************************\n\
+               ***************************************************\n\n"
+               , bg='green',
+            )
+            
          self.SystemRegs.enable.set(True)
          self.Ad9249Tester.enable.set(True)
          for adc in range(10):
             self.Ad9249Readout[adc].enable.set(True)
             self.Ad9249Config[adc].enable.set(True)
          
-         
+         # disable and stop all internal ADC startup activity
+         self.SystemRegs.AdcBypass.set(True)
+         # Wait 100 ms
+         time.sleep(0.1)
          
          for adc in range(10):
             
@@ -360,10 +428,74 @@ class Top(pr.Root):
                      
          self.Ad9249Tester.enable.set(False)
          
+         # flash training data
+         if self._promWrEn == True:
+            self.flashAdcDelays(self)
+         
          # save training data
          with open('ePixQuadAdcTrainingData.txt', 'w') as f:
             for item in self.allDelays:
                f.write("%s\n" % item)
+         
+         # re-enable internal ADC startup
+         self.SystemRegs.AdcBypass.set(False)
+   
+      @self.command()
+      def ClearAdcProm():
+         
+         if self._promWrEn == False:
+            click.secho(
+               "\n\n\
+               ***************************************************\n\
+               ***************************************************\n\
+               Writing ADC constants to PROM disabled         \n\
+               ***************************************************\n\
+               ***************************************************\n\n"
+               , bg='red',
+            )
+         else:
+         
+            self.CypressS25Fl.enable.set(True)
+            self.CypressS25Fl.resetFlash()
+            # erase 64kB per sector ERASE_SIZE = 0x10000
+            # use space at 48MB (mcs size 16MB)
+            # mcs end 0xf43efc
+            self.CypressS25Fl.eraseCmd(0x3000000)
+            
+            # create empty prom data array
+            writeArray = [0] * 64
+            
+            self.CypressS25Fl.setDataReg(writeArray)
+            self.CypressS25Fl.writeCmd(0x3000000)
+            
+            # Wait for last transaction to finish
+            self.CypressS25Fl.waitForFlashReady()
+            
+            # Start address of a burst transfer
+            self.CypressS25Fl.readCmd(0x3000000)
+            # Get the data
+            readArray = self.CypressS25Fl.getDataReg()
+            
+            if readArray != writeArray:
+               click.secho(
+                  "\n\n\
+                  ***************************************************\n\
+                  ***************************************************\n\
+                  Writing ADC constants to PROM failed !!!!!!        \n\
+                  ***************************************************\n\
+                  ***************************************************\n\n"
+                  , bg='red',
+               )
+            else:
+               click.secho(
+                  "\n\n\
+                  ***************************************************\n\
+                  ***************************************************\n\
+                  Writing ADC constants to PROM done       \n\
+                  ***************************************************\n\
+                  ***************************************************\n\n"
+                  , bg='green',
+               )
    
    @staticmethod
    def resetAdc(self, adc):
@@ -503,11 +635,11 @@ class Top(pr.Root):
       return delaySet
    
    @staticmethod
-   def testAdc(self, adc):
+   def testAdc(self, adc, pattern):
       print('ADC %d testing'%adc)
       
-      result = 0
       
+      result = 0
       # Reset lost lock counter
       self.Ad9249Readout[adc].LostLockCountReset()
       # Wait 1 ms
@@ -522,11 +654,19 @@ class Top(pr.Root):
       
       
       # enable mixed bit frequency pattern
-      self.Ad9249Config[adc].OutputTestMode.set(12)
+      if pattern == 0:
+         self.Ad9249Config[adc].OutputTestMode.set(12)
+      else:
+         self.Ad9249Config[adc].OutputTestMode.set(8)
+         self.Ad9249Config[adc].UserPatt1Lsb.set(0x00)
+         self.Ad9249Config[adc].UserPatt1Msb.set(0x60)
       # set the pattern tester
       self.Ad9249Tester.TestDataMask.set(0x3FFF)
-      self.Ad9249Tester.TestPattern.set(0x2867)
-      self.Ad9249Tester.TestSamples.set(10000)
+      if pattern == 0:
+         self.Ad9249Tester.TestPattern.set(0x2867)
+      else:
+         self.Ad9249Tester.TestPattern.set(0x1800)
+      self.Ad9249Tester.TestSamples.set(100000)
       self.Ad9249Tester.TestTimeout.set(10000)
       for lane in range(8):
          self.Ad9249Tester.TestChannel.set(adc*8+lane)
@@ -546,10 +686,81 @@ class Top(pr.Root):
       # disable mixed bit frequency pattern
       self.Ad9249Config[adc].OutputTestMode.set(0)
       
+      
       if result < 9:
          return -1
       else:
          return 0
+   
+   
+   @staticmethod
+   def flashAdcDelays(self):
+      self.CypressS25Fl.enable.set(True)
+      self.CypressS25Fl.resetFlash()
+      # erase 64kB per sector ERASE_SIZE = 0x10000
+      # use space at 48MB (mcs size 16MB)
+      # mcs end 0xf43efc
+      self.CypressS25Fl.eraseCmd(0x3000000)
+      
+      
+      # Create a burst data array
+      #print(", ".join("0x{:04x}".format(num) for num in self.allDelays))  
+      #print("-----------------------------------------------------------------------")
+
+      # create prom data array
+      writeArray = [0] * 64
+      
+      # copy ADC frame (1st) and lane (x8) delays words 0 to 44
+      for adc in range(10):
+         wordCnt = int((adc*9)/2) # 0 to 39
+         shiftCnt = int((adc*9)%2)*16
+         #print('wordCnt  %d'%wordCnt)
+         #print('shiftCnt %d'%shiftCnt)
+         writeArray[wordCnt] |= ((self.allDelays[adc*9]) & 0xffff) << shiftCnt
+         for lane in range(8):
+            wordCnt = int((adc*9+lane+1)/2) # 0 to 39
+            shiftCnt = int((adc*9+lane+1)%2)*16
+            #print('wordCnt  %d'%wordCnt)
+            #print('shiftCnt %d'%shiftCnt)
+            writeArray[wordCnt] |= ((self.allDelays[adc*9+lane+1]) & 0xffff) << shiftCnt
+      
+      #print(", ".join("0x{:04x}".format(num) for num in writeArray)) 
+      #print("-----------------------------------------------------------------------")      
+      
+      self.CypressS25Fl.setDataReg(writeArray)
+      self.CypressS25Fl.writeCmd(0x3000000)
+      
+      # Wait for last transaction to finish
+      self.CypressS25Fl.waitForFlashReady()
+      
+      # Start address of a burst transfer
+      self.CypressS25Fl.readCmd(0x3000000)
+      # Get the data
+      readArray = self.CypressS25Fl.getDataReg()
+      
+      if readArray != writeArray:
+         click.secho(
+            "\n\n\
+            ***************************************************\n\
+            ***************************************************\n\
+            Writing ADC constants to PROM failed !!!!!!        \n\
+            ***************************************************\n\
+            ***************************************************\n\n"
+            , bg='red',
+         )
+      else:
+         click.secho(
+            "\n\n\
+            ***************************************************\n\
+            ***************************************************\n\
+            Writing ADC constants to PROM done       \n\
+            ***************************************************\n\
+            ***************************************************\n\n"
+            , bg='green',
+         )
+      
+      #print(", ".join("0x{:04x}".format(num) for num in readArray))
+      #print("-----------------------------------------------------------------------")
       
       
       

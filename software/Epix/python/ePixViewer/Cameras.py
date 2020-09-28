@@ -52,6 +52,7 @@ EPIXM32     = 6
 HRADC32x32  = 7
 EPIXQUAD    = 8
 EPIXQUADSIM = 9
+EPIXMSH     = 10
 
 
 ################################################################################
@@ -70,7 +71,10 @@ class Camera():
     sensorWidth = 0
     sensorHeight = 0
     pixelDepth = 0
-    availableCameras = {  'ePix100a':  EPIX100A, 'ePix100p' : EPIX100P, 'Tixel48x48' : TIXEL48X48, 'ePix10ka' : EPIX10KA,  'Cpix2' : CPIX2, 'ePixM32Array' : EPIXM32, 'HrAdc32x32': HRADC32x32, 'ePixQuad' : EPIXQUAD, 'ePixQuadSim' : EPIXQUADSIM }
+    availableCameras = {  
+        'ePix100a':  EPIX100A, 'ePix100p' : EPIX100P, 'Tixel48x48' : TIXEL48X48, 'ePix10ka' : EPIX10KA,  
+        'Cpix2' : CPIX2, 'ePixM32Array' : EPIXM32, 'HrAdc32x32': HRADC32x32, 'ePixQuad' : EPIXQUAD, 
+        'ePixQuadSim' : EPIXQUADSIM, 'ePixMsh' : EPIXMSH }
     
 
     def __init__(self, cameraType = 'ePix100a') :
@@ -95,6 +99,8 @@ class Camera():
             self._initEpix10ka()
         if (camID == CPIX2):
             self._initCpix2()
+        if (camID == EPIXMSH):
+            self._initEpixMsh()
         if (camID == EPIXM32):
             self._initEpixM32()
         if (camID == HRADC32x32):
@@ -132,6 +138,9 @@ class Camera():
             return self.imgTool.applyBitMask(descImg, mask = self.bitMask)
         if (camID == CPIX2):
             descImg = self._descrambleCpix2Image(rawData)
+            return self.imgTool.applyBitMask(descImg, mask = self.bitMask)
+        if (camID == EPIXMSH):
+            descImg = self._descrambleEpixMshImage(rawData)
             return self.imgTool.applyBitMask(descImg, mask = self.bitMask)
         if (camID == EPIXM32):
             descImg = self._descrambleEpixM32Image(rawData)
@@ -179,6 +188,10 @@ class Camera():
             [frameComplete, readyForDisplay, newRawData]  = self._buildFrameCpix2Image(currentRawData, newRawData)
             return [frameComplete, readyForDisplay, newRawData]
             print('end of buildImageFrame')
+        if (camID == EPIXMSH):
+            frameComplete = 1
+            readyForDisplay = 1
+            return [frameComplete, readyForDisplay, newRawData]
         if (camID == EPIXM32):
             [frameComplete, readyForDisplay, newRawData]  = self._buildFrameEpixM32Image(currentRawData, newRawData)
             return [frameComplete, readyForDisplay, newRawData]
@@ -273,7 +286,15 @@ class Camera():
         self.sensorHeight = 96 # The sensor size in this dimension is doubled because each pixel has two information (ToT and ToA) 
         self.pixelDepth = 16
         self.bitMask = np.uint16(0x7FFF)
-   
+    
+    def _initEpixMsh(self):
+        self._NumAsicsPerSide = 1
+        self.sensorWidth  = 48
+        self.sensorHeight = 48
+        self.pixelDepth = 16
+        self.bitMask = np.uint16(0x7FFF)
+    
+    
     def _initEpixM32(self):
         #self._superRowSize = 384
         self._NumAsicsPerSide = 1
@@ -992,8 +1013,25 @@ class Camera():
             imgDesc = np.zeros((48*2,48*2), dtype='uint16')
         # returns final image
         
-        return imgDesc
+        return imgDesc    
+    
+    def _descrambleEpixMshImage(self, rawData):
+        """performs the EpixMsh image descrambling """
         
+        if len(rawData) < 48*48*2+32:
+            print("Got wrong pixel number ", len(imgDesc))
+        
+        #removes header before displying the image
+        for j in range(0,32):
+            rawData.pop(0)
+        
+        imgDesc = np.frombuffer(rawData[0:48*48*2],dtype='int16')
+        if (PRINT_VERBOSE): print("Got pixel number ", len(imgDesc))
+        imgDesc = imgDesc.reshape(self.sensorHeight, self.sensorWidth)
+        # returns final image
+        return imgDesc
+    
+    
     def _descrambleEpixM32Image(self, rawData):
         """performs the EpixM32 image descrambling """
         if (len(rawData)==2):

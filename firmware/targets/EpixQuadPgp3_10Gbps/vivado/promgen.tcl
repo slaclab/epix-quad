@@ -8,4 +8,4 @@
 ## the terms contained in the LICENSE.txt file.
 ##############################################################################
 
-source $::env(PROJ_DIR)/../../common/EpixQuadCommmon/vivado/promgen.tcl
+source $::env(PROJ_DIR)/../../common/EpixQuadCommon/vivado/promgen.tcl

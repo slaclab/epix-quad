@@ -334,8 +334,7 @@ begin
    adcSpiCsb(1)  <= iAdcSpiCsb(1) when iFpgaOutputEn = '1' else 'Z';
    adcSpiCsb(2)  <= iAdcSpiCsb(2) when iFpgaOutputEn = '1' else 'Z';
    adcPdwn01     <= iAdcPdwn(0) when iFpgaOutputEn = '1' else '0';
-   --adcPdwn(1)    <= iAdcPdwn(1) when iFpgaOutputEn = '1' else '0';
-   adcPdwnMon    <= iAdcPdwn(2) when iFpgaOutputEn = '1' else '0';
+   adcPdwnMon    <= iAdcPdwn(1) when iFpgaOutputEn = '1' else '0';
    
    -- ASIC Connections
    -- Digital bits, unused in this design but used to check pinout

@@ -30,6 +30,7 @@ import surf.misc
 from surf.devices.micron._AxiMicronN25Q import *
 import surf
 import numpy as np
+import time
 
 try:
     from PyQt5.QtWidgets import *
@@ -38,7 +39,6 @@ try:
 except ImportError:
     from PyQt4.QtCore    import *
     from PyQt4.QtGui     import *
-
 
 
 ################################################################################################
@@ -151,6 +151,197 @@ class EpixM32ArrayFpgaRegisters(pr.Device):
          return '{:.3f} kHz'.format(1/(self.clkPeriod * self._count(var.dependencies)) * 1e-3)
       return func
 
+################################################################################################
+##
+## epixMsh Classes definition
+##
+################################################################################################
+class EpixMsh(pr.Device):
+   def __init__(self, **kwargs):
+      if 'description' not in kwargs:
+            kwargs['description'] = "EPIXMSH FPGA"
+      
+      trigChEnum={0:'TrigReg', 1:'ThresholdChA', 2:'ThresholdChB', 3:'AcqStart', 4:'AsicCk', 5:'AsicRst', 6:'AsicCdsBline', 7:'AsicRstComp', 8:'AsicSampleN', 9:'AsicDinjEn', 10:'AsicCKinjEn'}
+      inChaEnum={0: 'ASIC_BUFOUT', 1: 'ASIC_COMPOUT'}
+      inChbEnum={0: 'ASIC_BUFOUT', 1: 'ASIC_COMPOUT'}
+      
+      
+      
+      super(self.__class__, self).__init__(**kwargs)
+      self.add(axi.AxiVersion(offset=0x00000000, expand=False))
+      self.add(EpixMshFpgaRegisters(name="EpixMshFpgaRegisters", offset=0x01000000, expand=True))
+      self.add(EpixMshDACs(name="EpixMshDACs[0]", offset=0x01300000, expand=False, DACaName='ASIC_Vthr', DACbName='ASIC_V_precharge'))
+      self.add(EpixMshDACs(name="EpixMshDACs[1]", offset=0x01300040, expand=False, DACaName='ASIC_V_Inj', DACbName='spare'))
+      self.add(TriggerRegisters(name="TriggerRegisters", offset=0x01100000, expand=False, BaseClock=100000000))
+      self.add(SlowAdcRegisters(name="SlowAdcRegisters", offset=0x03000000, expand=False))
+      self.add(OscilloscopeRegisters(name='Oscilloscope', offset=0x01200000, enabled=False, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum))
+      self.add(pgp.Pgp2bAxi(name='Pgp2bAxi', offset=0x02000000, expand=False, enabled=False))
+      for i in range(3):
+         if i == 2:
+            channels = 4
+         else:
+            channels = 8
+         self.add(ad.Ad9249ReadoutGroup      (name = ('Ad9249RdoutAdc[%d]'%i),   offset=(0x04100000+i*0x100000), channels=channels, enabled=False, expand=False))
+      for i in range(3):
+         self.add(ad.Ad9249ConfigGroup       (name = ('Ad9249ConfigAdc[%d]'%i),  offset=(0x04400000+i*0x000800), enabled=False, expand=False))
+      self.add(AxiMicronN25Q(name='MicronN25Q',    offset=0x05000000, expand=False, hidden=False))
+      self.add(MicroblazeLog(name='MicroblazeLog', offset=0x06000000, enabled=False, expand=False))
+      
+      self.add(pr.LocalCommand(name='InjDacRamp',  description='[start, stop, step, points, dly]', value=[0,0,0,0,0] ,function=self.injDacRamp))
+   
+   def injDacRamp(self, dev, cmd, arg):
+      """InjDacRamp command function"""       
+      print("InjDacRamp started")
+      arguments = np.asarray(arg)
+      dacStart = arguments[0]
+      dacStop = arguments[1]
+      dacStep = arguments[2]
+      dacPoints = arguments[3]
+      dacDly = arguments[4]
+      for dacVal in range(dacStart, dacStop, dacStep):
+         print('Set DAC to %d'%dacVal)
+         self.EpixMshDACs[1].ASIC_V_Inj.set(int(dacVal))
+         for pts in range(dacPoints):
+            time.sleep(dacDly/1000) 
+            #print('trigger %d'%pts)
+            self.root.Trigger()
+   
+   
+
+class EpixMshFpgaRegisters(pr.Device):
+   def __init__(self, **kwargs):
+      """Create the configuration device for Epix"""
+      super().__init__(description='Epix Configuration Registers', **kwargs)	
+      
+      def getFreqMHz(var):
+         x = var.dependencies[0].value()
+         return x / 1000000.0
+      
+      def getPerUs(var):
+         x = var.dependencies[0].value()
+         baseClk = self.BaseClock.get()
+         if baseClk > 0:
+            return x / (baseClk/1000000.0)
+         else:
+            return 0
+               
+      def setPerUs(deps):
+         def setUsValue(var, value, write):
+            rawVal = int(round(value*(self.BaseClock.get()/1000000.0)))
+            deps[0].set(rawVal,write)            
+         return setUsValue
+      
+      #############################################
+      # Create block / RemoteVariable combinations
+      #############################################
+      self.add(pr.RemoteVariable(name='DigPowerEn',            description='DigPowerEn',              offset=0x00000000, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='AnaPowerEn',            description='AnaPowerEn',              offset=0x00000000, bitSize=1,  bitOffset=1, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='FpgaOutEn',             description='FpgaOutEn',               offset=0x00000000, bitSize=1,  bitOffset=2, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='DbgMux0',               description='DbgMux0',                 offset=0x00000004, bitSize=8,  bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='DbgMux1',               description='DbgMux1',                 offset=0x00000008, bitSize=8,  bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='AdcClkHalfPer',         description='AdcClkHalfPer',           offset=0x0000000C, bitSize=8,  bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='StartupReq',            description='StartupReq',              offset=0x00000010, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='StartupAck',            description='StartupAck',              offset=0x00000010, bitSize=1,  bitOffset=1, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='StartupFail',           description='StartupFail',             offset=0x00000010, bitSize=1,  bitOffset=2, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='BaseClock',             description='FPGA base clk',           offset=0x00000014, bitSize=32, bitOffset=0, base=pr.UInt, mode='RO'))
+      self.add(pr.LinkVariable(  name='BaseClockMHz',          dependencies=[self.BaseClock],         mode='RO', units='MHz', linkedGet=getFreqMHz, disp='{:1.6f}')) 
+      self.add(pr.RemoteVariable(name='CompOutThreshold',      description='CompOutThreshold',        offset=0x00000018, bitSize=14, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='AdcPipelineDly',        description='AdcPipelineDly',          offset=0x0000001C, bitSize=8,  bitOffset=0, base=pr.UInt, mode='RW'))
+      
+      self.add(pr.RemoteVariable(name='AsicRstPol',            description='AsicRstPol',              offset=0x00000100, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='AsicRstDly',            description='AsicRstDly',              offset=0x00000104, bitSize=31, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.LinkVariable(  name='AsicRstDlyUs',          dependencies=[self.AsicRstDly],        mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.AsicRstDly]), disp='{:1.5f}')) 
+      self.add(pr.RemoteVariable(name='AsicRstWidth',          description='AsicRstWidth',            offset=0x00000108, bitSize=31, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.LinkVariable(  name='AsicRstWidthUs',        dependencies=[self.AsicRstWidth],      mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.AsicRstWidth]), disp='{:1.5f}')) 
+      
+      self.add(pr.RemoteVariable(name='AsicCdsBlinePol',       description='AsicCdsBlinePol',         offset=0x0000010C, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='AsicCdsBlineDly',       description='AsicCdsBlineDly',         offset=0x00000110, bitSize=31, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.LinkVariable(  name='AsicCdsBlineDlyUs',     dependencies=[self.AsicCdsBlineDly],   mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.AsicCdsBlineDly]), disp='{:1.5f}')) 
+      self.add(pr.RemoteVariable(name='AsicCdsBlineWidth',     description='AsicCdsBlineWidth',       offset=0x00000114, bitSize=31, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.LinkVariable(  name='AsicCdsBlineWidthUs',   dependencies=[self.AsicCdsBlineWidth], mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.AsicCdsBlineWidth]), disp='{:1.5f}')) 
+      
+      self.add(pr.RemoteVariable(name='AsicRstCompPol',        description='AsicRstCompPol',          offset=0x00000118, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='AsicRstCompDly',        description='AsicRstCompDly',          offset=0x0000011C, bitSize=31, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.LinkVariable(  name='AsicRstCompDlyUs',      dependencies=[self.AsicRstCompDly],    mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.AsicRstCompDly]), disp='{:1.5f}')) 
+      self.add(pr.RemoteVariable(name='AsicRstCompWidth',      description='AsicRstCompWidth',        offset=0x00000120, bitSize=31, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.LinkVariable(  name='AsicRstCompWidthUs',    dependencies=[self.AsicRstCompWidth],  mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.AsicRstCompWidth]), disp='{:1.5f}')) 
+      
+      self.add(pr.RemoteVariable(name='AsicSampleNPol',        description='AsicSampleNPol',          offset=0x00000124, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='AsicSampleNDly',        description='AsicSampleNDly',          offset=0x00000128, bitSize=31, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.LinkVariable(  name='AsicSampleNDlyUs',      dependencies=[self.AsicSampleNDly],    mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.AsicSampleNDly]), disp='{:1.5f}')) 
+      self.add(pr.RemoteVariable(name='AsicSampleNWidth',      description='AsicSampleNWidth',        offset=0x0000012C, bitSize=31, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.LinkVariable(  name='AsicSampleNWidthUs',    dependencies=[self.AsicSampleNWidth],  mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.AsicSampleNWidth]), disp='{:1.5f}')) 
+      
+      self.add(pr.RemoteVariable(name='AsicGRPol',             description='AsicGRPol',               offset=0x00000130, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='AsicGRDly',             description='AsicGRDly',               offset=0x00000134, bitSize=31, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.LinkVariable(  name='AsicGRDlyUs',           dependencies=[self.AsicGRDly],         mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.AsicGRDly]), disp='{:1.5f}')) 
+      self.add(pr.RemoteVariable(name='AsicGRWidth',           description='AsicGRWidth',             offset=0x00000138, bitSize=31, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.LinkVariable(  name='AsicGRWidthUs',         dependencies=[self.AsicGRWidth],       mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.AsicGRWidth]), disp='{:1.5f}')) 
+      
+      self.add(pr.RemoteVariable(name='AsicRdDly',             description='AsicRdDly',               offset=0x00000200, bitSize=31, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.LinkVariable(  name='AsicRdDlyUs',           dependencies=[self.AsicRdDly],         mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.AsicRdDly]), disp='{:1.5f}')) 
+      self.add(pr.RemoteVariable(name='AsicRdHalfPer',         description='AsicRdHalfPer',           offset=0x00000204, bitSize=16, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.LinkVariable(  name='AsicRdHalfPerUs',       dependencies=[self.AsicRdHalfPer],     mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.AsicRdHalfPer]), disp='{:1.5f}')) 
+      
+      self.add(pr.RemoteVariable(name='IRegEn',                description='IRegEn',                  offset=0x00000210, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='IRegDly',               description='IRegDly',                 offset=0x00000214, bitSize=31, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.LinkVariable(  name='IRegDlyUs',             dependencies=[self.IRegDly],           mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.IRegDly]), disp='{:1.5f}')) 
+      self.add(pr.RemoteVariable(name='IRegClkHalfPer',        description='IRegClkHalfPer',          offset=0x00000218, bitSize=16, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.LinkVariable(  name='IRegClkHalfPerUs',      dependencies=[self.IRegClkHalfPer],    mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.IRegClkHalfPer]), disp='{:1.5f}')) 
+      self.add(pr.RemoteVariable(name='IRegDregLow',           description='IRegDregLow',             offset=0x0000021C, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='IRegDregHigh',          description='IRegDregHigh',            offset=0x00000220, bitSize=16, bitOffset=0, base=pr.UInt, mode='RW'))
+      
+      self.add(pr.RemoteVariable(name='OverSampleEn',          description='OverSampleEn',            offset=0x00000230, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='OverSampleSize',        description='OverSampleSize',          offset=0x00000234, bitSize=3,  bitOffset=0, base=pr.UInt, mode='RW'))
+      
+      self.add(pr.RemoteVariable(name='IDacEn',                description='IDacEn',                  offset=0x00000240, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
+      self.add(pr.RemoteVariable(name='IDacStart',             description='IDacStart',               offset=0x00000244, bitSize=12, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='IDacStop',              description='IDacStop',                offset=0x00000248, bitSize=12, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='IDacStep',              description='IDacStep',                offset=0x0000024C, bitSize=8,  bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='IDacPoints',            description='IDacPoints',              offset=0x00000250, bitSize=8,  bitOffset=0, base=pr.UInt, mode='RW'))
+      
+      for i in range(9):
+         self.add(pr.RemoteVariable(name=('EnvData[%d]'%i),    description=('EnvData[%d]'%i),         offset=(0x00000300+i*4), bitSize=32, bitOffset=0, base=pr.UInt, mode='RO'))
+      
+      #####################################
+      # Create commands
+      #####################################
+      
+      # A command has an associated function. The function can be a series of
+      # python commands in a string. Function calls are executed in the command scope
+      # the passed arg is available as 'arg'. Use 'dev' to get to device scope.
+      # A command can also be a call to a local function with local scope.
+      # The command object and the arg are passed
+
+   @staticmethod   
+   def frequencyConverter(self):
+      def func(dev, var):         
+         return '{:.3f} kHz'.format(1/(self.clkPeriod * self._count(var.dependencies)) * 1e-3)
+      return func
+
+class EpixMshDACs(pr.Device):
+   def __init__(self, DACaName = 'DAC_A', DACbName = 'DAC_B', **kwargs):
+      """Create the configuration device for EpixMsh carrier DACs"""
+      super().__init__(description='EpixMsh DACs Configuration Registers', **kwargs)	
+      
+      def setVolt(deps):
+         def setUsValue(var, value, write):
+            rawVal = int(round(value/1.8*(2**12-1)))
+            deps[0].set(rawVal,write)            
+         return setUsValue
+      
+      def getVolt(var):
+         x = var.dependencies[0].value()
+         return x/(2**12-1)*1.8
+      
+      #############################################
+      # Create block / RemoteVariable combinations
+      #############################################
+      self.add(pr.RemoteVariable(name=DACaName,    description=DACaName, offset=0x00000009*4, bitSize=12,  bitOffset=0, base=pr.UInt, mode='WO'))
+      self.add(pr.LinkVariable(name=DACaName+'_V', dependencies=[getattr(self, DACaName)],    mode='WO', linkedGet=getVolt, linkedSet=setVolt([getattr(self, DACaName)]), disp='{:1.2f}', units='V'))
+      
+      self.add(pr.RemoteVariable(name=DACbName,    description=DACbName, offset=0x0000000A*4, bitSize=12,  bitOffset=0, base=pr.UInt, mode='WO'))
+      self.add(pr.LinkVariable(name=DACbName+'_V', dependencies=[getattr(self, DACbName)],    mode='WO', linkedGet=getVolt, linkedSet=setVolt([getattr(self, DACbName)]), disp='{:1.2f}', units='V'))
 
 
 ################################################################################################
@@ -821,11 +1012,12 @@ class EpixFpgaExtRegisters(pr.Device):
       self.add(pr.RemoteVariable(name='OversampleSize',      description='OversampleSize',   offset=0x00000003*addrSize, bitSize=3,  bitOffset=0, base=pr.UInt, mode='RW'))
       
       self.add(pr.RemoteVariable(name='DebugOut',            description='DebugOut',         offset=0x00000200*addrSize, bitSize=5,  bitOffset=0, base=pr.UInt, mode='RW'))
-      self.add(pr.RemoteVariable(name='InjStartDly',         description='InjStartDly',      offset=0x00000201*addrSize, bitSize=16, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='InjStartDly',         description='InjStartDly',      offset=0x00000201*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
       self.add(pr.LinkVariable(  name='InjStartDlyUs',       dependencies=[self.InjStartDly], mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.InjStartDly]), disp='{:1.5f}')) 
-      self.add(pr.RemoteVariable(name='InjStopDly',          description='InjStopDly',       offset=0x00000202*addrSize, bitSize=16, bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='InjStopDly',          description='InjStopDly',       offset=0x00000202*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
       self.add(pr.LinkVariable(  name='InjStopDlyUs',        dependencies=[self.InjStopDly], mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.InjStopDly]), disp='{:1.5f}')) 
       self.add(pr.RemoteVariable(name='InjSkip',             description='InjSkip',          offset=0x00000203*addrSize, bitSize=8,  bitOffset=0, base=pr.UInt, mode='RW'))
+      self.add(pr.RemoteVariable(name='InjSyncEn',           description='InjSyncEn',        offset=0x00000204*addrSize, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
       
       self.add(pr.RemoteVariable(name='BankPipelineDly00',   description='BankDly00',        offset=0x00000300*addrSize, bitSize=7,  bitOffset=0, base=pr.UInt, mode='RW'))
       self.add(pr.RemoteVariable(name='BankPipelineDly01',   description='BankDly01',        offset=0x00000301*addrSize, bitSize=7,  bitOffset=0, base=pr.UInt, mode='RW'))
@@ -1002,8 +1194,38 @@ class TixelFpgaRegisters(pr.Device):
 
 
 class TriggerRegisters(pr.Device):
-   def __init__(self, **kwargs):
+   def __init__(self, BaseClock=0, **kwargs):
       super().__init__(description='Trigger Registers', **kwargs)
+      
+      self.BaseClock = BaseClock
+      
+      def getPerUs(var):
+         x = var.dependencies[0].value()
+         baseClk = self.BaseClock
+         if baseClk > 0:
+            return x / (baseClk/1000000.0)
+         else:
+            return 0
+               
+      def setPerUs(deps):
+         def setUsValue(var, value, write):
+            rawVal = int(round(value*(self.BaseClock/1000000.0)))
+            deps[0].set(rawVal,write)            
+         return setUsValue
+      
+      def getPerMs(var):
+         x = var.dependencies[0].value()
+         baseClk = self.BaseClock
+         if baseClk > 0:
+            return x / (baseClk/1000.0)
+         else:
+            return 0
+               
+      def setPerMs(deps):
+         def setMsValue(var, value, write):
+            rawVal = int(round(value*(self.BaseClock/1000.0)))
+            deps[0].set(rawVal,write)            
+         return setMsValue
       
       # Creation. memBase is either the register bus server (srp, rce mapped memory, etc) or the device which
       # contains this object. In most cases the parent and memBase are the same but they can be 
@@ -1015,16 +1237,21 @@ class TriggerRegisters(pr.Device):
       # Create block / RemoteVariable combinations
       #############################################
       
-      
       #Setup registers & RemoteVariables
  
       self.add(pr.RemoteVariable(name='RunTriggerEnable',description='RunTriggerEnable',  offset=0x00000000, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='RunTriggerDelay', description='RunTriggerDelay',   offset=0x00000004, bitSize=32, bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
+      if self.BaseClock != 0:
+         self.add(pr.LinkVariable(  name='RunTriggerDelayUs',   dependencies=[self.RunTriggerDelay], mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.RunTriggerDelay]), disp='{:1.5f}')) 
       self.add(pr.RemoteVariable(name='DaqTriggerEnable',description='DaqTriggerEnable',  offset=0x00000008, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='DaqTriggerDelay', description='DaqTriggerDelay',   offset=0x0000000C, bitSize=32, bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
+      if self.BaseClock != 0:
+         self.add(pr.LinkVariable(  name='DaqTriggerDelayUs',   dependencies=[self.DaqTriggerDelay], mode='RW', units='us', linkedGet=getPerUs, linkedSet=setPerUs([self.DaqTriggerDelay]), disp='{:1.5f}')) 
       self.add(pr.RemoteVariable(name='AutoRunEn',       description='AutoRunEn',         offset=0x00000010, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='AutoDaqEn',       description='AutoDaqEn',         offset=0x00000014, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='AutoTrigPeriod',  description='AutoTrigPeriod',    offset=0x00000018, bitSize=32, bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
+      if self.BaseClock != 0:
+         self.add(pr.LinkVariable(  name='AutoTrigPeriodMs',dependencies=[self.AutoTrigPeriod], mode='RW', units='ms', linkedGet=getPerMs, linkedSet=setPerMs([self.AutoTrigPeriod]), disp='{:1.5f}')) 
       self.add(pr.RemoteVariable(name='PgpTrigEn',       description='PgpTrigEn',         offset=0x0000001C, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='AcqCountReset',   description='AcqCountReset',     offset=0x00000020, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
       self.add(pr.RemoteVariable(name='AcqCount',        description='AcqCount',          offset=0x00000024, bitSize=32, bitOffset=0, base=pr.UInt, disp = '{}', mode='RO'))
@@ -1064,20 +1291,24 @@ class OscilloscopeRegisters(pr.Device):
       
       #Setup registers & RemoteVariables
       
-      self.add(pr.RemoteVariable(name='ArmReg',          description='Arm',               offset=0x00000000, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='TrigReg',         description='Trig',              offset=0x00000004, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='ScopeEnable',     description='ScopeEnable',       offset=0x00000008, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW'))
-      self.add(pr.RemoteVariable(name='TriggerEdge',     description='TriggerEdge',       offset=0x0000000C, bitSize=1,  bitOffset=0, mode='RW', enum={0:'Falling', 1:'Rising'}))
-      self.add(pr.RemoteVariable(name='TriggerChannel',  description='TriggerChannel',    offset=0x00000010, bitSize=4,  bitOffset=0, mode='RW', enum=trigChEnum))
-      self.add(pr.RemoteVariable(name='TriggerMode'   ,  description='TriggerMode',       offset=0x00000014, bitSize=2,  bitOffset=0, mode='RW', enum={0:'Never', 1:'ArmReg', 2:'AcqStart', 3:'Always'}))
-      self.add(pr.RemoteVariable(name='TriggerAdcThresh',description='TriggerAdcThresh',  offset=0x00000018, bitSize=16, bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
-      self.add(pr.RemoteVariable(name='TriggerHoldoff',  description='TriggerHoldoff',    offset=0x0000001C, bitSize=13, bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
-      self.add(pr.RemoteVariable(name='TriggerOffset',   description='TriggerOffset',     offset=0x00000020, bitSize=13, bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
-      self.add(pr.RemoteVariable(name='TraceLength',     description='TraceLength',       offset=0x00000024, bitSize=13, bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
-      self.add(pr.RemoteVariable(name='SkipSamples',     description='SkipSamples',       offset=0x00000028, bitSize=13, bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
-      self.add(pr.RemoteVariable(name='InputChannelA',   description='InputChannelA',     offset=0x0000002C, bitSize=5,  bitOffset=0, mode='RW', enum=inChaEnum))
-      self.add(pr.RemoteVariable(name='InputChannelB',   description='InputChannelB',     offset=0x00000030, bitSize=5,  bitOffset=0, mode='RW', enum=inChbEnum))
-      self.add(pr.RemoteVariable(name='TriggerDelay',    description='TriggerDelay',      offset=0x00000034, bitSize=13, bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
+      self.add(pr.RemoteVariable(name='ArmReg',          description='Arm',               offset=0x00000000, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW', verify=False, pollInterval = 1))
+      self.add(pr.RemoteVariable(name='TrigReg',         description='Trig',              offset=0x00000004, bitSize=1,  bitOffset=0, base=pr.Bool, mode='RW', verify=False, pollInterval = 1))
+      self.add((
+         pr.RemoteVariable(name='ScopeEnable',     description='Setting1', offset=0x00000008, bitSize=1,  bitOffset=0,  base=pr.Bool, mode='RW'),
+         pr.RemoteVariable(name='TriggerEdge',     description='Setting1', offset=0x00000008, bitSize=1,  bitOffset=1,  mode='RW', enum={0:'Falling', 1:'Rising'}),
+         pr.RemoteVariable(name='TriggerChannel',  description='Setting1', offset=0x00000008, bitSize=4,  bitOffset=2,  mode='RW', enum=trigChEnum),
+         pr.RemoteVariable(name='TriggerMode',     description='Setting1', offset=0x00000008, bitSize=2,  bitOffset=6,  mode='RW', enum={0:'Never', 1:'ArmReg', 2:'AcqStart', 3:'Always'}),
+         pr.RemoteVariable(name='TriggerAdcThresh',description='Setting1', offset=0x00000008, bitSize=16, bitOffset=16, base=pr.UInt, disp = '{}', mode='RW')))
+      self.add((
+         pr.RemoteVariable(name='TriggerHoldoff',  description='Setting2', offset=0x0000000C, bitSize=13, bitOffset=0,  base=pr.UInt, disp = '{}', mode='RW'),
+         pr.RemoteVariable(name='TriggerOffset',   description='Setting2', offset=0x0000000C, bitSize=13, bitOffset=13, base=pr.UInt, disp = '{}', mode='RW')))
+      self.add((
+         pr.RemoteVariable(name='TraceLength',     description='Setting3', offset=0x00000010, bitSize=13, bitOffset=0,  base=pr.UInt, disp = '{}', mode='RW'),
+         pr.RemoteVariable(name='SkipSamples',     description='Setting3', offset=0x00000010, bitSize=13, bitOffset=13, base=pr.UInt, disp = '{}', mode='RW')))
+      self.add((
+         pr.RemoteVariable(name='InputChannelA',   description='Setting4', offset=0x00000014, bitSize=2,  bitOffset=0,  mode='RW', enum=inChaEnum),       
+         pr.RemoteVariable(name='InputChannelB',   description='Setting4', offset=0x00000014, bitSize=2,  bitOffset=5,  mode='RW', enum=inChbEnum)))
+      self.add(pr.RemoteVariable(name='TriggerDelay',    description='TriggerDelay',      offset=0x00000018, bitSize=13, bitOffset=0, base=pr.UInt, disp = '{}', mode='RW'))
       
       #####################################
       # Create commands

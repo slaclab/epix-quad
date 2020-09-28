@@ -104,9 +104,10 @@ package EpixPkgGen2 is
    
    type EpixConfigExtType is record
       dbgReg             : slv(4 downto 0);
-      injStartDly        : slv(15 downto 0);
-      injStopDly         : slv(15 downto 0);
+      injStartDly        : slv(31 downto 0);
+      injStopDly         : slv(31 downto 0);
       injSkip            : slv(7 downto 0);
+      injSyncEn          : sl;
       ghostCorr          : sl;
       pipelineDelay      : Slv7Array(15 downto 0);
       oversampleSize     : slv(2 downto 0);
@@ -118,6 +119,7 @@ package EpixPkgGen2 is
       injStartDly        => (others => '0'),
       injStopDly         => (others => '0'),
       injSkip            => (others => '0'),
+      injSyncEn          => '0',
       ghostCorr          => '1',
       pipelineDelay      => (others => (others => '0')),
       oversampleSize     => (others => '0'),

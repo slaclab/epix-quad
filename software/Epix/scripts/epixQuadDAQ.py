@@ -77,13 +77,21 @@ parser.add_argument(
     help     = "PGP lane number [0 ~ 3]",
 )
 
+parser.add_argument(
+    "--adcCalib", 
+    type     = argBool,
+    required = False,
+    default  = False,
+    help     = "Enable ADC calibration write to PROM. Can corrupt the FPGA's image potentially!",
+)  
+
 # Get the arguments
 args = parser.parse_args()
 
 #################################################################
 
 # Set base
-base = quad.Top(hwType=args.type, dev=args.pgp, lane=args.l,)    
+base = quad.Top(hwType=args.type, dev=args.pgp, lane=args.l, promWrEn=args.adcCalib)    
 
 # Start the system
 base.start(
@@ -107,7 +115,7 @@ if args.viewer:
    gui.eventReader.frameIndex = 0
    #gui.eventReaderImage.VIEW_DATA_CHANNEL_ID = 0
    gui.setReadDelay(0)
-   pyrogue.streamTap(base.pgpVc1, gui.eventReader) 
+   pyrogue.streamTap(base.pgpVc0, gui.eventReader) 
    pyrogue.streamTap(base.pgpVc2, gui.eventReaderScope)# PseudoScope
    pyrogue.streamTap(base.pgpVc3, gui.eventReaderMonitoring) # Slow Monitoring
 

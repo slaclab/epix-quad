@@ -590,7 +590,7 @@ begin
      end if;
 
      -- asic waveform enable is used to inhibit thw R0, ACQ and A/B from being generated during data readout
-     if (r.triggerCntPerCycle >= r.cpix2RegOut.ReqTriggerCnt) and ((r.asicAcqReg.R0Width + r.asicAcqReg.R0Delay) <= r.asicAcqTimeCnt1) and ((r.asicAcqReg.EnAWidth + r.asicAcqReg.EnADelay) <= r.asicAcqTimeCnt1) and ((r.asicAcqReg.EnBWidth + r.asicAcqReg.EnBDelay) <= r.asicAcqTimeCnt1) and ((r.asicAcqReg.R0Width + r.asicAcqReg.R0Delay) <= r.asicAcqTimeCnt1) then
+     if (r.triggerCntPerCycle >= r.cpix2RegOut.ReqTriggerCnt) and ((r.asicAcqReg.AcqWidth + r.asicAcqReg.AcqDelay) <= r.asicAcqTimeCnt1) and ((r.asicAcqReg.EnAWidth + r.asicAcqReg.EnADelay) <= r.asicAcqTimeCnt1) and ((r.asicAcqReg.EnBWidth + r.asicAcqReg.EnBDelay) <= r.asicAcqTimeCnt1) and ((r.asicAcqReg.R0Width + r.asicAcqReg.R0Delay) <= r.asicAcqTimeCnt1) then
         v.asicAcqReg.asicWFEn := '0';
      else
         v.asicAcqReg.asicWFEn := '1';

@@ -111,19 +111,20 @@ architecture ReadoutControl of ReadoutControl is
 
    -- Local Signals
    type RegType is record
-      readDone       : sl;
-      testPattern    : sl;
-      seqCountEn     : sl;
-      fillCnt        : slv(CH_FIFO_ADDR_WIDTH_C-1 downto 0);
-      chCnt          : slv(3 downto 0);
-      timeoutCnt     : slv(31 downto 0);
-      stuckTimeout   : slv(31 downto 0);
-      clearFifos     : sl;
-      error          : sl;
-      wordCnt        : slv(31 downto 0);
-      adcData        : Slv16Array(19 downto 0);
-      mAxisMaster    : AxiStreamMasterType;
-      state          : StateType;
+      readDone          : sl;
+      testPattern       : sl;
+      seqCountEn        : sl;
+      fillCnt           : slv(CH_FIFO_ADDR_WIDTH_C-1 downto 0);
+      chCnt             : slv(3 downto 0);
+      timeoutCnt        : slv(31 downto 0);
+      stuckTimeout      : slv(31 downto 0);
+      clearFifos        : sl;
+      error             : sl;
+      wordCnt           : slv(31 downto 0);
+      adcData           : Slv16Array(19 downto 0);
+      overSampleSizePwr : slv(6 downto 0);
+      mAxisMaster       : AxiStreamMasterType;
+      state             : StateType;
    end record;
    constant REG_INIT_C : RegType := (
       '0',
@@ -137,6 +138,7 @@ architecture ReadoutControl of ReadoutControl is
       '0',
       (others => '0'),
       (others => (others => '0')),      
+      (others => '0'),
       AXI_STREAM_MASTER_INIT_C,
       IDLE_S
    );
@@ -189,21 +191,55 @@ architecture ReadoutControl of ReadoutControl is
 begin
    
    -- moving average on ADC data for optional oversampling
-   G_Ovs: for i in 0 to 15 generate
-      U_MovingAvg : entity work.MovingAvg
-      generic map (
-         TPD_G          => TPD_G,
-         DATA_BITS_G    => 16
-      )
-      port map (
-         clk            => sysClk,
-         rst            => sysClkRst,
-         sizeCtrl       => epixConfigExt.oversampleSize,
-         dataIn         => adcData(i),
-         dataInValid    => adcValid(i),
-         dataOut        => adcDataOvs(i),
-         dataOutValid   => open
-      );
+   G_Ovs : for i in 15 downto 0 generate
+      signal avgDataTmp       : Slv21Array(15 downto 0);
+      signal avgDataTmpValid  : slv(15 downto 0);
+      signal avgDataMux       : Slv14Array(15 downto 0);
+   begin
+      
+      U_MovingAvg : entity surf.BoxcarIntegrator
+         generic map (
+            TPD_G        => TPD_G,
+            DATA_WIDTH_G => 14,
+            ADDR_WIDTH_G => 7
+         )
+         port map (
+            clk      => sysClk,
+            rst      => sysClkRst,
+            -- Configuration, intCount is 0 based, 0 = 1, 1 = 2, 1023 = 1024
+            intCount => r.overSampleSizePwr,
+            -- Inbound Interface
+            ibValid  => adcValid(i),
+            ibData   => adcData(i)(13 downto 0),
+            -- Outbound Interface
+            obValid  => avgDataTmpValid(i),
+            obData   => avgDataTmp(i)
+         );
+
+      avgDataMux(i) <= 
+         avgDataTmp(i)(20 downto 7) when epixConfigExt.oversampleSize = 7 else
+         avgDataTmp(i)(19 downto 6) when epixConfigExt.oversampleSize = 6 else
+         avgDataTmp(i)(18 downto 5) when epixConfigExt.oversampleSize = 5 else
+         avgDataTmp(i)(17 downto 4) when epixConfigExt.oversampleSize = 4 else
+         avgDataTmp(i)(16 downto 3) when epixConfigExt.oversampleSize = 3 else
+         avgDataTmp(i)(15 downto 2) when epixConfigExt.oversampleSize = 2 else
+         avgDataTmp(i)(14 downto 1) when epixConfigExt.oversampleSize = 1 else
+         avgDataTmp(i)(13 downto 0);
+      
+      U_Reg : entity surf.RegisterVector
+         generic map (
+            TPD_G       => TPD_G,
+            WIDTH_G     => 15
+         )
+         port map (
+            clk         => sysClk,
+            rst         => sysClkRst,
+            sig_i(14)   => avgDataTmpValid(i),
+            sig_i(13 downto 0) => avgDataMux(i),
+            reg_o(14)   => open,
+            reg_o(13 downto 0) => adcDataOvs(i)(13 downto 0)
+         );
+   
    end generate;
    
    
@@ -309,7 +345,7 @@ begin
       variable v : RegType;
    begin
       v := r;
-
+      
       -- Reset pulsed signals
       ssiResetFlags(v.mAxisMaster);
       v.mAxisMaster.tData := (others => '0');
@@ -330,6 +366,25 @@ begin
       for i in 16 to 19 loop
          v.adcData(i) := adcData(i);
       end loop;
+      
+      -- convert oversample size to power
+      if epixConfigExt.oversampleSize = 0 then
+         v.overSampleSizePwr   := "0000000";
+      elsif epixConfigExt.oversampleSize = 1 then
+         v.overSampleSizePwr   := "0000001";
+      elsif epixConfigExt.oversampleSize = 2 then
+         v.overSampleSizePwr   := "0000011";
+      elsif epixConfigExt.oversampleSize = 3 then
+         v.overSampleSizePwr   := "0000111";
+      elsif epixConfigExt.oversampleSize = 4 then
+         v.overSampleSizePwr   := "0001111";
+      elsif epixConfigExt.oversampleSize = 5 then
+         v.overSampleSizePwr   := "0011111";
+      elsif epixConfigExt.oversampleSize = 6 then
+         v.overSampleSizePwr   := "0111111";
+      else
+         v.overSampleSizePwr   := "1111111";
+      end if;
       
       -- Latch overflows (this is reset in IDLE state)
       if (fifoOflowAny = '1' or adcMemOflowAny = '1') then

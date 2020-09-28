@@ -35,7 +35,6 @@ class PseudoScopeCore(pr.Device):
       # Create block / variable combinations
       #############################################
       
-      
       #Setup registers & variables
       self.add(pr.RemoteVariable(
          name       = 'Arm',     
@@ -70,9 +69,9 @@ class PseudoScopeCore(pr.Device):
       self.add(pr.RemoteVariable(
          name       = 'TrigEdge',     
          description= 'Trigger Edge Select',     
-         offset     = 0x0000000C, 
+         offset     = 0x00000008, 
          bitSize    = 1, 
-         bitOffset  = 0,  
+         bitOffset  = 1,  
          base       = pr.Bool, 
          mode       = 'RW',
       ))
@@ -80,9 +79,9 @@ class PseudoScopeCore(pr.Device):
       self.add(pr.RemoteVariable(
          name       = 'TrigChannel',     
          description= 'Trigger Channel Select',     
-         offset     = 0x00000010, 
-         bitSize    = 5, 
-         bitOffset  = 0,  
+         offset     = 0x00000008, 
+         bitSize    = 4, 
+         bitOffset  = 2,  
          base       = pr.UInt, 
          mode       = 'RW',
       ))
@@ -90,9 +89,9 @@ class PseudoScopeCore(pr.Device):
       self.add(pr.RemoteVariable(
          name       = 'TrigMode',     
          description= 'Trigger Mode Select',     
-         offset     = 0x00000014, 
+         offset     = 0x00000008, 
          bitSize    = 2, 
-         bitOffset  = 0,  
+         bitOffset  = 6,  
          base       = pr.UInt, 
          mode       = 'RW',
       ))
@@ -100,9 +99,9 @@ class PseudoScopeCore(pr.Device):
       self.add(pr.RemoteVariable(
          name       = 'TrigAdcThreshold',     
          description= 'ADC Threshold for Over Threshold Channel',     
-         offset     = 0x00000018, 
+         offset     = 0x00000008, 
          bitSize    = 16, 
-         bitOffset  = 0,  
+         bitOffset  = 16,  
          base       = pr.UInt, 
          mode       = 'RW',
       ))
@@ -110,7 +109,7 @@ class PseudoScopeCore(pr.Device):
       self.add(pr.RemoteVariable(
          name       = 'TrigHoldoff',     
          description= 'Trigger Holdoff',     
-         offset     = 0x0000001C, 
+         offset     = 0x0000000C, 
          bitSize    = 13, 
          bitOffset  = 0,  
          base       = pr.UInt, 
@@ -120,9 +119,9 @@ class PseudoScopeCore(pr.Device):
       self.add(pr.RemoteVariable(
          name       = 'TrigOffset',     
          description= 'Trigger Offset',     
-         offset     = 0x00000020, 
+         offset     = 0x0000000C, 
          bitSize    = 13, 
-         bitOffset  = 0,  
+         bitOffset  = 13,  
          base       = pr.UInt, 
          mode       = 'RW',
       ))
@@ -130,7 +129,7 @@ class PseudoScopeCore(pr.Device):
       self.add(pr.RemoteVariable(
          name       = 'TraceLength',     
          description= 'Trigger Data Size',     
-         offset     = 0x00000024, 
+         offset     = 0x00000010, 
          bitSize    = 13, 
          bitOffset  = 0,  
          base       = pr.UInt, 
@@ -140,9 +139,9 @@ class PseudoScopeCore(pr.Device):
       self.add(pr.RemoteVariable(
          name       = 'SkipSamples',     
          description= 'Skip Samples',     
-         offset     = 0x00000028, 
+         offset     = 0x00000010, 
          bitSize    = 13, 
-         bitOffset  = 0,  
+         bitOffset  = 13,  
          base       = pr.UInt, 
          mode       = 'RW',
       ))
@@ -150,8 +149,8 @@ class PseudoScopeCore(pr.Device):
       self.add(pr.RemoteVariable(
          name       = 'InChannelA',     
          description= 'Input Channel A Select',     
-         offset     = 0x0000002C, 
-         bitSize    = 7, 
+         offset     = 0x00000014, 
+         bitSize    = 5, 
          bitOffset  = 0,  
          base       = pr.UInt, 
          mode       = 'RW',
@@ -160,9 +159,9 @@ class PseudoScopeCore(pr.Device):
       self.add(pr.RemoteVariable(
          name       = 'InChannelB',     
          description= 'Input Channel B Select',     
-         offset     = 0x00000030, 
-         bitSize    = 7, 
-         bitOffset  = 0,  
+         offset     = 0x00000014, 
+         bitSize    = 5, 
+         bitOffset  = 5,  
          base       = pr.UInt, 
          mode       = 'RW',
       ))
@@ -170,7 +169,7 @@ class PseudoScopeCore(pr.Device):
       self.add(pr.RemoteVariable(
          name       = 'TrigDelay',     
          description= 'Trigger Delay',     
-         offset     = 0x00000034, 
+         offset     = 0x00000018, 
          bitSize    = 13, 
          bitOffset  = 0,  
          base       = pr.UInt, 

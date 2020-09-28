@@ -8,8 +8,8 @@ if { [VersionCheck 2017.2] < 0 } {
 
 # Load submodules' code and constraints
 loadRuckusTcl $::env(TOP_DIR)/submodules/surf
-loadRuckusTcl $::env(TOP_DIR)/common/EpixQuadCommmon
-loadRuckusTcl $::env(TOP_DIR)/common/EpixCommonGen2
+loadRuckusTcl $::env(TOP_DIR)/common/EpixQuadCommon
+loadRuckusTcl $::env(TOP_DIR)/common/common
 
 # Load target's source code and constraints
 loadSource -sim_only -dir "$::DIR_PATH/tb/"
@@ -17,13 +17,13 @@ loadSource -sim_only -dir "$::DIR_PATH/../../targets/EpixQuad/hdl/"
 
 # Remove the .DCP and use the .XCI IP core instead
 remove_files [get_files {MigCore.dcp}]
-loadIpCore -path "$::env(TOP_DIR)/common/EpixQuadCommmon/ip/MigCore/MigCore.xci"
+loadIpCore -path "$::env(TOP_DIR)/common/EpixQuadCommon/ip/MigCore/MigCore.xci"
 
 remove_files [get_files {AxiInterconnect.dcp}]
-loadIpCore -path "$::env(TOP_DIR)/common/EpixQuadCommmon/ip/AxiInterconnnect/AxiInterconnect.xci"
+loadIpCore -path "$::env(TOP_DIR)/common/EpixQuadCommon/ip/AxiInterconnnect/AxiInterconnect.xci"
 
 remove_files [get_files {SysMonCore.dcp}]
-loadIpCore -path "$::env(TOP_DIR)/common/EpixQuadCommmon/ip/SysMonCore/SysMonCore.xci"
+loadIpCore -path "$::env(TOP_DIR)/common/EpixQuadCommon/ip/SysMonCore/SysMonCore.xci"
 
 # Set the top level synth_1 and sim_1
 set_property top {MigCoreWrapper} [get_filesets sources_1]

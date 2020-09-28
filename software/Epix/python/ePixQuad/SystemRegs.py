@@ -265,6 +265,16 @@ class SystemRegs(pr.Device):
          ))
       
       self.add(pr.RemoteVariable(
+         name       = 'AdcBypass',     
+         description= 'Bypass ADC Startup',
+         offset     = 0x00000540, 
+         bitSize    = 1, 
+         bitOffset  = 0,  
+         base       = pr.Bool, 
+         mode       = 'RW',
+      ))
+      
+      self.add(pr.RemoteVariable(
          name       = 'DdrVttEn',     
          description= 'Enable DDR VTT Voltage',
          offset     = 0x00000010, 

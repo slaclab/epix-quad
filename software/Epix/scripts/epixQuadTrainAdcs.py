@@ -177,8 +177,8 @@ for adc in range(args.adcStart, args.adcStop+1):
          QuadTop.Ad9249Readout[adc].FrameDelay.set(0x200+delay)
          # Reset lost lock counter
          QuadTop.Ad9249Readout[adc].LostLockCountReset()
-         # Wait 1 ms
-         time.sleep(0.001)
+         # Wait 10 ms
+         time.sleep(0.01)
          # Check lock status
          lostLockCountReg = QuadTop.Ad9249Readout[adc].LostLockCount.get()
          lockedReg = QuadTop.Ad9249Readout[adc].Locked.get()
@@ -250,6 +250,8 @@ for adc in range(args.adcStart, args.adcStop+1):
       for delay in range(512):
          # Set channel delay
          QuadTop.Ad9249Readout[adc].ChannelDelay[channel].set(0x200+delay)
+         # Wait 10 ms
+         # time.sleep(0.01)
          # sSet tester channel and start testing
          QuadTop.Ad9249Tester.TestChannel.set(adc*8+channel)
          QuadTop.Ad9249Tester.TestRequest.set(True)

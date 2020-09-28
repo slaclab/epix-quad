@@ -123,6 +123,7 @@ architecture AcqControl of AcqControl is
    signal iAsicGlblRst     : std_logic := '0';
    signal iAsicAcq         : std_logic := '0';
    signal iAsicClk         : std_logic := '0';
+   signal iInjAcq          : std_logic;
    
    signal iAsicSync         : sl;
 
@@ -145,8 +146,8 @@ architecture AcqControl of AcqControl is
    signal curState           : state := IDLE_S;
    signal nxtState           : state := IDLE_S;
    
-   signal injStartCnt   : slv(15 downto 0);
-   signal injStopCnt    : slv(15 downto 0);
+   signal injStartCnt   : slv(31 downto 0);
+   signal injStopCnt    : slv(31 downto 0);
    signal injSkipCnt    : slv(7 downto 0);
    signal injStartEn    : sl;
    signal injStopEn     : sl;
@@ -181,7 +182,9 @@ begin
    asicClk     <= iAsicClk               when ePixConfig.manualPinControl(5) = '0' else
                   ePixConfig.asicPins(5) when ePixConfig.manualPinControl(5) = '1' else
                   'X';
-   asicSync    <= iAsicSync;
+   -- injAcq is used for the external trigger timed with the ACQ but can also be used as sync triggering the ASIC's pulser
+   asicSync    <= iAsicSync              when epixConfigExt.injSyncEn = '0' else iInjAcq;
+   injAcq      <= iInjAcq;
    
    --Outputs not incorporated into state machine at the moment
    iAsicPpbe    <= '1'; 
@@ -697,11 +700,11 @@ begin
          end if;
          
          if sysClkRst = '1' or dummyAcq = '1' then
-            injAcq <= '0' after TPD_G;
+            iInjAcq <= '0' after TPD_G;
          elsif injStartEn = '1' and injStopEn = '0' and epixConfigExt.injStopDly /= 0 and injSkipCnt = 0 then
-            injAcq <= '1' after TPD_G;
+            iInjAcq <= '1' after TPD_G;
          elsif injStopEn = '1' then
-            injAcq <= '0' after TPD_G;
+            iInjAcq <= '0' after TPD_G;
          end if;
          
       end if;

@@ -26,8 +26,6 @@ use surf.SsiCmdMasterPkg.all;
 use surf.SaciMasterPkg.all;
 use surf.Pgp2bPkg.all;
 
-use work.EpixPkgGen2.all;
-
 library unisim;
 use unisim.vcomponents.all;
 
