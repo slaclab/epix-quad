@@ -590,17 +590,17 @@ else:
 # Add data stream to file as channel 1
 # File writer
 dataWriter = pyrogue.utilities.fileio.StreamWriter(name = 'dataWriter')
-pyrogue.streamConnect(pgpVc0, dataWriter.getChannel(0x1))
+pyrogue.streamConnect(pgpVc1, dataWriter.getChannel(0x1))
 # Add pseudoscope to file writer
 #pyrogue.streamConnect(pgpVc2, dataWriter.getChannel(0x2))
 #pyrogue.streamConnect(pgpVc3, dataWriter.getChannel(0x3))
 
 cmd = rogue.protocols.srp.Cmd()
-pyrogue.streamConnect(cmd, pgpVc0)
+pyrogue.streamConnect(cmd, pgpVc1)
 
 # Create and Connect SRP to VC1 to send commands
 srp = rogue.protocols.srp.SrpV0()
-pyrogue.streamConnectBiDir(pgpVc1,srp)
+pyrogue.streamConnectBiDir(pgpVc0,srp)
 
 #############################################
 # Microblaze console printout
@@ -716,7 +716,7 @@ appTop = QApplication(sys.argv)
 #ePixBoard = EpixBoard(guiTop, cmd, dataWriter, srp)
 ePixBoard = EpixBoard(0, cmd, dataWriter, srp)
 ePixBoard.start(pollEn=args.pollEn, initRead = args.initRead, timeout=3.0)
-#pyrogue.streamTap(pgpVc0, ePixBoard.eventReader)
+#pyrogue.streamTap(pgpVc1, ePixBoard.eventReader)
 # Viewer gui
 
 if args.asic == 1:
@@ -2749,7 +2749,7 @@ if args.test == 12:
       
       # connect ImageProc
       imgProc = ImgProc(framesPerThreshold)
-      pyrogue.streamTap(pgpVc0, imgProc)
+      pyrogue.streamTap(pgpVc1, imgProc)
       
       addrSize=4
       
@@ -2968,7 +2968,7 @@ if args.test == 13:
       
       # connect ImageProc
       imgProc = ImgProc(framesPerThreshold)
-      pyrogue.streamTap(pgpVc0, imgProc)
+      pyrogue.streamTap(pgpVc1, imgProc)
       
       addrSize=4
       

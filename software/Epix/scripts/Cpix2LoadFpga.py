@@ -115,17 +115,17 @@ print("PGP Card Version: %x" % (pgpVc0.getInfo().version))
 # Add data stream to file as channel 1
 # File writer
 dataWriter = pyrogue.utilities.fileio.StreamWriter(name = 'dataWriter')
-pyrogue.streamConnect(pgpVc0, dataWriter.getChannel(0x1))
+pyrogue.streamConnect(pgpVc1, dataWriter.getChannel(0x1))
 # Add pseudoscope to file writer
 pyrogue.streamConnect(pgpVc2, dataWriter.getChannel(0x2))
 pyrogue.streamConnect(pgpVc3, dataWriter.getChannel(0x3))
 
 cmd = rogue.protocols.srp.Cmd()
-pyrogue.streamConnect(cmd, pgpVc0)
+pyrogue.streamConnect(cmd, pgpVc1)
 
 # Create and Connect SRP to VC1 to send commands
 srp = rogue.protocols.srp.SrpV0()
-pyrogue.streamConnectBiDir(pgpVc1,srp)
+pyrogue.streamConnectBiDir(pgpVc0,srp)
 
 
 #######################################
@@ -186,7 +186,7 @@ class EpixBoard(pyrogue.Root):
 
 if (PRINT_VERBOSE): dbgData = rogue.interfaces.stream.Slave()
 if (PRINT_VERBOSE): dbgData.setDebug(60, "DATA[{}]".format(0))
-if (PRINT_VERBOSE): pyrogue.streamTap(pgpVc0, dbgData)
+if (PRINT_VERBOSE): pyrogue.streamTap(pgpVc1, dbgData)
 
 
 # Create GUI
