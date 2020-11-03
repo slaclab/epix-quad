@@ -44,7 +44,7 @@ PRINT_VERBOSE = 0
 # define global constants
 NOCAMERA    = 0
 EPIX100A    = 1
-EPIX100P    = 2
+EPIXS       = 2
 TIXEL48X48  = 3
 EPIX10KA    = 4
 CPIX2       = 5
@@ -72,7 +72,7 @@ class Camera():
     sensorHeight = 0
     pixelDepth = 0
     availableCameras = {  
-        'ePix100a':  EPIX100A, 'ePix100p' : EPIX100P, 'Tixel48x48' : TIXEL48X48, 'ePix10ka' : EPIX10KA,  
+        'ePix100a':  EPIX100A, 'ePixS' : EPIXS, 'Tixel48x48' : TIXEL48X48, 'ePix10ka' : EPIX10KA,  
         'Cpix2' : CPIX2, 'ePixM32Array' : EPIXM32, 'HrAdc32x32': HRADC32x32, 'ePixQuad' : EPIXQUAD, 
         'ePixQuadSim' : EPIXQUADSIM, 'ePixMsh' : EPIXMSH }
     
@@ -91,8 +91,8 @@ class Camera():
         #selcts proper initialization based on camera type
         if (camID == EPIX100A):
             self._initEPix100a()
-        if (camID == EPIX100P):
-            self._initEPix100p()
+        if (camID == EPIXS):
+            self._initEPixS()
         if (camID == TIXEL48X48):
             self._initTixel48x48()
         if (camID == EPIX10KA):
@@ -124,7 +124,7 @@ class Camera():
         if (camID == EPIX100A):
             descImg = self._descrambleEPix100aImage(rawData)
             return self.imgTool.applyBitMask(descImg, mask = self.bitMask)
-        if (camID == EPIX100P):
+        if (camID == EPIXS):
             descImg = self._descrambleEPix100aImage(rawData)        
             return self.imgTool.applyBitMask(descImg, mask = self.bitMask)
         if (camID == TIXEL48X48):
@@ -164,7 +164,7 @@ class Camera():
             frameComplete = 1
             readyForDisplay = 1
             return [frameComplete, readyForDisplay, newRawData]
-        if (camID == EPIX100P):
+        if (camID == EPIXS):
             # The flags are always true since each frame holds an entire image
             frameComplete = 1
             readyForDisplay = 1
@@ -216,14 +216,14 @@ class Camera():
         self.cameraModule = "Standard ePix100a"
         self.bitMask = np.uint16(0xFFFF)
 
-    def _initEPix100p(self):
-        self._superRowSize = 384
+    def _initEPixS(self):
+        self._superRowSize = 10
         self._NumAsicsPerSide = 2
-        self._NumAdcChPerAsic = 4
-        self._NumColPerAdcCh = 96
+        self._NumAdcChPerAsic = 1
+        self._NumColPerAdcCh = 10
         self._superRowSizeInBytes = self._superRowSize * 4
         self.sensorWidth = self._calcImgWidth()
-        self.sensorHeight = 706
+        self.sensorHeight = 12
         self.pixelDepth = 16
         self.bitMask = np.uint16(0xFFFF)
 
@@ -785,30 +785,6 @@ class Camera():
     ##########################################################
     # define all camera specific descrabler functions
     ##########################################################
-
-    def _descrambleEPix100pImage(self, rawData):
-        """performs the ePix100p image descrambling"""
-        
-        #removes header before displying the image
-        for j in range(0,32):
-            rawData.pop(0)
-        
-        #get the first superline
-        imgBot = rawData[(0*self._superRowSizeInBytes):(1*self._superRowSizeInBytes)] 
-        imgTop = rawData[(1*self._superRowSizeInBytes):(2*self._superRowSizeInBytes)] 
-        for j in range(2,self.sensorHeight):
-            if (j%2):
-                imgBot.extend(rawData[(j*self._superRowSizeInBytes):((j+1)*self._superRowSizeInBytes)])
-            else:
-                imgTop.extend(rawData[(j*self._superRowSizeInBytes):((j+1)*self._superRowSizeInBytes)]) 
-        imgDesc = imgBot
-        imgDesc.extend(imgTop)
-
-        # convert to numpy array
-        imgDesc = np.array(imgDesc,dtype='uint8')
-
-        # returns final image
-        return imgDesc
 
 
     def _descrambleEPix100aImageAsByteArray(self, rawData):

@@ -683,7 +683,7 @@ class Epix100a(pr.Device):
       self.add(EpixFpgaExtRegisters       (name="EpixFpgaExtRegisters", offset=0x01100000, enabled=False, expand=False))
       self.add(OscilloscopeRegisters      (name='Oscilloscope',         offset=0x01200000, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum))
       for i in range(4):
-         self.add(epix.Epix10kaAsic       (name=('Epix10kaAsic[%d]'%i), offset=(0x02000000+i*0x400000), enabled=False, expand=False))
+         self.add(epix.Epix100aAsic       (name=('Epix100aAsic[%d]'%i), offset=(0x02000000+i*0x400000), enabled=False, expand=False))
       #self.add(pgp.Pgp2bAxi               (name='Pgp2bAxi',             offset=0x03000000, expand=False, enabled=False))
       self.add(pgp.Pgp3AxiL               (name='Pgp3Axi',              offset=0x03000000, expand=False, enabled=False))
       self.add(SlowAdcRegisters           (name="SlowAdcRegisters",     offset=0x04000000, enabled=False, expand=False))
@@ -736,6 +736,96 @@ class Epix100a(pr.Device):
          self.Ad9249ConfigAdc[i].writeBlocks    ( force=force, recurse=recurse, variable=variable) 
       self.MicronN25Q.writeBlocks            ( force=force, recurse=recurse, variable=variable) 
       self.MicroblazeLog.writeBlocks         ( force=force, recurse=recurse, variable=variable)    
+
+
+################################################################################################
+##
+## epixS Classes definition
+##
+################################################################################################
+class EpixS(pr.Device):
+   def __init__(self, **kwargs):
+      if 'description' not in kwargs:
+            kwargs['description'] = "EPIXS FPGA"
+      
+      trigChEnum={0:'TrigReg', 1:'ThresholdChA', 2:'ThresholdChB', 3:'AcqStart', 4:'AsicAcq', 5:'AsicR0', 6:'AsicPpmat', 7:'AsicPpbe', 8:'AsicSync', 9:'AsicGr', 10: 'AsicRoClk'}
+      #TODO: assign meaningful channel names
+      inChaEnum={
+            10:'ASIC0_B0',  2: 'ASIC0_B1',  1: 'ASIC0_B2',  0: 'ASIC0_B3', 
+            8: 'ASIC1_B0',  9: 'ASIC1_B1',  3: 'ASIC1_B2',  4: 'ASIC1_B3', 
+            5: 'ASIC2_B0',  6: 'ASIC2_B1',  7: 'ASIC2_B2',  15:'ASIC2_B3', 
+            14:'ASIC3_B0',  13:'ASIC3_B1',  12:'ASIC3_B2',  11:'ASIC3_B3', 
+            17:'ASIC0_TPS', 19:'ASIC1_TPS', 18:'ASIC2_TPS', 16:'ASIC3_TPS'}
+      inChbEnum={
+            10:'ASIC0_B0',  2: 'ASIC0_B1',  1: 'ASIC0_B2',  0: 'ASIC0_B3', 
+            8: 'ASIC1_B0',  9: 'ASIC1_B1',  3: 'ASIC1_B2',  4: 'ASIC1_B3', 
+            5: 'ASIC2_B0',  6: 'ASIC2_B1',  7: 'ASIC2_B2',  15:'ASIC2_B3', 
+            14:'ASIC3_B0',  13:'ASIC3_B1',  12:'ASIC3_B2',  11:'ASIC3_B3', 
+            17:'ASIC0_TPS', 19:'ASIC1_TPS', 18:'ASIC2_TPS', 16:'ASIC3_TPS'}
+      super(self.__class__, self).__init__(**kwargs)
+      
+      self.add(axi.AxiVersion                (name="AxiVersion",           offset=0x00000000, expand=False))
+      self.add(EpixFpgaRegisters             (name="EpixFpgaRegisters",    offset=0x01000000))
+      self.add(EpixFpgaExtRegisters          (name="EpixFpgaExtRegisters", offset=0x01100000, enabled=False, expand=False))
+      self.add(OscilloscopeRegisters         (name='Oscilloscope',         offset=0x01200000, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum))
+      for i in range(4):
+         self.add(epix.EpixSAsic          (name=('EpixSAsic[%d]'%i), offset=(0x02000000+i*0x400000), enabled=False, expand=False))
+      #self.add(pgp.Pgp2bAxi                  (name='Pgp2bAxi',             offset=0x03000000, expand=False, enabled=False))
+      self.add(pgp.Pgp3AxiL                  (name='Pgp3Axi',              offset=0x03000000, expand=False, enabled=False))
+      self.add(SlowAdcRegisters              (name="SlowAdcRegisters",     offset=0x04000000, enabled=False, expand=False))
+      for i in range(3):
+         if i == 2:
+            channels = 4
+         else:
+            channels = 8
+         self.add(ad.Ad9249ReadoutGroup      (name = ('Ad9249RdoutAdc[%d]'%i),   offset=(0x05100000+i*0x100000), channels=channels, enabled=False, expand=False))
+      for i in range(3):
+         self.add(ad.Ad9249ConfigGroup       (name = ('Ad9249ConfigAdc[%d]'%i),  offset=(0x05400000+i*0x000800), enabled=False, expand=False))
+      self.add(AxiMicronN25Q                 (name='MicronN25Q',           offset=0x06000000, expand=False, hidden=False))
+      self.add(MicroblazeLog                 (name='MicroblazeLog',        offset=0x07000000, enabled=False, expand=False))
+            
+            
+   def writeBlocks(self, force=False, recurse=True, variable=None, checkEach=False):
+      """
+      Write all of the blocks held by this Device to memory
+      """
+      if not self.enable.get(): return
+      
+      # Process local blocks.
+      if variable is not None:
+         variable._block.startTransaction(rim.Write, check=checkEach)
+      else:
+         for block in self._blocks:
+            if force or block.stale:
+                  if block.bulkEn:
+                     block.startTransaction(rim.Write, check=checkEach)
+      
+      # Retire any in-flight transactions before starting next sequence
+      self._root.checkBlocks(recurse=True)
+      
+      self.asicMask = self.EpixFpgaRegisters.AsicMask.get()
+      
+      # Load all the registers
+      self.AxiVersion.writeBlocks            ( force=force, recurse=recurse, variable=variable)   
+      self.EpixFpgaRegisters.writeBlocks     ( force=force, recurse=recurse, variable=variable)   
+      self.EpixFpgaExtRegisters.writeBlocks  ( force=force, recurse=recurse, variable=variable)   
+      self.Oscilloscope.writeBlocks          ( force=force, recurse=recurse, variable=variable)   
+      self.Epix10kADouts.writeBlocks         ( force=force, recurse=recurse, variable=variable)   
+      for i in range(4):
+         if self.asicMask&(1<<i) != 0:
+            self.Epix10kaAsic[i].writeBlocks    ( force=force, recurse=recurse, variable=variable)   
+         else:
+            self.Epix10kaAsic[i].enable.set(False)
+      
+      #self.Pgp2bAxi.writeBlocks              ( force=force, recurse=recurse, variable=variable)   
+      self.SlowAdcRegisters.writeBlocks      ( force=force, recurse=recurse, variable=variable)   
+      for i in range(3):
+         self.Ad9249RdoutAdc[i].writeBlocks     ( force=force, recurse=recurse, variable=variable) 
+         self.Ad9249ConfigAdc[i].writeBlocks    ( force=force, recurse=recurse, variable=variable) 
+      self.MicronN25Q.writeBlocks            ( force=force, recurse=recurse, variable=variable) 
+      self.MicroblazeLog.writeBlocks         ( force=force, recurse=recurse, variable=variable) 
+
+
 
 ################################################################################################
 ##
