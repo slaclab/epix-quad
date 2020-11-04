@@ -560,9 +560,9 @@ class EpixSAsic(pr.Device):
         # CMD = 1, Addr = 19 : Col start  address[9:0]
         # CMD = 1, Addr = 20 : Col stop  address[9:0]
         self.add((
-            pr.RemoteVariable(name='RowStartAddr', description='RowStartAddr', offset=0x00001011*addrSize, bitSize=9, bitOffset=0, base=pr.UInt, mode='RW'),
+            pr.RemoteVariable(name='RowStartAddr', description='RowStartAddr', offset=0x00001011*addrSize, bitSize=9, bitOffset=0, base=pr.UInt, mode='WO'),
             pr.RemoteVariable(name='RowStopAddr',  description='RowStopAddr',  offset=0x00001012*addrSize, bitSize=9, bitOffset=0, base=pr.UInt, mode='RW'),
-            pr.RemoteVariable(name='ColStartAddr', description='ColStartAddr', offset=0x00001013*addrSize, bitSize=7, bitOffset=0, base=pr.UInt, mode='RW'),
+            pr.RemoteVariable(name='ColStartAddr', description='ColStartAddr', offset=0x00001013*addrSize, bitSize=7, bitOffset=0, base=pr.UInt, mode='WO'),
             pr.RemoteVariable(name='ColStopAddr',  description='ColStopAddr',  offset=0x00001014*addrSize, bitSize=7, bitOffset=0, base=pr.UInt, mode='RW')))
    
         #  CMD = 1, Addr = 21 : Chip ID Read
