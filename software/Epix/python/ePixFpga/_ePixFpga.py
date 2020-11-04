@@ -810,7 +810,6 @@ class EpixS(pr.Device):
       self.EpixFpgaRegisters.writeBlocks     ( force=force, recurse=recurse, variable=variable)   
       self.EpixFpgaExtRegisters.writeBlocks  ( force=force, recurse=recurse, variable=variable)   
       self.Oscilloscope.writeBlocks          ( force=force, recurse=recurse, variable=variable)   
-      self.Epix10kADouts.writeBlocks         ( force=force, recurse=recurse, variable=variable)   
       for i in range(4):
          if self.asicMask&(1<<i) != 0:
             self.Epix10kaAsic[i].writeBlocks    ( force=force, recurse=recurse, variable=variable)   
