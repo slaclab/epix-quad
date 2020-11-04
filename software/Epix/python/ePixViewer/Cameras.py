@@ -223,7 +223,7 @@ class Camera():
         self._NumColPerAdcCh = 10
         self._superRowSizeInBytes = self._superRowSize * 4
         self.sensorWidth = self._calcImgWidth()
-        self.sensorHeight = 12
+        self.sensorHeight = 24
         self.pixelDepth = 16
         self.bitMask = np.uint16(0xFFFF)
 
