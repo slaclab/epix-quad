@@ -474,7 +474,7 @@ class EpixSAsic(pr.Device):
         self.add((
             pr.RemoteVariable(name='Dm1En',     description='Digital Monitor 1 Enable', offset=0x00001006*addrSize, bitSize=1, bitOffset=0, base=pr.Bool, mode='RW'),
             pr.RemoteVariable(name='Dm2En',     description='Digital Monitor 1 Enable', offset=0x00001006*addrSize, bitSize=1, bitOffset=1, base=pr.Bool, mode='RW'),
-            pr.RemoteVariable(name='Vflg1_b',   description='Vflg1_b',                  offset=0x00001006*addrSize, bitSize=2, bitOffset=2, base=pr.Bool, mode='RW'),
+            pr.RemoteVariable(name='Vflg1_b',   description='Vflg1_b',                  offset=0x00001006*addrSize, bitSize=2, bitOffset=2, base=pr.UInt, mode='RW'),
             pr.RemoteVariable(name='Vflg1_off', description='Vflg1_off',                offset=0x00001006*addrSize, bitSize=1, bitOffset=4, base=pr.Bool, mode='RW')))
       
         # CMD = 1, Addr = 7  : Bit  5:0 = VREF_DAC[5:0]
