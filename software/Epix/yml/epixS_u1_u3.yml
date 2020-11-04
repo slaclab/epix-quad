@@ -42,7 +42,7 @@ ePixBoard:
       AsicAcqWidthUs: 100.00193
       AsicAcqLToPPmatL: 0x32a9
       AsicAcqLToPPmatLUs: 100.00193
-      AsicRoClkT: 0xc
+      AsicRoClkT: 0x3c
       AdcClkHalfT: 0x1
       TotalPixelsToRead: 120
       AsicGR: False
