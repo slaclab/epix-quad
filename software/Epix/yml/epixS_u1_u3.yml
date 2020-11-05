@@ -44,7 +44,7 @@ ePixBoard:
       AsicAcqLToPPmatLUs: 100.00193
       AsicRoClkT: 0x3c
       AdcClkHalfT: 0x1
-      TotalPixelsToRead: 120
+      TotalPixelsToRead: 0x78
       AsicGR: False
       AsicAcq: False
       AsicRO: False
@@ -102,15 +102,15 @@ ePixBoard:
       TrigReg: False
       ScopeEnable: False
       TriggerEdge: Falling
-      TriggerChannel: TrigReg
-      TriggerMode: Never
+      TriggerChannel: AsicRoClk
+      TriggerMode: AcqStart
       TriggerAdcThresh: 0
       TriggerHoldoff: 0
-      TriggerOffset: 0
-      TraceLength: 0
+      TriggerOffset: 55
+      TraceLength: 500
       SkipSamples: 0
-      InputChannelA: NONE
-      InputChannelB: NONE
+      InputChannelA: U1_B0
+      InputChannelB: U3_B0
       TriggerDelay: 0
     EpixSAsic[0]:
       enable: True
@@ -167,7 +167,6 @@ ePixBoard:
     EpixSAsic[1]:
       enable: False
       PulserSync: 0x0
-      PixelDummy: 0x0
       Pulser: 0x0
       pbit: False
       atest: False
@@ -272,7 +271,6 @@ ePixBoard:
     EpixSAsic[3]:
       enable: False
       PulserSync: 0x0
-      PixelDummy: 0x0
       Pulser: 0x0
       pbit: False
       atest: False
