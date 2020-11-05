@@ -174,7 +174,6 @@ architecture ReadoutControl of ReadoutControl is
    type chanMap is array(15 downto 0) of integer range 0 to 15;
    signal channelOrder   : chanMap;
    signal doutOrder      : chanMap;
-   signal asicOrder      : chanMap;
    signal channelValid   : slv(15 downto 0);
    
    signal adcDataOvs     : Slv16Array(15 downto 0);
@@ -284,7 +283,7 @@ begin
       -- readout order per ADC channel (0 - forward, 1 - backward)
       adcMemRdOrder <= "1000001111111000";
       -- used for ADC Pipeline Delay per ASIC
-      asicOrder <= (2,3,3,3,3,0,1,1,2,2,2,1,1,0,0,0);
+      -- asicOrder <= (2,3,3,3,3,0,1,1,2,2,2,1,1,0,0,0);
       -- valid only for EPIX10KA_C
       -- see DoutDeserializer for dout mapping
       doutOrder <= (4,5,6,7,8,9,10,11,3,2,1,0,15,14,13,12);
@@ -309,9 +308,33 @@ begin
       tpsData(3) <= r.adcData(19);
    end generate;
    G_EPIXS_CARRIER_ADC_GEN2 : if (ASIC_TYPE_G = EPIXS_C) generate
-      channelOrder <= (4,5,6,7,8,9,10,11,3,2,1,0,15,14,13,12);
-      channelValid  <= "1000100000010001";
-      adcMemRdOrder <= x"0FF0";
+   
+      -- EPIXS Carrier Board View:
+      --                 TOP
+      --        B0        |        B0     
+      --                  |
+      --                  |
+      --        U3        |        U2 
+      --                  |
+      --                  |
+      ------------------------------------------
+      --                  |
+      --                  |
+      --        U4        |        U1 
+      --                  |
+      --                  |
+      --        B0        |        B0        
+      --
+      -- ADC Channel Mappping for EPIXS GEN2 ADC Board:
+      --  8:'U1_B0'
+      --  1:'U2_B0'
+      --  5:'U3_B0'
+      -- 12:'U4_B0'
+      -- 16:'U1_TPS', 17:'U2_TPS', 18:'U3_TPS', 19:'U4_TPS'
+   
+      channelOrder <= (0,0,0,0,0,0,0,0,0,0,0,0,1,5,8,12);
+      channelValid  <= "0000000000001111";
+      adcMemRdOrder <= "0000000000100010";
       tpsData(0) <= r.adcData(16);
       tpsData(1) <= r.adcData(17);
       tpsData(2) <= r.adcData(18);
