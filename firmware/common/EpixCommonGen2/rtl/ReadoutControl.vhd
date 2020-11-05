@@ -332,7 +332,7 @@ begin
       -- 12:'U4_B0'
       -- 16:'U1_TPS', 17:'U2_TPS', 18:'U3_TPS', 19:'U4_TPS'
    
-      channelOrder <= (0,0,0,0,0,0,0,0,0,0,0,0,1,5,8,12);
+      channelOrder <= (0,2,3,4,6,7,9,10,11,13,14,15,1,5,8,12);
       channelValid  <= "0000000000001111";
       adcMemRdOrder <= "0000000000100010";
       tpsData(0) <= r.adcData(16);
