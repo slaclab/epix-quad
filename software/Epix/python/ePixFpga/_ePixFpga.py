@@ -751,9 +751,11 @@ class EpixS(pr.Device):
       trigChEnum={0:'TrigReg', 1:'ThresholdChA', 2:'ThresholdChB', 3:'AcqStart', 4:'AsicAcq', 5:'AsicR0', 6:'AsicPpmat', 7:'AsicPpbe', 8:'AsicSync', 9:'AsicGr', 10: 'AsicRoClk'}
       #TODO: assign meaningful channel names
       inChaEnum={
+            0 :'NONE',
             8 :'U1_B0',  1: 'U2_B0',  5: 'U3_B0',  12:'U4_B0', 
             16:'U1_TPS', 17:'U2_TPS', 18:'U3_TPS', 19:'U4_TPS'}
       inChbEnum={
+            0 :'NONE',
             8 :'U1_B0',  1: 'U2_B0',  5: 'U3_B0',  12:'U4_B0', 
             16:'U1_TPS', 17:'U2_TPS', 18:'U3_TPS', 19:'U4_TPS'}
       super(self.__class__, self).__init__(**kwargs)

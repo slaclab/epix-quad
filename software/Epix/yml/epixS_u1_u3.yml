@@ -109,8 +109,8 @@ ePixBoard:
       TriggerOffset: 0
       TraceLength: 0
       SkipSamples: 0
-      InputChannelA: ASIC0_B3
-      InputChannelB: ASIC0_B3
+      InputChannelA: NONE
+      InputChannelB: NONE
       TriggerDelay: 0
     EpixSAsic[0]:
       enable: True
