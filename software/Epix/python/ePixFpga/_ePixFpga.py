@@ -751,17 +751,11 @@ class EpixS(pr.Device):
       trigChEnum={0:'TrigReg', 1:'ThresholdChA', 2:'ThresholdChB', 3:'AcqStart', 4:'AsicAcq', 5:'AsicR0', 6:'AsicPpmat', 7:'AsicPpbe', 8:'AsicSync', 9:'AsicGr', 10: 'AsicRoClk'}
       #TODO: assign meaningful channel names
       inChaEnum={
-            10:'ASIC0_B0',  2: 'ASIC0_B1',  1: 'ASIC0_B2',  0: 'ASIC0_B3', 
-            8: 'ASIC1_B0',  9: 'ASIC1_B1',  3: 'ASIC1_B2',  4: 'ASIC1_B3', 
-            5: 'ASIC2_B0',  6: 'ASIC2_B1',  7: 'ASIC2_B2',  15:'ASIC2_B3', 
-            14:'ASIC3_B0',  13:'ASIC3_B1',  12:'ASIC3_B2',  11:'ASIC3_B3', 
-            17:'ASIC0_TPS', 19:'ASIC1_TPS', 18:'ASIC2_TPS', 16:'ASIC3_TPS'}
+            8 :'U1_B0',  1: 'U2_B0',  5: 'U3_B0',  12:'U4_B0', 
+            16:'U1_TPS', 17:'U2_TPS', 18:'U3_TPS', 19:'U4_TPS'}
       inChbEnum={
-            10:'ASIC0_B0',  2: 'ASIC0_B1',  1: 'ASIC0_B2',  0: 'ASIC0_B3', 
-            8: 'ASIC1_B0',  9: 'ASIC1_B1',  3: 'ASIC1_B2',  4: 'ASIC1_B3', 
-            5: 'ASIC2_B0',  6: 'ASIC2_B1',  7: 'ASIC2_B2',  15:'ASIC2_B3', 
-            14:'ASIC3_B0',  13:'ASIC3_B1',  12:'ASIC3_B2',  11:'ASIC3_B3', 
-            17:'ASIC0_TPS', 19:'ASIC1_TPS', 18:'ASIC2_TPS', 16:'ASIC3_TPS'}
+            8 :'U1_B0',  1: 'U2_B0',  5: 'U3_B0',  12:'U4_B0', 
+            16:'U1_TPS', 17:'U2_TPS', 18:'U3_TPS', 19:'U4_TPS'}
       super(self.__class__, self).__init__(**kwargs)
       
       self.add(axi.AxiVersion                (name="AxiVersion",           offset=0x00000000, expand=False))
