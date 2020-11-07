@@ -161,53 +161,6 @@ pyrogue.streamConnect(cmd, pgpVc1)
 srp = rogue.protocols.srp.SrpV0()
 pyrogue.streamConnectBiDir(pgpVc0,srp)
 
-#############################################
-# Microblaze console printout
-#############################################
-class MbDebug(rogue.interfaces.stream.Slave):
-
-    def __init__(self):
-        rogue.interfaces.stream.Slave.__init__(self)
-        self.enable = False
-
-    def _acceptFrame(self,frame):
-        if self.enable:
-            p = bytearray(frame.getPayload())
-            frame.read(p,0)
-            print('-------- Microblaze Console --------')
-            print(p.decode('utf-8'))
-
-#######################################
-# Custom run control
-#######################################
-class MyRunControl(pyrogue.RunControl):
-    def __init__(self,name):
-        pyrogue.RunControl.__init__(self,name,'Run Controller Cpix2',  rates={1:'1 Hz', 2:'2 Hz', 4:'4 Hz', 8:'8 Hz', 10:'10 Hz', 30:'30 Hz', 60:'60 Hz', 120:'120 Hz'})
-        self._thread = None
-
-    def _setRunState(self,dev,var,value,changed):
-        if changed: 
-            if self.runState.get(read=False) == 'Running': 
-                self._thread = threading.Thread(target=self._run) 
-                self._thread.start() 
-            else: 
-                self._thread.join() 
-                self._thread = None
-
-    def _run(self):
-        self.runCount.set(0) 
-        self._last = int(time.time()) 
-
-        while (self.runState.get(read=False) == 'Running'): 
-            delay = 1.0 / ({value: key for key,value in self.runRate.enum.items()}[self._runRate]) 
-            time.sleep(delay) 
-            #self._root.ssiPrbsTx.oneShot() 
-            cmd.sendCmd(0, 0)
-  
-            self._runCount += 1 
-            if self._last != int(time.time()): 
-                self._last = int(time.time()) 
-                self.runCount._updated() 
             
 ##############################
 # Set base
