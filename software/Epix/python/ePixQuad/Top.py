@@ -45,53 +45,61 @@ class Top(pr.Root):
          hwType      = 'pgp3_cardG3',
          promWrEn    = False,
          lane        = 0,
+         enVcMask    = 0xf,
+         enWriter    = True,
+         enPrbs      = True,
          **kwargs):
       super().__init__(name=name, description=description, **kwargs)
       
       self._promWrEn = promWrEn
       
-      # File writer
-      dataWriter = pr.utilities.fileio.StreamWriter()
-      self.add(dataWriter)
-      
       ######################################################################          
       
-      if (hwType == 'simulation'):
-         self.pgpVc0 = rogue.interfaces.stream.TcpClient('localhost',8000)
-         self.pgpVc1 = rogue.interfaces.stream.TcpClient('localhost',8002)
-         self.pgpVc2 = rogue.interfaces.stream.TcpClient('localhost',8004)
-         self.pgpVc3 = rogue.interfaces.stream.TcpClient('localhost',8006)            
-      elif (hwType == 'datadev'):
-         self.pgpVc0 = rogue.hardware.axi.AxiStreamDma(dev,256*lane+0,True) # Data & cmds
-         self.pgpVc1 = rogue.hardware.axi.AxiStreamDma(dev,256*lane+1,True) # Registers for ePix board
-         self.pgpVc2 = rogue.hardware.axi.AxiStreamDma(dev,256*lane+2,True) # PseudoScope
-         self.pgpVc3 = rogue.hardware.axi.AxiStreamDma(dev,256*lane+3,True) # Monitoring (Slow ADC)        
-      else:
-         self.pgpVc0 = rogue.hardware.pgp.PgpCard(dev,lane,0) # Data & cmds
-         self.pgpVc1 = rogue.hardware.pgp.PgpCard(dev,lane,1) # Registers for ePix board
-         self.pgpVc2 = rogue.hardware.pgp.PgpCard(dev,lane,2) # PseudoScope
-         self.pgpVc3 = rogue.hardware.pgp.PgpCard(dev,lane,3) # Monitoring (Slow ADC)
+      # VC0: Data & cmds
+      # VC1: Registers for ePix board
+      # VC2: PseudoScope
+      # VC3: Monitoring (Slow ADC)
+      for i in range(4):
+         if enVcMask & (1<<i):
+            if (hwType == 'simulation'):
+               setattr(self,f'pgpVc{i}',rogue.interfaces.stream.TcpClient('localhost',8000+i*2))
+            elif (hwType == 'datadev'):
+               setattr(self,f'pgpVc{i}',rogue.hardware.axi.AxiStreamDma(dev,256*lane+i,True))
+            else:
+               setattr(self,f'pgpVc{i}',rogue.hardware.pgp.PgpCard(dev,lane,i))
                
       ######################################################################
+
+      # File writer
+      if enWriter:
+         dataWriter = pr.utilities.fileio.StreamWriter()
+         self.add(dataWriter)
+         if enVcMask & 1:
+            pyrogue.streamConnect(self.pgpVc0, dataWriter.getChannel(0x1))
+         if enVcMask & 4:
+            pyrogue.streamConnect(self.pgpVc2, dataWriter.getChannel(0x2))
+         if enVcMask & 8:
+            pyrogue.streamConnect(self.pgpVc3, dataWriter.getChannel(0x3))
+
+      # PRBS
+      if enPrbs:
+         prbsRx = pyrogue.utilities.prbs.PrbsRx(name='PrbsRx', width=128)
+         if enVcMask & 1:
+            pyrogue.streamConnect(self.pgpVc0,prbsRx)
+         self.add(prbsRx)
+      
+      memMap = rogue.protocols.srp.SrpV3()                
       
       # Connect the SRPv3 to PGPv3.VC[0]
-      memMap = rogue.protocols.srp.SrpV3()                
-      pr.streamConnectBiDir(self.pgpVc1, memMap)             
-      
-      pyrogue.streamConnect(self.pgpVc0, dataWriter.getChannel(0x1))
-      # Add pseudoscope to file writer
-      pyrogue.streamConnect(self.pgpVc2, dataWriter.getChannel(0x2))
-      pyrogue.streamConnect(self.pgpVc3, dataWriter.getChannel(0x3))
-      
-      cmdVc1 = rogue.protocols.srp.Cmd()
-      pyrogue.streamConnect(cmdVc1, self.pgpVc0)
-      cmdVc3 = rogue.protocols.srp.Cmd()
-      pyrogue.streamConnect(cmdVc3, self.pgpVc3)
-      
-      prbsRx = pyrogue.utilities.prbs.PrbsRx(name='PrbsRx', width=128)
-      #pyrogue.streamConnect(self.pgpVc0,prbsRx)
-      self.add(prbsRx)
-      
+      if enVcMask & 1:
+         cmdVc1 = rogue.protocols.srp.Cmd()
+         pyrogue.streamConnect(cmdVc1, self.pgpVc0)
+      if enVcMask & 2:
+         pr.streamConnectBiDir(self.pgpVc1, memMap)             
+      if enVcMask & 8:
+         cmdVc3 = rogue.protocols.srp.Cmd()
+         pyrogue.streamConnect(cmdVc3, self.pgpVc3)
+
       @self.command()
       def SetAsicMatrixTest():
          # save TrigEn state and stop

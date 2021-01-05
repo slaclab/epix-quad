@@ -78,16 +78,17 @@ class EpixQuadMonitor(pr.Device):
       def getThermistorTemp(var):
          # resistor divider 100k and MC65F103B (Rt25=10k)
          # Vref 2.5V
+         TthermK = 0.0
          x = var.dependencies[0].value()
          if x != 0:
             Umeas = x / 16383.0 * 2.5
             Itherm = Umeas / 100000;
             Rtherm = (2.5 - Umeas) / Itherm;
-            LnRtR25 = np.log(Rtherm/10000.0)
-            TthermK = 1.0 / (3.3538646E-03 + 2.5654090E-04 * LnRtR25 + 1.9243889E-06 * (LnRtR25**2) + 1.0969244E-07 * (LnRtR25**3))
-            return TthermK - 273.15
-         else:
-            return 0.0
+            if Rtherm > 0.0:
+               LnRtR25 = np.log(Rtherm/10000.0)
+               TthermK = 1.0 / (3.3538646E-03 + 2.5654090E-04 * LnRtR25 + 1.9243889E-06 * (LnRtR25**2) + 1.0969244E-07 * (LnRtR25**3))
+            TthermK -= 273.15
+         return TthermK
       
       def getAnaTemp(var):
          x = var.dependencies[0].value()

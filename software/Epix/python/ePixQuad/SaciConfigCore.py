@@ -21,6 +21,7 @@ import pyrogue as pr
 import collections
 import os
 import numpy as np
+import json
 import time as ti
 import rogue.interfaces.memory as rim
 
@@ -35,7 +36,7 @@ except ImportError:
 class SaciConfigCore(pr.Device):
    def __init__(self, simSpeedup = False, **kwargs):
       """Create SaciConfigCore"""
-      super().__init__(description='Readout Core Regsisters', **kwargs)
+      super().__init__(description='Readout Core Regsisters', size=0x800000, **kwargs)
       
       self.simSpeedup = simSpeedup
       
@@ -122,6 +123,7 @@ class SaciConfigCore(pr.Device):
          name        = 'SetAsicsMatrix',
          description = 'Configure all ASICs matrix',
          function    = self.setAsicsMatrix,
+         value       = '',
       ))
       
       # A command has an associated function. The function can be a series of
@@ -133,7 +135,9 @@ class SaciConfigCore(pr.Device):
    # acelerated matrix configuration command
    def setAsicsMatrix(self, dev,cmd,arg):
       """SetAsicsMatrix command function"""
-      
+
+      print(f'setAsicsMatrix dev {dev} cmd {cmd} arg {arg[:16]}')
+
       # simulation only test
       if self.simSpeedup:
          # write memory
@@ -149,50 +153,59 @@ class SaciConfigCore(pr.Device):
          while self.ConfDoneAll.get() != True:
             ti.sleep(1)
          return
-      
-      if not isinstance(arg, str):
-         arg = ''
-      if len(arg) > 0:
-         self.filename = arg
-      else:
-         self.filename = QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
-      
-      # write csv to memory
-      if os.path.splitext(self.filename)[1] == '.csv':
-         matrixCfg = np.genfromtxt(self.filename, delimiter=',')
-         if matrixCfg.shape == (178, 192):
-            for asic in range (0, 16):
-               # writing to address zero resets statistics counters
-               # must always start writing config data from adress zero
-               memAddr = 0
-               memArray = []
-               for x in range (0, 177):
-                  for y in range (0, 192):
-                     
-                     if memAddr%8 == 0:
-                        memData = 0
-                     memData = memData | ( (int(matrixCfg[x][y]) & 0xF) << ((memAddr%8)*4) )
-                     if memAddr%8 == 7:
-                        #self._rawWrite((asic*0x80000)+int(memAddr/8)*4, memData)
-                        memArray.append(memData)
-                        #print('BRAM[0x%X] = 0x%X'%((asic*0x80000)+int(memAddr/8)*4, memData))
-                     
-                     memAddr = memAddr + 1
-               # make sure to send a big chunk of data avoiding slow 32 bit transactions
-               self._setError(0)
-               self._rawTxnChunker(offset=(asic*0x80000), data=memArray, base=pr.UInt, stride=4, wordBitSize=32, txnType=rim.Write, numWords=len(memArray))
-               self._waitTransaction(0)
+
+      shape = (16,178,192)
+      if ',' in arg:
+         arr = np.array(json.loads(arg),dtype=np.uint8)
+         if np.shape(arr)==shape[3-len(np.shape(arr)):]:
+            matrixCfg = np.broadcast_to(arr,shape)
          else:
-            print('csv file must be 192x178 pixels')
+            print('Input array dimensions {} mismatch {}'.format(np.shape(arr),shape)) 
+            return
       else:
-            print("Not csv file : ", self.filename)
+         if len(arg) > 0:
+            self.filename = arg
+         else:
+            self.filename = QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')[0]
+
+         # write csv to memory
+         if os.path.splitext(self.filename)[1] == '.csv':
+             arr = np.genfromtxt(self.filename, delimiter=',')
+             if np.shape(arr)==shape[3-len(np.shape(arr)):]:
+                matrixCfg = np.broadcast_to(arr,shape)
+             else:
+                print('Input array dimensions {} mismatch {}'.format(np.shape(arr),shape)) 
+                return
+
+      print('Writing matrix element (0,0,0)={}'.format(matrixCfg[0][0][0]))
+
+      for asic in range (0, 16):
+         # writing to address zero resets statistics counters
+         # must always start writing config data from adress zero
+         memAddr = 0
+         memArray = []
+         for x in range (0, 177):
+            for y in range (0, 192):
+               if memAddr%8 == 0:
+                  memData = 0
+               memData = memData | ( (int(matrixCfg[asic][x][y]) & 0xF) << ((memAddr%8)*4) )
+               if memAddr%8 == 7:
+                  #self._rawWrite((asic*0x80000)+int(memAddr/8)*4, memData)
+                  memArray.append(memData)
+                  #print('BRAM[0x%X] = 0x%X'%((asic*0x80000)+int(memAddr/8)*4, memData))
+                     
+               memAddr = memAddr + 1
+            
+         # make sure to send a big chunk of data avoiding slow 32 bit transactions
+         #self._setError(0)
+         self._rawTxnChunker(offset=(asic*0x80000), data=memArray, base=pr.UInt, stride=4, wordBitSize=32, txnType=rim.Write, numWords=len(memArray))
+         self._waitTransaction(0)
       
       #request config write to ASICs and wait for completion
       self.ConfSel.set(0xffff)
       self.ConfWrReq.set(True)
       while self.ConfDoneAll.get() != True:
          ti.sleep(1)
-      
    
    @staticmethod   
    def frequencyConverter(self):
