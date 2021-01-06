@@ -13,12 +13,12 @@ print(os.path.dirname(os.path.realpath(__file__)))
 
 for pkgpath in subpackages:
     pkgname = pkgpath.split('/')[-1]
-    linkname = os.path.join('epix_l2sidaq',pkgname)
+    linkname = os.path.join('epix',pkgname)
     if os.path.islink(linkname): os.remove(linkname)
     os.symlink(os.path.join('../../../',pkgpath),linkname)
 
 setup(
-    name = 'epix-l2sidaq',
-    description = 'LCLS II Epix 2lsi package',
+    name = 'epix',
+    description = 'LCLS II Epix package',
     packages = find_packages(),
 )
