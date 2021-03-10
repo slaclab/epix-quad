@@ -127,9 +127,9 @@ begin
          ROGUE_SIM_EN_G              => SIMULATION_G,
          ROGUE_SIM_PORT_NUM_G        => 8000,
          RATE_G                      => "3.125Gbps",
-         REFCLK_TYPE_G               => PGP3_REFCLK_156_C,
+         REFCLK_FREQ_G               => 156.25E+6,
          EN_PGP_MON_G                => true,
-         EN_GTH_DRP_G                => false,
+         EN_GT_DRP_G                 => false,
          EN_QPLL_DRP_G               => false,
          AXIL_BASE_ADDR_G            => AXI_BASE_ADDR_G,
          AXIL_CLK_FREQ_G             => AXI_CLK_FREQ_G
