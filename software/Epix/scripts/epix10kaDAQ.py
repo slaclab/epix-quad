@@ -111,6 +111,14 @@ parser.add_argument(
     help     = "Connect to VCS simulation",
 )  
 
+parser.add_argument(
+    "--asic_rev", 
+    type     = int,
+    required = False,
+    default  = 1,
+    help     = "ASIC rev 1 or 2",
+)
+
 
 # Get the arguments
 args = parser.parse_args()
@@ -236,7 +244,7 @@ class MyRunControl(pyrogue.RunControl):
 # Set base
 ##############################
 class EpixBoard(pyrogue.Root):
-    def __init__(self, guiTop, cmd, dataWriter, srp, **kwargs):
+    def __init__(self, guiTop, cmd, dataWriter, srp, asic_rev, **kwargs):
         super().__init__(name = 'ePixBoard',description = 'ePix 10ka Board', **kwargs)
         #self.add(MyRunControl('runControl'))
         self.add(dataWriter)
@@ -247,7 +255,7 @@ class EpixBoard(pyrogue.Root):
             cmd.sendCmd(0, 0)
 
         # Add Devices
-        self.add(fpga.Epix10ka(name='Epix10ka', offset=0, memBase=srp, hidden=False, enabled=True))
+        self.add(fpga.Epix10ka(name='Epix10ka', asic_rev=asic_rev, offset=0, memBase=srp, hidden=False, enabled=True))
         self.add(pyrogue.RunControl(name = 'runControl', description='Run Controller ePix 10ka', cmd=self.Trigger, rates={1:'1 Hz', 2:'2 Hz', 4:'4 Hz', 8:'8 Hz', 10:'10 Hz', 30:'30 Hz', 60:'60 Hz', 120:'120 Hz'}))
         
 
@@ -272,7 +280,7 @@ if (PRINT_VERBOSE): pyrogue.streamTap(pgpVc0, dbgData)
 # Create GUI
 appTop = QApplication(sys.argv)
 guiTop = pyrogue.gui.GuiTop(group = 'ePix10kaGui')
-ePixBoard = EpixBoard(guiTop, cmd, dataWriter, srp)
+ePixBoard = EpixBoard(guiTop, cmd, dataWriter, srp, args.asic_rev)
 ePixBoard.start(
    pollEn   = args.pollEn,
    initRead = args.initRead,

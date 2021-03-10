@@ -828,7 +828,7 @@ class EpixS(pr.Device):
 ##
 ################################################################################################
 class Epix10ka(pr.Device):
-   def __init__(self, **kwargs):
+   def __init__(self, asic_rev=1, **kwargs):
       if 'description' not in kwargs:
             kwargs['description'] = "EPIX10KA FPGA"
       
@@ -854,7 +854,10 @@ class Epix10ka(pr.Device):
       self.add(OscilloscopeRegisters         (name='Oscilloscope',         offset=0x01200000, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum))
       self.add(Epix10kADouts                 (name="Epix10kADouts",        offset=0x01300000, expand=False))
       for i in range(4):
-         self.add(epix.Epix10kaAsic          (name=('Epix10kaAsic[%d]'%i), offset=(0x02000000+i*0x400000), enabled=False, expand=False))
+         if asic_rev == 1:
+            self.add(epix.Epix10kaAsic          (name=('Epix10kaAsic[%d]'%i), offset=(0x02000000+i*0x400000), enabled=False, expand=False))
+         else:
+            self.add(epix.Epix10kaAsicRev2      (name=('Epix10kaAsic[%d]'%i), offset=(0x02000000+i*0x400000), enabled=False, expand=False))
       #self.add(pgp.Pgp2bAxi                  (name='Pgp2bAxi',             offset=0x03000000, expand=False, enabled=False))
       self.add(pgp.Pgp3AxiL                  (name='Pgp3Axi',              offset=0x03000000, expand=False, enabled=False))
       self.add(SlowAdcRegisters              (name="SlowAdcRegisters",     offset=0x04000000, enabled=False, expand=False))

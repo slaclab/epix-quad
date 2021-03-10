@@ -1075,6 +1075,23 @@ class Epix10kaAsic(pr.Device):
             return '{:.3f} kHz'.format(1/(self.clkPeriod * self._count(var.dependencies)) * 1e-3)
         return func
 
+class Epix10kaAsicRev2(Epix10kaAsic):
+    def __init__(self, **kwargs):
+        """Create the ePix10kaAsic rev2 device"""
+        super().__init__(**kwargs)
+
+
+        #In order to easily compare GenDAQ address map with the ePix rogue address map 
+        #it is defined the addrSize variable
+        addrSize = 4	
+        
+        # CMD = 1, Addr = 23
+        self.add((
+            pr.RemoteVariable(name='S2D_Rz', description='', offset=0x00001017*addrSize, bitSize=1, bitOffset=5, base=pr.UInt,  mode='RW', overlapEn=True)))
+        
+        # CMD = 1, Addr = 27
+        self.add((
+            pr.RemoteVariable(name='S2D_LSB', description='', offset=0x0000101B*addrSize, bitSize=2, bitOffset=0, base=pr.UInt, mode='RW', overlapEn=True)))
 
 class TixelAsic(pr.Device):
     def __init__(self, **kwargs):
