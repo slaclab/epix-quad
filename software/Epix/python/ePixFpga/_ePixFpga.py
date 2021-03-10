@@ -683,7 +683,7 @@ class Epix100a(pr.Device):
       self.add(EpixFpgaExtRegisters       (name="EpixFpgaExtRegisters", offset=0x01100000, enabled=False, expand=False))
       self.add(OscilloscopeRegisters      (name='Oscilloscope',         offset=0x01200000, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum))
       for i in range(4):
-         self.add(epix.Epix100aAsic       (name=('Epix100aAsic[%d]'%i), offset=(0x02000000+i*0x400000), enabled=False, expand=False))
+         self.add(epix.Epix100aAsic       (name=('Epix100aAsic[%d]'%i), offset=(0x02000000+i*0x400000), enabled=False, expand=False, size=0x3fffff))
       #self.add(pgp.Pgp2bAxi               (name='Pgp2bAxi',             offset=0x03000000, expand=False, enabled=False))
       self.add(pgp.Pgp3AxiL               (name='Pgp3Axi',              offset=0x03000000, expand=False, enabled=False))
       self.add(SlowAdcRegisters           (name="SlowAdcRegisters",     offset=0x04000000, enabled=False, expand=False))
@@ -725,9 +725,9 @@ class Epix100a(pr.Device):
       self.Oscilloscope.writeBlocks          ( force=force, recurse=recurse, variable=variable)   
       for i in range(4):
          if self.asicMask&(1<<i) != 0:
-            self.Epix10kaAsic[i].writeBlocks    ( force=force, recurse=recurse, variable=variable)   
+            self.Epix100aAsic[i].writeBlocks    ( force=force, recurse=recurse, variable=variable)   
          else:
-            self.Epix10kaAsic[i].enable.set(False)
+            self.Epix100aAsic[i].enable.set(False)
       
       #self.Pgp2bAxi.writeBlocks              ( force=force, recurse=recurse, variable=variable)   
       self.SlowAdcRegisters.writeBlocks      ( force=force, recurse=recurse, variable=variable)   
@@ -765,7 +765,7 @@ class EpixS(pr.Device):
       self.add(EpixFpgaExtRegisters          (name="EpixFpgaExtRegisters", offset=0x01100000, enabled=False, expand=False))
       self.add(OscilloscopeRegisters         (name='Oscilloscope',         offset=0x01200000, expand=False, trigChEnum=trigChEnum, inChaEnum=inChaEnum, inChbEnum=inChbEnum))
       for i in range(4):
-         self.add(epix.EpixSAsic          (name=('EpixSAsic[%d]'%i), offset=(0x02000000+i*0x400000), enabled=False, expand=False))
+         self.add(epix.EpixSAsic          (name=('EpixSAsic[%d]'%i), offset=(0x02000000+i*0x400000), enabled=False, expand=False, size=0x3fffff))
       #self.add(pgp.Pgp2bAxi                  (name='Pgp2bAxi',             offset=0x03000000, expand=False, enabled=False))
       self.add(pgp.Pgp3AxiL                  (name='Pgp3Axi',              offset=0x03000000, expand=False, enabled=False))
       self.add(SlowAdcRegisters              (name="SlowAdcRegisters",     offset=0x04000000, enabled=False, expand=False))
@@ -855,9 +855,9 @@ class Epix10ka(pr.Device):
       self.add(Epix10kADouts                 (name="Epix10kADouts",        offset=0x01300000, expand=False))
       for i in range(4):
          if asic_rev == 1:
-            self.add(epix.Epix10kaAsic          (name=('Epix10kaAsic[%d]'%i), offset=(0x02000000+i*0x400000), enabled=False, expand=False))
+            self.add(epix.Epix10kaAsic          (name=('Epix10kaAsic[%d]'%i), offset=(0x02000000+i*0x400000), enabled=False, expand=False, size=0x3fffff))
          else:
-            self.add(epix.Epix10kaAsicRev2      (name=('Epix10kaAsic[%d]'%i), offset=(0x02000000+i*0x400000), enabled=False, expand=False))
+            self.add(epix.Epix10kaAsicRev2      (name=('Epix10kaAsic[%d]'%i), offset=(0x02000000+i*0x400000), enabled=False, expand=False, size=0x3fffff))
       #self.add(pgp.Pgp2bAxi                  (name='Pgp2bAxi',             offset=0x03000000, expand=False, enabled=False))
       self.add(pgp.Pgp3AxiL                  (name='Pgp3Axi',              offset=0x03000000, expand=False, enabled=False))
       self.add(SlowAdcRegisters              (name="SlowAdcRegisters",     offset=0x04000000, enabled=False, expand=False))
