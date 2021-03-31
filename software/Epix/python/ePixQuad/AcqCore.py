@@ -119,6 +119,17 @@ class AcqCore(pr.Device):
       ))
       
       self.add(pr.RemoteVariable(
+         name       = 'AsicRoClkT',     
+         description= 'ASIC RoClk Period',
+         offset     = 0x00000034, 
+         bitSize    = 32, 
+         bitOffset  = 0,  
+         base       = pr.UInt, 
+         mode       = 'RW',
+         verify     = False,
+      ))
+      
+      self.add(pr.RemoteVariable(
          name       = 'AsicRoClkHalfT',     
          description= 'ASIC RoClk Half Period',
          offset     = 0x00000020, 

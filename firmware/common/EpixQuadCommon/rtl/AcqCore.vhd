@@ -87,6 +87,7 @@ architecture RTL of AcqCore is
       asicR0ToAsicAcq      : slv(31 downto 0);
       asicAcqWidth         : slv(31 downto 0);
       asicAcqLToPPmatL     : slv(31 downto 0);
+      asicRoClkTReg        : slv(31 downto 0);
       asicRoClkHalfTReg    : slv(31 downto 0);
       asicRoClkHalfT       : slv(31 downto 0);
       asicPreAcqTime       : slv(31 downto 0);
@@ -125,6 +126,7 @@ architecture RTL of AcqCore is
       asicR0ToAsicAcq      => toSlv(100, 32),
       asicAcqWidth         => toSlv(100, 32),
       asicAcqLToPPmatL     => (others=>'0'),
+      asicRoClkTReg        => (others=>'0'),
       asicRoClkHalfTReg    => (others=>'0'),
       asicRoClkHalfT       => (others=>'0'),
       asicPreAcqTime       => (others=>'0'),
@@ -177,12 +179,15 @@ begin
 
    comb : process (sysRst, r, sAxilReadMaster, sAxilWriteMaster,
       acqStartEdge, readDone, roClkTail) is
-      variable v      : RegType;
-      variable regCon : AxiLiteEndPointType;
+      variable v                 : RegType;
+      variable regCon            : AxiLiteEndPointType;
+      variable asicRoClkTRegTmp  : slv(31 downto 0);
    begin
       v := r;
       
       v.asicRoClkHalfTReg := (others=>'0');
+      v.asicRoClkTReg     := (others=>'0');
+      asicRoClkTRegTmp    := resize(r.asicRoClkHalfT(31 downto 16) + r.asicRoClkHalfT(15 downto 0), 32);
       
       -- ADC clock frequency is fixed to 50 MHz
       v.adcClk := not r.adcClk;
@@ -213,11 +218,13 @@ begin
       axiSlaveRegister (regCon, x"018", 0, v.asicAcqLToPPmatL  );
       axiSlaveRegister (regCon, x"01C", 0, v.asicPpmatToReadout);
       axiSlaveRegister (regCon, x"020", 0, v.asicRoClkHalfTReg );
-      axiSlaveRegisterR(regCon, x"020", 0, r.asicRoClkHalfT    );
+      axiSlaveRegisterR(regCon, x"020", 0, r.asicRoClkHalfT(15 downto 0));
       axiSlaveRegisterR(regCon, x"024", 0, toSlv(ROCLK_COUNT_C, 32));
       axiSlaveRegisterR(regCon, x"028", 0, r.asicPreAcqTime    );
       axiSlaveRegister (regCon, x"02C", 0, v.asicPinForce      );
       axiSlaveRegister (regCon, x"030", 0, v.asicPinValue      );
+      axiSlaveRegister (regCon, x"034", 0, v.asicRoClkTReg     );
+      axiSlaveRegisterR(regCon, x"034", 0, asicRoClkTRegTmp    );
       
       axiSlaveRegister (regCon, x"100", 0, v.dummyAcqEn        );
       
@@ -232,8 +239,19 @@ begin
       axiSlaveDefault(regCon, v.sAxilWriteSlave, v.sAxilReadSlave, AXI_RESP_DECERR_C);
       
       -- ASIC RdoutClk period is preset by the Microblaze and should be changed only be an expert
+      -- setting AsicRoClk by the half period register (asicRoClkHalfTReg) is a legacy way for the existing software
+      -- setting AsicRoClk by the full period register (asicRoClkTReg) is a new way that also allows to set non 50% duty cycle used for higher framerates
       if r.asicRoClkHalfTReg(31 downto 16) = x"AAAA" then
-         v.asicRoClkHalfT := x"0000" & r.asicRoClkHalfTReg(15 downto 0);
+         v.asicRoClkHalfT(31 downto 16) := r.asicRoClkHalfTReg(15 downto 0);
+         v.asicRoClkHalfT(15 downto 0)  := r.asicRoClkHalfTReg(15 downto 0);
+      elsif r.asicRoClkTReg(31 downto 16) = x"AAAA" then
+         if r.asicRoClkTReg(0) = '0' then
+            v.asicRoClkHalfT(31 downto 16) := '0' & r.asicRoClkTReg(15 downto 1);
+            v.asicRoClkHalfT(15 downto 0)  := '0' & r.asicRoClkTReg(15 downto 1);
+         else
+            v.asicRoClkHalfT(31 downto 16) := '0' & r.asicRoClkTReg(15 downto 1) + 1;
+            v.asicRoClkHalfT(15 downto 0)  := '0' & r.asicRoClkTReg(15 downto 1);
+         end if;
       end if;
       
       --------------------------------------------------
@@ -388,7 +406,7 @@ begin
                
             else
             
-               if r.stateCnt >= r.asicRoClkHalfT-1 or r.asicRoClkHalfT = 0 then
+               if r.stateCnt >= r.asicRoClkHalfT(31 downto 16)-1 or r.asicRoClkHalfT(31 downto 16) = 0 then
                   v.stateCnt  := (others=>'0');
                   v.roClkCnt  := r.roClkCnt + 1;
                   if r.roClkCnt < ROCLK_COUNT_C-1 then
@@ -415,7 +433,7 @@ begin
                
                -- do faster (dummy) readout 
                -- DUMMY_ASIC_ROCLK_HALFT_C = 2 -> 40ns -> 25MHz (this clock is divided by 4 inside epix10kA)
-               if r.stateCnt >= DUMMY_ASIC_ROCLK_HALFT_C - 1 then
+               if r.stateCnt >= DUMMY_ASIC_ROCLK_HALFT_C - 2 then
                   v.stateCnt := (others=>'0');
                   v.acqState := WAIT_ADC_S;
                end if;
@@ -425,7 +443,7 @@ begin
                
             else
                
-               if r.stateCnt >= r.asicRoClkHalfT-1 or r.asicRoClkHalfT = 0 then
+               if r.stateCnt >= r.asicRoClkHalfT(15 downto 0)-1 or r.asicRoClkHalfT(15 downto 0) = 0 then
                   v.stateCnt := (others=>'0');
                   v.acqState := WAIT_ADC_S;
                end if;
@@ -455,7 +473,7 @@ begin
                
             else
                
-               if r.stateCnt >= r.asicRoClkHalfT-1 or r.asicRoClkHalfT = 0 then
+               if r.stateCnt >= r.asicRoClkHalfT(31 downto 16)-1 or r.asicRoClkHalfT(31 downto 16) = 0 then
                   v.stateCnt  := (others=>'0');
                   if r.roClkCnt < roClkTail then
                      v.roClkCnt := r.roClkCnt + 1;
@@ -475,14 +493,14 @@ begin
                
                -- do faster (dummy) readout 
                -- DUMMY_ASIC_ROCLK_HALFT_C = 2 -> 40ns -> 25MHz (this clock is divided by 4 inside epix10kA)
-               if r.stateCnt >= DUMMY_ASIC_ROCLK_HALFT_C - 1 then
+               if r.stateCnt >= DUMMY_ASIC_ROCLK_HALFT_C - 2 then
                   v.stateCnt := (others=>'0');
                   v.acqState := WAIT_DOUT_S;
                end if;
                
             else
             
-               if r.stateCnt >= r.asicRoClkHalfT-1 or r.asicRoClkHalfT = 0 then
+               if r.stateCnt >= r.asicRoClkHalfT(15 downto 0)-1 or r.asicRoClkHalfT(15 downto 0) = 0 then
                   v.stateCnt := (others=>'0');
                   v.acqState := WAIT_DOUT_S;
                end if;
