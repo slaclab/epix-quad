@@ -1111,32 +1111,35 @@ begin
    -- Streaming out FIFO
    ----------------------------------------------------------------------
    
-   U_AxisOut0 : entity surf.AxiStreamFifoV2
-   generic map (
-      -- General Configurations
-      TPD_G               => TPD_G,
-      PIPE_STAGES_G       => 1,
-      SLAVE_READY_EN_G    => true,
-      VALID_THOLD_G       => 1,     -- =0 = only when frame ready
-      -- FIFO configurations
-      GEN_SYNC_FIFO_G     => false,
-      CASCADE_SIZE_G      => 1,
-      FIFO_ADDR_WIDTH_G   => 13,
-      -- AXI Stream Port Configurations
-      SLAVE_AXI_CONFIG_G  => SLAVE_AXI_CONFIG_C,
-      MASTER_AXI_CONFIG_G => MASTER_AXI_CONFIG_C
-   )
-   port map (
-      -- Slave Port
-      sAxisClk    => sysClk,
-      sAxisRst    => sysRst,
-      sAxisMaster => r.txMaster,
-      sAxisSlave  => txSlave,
-      -- Master Port
-      mAxisClk    => axisClk,
-      mAxisRst    => axisRst,
-      mAxisMaster => axisMaster,
-      mAxisSlave  => axisSlave
-   );
+   --U_AxisOut0 : entity surf.AxiStreamFifoV2
+   --generic map (
+   --   -- General Configurations
+   --   TPD_G               => TPD_G,
+   --   PIPE_STAGES_G       => 1,
+   --   SLAVE_READY_EN_G    => true,
+   --   VALID_THOLD_G       => 1,     -- =0 = only when frame ready
+   --   -- FIFO configurations
+   --   GEN_SYNC_FIFO_G     => false,
+   --   CASCADE_SIZE_G      => 1,
+   --   FIFO_ADDR_WIDTH_G   => 8,
+   --   -- AXI Stream Port Configurations
+   --   SLAVE_AXI_CONFIG_G  => SLAVE_AXI_CONFIG_C,
+   --   MASTER_AXI_CONFIG_G => MASTER_AXI_CONFIG_C
+   --)
+   --port map (
+   --   -- Slave Port
+   --   sAxisClk    => sysClk,
+   --   sAxisRst    => sysRst,
+   --   sAxisMaster => r.txMaster,
+   --   sAxisSlave  => txSlave,
+   --   -- Master Port
+   --   mAxisClk    => axisClk,
+   --   mAxisRst    => axisRst,
+   --   mAxisMaster => axisMaster,
+   --   mAxisSlave  => axisSlave
+   --);
+   
+   axisMaster <= r.txMaster;
+   txSlave    <= axisSlave;
    
 end rtl;
