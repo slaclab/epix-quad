@@ -972,7 +972,8 @@ begin
          generic map (
             TPD_G          => TPD_G,
             DATA_WIDTH_G   => 64,
-            ADDR_WIDTH_G   => BUFF_BITS_C+COLS_BITS_C
+            ADDR_WIDTH_G   => BUFF_BITS_C+COLS_BITS_C,
+            MEMORY_TYPE_G  => "distributed"
          )
          port map (
             -- Port A     
