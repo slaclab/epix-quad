@@ -250,7 +250,7 @@ args = parser.parse_args()
 args = parser.parse_args()
 
 # Set base
-base = quad.Top(hwType=args.type, dev=args.pgp, lane=args.l, promWrEn=args.adcCalib)    
+base = quad.Top(hwType=args.type, dev=args.pgp, lane=args.l, promWrEn=False)    
 
 # Start the system
 base.start(
