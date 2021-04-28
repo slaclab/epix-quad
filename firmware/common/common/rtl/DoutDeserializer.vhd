@@ -243,14 +243,14 @@ begin
       
       -- copy row buffer to FIFO in requested order
       if f.rowBuffRdy = '1' or f.copyReq = '1' then
-         fv.copyReq := '1';
-         fv.copyCnt := f.copyCnt + 1;
-         
          -- copy done
          if f.copyCnt = BANK_COLS_C then
             fv.copyReq := '0';
             fv.copyCnt := 0;
             fv.fifoWr := (others=>'0');
+         else
+            fv.copyReq := '1';
+            fv.copyCnt := f.copyCnt + 1;
          end if;
       end if;
       -- pick completed row buffer

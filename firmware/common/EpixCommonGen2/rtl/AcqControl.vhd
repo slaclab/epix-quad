@@ -113,6 +113,9 @@ architecture AcqControl of AcqControl is
    signal firstPixelRst      : sl := '0';
    signal iAcqBusy           : sl := '0';
    signal risingAcq          : sl := '0';
+   signal risingAcqD1        : sl := '0';
+   signal fallingAcq         : sl := '0';
+   signal selEdgeAcq         : sl := '0';
 
    -- Multiplexed ASIC outputs.  These versions are the
    -- automatic ones controlled by state machine.
@@ -647,13 +650,23 @@ begin
          clk         => sysClk,
          rst         => sysClkRst,
          dataIn      => iAsicAcq,
-         risingEdge  => risingAcq
+         risingEdge  => risingAcq,
+         fallingEdge => fallingAcq
       );
+   
+   -- falling edge strobe is used to misalign the sync pulse vs acq on demand
+   selEdgeAcq <= risingAcqD1 when injSkipCnt = 0 else fallingAcq;
    
    -- generate external adjustable injection trigger within ACQ pulse
    process(sysClk)
    begin
       if rising_edge(sysClk) then
+         
+         if sysClkRst = '1' then
+            risingAcqD1 <= '0' after TPD_G;
+         else
+            risingAcqD1 <= risingAcq after TPD_G;
+         end if;
          
          if sysClkRst = '1' then
             injSkipCnt <= (others=>'0') after TPD_G;
@@ -667,7 +680,7 @@ begin
          
          if sysClkRst = '1' or dummyAcq = '1' then
             injStartCnt <= (others=>'0') after TPD_G;
-         elsif risingAcq = '1' then
+         elsif selEdgeAcq = '1' then
             injStartCnt <= epixConfigExt.injStartDly after TPD_G;
          elsif injStartCnt /= 0 then
             injStartCnt <= injStartCnt - 1 after TPD_G;
@@ -675,7 +688,7 @@ begin
          
          if sysClkRst = '1' or dummyAcq = '1' then
             injStartEn  <= '0' after TPD_G;
-         elsif epixConfigExt.injStartDly = 0 and risingAcq = '1' then
+         elsif epixConfigExt.injStartDly = 0 and selEdgeAcq = '1' then
             injStartEn <= '1' after TPD_G;
          elsif injStartCnt = 1 then
             injStartEn <= '1' after TPD_G;
@@ -685,7 +698,7 @@ begin
          
          if sysClkRst = '1' or dummyAcq = '1' then
             injStopCnt <= (others=>'0') after TPD_G;
-         elsif risingAcq = '1' then
+         elsif selEdgeAcq = '1' then
             injStopCnt <= epixConfigExt.injStopDly after TPD_G;
          elsif injStopCnt /= 0 then
             injStopCnt <= injStopCnt - 1 after TPD_G;
@@ -701,7 +714,7 @@ begin
          
          if sysClkRst = '1' or dummyAcq = '1' then
             iInjAcq <= '0' after TPD_G;
-         elsif injStartEn = '1' and injStopEn = '0' and epixConfigExt.injStopDly /= 0 and injSkipCnt = 0 then
+         elsif injStartEn = '1' and injStopEn = '0' and epixConfigExt.injStopDly /= 0 then
             iInjAcq <= '1' after TPD_G;
          elsif injStopEn = '1' then
             iInjAcq <= '0' after TPD_G;

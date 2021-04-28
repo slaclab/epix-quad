@@ -88,9 +88,6 @@ architecture rtl of RdoutCoreBram is
    constant VC_C           : slv( 1 downto 0) := "00";
    constant QUAD_C         : slv( 1 downto 0) := "00";
    
-   -- Custom data types
-   type LineValidArray is array (natural range <>) of slv(2**BUFF_BITS_C-1 downto 0);
-   
    type WrStateType is (
       IDLE_S,
       BUFFER_S,
@@ -99,9 +96,14 @@ architecture rtl of RdoutCoreBram is
    
    type RdStateType is (
       IDLE_S,
-      HDR_S,
       WAIT_LINE_S,
-      MOVE_LINE_S,
+      MOVE_LINE_S
+   );
+   
+   type StrStateType is (
+      IDLE_S,
+      HDR_S,
+      DATA_S,
       FOOTER_S,
       TPS_DATA_S
    );
@@ -122,23 +124,28 @@ architecture rtl of RdoutCoreBram is
       readPend             : sl;
       buffErr              : sl;
       timeErr              : sl;
-      wordCnt              : integer range 0 to 10;
+      wordCnt              : integer range 0 to BANK_COLS_G/4*16;
       timeCnt              : integer range 0 to TIMEOUT_C;
-      sRowCount            : integer range 0 to 3;             -- 4 lines
-      bankCount            : integer range 0 to 15;            -- 16 banks per line
-      colCount             : integer range 0 to BANK_COLS_C;   -- generic column count
-      rowCount             : slv(ROWS_BITS_C-1 downto 0);      -- generic row count
+      sRowCount            : integer range 0 to 4*BANK_ROWS_G-1; -- total number of rows
+      bankCount            : integer range 0 to 15;              -- 16 banks per line
+      colCount             : integer range 0 to BANK_COLS_C;     -- generic column count
+      rowCount             : slv(ROWS_BITS_C-1 downto 0);        -- generic row count
       lineBufErr           : Slv32Array(3 downto 0);
       lineBufErrEn         : slv(3 downto 0);
-      lineBufValid         : LineValidArray(3 downto 0);
+      lineBufValid         : slv(2**BUFF_BITS_C-1 downto 0);
       memWrEn              : sl;
       lineWrAddr           : slv(COLS_BITS_C-1 downto 0);
       lineWrBuff           : slv(BUFF_BITS_C-1 downto 0);
-      lineRdAddr           : slv(COLS_BITS_C-1 downto 0);
+      lineRdAddrF          : slv(COLS_BITS_C-1 downto 0);
+      lineRdAddrR          : slv(COLS_BITS_C-1 downto 0);
       memWrAddr            : slv(BUFF_BITS_C+COLS_BITS_C-1 downto 0);
       doutRd               : Slv16Array(3 downto 0);
+      fifoWrEn             : sl;
+      fifoDin              : Slv64Array(3 downto 0);
+      fifoRdEn             : slv(3 downto 0);
       wrState              : WrStateType;
       rdState              : RdStateType;
+      strState             : StrStateType;
       txMaster             : AxiStreamMasterType;
       sAxilWriteSlave      : AxiLiteWriteSlaveType;
       sAxilReadSlave       : AxiLiteReadSlaveType;
@@ -172,15 +179,20 @@ architecture rtl of RdoutCoreBram is
       rowCount             => (others=>'0'),
       lineBufErr           => (others=>(others=>'0')),
       lineBufErrEn         => (others=>'0'),
-      lineBufValid         => (others=>(others=>'0')),
+      lineBufValid         => (others=>'0'),
       memWrEn              => '0',
       lineWrAddr           => (others=>'0'),
       lineWrBuff           => (others=>'0'),
-      lineRdAddr           => (others=>'0'),
+      lineRdAddrF          => (others=>'0'),
+      lineRdAddrR          => (others=>'0'),
       memWrAddr            => (others=>'0'),
       doutRd               => (others=>(others=>'0')),
+      fifoWrEn             => '0',
+      fifoDin              => (others=>(others=>'0')),
+      fifoRdEn             => (others=>'0'),
       wrState              => IDLE_S,
       rdState              => IDLE_S,
+      strState             => IDLE_S,
       txMaster             => AXI_STREAM_MASTER_INIT_C,
       sAxilWriteSlave      => AXI_LITE_WRITE_SLAVE_INIT_C,
       sAxilReadSlave       => AXI_LITE_READ_SLAVE_INIT_C,
@@ -195,14 +207,11 @@ architecture rtl of RdoutCoreBram is
    
    signal acqBusyEdge      : std_logic             := '0';
    signal txSlave          : AxiStreamSlaveType;
-   signal axisCascMaster   : AxiStreamMasterType;
-   signal axisCascSlave    : AxiStreamSlaveType;
-   --signal axisCascMaster   : AxiStreamMasterArray(4 downto 0);
-   --signal axisCascSlave    : AxiStreamSlaveArray(4 downto 0);
    
    signal memWrEn          : sl;
    signal memWrAddr        : slv(BUFF_BITS_C+COLS_BITS_C-1 downto 0);
-   signal memRdAddr        : slv(BUFF_BITS_C+COLS_BITS_C-1 downto 0);
+   --signal memRdAddr        : slv(BUFF_BITS_C+COLS_BITS_C-1 downto 0);
+   signal memRdAddr        : Slv16Array(63 downto 0);
    signal memRdData        : Slv64VectorArray(3 downto 0, 15 downto 0);
    signal memWrData        : Slv64Array(63 downto 0);
    
@@ -219,6 +228,17 @@ architecture rtl of RdoutCoreBram is
    signal muxDoutMap       : slv(15 downto 0);
    
    signal doutRd           : Slv16Array(3 downto 0);
+   
+   signal fifoDout         : Slv64Array(3 downto 0);
+   signal fifoAfull        : slv(3 downto 0);
+   signal fifoRdy          : slv(3 downto 0);
+   signal fifoValid        : slv(3 downto 0);
+   signal fifoCascadeData  : Slv64Array(3 downto 0);
+   signal fifrCascadeEn    : slv(3 downto 0);
+   signal fifoCascadeValid : slv(3 downto 0);
+   signal fifrCascadeAfull : slv(3 downto 0);
+   
+   signal fifoRdEn         : slv(3 downto 0);
    
 begin
    --r.rowCount(BUFF_BITS_C-1 downto 0)
@@ -423,10 +443,12 @@ begin
    
    comb : process (sysRst, sAxilReadMaster, sAxilWriteMaster, txSlave, r,
       acqBusyEdge, acqBusy, acqCount, acqSmplEn, memRdData, opCode, muxStrMap, tpsStream,
-      doutValid, doutOut, doutCount, monData) is
+      doutValid, doutOut, doutCount, monData, fifoRdy, fifoValid, fifoDout) is
       variable v      : RegType;
       variable regCon : AxiLiteEndPointType;
-      variable sRowCountVar : integer;
+      variable doutValidVar : slv(3 downto 0);
+      variable doutCountVar : slv(3 downto 0);
+      variable sRowCountMod : integer range 0 to 3;
    begin
       v := r;
       
@@ -509,7 +531,7 @@ begin
             end if;
             v.lineWrAddr      := (others=>'0');
             v.lineWrBuff      := (others=>'0');
-            v.lineBufValid    := (others=>(others=>'0'));
+            v.lineBufValid    := (others=>'0');
             v.adcDataBufCnt   := 0;
          
          -- buffer first sample for 32 bit write
@@ -543,9 +565,7 @@ begin
                   v.lineWrAddr := (others=>'0');
                   v.lineWrBuff := r.lineWrBuff + 1;
                   -- set valid flag (all finish simultaneously)
-                  for i in 3 downto 0 loop
-                     v.lineBufValid(i)(conv_integer(r.lineWrBuff)) := '1';
-                  end loop;
+                  v.lineBufValid(conv_integer(r.lineWrBuff)) := '1';
                else
                   -- every 2 sample strobes move buffer write pointer
                   v.lineWrAddr := r.lineWrAddr + 1;
@@ -571,7 +591,7 @@ begin
       
       -- check for buffer overflow
       for i in 3 downto 0 loop
-         if r.acqSmplEn(conv_integer(r.adcPipelineDly)) = '1' and r.lineBufValid(i) = BUFF_MAX_C then
+         if r.acqSmplEn(conv_integer(r.adcPipelineDly)) = '1' and r.lineBufValid = BUFF_MAX_C then
             v.lineBufErrEn(i) := '1';
             v.buffErr         := '1';
          end if;
@@ -584,6 +604,129 @@ begin
       
       --------------------------------------------------
       -- FSM to assemble and stream 4 lines (16 banks per line)
+      -- each line (super row) is written in parallel to 4 FIFOs
+      --------------------------------------------------
+      
+      doutValidVar(0) := doutValid(0)(r.bankCount);
+      doutValidVar(1) := doutValid(1)(r.bankCount);
+      doutValidVar(2) := doutValid(2)(r.bankCount);
+      doutValidVar(3) := doutValid(3)(r.bankCount);
+      if doutCount(0, r.bankCount) >= BANK_COLS_C then
+         doutCountVar(0) := '1';
+      else
+         doutCountVar(0) := '0';
+      end if;
+      if doutCount(1, r.bankCount) >= BANK_COLS_C then
+         doutCountVar(1) := '1';
+      else
+         doutCountVar(1) := '0';
+      end if;
+      if doutCount(2, r.bankCount) >= BANK_COLS_C then
+         doutCountVar(2) := '1';
+      else
+         doutCountVar(2) := '0';
+      end if;
+      if doutCount(3, r.bankCount) >= BANK_COLS_C then
+         doutCountVar(3) := '1';
+      else
+         doutCountVar(3) := '0';
+      end if;
+      
+      v.fifoWrEn := '0';
+      v.doutRd := (others=>(others=>'0'));
+      
+      case r.rdState is
+         
+         -- wait for trigger
+         when IDLE_S =>
+            v.lineRdAddrF  := (others=>'0');
+            v.lineRdAddrR  := toSlv(BANK_COLS_C, COLS_BITS_C);
+            v.bankCount    := 0;
+            v.colCount     := 0;
+            v.rowCount     := (others=>'0');
+            v.readPend     := '0';
+            if acqBusyEdge = '1' and r.rdoutEn = '1' and r.buffErr = '0' and r.timeErr = '0' then
+               v.readPend  := '1';
+               v.rdState   := WAIT_LINE_S;
+            end if;
+            
+            
+         when WAIT_LINE_S =>
+            if r.buffErr = '1' then
+               v.timeCnt   := 0;
+               v.rdState   := IDLE_S;
+            elsif v.lineBufValid(conv_integer(r.rowCount(BUFF_BITS_C-1 downto 0))) = '1' and doutValidVar = "1111" and doutCountVar = "1111" then
+               v.lineRdAddrF := r.lineRdAddrF + 1;
+               v.lineRdAddrR := r.lineRdAddrR - 1;
+               v.timeCnt   := 0;
+               v.rdState   := MOVE_LINE_S;
+            elsif r.timeCnt = TIMEOUT_C then
+               v.timeErr   := '1';
+               v.timeCnt   := 0;
+               v.rdState   := IDLE_S;
+            else
+               v.timeCnt   := r.timeCnt + 1;
+            end if;
+            
+         when MOVE_LINE_S =>
+            if r.buffErr = '1' then
+               v.rdState   := IDLE_S;
+            elsif fifoRdy = "1111" then
+               
+               v.fifoWrEn := '1';
+               
+               for i in 3 downto 0 loop
+                  v.fifoDin(i)(63 downto 0) := memRdData(i, r.bankCount);  -- super row 0-3, bank 0-15 = 64 memory channels
+                  -- insert (overwrite) dout bits
+                  v.fifoDin(i)(62) := doutOut(i, r.bankCount)(3);
+                  v.fifoDin(i)(46) := doutOut(i, r.bankCount)(2);
+                  v.fifoDin(i)(30) := doutOut(i, r.bankCount)(1);
+                  v.fifoDin(i)(14) := doutOut(i, r.bankCount)(0);
+                  v.doutRd(i)(r.bankCount) := '1';
+               end loop;
+               
+               
+               if r.colCount < BANK_COLS_C then    -- next column in bank
+                  v.colCount := r.colCount + 1;
+               elsif r.bankCount < 15 then         -- next bank (out of 16)
+                  v.colCount  := 0;
+                  v.bankCount := r.bankCount + 1;
+               elsif r.rowCount < BANK_ROWS_C then -- next row (go to wait for line state)
+                  v.colCount     := 0;
+                  v.bankCount    := 0;
+                  v.lineBufValid(conv_integer(r.rowCount(BUFF_BITS_C-1 downto 0))) := '0'; -- invalidate the buffer
+                  v.rowCount     := r.rowCount + 1;
+                  v.rdState      := WAIT_LINE_S;
+               else                                -- image done (go to footer state)
+                  v.colCount     := 0;
+                  v.bankCount    := 0;
+                  v.lineBufValid(conv_integer(r.rowCount(BUFF_BITS_C-1 downto 0))) := '0'; -- invalidate the buffer
+                  v.rowCount     := (others=>'0');
+                  v.rdState      := IDLE_S;
+               end if;
+               
+               -- move the read address 1 cycle ahead of the pixel counters
+               if r.colCount = BANK_COLS_C and r.bankCount = 15 then
+                  v.lineRdAddrF  := (others=>'0');
+                  v.lineRdAddrR  := toSlv(BANK_COLS_C, COLS_BITS_C);
+               elsif r.colCount = BANK_COLS_C-1 then
+                  v.lineRdAddrF  := (others=>'0');
+                  v.lineRdAddrR  := toSlv(BANK_COLS_C, COLS_BITS_C);
+               else
+                  v.lineRdAddrF := r.lineRdAddrF + 1;
+                  v.lineRdAddrR := r.lineRdAddrR - 1;
+               end if;
+               
+            end if;
+         
+         when others =>
+            v.rdState := IDLE_S;
+            
+      end case;
+      
+      
+      --------------------------------------------------
+      -- FSM to stream image data
       --------------------------------------------------
       
       -- Reset strobing Signals
@@ -595,29 +738,20 @@ begin
          v.txMaster.tStrb  := (others => '1');
       end if;
       
-      v.doutRd := (others=>(others=>'0'));
+      v.fifoRdEn := "0000";
       
-      case r.rdState is
+      case r.strState is
          
          -- wait for trigger
          when IDLE_S =>
-            if LINE_REVERSE_G(r.sRowCount) = '0' then
-               v.lineRdAddr := (others=>'0');
-            else
-               v.lineRdAddr := toSlv(BANK_COLS_C, COLS_BITS_C);
-            end if;
             v.sRowCount    := 0;
-            v.bankCount    := 0;
-            v.colCount     := 0;
-            v.rowCount     := (others=>'0');
-            v.readPend     := '0';
+            v.wordCnt      := 0;
             v.buffErr      := '0';
             v.timeErr      := '0';
             v.lineBufErrEn := (others=>'0');
             v.monData      := monData;
-            if acqBusyEdge = '1' and r.rdoutEn = '1' then
-               v.readPend  := '1';
-               v.rdState   := HDR_S;
+            if r.readPend = '1' then
+               v.strState   := HDR_S;
             end if;
       
          when HDR_S =>
@@ -636,99 +770,42 @@ begin
                end if;
                if (r.wordCnt = 3) then
                   v.wordCnt   := 0;
-                  v.timeCnt   := 0;
-                  v.rdState   := WAIT_LINE_S;
+                  v.strState   := DATA_S;
                else
                   v.wordCnt   := r.wordCnt + 1;
                end if;
             end if;
             
-         when WAIT_LINE_S =>
-            if r.buffErr = '1' then
-               v.colCount  := 0;
-               v.bankCount := 0;
-               v.rdState   := FOOTER_S;
-            elsif v.lineBufValid(r.sRowCount)(conv_integer(r.rowCount(BUFF_BITS_C-1 downto 0))) = '1' and doutValid(r.sRowCount)(r.bankCount) = '1' and doutCount(r.sRowCount, r.bankCount) >= BANK_COLS_C then
-               if LINE_REVERSE_G(r.sRowCount) = '0' then
-                  v.lineRdAddr := r.lineRdAddr + 1;
-               else
-                  v.lineRdAddr := r.lineRdAddr - 1;
-               end if;
-               v.rdState   := MOVE_LINE_S;
-            elsif r.timeCnt = TIMEOUT_C then
-               v.timeErr   := '1';
-               v.colCount  := 0;
-               v.bankCount := 0;
-               v.rdState   := FOOTER_S;
-            else
-               v.timeCnt   := r.timeCnt + 1;
-            end if;
+         when DATA_S =>
             
-         when MOVE_LINE_S =>
-            if v.txMaster.tValid = '0' then
+            -- get the last 2 bits of row counter to address a fifo
+            -- data from each super row is split into 4 fifos
+            -- de-interleaving is easy to implement, but it would cost a few ms of latency
+            -- due to waiting for 3 FIFOs be filled with ASIC readout data
+            -- deinterleaving would not work at 1kFPS without DDR buffering
+            sRowCountMod := conv_integer(toSlv(r.sRowCount, 2));
+         
+            if r.buffErr = '1' or r.timeErr = '1' then
+               v.strState   := FOOTER_S;
+            elsif v.txMaster.tValid = '0' and fifoValid(sRowCountMod) = '1' then
                
-               v.txMaster.tValid := '1';
-               v.txMaster.tData(63 downto 0) := memRdData(r.sRowCount, r.bankCount);  -- super row 0-3, bank 0-15 = 64 memory channels
-               -- insert (overwrite) dout bits
-               v.txMaster.tData(62) := doutOut(r.sRowCount, r.bankCount)(3);
-               v.txMaster.tData(46) := doutOut(r.sRowCount, r.bankCount)(2);
-               v.txMaster.tData(30) := doutOut(r.sRowCount, r.bankCount)(1);
-               v.txMaster.tData(14) := doutOut(r.sRowCount, r.bankCount)(0);
-               v.doutRd(r.sRowCount)(r.bankCount) := '1';
+               v.txMaster.tValid             := '1';
+               v.txMaster.tData(63 downto 0) := fifoDout(sRowCountMod);
+               v.fifoRdEn(sRowCountMod)      := '1';
                
-               if r.colCount < BANK_COLS_C then    -- next column in bank
-                  v.colCount := r.colCount + 1;
-               elsif r.bankCount < 15 then         -- next bank (out of 16)
-                  v.colCount  := 0;
-                  v.bankCount := r.bankCount + 1;
-               elsif r.sRowCount < 3 then          -- next super row (out of 4)
-                  v.colCount     := 0;
-                  v.bankCount    := 0;
-                  v.sRowCount    := r.sRowCount + 1;
-                  v.lineBufValid(r.sRowCount)(conv_integer(r.rowCount(BUFF_BITS_C-1 downto 0))) := '0'; -- invalidate the buffer
-               elsif r.rowCount < BANK_ROWS_C then -- next row (go to wait for line state)
-                  v.colCount     := 0;
-                  v.bankCount    := 0;
-                  v.sRowCount    := 0;
-                  v.lineBufValid(r.sRowCount)(conv_integer(r.rowCount(BUFF_BITS_C-1 downto 0))) := '0'; -- invalidate the buffer
-                  v.rowCount     := r.rowCount + 1;
-                  v.timeCnt      := 0;
-                  v.rdState      := WAIT_LINE_S;
-               else                                -- image done (go to footer state)
-                  v.colCount     := 0;
-                  v.bankCount    := 0;
-                  v.sRowCount    := 0;
-                  v.lineBufValid(r.sRowCount)(conv_integer(r.rowCount(BUFF_BITS_C-1 downto 0))) := '0'; -- invalidate the buffer
-                  v.rowCount     := (others=>'0');
-                  v.rdState      := FOOTER_S;
-               end if;
-               
-               -- move the read address 1 cycle ahead of the pixel counters
-               if r.colCount = BANK_COLS_C and r.bankCount = 15 and r.sRowCount = 3 then
-                  if LINE_REVERSE_G(0) = '0' then
-                     v.lineRdAddr := (others=>'0');
-                  else
-                     v.lineRdAddr := toSlv(BANK_COLS_C, COLS_BITS_C);
-                  end if;
-               elsif r.colCount = BANK_COLS_C-1 and r.bankCount = 15 then
-                  sRowCountVar := conv_integer(toSlv(v.sRowCount+1,2));
-                  if LINE_REVERSE_G(sRowCountVar) = '0' then
-                     v.lineRdAddr := (others=>'0');
-                  else
-                     v.lineRdAddr := toSlv(BANK_COLS_C, COLS_BITS_C);
-                  end if;
-               elsif r.colCount = BANK_COLS_C-1 then
-                  if LINE_REVERSE_G(v.sRowCount) = '0' then
-                     v.lineRdAddr := (others=>'0');
-                  else
-                     v.lineRdAddr := toSlv(BANK_COLS_C, COLS_BITS_C);
-                  end if;
+               -- move data from one super row 
+               -- 16 banks * 12 (64 byte packed) columns
+               if r.wordCnt < BANK_COLS_G/4*16 - 1 then
+                  v.wordCnt := r.wordCnt + 1;
+               -- move to the next super row
+               elsif r.sRowCount < 4*BANK_ROWS_G-1 then
+                  v.wordCnt   := 0;
+                  v.sRowCount := r.sRowCount + 1;
+               -- all rows completed (done)
                else
-                  if LINE_REVERSE_G(v.sRowCount) = '0' then
-                     v.lineRdAddr := r.lineRdAddr + 1;
-                  else
-                     v.lineRdAddr := r.lineRdAddr - 1;
-                  end if;
+                  v.wordCnt   := 0;
+                  v.sRowCount := 0;
+                  v.strState  := FOOTER_S;
                end if;
                
             end if;
@@ -778,16 +855,12 @@ begin
                   v.wordCnt := r.wordCnt + 1;
                end if;
                
-               if r.colCount < BANK_COLS_C then    -- next column in bank
-                  v.colCount := r.colCount + 1;
-               elsif r.bankCount < 15 then         -- next bank
-                  v.colCount  := 0;
-                  v.bankCount := r.bankCount + 1;
+               -- transmit total of 1 super row (mostly zeroed reserved data)
+               if r.wordCnt < BANK_COLS_G/4*16 - 1 then
+                  v.wordCnt  := r.wordCnt + 1;
                else
-                  v.colCount  := 0;
-                  v.bankCount := 0;
-                  v.wordCnt   := 0;
-                  v.rdState   := TPS_DATA_S;
+                  v.wordCnt  := 0;
+                  v.strState := TPS_DATA_S;
                end if;
                
             end if;
@@ -811,7 +884,6 @@ begin
                
                if (r.wordCnt = 3) then
                   v.wordCnt   := 0;
-                  v.readPend  := '0';
                   v.txMaster.tLast  := '1';
                   ssiSetUserEofe(SLAVE_AXI_CONFIG_C, v.txMaster, r.buffErr or r.timeErr);
                   for i in 3 downto 0 loop
@@ -819,7 +891,7 @@ begin
                         v.lineBufErr(i) := r.lineBufErr(i) + 1;
                      end if;
                   end loop;
-                  v.rdState   := IDLE_S;
+                  v.strState   := IDLE_S;
                else
                   v.wordCnt   := r.wordCnt + 1;
                end if;
@@ -827,11 +899,11 @@ begin
             end if;
          
          when others =>
-            v.rdState := IDLE_S;
+            v.strState := IDLE_S;
             
       end case;
       
-         
+      
       if (sysRst = '1') then
          v := REG_INIT_C;
       end if;
@@ -843,7 +915,8 @@ begin
       
       memWrEn     <= v.memWrEn;
       memWrAddr   <= r.memWrAddr;
-      memRdAddr   <= r.rowCount(BUFF_BITS_C-1 downto 0) & r.lineRdAddr;
+      
+      fifoRdEn    <= v.fifoRdEn;
       
       -- read strobe for the dout FIFOs
       -- swap ASIC banks in reversed super rows
@@ -890,11 +963,17 @@ begin
             "00" & r.adcDataBuf0(i*16+j) &
             "00" & muxStrMap(i*16+j).tData(13 downto 0);
          
+         memRdAddr(i*16+j)(BUFF_BITS_C+COLS_BITS_C-1 downto 0) <= 
+            r.rowCount(BUFF_BITS_C-1 downto 0) & r.lineRdAddrF when LINE_REVERSE_G(i) = '0' else
+            r.rowCount(BUFF_BITS_C-1 downto 0) & r.lineRdAddrR;
+         
+         
          U_BankBufRam: entity surf.DualPortRam
          generic map (
             TPD_G          => TPD_G,
             DATA_WIDTH_G   => 64,
-            ADDR_WIDTH_G   => BUFF_BITS_C+COLS_BITS_C
+            ADDR_WIDTH_G   => BUFF_BITS_C+COLS_BITS_C,
+            MEMORY_TYPE_G  => "distributed"
          )
          port map (
             -- Port A     
@@ -906,7 +985,7 @@ begin
             -- Port B
             clkb    => sysClk,
             rstb    => sysRst,
-            addrb   => memRdAddr,
+            addrb   => memRdAddr(i*16+j)(BUFF_BITS_C+COLS_BITS_C-1 downto 0),
             doutb   => memRdData(i, j)
          );
          
@@ -972,70 +1051,96 @@ begin
    roClkTail <= iRoClkTail(0);
    
    ----------------------------------------------------------------------
+   -- Use plain FIFOs to store the whole image
+   -- Spilt into 4 paths for faster data movement from line buffers by the rdState FS
+   -- Each path corresponds to 1 out of 4 super rows
+   ----------------------------------------------------------------------
+   
+   -- the cascade of 1 * 2^15 + 2^11 * 8 bytes                          = 278528 bytes
+   -- the 0.25 frame size 48 cols * 178 rows * 64 banks * 2 bytes *0.25 = 273408 bytes
+   -- the FIFO will fit whole image
+   
+   G_sRowFifo: for i in 3 downto 0 generate
+   
+      U_sRowFifo0 : entity surf.FifoCascade 
+         generic map (
+            DATA_WIDTH_G      => 64,
+            CASCADE_SIZE_G    => 1,
+            ADDR_WIDTH_G      => 15,
+            FWFT_EN_G         => true,
+            GEN_SYNC_FIFO_G   => true
+         )
+         port map ( 
+            rst               => sysRst,
+            wr_clk            => sysClk,
+            wr_en             => r.fifoWrEn,
+            din               => r.fifoDin(i),
+            almost_full       => fifoAfull(i),
+            rd_clk            => sysClk,
+            rd_en             => fifrCascadeEn(i),
+            dout              => fifoCascadeData(i),
+            valid             => fifoCascadeValid(i)
+         );
+      
+      fifoRdy(i) <= not fifoAfull(i);
+      
+      U_sRowFifo1 : entity surf.FifoCascade 
+         generic map (
+            DATA_WIDTH_G      => 64,
+            CASCADE_SIZE_G    => 1,
+            ADDR_WIDTH_G      => 11,
+            FWFT_EN_G         => true,
+            GEN_SYNC_FIFO_G   => true
+         )
+         port map ( 
+            rst               => sysRst,
+            wr_clk            => sysClk,
+            wr_en             => fifrCascadeEn(i),
+            din               => fifoCascadeData(i),
+            almost_full       => fifrCascadeAfull(i),
+            rd_clk            => sysClk,
+            rd_en             => fifoRdEn(i),
+            dout              => fifoDout(i),
+            valid             => fifoValid(i)
+         );
+      
+      fifrCascadeEn(i) <= not fifrCascadeAfull(i) and fifoCascadeValid(i);
+   
+   end generate G_sRowFifo;
+   
+   ----------------------------------------------------------------------
    -- Streaming out FIFO
    ----------------------------------------------------------------------
    
-   -- the cascade of 4 * 2^15 + 2^13 * 8 bytes               = 1114112 bytes
-   -- the frame size 48 cols * 178 rows * 64 banks * 2 bytes = 1093632 bytes
-   -- the FIFO will fit whole image
+   --U_AxisOut0 : entity surf.AxiStreamFifoV2
+   --generic map (
+   --   -- General Configurations
+   --   TPD_G               => TPD_G,
+   --   PIPE_STAGES_G       => 1,
+   --   SLAVE_READY_EN_G    => true,
+   --   VALID_THOLD_G       => 1,     -- =0 = only when frame ready
+   --   -- FIFO configurations
+   --   GEN_SYNC_FIFO_G     => false,
+   --   CASCADE_SIZE_G      => 1,
+   --   FIFO_ADDR_WIDTH_G   => 8,
+   --   -- AXI Stream Port Configurations
+   --   SLAVE_AXI_CONFIG_G  => SLAVE_AXI_CONFIG_C,
+   --   MASTER_AXI_CONFIG_G => MASTER_AXI_CONFIG_C
+   --)
+   --port map (
+   --   -- Slave Port
+   --   sAxisClk    => sysClk,
+   --   sAxisRst    => sysRst,
+   --   sAxisMaster => r.txMaster,
+   --   sAxisSlave  => txSlave,
+   --   -- Master Port
+   --   mAxisClk    => axisClk,
+   --   mAxisRst    => axisRst,
+   --   mAxisMaster => axisMaster,
+   --   mAxisSlave  => axisSlave
+   --);
    
-   
-   U_AxisOut0 : entity surf.AxiStreamFifoV2
-   generic map (
-      -- General Configurations
-      TPD_G               => TPD_G,
-      PIPE_STAGES_G       => 1,
-      SLAVE_READY_EN_G    => true,
-      VALID_THOLD_G       => 1,     -- =0 = only when frame ready
-      -- FIFO configurations
-      GEN_SYNC_FIFO_G     => true,
-      CASCADE_SIZE_G      => 4,
-      FIFO_ADDR_WIDTH_G   => 15,
-      -- AXI Stream Port Configurations
-      SLAVE_AXI_CONFIG_G  => SLAVE_AXI_CONFIG_C,
-      MASTER_AXI_CONFIG_G => MASTER_AXI_CONFIG_C
-   )
-   port map (
-      -- Slave Port
-      sAxisClk    => sysClk,
-      sAxisRst    => sysRst,
-      sAxisMaster => r.txMaster,
-      sAxisSlave  => txSlave,
-      -- Master Port
-      mAxisClk    => sysClk,
-      mAxisRst    => sysRst,
-      mAxisMaster => axisCascMaster,
-      mAxisSlave  => axisCascSlave
-   );
-   
-   
-   
-   U_AxisOut1 : entity surf.AxiStreamFifoV2
-   generic map (
-      -- General Configurations
-      TPD_G               => TPD_G,
-      PIPE_STAGES_G       => 1,
-      SLAVE_READY_EN_G    => true,
-      VALID_THOLD_G       => 1,     -- =0 = only when frame ready
-      -- FIFO configurations
-      GEN_SYNC_FIFO_G     => false,
-      CASCADE_SIZE_G      => 1,
-      FIFO_ADDR_WIDTH_G   => 13,
-      -- AXI Stream Port Configurations
-      SLAVE_AXI_CONFIG_G  => SLAVE_AXI_CONFIG_C,
-      MASTER_AXI_CONFIG_G => MASTER_AXI_CONFIG_C
-   )
-   port map (
-      -- Slave Port
-      sAxisClk    => sysClk,
-      sAxisRst    => sysRst,
-      sAxisMaster => axisCascMaster,
-      sAxisSlave  => axisCascSlave,
-      -- Master Port
-      mAxisClk    => axisClk,
-      mAxisRst    => axisRst,
-      mAxisMaster => axisMaster,
-      mAxisSlave  => axisSlave
-   );
+   axisMaster <= r.txMaster;
+   txSlave    <= axisSlave;
    
 end rtl;

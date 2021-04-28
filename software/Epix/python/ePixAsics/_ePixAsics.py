@@ -60,19 +60,19 @@ class Epix100aAsic(pr.Device):
     
         
         #Setup registers & variables
-                
+         
         # CMD = 0, Addr = 0  : Prepare for readout
         self.add(pr.RemoteCommand(name='CmdPrepForRead', description='ePix Prepare For Readout', 
-                             offset=0x00000000*addrSize, bitSize=1, bitOffset=0, function=pr.Command.touchZero, hidden=True))
+                             offset=0x00000000*addrSize, bitSize=1, bitOffset=0, function=pr.Command.touchZero, hidden=True, overlapEn=True))
         
         # CMD = 1, Addr = 1  : Bits 2:0 - Pulser monostable bits
         #                      Bit  7   - Pulser sync bit
-        self.add((pr.RemoteVariable(name='MonostPulser', description='MonoSt Pulser bits',   offset=0x00001001*addrSize, bitSize=3, bitOffset=0, base=pr.UInt, mode='RW'),
-                 pr.RemoteVariable( name='PulserSync',   description='Pulse on SYNC signal', offset=0x00001001*addrSize, bitSize=1, bitOffset=7, base=pr.UInt, mode='RW')))
+        self.add((pr.RemoteVariable(name='MonostPulser', description='MonoSt Pulser bits',   offset=0x00001001*addrSize, bitSize=3, bitOffset=0, base=pr.UInt, mode='RW', overlapEn=True),
+                 pr.RemoteVariable( name='PulserSync',   description='Pulse on SYNC signal', offset=0x00001001*addrSize, bitSize=1, bitOffset=7, base=pr.UInt, mode='RW', overlapEn=True)))
         # CMD = 1, Addr = 2  : Pixel dummy, write data
         #                    : Bit 0 = Test
         #                    : Bit 1 = Test
-        self.add(pr.RemoteVariable(name='PixelDummy', description='Pixel dummy, write data', offset=0x00001002*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
+        self.add(pr.RemoteVariable(name='PixelDummy', description='Pixel dummy, write data', offset=0x00001002*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW', overlapEn=True))
         
         # TODO
         # check Variable("DummyMask") and Variable("DummyTest")
@@ -86,100 +86,100 @@ class Epix100aAsic(pr.Device):
         #                    : Bit  14  = hrtest
         #                    : Bit  15  = PulserR
         self.add((
-            pr.RemoteVariable(name='Pulser',   description='Config3', offset=0x00001003*addrSize, bitSize=10, bitOffset=0,  base=pr.UInt,  mode='RW'),
-            pr.RemoteVariable(name='pbit',     description='Config3', offset=0x00001003*addrSize, bitSize=1,  bitOffset=10, base=pr.Bool, mode='RW'),
-            pr.RemoteVariable(name='atest',    description='Config3', offset=0x00001003*addrSize, bitSize=1,  bitOffset=11, base=pr.Bool, mode='RW'),
-            pr.RemoteVariable(name='test',     description='Config3', offset=0x00001003*addrSize, bitSize=1,  bitOffset=12, base=pr.Bool, mode='RW'),
-            pr.RemoteVariable(name='sba_test', description='Config3', offset=0x00001003*addrSize, bitSize=1,  bitOffset=13, base=pr.Bool, mode='RW'),
-            pr.RemoteVariable(name='hrtest',   description='Config3', offset=0x00001003*addrSize, bitSize=1,  bitOffset=14, base=pr.Bool, mode='RW'),
-            pr.RemoteVariable(name='PulserR',  description='Config3', offset=0x00001003*addrSize, bitSize=1,  bitOffset=15, base=pr.Bool, mode='RW')))
+            pr.RemoteVariable(name='Pulser',   description='Config3', offset=0x00001003*addrSize, bitSize=10, bitOffset=0,  base=pr.UInt,  mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='pbit',     description='Config3', offset=0x00001003*addrSize, bitSize=1,  bitOffset=10, base=pr.Bool, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='atest',    description='Config3', offset=0x00001003*addrSize, bitSize=1,  bitOffset=11, base=pr.Bool, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='test',     description='Config3', offset=0x00001003*addrSize, bitSize=1,  bitOffset=12, base=pr.Bool, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='sba_test', description='Config3', offset=0x00001003*addrSize, bitSize=1,  bitOffset=13, base=pr.Bool, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='hrtest',   description='Config3', offset=0x00001003*addrSize, bitSize=1,  bitOffset=14, base=pr.Bool, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='PulserR',  description='Config3', offset=0x00001003*addrSize, bitSize=1,  bitOffset=15, base=pr.Bool, mode='RW', overlapEn=True)))
 
         # CMD = 1, Addr = 4  : Bits 3:0 = DM1[3:0]
         #                    : Bits 7:4 = DM2[3:0]
         
         self.add(
-            pr.RemoteVariable(name='DigMon1', offset=0x00001004*addrSize, bitSize=4, bitOffset=0, base=pr.UInt, mode='RW'))         
+            pr.RemoteVariable(name='DigMon1', offset=0x00001004*addrSize, bitSize=4, bitOffset=0, base=pr.UInt, mode='RW', overlapEn=True))         
 
         self.add(
-            pr.RemoteVariable(name='DigMon2', offset=0x00001004*addrSize, bitSize=4, bitOffset=4, base=pr.UInt, mode='RW'))         
+            pr.RemoteVariable(name='DigMon2', offset=0x00001004*addrSize, bitSize=4, bitOffset=4, base=pr.UInt, mode='RW', overlapEn=True))         
  
         # CMD = 1, Addr = 5  : Bits 2:0 = Pulser DAC[2:0]
         #                      Bits 7:4 = TPS_GR[3:0]
         self.add((
-            pr.RemoteVariable(name='PulserDac', description='Pulser Dac', offset=0x00001005*addrSize, bitSize=3, bitOffset=0, base=pr.UInt, mode='RW'),
-            pr.RemoteVariable(name='TpsGr',     description='',           offset=0x00001005*addrSize, bitSize=4, bitOffset=4, base=pr.UInt, mode='RW')))
+            pr.RemoteVariable(name='PulserDac', description='Pulser Dac', offset=0x00001005*addrSize, bitSize=3, bitOffset=0, base=pr.UInt, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='TpsGr',     description='',           offset=0x00001005*addrSize, bitSize=4, bitOffset=4, base=pr.UInt, mode='RW', overlapEn=True)))
 
         # CMD = 1, Addr = 6  : Bit  0   = DM1en
         #                    : Bit  1   = DM2en
         #                    : Bit  4   = SLVDSbit
         self.add((
-            pr.RemoteVariable(name='Dm1En', description='Digital Monitor 1 Enable', offset=0x00001006*addrSize, bitSize=1, bitOffset=0, base=pr.Bool, mode='RW'),
-            pr.RemoteVariable(name='Dm2En', description='Digital Monitor 1 Enable', offset=0x00001006*addrSize, bitSize=1, bitOffset=1, base=pr.Bool, mode='RW'),
-            pr.RemoteVariable(name='SLVDSbit', description='',                      offset=0x00001006*addrSize, bitSize=1, bitOffset=4, base=pr.Bool, mode='RW')))
+            pr.RemoteVariable(name='Dm1En', description='Digital Monitor 1 Enable', offset=0x00001006*addrSize, bitSize=1, bitOffset=0, base=pr.Bool, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='Dm2En', description='Digital Monitor 1 Enable', offset=0x00001006*addrSize, bitSize=1, bitOffset=1, base=pr.Bool, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='SLVDSbit', description='',                      offset=0x00001006*addrSize, bitSize=1, bitOffset=4, base=pr.Bool, mode='RW', overlapEn=True)))
       
         # CMD = 1, Addr = 7  : Bit  5:0 = VREF[5:0]
         #                    : Bit  7:6 = VrefLow[1:0]
         self.add((
-            pr.RemoteVariable(name='VRef',    description='Voltage Ref',                offset=0x00001007*addrSize, bitSize=6, bitOffset=0, base=pr.UInt, mode='RW'),
-            pr.RemoteVariable(name='VRefLow', description='Voltage Ref for Extra Rows', offset=0x00001007*addrSize, bitSize=2, bitOffset=6, base=pr.UInt, mode='RW')))
+            pr.RemoteVariable(name='VRef',    description='Voltage Ref',                offset=0x00001007*addrSize, bitSize=6, bitOffset=0, base=pr.UInt, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='VRefLow', description='Voltage Ref for Extra Rows', offset=0x00001007*addrSize, bitSize=2, bitOffset=6, base=pr.UInt, mode='RW', overlapEn=True)))
 
         # CMD = 1, Addr = 8  : Bit  0   = TPS_tcomp
         #                    : Bit  4:1 = TPS_MUX[3:0]
         #                    : Bit  7:5 = RO_Monost[2:0]
         self.add((
-            pr.RemoteVariable(name='TPS_tcomp',  description='', offset=0x00001008*addrSize, bitSize=1, bitOffset=0, base=pr.Bool, mode='RW'),
-            pr.RemoteVariable(name='TPS_MUX',    description='', offset=0x00001008*addrSize, bitSize=4, bitOffset=1, base=pr.UInt, mode='RW'),
-            pr.RemoteVariable(name='TPS_Monost', description='', offset=0x00001008*addrSize, bitSize=3, bitOffset=5, base=pr.UInt,  mode='RW')))
+            pr.RemoteVariable(name='TPS_tcomp',  description='', offset=0x00001008*addrSize, bitSize=1, bitOffset=0, base=pr.Bool, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='TPS_MUX',    description='', offset=0x00001008*addrSize, bitSize=4, bitOffset=1, base=pr.UInt, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='TPS_Monost', description='', offset=0x00001008*addrSize, bitSize=3, bitOffset=5, base=pr.UInt,  mode='RW', overlapEn=True)))
 
         # CMD = 1, Addr = 9  : Bit  3:0 = S2D0_GR[3:0]
         #                    : Bit  7:4 = S2D1_GR[3:0]
         self.add((
-            pr.RemoteVariable(name='S2d0Gr', description='', offset=0x00001009*addrSize, bitSize=4, bitOffset=0, base=pr.UInt, mode='RW'),
-            pr.RemoteVariable(name='S2d1Gr', description='', offset=0x00001009*addrSize, bitSize=4, bitOffset=4, base=pr.UInt, mode='RW')))
+            pr.RemoteVariable(name='S2d0Gr', description='', offset=0x00001009*addrSize, bitSize=4, bitOffset=0, base=pr.UInt, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='S2d1Gr', description='', offset=0x00001009*addrSize, bitSize=4, bitOffset=4, base=pr.UInt, mode='RW', overlapEn=True)))
   
         # CMD = 1, Addr = 10 : Bit  0   = PP_OCB_S2D
         #                    : Bit  3:1 = OCB[2:0]
         #                    : Bit  6:4 = Monost[2:0]
         #                    : Bit  7   = fastpp_enable
         self.add((
-            pr.RemoteVariable(name='PpOcbS2d',     description='', offset=0x0000100A*addrSize, bitSize=1, bitOffset=0, base=pr.Bool, mode='RW'),
-            pr.RemoteVariable(name='Ocb',          description='', offset=0x0000100A*addrSize, bitSize=3, bitOffset=1, base=pr.UInt,  mode='RW'),
-            pr.RemoteVariable(name='Monost',       description='', offset=0x0000100A*addrSize, bitSize=3, bitOffset=4, base=pr.UInt,  mode='RW'),
-            pr.RemoteVariable(name='FastppEnable', description='', offset=0x0000100A*addrSize, bitSize=1, bitOffset=7, base=pr.Bool, mode='RW')))
+            pr.RemoteVariable(name='PpOcbS2d',     description='', offset=0x0000100A*addrSize, bitSize=1, bitOffset=0, base=pr.Bool, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='Ocb',          description='', offset=0x0000100A*addrSize, bitSize=3, bitOffset=1, base=pr.UInt,  mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='Monost',       description='', offset=0x0000100A*addrSize, bitSize=3, bitOffset=4, base=pr.UInt,  mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='FastppEnable', description='', offset=0x0000100A*addrSize, bitSize=1, bitOffset=7, base=pr.Bool, mode='RW', overlapEn=True)))
      
         # CMD = 1, Addr = 11 : Bit  2:0 = Preamp[2:0]
         #                    : Bit  5:3 = Pixel_CB[2:0]
         #                    : Bit  7:6 = Vld1_b[1:0]
         self.add((
-            pr.RemoteVariable(name='Preamp',  description='', offset=0x0000100B*addrSize, bitSize=3, bitOffset=0, base=pr.UInt, mode='RW'),
-            pr.RemoteVariable(name='PixelCb', description='', offset=0x0000100B*addrSize, bitSize=3, bitOffset=3, base=pr.UInt, mode='RW'),
-            pr.RemoteVariable(name='Vld1_b',  description='', offset=0x0000100B*addrSize, bitSize=2, bitOffset=6, base=pr.UInt, mode='RW')))
+            pr.RemoteVariable(name='Preamp',  description='', offset=0x0000100B*addrSize, bitSize=3, bitOffset=0, base=pr.UInt, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='PixelCb', description='', offset=0x0000100B*addrSize, bitSize=3, bitOffset=3, base=pr.UInt, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='Vld1_b',  description='', offset=0x0000100B*addrSize, bitSize=2, bitOffset=6, base=pr.UInt, mode='RW', overlapEn=True)))
 
         # CMD = 1, Addr = 12 : Bit  0   = S2D_tcomp
         #                    : Bit  6:1 = Filter_Dac[5:0]
         self.add((
-            pr.RemoteVariable(name='S2dTComp',  description='', offset=0x0000100C*addrSize, bitSize=1, bitOffset=0, base=pr.Bool, mode='RW'),
-            pr.RemoteVariable(name='FilterDac', description='', offset=0x0000100C*addrSize, bitSize=6, bitOffset=1, base=pr.UInt,  mode='RW')))
+            pr.RemoteVariable(name='S2dTComp',  description='', offset=0x0000100C*addrSize, bitSize=1, bitOffset=0, base=pr.Bool, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='FilterDac', description='', offset=0x0000100C*addrSize, bitSize=6, bitOffset=1, base=pr.UInt,  mode='RW', overlapEn=True)))
 
         # CMD = 1, Addr = 13 : Bit  1:0 = tc[1:0]
         #                    : Bit  4:2 = S2D[2:0]
         #                    : Bit  7:5 = S2D_DAC_BIAS[2:0]
         self.add((
-            pr.RemoteVariable(name='TC',         description='', offset=0x0000100D*addrSize, bitSize=2, bitOffset=0, base=pr.UInt, mode='RW'),
-            pr.RemoteVariable(name='S2d',        description='', offset=0x0000100D*addrSize, bitSize=3, bitOffset=2, base=pr.UInt, mode='RW'),
-            pr.RemoteVariable(name='S2dDacBias', description='', offset=0x0000100D*addrSize, bitSize=3, bitOffset=5, base=pr.UInt, mode='RW')))
+            pr.RemoteVariable(name='TC',         description='', offset=0x0000100D*addrSize, bitSize=2, bitOffset=0, base=pr.UInt, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='S2d',        description='', offset=0x0000100D*addrSize, bitSize=3, bitOffset=2, base=pr.UInt, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='S2dDacBias', description='', offset=0x0000100D*addrSize, bitSize=3, bitOffset=5, base=pr.UInt, mode='RW', overlapEn=True)))
 
         # CMD = 1, Addr = 14 : Bit  1:0 = tps_tcDAC[1:0]
         #                    : Bit  7:2 = TPS_DAC[5:0]
         self.add((
-            pr.RemoteVariable(name='TpsTcDac', description='', offset=0x0000100E*addrSize, bitSize=2, bitOffset=0, base=pr.UInt, mode='RW'),
-            pr.RemoteVariable(name='TpsDac',   description='', offset=0x0000100E*addrSize, bitSize=6, bitOffset=2, base=pr.UInt, mode='RW')))
+            pr.RemoteVariable(name='TpsTcDac', description='', offset=0x0000100E*addrSize, bitSize=2, bitOffset=0, base=pr.UInt, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='TpsDac',   description='', offset=0x0000100E*addrSize, bitSize=6, bitOffset=2, base=pr.UInt, mode='RW', overlapEn=True)))
 
         # CMD = 1, Addr = 15 : Bit  1:0 = S2D0_tcDAC[1:0]
         #                    : Bit  7:2 = S2D0_DAC[5:0]
         self.add((
-            pr.RemoteVariable(name='S2d0TcDac', description='', offset=0x0000100F*addrSize, bitSize=2, bitOffset=0, base=pr.UInt, mode='RW'),
-            pr.RemoteVariable(name='S2d0Dac',   description='', offset=0x0000100F*addrSize, bitSize=6, bitOffset=2, base=pr.UInt, mode='RW')))
+            pr.RemoteVariable(name='S2d0TcDac', description='', offset=0x0000100F*addrSize, bitSize=2, bitOffset=0, base=pr.UInt, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='S2d0Dac',   description='', offset=0x0000100F*addrSize, bitSize=6, bitOffset=2, base=pr.UInt, mode='RW', overlapEn=True)))
 
         # CMD = 1, Addr = 16 : Bit  0   = test_BE
         #                    : Bit  1   = is_en
@@ -187,31 +187,31 @@ class Epix100aAsic(pr.Device):
         #                    : Bit  3   = delCCkreg
         #                    : Bit  4   = ro_rst_exten
         self.add((
-            pr.RemoteVariable(name='TestBe',       description='', offset=0x00001010*addrSize, bitSize=1, bitOffset=0, base=pr.Bool, mode='RW'),
-            pr.RemoteVariable(name='IsEn',         description='', offset=0x00001010*addrSize, bitSize=1, bitOffset=1, base=pr.Bool, mode='RW'),
-            pr.RemoteVariable(name='DelExec',      description='', offset=0x00001010*addrSize, bitSize=1, bitOffset=2, base=pr.Bool, mode='RW'),
-            pr.RemoteVariable(name='DelCckRef',    description='', offset=0x00001010*addrSize, bitSize=1, bitOffset=3, base=pr.Bool, mode='RW'),
-            pr.RemoteVariable(name='ro_rst_exten', description='', offset=0x00001010*addrSize, bitSize=1, bitOffset=4, base=pr.Bool, mode='RW')))
+            pr.RemoteVariable(name='TestBe',       description='', offset=0x00001010*addrSize, bitSize=1, bitOffset=0, base=pr.Bool, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='IsEn',         description='', offset=0x00001010*addrSize, bitSize=1, bitOffset=1, base=pr.Bool, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='DelExec',      description='', offset=0x00001010*addrSize, bitSize=1, bitOffset=2, base=pr.Bool, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='DelCckRef',    description='', offset=0x00001010*addrSize, bitSize=1, bitOffset=3, base=pr.Bool, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='ro_rst_exten', description='', offset=0x00001010*addrSize, bitSize=1, bitOffset=4, base=pr.Bool, mode='RW', overlapEn=True)))
 
         # CMD = 1, Addr = 17 : Row start  address[9:0]
         # CMD = 1, Addr = 18 : Row stop  address[9:0]
         # CMD = 1, Addr = 19 : Col start  address[9:0]
         # CMD = 1, Addr = 20 : Col stop  address[9:0]
         self.add((
-            pr.RemoteVariable(name='RowStartAddr', description='RowStartAddr', offset=0x00001011*addrSize, bitSize=10, bitOffset=0, base=pr.UInt, mode='RW'),
-            pr.RemoteVariable(name='RowStopAddr',  description='RowStopAddr',  offset=0x00001012*addrSize, bitSize=10, bitOffset=0, base=pr.UInt, mode='RW'),
-            pr.RemoteVariable(name='ColStartAddr', description='ColStartAddr', offset=0x00001013*addrSize, bitSize=10, bitOffset=0, base=pr.UInt, mode='RW'),
-            pr.RemoteVariable(name='ColStopAddr',  description='ColStopAddr',  offset=0x00001014*addrSize, bitSize=10, bitOffset=0, base=pr.UInt, mode='RW')))
+            pr.RemoteVariable(name='RowStartAddr', description='RowStartAddr', offset=0x00001011*addrSize, bitSize=10, bitOffset=0, base=pr.UInt, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='RowStopAddr',  description='RowStopAddr',  offset=0x00001012*addrSize, bitSize=10, bitOffset=0, base=pr.UInt, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='ColStartAddr', description='ColStartAddr', offset=0x00001013*addrSize, bitSize=10, bitOffset=0, base=pr.UInt, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='ColStopAddr',  description='ColStopAddr',  offset=0x00001014*addrSize, bitSize=10, bitOffset=0, base=pr.UInt, mode='RW', overlapEn=True)))
    
         #  CMD = 1, Addr = 21 : Chip ID Read
         self.add(
-            pr.RemoteVariable(name='ChipId', description='ChipId', offset=0x00001015*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW'))
+            pr.RemoteVariable(name='ChipId', description='ChipId', offset=0x00001015*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RW', overlapEn=True))
 
         # CMD = 1, Addr = 22 : Bit  3:0 = S2D2GR[3:0]
         #                    : Bit  7:4 = S2D3GR[5:0] #TODO check it this is not 3:0??
         self.add((
-            pr.RemoteVariable(name='S2d2Gr', description='', offset=0x00001016*addrSize, bitSize=4, bitOffset=0, base=pr.UInt, mode='RW'),
-            pr.RemoteVariable(name='S2d3Gr', description='', offset=0x00001016*addrSize, bitSize=4, bitOffset=4, base=pr.UInt, mode='RW')))
+            pr.RemoteVariable(name='S2d2Gr', description='', offset=0x00001016*addrSize, bitSize=4, bitOffset=0, base=pr.UInt, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='S2d3Gr', description='', offset=0x00001016*addrSize, bitSize=4, bitOffset=4, base=pr.UInt, mode='RW', overlapEn=True)))
 
         # CMD = 1, Addr = 23 : Bit  1:0 = S2D1_tcDAC[1:0]
         #                    : Bit  7:2 = S2D1_DAC[5:0]
@@ -220,12 +220,12 @@ class Epix100aAsic(pr.Device):
         # CMD = 1, Addr = 25 : Bit  1:0 = S2D3_tcDAC[1:0]
         #                    : Bit  7:2 = S2D3_DAC[5:0]
         self.add((
-            pr.RemoteVariable(name='S2d1TcDac', description='', offset=0x00001017*addrSize, bitSize=2, bitOffset=0, base=pr.UInt, mode='RW'),
-            pr.RemoteVariable(name='S2d1Dac',   description='', offset=0x00001017*addrSize, bitSize=6, bitOffset=2, base=pr.UInt, mode='RW'),
-            pr.RemoteVariable(name='S2d2TcDac', description='', offset=0x00001018*addrSize, bitSize=2, bitOffset=0, base=pr.UInt, mode='RW'),
-            pr.RemoteVariable(name='S2d2Dac',   description='', offset=0x00001018*addrSize, bitSize=6, bitOffset=2, base=pr.UInt, mode='RW'),
-            pr.RemoteVariable(name='S2d3TcDac', description='', offset=0x00001019*addrSize, bitSize=2, bitOffset=0, base=pr.UInt, mode='RW'),
-            pr.RemoteVariable(name='S2d3Dac',   description='', offset=0x00001019*addrSize, bitSize=6, bitOffset=2, base=pr.UInt, mode='RW')))
+            pr.RemoteVariable(name='S2d1TcDac', description='', offset=0x00001017*addrSize, bitSize=2, bitOffset=0, base=pr.UInt, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='S2d1Dac',   description='', offset=0x00001017*addrSize, bitSize=6, bitOffset=2, base=pr.UInt, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='S2d2TcDac', description='', offset=0x00001018*addrSize, bitSize=2, bitOffset=0, base=pr.UInt, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='S2d2Dac',   description='', offset=0x00001018*addrSize, bitSize=6, bitOffset=2, base=pr.UInt, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='S2d3TcDac', description='', offset=0x00001019*addrSize, bitSize=2, bitOffset=0, base=pr.UInt, mode='RW', overlapEn=True),
+            pr.RemoteVariable(name='S2d3Dac',   description='', offset=0x00001019*addrSize, bitSize=6, bitOffset=2, base=pr.UInt, mode='RW', overlapEn=True)))
         
         # CMD = 6, Addr = 17 : Row counter[8:0]
         self.add((
@@ -284,22 +284,24 @@ class Epix100aAsic(pr.Device):
 #        if value is True:
 #            self.readBlocks(recurse=True, variable=None)
 #            self.checkBlocks(recurse=True, variable=None)
-
+    
+    
+    
     def fnSetPixelBitmap(self, dev,cmd,arg):
         """SetPixelBitmap command function"""
         addrSize = 4
-        #set r0mode in order to have saci cmd to work properly on legacy firmware
-        self.root.ePix100aFPGA.EpixFpgaRegisters.AsicR0Mode.set(True)
 
         if (self.enable.get()):
             self.reportCmd(dev,cmd,arg)
+            if not isinstance(arg, str):
+               arg = ''
             if len(arg) > 0:
-                self.filename = arg
+               self.filename = arg
             else:
-                self.filename = QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
-            # in PyQt5 QFileDialog returns a tuple
-            if usingPyQt5:
-               self.filename = self.filename[0]
+               self.filename = QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+               # in PyQt5 QFileDialog returns a tuple
+               if usingPyQt5:
+                  self.filename = self.filename[0]
             if os.path.splitext(self.filename)[1] == '.csv':
                 matrixCfg = np.genfromtxt(self.filename, delimiter=',')
                 if matrixCfg.shape == (354, 384):
@@ -329,19 +331,19 @@ class Epix100aAsic(pr.Device):
         else:
             print("Warning: ASIC enable is set to False!")
 
+
     def fnGetPixelBitmap(self, dev,cmd,arg):
         """GetPixelBitmap command function"""
         addrSize = 4
-        #set r0mode in order to have saci cmd to work properly on legacy firmware
-        self.root.ePix100aFPGA.EpixFpgaRegisters.AsicR0Mode.set(True)
 
         if (self.enable.get()):
-
             self.reportCmd(dev,cmd,arg)
+            if not isinstance(arg, str):
+               arg = ''
             if len(arg) > 0:
-                self.filename = arg
+               self.filename = arg
             else:
-                self.filename = QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
+               self.filename = QFileDialog.getOpenFileName(self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
             # in PyQt5 QFileDialog returns a tuple
             if usingPyQt5:
                self.filename = self.filename[0]
@@ -371,8 +373,6 @@ class Epix100aAsic(pr.Device):
 
     def fnClearMatrix(self, dev,cmd,arg):
         """ClearMatrix command function"""
-        #set r0mode in order to have saci cmd to work properly on legacy firmware
-        self.root.ePix100aFPGA.EpixFpgaRegisters.AsicR0Mode.set(True)
 
         if (self.enable.get()):
             self.reportCmd(dev,cmd,arg)
@@ -1075,6 +1075,23 @@ class Epix10kaAsic(pr.Device):
             return '{:.3f} kHz'.format(1/(self.clkPeriod * self._count(var.dependencies)) * 1e-3)
         return func
 
+class Epix10kaAsicRev2(Epix10kaAsic):
+    def __init__(self, **kwargs):
+        """Create the ePix10kaAsic rev2 device"""
+        super().__init__(**kwargs)
+
+
+        #In order to easily compare GenDAQ address map with the ePix rogue address map 
+        #it is defined the addrSize variable
+        addrSize = 4	
+        
+        # CMD = 1, Addr = 23
+        self.add((
+            pr.RemoteVariable(name='S2D_Rz', description='', offset=0x00001017*addrSize, bitSize=1, bitOffset=5, base=pr.UInt,  mode='RW', overlapEn=True)))
+        
+        # CMD = 1, Addr = 27
+        self.add((
+            pr.RemoteVariable(name='S2D_LSB', description='', offset=0x0000101B*addrSize, bitSize=2, bitOffset=0, base=pr.UInt, mode='RW', overlapEn=True)))
 
 class TixelAsic(pr.Device):
     def __init__(self, **kwargs):
