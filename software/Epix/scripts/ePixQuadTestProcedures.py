@@ -125,6 +125,30 @@ def setAsicMatrixPulseGrid66Force(x, y):
             raise RuntimeError('Set ASIC %d matrix to 66%d%d pulse pattern - Failed'%(args.asic,Mask_x,Mask_y))
    print('Set ASIC %d matrix to 66%d%d pulse pattern - Done'%(args.asic,Mask_x,Mask_y))
 
+
+def setAsicMatrixGrid22(x, y, pix, dev):
+   addrSize=4
+   dev._rawWrite(0x00000000*addrSize,0)
+   dev._rawWrite(0x00008000*addrSize,0)
+   for i in range(175):
+      for j in range(192):
+         if (i % 2 == x) and (j % 2 == y):
+            bankToWrite = int(j/48);
+            if (bankToWrite == 0):
+               colToWrite = 0x700 + j%48;
+            elif (bankToWrite == 1):
+               colToWrite = 0x680 + j%48;
+            elif (bankToWrite == 2):
+               colToWrite = 0x580 + j%48;
+            elif (bankToWrite == 3):
+               colToWrite = 0x380 + j%48;
+            else:
+               print('unexpected bank number')
+            dev._rawWrite(0x00006013*addrSize, colToWrite)
+            dev._rawWrite(0x00006011*addrSize, i)
+            dev._rawWrite(0x00005000*addrSize, pix)
+   dev._rawWrite(0x00000000*addrSize,0)
+
 def setAsicThreshold1(threshold):
    print('Setting TH1 to %d'%threshold)
    SelectedAsic.MSBCompTH1_DAC.set(threshold >> 6) # 4 bit MSB
@@ -214,12 +238,13 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--test", 
+    "--c", 
     type     = str,
-    required = False,
-    default  = 'trimBitsData',
-    help     = "Test name (options: trimBitsData)",
+    required = True,
+    default  = './',
+    help     = "Configuration yml file",
 )
+
 
 parser.add_argument(
     "--dir", 
@@ -233,11 +258,17 @@ parser.add_argument(
     "--framesPerThreshold", 
     type     = int,
     required = False,
-    default  = 10,
+    default  = 10240,
     help     = "Number of frames per threshold",
 )
 
-
+parser.add_argument(
+    "--acqWidth", 
+    type     = int,
+    required = False,
+    default  = 20000,
+    help     = "Acquisition time in 10ns intervals",
+)
 
 
 
@@ -254,8 +285,8 @@ base = quad.Top(hwType=args.type, dev=args.pgp, lane=args.l, promWrEn=False)
 
 # Start the system
 base.start(
-    pollEn   = args.pollEn,
-    initRead = args.initRead,
+    pollEn   = False,
+    initRead = False,
     timeout  = 5.0,    
 )
 
@@ -264,48 +295,48 @@ base.start(
 #   Event reader class
 #   
 ################################################################################
-class ImgProc(rogue.interfaces.stream.Slave):
-   """retrieves data from a file using rogue utilities services"""
-
-   dataWait = threading.Condition()
-   
-   def __init__(self, reqFrames) :
-      rogue.interfaces.stream.Slave.__init__(self)
-      self.frameNum = 0
-      self.reqFrames = reqFrames
-      self.badFrames = 0
-      self.frameBuf = np.empty((reqFrames, 176, 192))
-      self.rawBuf = np.empty((reqFrames, 176*192))
-   
-   def acquireData(self):
-      self.frameNum = 0
-      
-   def descrambleImg(self):
-      for j in range(self.reqFrames):
-         adcImg = self.rawBuf[j].reshape(-1,6)
-         for i in range(0,6):
-            adcImg2 = adcImg[:,i].reshape(-1,32)
-            if i == 0:
-               quadrant0sq = adcImg2
-            else:
-               quadrant0sq = np.concatenate((quadrant0sq,adcImg2),1)
-      self.frameBuf[:,:,:] = quadrant0sq
-   
-   def _acceptFrame(self,frame):
-      cframe = bytearray(frame.getPayload())
-      frame.read(cframe,0)
-      
-      if frame.getPayload() == 67596 and self.frameNum < self.reqFrames:
-         #self.frameBuf[self.frameNum] = np.frombuffer(cframe, dtype=np.uint16, count=-1, offset=12).reshape(176,192)
-         self.rawBuf[self.frameNum] = np.frombuffer(cframe, dtype=np.uint16, count=-1, offset=12)
-         self.frameNum = self.frameNum + 1
-         #print(self.frameNum)
-         if self.frameNum >= self.reqFrames:
-            self.dataWait.acquire()
-            self.dataWait.notify()
-            self.dataWait.release()
-      else:
-         self.badFrames = self.badFrames + 1
+#class ImgProc(rogue.interfaces.stream.Slave):
+#   """retrieves data from a file using rogue utilities services"""
+#
+#   dataWait = threading.Condition()
+#   
+#   def __init__(self, reqFrames) :
+#      rogue.interfaces.stream.Slave.__init__(self)
+#      self.frameNum = 0
+#      self.reqFrames = reqFrames
+#      self.badFrames = 0
+#      self.frameBuf = np.empty((reqFrames, 176, 192))
+#      self.rawBuf = np.empty((reqFrames, 176*192))
+#   
+#   def acquireData(self):
+#      self.frameNum = 0
+#      
+#   def descrambleImg(self):
+#      for j in range(self.reqFrames):
+#         adcImg = self.rawBuf[j].reshape(-1,6)
+#         for i in range(0,6):
+#            adcImg2 = adcImg[:,i].reshape(-1,32)
+#            if i == 0:
+#               quadrant0sq = adcImg2
+#            else:
+#               quadrant0sq = np.concatenate((quadrant0sq,adcImg2),1)
+#      self.frameBuf[:,:,:] = quadrant0sq
+#   
+#   def _acceptFrame(self,frame):
+#      cframe = bytearray(frame.getPayload())
+#      frame.read(cframe,0)
+#      
+#      if frame.getPayload() == 1095232 and self.frameNum < self.reqFrames:
+#         #self.frameBuf[self.frameNum] = np.frombuffer(cframe, dtype=np.uint16, count=-1, offset=12).reshape(176,192)
+#         self.rawBuf[self.frameNum] = np.frombuffer(cframe, dtype=np.uint16, count=-1, offset=12)
+#         self.frameNum = self.frameNum + 1
+#         #print(self.frameNum)
+#         if self.frameNum >= self.reqFrames:
+#            self.dataWait.acquire()
+#            self.dataWait.notify()
+#            self.dataWait.release()
+#      else:
+#         self.badFrames = self.badFrames + 1
 
 
 
@@ -313,135 +344,184 @@ class ImgProc(rogue.interfaces.stream.Slave):
 #################################################################
 
 # connect ImageProc
-imgProc = ImgProc(args.framesPerThreshold)
-pyrogue.streamTap(base.pgpVc0, imgProc)
+#imgProc = ImgProc(args.framesPerThreshold)
+#pyrogue.streamTap(base.pgpVc0, imgProc)
 
-SelectedAsic = base.Epix10kaSaci[0].Cpix2Asic0
+SelectedAsic = base.Epix10kaSaci[0]
+
+#check and load config.yml
+base.LoadConfig(args.c)
+
+#if os.path.isfile(args.dir+'/config.yml'):
+#   print('Setting camera registers')
+#   base.LoadConfig(args.dir+'/config.yml')
+#   #base.ReadConfig(args.dir+'/config.yml')
+#else:
+#   raise FileNotFoundError('File ' + args.dir+'/config.yml not found')
+
+#make dir for data if does not exist
+#if not os.path.isdir(args.dir+'/data'):
+#   os.mkdir(args.dir+'/data')
 
 
+print('Set auto-trigger to 60Hz')
+base.SystemRegs.TrigEn.set(True)
+base.SystemRegs.TrigSrcSel.set(0x3)
+base.SystemRegs.AutoTrigEn.set(False)
+base.SystemRegs.AutoTrigFreqHz.set(60.0)
 
-#if args.test == 'trimBitsData':
-#   
-#   if os.path.isdir(args.dir):
-#      
-#      Pulser = 319
-#      Npulse = 100
-#      
-#      
-#      #check and load config.yml
-#      if os.path.isfile(args.dir+'/config.yml'):
-#         print('Setting camera registers')
-#         base.LoadConfig(args.dir+'/config.yml')
-#      else:
-#         raise FileNotFoundError('File ' + args.dir+'/config.yml not found')
-#      
-#      #make dir for data if does not exist
-#      if not os.path.isdir(args.dir+'/data'):
-#         os.mkdir(args.dir+'/data')
-#      
-#      SelectedAsic.enable.set(True)
-#      base.EpixHR.RegisterControl.enable.set(True)
-#      base.EpixHR.TriggerRegisters.enable.set(True)
-#      
-#      print('Enable only counter A readout')
-#      SelectedAsic.Pix_Count_T.set(False)
-#      SelectedAsic.Pix_Count_sel.set(False)
-#      
-#      # disable automatic readout 
-#      base.EpixHR.RegisterControl.EnAllFrames.set(False)
-#      base.EpixHR.RegisterControl.EnSingleFrame.set(False)
-#      
-#      # set Npulse
-#      base.EpixHR.RegisterControl.ReqTriggerCnt.set(Npulse)
-#      
-#      # enable run trigger
-#      base.EpixHR.TriggerRegisters.RunTriggerEnable.set(True)
-#      
-#      print('Clearing ASIC %d matrix'%(args.asic))
-#      SelectedAsic.ClearMatrix()
-#      
-#      print('Enabling pulser')
-#      SelectedAsic.Pulser.set(Pulser)
-#      SelectedAsic.test.set(True)
-#      SelectedAsic.atest.set(False)
-#      
-#      threshold_2 = 1023
-#      threshold_1 = 1023
-#      setAsicThreshold2(threshold_2)
-#      setAsicThreshold1(threshold_1)
-#      
-#      
-#      for VtrimB in range(63,256,64):
-#         for TrimBits in range(0,16,1):
-#            for Mask_x in range(6):
-#               for Mask_y in range(6):
-#                  
-#                  setAsicVtrimBForce(VtrimB)
-#                  setAsicTrimBitsForce(TrimBits)
-#                  setAsicMatrixPulseGrid66Force(Mask_x,Mask_y)
-#                  
-#                  
-#                  for threshold_1 in range(900,400,-1):
-#                     
-#                     setAsicThreshold1(threshold_1)
-#                     
-#                     # eanble automatic readout 
-#                     base.EpixHR.RegisterControl.EnAllFrames.set(True)
-#                     base.EpixHR.RegisterControl.EnSingleFrame.set(True)
-#                        
-#                     # acquire images
-#                     imgProc.dataWait.acquire()
-#                     imgProc.acquireData()
-#                     imgProc.dataWait.wait()
-#                     imgProc.descrambleImg()
-#                     
-#                     # stop triggering data
-#                     base.EpixHR.RegisterControl.EnAllFrames.set(False)
-#                     base.EpixHR.RegisterControl.EnSingleFrame.set(False)
-#                     
-#                     # save data
-#                     fileName = args.dir + '/data/' + '/ACQ' + '{:04d}'.format(args.framesPerThreshold) + '_VTRIMB' + '{:1d}'.format(VtrimB) + '_TH1' + '{:04d}'.format(threshold_1) + '_TH2' + '{:04d}'.format(threshold_2) + '_P' + '{:04d}'.format(Pulser) + '_N' + '{:05d}'.format(Npulse) + '_TrimBits' + '{:02d}'.format(TrimBits) + '_66' + '{:1d}'.format(Mask_x) + '{:1d}'.format(Mask_y)
-#                     np.savez_compressed(fileName, im=imgProc.frameBuf)
-#                     print(fileName + ' saved')
-#
-#   else:
-#      print('Directory %s does not exist'%args.dir)
-#   
-#
+
+print('Set integration time to %d'%(args.acqWidth))
+#base.EpixFpgaRegisters.AsicAcqWidth.set(args.acqWidth)
+#base.EpixFpgaRegisters.AsicR0ToAsicAcq.set(args.acqWidth)
+base.AcqCore.AsicAcqWidth.set(args.acqWidth)
+base.AcqCore.AsicR0ToAsicAcq.set(args.acqWidth)
+
+for trbit in range(2):
    
-base.stop()
-exit()
-
-
-############################
-##  -> Set Pulser to 319
-##  -> Scan VtrimB 0 to 3
-##     -> Scan (4) trim bits 0 to 15 values (fine)
-##        -> Scan all bit masks 6600 to 6655 (x36)
-##           -> Keep TH2 1023, scan TH1 900-400
-#if args.test == 7:
-
-############################
-## The same as test 7 but scanning th2 and counting in counter B
-##  -> Set Pulser to 319
-##  -> Scan VtrimB 0 to 3
-##     -> Scan (4) trim bits 0 to 15 values (fine)
-##        -> Scan all bit masks 6600 to 6655 (x36)
-##           -> Keep TH1 1023, scan TH2 900-400
-#if args.test == 9:
-
-############################
-##  New threshold trim calibration procedure using noise instead of pulser
-##  -> Set synchronous mode and count to 1000
-##  -> Set pulser DAC 0 (global test not working in prototype)
-##  -> Clear matrix to disable pulser
-##  -> Count only in counter A (no toggling and single readout) 
-##  -> Count over threshold 1 
-##  -> Scan VtrimB 0 to 3
-##     -> Scan (4) trim bits 0 to 15 values (fine)
-##        -> Keep TH2 1023, scan TH1 0-1023
-##           -> Acquire 10 frames and do median over each pixel
-##              mask pixel if med >= 3
-##              replace median value of masked pixel with -1
-##              save median only to a binary file (signed int32)
-#if args.test == 12:
+   
+   for asicNo in range(16):
+      print('Enable ASICs test')
+      base.Epix10kaSaci[asicNo].test.set(True)
+      print('Enable ASICs atest')
+      base.Epix10kaSaci[asicNo].atest.set(True)
+      if trbit == 1:
+         print('Setting trbit to 1 (high to low gain)')
+         base.Epix10kaSaci[asicNo].trbit.set(True)
+      else:
+         print('Setting trbit to 0 (medium to low gain)')
+         base.Epix10kaSaci[asicNo].trbit.set(False)
+   
+   for x in range(2):
+      for y in range(2):
+         
+         for asicNo in range(16):
+            print('Clearing ASICs matrix (auto-range)')
+            base.Epix10kaSaci[asicNo].ClearMatrix()
+            
+            print('Setting ASICs matrix to %d%d pattern'%(x,y))
+            setAsicMatrixGrid22(x, y, 1, base.Epix10kaSaci[asicNo])
+         
+            print('Reset pulser')
+            base.Epix10kaSaci[asicNo].PulserR.set(True)
+            base.Epix10kaSaci[asicNo].PulserR.set(False)
+            
+         
+         print('Open data file')
+         base.dataWriter.dataFile.set(args.dir + '/calib_acq_width' +  '{:06d}'.format(args.acqWidth) + '_trbit' + '{:1d}'.format(trbit) + '_22' + '{:1d}'.format(x) + '{:1d}'.format(y)  + '.dat')
+         base.dataWriter.open.set(True)
+         
+         # eanble automatic readout 
+         base.SystemRegs.AutoTrigEn.set(True)
+         
+         time.sleep(200)
+         
+         # stop triggering data
+         base.SystemRegs.AutoTrigEn.set(False)
+         
+         print('Close data file')
+         base.dataWriter.open.set(False)
+         
+   
+   
+   # acquire dark frames in 5 modes before the pulser scan
+   
+   print('Disable ASICs test for darks')
+   for asicNo in range(16):
+      base.Epix10kaSaci[asicNo].test.set(False)
+      print('Disable ASICs atest for darks')
+      base.Epix10kaSaci[asicNo].atest.set(False)
+      print('Set ASICs to fixed medium')
+      base.Epix10kaSaci[asicNo].trbit.set(False)
+      base.Epix10kaSaci[asicNo].PrepareMultiConfig()
+      base.Epix10kaSaci[asicNo].WriteMatrixData(12)
+   
+   
+   
+   print('Open dark file fixed medium')
+   base.dataWriter.dataFile.set(args.dir + '/calib_acq_width' +  '{:06d}'.format(args.acqWidth) + '_trbit' + '{:1d}'.format(trbit) + '_darkFixedMed.dat')
+   base.dataWriter.open.set(True)
+   # eanble automatic readout 
+   base.SystemRegs.AutoTrigEn.set(True)
+   time.sleep(40)
+   # stop triggering data
+   base.SystemRegs.AutoTrigEn.set(False)
+   print('Close data file')
+   base.dataWriter.open.set(False)
+   
+   
+   
+   for asicNo in range(16):
+      print('Set ASICs to fixed high')
+      base.Epix10kaSaci[asicNo].trbit.set(True)
+      base.Epix10kaSaci[asicNo].PrepareMultiConfig()
+      base.Epix10kaSaci[asicNo].WriteMatrixData(12)
+   
+   print('Open dark file fixed high')
+   base.dataWriter.dataFile.set(args.dir + '/calib_acq_width' +  '{:06d}'.format(args.acqWidth) + '_trbit' + '{:1d}'.format(trbit) + '_darkFixedHigh.dat')
+   base.dataWriter.open.set(True)
+   # eanble automatic readout 
+   base.SystemRegs.AutoTrigEn.set(True)
+   time.sleep(40)
+   # stop triggering data
+   base.SystemRegs.AutoTrigEn.set(False)
+   print('Close data file')
+   base.dataWriter.open.set(False)
+   
+   
+   for asicNo in range(16):
+      print('Set ASICs to fixed low')
+      base.Epix10kaSaci[asicNo].PrepareMultiConfig()
+      base.Epix10kaSaci[asicNo].WriteMatrixData(8)
+   
+   print('Open dark file fixed low')
+   base.dataWriter.dataFile.set(args.dir + '/calib_acq_width' +  '{:06d}'.format(args.acqWidth) + '_trbit' + '{:1d}'.format(trbit) + '_darkFixedLow.dat')
+   base.dataWriter.open.set(True)
+   # eanble automatic readout 
+   base.SystemRegs.AutoTrigEn.set(True)
+   time.sleep(40)
+   # stop triggering data
+   base.SystemRegs.AutoTrigEn.set(False)
+   print('Close data file')
+   base.dataWriter.open.set(False)
+   
+   
+   
+   for asicNo in range(16):
+      print('Set ASICs to auto range high to low')
+      base.Epix10kaSaci[asicNo].trbit.set(True)
+      base.Epix10kaSaci[asicNo].PrepareMultiConfig()
+      base.Epix10kaSaci[asicNo].WriteMatrixData(0)
+   
+   print('Open dark file auto range high to low')
+   base.dataWriter.dataFile.set(args.dir + '/calib_acq_width' +  '{:06d}'.format(args.acqWidth) + '_trbit' + '{:1d}'.format(trbit) + '_darkAutoHtoL.dat')
+   base.dataWriter.open.set(True)
+   # eanble automatic readout 
+   base.SystemRegs.AutoTrigEn.set(True)
+   time.sleep(40)
+   # stop triggering data
+   base.SystemRegs.AutoTrigEn.set(False)
+   print('Close data file')
+   base.dataWriter.open.set(False)
+   
+   
+   
+   for asicNo in range(16):
+      print('Set ASICs to auto range medium to low')
+      base.Epix10kaSaci[asicNo].trbit.set(False)
+      base.Epix10kaSaci[asicNo].PrepareMultiConfig()
+      base.Epix10kaSaci[asicNo].WriteMatrixData(0)
+   
+   print('Open dark file auto range medium to low')
+   base.dataWriter.dataFile.set(args.dir + '/calib_acq_width' +  '{:06d}'.format(args.acqWidth) + '_trbit' + '{:1d}'.format(trbit) + '_darkAutoMtoL.dat')
+   base.dataWriter.open.set(True)
+   # eanble automatic readout 
+   base.SystemRegs.AutoTrigEn.set(True)
+   time.sleep(40)
+   # stop triggering data
+   base.SystemRegs.AutoTrigEn.set(False)
+   print('Close data file')
+   base.dataWriter.open.set(False)
+   
+   
+   
