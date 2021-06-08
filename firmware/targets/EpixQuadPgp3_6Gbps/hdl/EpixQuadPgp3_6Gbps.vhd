@@ -116,7 +116,9 @@ entity EpixQuadPgp3_6Gbps is
       adcCsb            : out   slv(9 downto 0);
       -- debug outputs
       dbgOut            : out   slv(2 downto 0);
-      spareIo2v5        : out   slv(4 downto 0)
+      spareIo2v5        : out   slv(4 downto 0);
+      -- ttl trigger
+      trigTtl           : in    sl
    );
 end EpixQuadPgp3_6Gbps;
 
@@ -217,7 +219,9 @@ begin
          adcCsb            => adcCsb,
          -- debug outputs
          dbgOut            => dbgOut,
-         spareIo2v5        => spareIo2v5
+         spareIo2v5        => spareIo2v5,
+         -- ttl trigger
+         trigTtl           => trigTtl
       );
 
 end top_level;

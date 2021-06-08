@@ -120,7 +120,9 @@ entity EpixQuadCore is
       adcCsb            : out   slv(9 downto 0);
       -- debug outputs
       dbgOut            : out   slv(2 downto 0);
-      spareIo2v5        : out   slv(4 downto 0)
+      spareIo2v5        : out   slv(4 downto 0);
+      -- ttl trigger
+      trigTtl           : in    sl
    );
 end EpixQuadCore;
 
@@ -423,7 +425,7 @@ begin
          asicMask             => open,
          -- trigger inputs
          trigPgp              => opCodeEn,
-         trigTtl              => '0',
+         trigTtl              => trigTtl,
          trigCmd              => swTrigger,
          acqStart             => acqStart,
          -- Monitor data for the image stream

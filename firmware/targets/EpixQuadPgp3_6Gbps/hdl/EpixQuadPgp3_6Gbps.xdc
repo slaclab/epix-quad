@@ -313,6 +313,8 @@ set_property -dict { PACKAGE_PIN W8   IOSTANDARD LVCMOS18 } [get_ports {adcCsb[2
 set_property -dict { PACKAGE_PIN AA8  IOSTANDARD LVCMOS18 } [get_ports {adcCsb[1]}]
 set_property -dict { PACKAGE_PIN Y8   IOSTANDARD LVCMOS18 } [get_ports {adcCsb[0]}]
 
+set_property -dict { PACKAGE_PIN P25  IOSTANDARD LVCMOS12 } [get_ports {trigTtl}]
+
 
 #set_property LOC BUFGCE_X1Y74  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
 #set_property LOC BUFGCE_DIV_X0Y11  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/U_AdcBitClkR}]
