@@ -949,6 +949,12 @@ class Epix10kaAsic(pr.Device):
 
         self.add(
             pr.Command(name='ClearMatrix',description='Clear configuration bits of all pixels', function=self.fnClearMatrix))
+            
+        self.add(
+            pr.Command(name='SetMatrixHiMed',description='Set configuration bits of all pixels to 12', function=self.fnSetMatrixHiMed))
+            
+        self.add(
+            pr.Command(name='SetMatrixLow',description='Set configuration bits of all pixels to 8', function=self.fnSetMatrixLow))
 
         self.add(
             pr.Command(name='SetPixelBitmap',description='Set pixel bitmap of the matrix', function=self.fnSetPixelBitmap))
@@ -1061,7 +1067,40 @@ class Epix10kaAsic(pr.Device):
                 self.WriteColData.set(0)
             self.CmdPrepForRead()
         else:
-            print("Warning: ASIC enable is set to False!")          
+            print("Warning: ASIC enable is set to False!") 
+
+
+    def fnSetMatrixHiMed(self, dev,cmd,arg):
+        """ClearMatrix command function"""
+        #set r0mode in order to have saci cmd to work properly on legacy firmware
+        #self.root.Epix10ka.EpixFpgaRegisters.AsicR0Mode.set(True)
+
+        if (self.enable.get()):
+            self.reportCmd(dev,cmd,arg)
+            for i in range (0, 48):
+                self.PrepareMultiConfig()
+                self.ColCounter.set(i)
+                self.WriteColData.set(12)
+            self.CmdPrepForRead()
+        else:
+            print("Warning: ASIC enable is set to False!") 
+            
+            
+    def fnSetMatrixLow(self, dev,cmd,arg):
+        """ClearMatrix command function"""
+        #set r0mode in order to have saci cmd to work properly on legacy firmware
+        #self.root.Epix10ka.EpixFpgaRegisters.AsicR0Mode.set(True)
+
+        if (self.enable.get()):
+            self.reportCmd(dev,cmd,arg)
+            for i in range (0, 48):
+                self.PrepareMultiConfig()
+                self.ColCounter.set(i)
+                self.WriteColData.set(8)
+            self.CmdPrepForRead()
+        else:
+            print("Warning: ASIC enable is set to False!") 
+            
 
     # standard way to report a command has been executed
     def reportCmd(self, dev,cmd,arg):

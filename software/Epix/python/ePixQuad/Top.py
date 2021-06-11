@@ -140,6 +140,36 @@ class Top(pr.Root):
                self.Epix10kaSaci[i].ClearMatrix()
          # restore TrigEn state
          self.SystemRegs.TrigEn.set(trigEn)
+         
+      @self.command()
+      def SetAsicMatrixHighOrMedium():
+         # save TrigEn state and stop
+         self.SystemRegs.enable.set(True)
+         trigEn = self.SystemRegs.TrigEn.get()
+         self.SystemRegs.TrigEn.set(False)
+         # clear matrix in all enabled ASICs
+         for i in range(16):
+            if self.Epix10kaSaci[i].enable.get() == True:
+               self.Epix10kaSaci[i].atest.set(False)
+               self.Epix10kaSaci[i].test.set(False)
+               self.Epix10kaSaci[i].SetMatrixHiMed()
+         # restore TrigEn state
+         self.SystemRegs.TrigEn.set(trigEn)
+         
+      @self.command()
+      def SetAsicMatrixLow():
+         # save TrigEn state and stop
+         self.SystemRegs.enable.set(True)
+         trigEn = self.SystemRegs.TrigEn.get()
+         self.SystemRegs.TrigEn.set(False)
+         # clear matrix in all enabled ASICs
+         for i in range(16):
+            if self.Epix10kaSaci[i].enable.get() == True:
+               self.Epix10kaSaci[i].atest.set(False)
+               self.Epix10kaSaci[i].test.set(False)
+               self.Epix10kaSaci[i].SetMatrixLow()
+         # restore TrigEn state
+         self.SystemRegs.TrigEn.set(trigEn)
       
       @self.command()
       def MonStrEnable():
