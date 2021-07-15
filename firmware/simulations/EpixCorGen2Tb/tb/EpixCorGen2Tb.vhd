@@ -47,7 +47,7 @@ architecture testbed of EpixCorGen2Tb is
    
    constant BUILD_INFO_TB_C : BuildInfoRetType := (
       buildString =>  (others => (others => '0')),
-      fwVersion => X"EA040000",
+      fwVersion => X"E2040000",
       gitHash => (others => '0'));
    
    
