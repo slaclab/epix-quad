@@ -119,10 +119,6 @@ begin
       end if;
       
       
-      
-      -- Reset data
-      v.axiReadSlave.rdata       := (others => '0');
-      
       -- Determine the transaction type
       axiSlaveWaitTxn(regCon, axiWriteMaster, axiReadMaster, v.axiWriteSlave, v.axiReadSlave);
 
