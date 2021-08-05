@@ -122,7 +122,7 @@ begin
       v := r;
       
       -- Reset data and strobes
-      v.axiReadSlave.rdata       := (others => '0');
+      -- v.axiReadSlave.rdata       := (others => '0');https://github.com/slaclab/surf/pull/718
       
       -- Determine the transaction type
       axiSlaveWaitTxn(regCon, axiWriteMaster, axiReadMaster, v.axiWriteSlave, v.axiReadSlave);

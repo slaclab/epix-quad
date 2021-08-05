@@ -205,7 +205,7 @@ begin
       v := r;
       
       -- Reset data and strobes
-      v.axiReadSlave.rdata       := (others => '0');
+      -- v.axiReadSlave.rdata       := (others => '0');https://github.com/slaclab/surf/pull/718
       v.asicAcqReg.asicSample    := r.asicAcqReg.asicSample(254 downto 0) & '0';
       v.asicAcqReg.asicStart     := '0';
       
