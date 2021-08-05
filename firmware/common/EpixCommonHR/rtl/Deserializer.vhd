@@ -313,7 +313,7 @@ begin
       -------------------------------------------------------------------------------------------------
       -- AXIL Interface (axilClk)
       -------------------------------------------------------------------------------------------------
-      vr.axilReadSlave.rdata := (others => '0');
+      -- vr.axilReadSlave.rdata := (others => '0');https://github.com/slaclab/surf/pull/718
       
       -- shift register
       vr.resync := axilR.resync(6 downto 0) & '0';

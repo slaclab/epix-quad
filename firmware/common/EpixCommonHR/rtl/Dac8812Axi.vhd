@@ -124,7 +124,7 @@ begin
    begin
       v := r;
             
-      v.sAxilReadSlave.rdata := (others => '0');
+      -- v.sAxilReadSlave.rdata := (others => '0');https://github.com/slaclab/surf/pull/718
       axiSlaveWaitTxn(regCon, sAxilWriteMaster, sAxilReadMaster, v.sAxilWriteSlave, v.sAxilReadSlave);
       
       axiSlaveRegister (regCon, x"00",  0, v.dac.dacData);

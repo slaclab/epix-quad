@@ -104,7 +104,7 @@ begin
       v := r;
       
       -- Reset data
-      v.axiReadSlave.rdata       := (others => '0');
+      -- v.axiReadSlave.rdata       := (others => '0');https://github.com/slaclab/surf/pull/718
       
       -- Determine the transaction type
       axiSlaveWaitTxn(axiWriteMaster, axiReadMaster, v.axiWriteSlave, v.axiReadSlave, axiStatus);
