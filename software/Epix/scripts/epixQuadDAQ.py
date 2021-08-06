@@ -95,9 +95,9 @@ base = quad.Top(hwType=args.type, dev=args.pgp, lane=args.l, promWrEn=args.adcCa
 
 # Start the system
 base.start(
-    pollEn   = args.pollEn,
-    initRead = args.initRead,
-    timeout  = 5.0,    
+#    pollEn   = args.pollEn,
+#    initRead = args.initRead,
+#    timeout  = 5.0,    
 )
 
 # Create GUI
