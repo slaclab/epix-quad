@@ -168,6 +168,7 @@ set_property -dict { PACKAGE_PIN AG22 IOSTANDARD LVCMOS25 } [get_ports {dcdcEn[1
 set_property -dict { PACKAGE_PIN AH22 IOSTANDARD LVCMOS25 } [get_ports {dcdcEn[0]}]
 
 set_property -dict { PACKAGE_PIN M27  IOSTANDARD LVCMOS12 } [get_ports {tempAlertL}]
+set_property -dict { PACKAGE_PIN M26  IOSTANDARD LVCMOS12 } [get_ports {trigTtl}]
 
 set_property -dict { PACKAGE_PIN M25  IOSTANDARD LVCMOS12 } [get_ports {dbgOut[0]}]
 set_property -dict { PACKAGE_PIN M28  IOSTANDARD LVCMOS12 } [get_ports {dbgOut[1]}]

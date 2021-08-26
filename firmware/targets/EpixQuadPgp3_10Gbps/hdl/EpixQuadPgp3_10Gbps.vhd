@@ -116,8 +116,10 @@ entity EpixQuadPgp3_10Gbps is
       adcCsb            : out   slv(9 downto 0);
       -- debug outputs
       dbgOut            : out   slv(2 downto 0);
-      spareIo2v5        : out   slv(4 downto 0)
-   );
+      spareIo2v5        : out   slv(4 downto 0);
+      -- ttl Trigger
+      trigTtl           : in    sl 
+  );
 end EpixQuadPgp3_10Gbps;
 
 architecture top_level of EpixQuadPgp3_10Gbps is
@@ -217,7 +219,9 @@ begin
          adcCsb            => adcCsb,
          -- debug outputs
          dbgOut            => dbgOut,
-         spareIo2v5        => spareIo2v5
-      );
+         spareIo2v5        => spareIo2v5,
+         -- ttl Trigger
+         trigTtl           => trigTtl
+     );
 
 end top_level;
