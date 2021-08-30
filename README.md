@@ -14,7 +14,7 @@
 
 # Clone the GIT repository
 ```
-$ git clone --recursive git@github.com:slaclab/epix
+$ git clone --recursive git@github.com:slaclab/epix-quad
 ```
 
 # Compile Rogue
