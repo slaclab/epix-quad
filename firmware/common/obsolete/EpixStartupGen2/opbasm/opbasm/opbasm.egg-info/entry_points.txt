@@ -1,4 +1,0 @@
-[console_scripts]
-opbasm = opbasm:main
-pb_update = pb_update:main
-

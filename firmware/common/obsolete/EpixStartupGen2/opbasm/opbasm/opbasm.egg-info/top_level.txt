@@ -1,6 +1,0 @@
-opbasm_lib
-templates
-ez_setup
-opbasm
-pb_update
-test

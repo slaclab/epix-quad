@@ -1,9 +1,0 @@
-puts "************************************"
-puts "  Epix Digital Card, Generation 1   "
-puts "************************************"
-
-set jtag_devices_upstream 0
-set jtag_devices_downstream 0
-set irlength_upstream 0
-set irlength_downstream 0 
-set usercode "1111000011"
