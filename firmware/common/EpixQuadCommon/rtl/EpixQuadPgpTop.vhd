@@ -32,8 +32,8 @@ entity EpixQuadPgpTop is
       TPD_G             : time            := 1 ns;
       SIMULATION_G      : boolean         := false;
       SIM_SPEEDUP_G     : boolean         := false;
-      COM_TYPE_G        : string          := "PGPv3";
-      RATE_G            : string          := "6.25Gbps");
+      COM_TYPE_G        : string          := "PGPv4";
+      RATE_G            : string          := "10.125Gbps");
    port (
       -- Clock and Reset
       sysClk            : out sl;
@@ -76,13 +76,61 @@ architecture top_level of EpixQuadPgpTop is
 
 begin
    
-   assert COM_TYPE_G = "PGPv3" or COM_TYPE_G = "PGPv2b"
-      report "COM_TYPE_G must be set to PGPv3 or PGPv2b"
+   assert COM_TYPE_G = "PGPv2b" or COM_TYPE_G = "PGPv3" or COM_TYPE_G = "PGPv4"
+      report "COM_TYPE_G must be set to PGPv2b, PGPv3, or PGPv4"
       severity failure;
 
    --------------------------------------------------------
    -- Communication Module
    --------------------------------------------------------
+   G_PGPv4 : if COM_TYPE_G = "PGPv4" generate
+   
+      U_PGP : entity work.EpixQuadPgp4Core
+         generic map (
+            TPD_G             => TPD_G,
+            SIMULATION_G      => SIMULATION_G,
+            SIM_SPEEDUP_G     => SIM_SPEEDUP_G,
+            RATE_G            => RATE_G)
+         port map (
+            -- Clock and Reset
+            sysClk            => sysClk,
+            sysRst            => sysRst,
+            -- Data Streaming Interface
+            dataTxMaster      => dataTxMaster,
+            dataTxSlave       => dataTxSlave,
+            -- Scope Data Interface
+            scopeTxMaster     => scopeTxMaster,
+            scopeTxSlave      => scopeTxSlave,
+            -- Monitor Data Interface
+            monitorTxMaster   => monitorTxMaster,
+            monitorTxSlave    => monitorTxSlave,
+            monitorEn         => monitorEn,
+            -- AXI-Lite Register Interface
+            mAxilReadMaster   => mAxilReadMaster ,
+            mAxilReadSlave    => mAxilReadSlave  ,
+            mAxilWriteMaster  => mAxilWriteMaster,
+            mAxilWriteSlave   => mAxilWriteSlave ,
+            -- Debug AXI-Lite Interface         
+            sAxilReadMaster   => sAxilReadMaster ,
+            sAxilReadSlave    => sAxilReadSlave  ,
+            sAxilWriteMaster  => sAxilWriteMaster,
+            sAxilWriteSlave   => sAxilWriteSlave ,
+            -- Software trigger interface
+            swTrigOut         => swTrigOut,
+            -- Fiber trigger interface
+            opCode            => opCode,
+            opCodeEn          => opCodeEn,
+            -- PGP Ports
+            pgpClkP           => pgpClkP,
+            pgpClkN           => pgpClkN,
+            pgpRxP            => pgpRxP,
+            pgpRxN            => pgpRxN,
+            pgpTxP            => pgpTxP,
+            pgpTxN            => pgpTxN
+         );
+      
+   end generate G_PGPv4;
+ 
    G_PGPv3 : if COM_TYPE_G = "PGPv3" generate
    
       U_PGP : entity work.EpixQuadPgp3Core

@@ -26,6 +26,9 @@ import ePixViewer as vi
 # Set the argument parser
 parser = argparse.ArgumentParser()
 
+# Mutually exclusive group for the card selection
+group = parser.add_mutually_exclusive_group()
+
 # Convert str to bool
 argBool = lambda s: s.lower() in ['true', 't', 'yes', '1']
 
@@ -62,13 +65,21 @@ parser.add_argument(
     help     = "Data card type pgp3_cardG3, datadev or simulation)",
 )  
 
-parser.add_argument(
+group.add_argument(
     "--pgp", 
     type     = str,
     required = False,
     default  = '/dev/pgpcard_0',
     help     = "PGP devide (default /dev/pgpcard_0)",
 )  
+
+group.add_argument(
+    "--dataDev",
+    type      = str,
+    required  = Flase,
+    default   = '/dev/datadev_0',
+    help      = 'Data dev card, for Pgp4'
+)
 
 parser.add_argument(
     "--l", 
@@ -87,7 +98,7 @@ parser.add_argument(
 
 # Get the arguments
 args = parser.parse_args()
-
+print(args)
 #################################################################
 
 # Set base

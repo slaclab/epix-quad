@@ -27,7 +27,7 @@ use surf.AxiStreamPkg.all;
 library unisim;
 use unisim.vcomponents.all;
 
-entity EpixQuadPgp3_10Gbps is
+entity EpixQuadPgp4_10Gbps is
    generic (
       TPD_G             : time            := 1 ns;
       BUILD_INFO_G      : BuildInfoType;
@@ -120,9 +120,9 @@ entity EpixQuadPgp3_10Gbps is
       -- ttl Trigger
       trigTtl           : in    sl 
   );
-end EpixQuadPgp3_10Gbps;
+end EpixQuadPgp4_10Gbps;
 
-architecture top_level of EpixQuadPgp3_10Gbps is
+architecture top_level of EpixQuadPgp4_10Gbps is
    
 begin
 

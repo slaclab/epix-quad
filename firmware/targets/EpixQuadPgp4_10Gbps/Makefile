@@ -1,7 +1,7 @@
-#export GIT_BYPASS = 0
+export GIT_BYPASS = 1
 
 # Use the PGPv3 10G core
-export INCLUDE_PGP3_10G = 1
+export INCLUDE_PGP4_10G = 1
 
 # Define Firmware Version Number
 export PRJ_VERSION = 0xEA06000F
