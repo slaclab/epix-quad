@@ -1,5 +1,5 @@
 # Setup environment
-source /afs/slac/g/reseng/rogue/v3.7.0/setup_rogue.sh
+source /afs/slac/g/reseng/rogue/v5.6.4/setup_rogue.sh
 
 # Python Package directories
 export EPIXROGUE_DIR=${PWD}/python

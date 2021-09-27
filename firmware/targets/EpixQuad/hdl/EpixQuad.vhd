@@ -1,8 +1,8 @@
 -------------------------------------------------------------------------------
--- File       : EpixQuad.vhd
+-- File       : EpixQuadPgp3_10Gbps.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
--- Description: EpixQuad Target's Top Level
+-- Description: EpixQuadPgp3_10Gbps Target's Top Level
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Development Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
@@ -116,8 +116,10 @@ entity EpixQuad is
       adcCsb            : out   slv(9 downto 0);
       -- debug outputs
       dbgOut            : out   slv(2 downto 0);
-      spareIo2v5        : out   slv(4 downto 0)
-   );
+      spareIo2v5        : out   slv(4 downto 0);
+      -- ttl Trigger
+      trigTtl           : in    sl 
+  );
 end EpixQuad;
 
 architecture top_level of EpixQuad is
@@ -130,7 +132,8 @@ begin
          BUILD_INFO_G      => BUILD_INFO_G,
          SIMULATION_G      => SIMULATION_G,
          SIM_SPEEDUP_G     => SIM_SPEEDUP_G,
-         COM_TYPE_G        => "PGPv2b"
+         MIG_CORE_EN       => false,
+         RATE_G            => "6.25Gbps"
       )
       port map (
          -- DRR Memory interface ports
@@ -215,7 +218,9 @@ begin
          adcCsb            => adcCsb,
          -- debug outputs
          dbgOut            => dbgOut,
-         spareIo2v5        => spareIo2v5
-      );
+         spareIo2v5        => spareIo2v5,
+         -- ttl Trigger
+         trigTtl           => trigTtl
+     );
 
 end top_level;

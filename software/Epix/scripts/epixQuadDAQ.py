@@ -76,7 +76,7 @@ group.add_argument(
 group.add_argument(
     "--dataDev",
     type      = str,
-    required  = Flase,
+    required  = False,
     default   = '/dev/datadev_0',
     help      = 'Data dev card, for Pgp4'
 )
