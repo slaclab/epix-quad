@@ -67,7 +67,7 @@ parser.add_argument(
 
 group.add_argument(
     "--pgp", 
-    type     = str,
+    type     = argBool,
     required = False,
     default  = '/dev/pgpcard_0',
     help     = "PGP devide (default /dev/pgpcard_0)",
@@ -75,7 +75,7 @@ group.add_argument(
 
 group.add_argument(
     "--dataDev",
-    type      = str,
+    type      = argBool,
     required  = False,
     default   = '/dev/datadev_0',
     help      = 'Data dev card, for Pgp4'
@@ -101,8 +101,14 @@ args = parser.parse_args()
 print(args)
 #################################################################
 
+
+if args.pgp:
+    device = '/dev/pgpcard_0'
+elif args.dataDev:
+    device ='/dev/datadev_0'
+
 # Set base
-base = quad.Top(hwType=args.type, dev=args.pgp, lane=args.l, promWrEn=args.adcCalib)    
+base = quad.Top(hwType=args.type, dev=device, lane=args.l, promWrEn=args.adcCalib)
 
 # Start the system
 base.start(
