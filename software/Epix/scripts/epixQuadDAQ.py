@@ -61,7 +61,7 @@ parser.add_argument(
     "--type", 
     type     = str,
     required = False,
-    default  = 'pgp3_cardG3',
+    default  = 'datadev',
     help     = "Data card type pgp3_cardG3, datadev or simulation)",
 )  
 
