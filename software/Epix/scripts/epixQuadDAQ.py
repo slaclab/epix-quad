@@ -104,9 +104,9 @@ print(args)
 
 if args.pgp:
     device = '/dev/pgpcard_0'
-elif args.dataDev:
+else :
     device ='/dev/datadev_0'
-
+print(device)
 # Set base
 base = quad.Top(hwType=args.type, dev=device, lane=args.l, promWrEn=args.adcCalib)
 

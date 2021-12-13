@@ -133,7 +133,7 @@ begin
          SIMULATION_G      => SIMULATION_G,
          SIM_SPEEDUP_G     => SIM_SPEEDUP_G,
          MIG_CORE_EN       => false,
-         RATE_G            => "6.25Gbps"
+         RATE_G            => "10.3125Gbps"
       )
       port map (
          -- DRR Memory interface ports
