@@ -1,16 +1,12 @@
-export GIT_BYPASS = 1
-
 # COMM_TYPE for pgp version [pgp2b, pgp3, pgp4]
 export COMM_TYPE = pgp4
 
 # pgp version and data rate
-#export INCLUDE_PGP3_6G = 1
-#export INCLUDE_PGP3_10G = 1
 #export INCLUDE_PGP4_6G = 1
 export INCLUDE_PGP4_10G = 1
 
 # Define Firmware Version Number
-export PRJ_VERSION = 0xEA06000F
+export PRJ_VERSION = 0xEA060010
 
 # Define the Microblaze source path
 export SDK_SRC_PATH = $(PROJ_DIR)/../../common/EpixQuadCommon/src/
