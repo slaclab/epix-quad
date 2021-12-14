@@ -20,6 +20,8 @@
 # contained in the LICENSE.txt file.
 #-----------------------------------------------------------------------------
 
+import setupLibPaths
+
 import sys
 import pyrogue as pr
 import pyrogue.gui

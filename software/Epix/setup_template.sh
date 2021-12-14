@@ -1,9 +1,10 @@
+
+##################################
 # Setup environment
-source /afs/slac/g/reseng/rogue/v5.6.4/setup_rogue.sh
+##################################
+source /afs/slac.stanford.edu/g/reseng/vol26/anaconda/miniconda3/etc/profile.d/conda.sh
 
-# Python Package directories
-export EPIXROGUE_DIR=${PWD}/python
-export SURF_DIR=${PWD}/../../firmware/submodules/surf/python
-
-# Setup python path
-export PYTHONPATH=${PWD}/python:${EPIXROGUE_DIR}:${SURF_DIR}:${PYTHONPATH}
+##################################
+# Activate Rogue conda Environment
+##################################
+conda activate rogue_v5.6.4
