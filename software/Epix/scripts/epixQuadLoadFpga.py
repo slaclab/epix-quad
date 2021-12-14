@@ -35,6 +35,12 @@ parser = argparse.ArgumentParser()
 
 # Add arguments
 
+# Convert str to bool
+argBool = lambda s: s.lower() in ['true', 't', 'yes', '1']
+
+# Mutually exclusive group for the card selection
+group = parser.add_mutually_exclusive_group()
+
 parser.add_argument(
     "--l", 
     type     = int,
@@ -53,34 +59,55 @@ parser.add_argument(
     "--type", 
     type     = str,
     required = False,
-    default  = 'pgp3_cardG3',
+    default  = 'datadev',
     help     = "Data card type pgp3_cardG3, datadev or simulation)",
 )  
 
-parser.add_argument(
+group.add_argument(
     "--pgp", 
-    type     = str,
+    type     = argBool,
     required = False,
     default  = '/dev/pgpcard_0',
     help     = "PGP devide (default /dev/pgpcard_0)",
 )  
 
+group.add_argument(
+    "--dataDev",
+    type      = argBool,
+    required  = False,
+    default   = '/dev/datadev_0',
+    help      = 'Data dev card, for Pgp4'
+)
+
+# parser.add_argument(
+#     "--pgp", 
+#     type     = str,
+#     required = False,
+#     default  = '/dev/pgpcard_0',
+#     help     = "PGP devide (default /dev/pgpcard_0)",
+# )  
+
 # Get the arguments
 args = parser.parse_args()
 
+if args.pgp:
+    device = '/dev/pgpcard_0'
+else :
+    device ='/dev/datadev_0'
+    
 #################################################################
 
 # Set base
 base = quad.Top(
     hwType = args.type, 
     lane   = args.l,
-    dev    = args.pgp,
+    dev    = device,
 )    
 
 # Start the system
 base.start(
-    pollEn   = False,
-    initRead = False,
+    # pollEn   = False,
+    # initRead = False,
 )
     
 # Create useful pointers
