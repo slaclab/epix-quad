@@ -1,10 +1,12 @@
-#export GIT_BYPASS = 0
+# COMM_TYPE for pgp version [pgp2b, pgp3, pgp4]
+export COMM_TYPE = pgp4
 
-# # Use the PGPv3 10G core
-# export INCLUDE_PGP3_10G = 1
+# pgp version and data rate
+#export INCLUDE_PGP4_6G = 1
+export INCLUDE_PGP4_10G = 1
 
 # Define Firmware Version Number
-export PRJ_VERSION = 0xEA04000F
+export PRJ_VERSION = 0xEA060011
 
 # Define the Microblaze source path
 export SDK_SRC_PATH = $(PROJ_DIR)/../../common/EpixQuadCommon/src/
@@ -34,5 +36,6 @@ include ../../submodules/ruckus/system_vivado.mk
 
 #-------------------------------------------------------------------------------
 #-- Revision History:
-#-- 07/30/2018 (0xEA040000): First revision
+#-- 07/30/2018 (0xEA050000): First revision
+#-- 07/30/2018 (0xEA050001): fit whole image in the output stream FIFO
 #-------------------------------------------------------------------------------

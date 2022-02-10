@@ -8,6 +8,7 @@
 ## may be copied, modified, propagated, or distributed except according to 
 ## the terms contained in the LICENSE.txt file.
 ##############################################################################
+import setupLibPaths
 
 import sys
 import pyrogue as pr
@@ -61,13 +62,13 @@ parser.add_argument(
     "--type", 
     type     = str,
     required = False,
-    default  = 'pgp3_cardG3',
+    default  = 'datadev',
     help     = "Data card type pgp3_cardG3, datadev or simulation)",
 )  
 
 group.add_argument(
     "--pgp", 
-    type     = str,
+    type     = argBool,
     required = False,
     default  = '/dev/pgpcard_0',
     help     = "PGP devide (default /dev/pgpcard_0)",
@@ -75,8 +76,8 @@ group.add_argument(
 
 group.add_argument(
     "--dataDev",
-    type      = str,
-    required  = Flase,
+    type      = argBool,
+    required  = False,
     default   = '/dev/datadev_0',
     help      = 'Data dev card, for Pgp4'
 )
@@ -101,8 +102,14 @@ args = parser.parse_args()
 print(args)
 #################################################################
 
+
+if args.pgp:
+    device = '/dev/pgpcard_0'
+else :
+    device ='/dev/datadev_0'
+print(device)
 # Set base
-base = quad.Top(hwType=args.type, dev=args.pgp, lane=args.l, promWrEn=args.adcCalib)    
+base = quad.Top(hwType=args.type, dev=device, lane=args.l, promWrEn=args.adcCalib)
 
 # Start the system
 base.start(

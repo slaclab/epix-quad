@@ -1,0 +1,24 @@
+# Running ePix Quad Software
+
+### 0 - make sure pgpdriver is loaded
+/sbin/lsmod | grep -i datadev_*
+
+### 1 - Load pgp driver as root
+cd /data/ePix-Quad/aes-stream-drivers/data_dev/driver
+sudo /sbin/insmod datadev.ko cfgSize=327680 cfgRxCount=128 cfgTxCount=128
+
+##### Verify the device permissions match below
+disco@tid-pc93341 /data
+~> ls -al /dev/datadev_0
+crw-rw-rw- 1 root root 245, 0 Oct  4 09:20 /dev/datadev_0
+
+##### if not
+sudo chmod 666 /dev/datadev_0
+
+
+### 3 - Runing the software
+bash
+cd /data/ePix_Quad/epix-quad/software/Epix/
+source setup_template.sh
+
+python ./scripts/epixQuadDAQ.py --l=0 --viewer=1 --dataDev=1
