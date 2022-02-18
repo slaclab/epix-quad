@@ -128,7 +128,7 @@ class EpixQuadMonitor(pr.Device):
         self.add(pr.RemoteVariable
                  (name='MonitorEn',
                   description='Enable Monitor',
-                  offset=0x00000000,
+                  offset=0x0000_0000,
                   bitSize=1,
                   bitOffset=0,
                   base=pr.Bool,
@@ -138,7 +138,7 @@ class EpixQuadMonitor(pr.Device):
         self.add(pr.RemoteVariable
                  (name='MonitorStrEn',
                   description='Monitor Stream Enabled',
-                  offset=0x00000004,
+                  offset=0x0000_0004,
                   bitSize=1,
                   bitOffset=0,
                   base=pr.Bool,
@@ -148,7 +148,7 @@ class EpixQuadMonitor(pr.Device):
         self.add(pr.RemoteVariable
                  (name='TrigPrescaler',
                   description='Monitor Triggger Prescaler',
-                  offset=0x00000008,
+                  offset=0x0000_0008,
                   bitSize=16,
                   bitOffset=0,
                   base=pr.UInt,
@@ -158,7 +158,7 @@ class EpixQuadMonitor(pr.Device):
         self.add(pr.RemoteVariable
                  (name='ShtError',
                   description='SHT31 Humidity Sensor Error',
-                  offset=0x0000000C,
+                  offset=0x0000_000C,
                   bitSize=16,
                   bitOffset=0,
                   base=pr.UInt,
@@ -168,7 +168,7 @@ class EpixQuadMonitor(pr.Device):
         self.add(pr.RemoteVariable
                  (name='ShtHumRaw',
                   description='SHT31 Humidity Value',
-                  offset=0x00000010,
+                  offset=0x0000_0010,
                   bitSize=16,
                   bitOffset=0,
                   base=pr.UInt,
@@ -187,7 +187,7 @@ class EpixQuadMonitor(pr.Device):
         self.add(pr.RemoteVariable
                  (name='ShtTempRaw',
                   description='SHT31 Temperature Value',
-                  offset=0x00000014,
+                  offset=0x0000_0014,
                   bitSize=16,
                   bitOffset=0,
                   base=pr.UInt,
@@ -205,7 +205,7 @@ class EpixQuadMonitor(pr.Device):
         self.add(pr.RemoteVariable
                  (name='NctError',
                   description='NCT218 Temp. Sensor Error',
-                  offset=0x00000018,
+                  offset=0x0000_0018,
                   bitSize=16,
                   bitOffset=0,
                   base=pr.UInt,
@@ -215,7 +215,7 @@ class EpixQuadMonitor(pr.Device):
         self.add(pr.RemoteVariable
                  (name='NctLocTempRaw',
                   description='NCT218 Local Temp.',
-                  offset=0x0000001C,
+                  offset=0x0000_001C,
                   bitSize=8,
                   bitOffset=0,
                   base=pr.UInt,
@@ -234,7 +234,7 @@ class EpixQuadMonitor(pr.Device):
         self.add(pr.RemoteVariable
                  (name='NctRemTempLRaw',
                   description='NCT218 Remote Temp. L Byte',
-                  offset=0x00000020,
+                  offset=0x0000_0020,
                   bitSize=8,
                   bitOffset=0,
                   base=pr.UInt,
@@ -243,7 +243,7 @@ class EpixQuadMonitor(pr.Device):
         self.add(pr.RemoteVariable
                  (name='NctRemTempHRaw',
                   description='NCT218 Remote Temp. H Byte',
-                  offset=0x00000024,
+                  offset=0x0000_0024,
                   bitSize=8,
                   bitOffset=0,
                   base=pr.UInt,
@@ -262,7 +262,7 @@ class EpixQuadMonitor(pr.Device):
             self.add(pr.RemoteVariable(
                 name=('AD7949DataRaw[%d]' % i),
                 description=('AD7949 Raw Data Channel [%d]' % i),
-                offset=(0x00000100 + i * 4),
+                offset=(0x0000_0100 + i * 4),
                 bitSize=14,
                 bitOffset=0,
                 base=pr.UInt,
@@ -303,7 +303,7 @@ class EpixQuadMonitor(pr.Device):
             self.add(pr.RemoteVariable(
                 name=('SensorRegRaw[%d]' % i),
                 description=('Sensor Raw Data Register [%d]' % i),
-                offset=(0x00000200 + i * 4),
+                offset=(0x0000_0200 + i * 4),
                 bitSize=32,
                 bitOffset=0,
                 base=pr.UInt,
@@ -370,7 +370,7 @@ class EpixQuadMonitor(pr.Device):
             self.add(pr.RemoteVariable(
                 name=('SensorRegRaw[%d]' % i),
                 description=('Sensor Raw Data Register [%d]' % i),
-                offset=(0x00000200 + i * 4),
+                offset=(0x0000_0200 + i * 4),
                 bitSize=32,
                 bitOffset=0,
                 base=pr.UInt,
@@ -430,7 +430,7 @@ class EpixQuadMonitor(pr.Device):
             self.add(pr.RemoteVariable(
                 name=('SensorRegRaw[%d]' % i),
                 description=('Sensor Raw Data Register [%d]' % i),
-                offset=(0x00000200 + i * 4),
+                offset=(0x0000_0200 + i * 4),
                 bitSize=32,
                 bitOffset=0,
                 base=pr.UInt,

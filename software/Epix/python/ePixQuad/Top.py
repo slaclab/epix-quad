@@ -37,8 +37,6 @@ from os import path
 
 import click
 
-import pdb
-
 
 class Top(pr.Root):
     def __init__(self,
@@ -70,8 +68,6 @@ class Top(pr.Root):
                     setattr(self, f'pgpVc{i}', rogue.hardware.axi.AxiStreamDma(dev, 256 * lane + i, True))
                 else:
                     setattr(self, f'pgpVc{i}', rogue.hardware.pgp.PgpCard(dev, lane, i))
-
-        pdb.set_trace()
 
         ######################################################################
 

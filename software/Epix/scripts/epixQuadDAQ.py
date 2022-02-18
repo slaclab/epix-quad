@@ -13,14 +13,14 @@ import setupLibPaths
 import sys
 import pyrogue as pr
 import pyrogue.gui
+import pyrogue.pydm
 import rogue
 import argparse
 import ePixQuad as quad
 import ePixViewer as vi
 
-import pdb
 
-# rogue.Logging.setLevel(rogue.Logging.Warning)
+rogue.Logging.setLevel(rogue.Logging.Error)
 # rogue.Logging.setFilter("pyrogue.SrpV3",rogue.Logging.Debug)
 # rogue.Logging.setLevel(rogue.Logging.Debug)
 
@@ -114,37 +114,41 @@ else:
     device = '/dev/datadev_0'
 print(device)
 
+
 # Set base
-base = quad.Top(hwType=args.type, dev=device, lane=args.l, promWrEn=args.adcCalib)
-
-
-# Start the system
-base.start(
-    #    pollEn   = args.pollEn,
-    #    initRead = args.initRead,
-    #    timeout  = 5.0,
+base = quad.Top(
+    hwType=args.type,
+    dev=device,
+    lane=args.l,
+    promWrEn=args.adcCalib,
 )
 
-# Create GUI
+# Start the system
+base.start()
+
+
+# # Create GUI
 appTop = pr.gui.application(sys.argv)
-guiTop = pr.gui.GuiTop(group='rootMesh')
-appTop.setStyle('Fusion')
-guiTop.addTree(base)
-guiTop.resize(600, 800)
 
-base.guiTop = guiTop
-
+# Have to check if viewer is wanted before trying to load rogue pydm ui
 # Viewer gui
 if args.viewer:
     gui = vi.Window(cameraType='ePixQuad')
     gui.eventReader.frameIndex = 0
-    #gui.eventReaderImage.VIEW_DATA_CHANNEL_ID = 0
+    # gui.eventReaderImage.VIEW_DATA_CHANNEL_ID = 0
     gui.setReadDelay(0)
     pyrogue.streamTap(base.pgpVc0, gui.eventReader)
     pyrogue.streamTap(base.pgpVc2, gui.eventReaderScope)  # PseudoScope
     pyrogue.streamTap(base.pgpVc3, gui.eventReaderMonitoring)  # Slow Monitoring
 
 print("Starting GUI...\n")
+
+
+pyrogue.pydm.runPyDM(
+    root=base,
+    sizeX=900,
+    sizeY=800,
+)
 
 # Run GUI
 appTop.exec_()

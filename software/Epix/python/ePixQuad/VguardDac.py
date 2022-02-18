@@ -31,9 +31,9 @@ class VguardDac(pr.Device):
             return x / 65535.0 * 2.5 * (1 + 845.0 / 3000)
 
         def setDacVolt(deps):
-            def setDacValue(var, value, write):
+            def setDacValue(value):
                 rawVal = int(round(value * 65535.0 / (2.5 * (1 + 845.0 / 3000))))
-                deps[0].set(rawVal, write)
+                deps[0].set(rawVal)
             return setDacValue
 
         # Creation. memBase is either the register bus server (srp, rce mapped memory, etc) or the device which

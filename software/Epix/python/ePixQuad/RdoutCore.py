@@ -40,7 +40,7 @@ class RdoutCore(pr.Device):
         self.add(pr.RemoteVariable(
             name='RdoutEn',
             description='Enable Readout',
-            offset=0x00000000,
+            offset=0x0000_0000,
             bitSize=1,
             bitOffset=0,
             base=pr.Bool,
@@ -50,7 +50,7 @@ class RdoutCore(pr.Device):
         self.add(pr.RemoteVariable(
             name='SeqCount',
             description='Sequence Counter',
-            offset=0x00000004,
+            offset=0x0000_0004,
             bitSize=32,
             bitOffset=0,
             base=pr.UInt,
@@ -60,7 +60,7 @@ class RdoutCore(pr.Device):
         self.add(pr.RemoteVariable(
             name='SeqCountReset',
             description='Sequence Counter Reset',
-            offset=0x00000008,
+            offset=0x0000_0008,
             bitSize=1,
             bitOffset=0,
             base=pr.Bool,
@@ -70,7 +70,7 @@ class RdoutCore(pr.Device):
         self.add(pr.RemoteVariable(
             name='AdcPipelineDelay',
             description='ADC Sample Pipeline Delay',
-            offset=0x0000000C,
+            offset=0x0000_000C,
             bitSize=32,
             bitOffset=0,
             base=pr.UInt,
@@ -82,7 +82,7 @@ class RdoutCore(pr.Device):
             self.add(pr.RemoteVariable(
                 name=('LineBufErr[%d]' % i),
                 description=('DPRAM Line Burrer [%d] Error Counter' % i),
-                offset=0x00000010 + i * 4,
+                offset=0x0000_0010 + i * 4,
                 bitSize=32,
                 bitOffset=0,
                 base=pr.UInt,
@@ -92,7 +92,7 @@ class RdoutCore(pr.Device):
         self.add(pr.RemoteVariable(
             name='TestData',
             description='Enable Test Data',
-            offset=0x00000020,
+            offset=0x0000_0020,
             bitSize=1,
             bitOffset=0,
             base=pr.Bool,
@@ -102,7 +102,7 @@ class RdoutCore(pr.Device):
         self.add(pr.RemoteVariable(
             name='OverSampleEn',
             description='Enable Over-sampling',
-            offset=0x00000024,
+            offset=0x0000_0024,
             bitSize=1,
             bitOffset=0,
             base=pr.Bool,
@@ -112,7 +112,7 @@ class RdoutCore(pr.Device):
         self.add(pr.RemoteVariable(
             name='OverSampleSize',
             description='Over-sampling Size',
-            offset=0x00000028,
+            offset=0x0000_0028,
             bitSize=3,
             bitOffset=0,
             base=pr.UInt,
