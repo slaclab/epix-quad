@@ -35,6 +35,7 @@ entity EpixQuadCore is
       SIMULATION_G      : boolean         := false;
       SIM_SPEEDUP_G     : boolean         := false;
       MIG_CORE_EN       : boolean         := true;
+      COM_TYPE_G        : string          := "PGPv3";
       RATE_G            : string          := "6.25Gbps"); -- "6.25Gbps"  or "10.3125Gbps"
    port (
       -- DRR Memory interface ports
@@ -226,11 +227,12 @@ begin
    -- Communication Module
    --------------------------------------------------------
    
-   U_PGP : entity work.EpixQuadComm
+   U_PGP : entity work.EpixQuadTop
       generic map (
          TPD_G             => TPD_G,
          SIMULATION_G      => SIMULATION_G,
          SIM_SPEEDUP_G     => SIM_SPEEDUP_G,
+         COM_TYPE_G        => COM_TYPE_G,
          RATE_G            => RATE_G)
       port map (
          -- Clock and Reset
