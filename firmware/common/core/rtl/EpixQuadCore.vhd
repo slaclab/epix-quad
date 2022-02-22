@@ -227,7 +227,7 @@ begin
    -- Communication Module
    --------------------------------------------------------
    
-   U_PGP : entity work.EpixQuadTop
+   U_PGP : entity work.EpixQuadPgpTop
       generic map (
          TPD_G             => TPD_G,
          SIMULATION_G      => SIMULATION_G,

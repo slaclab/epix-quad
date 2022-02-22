@@ -27,6 +27,16 @@ set_clock_groups -asynchronous \
    -group [get_clocks -include_generated_clocks {adcBitClkDiv4}] \
    -group [get_clocks -include_generated_clocks {adcBitClkDiv7}] 
 
+create_clock -name pgp4PhyRxClk -period 3.200 [get_pins {U_CORE/U_PGP/G_PGP.U_PGP/U_Pgp3GthUsIpWrapper_1/GEN_10G.U_Pgp3GthUsIp/inst/gen_gtwizard_gthe3_top.Pgp3GthUsIp10G_gtwizard_gthe3_inst/gen_gtwizard_gthe3.gen_channel_container[2].gen_enabled_channel.gthe3_channel_wrapper_inst/channel_inst/gthe3_channel_gen.gen_gthe3_channel_inst[0].GTHE3_CHANNEL_PRIM_INST/rxoutclk_out}]
+
+create_clock -name pgp4PhyTxClk -period 3.200 [get_pins {U_CORE/U_PGP/G_PGP.U_PGP/U_Pgp3GthUsIpWrapper_1/GEN_10G.U_Pgp3GthUsIp/inst/gen_gtwizard_gthe3_top.Pgp3GthUsIp10G_gtwizard_gthe3_inst/gen_gtwizard_gthe3.gen_channel_container[2].gen_enabled_channel.gthe3_channel_wrapper_inst/channel_inst/gthe3_channel_gen.gen_gthe3_channel_inst[0].GTHE3_CHANNEL_PRIM_INST/txoutclk_out}]
+
+#set_clock_groups -asynchronous \
+#    -group [get_clocks -of_objects [get_pins U_CORE/U_PGP/G_PGP.U_PGP/U_Pgp3GthUsIpWrapper_1/GEN_10G.U_Pgp3GthUsIp/inst/gen_gtwizard_gthe3_top.Pgp3GthUsIp10G_gtwizard_gthe3_inst/gen_gtwizard_gthe3.gen_tx_user_clocking_internal.gen_single_instance.gtwiz_userclk_tx_inst/gen_gtwiz_userclk_tx_main.bufg_gt_usrclk2_inst/O]] \
+#    -group [get_clocks -of_objects [get_pins U_CORE/U_PGP/G_PGP.U_PGP/U_Pgp3GthUsIpWrapper_1/GEN_10G.U_Pgp3GthUsIp/inst/gen_gtwizard_gthe3_top.Pgp3GthUsIp10G_gtwizard_gthe3_inst/gen_gtwizard_gthe3.gen_rx_user_clocking_internal.gen_single_instance.gtwiz_userclk_rx_inst/gen_gtwiz_userclk_rx_main.bufg_gt_usrclk2_inst/O]]
+
+set_clock_groups -asynchronous -group [get_clocks -include_generated_clocks {pgp4PhyRxClk}] -group [get_clocks -include_generated_clocks {pgpClkP}] -group [get_clocks -include_generated_clocks {pgp4PhyTxClk}] -group [get_clocks -include_generated_clocks {pgpClkP}]
+
 
 ############################
 ## Pinout Configuration   ##
