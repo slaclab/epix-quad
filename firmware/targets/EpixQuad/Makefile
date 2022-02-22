@@ -6,7 +6,7 @@ export COMM_TYPE = pgp4
 export INCLUDE_PGP4_10G = 1
 
 # Define Firmware Version Number
-export PRJ_VERSION = 0xEA060011
+export PRJ_VERSION = $(addprefix 0x0,$(shell git rev-parse --short HEAD))
 
 # Define the Microblaze source path
 export SDK_SRC_PATH = $(PROJ_DIR)/../../common/EpixQuadCommon/src/
