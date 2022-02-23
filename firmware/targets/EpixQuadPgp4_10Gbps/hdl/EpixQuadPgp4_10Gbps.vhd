@@ -1,8 +1,7 @@
 -------------------------------------------------------------------------------
--- File       : EpixQuadPgp3_10Gbps.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
--- Description: EpixQuadPgp3_10Gbps Target's Top Level
+-- Description: Target's Top Level
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Development Firmware'.
 -- It is subject to the license terms in the LICENSE.txt file found in the 
@@ -27,7 +26,7 @@ use surf.AxiStreamPkg.all;
 library unisim;
 use unisim.vcomponents.all;
 
-entity EpixQuad is
+entity EpixQuadPgp4_10Gbps is
    generic (
       TPD_G             : time            := 1 ns;
       BUILD_INFO_G      : BuildInfoType;
@@ -120,9 +119,9 @@ entity EpixQuad is
       -- ttl Trigger
       trigTtl           : in    sl 
   );
-end EpixQuad;
+end EpixQuadPgp4_10Gbps;
 
-architecture top_level of EpixQuad is
+architecture top_level of EpixQuadPgp4_10Gbps is
    
 begin
 
@@ -133,6 +132,7 @@ begin
          SIMULATION_G      => SIMULATION_G,
          SIM_SPEEDUP_G     => SIM_SPEEDUP_G,
          MIG_CORE_EN       => false,
+         COM_TYPE_G        => "PGPv4",
          RATE_G            => "10.3125Gbps"
       )
       port map (
