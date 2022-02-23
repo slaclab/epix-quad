@@ -2,7 +2,7 @@
 source -quiet $::env(RUCKUS_DIR)/vivado_proc.tcl
 
 # Load local Source Code and Constraints
-loadSource -lib epix_quad -dir "$::DIR_PATH/rtl"
+loadSource -dir "$::DIR_PATH/../pgp4/rtl"
 
 # Check if required variables exist
 if { [info exists ::env(INCLUDE_PGP3_10G)] != 1 && [info exists ::env(INCLUDE_PGP3_6G)] != 1} {

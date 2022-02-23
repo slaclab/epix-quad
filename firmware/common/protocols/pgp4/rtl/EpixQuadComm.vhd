@@ -22,6 +22,7 @@ library surf;
 use surf.StdRtlPkg.all;
 use surf.AxiLitePkg.all;
 use surf.AxiStreamPkg.all;
+use surf.Pgp3Pkg.all;
 use surf.Pgp4Pkg.all;
 
 library unisim;
@@ -32,6 +33,7 @@ entity EpixQuadComm is
       TPD_G             : time            := 1 ns;
       SIMULATION_G      : boolean         := false;
       SIM_SPEEDUP_G     : boolean         := false;
+      COM_TYPE_G        : string          := "PGPv4";
       RATE_G            : string          := "6.25Gbps");
    port (
       -- Clock and Reset
@@ -93,6 +95,7 @@ architecture top_level of EpixQuadComm is
    signal iOpCode       : slv(7 downto 0);
    signal iOpCodeEn     : sl;
    
+   signal tempRxOut     : Pgp3RxOutType;
    signal pgpRxOut      : Pgp4RxOutType;
 
 begin
@@ -191,52 +194,107 @@ begin
             qpllRst     => qpllRst
          );
    
-      U_PGP : entity surf.Pgp4GthUs
-         generic map (
-            TPD_G             => TPD_G,
-            RATE_G            => RATE_G,
-            NUM_VC_G          => 4,
-            EN_DRP_G          => false,
-            EN_PGP_MON_G      => true,
-            AXIL_CLK_FREQ_G   => 100.0E+6
-         )
-         port map (
-            -- Stable Clock and Reset
-            stableClk         => iSysClk,
-            stableRst         => iSysRst,
-            -- QPLL Interface
-            qpllLock          => qpllLock(0),
-            qpllclk           => qpllClk(0),
-            qpllrefclk        => qpllRefclk(0),
-            qpllRst           => qpllRst(0),
-            -- Gt Serial IO
-            pgpGtTxP          => pgpTxP,
-            pgpGtTxN          => pgpTxN,
-            pgpGtRxP          => pgpRxP,
-            pgpGtRxN          => pgpRxN,
-            -- Clocking
-            pgpClk            => pgpClk,
-            pgpClkRst         => pgpReset,
-            -- Non VC Rx Signals
-            pgpRxIn           => PGP4_RX_IN_INIT_C,
-            pgpRxOut          => pgpRxOut,
-            -- Non VC Tx Signals
-            pgpTxIn           => PGP4_TX_IN_INIT_C,
-            pgpTxOut          => open,
-            -- Frame Transmit Interface
-            pgpTxMasters      => txMasters,
-            pgpTxSlaves       => txSlaves,
-            -- Frame Receive Interface
-            pgpRxMasters      => rxMasters,
-            pgpRxCtrl         => rxCtrl,
-            -- AXI-Lite Register Interface (axilClk domain)
-            axilClk           => iSysClk,
-            axilRst           => iSysRst,
-            axilReadMaster    => sAxilReadMaster,
-            axilReadSlave     => sAxilReadSlave,
-            axilWriteMaster   => sAxilWriteMaster,
-            axilWriteSlave    => sAxilWriteSlave
-         );
+      GEN_V3 : if COM_TYPE_G = "PGPv3" generate
+         U_PGP : entity surf.Pgp3GthUs
+            generic map (
+               TPD_G             => TPD_G,
+               RATE_G            => RATE_G,
+               NUM_VC_G          => 4,
+               EN_DRP_G          => false,
+               EN_PGP_MON_G      => true,
+               AXIL_CLK_FREQ_G   => 100.0E+6
+            )
+            port map (
+               -- Stable Clock and Reset
+               stableClk         => iSysClk,
+               stableRst         => iSysRst,
+               -- QPLL Interface
+               qpllLock          => qpllLock(0),
+               qpllclk           => qpllClk(0),
+               qpllrefclk        => qpllRefclk(0),
+               qpllRst           => qpllRst(0),
+               -- Gt Serial IO
+               pgpGtTxP          => pgpTxP,
+               pgpGtTxN          => pgpTxN,
+               pgpGtRxP          => pgpRxP,
+               pgpGtRxN          => pgpRxN,
+               -- Clocking
+               pgpClk            => pgpClk,
+               pgpClkRst         => pgpReset,
+               -- Non VC Rx Signals
+               pgpRxIn           => PGP3_RX_IN_INIT_C,
+               pgpRxOut          => tempRxOut,
+               -- Non VC Tx Signals
+               pgpTxIn           => PGP3_TX_IN_INIT_C,
+               pgpTxOut          => open,
+               -- Frame Transmit Interface
+               pgpTxMasters      => txMasters,
+               pgpTxSlaves       => txSlaves,
+               -- Frame Receive Interface
+               pgpRxMasters      => rxMasters,
+               pgpRxCtrl         => rxCtrl,
+               -- AXI-Lite Register Interface (axilClk domain)
+               axilClk           => iSysClk,
+               axilRst           => iSysRst,
+               axilReadMaster    => sAxilReadMaster,
+               axilReadSlave     => sAxilReadSlave,
+               axilWriteMaster   => sAxilWriteMaster,
+               axilWriteSlave    => sAxilWriteSlave
+            );
+
+         pgpRxOut.opCodeEn                <= tempRxOut.opCodeEn;
+         pgpRxOut.opCodeData(15 downto 8) <= tempRxOut.opCodeData(7 downto 0); -- PGPv3 uses BIT[7:0] but PGPv4 uses [15:8]
+
+         end generate GEN_V3; 
+
+      GEN_V4 : if COM_TYPE_G = "PGPv4" generate
+         U_PGP : entity surf.Pgp4GthUs
+            generic map (
+               TPD_G             => TPD_G,
+               RATE_G            => RATE_G,
+               NUM_VC_G          => 4,
+               EN_DRP_G          => false,
+               EN_PGP_MON_G      => true,
+               AXIL_CLK_FREQ_G   => 100.0E+6
+            )
+            port map (
+               -- Stable Clock and Reset
+               stableClk         => iSysClk,
+               stableRst         => iSysRst,
+               -- QPLL Interface
+               qpllLock          => qpllLock(0),
+               qpllclk           => qpllClk(0),
+               qpllrefclk        => qpllRefclk(0),
+               qpllRst           => qpllRst(0),
+               -- Gt Serial IO
+               pgpGtTxP          => pgpTxP,
+               pgpGtTxN          => pgpTxN,
+               pgpGtRxP          => pgpRxP,
+               pgpGtRxN          => pgpRxN,
+               -- Clocking
+               pgpClk            => pgpClk,
+               pgpClkRst         => pgpReset,
+               -- Non VC Rx Signals
+               pgpRxIn           => PGP4_RX_IN_INIT_C,
+               pgpRxOut          => pgpRxOut,
+               -- Non VC Tx Signals
+               pgpTxIn           => PGP4_TX_IN_INIT_C,
+               pgpTxOut          => open,
+               -- Frame Transmit Interface
+               pgpTxMasters      => txMasters,
+               pgpTxSlaves       => txSlaves,
+               -- Frame Receive Interface
+               pgpRxMasters      => rxMasters,
+               pgpRxCtrl         => rxCtrl,
+               -- AXI-Lite Register Interface (axilClk domain)
+               axilClk           => iSysClk,
+               axilRst           => iSysRst,
+               axilReadMaster    => sAxilReadMaster,
+               axilReadSlave     => sAxilReadSlave,
+               axilWriteMaster   => sAxilWriteMaster,
+               axilWriteSlave    => sAxilWriteSlave
+            );
+         end generate GEN_V4;           
    
    end generate G_PGP;   
       
@@ -275,7 +333,7 @@ begin
       generic map (
          TPD_G                => TPD_G,
          SIMULATION_G         => SIMULATION_G,
-         AXI_STREAM_CONFIG_G  => PGP4_AXIS_CONFIG_C
+         AXI_STREAM_CONFIG_G  => ite(COM_TYPE_G = "PGPv4",PGP4_AXIS_CONFIG_C,PGP3_AXIS_CONFIG_C)
       )
       port map (
          -- PGP Clock and Reset
