@@ -4,7 +4,7 @@ source -quiet $::env(RUCKUS_DIR)/vivado_proc.tcl
 # Load library modules
 loadRuckusTcl $::env(PROJ_DIR)/../../submodules/surf
 loadRuckusTcl $::env(PROJ_DIR)/../../common/EpixQuadCommon
-loadRuckusTcl $::env(PROJ_DIR)/../../common/core
+# loadRuckusTcl $::env(PROJ_DIR)/../../common/core
 loadRuckusTcl $::env(PROJ_DIR)/../../common/common
 
 # Load local source Code and constraints

@@ -12,15 +12,21 @@
 ## Timing Constraints   ##
 ##########################
 
-
+create_clock -name pgpClkP   -period 6.400 [get_ports {pgpClkP}]
 create_clock -name ddrClkP   -period 5.000 [get_ports {c0_sys_clk_p}]
 
-create_generated_clock -name sysClk          [get_pins {U_CORE/U_PGP/U_PLL1/MmcmGen.U_Mmcm/CLKOUT0}]
+create_generated_clock -name sysClk          [get_pins {U_CORE/U_PGP/G_PGPv4.U_PGP/U_PLL1/MmcmGen.U_Mmcm/CLKOUT0}]
 create_generated_clock -name adcBitClk       [get_pins {U_CORE/U_AdcCore/U_PLLAdc/MmcmGen.U_Mmcm/CLKOUT0}]
 create_generated_clock -name adcBitClkDiv4   [get_pins {U_CORE/U_AdcCore/U_PLLAdc/MmcmGen.U_Mmcm/CLKOUT1}]
 create_generated_clock -name adcBitClkDiv7   [get_pins {U_CORE/U_AdcCore/U_PLLAdc/MmcmGen.U_Mmcm/CLKOUT2}]
 
+create_clock -name pgp3PhyRxClk -period 5.280 [get_pins {U_CORE/U_PGP/G_PGPv4.U_PGP/G_PGP.U_PGP/U_Pgp3GthUsIpWrapper_1/GEN_6G.U_Pgp3GthUsIp/inst/gen_gtwizard_gthe3_top.Pgp3GthUsIp6G_gtwizard_gthe3_inst/gen_gtwizard_gthe3.gen_channel_container[2].gen_enabled_channel.gthe3_channel_wrapper_inst/channel_inst/gthe3_channel_gen.gen_gthe3_channel_inst[0].GTHE3_CHANNEL_PRIM_INST/RXOUTCLK}]
+create_clock -name pgp3PhyTxClk -period 5.280 [get_pins {U_CORE/U_PGP/G_PGPv4.U_PGP/G_PGP.U_PGP/U_Pgp3GthUsIpWrapper_1/GEN_6G.U_Pgp3GthUsIp/inst/gen_gtwizard_gthe3_top.Pgp3GthUsIp6G_gtwizard_gthe3_inst/gen_gtwizard_gthe3.gen_channel_container[2].gen_enabled_channel.gthe3_channel_wrapper_inst/channel_inst/gthe3_channel_gen.gen_gthe3_channel_inst[0].GTHE3_CHANNEL_PRIM_INST/TXOUTCLK}]
+set_clock_groups -asynchronous -group [get_clocks -include_generated_clocks {pgpClkP}] -group [get_clocks -include_generated_clocks {pgp3PhyTxClk}] -group [get_clocks -include_generated_clocks {pgp3PhyRxClk}]
+set_clock_groups -asynchronous -group [get_clocks -of_objects [get_pins U_CORE/U_PGP/G_PGPv4.U_PGP/G_PGP.U_PGP/U_Pgp3GthUsIpWrapper_1/GEN_6G.U_Pgp3GthUsIp/inst/gen_gtwizard_gthe3_top.Pgp3GthUsIp6G_gtwizard_gthe3_inst/gen_gtwizard_gthe3.gen_tx_user_clocking_internal.gen_single_instance.gtwiz_userclk_tx_inst/gen_gtwiz_userclk_tx_main.bufg_gt_usrclk2_inst/O]] -group [get_clocks -of_objects [get_pins U_CORE/U_PGP/G_PGPv4.U_PGP/G_PGP.U_PGP/U_Pgp3GthUsIpWrapper_1/GEN_6G.U_Pgp3GthUsIp/inst/gen_gtwizard_gthe3_top.Pgp3GthUsIp6G_gtwizard_gthe3_inst/gen_gtwizard_gthe3.gen_rx_user_clocking_internal.gen_single_instance.gtwiz_userclk_rx_inst/gen_gtwiz_userclk_rx_main.bufg_gt_usrclk2_inst/O]]
+
 set_clock_groups -asynchronous \
+   -group [get_clocks -include_generated_clocks {pgpClkP}] \
    -group [get_clocks -include_generated_clocks {ddrClkP}] \
    -group [get_clocks -include_generated_clocks {sysClk}] \
    -group [get_clocks -include_generated_clocks {adcBitClk}] \
@@ -28,23 +34,18 @@ set_clock_groups -asynchronous \
    -group [get_clocks -include_generated_clocks {adcBitClkDiv7}] 
 
 
-create_clock -name pgp4PhyRxClk -period 3.200 [get_pins {U_CORE/U_PGP/G_PGP.U_PGP/U_Pgp3GthUsIpWrapper_1/GEN_6G.U_Pgp3GthUsIp/inst/gen_gtwizard_gthe3_top.Pgp3GthUsIp6G_gtwizard_gthe3_inst/gen_gtwizard_gthe3.gen_channel_container[2].gen_enabled_channel.gthe3_channel_wrapper_inst/channel_inst/gthe3_channel_gen.gen_gthe3_channel_inst[0].GTHE3_CHANNEL_PRIM_INST/rxoutclk_out}]
-
-create_clock -name pgp4PhyTxClk -period 3.200 [get_pins {U_CORE/U_PGP/G_PGP.U_PGP/U_Pgp3GthUsIpWrapper_1/GEN_6G.U_Pgp3GthUsIp/inst/gen_gtwizard_gthe3_top.Pgp3GthUsIp6G_gtwizard_gthe3_inst/gen_gtwizard_gthe3.gen_channel_container[2].gen_enabled_channel.gthe3_channel_wrapper_inst/channel_inst/gthe3_channel_gen.gen_gthe3_channel_inst[0].GTHE3_CHANNEL_PRIM_INST/txoutclk_out}]
-
-#set_clock_groups -asynchronous \
-#    -group [get_clocks -of_objects [get_pins U_CORE/U_PGP/G_PGP.U_PGP/U_Pgp3GthUsIpWrapper_1/GEN_6G.U_Pgp3GthUsIp/inst/gen_gtwizard_gthe3_top.Pgp3GthUsIp6G_gtwizard_gthe3_inst/gen_gtwizard_gthe3.gen_tx_user_clocking_internal.gen_single_instance.gtwiz_userclk_tx_inst/gen_gtwiz_userclk_tx_main.bufg_gt_usrclk2_inst/O]] \
-#    -group [get_clocks -of_objects [get_pins U_CORE/U_PGP/G_PGP.U_PGP/U_Pgp3GthUsIpWrapper_1/GEN_6G.U_Pgp3GthUsIp/inst/gen_gtwizard_gthe3_top.Pgp3GthUsIp6G_gtwizard_gthe3_inst/gen_gtwizard_gthe3.gen_rx_user_clocking_internal.gen_single_instance.gtwiz_userclk_rx_inst/gen_gtwiz_userclk_rx_main.bufg_gt_usrclk2_inst/O]]
-
-set_clock_groups -asynchronous -group [get_clocks -include_generated_clocks {pgp4PhyRxClk}] -group [get_clocks -include_generated_clocks {pgpClkP}] -group [get_clocks -include_generated_clocks {pgp4PhyTxClk}] -group [get_clocks -include_generated_clocks {pgpClkP}]
-
-
-
 ############################
 ## Pinout Configuration   ##
 ############################
 
 set_property -dict { PACKAGE_PIN N15 IOSTANDARD ANALOG } [get_ports {vPIn}]
+
+set_property PACKAGE_PIN AD6 [get_ports {pgpClkP}]
+set_property PACKAGE_PIN AD5 [get_ports {pgpClkN}]
+set_property PACKAGE_PIN AG4 [get_ports pgpTxP]
+set_property PACKAGE_PIN AG3 [get_ports pgpTxN]
+set_property PACKAGE_PIN AH2 [get_ports pgpRxP]
+set_property PACKAGE_PIN AH1 [get_ports pgpRxN]
 
 set_property -dict { PACKAGE_PIN H4   IOSTANDARD LVCMOS18 } [get_ports {dacScl}]
 set_property -dict { PACKAGE_PIN H3   IOSTANDARD LVCMOS18 } [get_ports {dacSda}]
