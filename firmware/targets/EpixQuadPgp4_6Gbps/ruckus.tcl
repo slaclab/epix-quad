@@ -6,7 +6,6 @@ loadRuckusTcl $::env(PROJ_DIR)/../../submodules/surf
 loadRuckusTcl $::env(PROJ_DIR)/../../common/EpixQuadCommon
 loadRuckusTcl $::env(PROJ_DIR)/../../common/core
 loadRuckusTcl $::env(PROJ_DIR)/../../common/common
-loadRuckusTcl $::env(PROJ_DIR)/../../common/protocols
 
 # Load local source Code and constraints
 loadSource      -dir "$::DIR_PATH/hdl/"
