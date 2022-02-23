@@ -1,9 +1,8 @@
 # COMM_TYPE for pgp version [pgp2b, pgp3, pgp4]
-export COMM_TYPE = pgp4
+export COMM_TYPE = pgp3
 
 # pgp version and data rate
-#export INCLUDE_PGP4_6G = 1
-export INCLUDE_PGP4_10G = 1
+export INCLUDE_PGP3_6G = 1
 
 # Define Firmware Version Number
 export PRJ_VERSION = $(addprefix 0x0,$(shell git rev-parse --short HEAD))
