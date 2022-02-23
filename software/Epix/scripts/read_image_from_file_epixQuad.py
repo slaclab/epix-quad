@@ -31,14 +31,13 @@ import ePixViewer.imgProcessing as imgPr
 import matplotlib
 matplotlib.use('QT4Agg')
 # matplotlib.pyplot.ion()
-MAX_NUMBER_OF_FRAMES_PER_BATCH = 80000
-
+MAX_NUMBER_OF_FRAMES_PER_BATCH = 8000
 
 ##################################################
 # Global variables
 ##################################################
-cameraType = 'ePixMsh'
-bitMask = 0x7fff
+cameraType = 'ePixQuad'
+bitMask = 0x3fff
 PLOT_IMAGE = False
 PLOT_IMAGE_DARKSUB = False
 SAVEHDF5 = True
@@ -64,21 +63,17 @@ while ((len(file_header) > 0) and (numberOfFrames < MAX_NUMBER_OF_FRAMES_PER_BAT
         payloadSize = int(file_header[0] / 4) - 1
         #print ('size',  file_header)
         newPayload = np.fromfile(f, dtype='uint32', count=payloadSize)  # (frame size splited by four to read 32 bit
-
-        # print('#################################### payloadSize %d'%payloadSize)
-        # filter out non image data (scope etc)
-        if payloadSize == 1165:
-
-            if (numberOfFrames == 0):
-                allFrames = [newPayload.copy()]
-            else:
-                newFrame = [newPayload.copy()]
-                allFrames = np.append(allFrames, newFrame, axis=0)
-            numberOfFrames = numberOfFrames + 1
+        if (numberOfFrames == 0):
+            allFrames = [newPayload.copy()]
+        else:
+            newFrame = [newPayload.copy()]
+            allFrames = np.append(allFrames, newFrame, axis=0)
+        numberOfFrames = numberOfFrames + 1
         #print ("Payload" , numberOfFrames, ":",  (newPayload[0:5]))
         previousSize = file_header
-    except Exception as e:
-        print("Message\n", e)
+    except Exception:
+        #e = sys.exc_info()[0]
+        #print ("Message\n", e)
         print('size', file_header, 'previous size', previousSize)
         print("numberOfFrames read: ", numberOfFrames)
 
@@ -95,7 +90,6 @@ if(numberOfFrames == 1):
     [frameComplete, readyForDisplay, rawImgFrame] = currentCam.buildImageFrame(
         currentRawData=[], newRawData=allFrames[0])
     imgDesc = np.array([currentCam.descrambleImage(bytearray(rawImgFrame.tobytes()))])
-    imgTrig = np.array([0xffff & rawImgFrame[1]])
 else:
     for i in range(0, numberOfFrames):
         # get an specific frame
@@ -105,12 +99,9 @@ else:
         # get descrambled image from camera
         if (i == 0):
             imgDesc = np.array([currentCam.descrambleImage(bytearray(rawImgFrame.tobytes()))])
-            imgTrig = np.array([0xffff & rawImgFrame[1]])
         else:
             imgDesc = np.concatenate(
                 (imgDesc, np.array([currentCam.descrambleImage(bytearray(rawImgFrame.tobytes()))])), 0)
-            imgTrig = np.concatenate((imgTrig, np.array([0xffff & rawImgFrame[1]])), 0)
-        # print(0xffff&rawImgFrame[1])
 
 
 ##################################################
@@ -143,7 +134,6 @@ if(SAVEHDF5):
     print("Saving Hdf5")
     index_h5 = 'data'
     f_h5[index_h5] = imgDesc.astype('uint16')
-    f_h5['acqCnt'] = imgTrig.astype('uint16')
 f_h5.close()
 
 # the histogram of the data

@@ -2,9 +2,9 @@
 ##################################
 # Setup environment
 ##################################
-source /afs/slac.stanford.edu/g/reseng/vol26/anaconda/miniconda3/etc/profile.d/conda.sh
+source /afs/slac/g/reseng/rogue/anaconda_new_a/anaconda3/etc/profile.d/conda.sh
 
 ##################################
 # Activate Rogue conda Environment
 ##################################
-conda activate rogue_v5.6.4
+conda activate rogue_v5.13.0
