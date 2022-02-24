@@ -1,10 +1,10 @@
 ##############################################################################
 ## This file is part of 'LZ Test Stand Firmware'.
-## It is subject to the license terms in the LICENSE.txt file found in the 
-## top-level directory of this distribution and at: 
-##    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
-## No part of 'LZ Test Stand Firmware', including this file, 
-## may be copied, modified, propagated, or distributed except according to 
+## It is subject to the license terms in the LICENSE.txt file found in the
+## top-level directory of this distribution and at:
+##    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+## No part of 'LZ Test Stand Firmware', including this file,
+## may be copied, modified, propagated, or distributed except according to
 ## the terms contained in the LICENSE.txt file.
 ##############################################################################
 
@@ -31,7 +31,7 @@ set_clock_groups -asynchronous \
    -group [get_clocks -include_generated_clocks {sysClk}] \
    -group [get_clocks -include_generated_clocks {adcBitClk}] \
    -group [get_clocks -include_generated_clocks {adcBitClkDiv4}] \
-   -group [get_clocks -include_generated_clocks {adcBitClkDiv7}] 
+   -group [get_clocks -include_generated_clocks {adcBitClkDiv7}]
 
 
 ############################
@@ -615,7 +615,7 @@ set_property -dict { PACKAGE_PIN M26  IOSTANDARD LVCMOS12 } [get_ports {trigTtl}
 ## Misc. Configurations ##
 ##########################
 
-set_property BITSTREAM.CONFIG.CONFIGRATE 50 [current_design] 
+set_property BITSTREAM.CONFIG.CONFIGRATE 50 [current_design]
 set_property BITSTREAM.CONFIG.SPI_32BIT_ADDR Yes [current_design]
 set_property BITSTREAM.CONFIG.SPI_BUSWIDTH 2 [current_design]
 set_property BITSTREAM.CONFIG.SPI_FALL_EDGE No [current_design]

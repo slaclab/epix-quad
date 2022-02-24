@@ -5,11 +5,11 @@
 -- Description: EPIX EpixQuadPgp2bCore Target's Top Level
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Development Firmware'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Development Firmware', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'EPIX Development Firmware', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -93,12 +93,12 @@ architecture top_level of EpixQuadPgp2bCore is
    signal pgpReset      : sl;
    signal iSysClk       : sl;
    signal iSysRst       : sl;
-   
+
    signal iOpCode       : slv(7 downto 0);
    signal iOpCodeEn     : sl;
 
 begin
-   
+
    U_BUFG_GT : BUFG_GT
       port map (
          I       => pgpRefClkDiv2,
@@ -142,7 +142,7 @@ begin
          clkOut(0) => pgpClk,
          -- Reset Outputs
          rstOut(0) => pgpReset);
-   
+
    -- clkOut(0) - 100.00 MHz
    U_PLL1 : entity surf.ClockManagerUltraScale
       generic map(
@@ -166,8 +166,8 @@ begin
          clkOut(0) => iSysClk,
          -- Reset Outputs
          rstOut(0) => iSysRst);
-   
-   
+
+
    sysClk <= iSysClk;
    sysRst <= iSysRst;
 
@@ -178,9 +178,9 @@ begin
          clk    => pgpClk,
          rstIn  => pgpReset,
          rstOut => pgpRst);
-   
+
    G_PGP : if SIMULATION_G = false generate
-      
+
       U_IBUFDS_GTE3 : IBUFDS_GTE3
          generic map (
             REFCLK_EN_TX_PATH  => '0',
@@ -192,7 +192,7 @@ begin
             CEB   => '0',
             ODIV2 => pgpRefClkDiv2,        -- 156.25MHz (Divide by 1)
             O     => pgpRefClk);           -- 156.25MHz
-      
+
       U_PGP : entity surf.Pgp2bGthUltra
          generic map (
             TPD_G             => TPD_G,
@@ -235,7 +235,7 @@ begin
             axilWriteSlave    => open
          );
    end generate G_PGP;
-   
+
    G_PGP_SIM : if SIMULATION_G = true generate
       U_PGP_SIM : entity surf.RoguePgp2bSim
          generic map (
@@ -262,8 +262,8 @@ begin
          );
       pgpRefClk <= '0';
    end generate G_PGP_SIM;
-   
-   
+
+
    U_VcMapping : entity work.PgpVcMapping
       generic map (
          TPD_G                => TPD_G,
@@ -330,7 +330,7 @@ begin
          axilReadSlave   => sAxilReadSlave,
          axilWriteMaster => sAxilWriteMaster,
          axilWriteSlave  => sAxilWriteSlave);
-   
+
    -----------------------------------------
    -- PGP Sideband Triggers:
    -- Any op code is a trigger, actual op
@@ -351,7 +351,7 @@ begin
          valid  => iOpCodeEn,
          dout   => iOpCode
       );
-   
+
    -- register opCode
    process(iSysClk) begin
       if rising_edge(iSysClk) then

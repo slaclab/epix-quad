@@ -5,11 +5,11 @@
 -- Description: SaciConfigCore.
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Development Firmware'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Development Firmware', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'EPIX Development Firmware', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -54,7 +54,7 @@ entity SaciConfigCore is
 end SaciConfigCore;
 
 architecture rtl of SaciConfigCore is
-   
+
    constant DSP_CMP_NUM_C     : natural := 15;
    constant NUM_AXI_MASTERS_C : natural := 17;
    constant AXI_CONFIG_C      : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := genAxiLiteConfig(NUM_AXI_MASTERS_C, AXI_BASE_ADDR_G, 24, 19);
@@ -63,15 +63,15 @@ architecture rtl of SaciConfigCore is
    signal axilCbWriteSlaves   : AxiLiteWriteSlaveArray(NUM_AXI_MASTERS_C-1 downto 0);
    signal axilCbReadMasters   : AxiLiteReadMasterArray(NUM_AXI_MASTERS_C-1 downto 0);
    signal axilCbReadSlaves    : AxiLiteReadSlaveArray(NUM_AXI_MASTERS_C-1 downto 0);
-   
+
    type StateType is (
       REG_ACC_S,
       REG_WAIT_S,
       CON_ACC_S
    );
-   
+
    type StateTypeArray is array (natural range <>) of StateType;
-   
+
    type RegType is record
       state                : StateTypeArray(3 downto 0);
       maxFreqConf          : Slv4Array(15 downto 0);
@@ -100,33 +100,33 @@ architecture rtl of SaciConfigCore is
 
    signal r             : RegType := REG_INIT_C;
    signal rin           : RegType;
-   
+
    signal confDone      : slv(3 downto 0);
    signal confDoneAll   : sl;
    signal confFail      : slv(15 downto 0);
-   
+
    signal regSaciClk    : slv(3 downto 0);
    signal regSaciCmd    : slv(3 downto 0);
    signal regSaciSelL   : slv(15 downto 0);
    signal regSaciBusReq : slv(3 downto 0);
-   
+
    signal conSaciClk    : slv(3 downto 0);
    signal conSaciCmd    : slv(3 downto 0);
    signal conSaciSelL   : slv(15 downto 0);
    signal conSaciBusReq : slv(3 downto 0);
-   
+
    signal memAddr       : Slv13Array(15 downto 0);
    signal memDout       : Slv32Array(15 downto 0);
    signal memDin        : Slv32Array(15 downto 0);
    signal memWr         : slv(15 downto 0);
-   
+
    signal cmpAin        : Slv18VectorArray(15 downto 0, DSP_CMP_NUM_C-1 downto 0);
    signal cmpBin        : Slv18VectorArray(15 downto 0, DSP_CMP_NUM_C-1 downto 0);
    signal cmpGtEq       : Slv1VectorArray (15 downto 0, DSP_CMP_NUM_C-1 downto 0);
-   
+
 begin
-   
-   
+
+
    ---------------------
    -- AXI-Lite: Crossbar
    ---------------------
@@ -150,9 +150,9 @@ begin
          mAxiReadMasters      => axilCbReadMasters,
          mAxiReadSlaves       => axilCbReadSlaves
       );
-   
 
-   comb : process (sysRst, r, axilCbReadMasters(16), axilCbWriteMasters, axilCbWriteSlaves, 
+
+   comb : process (sysRst, r, axilCbReadMasters(16), axilCbWriteMasters, axilCbWriteSlaves,
       confDone, confDoneAll, confFail, regSaciBusReq, conSaciBusReq, cmpGtEq) is
       variable v           : RegType;
       variable regCon      : AxiLiteEndPointType;
@@ -160,14 +160,14 @@ begin
       variable cmpGtEqSel  : Slv18VectorArray(15 downto 0, 13 downto 0);
    begin
       v := r;
-      
+
       v.confWrReq := '0';
       v.confRdReq := '0';
-      
+
       --------------------------------------------------
       -- AXI Lite register logic
       --------------------------------------------------
-      
+
       -- Determine the AXI-Lite transaction
       axiSlaveWaitTxn(regCon, axilCbWriteMasters(16), axilCbReadMasters(16), v.axilWriteSlave, v.axilReadSlave);
 
@@ -179,16 +179,16 @@ begin
       for asic in 15 downto 0 loop
          axiSlaveRegisterR(regCon, x"020"+toSlv(asic*4,12), 0, r.maxFreqConf(asic));
       end loop;
-      
+
       -- Close out the AXI-Lite transaction
       axiSlaveDefault(regCon, v.axilWriteSlave, v.axilReadSlave, AXI_RESP_DECERR_C);
-      
+
       --------------------------------------------------
       -- SACI arbiter FSMs
       --------------------------------------------------
       for i in 3 downto 0 loop
          case (r.state(i)) is
-            
+
             when REG_ACC_S =>
                -- register acces at startup
                v.regSaciBusGr(i) := '1';
@@ -196,7 +196,7 @@ begin
                if conSaciBusReq(i) = '1' then
                   v.state(i) := REG_WAIT_S;
                end if;
-            
+
             when REG_WAIT_S =>
                -- wait for register access to terminate
                if regSaciBusReq(i) = '0' then
@@ -204,26 +204,26 @@ begin
                   v.conSaciBusGr(i) := '1';
                   v.state(i) := CON_ACC_S;
                end if;
-               
+
             when CON_ACC_S =>
                -- return to register access mode when config done
                if confDone(i) = '1' then
                   v.state(i) := REG_ACC_S;
                end if;
-            
+
             when others =>
                v.state(i) := REG_ACC_S;
-            
+
          end case;
       end loop;
-      
+
       --------------------------------------------------
       -- Find most frequent (commmon) pixel configuration in memories write transactions
       --------------------------------------------------
       for asic in 15 downto 0 loop
-         
+
          for bins in 0 to 15 loop
-            
+
             -- count bins in all 8 nibbles
             countConf(asic, bins) := (others=>'0');
             if axilCbWriteMasters(asic).wdata(3 downto 0) = bins then
@@ -250,21 +250,21 @@ begin
             if axilCbWriteMasters(asic).wdata(31 downto 28) = bins then
                countConf(asic, bins) := countConf(asic, bins) + 1;
             end if;
-            
+
             -- Register statistics
             if axilCbWriteSlaves(asic).wready = '1' then
                v.maxFreqHist(asic, bins) := r.maxFreqHist(asic, bins) + countConf(asic, bins);
             end if;
-            
+
             -- Reset statistics on address 0
             if axilCbWriteMasters(asic).awaddr(18 downto 0) = 0 and axilCbWriteSlaves(asic).awready = '1' then
                v.maxFreqHist(asic, bins)  := "00000000000000" & countConf(asic, bins);
             end if;
-            
+
          end loop;
-         
+
          -- select the highest bin
-         
+
          -- first stage of 8 DSP comparators
          for cmp in 0 to 7 loop
             cmpAin(asic, cmp) <= r.maxFreqHist(asic, cmp*2+0);
@@ -275,7 +275,7 @@ begin
                cmpGtEqSel(asic, cmp) := r.maxFreqHist(asic, cmp*2+1);
             end if;
          end loop;
-         
+
          -- second stage of 4 DSP comparators
          for cmp in 0 to 3 loop
             cmpAin(asic, 8+cmp) <= cmpGtEqSel(asic, cmp*2+0);
@@ -286,7 +286,7 @@ begin
                cmpGtEqSel(asic, 8+cmp) := cmpGtEqSel(asic, cmp*2+1);
             end if;
          end loop;
-         
+
          -- third stage of 2 DSP comparators
          for cmp in 0 to 1 loop
             cmpAin(asic, 12+cmp) <= cmpGtEqSel(asic, 8+cmp*2+0);
@@ -297,19 +297,19 @@ begin
                cmpGtEqSel(asic, 12+cmp) := cmpGtEqSel(asic, 8+cmp*2+1);
             end if;
          end loop;
-         
+
          -- fourth stage of 1 DSP comparator
          cmpAin(asic, 14) <= cmpGtEqSel(asic, 12);
          cmpBin(asic, 14) <= cmpGtEqSel(asic, 13);
-         
+
          -- decode highest bin
          if cmpGtEq(asic, 14) = "1" then
             -- comparator 12
             if cmpGtEq(asic, 12) = "1" then
                -- comparator 8
-               if cmpGtEq(asic, 8) = "1" then 
+               if cmpGtEq(asic, 8) = "1" then
                   -- comparator 0
-                  if cmpGtEq(asic, 0) = "1" then 
+                  if cmpGtEq(asic, 0) = "1" then
                      -- bin 0
                      v.maxFreqConf(asic) := "0000";
                   else
@@ -318,7 +318,7 @@ begin
                   end if;
                else
                   -- comparator 1
-                  if cmpGtEq(asic, 1) = "1" then 
+                  if cmpGtEq(asic, 1) = "1" then
                      -- bin 2
                      v.maxFreqConf(asic) := "0010";
                   else
@@ -329,9 +329,9 @@ begin
             -- comparator 13
             else
                -- comparator 9
-               if cmpGtEq(asic, 9) = "1" then 
+               if cmpGtEq(asic, 9) = "1" then
                   -- comparator 2
-                  if cmpGtEq(asic, 2) = "1" then 
+                  if cmpGtEq(asic, 2) = "1" then
                      -- bin 4
                      v.maxFreqConf(asic) := "0100";
                   else
@@ -340,7 +340,7 @@ begin
                   end if;
                else
                   -- comparator 3
-                  if cmpGtEq(asic, 3) = "1" then 
+                  if cmpGtEq(asic, 3) = "1" then
                      -- bin 6
                      v.maxFreqConf(asic) := "0110";
                   else
@@ -352,9 +352,9 @@ begin
          else
             if cmpGtEq(asic, 13) = "1" then
                -- comparator 10
-               if cmpGtEq(asic, 10) = "1" then 
+               if cmpGtEq(asic, 10) = "1" then
                   -- comparator 4
-                  if cmpGtEq(asic, 4) = "1" then 
+                  if cmpGtEq(asic, 4) = "1" then
                      -- bin 8
                      v.maxFreqConf(asic) := "1000";
                   else
@@ -363,7 +363,7 @@ begin
                   end if;
                else
                   -- comparator 5
-                  if cmpGtEq(asic, 5) = "1" then 
+                  if cmpGtEq(asic, 5) = "1" then
                      -- bin 10
                      v.maxFreqConf(asic) := "1010";
                   else
@@ -373,9 +373,9 @@ begin
                end if;
             else
                -- comparator 11
-               if cmpGtEq(asic, 11) = "1" then 
+               if cmpGtEq(asic, 11) = "1" then
                   -- comparator 6
-                  if cmpGtEq(asic, 6) = "1" then 
+                  if cmpGtEq(asic, 6) = "1" then
                      -- bin 12
                      v.maxFreqConf(asic) := "1100";
                   else
@@ -384,7 +384,7 @@ begin
                   end if;
                else
                   -- comparator 7
-                  if cmpGtEq(asic, 7) = "1" then 
+                  if cmpGtEq(asic, 7) = "1" then
                      -- bin 14
                      v.maxFreqConf(asic) := "1110";
                   else
@@ -394,11 +394,11 @@ begin
                end if;
             end if;
          end if;
-         
-         
+
+
       end loop;
-      
-      
+
+
       if (sysRst = '1') then
          v := REG_INIT_C;
       end if;
@@ -416,10 +416,10 @@ begin
          r <= rin after TPD_G;
       end if;
    end process seq;
-   
-   
+
+
    GEN_SACI : for i in 3 downto 0 generate
-      
+
       ----------------------------------------------------
       -- 4 x 4 ASICs SACI Registers Interfaces
       -- Wide address space (has to be at the top level)
@@ -451,7 +451,7 @@ begin
             axilWriteMaster   => axilWriteMasters(i),
             axilWriteSlave    => axilWriteSlaves(i)
          );
-   
+
       ----------------------------------------------------
       -- Matrix Configurators
       ----------------------------------------------------
@@ -489,24 +489,24 @@ begin
             memDin         => memDin(i*4+3 downto i*4),
             memWr          => memWr(i*4+3 downto i*4)
          );
-      
+
       ----------------------------------------------------
       -- SACI bus mux
       ----------------------------------------------------
-      saciClk(i)  <= 
-         regSaciClk(i)                 when r.regSaciBusGr(i) = '1' else 
+      saciClk(i)  <=
+         regSaciClk(i)                 when r.regSaciBusGr(i) = '1' else
          conSaciClk(i);
-      saciCmd(i)  <= 
-         regSaciCmd(i)                 when r.regSaciBusGr(i) = '1' else 
+      saciCmd(i)  <=
+         regSaciCmd(i)                 when r.regSaciBusGr(i) = '1' else
          conSaciCmd(i);
-      saciSelL(i*4+3 downto i*4) <= 
-         regSaciSelL(i*4+3 downto i*4) when r.regSaciBusGr(i) = '1' else 
+      saciSelL(i*4+3 downto i*4) <=
+         regSaciSelL(i*4+3 downto i*4) when r.regSaciBusGr(i) = '1' else
          conSaciSelL(i*4+3 downto i*4);
-      
+
    end generate GEN_SACI;
-   
+
    confDoneAll <= confDone(3) and confDone(2) and confDone(1) and confDone(0);
-   
+
    ----------------------------------------------------
    -- Generate Configuration Memories
    ----------------------------------------------------
@@ -538,9 +538,9 @@ begin
             din            => memDin(i),
             dout           => memDout(i)
          );
-   
+
    end generate GEN_MEM;
-   
+
    ----------------------------------------------------
    -- Generate DSP Comparators
    ----------------------------------------------------
@@ -559,6 +559,6 @@ begin
             );
       end generate GEN_CMP;
    end generate GEN_ASIC;
-   
+
 end rtl;
 

@@ -5,11 +5,11 @@
 -- Description:
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Development Firmware'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Development Firmware', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'EPIX Development Firmware', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -32,20 +32,20 @@ entity AxiIcWrapper is
       axiImgClk            : in  sl;
       axiImgWriteMasters   : in  AxiWriteMasterArray(3 downto 0);
       axiImgWriteSlaves    : out AxiWriteSlaveArray(3 downto 0);
-      
+
       -- AXI Slave for data readout
       -- 128 Bit Data Bus
       axiDoutClk           : in  sl;
       axiDoutReadMaster    : in  AxiReadMasterType;
       axiDoutReadSlave     : out AxiReadSlaveType;
-      
+
       -- AXI Slave for memory tester (aximClk domain)
       -- 128 Bit Data Bus
       axiBistReadMaster    : in  AxiReadMasterType;
       axiBistReadSlave     : out AxiReadSlaveType;
       axiBistWriteMaster   : in  AxiWriteMasterType;
       axiBistWriteSlave    : out AxiWriteSlaveType;
-      
+
       -- AXI Master
       -- 128 Bit Data Bus
       aximClk              : in  sl;
@@ -58,7 +58,7 @@ entity AxiIcWrapper is
 end AxiIcWrapper;
 
 architecture mapping of AxiIcWrapper is
-   
+
    COMPONENT AxiInterconnect
       PORT (
          INTERCONNECT_ACLK : IN STD_LOGIC;
@@ -338,11 +338,11 @@ architecture mapping of AxiIcWrapper is
          M00_AXI_RREADY : OUT STD_LOGIC
       );
    END COMPONENT;
-   
-   
-   
+
+
+
    signal aximRstN            : sl;
-   
+
    -- AXI Interconnect RTL 1.7 generates ports for unused channels
    -- unused channels
    signal axiImgReadMasters   : AxiReadMasterArray(3 downto 0);
@@ -351,9 +351,9 @@ architecture mapping of AxiIcWrapper is
    signal axiDoutWriteSlave   : AxiWriteSlaveType;
 
 begin
-   
+
    aximRstN <= not aximRst;
-   
+
    -- AXI Interconnect RTL 1.7 generates ports for unused channels
    -- unused channels
    axiImgReadMasters    <= (others=>AXI_READ_MASTER_INIT_C);
@@ -363,7 +363,7 @@ begin
    PORT MAP (
       INTERCONNECT_ACLK       => aximClk,
       INTERCONNECT_ARESETN    => aximRstN,
-      
+
       S00_AXI_ARESET_OUT_N    => open,
       S00_AXI_ACLK            => axiImgClk,
       S00_AXI_AWID            => axiImgWriteMasters(0).awid(0 downto 0),
@@ -403,7 +403,7 @@ begin
       S00_AXI_RLAST           => axiImgReadSlaves(0).rlast,
       S00_AXI_RVALID          => axiImgReadSlaves(0).rvalid,
       S00_AXI_RREADY          => axiImgReadMasters(0).rready,
-      
+
       S01_AXI_ARESET_OUT_N    => open,
       S01_AXI_ACLK            => axiImgClk,
       S01_AXI_AWID            => axiImgWriteMasters(1).awid(0 downto 0),
@@ -443,7 +443,7 @@ begin
       S01_AXI_RLAST           => axiImgReadSlaves(1).rlast,
       S01_AXI_RVALID          => axiImgReadSlaves(1).rvalid,
       S01_AXI_RREADY          => axiImgReadMasters(1).rready,
-      
+
       S02_AXI_ARESET_OUT_N    => open,
       S02_AXI_ACLK            => axiImgClk,
       S02_AXI_AWID            => axiImgWriteMasters(2).awid(0 downto 0),
@@ -483,7 +483,7 @@ begin
       S02_AXI_RLAST           => axiImgReadSlaves(2).rlast,
       S02_AXI_RVALID          => axiImgReadSlaves(2).rvalid,
       S02_AXI_RREADY          => axiImgReadMasters(2).rready,
-      
+
       S03_AXI_ARESET_OUT_N    => open,
       S03_AXI_ACLK            => axiImgClk,
       S03_AXI_AWID            => axiImgWriteMasters(3).awid(0 downto 0),
@@ -523,7 +523,7 @@ begin
       S03_AXI_RLAST           => axiImgReadSlaves(3).rlast,
       S03_AXI_RVALID          => axiImgReadSlaves(3).rvalid,
       S03_AXI_RREADY          => axiImgReadMasters(3).rready,
-      
+
       S04_AXI_ARESET_OUT_N    => open,
       S04_AXI_ACLK            => axiDoutClk,
       S04_AXI_AWID            => axiDoutWriteMaster.awid(0 downto 0),
@@ -563,7 +563,7 @@ begin
       S04_AXI_RLAST           => axiDoutReadSlave.rlast,
       S04_AXI_RVALID          => axiDoutReadSlave.rvalid,
       S04_AXI_RREADY          => axiDoutReadMaster.rready,
-      
+
       S05_AXI_ARESET_OUT_N    => open,
       S05_AXI_ACLK            => aximClk,
       S05_AXI_AWID            => axiBistWriteMaster.awid(0 downto 0),
@@ -603,7 +603,7 @@ begin
       S05_AXI_RLAST           => axiBistReadSlave.rlast,
       S05_AXI_RVALID          => axiBistReadSlave.rvalid,
       S05_AXI_RREADY          => axiBistReadMaster.rready,
-      
+
       M00_AXI_ARESET_OUT_N    => open,
       M00_AXI_ACLK            => aximClk,
       M00_AXI_AWID            => aximWriteMaster.awid(3 downto 0),

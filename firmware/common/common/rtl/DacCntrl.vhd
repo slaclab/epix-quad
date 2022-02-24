@@ -9,11 +9,11 @@
 -- DAC Controller.
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Development Firmware'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Development Firmware', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'EPIX Development Firmware', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -30,8 +30,8 @@ use surf.StdRtlPkg.all;
 entity DacCntrl is
    generic (
       TPD_G : time := 1 ns
-   ); 
-   port ( 
+   );
+   port (
 
       -- Master system clock
       sysClk          : in  std_logic;
@@ -150,7 +150,7 @@ begin
 
             if dacStrobe = '1' then
                nxtState <= ST_WAIT;
-            else 
+            else
                nxtState <= curState;
             end if;
 
@@ -163,7 +163,7 @@ begin
 
             if intClkEn = '1' then
                nxtState <= ST_SHIFT;
-            else 
+            else
                nxtState <= curState;
             end if;
 
@@ -176,7 +176,7 @@ begin
 
             if intClkEn = '1' and intBit = 0 then
                nxtState <= ST_IDLE;
-            else 
+            else
                nxtState <= curState;
             end if;
 

@@ -5,11 +5,11 @@
 -- Description: EPIX Quad Target's Top Level
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Development Firmware'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Development Firmware', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'EPIX Development Firmware', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -80,9 +80,9 @@ entity AsicCoreTop is
 end AsicCoreTop;
 
 architecture rtl of AsicCoreTop is
-   
+
    constant LINE_REVERSE_C       : slv(3 downto 0) := "1010";
-   
+
    constant NUM_AXI_MASTERS_C    : natural := 5;
 
    constant ASIC_ACQ_INDEX_C     : natural := 0;
@@ -97,37 +97,37 @@ architecture rtl of AsicCoreTop is
    signal axilWriteSlaves  : AxiLiteWriteSlaveArray(NUM_AXI_MASTERS_C-1 downto 0);
    signal axilReadMasters  : AxiLiteReadMasterArray(NUM_AXI_MASTERS_C-1 downto 0);
    signal axilReadSlaves   : AxiLiteReadSlaveArray(NUM_AXI_MASTERS_C-1 downto 0);
-   
+
    signal acqBusy          : sl;
    signal acqCount         : slv(31 downto 0);
    signal acqSmplEn        : sl;
    signal readDone         : sl;
-   
+
    signal iAsicAcq         : sl;
    signal iAsicR0          : sl;
    signal iAsicSync        : sl;
    signal iAsicPpmat       : sl;
    signal iAsicRoClk       : sl;
-   
+
    signal testStream       : AxiStreamMasterArray(63 downto 0);
-   
+
    signal roClkTail        : slv(7 downto 0);
    signal asicDoutTest     : slv(15 downto 0);
-   
+
    signal iDataTxMaster    : AxiStreamMasterType;
    signal axisMasterPRBS   : AxiStreamMasterType;
    signal axisMasterASIC   : AxiStreamMasterType;
    signal axisSlavePRBS    : AxiStreamSlaveType;
    signal axisSlaveASIC    : AxiStreamSlaveType;
-   
+
    -- ADC signals
    signal adcValid         : slv(31 downto 0);
    signal adcData          : Slv16Array(31 downto 0);
-   
+
    constant MASTER_AXI_CONFIG_C  : AxiStreamConfigType := ssiAxiStreamConfig(8);
-   
+
 begin
-   
+
    ---------------------
    -- AXI-Lite: Crossbar
    ---------------------
@@ -151,7 +151,7 @@ begin
          mAxiReadMasters  => axilReadMasters,
          mAxiReadSlaves   => axilReadSlaves
       );
-   
+
    ---------------------------------------------------------------
    -- Acquisition core
    --------------------- ------------------------------------------
@@ -166,7 +166,7 @@ begin
       -- System Clock (100 MHz)
       sysClk            => sysClk,
       sysRst            => sysRst,
-      -- AXI lite slave port for register access      
+      -- AXI lite slave port for register access
       sAxilWriteMaster  => axilWriteMasters(ASIC_ACQ_INDEX_C),
       sAxilWriteSlave   => axilWriteSlaves(ASIC_ACQ_INDEX_C),
       sAxilReadMaster   => axilReadMasters(ASIC_ACQ_INDEX_C),
@@ -194,9 +194,9 @@ begin
    asicSync    <=  iAsicSync;
    asicPpmat   <=  iAsicPpmat;
    asicRoClk   <=  iAsicRoClk;
-   
+
    ---------------------------------------------------------------
-   -- Readout core 
+   -- Readout core
    --------------------- ------------------------------------------
    U_RdoutCore : entity work.RdoutCoreTop
    generic map (
@@ -209,7 +209,7 @@ begin
       -- ADC interface
       sysClk               => sysClk,
       sysRst               => sysRst,
-      -- AXI-Lite Interface for local registers 
+      -- AXI-Lite Interface for local registers
       sAxilReadMaster      => axilReadMasters(ASIC_RDOUT_INDEX_C),
       sAxilReadSlave       => axilReadSlaves(ASIC_RDOUT_INDEX_C),
       sAxilWriteMaster     => axilWriteMasters(ASIC_RDOUT_INDEX_C),
@@ -243,10 +243,10 @@ begin
       axisClk              => sysClk,
       axisRst              => sysRst,
       axisMaster           => axisMasterASIC,
-      axisSlave            => axisSlaveASIC 
+      axisSlave            => axisSlaveASIC
    );
-   
-   
+
+
    ---------------------------------------------------------------
    -- PseudoScope Core
    --------------------- ------------------------------------------
@@ -256,7 +256,7 @@ begin
       INPUTS_G                   => 32,
       MASTER_AXI_STREAM_CONFIG_G => ssiAxiStreamConfig(4, TKEEP_COMP_C)
    )
-   port map ( 
+   port map (
       -- system clock
       clk               => sysClk,
       rst               => sysRst,
@@ -286,23 +286,23 @@ begin
       sAxilReadMaster   => axilReadMasters(SCOPE_INDEX_C),
       sAxilReadSlave    => axilReadSlaves(SCOPE_INDEX_C)
    );
-   
-   GenAdcTps : for i in 0 to 15 generate 
+
+   GenAdcTps : for i in 0 to 15 generate
       adcData(i)  <= adcStream(64+i).tData(15 downto 0);
       adcValid(i) <= adcStream(64+i).tValid;
    end generate;
-   GenAdcBanks : for i in 0 to 7 generate 
+   GenAdcBanks : for i in 0 to 7 generate
       adcData(16+i*2)    <= adcStream(i*8).tData(15 downto 0);
       adcValid(16+i*2)   <= adcStream(i*8).tValid;
       adcData(16+i*2+1)  <= adcStream(i*8+1).tData(15 downto 0);
       adcValid(16+i*2+1) <= adcStream(i*8+1).tValid;
    end generate;
-   
+
    ---------------------------------------------------------------
    -- ASIC Analog Test Data Generator
    --------------------- ------------------------------------------
-   G_AsicEmuAout : for i in 0 to 63 generate 
-      
+   G_AsicEmuAout : for i in 0 to 63 generate
+
       U_AsicEmuAout : entity work.AsicEmuAout
          generic map (
             TPD_G       => TPD_G,
@@ -318,13 +318,13 @@ begin
             -- Test data output
             testStream  => testStream(i)
          );
-      
+
    end generate;
-   
+
    ---------------------------------------------------------------
    -- ASIC Digital Test Data Generator
    --------------------- ------------------------------------------
-   G_AsicEmuDout : for i in 0 to 15 generate 
+   G_AsicEmuDout : for i in 0 to 15 generate
       constant BANK_ROW_PAT_C : Slv64Array(15 downto 0) := (
          0  => toSlv( 1, 64), 1  => toSlv( 2, 64), 2  => toSlv( 3, 64), 3  => toSlv( 4, 64),
          4  => toSlv( 5, 64), 5  => toSlv( 6, 64), 6  => toSlv( 7, 64), 7  => toSlv( 8, 64),
@@ -332,7 +332,7 @@ begin
          12 => toSlv(13, 64), 13 => toSlv(14, 64), 14 => toSlv(15, 64), 15 => toSlv(16, 64)
       );
    begin
-      
+
       U_AsicEmuDout : entity work.AsicEmuDout
       generic map (
          TPD_G             => TPD_G,
@@ -351,9 +351,9 @@ begin
          -- Test data output
          asicDoutTest      => asicDoutTest(i)
       );
-      
+
    end generate;
-   
+
    ---------------------------------------------------------------
    -- ASIC Stream Monitor
    --------------------- ------------------------------------------
@@ -364,7 +364,7 @@ begin
          AXIS_CLK_FREQ_G   => AXI_CLK_FREQ_G, -- Units of Hz
          AXIS_NUM_SLOTS_G  => 1,
          AXIS_CONFIG_G     => ssiAxiStreamConfig(8) -- 64-bits
-      ) 
+      )
       port map(
          -- AXIS Stream Interface
          axisClk           => sysClk,
@@ -379,13 +379,13 @@ begin
          sAxilWriteMaster  => axilWriteMasters(AXIS_MON_INDEX_C),
          sAxilWriteSlave   => axilWriteSlaves(AXIS_MON_INDEX_C)
       );
-   
-   
+
+
    ---------------------------------------------------------------
    -- PRBS Tx generator
    --------------------- -----------------------------------------
-   U_AXI_PRBS : entity surf.SsiPrbsTx 
-   generic map(         
+   U_AXI_PRBS : entity surf.SsiPrbsTx
+   generic map(
       TPD_G                      => TPD_G,
       MASTER_AXI_PIPE_STAGES_G   => 1,
       PRBS_SEED_SIZE_G           => 128,
@@ -409,8 +409,8 @@ begin
       axilWriteMaster => axilWriteMasters(AXIS_PRBS_INDEX_C),
       axilWriteSlave  => axilWriteSlaves(AXIS_PRBS_INDEX_C)
    );
-   
-   U_STREAM_MUX : entity surf.AxiStreamMux 
+
+   U_STREAM_MUX : entity surf.AxiStreamMux
       generic map(
          TPD_G                => TPD_G,
          NUM_SLAVES_G         => 2,
@@ -432,8 +432,8 @@ begin
          mAxisMaster       => iDataTxMaster,
          mAxisSlave        => dataTxSlave
       );
-   
+
    dataTxMaster   <= iDataTxMaster;
-   
-   
+
+
 end rtl;

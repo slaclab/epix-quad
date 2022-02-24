@@ -5,11 +5,11 @@
 -- Description: Epix10kMatrixConfig.
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Development Firmware'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Development Firmware', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'EPIX Development Firmware', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -63,10 +63,10 @@ architecture rtl of Epix10kMatrixConfig is
 
    constant CHIP_BITS_C : integer := log2(SACI_NUM_CHIPS_G);
    constant TIMEOUT_C   : integer := integer(AXIL_TIMEOUT_G/AXIL_CLK_PERIOD_G)-1;
-   
+
    constant COLCNT_C    : integer := ite(SIM_SPEEDUP_G, 1,  47);
    constant ROWCNT_C    : integer := ite(SIM_SPEEDUP_G, 3, 176);
-   
+
    constant SACI_ROWCNT_CMD_C : slv( 6 downto 0) := "0000110";
    constant SACI_ROWCNT_ADR_C : slv(11 downto 0) := "000000010001";
    constant SACI_COLCNT_CMD_C : slv( 6 downto 0) := "0000110";
@@ -84,7 +84,7 @@ architecture rtl of Epix10kMatrixConfig is
       SACI_REQ_S,
       SACI_ACK_S
    );
-   
+
    type ConfStateType is (
       IDLE_S,
       WAIT_BUS_S,
@@ -171,7 +171,7 @@ architecture rtl of Epix10kMatrixConfig is
 
    signal ack    : sl;
    signal fail   : sl;
-   signal rdData : slv(31 downto 0);  
+   signal rdData : slv(31 downto 0);
 
 begin
 
@@ -187,7 +187,7 @@ begin
       report "AXIL_CLK_PERIOD_G must be < SACI_CLK_PERIOD_G" severity failure;
    assert (SACI_CLK_PERIOD_G < AXIL_TIMEOUT_G)
       report "SACI_CLK_PERIOD_G must be < AXIL_TIMEOUT_G" severity failure;
-   
+
    U_SaciMaster2_1 : entity surf.SaciMaster2
       generic map (
          TPD_G              => TPD_G,
@@ -220,7 +220,7 @@ begin
    begin
       -- Latch the current value
       v := r;
-      
+
       v.saciReq   := '0';
       v.memWr     := '0';
       -- move memory address
@@ -232,7 +232,7 @@ begin
          -- Increment the counter
          v.timer := r.timer + 1;
       end if;
-      
+
       -- select memory output bits of current ASIC
       if r.confAddr(2 downto 0) = "000" then
          memDoutSel := memDout(r.asicCnt)( 3 downto  0);
@@ -251,17 +251,17 @@ begin
       else
          memDoutSel := memDout(r.asicCnt)(31 downto 28);
       end if;
-      
+
       -- check if current pixel config of current ASIC is equal to most frequent element
       if memDoutSel = maxFreqConf(r.asicCnt) then
          maxFreq := '1';
       else
          maxFreq := '0';
       end if;
-      
+
       -- Matrix Set/Get Configuration State Machine
       case (r.confState) is
-         
+
          when IDLE_S =>
             v.bankCnt := 0;
             v.colCnt := 0;
@@ -278,14 +278,14 @@ begin
                v.maxFreqConf := maxFreqConf;
                v.confState := WAIT_BUS_S;
             end if;
-         
+
          -- wait for SACI bus
          when WAIT_BUS_S =>
             v.saciBusReq := '1';
             if saciBusGr = '1' then
                v.confState := NEXT_ASIC_S;
             end if;
-         
+
          -- select next enabled ASIC
          when NEXT_ASIC_S =>
             v.bankCnt := 0;
@@ -304,12 +304,12 @@ begin
             else
                v.confState := IDLE_S;
             end if;
-         
+
          ----------------------------------------------------------
          -- the following SACI commands set entire matrix to selected
          -- most frequent (common) configration component
          ----------------------------------------------------------
-         
+
          when PREPMC_CMD_S =>
             -- Prepare Multi-config SACI Command
             v.req       := '1';
@@ -320,7 +320,7 @@ begin
             v.wrData    := (others=>'0');
             v.saciReq   := '1';
             v.confState := PREPMC_CMD_WAIT_S;
-            
+
          when PREPMC_CMD_WAIT_S =>
             if r.saciDone = '1' then
                if r.saciErr = '0' then
@@ -330,7 +330,7 @@ begin
                   v.confState := ASIC_DONE_S;
                end if;
             end if;
-            
+
          when MATDAT_CMD_S =>
             -- Set Matrix Data SACI Command
             v.req       := '1';
@@ -341,7 +341,7 @@ begin
             v.wrData    := x"0000000" & maxFreqConf(r.asicCnt);
             v.saciReq   := '1';
             v.confState := MATDAT_CMD_WAIT_S;
-            
+
          when MATDAT_CMD_WAIT_S =>
             if r.saciDone = '1' then
                if r.saciErr = '0' then
@@ -351,14 +351,14 @@ begin
                   v.confState := ASIC_DONE_S;
                end if;
             end if;
-         
+
          ----------------------------------------------------------
          -- the following SACI commands loop through all non common
          -- configuration components
          ----------------------------------------------------------
-         
+
          when ROWCNT_CMD_S =>
-            -- wait for the read address 
+            -- wait for the read address
             if r.dlyCnt >= 3 then
                if maxFreq = '0' or r.confWrReq = '0' then
                   -- Set Row SACI Command
@@ -380,8 +380,8 @@ begin
             else
                v.dlyCnt := r.dlyCnt + 1;
             end if;
-            
-         
+
+
          when ROWCNT_CMD_WAIT_S =>
             if r.saciDone = '1' then
                if r.saciErr = '0' then
@@ -391,7 +391,7 @@ begin
                   v.confState := ASIC_DONE_S;
                end if;
             end if;
-            
+
          when COLCNT_CMD_S =>
             -- Set Column and Bank SACI Command
             v.req       := '1';
@@ -411,7 +411,7 @@ begin
             end if;
             v.saciReq   := '1';
             v.confState := COLCNT_CMD_WAIT_S;
-         
+
          when COLCNT_CMD_WAIT_S =>
             if r.saciDone = '1' then
                if r.saciErr = '0' then
@@ -421,7 +421,7 @@ begin
                   v.confState := ASIC_DONE_S;
                end if;
             end if;
-            
+
          when PIXDAT_CMD_S =>
             -- Set Pixel Data SACI Command
             v.req       := '1';
@@ -432,12 +432,12 @@ begin
             v.wrData    := x"0000000" & memDoutSel;
             v.saciReq   := '1';
             v.confState := PIXDAT_CMD_WAIT_S;
-            
+
          when PIXDAT_CMD_WAIT_S =>
             if r.saciDone = '1' or r.saciSkip = '1' then
-               
+
                v.saciSkip := '0';
-               
+
                -- if no error
                -- select next column/row/ASIC
                if r.saciErr = '1' then
@@ -463,12 +463,12 @@ begin
                      v.memWr := '1';
                   end if;
                   v.confState := ASIC_DONE_S;
-               end if; 
-               
+               end if;
+
                -- move memory address
                -- 4 bits per pixel / 32 bit memory
                v.confAddr := r.confAddr + 1;
-               
+
                -- overwrite memory if matrix read request
                if r.confWrReq = '0' then
                   if r.confAddr(2 downto 0) = "000" then
@@ -491,9 +491,9 @@ begin
                      v.memWr := '1';
                   end if;
                end if;
-               
+
             end if;
-         
+
          when ASIC_DONE_S =>
             if r.asicCnt < SACI_NUM_CHIPS_G-1 then
                v.asicCnt := r.asicCnt + 1;
@@ -501,10 +501,10 @@ begin
             else
                v.confState := IDLE_S;
             end if;
-            
+
          when others =>
             v.confState  := IDLE_S;
-      
+
       end case;
 
       -- SACI Access State Machine
@@ -560,7 +560,7 @@ begin
 
       -- Register the variable for next clock cycle
       rin <= v;
-      
+
       -- Outputs
       confDone             <= r.confDone;
       confFail             <= r.confFail;

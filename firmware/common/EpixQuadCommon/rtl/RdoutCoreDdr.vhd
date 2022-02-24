@@ -5,11 +5,11 @@
 -- Description:
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Development Firmware'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Development Firmware', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'EPIX Development Firmware', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -36,7 +36,7 @@ entity RdoutCoreDdr is
       -- ADC interface
       sysClk               : in  sl;
       sysRst               : in  sl;
-      -- AXI-Lite Interface for local registers 
+      -- AXI-Lite Interface for local registers
       sAxilReadMaster      : in  AxiLiteReadMasterType;
       sAxilReadSlave       : out AxiLiteReadSlaveType;
       sAxilWriteMaster     : in  AxiLiteWriteMasterType;
@@ -75,66 +75,66 @@ entity RdoutCoreDdr is
 end RdoutCoreDdr;
 
 architecture rtl of RdoutCoreDdr is
-   
+
    -- ASIC settings
-   
+
    constant BANK_COLS_C          : natural := BANK_COLS_G - 1;
    constant BANK_ROWS_C          : natural := BANK_ROWS_G - 1;
    constant BANK_NUM_C           : natural := 15;
-   
+
    -- Buffer settings
-   
+
    constant LINE_BYTES_C   : natural := BANK_COLS_G*2;                  -- number of bytes of one row in a bank (2 bytes per pixel)
    constant LINE_ADDR_C    : natural := log2(BANK_COLS_G);              -- memory address to fit full line
    constant LINE_BUFF_C    : natural := 1;                              -- memory address to fit multiple line buffers (2**LINE_BUFF_C buffers)
-   
+
    constant DDR_SIZE_C     : natural := LINE_BYTES_C * BANK_ROWS_G * (BANK_NUM_C+1);   -- number of bytes of 1 out of 4 image buffers
    constant DDR_ADDR_C     : natural := log2(DDR_SIZE_C);               -- memory address to fit 1 out of 4 image buffers
    constant DDR_BUFF_C     : natural := 3;                              -- memory address to fit multiple 1 out of 4 image buffers (2**DDR_BUFF_C buffers)
-   
+
    -- AXI settings
-   
+
    constant AXI_CONFIG_C : AxiConfigType := axiConfig(
       ADDR_WIDTH_C => 29,
       DATA_BYTES_C => 16,
       ID_BITS_C    => 1,
       LEN_BITS_C   => 8
    );
-   
+
    constant AXI_BURST_C : slv(1 downto 0)    := "01";
    constant AXI_CACHE_C : slv(3 downto 0)    := "1111";
    constant AWLEN_C     : slv(7 downto 0)    := getAxiLen(AXI_CONFIG_C, LINE_BYTES_C);
-   
+
    -- Stream settings
-   
+
    constant SLAVE_AXI_CONFIG_C   : AxiStreamConfigType := ssiAxiStreamConfig(4);
    constant MASTER_AXI_CONFIG_C  : AxiStreamConfigType := ssiAxiStreamConfig(4);
-   
+
    -- Custom data types
-   
+
    type LineValidArray is array (natural range <>) of slv(2**LINE_BUFF_C-1 downto 0);
    type LineAddrArray  is array (natural range <>) of slv(LINE_ADDR_C-1 downto 0);
    type LineBuffArray  is array (natural range <>) of slv(LINE_BUFF_C-1 downto 0);
    type LineFullArray  is array (natural range <>) of slv(LINE_ADDR_C+LINE_BUFF_C-1 downto 0);
    type DdrAddrArray   is array (natural range <>) of slv(DDR_ADDR_C-1 downto 0);
    type DdrBuffArray   is array (natural range <>) of slv(DDR_BUFF_C-1 downto 0);
-   
+
    type BankIntArray   is array (natural range <>) of integer range 0 to BANK_NUM_C;
    type ColIntArray    is array (natural range <>) of integer range 0 to BANK_COLS_C;
    type RowIntArray    is array (natural range <>) of integer range 0 to BANK_ROWS_C;
-   
+
    type RdStateType is (
       IDLE_S
    );
-   
+
    type WrStateType is (
       IDLE_S,
       ADDR_S,
       MOVE_S
    );
-   
+
    type WrStateArray is array (natural range<>) of WrStateType;
-   
+
    type RegType is record
       rdoutEn              : sl;
       rdoutEnReg           : sl;
@@ -193,33 +193,33 @@ architecture rtl of RdoutCoreDdr is
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
-   
+
    signal acqBusyEdge     : std_logic             := '0';
    signal txSlave          : AxiStreamSlaveType;
-   
+
    signal memWrEn          : sl;
    signal memWrAddr        : slv(LINE_BUFF_C+LINE_ADDR_C-1 downto 0);
    signal memRdAddr        : LineFullArray(63 downto 0);
    signal memRdData        : Slv14Array(63 downto 0);
-   
+
 begin
-   
-   assert LINE_BYTES_C <= 4096 
-      report "Line size over 4kB is not supported" 
+
+   assert LINE_BYTES_C <= 4096
+      report "Line size over 4kB is not supported"
       severity failure;
-   
-   assert LINE_BYTES_C mod AXI_CONFIG_C.DATA_BYTES_C = 0 
-      report "Line size must be " & integer'image(AXI_CONFIG_C.DATA_BYTES_C) & " bytes aligned" 
+
+   assert LINE_BYTES_C mod AXI_CONFIG_C.DATA_BYTES_C = 0
+      report "Line size must be " & integer'image(AXI_CONFIG_C.DATA_BYTES_C) & " bytes aligned"
       severity failure;
-      
+
    assert (DDR_ADDR_C + DDR_BUFF_C + 2) < AXI_CONFIG_C.ADDR_WIDTH_C
       report "Buffer size " & integer'image(2**(DDR_ADDR_C + DDR_BUFF_C + 2)) & " is larger than available " & integer'image(2**AXI_CONFIG_C.ADDR_WIDTH_C) & "bytes"
       severity failure;
-   
+
    --------------------------------------------------
    -- Data storage and readout FSMs
    --------------------------------------------------
-   
+
    U_ReadStartEdge : entity surf.SynchronizerEdge
       port map (
          clk        => sysClk,
@@ -227,29 +227,29 @@ begin
          dataIn     => acqBusy,
          risingEdge => acqBusyEdge
       );
-   
+
    comb : process (sysRst, axiReadSlave, axiWriteSlaves, sAxilReadMaster, sAxilWriteMaster, txSlave, r,
       buffersRdy, acqBusyEdge, acqBusy, acqCount, acqSmplEn, memRdData, opCode) is
       variable v      : RegType;
       variable regCon : AxiLiteEndPointType;
    begin
       v := r;
-      
+
       if r.readPend = "0000" and acqBusyEdge = '0' then
          v.rdoutEn := r.rdoutEnReg;
       end if;
-      
+
       -- count readouts
       if r.seqCountReset = '1' then
          v.seqCount := (others=>'0');
       elsif acqBusyEdge = '1' and r.rdoutEn = '1' and buffersRdy = '1' then
          v.seqCount := r.seqCount + 1;
       end if;
-      
+
       --------------------------------------------------
       -- AXI Lite register logic
       --------------------------------------------------
-      
+
       -- Determine the AXI-Lite transaction
       axiSlaveWaitTxn(regCon, sAxilWriteMaster, sAxilReadMaster, v.sAxilWriteSlave, v.sAxilReadSlave);
 
@@ -262,20 +262,20 @@ begin
       axiSlaveRegisterR(regCon, x"018", 0, r.lineBufErr(2)     );
       axiSlaveRegisterR(regCon, x"01C", 0, r.lineBufErr(3)     );
       axiSlaveRegisterR(regCon, x"020", 0, buffersRdy          );
-      
+
       -- Close out the AXI-Lite transaction
       axiSlaveDefault(regCon, v.sAxilWriteSlave, v.sAxilReadSlave, AXI_RESP_DECERR_C);
-      
+
       --------------------------------------------------
       -- Line buffers (64 bank channels)
       -- one pipeline delay to allow common DPRAM write control
       --------------------------------------------------
-      
+
       if r.rdoutEn = '1' and buffersRdy = '1' then
-         
+
          -- shift the sample strobe
          v.acqSmplEn := r.acqSmplEn(126 downto 0) & acqSmplEn;
-         
+
          -- line write pointer
          if r.acqSmplEn(conv_integer(r.adcPipelineDly)) = '1' then
             if r.lineWrAddr = BANK_COLS_C then
@@ -291,7 +291,7 @@ begin
                v.lineWrAddr := r.lineWrAddr + 1;
             end if;
          end if;
-         
+
          -- check for line buffer overflow
          -- all 4 line FSMs should finish before writing again
          for i in 3 downto 0 loop
@@ -299,20 +299,20 @@ begin
                v.lineBufErr(i) := r.lineBufErr(i) + 1;
             end if;
          end loop;
-         
+
       else
          v.lineWrAddr   := (others=>'0');
          v.lineWrBuff   := (others=>'0');
          v.lineBufValid := (others=>(others=>'0'));
       end if;
-      
+
       --------------------------------------------------
       -- Write FSMs (4 line channels)
       -- 16 banks per line
       --------------------------------------------------
-      
+
       for i in 3 downto 0 loop
-         
+
          -- Reset strobing Signals
          if (axiWriteSlaves(i).awready = '1') then
             v.wMaster(i).awvalid := '0';
@@ -321,11 +321,11 @@ begin
             v.wMaster(i).wvalid := '0';
             v.wMaster(i).wlast  := '0';
          end if;
-      
-      
+
+
          case r.wrState(i) is
-            
-            
+
+
             -- wait for trigger
             when IDLE_S =>
                if LINE_REVERSE_G(i) = '0' then
@@ -343,9 +343,9 @@ begin
                   v.readPend(i)  := '1';
                   v.wrState(i)   := ADDR_S;
                end if;
-         
+
             when ADDR_S =>
-            
+
                -- Check if ready to make memory request
                if (v.wMaster(i).awvalid = '0') then
                   -- Wait for the whole line stored in DPRAM bufffer
@@ -369,7 +369,7 @@ begin
                      end if;
                   end if;
                end if;
-            
+
             when MOVE_S =>
                -- Check if ready to move data
                if (v.wMaster(i).wvalid = '0') then
@@ -398,12 +398,12 @@ begin
                   elsif r.ddrWrAddr(i)(3 downto 0) = "1100" then
                      v.wMaster(i).wdata(111 downto 96) := "00" & memRdData(r.bankCount(i)+i*16);
                   else --"1110"
-                     v.wMaster(i).wdata(127 downto 112) := "00" & memRdData(r.bankCount(i)+i*16); 
+                     v.wMaster(i).wdata(127 downto 112) := "00" & memRdData(r.bankCount(i)+i*16);
                      v.wMaster(i).wvalid := '1';
                   end if;
-                  
+
                   v.wMaster(i).wstrb(15 downto 0) := x"FFFF";
-                  
+
                   -- Check for last AXI transfer (line size burst)
                   if r.colCount(i) >= BANK_COLS_C and r.bankCount(i) >= BANK_NUM_C then
                      v.bankCount(i) := 0;
@@ -436,32 +436,32 @@ begin
                      v.colCount(i)  := r.colCount(i) + 1;
                   end if;
                end if;
-               
+
             when others =>
                v.wrState(i) := IDLE_S;
-               
+
          end case;
-         
+
          for k in 15 downto 0 loop
             memRdAddr(k+i*16) <= r.lineRdBuff(i) & r.lineRdAddr(i);
          end loop;
-      
+
       end loop;
-         
+
       if (sysRst = '1') then
          v := REG_INIT_C;
       end if;
 
       rin <= v;
-      
+
       axiReadMaster     <= r.rMaster;
       axiWriteMasters   <= r.wMaster;
       sAxilWriteSlave   <= r.sAxilWriteSlave;
       sAxilReadSlave    <= r.sAxilReadSlave;
-      
+
       memWrEn           <= r.acqSmplEn(conv_integer(r.adcPipelineDly));
       memWrAddr         <= r.lineWrBuff & r.lineWrAddr;
-      
+
       readDone <= not (r.readPend(3) or r.readPend(2) or r.readPend(1) or r.readPend(0));
 
    end process comb;
@@ -472,7 +472,7 @@ begin
          r <= rin after TPD_G;
       end if;
    end process seq;
-   
+
    ----------------------------------------------------------------------
    -- Line DPRAM buffers (64 bank channels)
    ----------------------------------------------------------------------
@@ -484,7 +484,7 @@ begin
          ADDR_WIDTH_G   => LINE_BUFF_C+LINE_ADDR_C
       )
       port map (
-         -- Port A     
+         -- Port A
          clka    => sysClk,
          wea     => memWrEn,
          rsta    => sysRst,
@@ -497,11 +497,11 @@ begin
          doutb   => memRdData(i)
       );
    end generate G_BankBuf;
-   
+
    ----------------------------------------------------------------------
    -- Streaming out FIFO
    ----------------------------------------------------------------------
-   
+
    U_AxisOut : entity surf.AxiStreamFifoV2
    generic map (
       -- General Configurations
@@ -529,5 +529,5 @@ begin
       mAxisMaster => axisMaster,
       mAxisSlave  => axisSlave
    );
-   
+
 end rtl;

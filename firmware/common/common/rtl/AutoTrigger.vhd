@@ -9,11 +9,11 @@
 -- Generates automatic triggers
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Development Firmware'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Development Firmware', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'EPIX Development Firmware', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -34,7 +34,7 @@ entity AutoTrigger is
       sysClk        : in  sl;
       sysClkRst     : in  sl;
 
-      -- Inputs 
+      -- Inputs
       runTrigIn     : in  sl := '0';
       daqTrigIn     : in  sl := '0';
 
@@ -73,7 +73,7 @@ begin
    timeoutTarget <= unsigned(trigPeriod(30 downto 0) & '0');
    trigTarget    <= unsigned(trigPeriod);
 
-   -- Send triggers if you haven't seen one in timeout 
+   -- Send triggers if you haven't seen one in timeout
    process(sysClk) begin
       if rising_edge(sysClk) then
          -- On reset, reset the counter to 0
@@ -94,14 +94,14 @@ begin
                   --Default is to increment the timeout count
                   timeoutCnt <= timeoutCnt + 1 after tpd;
                   case trigSel is
-                     -- In external mode, if we see double the timeout, 
+                     -- In external mode, if we see double the timeout,
                      -- reset the counter and switch to internal
                      when EXTERNAL_T =>
                         if (timeoutCnt >= timeoutTarget) then
                            timeoutCnt <= (others => '0') after tpd;
                            trigSel    <= INTERNAL_T      after tpd;
                         end if;
-                     -- In internal mode, fire off a trigger if we 
+                     -- In internal mode, fire off a trigger if we
                      -- get to the target count and reset the count
                      when INTERNAL_T =>
                         if (timeoutCnt >= trigTarget) then

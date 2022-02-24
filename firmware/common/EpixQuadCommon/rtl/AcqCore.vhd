@@ -5,11 +5,11 @@
 -- Description:
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Development Firmware'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Development Firmware', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'EPIX Development Firmware', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -61,7 +61,7 @@ end AcqCore;
 
 -- Define architecture
 architecture RTL of AcqCore is
-   
+
    type AcqStateType is (
       IDLE_S,
       WAIT_R0_S,
@@ -78,7 +78,7 @@ architecture RTL of AcqCore is
       WAIT_FOR_READOUT_S,
       SYNC_S
    );
-   
+
    type RegType is record
       acqCount             : slv(31 downto 0);
       acqCountReset        : sl;
@@ -159,16 +159,16 @@ architecture RTL of AcqCore is
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
-   
+
    signal acqStartEdge       : std_logic             := '0';
-   
+
    constant ROCLK_COUNT_C : natural := 4 * BANK_COLS_G * BANK_ROWS_G;   -- roClk is divided by 4, (data is read out from 64 banks simultaneously)
    constant DUMMY_ASIC_ROCLK_HALFT_C : natural := 2;
    constant DUMMY_ASIC_R0_TO_ACQ_C   : natural := 2500;
    constant DUMMY_ASIC_ACQ_WIDTH_C   : natural := 2500;
-   
+
 begin
-   
+
    U_ReadStartEdge : entity surf.SynchronizerEdge
       port map (
          clk        => sysClk,
@@ -184,28 +184,28 @@ begin
       variable asicRoClkTRegTmp  : slv(31 downto 0);
    begin
       v := r;
-      
+
       v.asicRoClkHalfTReg := (others=>'0');
       v.asicRoClkTReg     := (others=>'0');
       asicRoClkTRegTmp    := resize(r.asicRoClkHalfT(31 downto 16) + r.asicRoClkHalfT(15 downto 0), 32);
-      
+
       -- ADC clock frequency is fixed to 50 MHz
       v.adcClk := not r.adcClk;
-      
+
       -- clear strobe
       v.acqCountReset := '0';
-      
+
       -- count acquisitions
       if r.acqCountReset = '1' then
          v.acqCount := (others=>'0');
       elsif acqStartEdge = '1' and r.acqBusy = '0' then
          v.acqCount := r.acqCount + 1;
       end if;
-      
+
       --------------------------------------------------
       -- AXI Lite register logic
       --------------------------------------------------
-      
+
       -- Determine the AXI-Lite transaction
       axiSlaveWaitTxn(regCon, sAxilWriteMaster, sAxilReadMaster, v.sAxilWriteSlave, v.sAxilReadSlave);
 
@@ -225,19 +225,19 @@ begin
       axiSlaveRegister (regCon, x"030", 0, v.asicPinValue      );
       axiSlaveRegister (regCon, x"034", 0, v.asicRoClkTReg     );
       axiSlaveRegisterR(regCon, x"034", 0, asicRoClkTRegTmp    );
-      
+
       axiSlaveRegister (regCon, x"100", 0, v.dummyAcqEn        );
-      
+
       axiSlaveRegister (regCon, x"110", 0, v.asicSyncInjEn     );
       axiSlaveRegister (regCon, x"114", 0, v.asicSyncInjDly    );
-      
+
       axiSlaveRegister (regCon, x"120", 0, v.dbgOutSel(0)      );
       axiSlaveRegister (regCon, x"124", 0, v.dbgOutSel(1)      );
       axiSlaveRegister (regCon, x"128", 0, v.dbgOutSel(2)      );
-      
+
       -- Close out the AXI-Lite transaction
       axiSlaveDefault(regCon, v.sAxilWriteSlave, v.sAxilReadSlave, AXI_RESP_DECERR_C);
-      
+
       -- ASIC RdoutClk period is preset by the Microblaze and should be changed only be an expert
       -- setting AsicRoClk by the half period register (asicRoClkHalfTReg) is a legacy way for the existing software
       -- setting AsicRoClk by the full period register (asicRoClkTReg) is a new way that also allows to set non 50% duty cycle used for higher framerates
@@ -253,12 +253,12 @@ begin
             v.asicRoClkHalfT(15 downto 0)  := '0' & r.asicRoClkTReg(15 downto 1);
          end if;
       end if;
-      
+
       --------------------------------------------------
       -- Acquisition FSM
       -- Based on small EPIX camera implementation by Kurtis
       --------------------------------------------------
-      
+
       v.stateCnt        := r.stateCnt + 1;
       v.acqBusy         := '1';
       v.asicAcq         := '0';
@@ -268,12 +268,12 @@ begin
       v.asicPpmat       := '0';
       v.asicRoClk       := '0';
       v.acqSmplEn       := '0';
-      
+
       -- sum all delay leading to ACQ pulse
       v.asicPreAcqTime := r.acqToAsicR0Delay + r.asicR0Width + r.asicR0ToAsicAcq;
-      
+
       case r.acqState is
-         
+
          -- wait for trigger
          when IDLE_S =>
             v.stateCnt  := (others=>'0');
@@ -285,7 +285,7 @@ begin
             if acqStartEdge = '1' then
                v.acqState := WAIT_R0_S;
             end if;
-         
+
          -- delay before R0
          when WAIT_R0_S =>
             v.asicR0 := '0';
@@ -299,7 +299,7 @@ begin
                   v.acqState := PULSE_R0_S;
                end if;
             end if;
-         
+
          -- R0 pulse (low)
          when PULSE_R0_S =>
             v.asicR0 := '0';
@@ -313,7 +313,7 @@ begin
                   v.acqState := WAIT_ACQ_S;
                end if;
             end if;
-         
+
          -- delay before ACQ pulse
          when WAIT_ACQ_S =>
             v.asicPpmat := '1';
@@ -329,7 +329,7 @@ begin
                   v.asicSyncInjSt := '1';
                end if;
             end if;
-         
+
          -- ACQ pulse (high)
          when ACQ_S =>
             v.asicAcq := '1';
@@ -345,9 +345,9 @@ begin
                   v.acqState := WAIT_PPMAT_S;
                end if;
             end if;
-         
+
          -- removed DROP_ACQ_S state as it was an empty transition
-         
+
          -- Delay before PPMAT drop (matrix power off)
          when WAIT_PPMAT_S =>
             v.asicPpmat := '1';
@@ -360,7 +360,7 @@ begin
                   v.acqState := WAIT_POST_PPMAT_S;
                end if;
             end if;
-         
+
          -- delay before start of readout
          when WAIT_POST_PPMAT_S =>
             if r.dummyAcq = '1' then
@@ -372,19 +372,19 @@ begin
                   v.acqState := SYNC_TO_ADC_S;
                end if;
             end if;
-         
+
          -- synchronize with adcClk
          when SYNC_TO_ADC_S =>
             if r.adcClk = '1' then
                v.stateCnt := (others=>'0');
                v.acqState := NEXT_CELL_S;
             end if;
-         
+
          -- asicRoClk low
          when WAIT_ADC_S =>
             if r.dummyAcq = '1' then
-               
-               -- do faster (dummy) readout 
+
+               -- do faster (dummy) readout
                -- DUMMY_ASIC_ROCLK_HALFT_C = 2 -> 40ns -> 25MHz (this clock is divided by 4 inside epix10kA)
                if r.stateCnt >= DUMMY_ASIC_ROCLK_HALFT_C - 1 then
                   v.stateCnt  := (others=>'0');
@@ -403,9 +403,9 @@ begin
                      end if;
                   end if;
                end if;
-               
+
             else
-            
+
                if r.stateCnt >= r.asicRoClkHalfT(31 downto 16)-1 or r.asicRoClkHalfT(31 downto 16) = 0 then
                   v.stateCnt  := (others=>'0');
                   v.roClkCnt  := r.roClkCnt + 1;
@@ -422,16 +422,16 @@ begin
                      end if;
                   end if;
                end if;
-            
+
             end if;
-         
+
          -- asicRoClk high
          when NEXT_CELL_S =>
             v.asicRoClk := '1';
-            
+
             if r.dummyAcq = '1' then
-               
-               -- do faster (dummy) readout 
+
+               -- do faster (dummy) readout
                -- DUMMY_ASIC_ROCLK_HALFT_C = 2 -> 40ns -> 25MHz (this clock is divided by 4 inside epix10kA)
                if r.stateCnt >= DUMMY_ASIC_ROCLK_HALFT_C - 2 then
                   v.stateCnt := (others=>'0');
@@ -440,9 +440,9 @@ begin
                if r.roClkCnt(1 downto 0) = "11" and r.stateCnt = 0 then
                   v.acqSmplEn := '1';
                end if;
-               
+
             else
-               
+
                if r.stateCnt >= r.asicRoClkHalfT(15 downto 0)-1 or r.asicRoClkHalfT(15 downto 0) = 0 then
                   v.stateCnt := (others=>'0');
                   v.acqState := WAIT_ADC_S;
@@ -450,15 +450,15 @@ begin
                if r.roClkCnt(1 downto 0) = "11" and r.stateCnt = 0 then
                   v.acqSmplEn := '1';
                end if;
-            
+
             end if;
-         
+
          -- asicRoClk low
          when WAIT_DOUT_S =>
-            
+
             if r.dummyAcq = '1' then
-               
-               -- do faster (dummy) readout 
+
+               -- do faster (dummy) readout
                -- DUMMY_ASIC_ROCLK_HALFT_C = 2 -> 40ns -> 25MHz (this clock is divided by 4 inside epix10kA)
                if r.stateCnt >= DUMMY_ASIC_ROCLK_HALFT_C - 1 then
                   v.stateCnt  := (others=>'0');
@@ -470,9 +470,9 @@ begin
                      v.acqState := SYNC_S;
                   end if;
                end if;
-               
+
             else
-               
+
                if r.stateCnt >= r.asicRoClkHalfT(31 downto 16)-1 or r.asicRoClkHalfT(31 downto 16) = 0 then
                   v.stateCnt  := (others=>'0');
                   if r.roClkCnt < roClkTail then
@@ -482,31 +482,31 @@ begin
                      v.acqState := WAIT_FOR_READOUT_S;
                   end if;
                end if;
-            
+
             end if;
-         
+
          -- asicRoClk high
          when NEXT_DOUT_S =>
             v.asicRoClk := '1';
-            
+
             if r.dummyAcq = '1' then
-               
-               -- do faster (dummy) readout 
+
+               -- do faster (dummy) readout
                -- DUMMY_ASIC_ROCLK_HALFT_C = 2 -> 40ns -> 25MHz (this clock is divided by 4 inside epix10kA)
                if r.stateCnt >= DUMMY_ASIC_ROCLK_HALFT_C - 2 then
                   v.stateCnt := (others=>'0');
                   v.acqState := WAIT_DOUT_S;
                end if;
-               
+
             else
-            
+
                if r.stateCnt >= r.asicRoClkHalfT(15 downto 0)-1 or r.asicRoClkHalfT(15 downto 0) = 0 then
                   v.stateCnt := (others=>'0');
                   v.acqState := WAIT_DOUT_S;
                end if;
-            
+
             end if;
-         
+
          -- wait unit all ASIC data is read out (handshake)
          when WAIT_FOR_READOUT_S =>
             v.asicR0 := '0';
@@ -514,7 +514,7 @@ begin
                v.stateCnt := (others=>'0');
                v.acqState := SYNC_S;
             end if;
-         
+
          -- SACI_RESET_S state renamed to SYNC_S
          when SYNC_S =>
             v.asicR0 := '0';
@@ -535,15 +535,15 @@ begin
                   v.acqState := IDLE_S;
                end if;
             end if;
-            
-         
+
+
          -- removed DONE_S state as it was an empty transition
-            
+
          when others =>
             v.acqState := IDLE_S;
-            
+
       end case;
-      
+
       -- logic to create sync injection pulse delayed to the acq pulse
       -- this is an alternate way to use sync and injection circuit
       -- ASIC's configuration has to be changed appropriately with this option change
@@ -562,8 +562,8 @@ begin
       else
          v.asicSyncInj := '0';
       end if;
-      
-      
+
+
       if (sysRst = '1') then
          v := REG_INIT_C;
       end if;
@@ -576,7 +576,7 @@ begin
       adcClk            <= r.adcClk;
       acqCount          <= r.acqCount;
       acqSmplEn         <= r.acqSmplEn;
-      
+
       -- debug outputs
       for i in 0 to 2 loop
          if r.dbgOutSel(i) = 0 then
@@ -601,7 +601,7 @@ begin
       end loop;
 
    end process comb;
-   
+
    asicAcq     <= r.asicAcq   when r.asicPinForce(0) = '0' else r.asicPinValue(0);
    asicR0      <= r.asicR0    when r.asicPinForce(1) = '0' else r.asicPinValue(1);
    asicPpmat   <= r.asicPpmat when r.asicPinForce(2) = '0' else r.asicPinValue(2);
@@ -615,6 +615,6 @@ begin
          r <= rin after TPD_G;
       end if;
    end process seq;
-   
+
 end RTL;
 

@@ -5,11 +5,11 @@
 -- Description:
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Development Firmware'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Development Firmware', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'EPIX Development Firmware', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -35,7 +35,7 @@ entity EpixQuadMonitoring is
       I2C_MIN_PULSE_G   : real      := 100.0E-9;   -- units of seconds
       AXI_CLK_FREQ_G    : real      := 156.25E+6;  -- units of Hz
       SIM_SPEEDUP_G     : boolean   := false
-   );  
+   );
    port (
       -- Clocks and Resets
       sysClk            : in    sl;
@@ -64,19 +64,19 @@ entity EpixQuadMonitoring is
 end entity EpixQuadMonitoring;
 
 architecture rtl of EpixQuadMonitoring is
-   
+
    constant I2C_SCL_5xFREQ_C : real    := 5.0 * I2C_SCL_FREQ_G;
    constant PRESCALE_C       : natural := ite(SIM_SPEEDUP_G,  7, (getTimeRatio(AXI_CLK_FREQ_G, I2C_SCL_5xFREQ_C)) - 1);
    constant FILTER_C         : natural := ite(SIM_SPEEDUP_G, 11, natural(AXI_CLK_FREQ_G * I2C_MIN_PULSE_G) + 1);
-   
+
    constant I2C_HUM_CONFIG_C : I2cAxiLiteDevArray(1 downto 0) := (
       0 => (MakeI2cAxiLiteDevType("1000100", 48, 16, '0', '1')),
       1 => (MakeI2cAxiLiteDevType("1001100", 8, 8, '0'))
-   );  
-   
+   );
+
    -- worst case scenarion measurement time is 15 ms (66.67 Hz)
    constant SHT31_MEAS_TIME_C : natural := ite(SIM_SPEEDUP_G, 100,(getTimeRatio(AXI_CLK_FREQ_G, 66.67)) - 1);
-   
+
    -- number of registers to read from NCT218
    constant NCT218_REGS_NUM_C : natural := 3;
    -- register addresses to read from NCT218
@@ -85,13 +85,13 @@ architecture rtl of EpixQuadMonitoring is
       1 => x"10", -- external temperature low byte
       2 => x"01"  -- external temperature high byte
    );
-   
+
    -- minimum clock period at 1.8VIO is 50 ns
    constant AD7949_SPI_SCLK_C : real := 1.0E+6;
    -- maximum sampling (cycle) frequency is 250kHz
    constant AD7949_CYC_CLK_C  : real := 250.0E+3;
    constant AD7949_CYC_PER_C  : natural := getTimeRatio(AXI_CLK_FREQ_G, AD7949_CYC_CLK_C)-1;
-   
+
    -- 1 HZ counter ticks for the monitor data trigger
    constant MON_TRIG_PER_C       : natural := ite(SIM_SPEEDUP_G, 1000, getTimeRatio(AXI_CLK_FREQ_G, 1.0)-1);
    constant SLAVE_AXI_CONFIG_C   : AxiStreamConfigType := ssiAxiStreamConfig(4);
@@ -99,43 +99,43 @@ architecture rtl of EpixQuadMonitoring is
    constant VC_C                 : slv( 1 downto 0) := "11";
    constant QUAD_C               : slv( 1 downto 0) := "00";
    constant OPCODE_C             : slv( 7 downto 0) := x"00";
-   
+
    type StateType is (
-      WAIT_REQ_S, 
-      ADDR_S, 
-      WRITE_S, 
-      READ_TXN_S, 
-      READ_S, 
-      BUS_ACK_S, 
+      WAIT_REQ_S,
+      ADDR_S,
+      WRITE_S,
+      READ_TXN_S,
+      READ_S,
+      BUS_ACK_S,
       REG_ACK_S
    );
-   
+
    type HumStateType is (
-      IDLE_S, 
-      HSTART_S, 
-      HBUS_WAIT1_S, 
-      HMEAS_WAIT_S, 
-      HMEAS_READ_S, 
-      HBUS_WAIT2_S, 
+      IDLE_S,
+      HSTART_S,
+      HBUS_WAIT1_S,
+      HMEAS_WAIT_S,
+      HMEAS_READ_S,
+      HBUS_WAIT2_S,
       TSTART_S,
       TBUS_WAIT1_S,
       TBUS_READ_S,
       TBUS_WAIT2_S
    );
-   
+
    type SpiStateType is (
-      IDLE_S, 
+      IDLE_S,
       BUS_EN_S,
       BUS_WAIT_S,
       WAIT_TCYC_S
    );
-   
+
    type RdStateType is (
       IDLE_S,
       HDR_S,
       DATA_S
    );
-   
+
    type RegType is record
       state             : StateType;
       byteCount         : slv(2 downto 0);
@@ -260,13 +260,13 @@ architecture rtl of EpixQuadMonitoring is
    signal rin           : RegType;
    signal i2cMasterIn   : I2cMasterInType;
    signal i2cMasterOut  : I2cMasterOutType;
-   
+
    signal i2ci : i2c_in_type;
    signal i2co : i2c_out_type;
-   
+
    signal spiRdEn       : sl;
    signal spiRdData     : slv(13 downto 0);
-   
+
    signal iMonData      : Slv16Array(37 downto 0);
 
    function getIndex (
@@ -285,11 +285,11 @@ architecture rtl of EpixQuadMonitoring is
    end function getIndex;
 
 begin
-   
+
    --------------------------------------------------
    -- Basic I2c Master
    --------------------------------------------------
-   
+
    i2cMaster_1 : entity surf.I2cMaster
       generic map (
          TPD_G                => TPD_G,
@@ -304,25 +304,25 @@ begin
          i2cMasterOut => i2cMasterOut,
          i2ci         => i2ci,
          i2co         => i2co);
-   
+
    IOBUF_SCL : IOBUF
       port map (
          O  => i2ci.scl,                -- Buffer output
          IO => humScl,                  -- Buffer inout port (connect directly to top-level port)
          I  => i2co.scl,                -- Buffer input
-         T  => i2co.scloen);            -- 3-state enable input, high=input, low=output  
+         T  => i2co.scloen);            -- 3-state enable input, high=input, low=output
 
    IOBUF_SDA : IOBUF
       port map (
          O  => i2ci.sda,                -- Buffer output
          IO => humSda,                  -- Buffer inout port (connect directly to top-level port)
          I  => i2co.sda,                -- Buffer input
-         T  => i2co.sdaoen);            -- 3-state enable input, high=input, low=output  
-   
+         T  => i2co.sdaoen);            -- 3-state enable input, high=input, low=output
+
    --------------------------------------------------
    -- Basic SPI Master
    --------------------------------------------------
-   
+
    U_SpiMaster : entity surf.SpiMaster
    generic map (
       TPD_G             => TPD_G,
@@ -349,7 +349,7 @@ begin
       spiSdi      => envDin,
       spiSdo      => envSdo
    );
-   
+
    --------------------------------------------------
    -- Combinational logic
    --------------------------------------------------
@@ -362,10 +362,10 @@ begin
       variable regCon       : AxiLiteEndPointType;
    begin
       v := r;
-      
+
       -- reset strobes
       v.trigger   := '0';
-      
+
       -- prescale the trigger as set
       if acqStart = '1' and r.monitorEnReg = '1' then
          if r.prescalerCnt < r.trigPrescaler then
@@ -375,12 +375,12 @@ begin
             v.trigger      := '1';
          end if;
       end if;
-      
-      
+
+
       ------------------------------------------------------------------------------------------------
       -- Register access
       ------------------------------------------------------------------------------------------------
-      
+
       -- Determine the AXI-Lite transaction
       axiSlaveWaitTxn(regCon, axilWriteMaster, axilReadMaster, v.sAxilWriteSlave, v.sAxilReadSlave);
 
@@ -404,18 +404,18 @@ begin
       if r.sensorCnt > 0 then
          v.sensorCnt := r.sensorCnt - 1;
       end if;
-      
 
-      
+
+
       -- Close out the AXI-Lite transaction
       axiSlaveDefault(regCon, v.sAxilWriteSlave, v.sAxilReadSlave, AXI_RESP_DECERR_C);
-      
-      
+
+
       ------------------------------------------------------------------------------------------------
       -- I2C bus readout state machine
       -- modified I2cRegMaster from surf that allows transactions over 4 bytes
       ------------------------------------------------------------------------------------------------
-      
+
       addrIndexVar := getIndex(r.endianness, r.byteCount, r.regAddrSize);
       dataIndexVar := getIndex(r.endianness, r.byteCount, r.regDataSize);
 
@@ -444,10 +444,10 @@ begin
                   else
                      v.i2cMasterIn.op := '0';
                      v.state := READ_S;
-                  end if;                  
+                  end if;
                end if;
             end if;
-            
+
          when ADDR_S =>
             -- When a new register access request is seen,
             -- Write the register address out on the bus first
@@ -485,7 +485,7 @@ begin
                   v.state := REG_ACK_S;
                end if;
             end if;
-            
+
 
          when READ_TXN_S =>
             -- Start new txn to read data bytes
@@ -508,19 +508,19 @@ begin
                end if;
             end if;
 
-         when BUS_ACK_S => 
+         when BUS_ACK_S =>
             if i2cMasterOut.busAck = '1' then
                v.i2cMasterIn.txnReq := '0';
                v.state              := REG_ACK_S;
             end if;
-            
+
          when REG_ACK_S =>
             -- Req done. Ack the req.
             -- Might have failed so hold regFail (would be set to 0 otherwise).
             v.regAck  := '1';
             v.regFail := r.regFail;
             if (r.regReq = '0') then
---          v.regAck := '0'; Might want this back. 
+--          v.regAck := '0'; Might want this back.
                v.state := WAIT_REQ_S;
             end if;
 
@@ -534,19 +534,19 @@ begin
          v.i2cMasterIn.rdAck  := '1';
          v.state              := REG_ACK_S;
       end if;
-      
+
       ------------------------------------------------------------------------------------------------
       -- State machine to conduct measurements and make readout of the devices on the humidity I2C bus
       ------------------------------------------------------------------------------------------------
-      
+
       case r.humState is
-         
+
          when IDLE_S =>
             v.nctRegCnt := 0;
             if r.trigger = '1' then
                v.humState := HSTART_S;
             end if;
-         
+
          -- conduct measurement and readout of SHT31-DIS-B
          -- send single shot command
          when HSTART_S =>
@@ -558,7 +558,7 @@ begin
             v.regAddr      := (others=>'0');
             v.regAddrSize  := toSlv(wordCount(1, 8) - 1, 2);
             v.regAddrSkip  := '1';
-            -- single shot command 
+            -- single shot command
             -- clock stretching disabled 0x24
             -- Medium repeatability 0x0B
             v.regDataSize  := toSlv(wordCount(16, 8) - 1, 3);
@@ -570,7 +570,7 @@ begin
             if r.regAck = '0' then
                v.humState     := HBUS_WAIT1_S;
             end if;
-         
+
          -- wait for I2C transaction complete
          when HBUS_WAIT1_S =>
             if (r.regAck = '1' and r.regReq = '1') then
@@ -578,7 +578,7 @@ begin
                if r.regFail = '0' then
                   v.humState  := HMEAS_WAIT_S;
                else
-                  -- SHT31 command failed 
+                  -- SHT31 command failed
                   -- goto next device on the bus
                   v.humState  := TSTART_S;
                   if r.shtError < x"FFFF" then
@@ -586,7 +586,7 @@ begin
                   end if;
                end if;
             end if;
-         
+
          -- wait for the internal measurement complete
          when HMEAS_WAIT_S =>
             if r.waitCnt < SHT31_MEAS_TIME_C then
@@ -595,7 +595,7 @@ begin
                v.waitCnt   := (others=>'0');
                v.humState  := HMEAS_READ_S;
             end if;
-         
+
          -- read humidity and temperature sensor
          when HMEAS_READ_S =>
             -- start humidity and temperature measurement
@@ -616,7 +616,7 @@ begin
             if r.regAck = '0' then
                v.humState     := HBUS_WAIT2_S;
             end if;
-         
+
          -- wait for I2C transaction complete
          when HBUS_WAIT2_S =>
             if (r.regAck = '1' and r.regReq = '1') then
@@ -627,7 +627,7 @@ begin
                   v.shtTempReg   := r.regRdData(7 downto 0)   & r.regRdData(15 downto 8);
                   v.shtHumReg    := r.regRdData(31 downto 24) & r.regRdData(39 downto 32);
                else
-                  -- SHT31 command failed 
+                  -- SHT31 command failed
                   if r.shtError < x"FFFF" then
                      v.shtError  := r.shtError + 1;
                   end if;
@@ -635,7 +635,7 @@ begin
                -- go to next device on the bus
                v.humState  := TSTART_S;
             end if;
-         
+
          -- read out NCT218 FPGA junction temperature sensor
          when TSTART_S =>
             -- send NTC218 pionter value
@@ -646,7 +646,7 @@ begin
             v.regAddr      := (others=>'0');
             v.regAddrSize  := toSlv(wordCount(1, 8) - 1, 2);
             v.regAddrSkip  := '1';
-            -- single shot command 
+            -- single shot command
             -- clock stretching disabled 0x24
             -- Medium repeatability 0x0B
             v.regDataSize  := toSlv(wordCount(8, 8) - 1, 3);
@@ -658,14 +658,14 @@ begin
             if r.regAck = '0' then
                v.humState     := TBUS_WAIT1_S;
             end if;
-         
+
          when TBUS_WAIT1_S =>
             if (r.regAck = '1' and r.regReq = '1') then
                v.regReq    := '0';
                if r.regFail = '0' then
                   v.humState  := TBUS_READ_S;
                else
-                  -- NCT command failed 
+                  -- NCT command failed
                   -- goto IDLE_S
                   v.humState  := IDLE_S;
                   if r.nctError < x"FFFF" then
@@ -673,7 +673,7 @@ begin
                   end if;
                end if;
             end if;
-            
+
          when TBUS_READ_S =>
             -- start humidity and temperature measurement
             v.i2cAddr      := I2C_HUM_CONFIG_C(1).i2cAddress;
@@ -693,7 +693,7 @@ begin
             if r.regAck = '0' then
                v.humState     := TBUS_WAIT2_S;
             end if;
-            
+
          when TBUS_WAIT2_S =>
             if (r.regAck = '1' and r.regReq = '1') then
                v.regReq    := '0';
@@ -710,7 +710,7 @@ begin
                      v.humState  := IDLE_S;
                   end if;
                else
-                  -- NCT command failed 
+                  -- NCT command failed
                   if r.nctError < x"FFFF" then
                      v.nctError  := r.nctError + 1;
                   end if;
@@ -718,30 +718,30 @@ begin
                   v.humState  := IDLE_S;
                end if;
             end if;
-            
+
       end case;
-      
+
       ------------------------------------------------------------------------------------------------
       -- AD7949 readout state machine
       ------------------------------------------------------------------------------------------------
-      
+
       v.spiWrEn := '0';
       v.spiRdEn := spiRdEn;
-      
+
       case r.spiState is
-         
+
          -- wait for trigger
          when IDLE_S =>
             if r.trigger = '1' then
                v.spiState := BUS_EN_S;
             end if;
-         
+
          -- write config and read the measurement
          when BUS_EN_S =>
-            v.spiWrData := "1111" & r.spiWrdCnt(2 downto 0) & "0000001"; 
+            v.spiWrData := "1111" & r.spiWrdCnt(2 downto 0) & "0000001";
             v.spiWrEn   := '1';
             v.spiState := BUS_WAIT_S;
-         
+
          when BUS_WAIT_S =>
             if spiRdEn = '1' and r.spiRdEn = '0' then
                -- skip first 2 samples (ADC pipeline)
@@ -750,7 +750,7 @@ begin
                end if;
                v.spiState := WAIT_TCYC_S;
             end if;
-         
+
          -- wait Tcyc for next measurement
          when WAIT_TCYC_S =>
             if r.spiCycCnt >= AD7949_CYC_PER_C then
@@ -765,13 +765,13 @@ begin
             else
                v.spiCycCnt := r.spiCycCnt + 1;
             end if;
-            
+
       end case;
-      
+
       --------------------------------------------------
       -- FSM to stream monitoring data
       --------------------------------------------------
-      
+
       if monitorEn = '1' and r.monitorEnReg = '1' then
          if r.monTrigCnt < MON_TRIG_PER_C then
             v.monTrigCnt := r.monTrigCnt + 1;
@@ -781,7 +781,7 @@ begin
       else
          v.monTrigCnt := 0;
       end if;
-      
+
       -- Reset strobing Signals
       if (monitorTxSlave.tReady = '1') then
          v.txMaster.tValid := '0';
@@ -790,16 +790,16 @@ begin
          v.txMaster.tKeep  := (others => '1');
          v.txMaster.tStrb  := (others => '1');
       end if;
-      
+
       case r.rdState is
-         
+
          -- wait for trigger
          when IDLE_S =>
             if r.monTrigCnt = MON_TRIG_PER_C then
                v.monData   := iMonData;
                v.rdState   := HDR_S;
             end if;
-      
+
          when HDR_S =>
             if v.txMaster.tValid = '0' then
                v.txMaster.tValid := '1';
@@ -818,11 +818,11 @@ begin
                   v.wordCnt   := r.wordCnt + 1;
                end if;
             end if;
-         
+
          when DATA_S =>
             if v.txMaster.tValid = '0' then
                v.txMaster.tValid := '1';
-               
+
                if r.wordCnt = 0 then
                   v.txMaster.tData(31 downto  0) := r.monData( 1) & r.monData( 0);
                elsif r.wordCnt = 1 then
@@ -864,7 +864,7 @@ begin
                else
                   v.txMaster.tData(31 downto  0) := x"00000000";
                end if;
-               
+
                if (r.wordCnt < 31) then
                   v.wordCnt := r.wordCnt + 1;
                else
@@ -873,31 +873,31 @@ begin
                   v.wordCnt := 0;
                   v.rdState := IDLE_S;
                end if;
-               
+
             end if;
-         
+
          when others =>
             v.rdState := IDLE_S;
-            
+
       end case;
-      
+
       ------------------------------------------------------------------------------------------------
       -- Synchronous Reset
       ------------------------------------------------------------------------------------------------
-      
+
       if (sysRst = '1') then
          v := REG_INIT_C;
       end if;
-      
+
       ------------------------------------------------------------------------------------------------
       -- Signal assignment
       ------------------------------------------------------------------------------------------------
-      
+
       rin <= v;
 
       axilWriteSlave          <= r.sAxilWriteSlave;
       axilReadSlave           <= r.sAxilReadSlave;
-      
+
       -- Internal signals
       i2cMasterIn.enable      <= '1';
       i2cMasterIn.prescale    <= toSlv(PRESCALE_C, 16);
@@ -911,9 +911,9 @@ begin
       i2cMasterIn.wrData      <= r.i2cMasterIn.wrData;
       i2cMasterIn.rdAck       <= r.i2cMasterIn.rdAck;
       i2cMasterIn.busReq      <= r.i2cMasterIn.busReq;
-      
+
       monitorTxMaster         <= r.txMaster;
-      
+
       iMonData( 0)            <= r.shtHumReg;
       iMonData( 1)            <= r.shtTempReg;
       iMonData( 2)            <= x"00" & r.nctRegs(0);
@@ -921,7 +921,7 @@ begin
       iMonData(11 downto  4)  <= r.adDataReg;
       iMonData(37 downto 12)  <= r.sensorReg;
       monData                 <= iMonData;
-      
+
 
    end process comb;
 

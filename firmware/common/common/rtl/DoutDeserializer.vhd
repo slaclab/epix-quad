@@ -5,7 +5,7 @@
 -- File       : DoutDeserializer.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
--- Description: Deserializes EPIX10KA digital outputs. The ASIC has one output per 
+-- Description: Deserializes EPIX10KA digital outputs. The ASIC has one output per
 -- 4 banks therefore 4 readout clock cycles are needed to output digital data.
 -- It takes 10 roClk cycles before first valid data appears (verified with chipscope)
 -- and the rdoClkDelay should be set correspondingly for valid image readout.
@@ -28,11 +28,11 @@
 -- doutOut(0):  ASIC0_BANK0
 -------------------------------------------------------------------------------
 -- This file is part of 'Epix Development Firmware'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Development Firmware', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'EPIX Development Firmware', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -45,7 +45,7 @@ library surf;
 use surf.StdRtlPkg.all;
 use surf.AxiLitePkg.all;
 
-entity DoutDeserializer is 
+entity DoutDeserializer is
    generic (
       TPD_G             : time             := 1 ns;
       AXIL_ERR_RESP_G   : slv(1 downto 0)  := AXI_RESP_DECERR_C;
@@ -53,7 +53,7 @@ entity DoutDeserializer is
       RD_ORDER_INIT_G   : slv(15 downto 0) := x"0FF0";
       FOUR_BIT_OUT_G      : boolean          := false
    );
-   port ( 
+   port (
       clk         : in  sl;
       rst         : in  sl;
       asicDout    : in  slv(3 downto 0);
@@ -63,12 +63,12 @@ entity DoutDeserializer is
       doutRd      : in  slv(15 downto 0);
       doutValid   : out slv(15 downto 0);
       doutCount   : out Slv8Array(15 downto 0);
-      
+
       -- Acquisition state machine handshake
       acqBusy     : in  sl;
       roClkTail   : out slv(7 downto 0);
-      
-      
+
+
       -- AXI lite slave port for register access
       sAxilWriteMaster  : in  AxiLiteWriteMasterType;
       sAxilWriteSlave   : out AxiLiteWriteSlaveType;
@@ -80,16 +80,16 @@ end DoutDeserializer;
 
 -- Define architecture
 architecture RTL of DoutDeserializer is
-   
+
    constant BANK_COLS_C    : natural   := BANK_COLS_G - 1;
    constant COLS_BITS_C    : natural   := log2(BANK_COLS_G);
-   
+
    constant FIFO_OUT_WIDTH : natural := ite(FOUR_BIT_OUT_G, 4, 2);
-   
+
    type BuffVectorArray is array (natural range<>, natural range<>) of slv(BANK_COLS_G-1 downto 0);
-   
+
    type StateType is (IDLE_S, WAIT_S, STORE_S);
-   
+
    type FsmType is record
       state             : StateType;
       asicDout          : slv(3 downto 0);
@@ -135,15 +135,15 @@ architecture RTL of DoutDeserializer is
       sAxilWriteSlave   => AXI_LITE_WRITE_SLAVE_INIT_C,
       sAxilReadSlave    => AXI_LITE_READ_SLAVE_INIT_C
    );
-   
+
    signal f   : FsmType := FSM_INIT_C;
    signal fin : FsmType;
-   
+
    attribute keep : string;
    attribute keep of f : signal is "true";
-   
+
 begin
-   
+
    comb : process (rst, f, asicDout, asicRoClk, acqBusy, sAxilWriteMaster, sAxilReadMaster) is
       variable fv             : FsmType;
       variable acqBusyRising  : sl;
@@ -151,37 +151,37 @@ begin
       variable regCon         : AxiLiteEndPointType;
    begin
       fv := f;
-      
+
       axiSlaveWaitTxn(regCon, sAxilWriteMaster, sAxilReadMaster, fv.sAxilWriteSlave, fv.sAxilReadSlave);
-      
+
       axiSlaveRegister (regCon, x"00",  0, fv.rdoClkDelay);
       axiSlaveRegister (regCon, x"04",  0, fv.sysClkDelay);
       axiSlaveRegister (regCon, x"08",  0, fv.rdOrder);
-      
+
       axiSlaveDefault(regCon, fv.sAxilWriteSlave, fv.sAxilReadSlave, AXIL_ERR_RESP_G);
-      
-      -- sync      
+
+      -- sync
       fv.asicRoClk := asicRoClk;
       fv.acqBusy := acqBusy;
       fv.asicDout := asicDout;
       -- delay FIFO write strobe
       fv.fifoWrDly := f.fifoWr;
-      
+
       -- detect rising edge
       if f.asicRoClk = '0' and asicRoClk = '1' then
          fv.roClkRising(255 downto 1)  := (others=>'0');
          fv.roClkRising(0)             := '1';
-      else 
+      else
          fv.roClkRising := f.roClkRising(254 downto 0) & '0';
       end if;
-      
+
       -- detect rising edge
       if f.acqBusy = '0' and acqBusy = '1' then
          acqBusyRising := '1';
-      else 
+      else
          acqBusyRising := '0';
       end if;
-      
+
       case f.state is
          when IDLE_S =>
             fv.fifoRst := '1';
@@ -196,7 +196,7 @@ begin
             else
                fv.state := STORE_S;
             end if;
-         
+
          when WAIT_S =>
             -- wait configured roClk cycles
             -- before deserializing
@@ -208,7 +208,7 @@ begin
                fv.stCnt := (others=>'0');
                fv.state := STORE_S;
             end if;
-         
+
          when STORE_S =>
             fv.fifoRst := '0';
             fv.rowBuffRdy := '0';
@@ -221,7 +221,7 @@ begin
 
                -- count rising edges of roClk
                fv.stCnt := f.stCnt + 1;
-               
+
                -- change row buffer and trigger copy logic
                if conv_integer(f.stCnt(COLS_BITS_C+1 downto 2)) = BANK_COLS_C and f.stCnt(1 downto 0) = "11" then
                   fv.rowBuffRdy := '1';
@@ -233,14 +233,14 @@ begin
                      fv.rowBuffAct := 0;
                   end if;
                end if;
-            
+
             end if;
-         
+
          when others =>
             fv.state := IDLE_S;
-         
+
       end case;
-      
+
       -- copy row buffer to FIFO in requested order
       if f.rowBuffRdy = '1' or f.copyReq = '1' then
          -- copy done
@@ -267,14 +267,14 @@ begin
             fv.fifoIn(i)(0) := f.rowBuff(rowBuffCopy, i)(BANK_COLS_C - f.copyCnt);
          end if;
       end loop;
-      
+
       -- reset FSM when acquisition start is detected
       if acqBusyRising = '1' then
          fv.state := IDLE_S;
       end if;
-      
+
       -- reset logic
-      
+
       if (rst = '1') then
          fv := FSM_INIT_C;
       end if;
@@ -294,8 +294,8 @@ begin
          f <= fin after TPD_G;
       end if;
    end process seq;
-   
-   
+
+
    G_TWO_BIT_OUT : if FOUR_BIT_OUT_G = false generate
       -- data out FIFOs
       G_DoutFifos : for i in 0 to 15 generate
@@ -323,7 +323,7 @@ begin
       end generate;
       doutOut4    <= (others=>(others=>'0'));
    end generate;
-   
+
    G_FOUR_BIT_OUT : if FOUR_BIT_OUT_G = true generate
       -- data out FIFOs
       G_DoutFifos : for i in 0 to 15 generate

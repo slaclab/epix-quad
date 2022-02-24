@@ -5,11 +5,11 @@
 -- Description: EpixQuadCore Target's Top Level
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Development Firmware'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Development Firmware', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'EPIX Development Firmware', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -127,12 +127,12 @@ entity EpixQuadCore is
 end EpixQuadCore;
 
 architecture rtl of EpixQuadCore is
-   
+
    --constant BANK_COLS_C          : natural      := ite(SIM_SPEEDUP_G, 24, 48);
    --constant BANK_ROWS_C          : natural      := ite(SIM_SPEEDUP_G, 48, 178);
    constant BANK_COLS_C          : natural      := ite(SIM_SPEEDUP_G, 48, 48);
    constant BANK_ROWS_C          : natural      := ite(SIM_SPEEDUP_G, 178, 178);
-   
+
    constant NUM_AXI_MASTERS_C    : natural := 9;
 
    constant SYS_INDEX_C          : natural := 0;
@@ -146,7 +146,7 @@ architecture rtl of EpixQuadCore is
    constant SACI_CORE_INDEX_C    : natural := 8;
 
    constant AXI_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := genAxiLiteConfig(NUM_AXI_MASTERS_C, x"00000000", 31, 24);
-   
+
    constant SACI_CLK_PERIOD_C    : real := ite(SIM_SPEEDUP_G, 80.0E-9, 1.00E-6);
 
    signal axilWriteMasters : AxiLiteWriteMasterArray(NUM_AXI_MASTERS_C-1 downto 0);
@@ -156,12 +156,12 @@ architecture rtl of EpixQuadCore is
 
    signal sysClk           : sl;
    signal sysRst           : sl;
-   
+
    signal axilWriteMaster  : AxiLiteWriteMasterType;
    signal axilWriteSlave   : AxiLiteWriteSlaveType;
    signal axilReadSlave    : AxiLiteReadSlaveType;
    signal axilReadMaster   : AxiLiteReadMasterType;
-   
+
    signal mbReadMaster     : AxiLiteReadMasterType;
    signal mbReadSlave      : AxiLiteReadSlaveType;
    signal mbWriteMaster    : AxiLiteWriteMasterType;
@@ -179,13 +179,13 @@ architecture rtl of EpixQuadCore is
    signal axiWriteSlaves     : AxiWriteSlaveArray(3 downto 0);
    signal axiReadMaster      : AxiReadMasterType;
    signal axiReadSlave       : AxiReadSlaveType;
-   
+
    signal buffersRdy  : sl;
    signal swTrigger   : sl;
-   
+
    signal iAsicDigEn  : sl;
    signal iAsicDigEnL : sl;
-   
+
    -- ASIC ACQ signals
    signal iAsicAcq      : sl;
    signal iAsicR0       : sl;
@@ -198,35 +198,35 @@ architecture rtl of EpixQuadCore is
    signal iAsicSaciCmd  : slv(3 downto 0);
    signal iAsicSaciSelL : slv(15 downto 0);
    signal iAdcClk       : sl;
-   
+
    signal adcStream     : AxiStreamMasterArray(79 downto 0);
-   
+
    signal acqStart      : sl;
    signal adcClkRst     : slv(9 downto 0);
    signal adcReqStart   : sl;
    signal iAdcReqStart  : sl;
    signal iDcDcEn2      : sl;
    signal adcReqTest    : sl;
-   
+
    signal opCode        : slv(7 downto 0);
    signal opCodeEn      : sl;
-   
+
    signal iDcdcEn       : slv(3 downto 0);
-   signal mbIrq         : slv(7 downto 0) := (others => '0'); 
-   
+   signal mbIrq         : slv(7 downto 0) := (others => '0');
+
    signal monData       : Slv16Array(37 downto 0);
-   
+
    signal iDbgOut       : slv(2 downto 0);
-   
+
    signal iAdcSclk      : slv(2 downto 0);
    signal iAdcCsb       : slv(9 downto 0);
-   
+
 begin
 
    --------------------------------------------------------
    -- Communication Module
    --------------------------------------------------------
-   
+
    U_PGP : entity work.EpixQuadPgpTop
       generic map (
          TPD_G             => TPD_G,
@@ -253,7 +253,7 @@ begin
          mAxilReadSlave    => axilReadSlave,
          mAxilWriteMaster  => axilWriteMaster,
          mAxilWriteSlave   => axilWriteSlave,
-         -- Debug AXI-Lite Interface         
+         -- Debug AXI-Lite Interface
          sAxilReadMaster   => axilReadMasters(PGP_INDEX_C),
          sAxilReadSlave    => axilReadSlaves(PGP_INDEX_C),
          sAxilWriteMaster  => axilWriteMasters(PGP_INDEX_C),
@@ -271,7 +271,7 @@ begin
          pgpTxP            => pgpTxP,
          pgpTxN            => pgpTxN
       );
-   
+
    --------------------------------
    -- Microblaze Embedded Processor
    --------------------------------
@@ -290,15 +290,15 @@ begin
          -- Clock and Reset
          clk              => sysClk,
          rst              => sysRst);
-   
-   
+
+
    U_AdcStartEdge : entity surf.SynchronizerEdge
       port map (
          clk         => sysClk,
          rst         => sysRst,
          dataIn      => adcReqStart,
          risingEdge  => iAdcReqStart);
-         
+
    U_DcdcEnEdge : entity surf.SynchronizerEdge
       port map (
          clk         => sysClk,
@@ -306,16 +306,16 @@ begin
          dataIn      => iDcdcEn(2),
          risingEdge  => iDcDcEn2);
    mbIrq(0) <= iDcDcEn2 or iAdcReqStart;
-   
+
    U_AdcTestEdge : entity surf.SynchronizerEdge
       port map (
          clk         => sysClk,
          rst         => sysRst,
          dataIn      => adcReqTest,
          risingEdge  => mbIrq(1));
-   
+
    mbIrq(2) <= acqStart;
-   
+
    --------------------------------------------------------
    -- AXI-Lite: Crossbar
    --------------------------------------------------------
@@ -435,12 +435,12 @@ begin
          monitorTxSlave       => monitorTxSlave,
          monitorEn            => monitorEn
       );
-   
+
    dcdcEn      <= iDcdcEn;
    asicDigEn   <= iAsicDigEn;
    iAsicDigEnL <= not iAsicDigEn;
-   
-   
+
+
    --------------------------------------------------------
    -- ASIC Acquisition Core
    --------------------------------------------------------
@@ -493,15 +493,15 @@ begin
          scopeTxMaster        => scopeTxMaster,
          scopeTxSlave         => scopeTxSlave
       );
-   
+
    dbgOut(0) <= not iDbgOut(0);
    dbgOut(1) <= not iDbgOut(1);
    dbgOut(2) <= not iDbgOut(2);
-   
+
    ----------------------------------------------------
    -- SACI Core
    -- Register Access and Matrix Configurators
-   ----------------------------------------------------             
+   ----------------------------------------------------
    U_SaciConfigCore : entity work.SaciConfigCore
       generic map (
          TPD_G             => TPD_G,
@@ -530,7 +530,7 @@ begin
          axilWriteMasters  => axilWriteMasters(ASIC_SACI3_INDEX_C downto ASIC_SACI0_INDEX_C),
          axilWriteSlaves   => axilWriteSlaves(ASIC_SACI3_INDEX_C downto ASIC_SACI0_INDEX_C)
       );
-   
+
    --------------------------------------------------------
    -- ASIC ADCs Core
    --------------------------------------------------------
@@ -571,21 +571,21 @@ begin
          -- ADC clock enable
          adcClkEn             => iAdcClk
       );
-   
+
    adcSclk  <= iAdcSclk;
    adcCsb   <= iAdcCsb;
-   
+
    spareIo2v5(0) <= '0';
    spareIo2v5(1) <= '0'; --iAdcSclk(1);
    spareIo2v5(2) <= '0'; --iAdcCsb(5);
    spareIo2v5(3) <= '0'; --adcClkRst(5);
-   
+
    --------------------------------------------------------
    -- ASIC Buffers (with tri-state outputs)
    --------------------------------------------------------
-   
+
    GEN_VEC2 : for i in 1 downto 0 generate
-      
+
       U_RoClkOutBufDiff : entity surf.OutputBufferReg
       generic map (
          TPD_G       => TPD_G,
@@ -598,11 +598,11 @@ begin
          O     => asicRoClkP(i),
          OB    => asicRoClkN(i)
       );
-      
+
    end generate GEN_VEC2;
-   
+
    GEN_VEC4 : for i in 3 downto 0 generate
-      
+
       asicSaciCmd(i) <= iAsicSaciCmd(i)   when iAsicDigEn = '1' else 'Z';
       asicSaciClk(i) <= iAsicSaciClk(i)   when iAsicDigEn = '1' else 'Z';
       asicAcq(i)     <= iAsicAcq          when iAsicDigEn = '1' else 'Z';
@@ -610,28 +610,28 @@ begin
       asicGr(i)      <= iAsicGr           when iAsicDigEn = '1' else 'Z';
       asicSync(i)    <= iAsicSync         when iAsicDigEn = '1' else 'Z';
       asicPpmat(i)   <= iAsicPpmat        when iAsicDigEn = '1' else 'Z';
-      
+
    end generate GEN_VEC4;
-   
+
    GEN_VEC16 : for i in 15 downto 0 generate
-      
+
       U_IBUFDS : IBUFDS
       port map (
          I  => asicDoutP(i),
          IB => asicDoutN(i),
          O  => iAsicDout(i)
       );
-      
+
       asicSaciSelL(i) <= iAsicSaciSelL(i) when iAsicDigEn = '1' else 'Z';
-      
+
    end generate GEN_VEC16;
-   
+
    ----------------------------------------------------------
    ---- ADC Clock Output Buffers
    ----------------------------------------------------------
    --
    --GEN_VEC5 : for i in 4 downto 0 generate
-   --   
+   --
    --   U_AdcClkOutBufDiff : entity surf.OutputBufferReg
    --   generic map (
    --      TPD_G       => TPD_G,
@@ -643,8 +643,8 @@ begin
    --      O     => adcClkP(i),
    --      OB    => adcClkN(i)
    --   );
-   --   
+   --
    --end generate GEN_VEC5;
-   
+
 
 end rtl;

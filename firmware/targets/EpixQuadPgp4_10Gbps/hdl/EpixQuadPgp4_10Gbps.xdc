@@ -1,10 +1,10 @@
 ##############################################################################
 ## This file is part of 'LZ Test Stand Firmware'.
-## It is subject to the license terms in the LICENSE.txt file found in the 
-## top-level directory of this distribution and at: 
-##    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
-## No part of 'LZ Test Stand Firmware', including this file, 
-## may be copied, modified, propagated, or distributed except according to 
+## It is subject to the license terms in the LICENSE.txt file found in the
+## top-level directory of this distribution and at:
+##    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+## No part of 'LZ Test Stand Firmware', including this file,
+## may be copied, modified, propagated, or distributed except according to
 ## the terms contained in the LICENSE.txt file.
 ##############################################################################
 
@@ -15,21 +15,13 @@
 create_clock -name pgpClkP   -period 6.400 [get_ports {pgpClkP}]
 create_clock -name ddrClkP   -period 5.000 [get_ports {c0_sys_clk_p}]
 
-create_clock -name adc0DClk -period 2.850 [get_ports {adcDClkP[0]}]
-create_clock -name adc1DClk -period 2.850 [get_ports {adcDClkP[1]}]
-create_clock -name adc2DClk -period 2.850 [get_ports {adcDClkP[2]}]
-create_clock -name adc3DClk -period 2.850 [get_ports {adcDClkP[3]}]
-create_clock -name adc4DClk -period 2.850 [get_ports {adcDClkP[4]}]
-create_clock -name adc5DClk -period 2.850 [get_ports {adcDClkP[5]}]
-create_clock -name adc6DClk -period 2.850 [get_ports {adcDClkP[6]}]
-create_clock -name adc7DClk -period 2.850 [get_ports {adcDClkP[7]}]
-create_clock -name adc8DClk -period 2.850 [get_ports {adcDClkP[8]}]
-create_clock -name adc9DClk -period 2.850 [get_ports {adcDClkP[9]}]
+create_generated_clock -name sysClk          [get_pins {U_CORE/U_PGP/G_PGPv4.U_PGP/U_PLL1/MmcmGen.U_Mmcm/CLKOUT0}]
+create_generated_clock -name adcBitClk       [get_pins {U_CORE/U_AdcCore/U_PLLAdc/MmcmGen.U_Mmcm/CLKOUT0}]
+create_generated_clock -name adcBitClkDiv4   [get_pins {U_CORE/U_AdcCore/U_PLLAdc/MmcmGen.U_Mmcm/CLKOUT1}]
+create_generated_clock -name adcBitClkDiv7   [get_pins {U_CORE/U_AdcCore/U_PLLAdc/MmcmGen.U_Mmcm/CLKOUT2}]
 
-create_generated_clock -name sysClk    [get_pins {U_CORE/U_PGP/G_PGPv4.U_PGP/U_PLL1/MmcmGen.U_Mmcm/CLKOUT0}]
-
-create_clock -name pgp3PhyRxClk -period 3.200 [get_pins {U_CORE/U_PGP/G_PGPv4.U_PGP/G_PGP.U_PGP/U_Pgp3GthUsIpWrapper_1/GEN_10G.U_Pgp3GthUsIp/inst/gen_gtwizard_gthe3_top.Pgp3GthUsIp10G_gtwizard_gthe3_inst/gen_gtwizard_gthe3.gen_channel_container[2].gen_enabled_channel.gthe3_channel_wrapper_inst/channel_inst/gthe3_channel_gen.gen_gthe3_channel_inst[0].GTHE3_CHANNEL_PRIM_INST/RXOUTCLK}]
-create_clock -name pgp3PhyTxClk -period 3.200 [get_pins {U_CORE/U_PGP/G_PGPv4.U_PGP/G_PGP.U_PGP/U_Pgp3GthUsIpWrapper_1/GEN_10G.U_Pgp3GthUsIp/inst/gen_gtwizard_gthe3_top.Pgp3GthUsIp10G_gtwizard_gthe3_inst/gen_gtwizard_gthe3.gen_channel_container[2].gen_enabled_channel.gthe3_channel_wrapper_inst/channel_inst/gthe3_channel_gen.gen_gthe3_channel_inst[0].GTHE3_CHANNEL_PRIM_INST/TXOUTCLK}]
+create_clock -name pgp3PhyRxClk -period 5.280 [get_pins {U_CORE/U_PGP/G_PGPv4.U_PGP/G_PGP.U_PGP/U_Pgp3GthUsIpWrapper_1/GEN_10G.U_Pgp3GthUsIp/inst/gen_gtwizard_gthe3_top.Pgp3GthUsIp10G_gtwizard_gthe3_inst/gen_gtwizard_gthe3.gen_channel_container[2].gen_enabled_channel.gthe3_channel_wrapper_inst/channel_inst/gthe3_channel_gen.gen_gthe3_channel_inst[0].GTHE3_CHANNEL_PRIM_INST/RXOUTCLK}]
+create_clock -name pgp3PhyTxClk -period 5.280 [get_pins {U_CORE/U_PGP/G_PGPv4.U_PGP/G_PGP.U_PGP/U_Pgp3GthUsIpWrapper_1/GEN_10G.U_Pgp3GthUsIp/inst/gen_gtwizard_gthe3_top.Pgp3GthUsIp10G_gtwizard_gthe3_inst/gen_gtwizard_gthe3.gen_channel_container[2].gen_enabled_channel.gthe3_channel_wrapper_inst/channel_inst/gthe3_channel_gen.gen_gthe3_channel_inst[0].GTHE3_CHANNEL_PRIM_INST/TXOUTCLK}]
 set_clock_groups -asynchronous -group [get_clocks -include_generated_clocks {pgpClkP}] -group [get_clocks -include_generated_clocks {pgp3PhyTxClk}] -group [get_clocks -include_generated_clocks {pgp3PhyRxClk}]
 set_clock_groups -asynchronous -group [get_clocks -of_objects [get_pins U_CORE/U_PGP/G_PGPv4.U_PGP/G_PGP.U_PGP/U_Pgp3GthUsIpWrapper_1/GEN_10G.U_Pgp3GthUsIp/inst/gen_gtwizard_gthe3_top.Pgp3GthUsIp10G_gtwizard_gthe3_inst/gen_gtwizard_gthe3.gen_tx_user_clocking_internal.gen_single_instance.gtwiz_userclk_tx_inst/gen_gtwiz_userclk_tx_main.bufg_gt_usrclk2_inst/O]] -group [get_clocks -of_objects [get_pins U_CORE/U_PGP/G_PGPv4.U_PGP/G_PGP.U_PGP/U_Pgp3GthUsIpWrapper_1/GEN_10G.U_Pgp3GthUsIp/inst/gen_gtwizard_gthe3_top.Pgp3GthUsIp10G_gtwizard_gthe3_inst/gen_gtwizard_gthe3.gen_rx_user_clocking_internal.gen_single_instance.gtwiz_userclk_rx_inst/gen_gtwiz_userclk_rx_main.bufg_gt_usrclk2_inst/O]]
 
@@ -37,80 +29,9 @@ set_clock_groups -asynchronous \
    -group [get_clocks -include_generated_clocks {pgpClkP}] \
    -group [get_clocks -include_generated_clocks {ddrClkP}] \
    -group [get_clocks -include_generated_clocks {sysClk}] \
-   -group [get_clocks -include_generated_clocks {adc0DClk}] \
-   -group [get_clocks -include_generated_clocks {adc1DClk}] \
-   -group [get_clocks -include_generated_clocks {adc2DClk}] \
-   -group [get_clocks -include_generated_clocks {adc3DClk}] \
-   -group [get_clocks -include_generated_clocks {adc4DClk}] \
-   -group [get_clocks -include_generated_clocks {adc5DClk}] \
-   -group [get_clocks -include_generated_clocks {adc6DClk}] \
-   -group [get_clocks -include_generated_clocks {adc7DClk}] \
-   -group [get_clocks -include_generated_clocks {adc8DClk}] \
-   -group [get_clocks -include_generated_clocks {adc9DClk}]
-
-create_generated_clock -name adcBitClk0R    [get_pins {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/U_AdcBitClkR/O}]
-create_generated_clock -name adcBitClk0R    [get_pins {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/U_AdcBitClkR/O}]
-create_generated_clock -name adcBitClk0RD4  [get_pins {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/U_AdcBitClkRD4/O}]
-create_generated_clock -name adcBitClk1R    [get_pins {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/U_AdcBitClkR/O}]
-create_generated_clock -name adcBitClk1RD4  [get_pins {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/U_AdcBitClkRD4/O}]
-create_generated_clock -name adcBitClk2R    [get_pins {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/U_AdcBitClkR/O}]
-create_generated_clock -name adcBitClk2RD4  [get_pins {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/U_AdcBitClkRD4/O}]
-create_generated_clock -name adcBitClk3R    [get_pins {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/U_AdcBitClkR/O}]
-create_generated_clock -name adcBitClk3RD4  [get_pins {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/U_AdcBitClkRD4/O}]
-create_generated_clock -name adcBitClk4R    [get_pins {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/U_AdcBitClkR/O}]
-create_generated_clock -name adcBitClk4RD4  [get_pins {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/U_AdcBitClkRD4/O}]
-create_generated_clock -name adcBitClk5R    [get_pins {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/U_AdcBitClkR/O}]
-create_generated_clock -name adcBitClk5RD4  [get_pins {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/U_AdcBitClkRD4/O}]
-create_generated_clock -name adcBitClk6R    [get_pins {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/U_AdcBitClkR/O}]
-create_generated_clock -name adcBitClk6RD4  [get_pins {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/U_AdcBitClkRD4/O}]
-create_generated_clock -name adcBitClk7R    [get_pins {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/U_AdcBitClkR/O}]
-create_generated_clock -name adcBitClk7RD4  [get_pins {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/U_AdcBitClkRD4/O}]
-create_generated_clock -name adcBitClk8R    [get_pins {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/U_AdcBitClkR/O}]
-create_generated_clock -name adcBitClk8RD4  [get_pins {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/U_AdcBitClkRD4/O}]
-create_generated_clock -name adcBitClk9R    [get_pins {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/U_AdcBitClkR/O}]
-create_generated_clock -name adcBitClk9RD4  [get_pins {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/U_AdcBitClkRD4/O}]
-
-set_clock_groups -asynchronous \
-   -group [get_clocks -include_generated_clocks {adc0DClk}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk0R}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk0RD4}] 
-set_clock_groups -asynchronous \
-   -group [get_clocks -include_generated_clocks {adc1DClk}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk1R}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk1RD4}] 
-set_clock_groups -asynchronous \
-   -group [get_clocks -include_generated_clocks {adc2DClk}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk2R}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk2RD4}] 
-set_clock_groups -asynchronous \
-   -group [get_clocks -include_generated_clocks {adc3DClk}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk3R}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk3RD4}] 
-set_clock_groups -asynchronous \
-   -group [get_clocks -include_generated_clocks {adc4DClk}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk4R}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk4RD4}] 
-set_clock_groups -asynchronous \
-   -group [get_clocks -include_generated_clocks {adc5DClk}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk5R}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk5RD4}] 
-set_clock_groups -asynchronous \
-   -group [get_clocks -include_generated_clocks {adc6DClk}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk6R}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk6RD4}] 
-set_clock_groups -asynchronous \
-   -group [get_clocks -include_generated_clocks {adc7DClk}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk7R}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk7RD4}] 
-set_clock_groups -asynchronous \
-   -group [get_clocks -include_generated_clocks {adc8DClk}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk8R}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk8RD4}] 
-set_clock_groups -asynchronous \
-   -group [get_clocks -include_generated_clocks {adc9DClk}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk9R}] \
-   -group [get_clocks -include_generated_clocks {adcBitClk9RD4}] 
-
+   -group [get_clocks -include_generated_clocks {adcBitClk}] \
+   -group [get_clocks -include_generated_clocks {adcBitClkDiv4}] \
+   -group [get_clocks -include_generated_clocks {adcBitClkDiv7}]
 
 
 ############################
@@ -168,7 +89,6 @@ set_property -dict { PACKAGE_PIN AG22 IOSTANDARD LVCMOS25 } [get_ports {dcdcEn[1
 set_property -dict { PACKAGE_PIN AH22 IOSTANDARD LVCMOS25 } [get_ports {dcdcEn[0]}]
 
 set_property -dict { PACKAGE_PIN M27  IOSTANDARD LVCMOS12 } [get_ports {tempAlertL}]
-set_property -dict { PACKAGE_PIN M26  IOSTANDARD LVCMOS12 } [get_ports {trigTtl}]
 
 set_property -dict { PACKAGE_PIN M25  IOSTANDARD LVCMOS12 } [get_ports {dbgOut[0]}]
 set_property -dict { PACKAGE_PIN M28  IOSTANDARD LVCMOS12 } [get_ports {dbgOut[1]}]
@@ -393,275 +313,309 @@ set_property -dict { PACKAGE_PIN W8   IOSTANDARD LVCMOS18 } [get_ports {adcCsb[2
 set_property -dict { PACKAGE_PIN AA8  IOSTANDARD LVCMOS18 } [get_ports {adcCsb[1]}]
 set_property -dict { PACKAGE_PIN Y8   IOSTANDARD LVCMOS18 } [get_ports {adcCsb[0]}]
 
-
-set_property LOC BUFGCE_X1Y74  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
-set_property LOC BUFGCE_X1Y81  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
-set_property LOC BUFGCE_X1Y61  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
-set_property LOC BUFGCE_X1Y58  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
-set_property LOC BUFGCE_X0Y87  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
-set_property LOC BUFGCE_X0Y86  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
-set_property LOC BUFGCE_X0Y51  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
-set_property LOC BUFGCE_X0Y56  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
-set_property LOC BUFGCE_X1Y116 [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
-set_property LOC BUFGCE_X1Y96  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
+# TTL IN0
+# set_property -dict { PACKAGE_PIN P25  IOSTANDARD LVCMOS12 } [get_ports {trigTtl}]
+# TTL IN2 - distroyed IN0 buffer (U1) while working at APS Argonne. Must switch to using IN2
+set_property -dict { PACKAGE_PIN M26  IOSTANDARD LVCMOS12 } [get_ports {trigTtl}]
 
 
-# ADC0 CH0
-set_property LOC BITSLICE_RX_TX_X1Y160  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y160  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC0 CH1
-set_property LOC BITSLICE_RX_TX_X1Y162  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y162  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC0 CH2
-set_property LOC BITSLICE_RX_TX_X1Y164  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y164  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC0 CH3
-set_property LOC BITSLICE_RX_TX_X1Y166  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y166  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC0 CH4
-set_property LOC BITSLICE_RX_TX_X1Y169  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y169  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC0 CH5
-set_property LOC BITSLICE_RX_TX_X1Y171  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y171  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC0 CH6
-set_property LOC BITSLICE_RX_TX_X1Y173  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y173  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC0 CH7
-set_property LOC BITSLICE_RX_TX_X1Y175  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y175  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-
-# ADC1 CH0
-set_property LOC BITSLICE_RX_TX_X1Y190  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y190  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC1 CH1
-set_property LOC BITSLICE_RX_TX_X1Y192  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y192  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC1 CH2
-set_property LOC BITSLICE_RX_TX_X1Y195  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y195  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC1 CH3
-set_property LOC BITSLICE_RX_TX_X1Y197  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y197  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC1 CH4
-set_property LOC BITSLICE_RX_TX_X1Y199  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y199  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC1 CH5
-set_property LOC BITSLICE_RX_TX_X1Y201  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y201  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC1 CH6
-set_property LOC BITSLICE_RX_TX_X1Y203  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y203  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC1 CH7
-set_property LOC BITSLICE_RX_TX_X1Y205  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y205  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-
-# ADC2 CH0
-set_property LOC BITSLICE_RX_TX_X1Y108  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y108  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC2 CH1
-set_property LOC BITSLICE_RX_TX_X1Y110  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y110  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC2 CH2
-set_property LOC BITSLICE_RX_TX_X1Y112  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y112  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC2 CH3
-set_property LOC BITSLICE_RX_TX_X1Y114  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y114  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC2 CH4
-set_property LOC BITSLICE_RX_TX_X1Y117  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y117  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC2 CH5
-set_property LOC BITSLICE_RX_TX_X1Y119  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y119  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC2 CH6
-set_property LOC BITSLICE_RX_TX_X1Y121  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y121  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC2 CH7
-set_property LOC BITSLICE_RX_TX_X1Y123  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y123  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-
-# ADC3 CH0
-set_property LOC BITSLICE_RX_TX_X1Y138  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y138  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC3 CH1
-set_property LOC BITSLICE_RX_TX_X1Y140  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y140  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC3 CH2
-set_property LOC BITSLICE_RX_TX_X1Y143  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y143  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC3 CH3
-set_property LOC BITSLICE_RX_TX_X1Y145  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y145  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC3 CH4
-set_property LOC BITSLICE_RX_TX_X1Y147  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y147  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC3 CH5
-set_property LOC BITSLICE_RX_TX_X1Y149  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y149  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC3 CH6
-set_property LOC BITSLICE_RX_TX_X1Y151  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y151  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC3 CH7
-set_property LOC BITSLICE_RX_TX_X1Y153  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y153  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-
-# ADC4 CH0
-set_property LOC BITSLICE_RX_TX_X0Y160  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y160  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC4 CH1
-set_property LOC BITSLICE_RX_TX_X0Y162  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y162  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC4 CH2
-set_property LOC BITSLICE_RX_TX_X0Y164  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y164  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC4 CH3
-set_property LOC BITSLICE_RX_TX_X0Y166  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y166  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC4 CH4
-set_property LOC BITSLICE_RX_TX_X0Y169  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y169  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC4 CH5
-set_property LOC BITSLICE_RX_TX_X0Y171  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y171  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC4 CH6
-set_property LOC BITSLICE_RX_TX_X0Y173  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y173  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC4 CH7
-set_property LOC BITSLICE_RX_TX_X0Y175  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y175  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-
-# ADC5 CH0
-set_property LOC BITSLICE_RX_TX_X0Y190  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y190  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC5 CH1
-set_property LOC BITSLICE_RX_TX_X0Y192  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y192  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC5 CH2
-set_property LOC BITSLICE_RX_TX_X0Y195  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y195  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC5 CH3
-set_property LOC BITSLICE_RX_TX_X0Y197  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y197  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC5 CH4
-set_property LOC BITSLICE_RX_TX_X0Y199  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y199  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC5 CH5
-set_property LOC BITSLICE_RX_TX_X0Y201  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y201  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC5 CH6
-set_property LOC BITSLICE_RX_TX_X0Y203  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y203  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC5 CH7
-set_property LOC BITSLICE_RX_TX_X0Y205  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y205  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-
-# ADC6 CH0
-set_property LOC BITSLICE_RX_TX_X0Y108  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y108  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC6 CH1
-set_property LOC BITSLICE_RX_TX_X0Y110  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y110  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC6 CH2
-set_property LOC BITSLICE_RX_TX_X0Y112  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y112  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC6 CH3
-set_property LOC BITSLICE_RX_TX_X0Y114  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y114  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC6 CH4
-set_property LOC BITSLICE_RX_TX_X0Y117  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y117  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC6 CH5
-set_property LOC BITSLICE_RX_TX_X0Y119  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y119  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC6 CH6
-set_property LOC BITSLICE_RX_TX_X0Y121  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y121  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC6 CH7
-set_property LOC BITSLICE_RX_TX_X0Y123  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y123  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-
-# ADC7 CH0
-set_property LOC BITSLICE_RX_TX_X0Y138  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y138  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC7 CH1
-set_property LOC BITSLICE_RX_TX_X0Y140  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y140  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC7 CH2
-set_property LOC BITSLICE_RX_TX_X0Y143  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y143  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC7 CH3
-set_property LOC BITSLICE_RX_TX_X0Y145  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y145  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC7 CH4
-set_property LOC BITSLICE_RX_TX_X0Y147  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y147  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC7 CH5
-set_property LOC BITSLICE_RX_TX_X0Y149  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y149  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC7 CH6
-set_property LOC BITSLICE_RX_TX_X0Y151  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y151  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC7 CH7
-set_property LOC BITSLICE_RX_TX_X0Y153  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X0Y153  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-
-# ADC8 CH0
-set_property LOC BITSLICE_RX_TX_X1Y212  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y212  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC8 CH1
-set_property LOC BITSLICE_RX_TX_X1Y214  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y214  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC8 CH2
-set_property LOC BITSLICE_RX_TX_X1Y216  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y216  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC8 CH3
-set_property LOC BITSLICE_RX_TX_X1Y218  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y218  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC8 CH4
-set_property LOC BITSLICE_RX_TX_X1Y221  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y221  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC8 CH5
-set_property LOC BITSLICE_RX_TX_X1Y223  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y223  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC8 CH6
-set_property LOC BITSLICE_RX_TX_X1Y225  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y225  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC8 CH7
-set_property LOC BITSLICE_RX_TX_X1Y227  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y227  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-
-# ADC9 CH0
-set_property LOC BITSLICE_RX_TX_X1Y242  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y242  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC9 CH1
-set_property LOC BITSLICE_RX_TX_X1Y244  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y244  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC9 CH2
-set_property LOC BITSLICE_RX_TX_X1Y247  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y247  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC9 CH3
-set_property LOC BITSLICE_RX_TX_X1Y249  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y249  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC9 CH4
-set_property LOC BITSLICE_RX_TX_X1Y251  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y251  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC9 CH5
-set_property LOC BITSLICE_RX_TX_X1Y253  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y253  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC9 CH6
-set_property LOC BITSLICE_RX_TX_X1Y255  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y255  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
-# ADC9 CH7
-set_property LOC BITSLICE_RX_TX_X1Y257  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
-set_property LOC BITSLICE_RX_TX_X1Y257  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+#set_property LOC BUFGCE_X1Y74  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
+#set_property LOC BUFGCE_DIV_X0Y11  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/U_AdcBitClkR}]
+#set_property LOC BUFGCE_DIV_X0Y10  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/U_AdcBitClkRD4}]
+#
+#set_property LOC BUFGCE_X1Y81  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
+#set_property LOC BUFGCE_DIV_X0Y9   [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/U_AdcBitClkR}]
+#set_property LOC BUFGCE_DIV_X0Y8   [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/U_AdcBitClkRD4}]
+#
+#set_property LOC BUFGCE_X1Y61  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
+#set_property LOC BUFGCE_DIV_X1Y15  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/U_AdcBitClkR}]
+#set_property LOC BUFGCE_DIV_X1Y14  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/U_AdcBitClkRD4}]
+#
+#set_property LOC BUFGCE_X1Y58  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
+#set_property LOC BUFGCE_DIV_X1Y13  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/U_AdcBitClkR}]
+#set_property LOC BUFGCE_DIV_X1Y12  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/U_AdcBitClkRD4}]
+#
+#set_property LOC BUFGCE_X0Y87  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
+#set_property LOC BUFGCE_DIV_X0Y15  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/U_AdcBitClkR}]
+#set_property LOC BUFGCE_DIV_X0Y14  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/U_AdcBitClkRD4}]
+#
+#set_property LOC BUFGCE_X0Y86  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
+#set_property LOC BUFGCE_DIV_X0Y13  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/U_AdcBitClkR}]
+#set_property LOC BUFGCE_DIV_X0Y12  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/U_AdcBitClkRD4}]
+#
+#set_property LOC BUFGCE_X0Y51  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
+#set_property LOC BUFGCE_DIV_X1Y19  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/U_AdcBitClkR}]
+#set_property LOC BUFGCE_DIV_X1Y18  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/U_AdcBitClkRD4}]
+#
+#set_property LOC BUFGCE_X0Y56  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
+#set_property LOC BUFGCE_DIV_X1Y17  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/U_AdcBitClkR}]
+#set_property LOC BUFGCE_DIV_X1Y16  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/U_AdcBitClkRD4}]
+#
+#set_property LOC BUFGCE_X1Y116 [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
+#set_property LOC BUFGCE_DIV_X0Y19  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/U_AdcBitClkR}]
+#set_property LOC BUFGCE_DIV_X0Y18  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/U_AdcBitClkRD4}]
+#
+#set_property LOC BUFGCE_X1Y96  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/G_NO_MMCM.U_bitClkBufG}]
+#set_property LOC BUFGCE_DIV_X1Y11  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/U_AdcBitClkR}]
+#set_property LOC BUFGCE_DIV_X1Y1   [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/U_AdcBitClkRD4}]
+#
+#
+## ADC0 CH0
+#set_property LOC BITSLICE_RX_TX_X1Y160  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y160  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC0 CH1
+#set_property LOC BITSLICE_RX_TX_X1Y162  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y162  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC0 CH2
+#set_property LOC BITSLICE_RX_TX_X1Y164  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y164  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC0 CH3
+#set_property LOC BITSLICE_RX_TX_X1Y166  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y166  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC0 CH4
+#set_property LOC BITSLICE_RX_TX_X1Y169  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y169  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC0 CH5
+#set_property LOC BITSLICE_RX_TX_X1Y171  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y171  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC0 CH6
+#set_property LOC BITSLICE_RX_TX_X1Y173  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y173  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC0 CH7
+#set_property LOC BITSLICE_RX_TX_X1Y175  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y175  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[0].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+#
+## ADC1 CH0
+#set_property LOC BITSLICE_RX_TX_X1Y190  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y190  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC1 CH1
+#set_property LOC BITSLICE_RX_TX_X1Y192  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y192  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC1 CH2
+#set_property LOC BITSLICE_RX_TX_X1Y195  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y195  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC1 CH3
+#set_property LOC BITSLICE_RX_TX_X1Y197  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y197  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC1 CH4
+#set_property LOC BITSLICE_RX_TX_X1Y199  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y199  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC1 CH5
+#set_property LOC BITSLICE_RX_TX_X1Y201  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y201  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC1 CH6
+#set_property LOC BITSLICE_RX_TX_X1Y203  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y203  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC1 CH7
+#set_property LOC BITSLICE_RX_TX_X1Y205  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y205  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[1].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+#
+## ADC2 CH0
+#set_property LOC BITSLICE_RX_TX_X1Y108  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y108  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC2 CH1
+#set_property LOC BITSLICE_RX_TX_X1Y110  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y110  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC2 CH2
+#set_property LOC BITSLICE_RX_TX_X1Y112  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y112  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC2 CH3
+#set_property LOC BITSLICE_RX_TX_X1Y114  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y114  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC2 CH4
+#set_property LOC BITSLICE_RX_TX_X1Y117  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y117  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC2 CH5
+#set_property LOC BITSLICE_RX_TX_X1Y119  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y119  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC2 CH6
+#set_property LOC BITSLICE_RX_TX_X1Y121  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y121  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC2 CH7
+#set_property LOC BITSLICE_RX_TX_X1Y123  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y123  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[2].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+#
+## ADC3 CH0
+#set_property LOC BITSLICE_RX_TX_X1Y138  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y138  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC3 CH1
+#set_property LOC BITSLICE_RX_TX_X1Y140  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y140  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC3 CH2
+#set_property LOC BITSLICE_RX_TX_X1Y143  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y143  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC3 CH3
+#set_property LOC BITSLICE_RX_TX_X1Y145  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y145  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC3 CH4
+#set_property LOC BITSLICE_RX_TX_X1Y147  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y147  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC3 CH5
+#set_property LOC BITSLICE_RX_TX_X1Y149  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y149  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC3 CH6
+#set_property LOC BITSLICE_RX_TX_X1Y151  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y151  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC3 CH7
+#set_property LOC BITSLICE_RX_TX_X1Y153  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y153  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[3].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+#
+## ADC4 CH0
+#set_property LOC BITSLICE_RX_TX_X0Y160  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y160  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC4 CH1
+#set_property LOC BITSLICE_RX_TX_X0Y162  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y162  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC4 CH2
+#set_property LOC BITSLICE_RX_TX_X0Y164  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y164  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC4 CH3
+#set_property LOC BITSLICE_RX_TX_X0Y166  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y166  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC4 CH4
+#set_property LOC BITSLICE_RX_TX_X0Y169  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y169  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC4 CH5
+#set_property LOC BITSLICE_RX_TX_X0Y171  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y171  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC4 CH6
+#set_property LOC BITSLICE_RX_TX_X0Y173  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y173  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC4 CH7
+#set_property LOC BITSLICE_RX_TX_X0Y175  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y175  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[4].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+#
+## ADC5 CH0
+#set_property LOC BITSLICE_RX_TX_X0Y190  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y190  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC5 CH1
+#set_property LOC BITSLICE_RX_TX_X0Y192  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y192  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC5 CH2
+#set_property LOC BITSLICE_RX_TX_X0Y195  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y195  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC5 CH3
+#set_property LOC BITSLICE_RX_TX_X0Y197  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y197  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC5 CH4
+#set_property LOC BITSLICE_RX_TX_X0Y199  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y199  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC5 CH5
+#set_property LOC BITSLICE_RX_TX_X0Y201  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y201  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC5 CH6
+#set_property LOC BITSLICE_RX_TX_X0Y203  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y203  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC5 CH7
+#set_property LOC BITSLICE_RX_TX_X0Y205  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y205  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[5].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+#
+## ADC6 CH0
+#set_property LOC BITSLICE_RX_TX_X0Y108  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y108  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC6 CH1
+#set_property LOC BITSLICE_RX_TX_X0Y110  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y110  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC6 CH2
+#set_property LOC BITSLICE_RX_TX_X0Y112  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y112  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC6 CH3
+#set_property LOC BITSLICE_RX_TX_X0Y114  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y114  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC6 CH4
+#set_property LOC BITSLICE_RX_TX_X0Y117  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y117  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC6 CH5
+#set_property LOC BITSLICE_RX_TX_X0Y119  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y119  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC6 CH6
+#set_property LOC BITSLICE_RX_TX_X0Y121  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y121  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC6 CH7
+#set_property LOC BITSLICE_RX_TX_X0Y123  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y123  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[6].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+#
+## ADC7 CH0
+#set_property LOC BITSLICE_RX_TX_X0Y138  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y138  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC7 CH1
+#set_property LOC BITSLICE_RX_TX_X0Y140  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y140  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC7 CH2
+#set_property LOC BITSLICE_RX_TX_X0Y143  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y143  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC7 CH3
+#set_property LOC BITSLICE_RX_TX_X0Y145  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y145  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC7 CH4
+#set_property LOC BITSLICE_RX_TX_X0Y147  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y147  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC7 CH5
+#set_property LOC BITSLICE_RX_TX_X0Y149  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y149  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC7 CH6
+#set_property LOC BITSLICE_RX_TX_X0Y151  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y151  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC7 CH7
+#set_property LOC BITSLICE_RX_TX_X0Y153  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X0Y153  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[7].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+#
+## ADC8 CH0
+#set_property LOC BITSLICE_RX_TX_X1Y212  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y212  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC8 CH1
+#set_property LOC BITSLICE_RX_TX_X1Y214  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y214  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC8 CH2
+#set_property LOC BITSLICE_RX_TX_X1Y216  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y216  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC8 CH3
+#set_property LOC BITSLICE_RX_TX_X1Y218  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y218  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC8 CH4
+#set_property LOC BITSLICE_RX_TX_X1Y221  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y221  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC8 CH5
+#set_property LOC BITSLICE_RX_TX_X1Y223  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y223  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC8 CH6
+#set_property LOC BITSLICE_RX_TX_X1Y225  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y225  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC8 CH7
+#set_property LOC BITSLICE_RX_TX_X1Y227  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y227  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[8].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+#
+## ADC9 CH0
+#set_property LOC BITSLICE_RX_TX_X1Y242  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y242  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[0].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC9 CH1
+#set_property LOC BITSLICE_RX_TX_X1Y244  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y244  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[1].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC9 CH2
+#set_property LOC BITSLICE_RX_TX_X1Y247  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y247  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[2].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC9 CH3
+#set_property LOC BITSLICE_RX_TX_X1Y249  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y249  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[3].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC9 CH4
+#set_property LOC BITSLICE_RX_TX_X1Y251  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y251  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[4].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC9 CH5
+#set_property LOC BITSLICE_RX_TX_X1Y253  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y253  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[5].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC9 CH6
+#set_property LOC BITSLICE_RX_TX_X1Y255  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y255  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[6].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
+## ADC9 CH7
+#set_property LOC BITSLICE_RX_TX_X1Y257  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_IDELAYE3_0/U_IDELAYE3}]
+#set_property LOC BITSLICE_RX_TX_X1Y257  [get_cells {U_CORE/U_AdcCore/G_AdcReadout[9].U_AdcReadout/GenData[7].U_DATA_DESERIALIZER/U_ISERDESE3_master}]
 
 
 ##########################
 ## Misc. Configurations ##
 ##########################
 
-set_property BITSTREAM.CONFIG.CONFIGRATE 50 [current_design] 
+set_property BITSTREAM.CONFIG.CONFIGRATE 50 [current_design]
 set_property BITSTREAM.CONFIG.SPI_32BIT_ADDR Yes [current_design]
 set_property BITSTREAM.CONFIG.SPI_BUSWIDTH 2 [current_design]
 set_property BITSTREAM.CONFIG.SPI_FALL_EDGE No [current_design]

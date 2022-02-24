@@ -7,11 +7,11 @@
 -- Description: Pgp3FrontEnd for generation 2 ePix digital card
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Development Firmware'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Development Firmware', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'EPIX Development Firmware', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -64,13 +64,13 @@ entity Pgp3FrontEnd is
       sAxiLiteReadSlave   : out AxiLiteReadSlaveType;
       sAxiLiteWriteMaster : in  AxiLiteWriteMasterType;
       sAxiLiteWriteSlave  : out AxiLiteWriteSlaveType;
-      -- Acquisition streaming data Links (axiClk domain)      
+      -- Acquisition streaming data Links (axiClk domain)
       dataAxisMaster    : in  AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
       dataAxisSlave     : out AxiStreamSlaveType;
-      -- Scope streaming data Links (axiClk domain)      
+      -- Scope streaming data Links (axiClk domain)
       scopeAxisMaster   : in  AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
       scopeAxisSlave    : out AxiStreamSlaveType;
-      -- Monitoring streaming data Links (axiClk domain)      
+      -- Monitoring streaming data Links (axiClk domain)
       monitorAxisMaster : in  AxiStreamMasterType := AXI_STREAM_MASTER_INIT_C;
       monitorAxisSlave  : out AxiStreamSlaveType;
       -- Monitoring enable command incoming stream
@@ -80,7 +80,7 @@ entity Pgp3FrontEnd is
       -- To access sideband commands
       pgpOpCode         : out  slv(7 downto 0);
       pgpOpCodeEn       : out  sl
-   );        
+   );
 end Pgp3FrontEnd;
 
 architecture mapping of Pgp3FrontEnd is
@@ -90,28 +90,28 @@ architecture mapping of Pgp3FrontEnd is
    signal pgpRefClk     : sl;
    signal pgpRefClkBufg : sl;
    signal pgpRefClkRst  : sl;
-   
+
    signal pgpTxMasters : AxiStreamMasterArray(3 downto 0);
    signal pgpTxSlaves  : AxiStreamSlaveArray(3 downto 0);
    signal pgpRxMasters : AxiStreamMasterArray(3 downto 0);
    signal pgpRxCtrl    : AxiStreamCtrlArray(3 downto 0);
    -- for simulation only
    signal pgpRxSlaves  : AxiStreamSlaveArray(3 downto 0);
-   
+
    signal iSsiCmd      : SsiCmdMasterType;
    signal iPgpRxOut    : Pgp3RxOutType;
-   
+
 begin
-   
-   
+
+
    U_BUFG : BUFG
       port map (
          I => pgpRefClk,
          O => pgpRefClkBufg);
-   
+
    pgpClk <= pgpRefClkBufg;
    pgpRst <= pgpRefClkRst;
-   
+
    U_PwrUpRst : entity surf.PwrUpRst
       generic map(
          TPD_G         => TPD_G,
@@ -120,7 +120,7 @@ begin
          clk    => pgpRefClkBufg,
          rstOut => pgpRefClkRst
       );
-   
+
    U_Pgp3Gtp7Wrapper : entity surf.Pgp3Gtp7Wrapper
       generic map (
          TPD_G                       => TPD_G,
@@ -170,7 +170,7 @@ begin
          axilWriteMaster   => sAxiLiteWriteMaster,
          axilWriteSlave    => sAxiLiteWriteSlave
       );
-   
+
    -----------------------------------------
    -- PGP Sideband Triggers:
    -- Any op code is a trigger
@@ -191,16 +191,16 @@ begin
          valid  => pgpOpCodeEn,
          dout   => pgpOpCode
       );
-   
-   -- Lane 0, VC0 RX/TX, Register access control        
-   U_Vc0AxiMasterRegisters : entity surf.SsiAxiLiteMaster 
+
+   -- Lane 0, VC0 RX/TX, Register access control
+   U_Vc0AxiMasterRegisters : entity surf.SsiAxiLiteMaster
       generic map (
          EN_32BIT_ADDR_G     => true,
          AXI_STREAM_CONFIG_G => PGP3_AXIS_CONFIG_C,
          SLAVE_READY_EN_G    => SIMULATION_G
       )
       port map (
-         -- Streaming Slave (Rx) Interface (sAxisClk domain) 
+         -- Streaming Slave (Rx) Interface (sAxisClk domain)
          sAxisClk    => iPgpClk,
          sAxisRst    => iPgpRst,
          sAxisMaster => pgpRxMasters(0),
@@ -219,8 +219,8 @@ begin
          mAxiLiteReadMaster  => mAxiLiteReadMaster,
          mAxiLiteReadSlave   => mAxiLiteReadSlave
       );
-   
-   -- Lane 0, VC1 TX, streaming data out 
+
+   -- Lane 0, VC1 TX, streaming data out
    U_Vc0SsiTxFifo : entity surf.AxiStreamFifoV2
       generic map (
          --EN_FRAME_FILTER_G   => true,
@@ -229,10 +229,10 @@ begin
          GEN_SYNC_FIFO_G     => false,
          FIFO_ADDR_WIDTH_G   => 14,
          FIFO_FIXED_THRESH_G => true,
-         FIFO_PAUSE_THRESH_G => 128,    
+         FIFO_PAUSE_THRESH_G => 128,
          SLAVE_AXI_CONFIG_G  => ssiAxiStreamConfig(4, TKEEP_COMP_C),
-         MASTER_AXI_CONFIG_G => PGP3_AXIS_CONFIG_C) 
-      port map (   
+         MASTER_AXI_CONFIG_G => PGP3_AXIS_CONFIG_C)
+      port map (
          -- Slave Port
          sAxisClk    => axiClk,
          sAxisRst    => axiRst,
@@ -242,12 +242,12 @@ begin
          mAxisClk    => iPgpClk,
          mAxisRst    => iPgpRst,
          mAxisMaster => pgpTxMasters(1),
-         mAxisSlave  => pgpTxSlaves(1));     
+         mAxisSlave  => pgpTxSlaves(1));
    -- Lane 0, VC1 RX, Command processor
    U_Vc0SsiCmdMaster : entity surf.SsiCmdMaster
       generic map (
          SLAVE_READY_EN_G    => SIMULATION_G,
-         AXI_STREAM_CONFIG_G => PGP3_AXIS_CONFIG_C)   
+         AXI_STREAM_CONFIG_G => PGP3_AXIS_CONFIG_C)
       port map (
          -- Streaming Data Interface
          axisClk     => iPgpClk,
@@ -278,22 +278,22 @@ begin
          syncPulse   => swRun,
          -- Local clock and reset
          locClk      => axiClk,
-         locRst      => axiRst              
+         locRst      => axiRst
       );
-      
+
    -- Lane 0, VC2 TX oscilloscope data stream
    U_Vc2SsiOscilloscopeFifo : entity surf.AxiStreamFifoV2
       generic map (
          --EN_FRAME_FILTER_G   => true,
          CASCADE_SIZE_G      => 1,
          MEMORY_TYPE_G       => "block",
-         GEN_SYNC_FIFO_G     => false,    
+         GEN_SYNC_FIFO_G     => false,
          FIFO_ADDR_WIDTH_G   => 14,
          FIFO_FIXED_THRESH_G => true,
-         FIFO_PAUSE_THRESH_G => 128,    
+         FIFO_PAUSE_THRESH_G => 128,
          SLAVE_AXI_CONFIG_G  => ssiAxiStreamConfig(4),
-         MASTER_AXI_CONFIG_G => PGP3_AXIS_CONFIG_C) 
-      port map (   
+         MASTER_AXI_CONFIG_G => PGP3_AXIS_CONFIG_C)
+      port map (
          -- Slave Port
          sAxisClk    => axiClk,
          sAxisRst    => axiRst,
@@ -303,21 +303,21 @@ begin
          mAxisClk    => iPgpClk,
          mAxisRst    => iPgpRst,
          mAxisMaster => pgpTxMasters(2),
-         mAxisSlave  => pgpTxSlaves(2));     
-   
+         mAxisSlave  => pgpTxSlaves(2));
+
    -- Lane 0, VC3 TX monitoring data stream
    U_Vc3SsiMonitorFifo : entity surf.AxiStreamFifoV2
    generic map (
       --EN_FRAME_FILTER_G   => true,
       CASCADE_SIZE_G      => 1,
       MEMORY_TYPE_G       => "block",
-      GEN_SYNC_FIFO_G     => false,    
+      GEN_SYNC_FIFO_G     => false,
       FIFO_ADDR_WIDTH_G   => 9,
       FIFO_FIXED_THRESH_G => true,
-      FIFO_PAUSE_THRESH_G => 128,    
+      FIFO_PAUSE_THRESH_G => 128,
       SLAVE_AXI_CONFIG_G  => ssiAxiStreamConfig(4),
-      MASTER_AXI_CONFIG_G => PGP3_AXIS_CONFIG_C) 
-   port map (   
+      MASTER_AXI_CONFIG_G => PGP3_AXIS_CONFIG_C)
+   port map (
       -- Slave Port
       sAxisClk    => axiClk,
       sAxisRst    => axiRst,
@@ -335,13 +335,13 @@ begin
       --EN_FRAME_FILTER_G   => true,
       CASCADE_SIZE_G      => 1,
       MEMORY_TYPE_G       => "block",
-      GEN_SYNC_FIFO_G     => false,    
+      GEN_SYNC_FIFO_G     => false,
       FIFO_ADDR_WIDTH_G   => 9,
       FIFO_FIXED_THRESH_G => true,
-      FIFO_PAUSE_THRESH_G => 128,    
+      FIFO_PAUSE_THRESH_G => 128,
       SLAVE_AXI_CONFIG_G  => PGP3_AXIS_CONFIG_C,
-      MASTER_AXI_CONFIG_G => ssiAxiStreamConfig(4)) 
-   port map (   
+      MASTER_AXI_CONFIG_G => ssiAxiStreamConfig(4))
+   port map (
       -- Slave Port
       sAxisClk    => iPgpClk,
       sAxisRst    => iPgpRst,
@@ -353,9 +353,9 @@ begin
       mAxisMaster => monEnAxisMaster,
       mAxisSlave  => AXI_STREAM_SLAVE_FORCE_C
    );
-   
+
    -- If we have unused RX CTRL
    pgpRxCtrl(3) <= AXI_STREAM_CTRL_UNUSED_C;
-      
+
 end mapping;
 

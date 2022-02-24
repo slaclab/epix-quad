@@ -2,14 +2,14 @@
 -- File       : PgpVcMapping.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
--- Description: 
+-- Description:
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Development Firmware'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Development Firmware', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'EPIX Development Firmware', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -70,10 +70,10 @@ architecture mapping of PgpVcMapping is
    signal ssiCmdVc3  : SsiCmdMasterType;
    signal monEn      : sl;
    signal monDis     : sl;
-   
+
 begin
-   
-   -- VC1 RX/TX, SRPv3 Register Module    
+
+   -- VC1 RX/TX, SRPv3 Register Module
    U_VC1 : entity surf.SrpV3AxiLite
       generic map (
          TPD_G               => TPD_G,
@@ -81,7 +81,7 @@ begin
          GEN_SYNC_FIFO_G     => false,
          AXI_STREAM_CONFIG_G => AXI_STREAM_CONFIG_G)
       port map (
-         -- Streaming Slave (Rx) Interface (sAxisClk domain) 
+         -- Streaming Slave (Rx) Interface (sAxisClk domain)
          sAxisClk         => pgpClk,
          sAxisRst         => pgpRst,
          sAxisMaster      => rxMasters(1),
@@ -164,8 +164,8 @@ begin
          -- Local clock and reset
          locClk      => sysClk,
          locRst      => sysRst);
-   
-   
+
+
    -- VC2 TX, Scope Data
    rxCtrl(2)   <= AXI_STREAM_CTRL_UNUSED_C;
    rxSlaves(2) <= AXI_STREAM_SLAVE_INIT_C;
@@ -227,7 +227,7 @@ begin
          mAxisRst    => pgpRst,
          mAxisMaster => txMasters(3),
          mAxisSlave  => txSlaves(3));
-   
+
    -- VC3 RX, Command processor
    U_VC3_RX : entity surf.SsiCmdMaster
       generic map (
@@ -262,7 +262,7 @@ begin
          -- Local clock and reset
          locClk      => sysClk,
          locRst      => sysRst);
-   
+
    -- Command opCode x01 - Enable Monitor Stream
    U_MonEnPulser : entity surf.SsiCmdMasterPulser
       generic map (
@@ -279,8 +279,8 @@ begin
          -- Local clock and reset
          locClk      => sysClk,
          locRst      => sysRst);
-   
-   process (sysClk) 
+
+   process (sysClk)
    begin
       if rising_edge(sysClk) then
          if sysRst = '1' then

@@ -5,11 +5,11 @@
 -- Description: EPIX Quad Target's Top Level
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Development Firmware'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Development Firmware', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'EPIX Development Firmware', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -127,7 +127,7 @@ entity SystemCore is
 end SystemCore;
 
 architecture top_level of SystemCore is
-   
+
    constant DDR_AXI_CONFIG_C : AxiConfigType := axiConfig(
       ADDR_WIDTH_C => 29,
       DATA_BYTES_C => 16,
@@ -136,10 +136,10 @@ architecture top_level of SystemCore is
 
    constant START_ADDR_C : slv(DDR_AXI_CONFIG_C.ADDR_WIDTH_C-1 downto 0) := (others => '0');
    constant STOP_ADDR_C  : slv(DDR_AXI_CONFIG_C.ADDR_WIDTH_C-1 downto 0) := ite(SIM_SPEEDUP_G, toSlv(32*4096, DDR_AXI_CONFIG_C.ADDR_WIDTH_C) ,toSlv(2**DDR_AXI_CONFIG_C.ADDR_WIDTH_C-1, DDR_AXI_CONFIG_C.ADDR_WIDTH_C));
-   
+
    constant I2C_DAC_CONFIG_C : I2cAxiLiteDevArray(0 downto 0) := (
       0 => (MakeI2cAxiLiteDevType("1001110", 16, 8, '1'))
-   );   
+   );
 
    constant NUM_AXI_MASTERS_C : natural := 8;
 
@@ -185,11 +185,11 @@ architecture top_level of SystemCore is
    signal memTestRst       : sl;
    signal memTestRstSync   : sl;
    signal iDdrVttEn        : sl;
-   
+
    signal iAcqStart        : sl;
 
 begin
-   
+
    ---------------------
    -- AXI-Lite: Crossbar
    ---------------------
@@ -214,7 +214,7 @@ begin
 
    --------------------------
    -- AXI-Lite Version Module
-   --------------------------          
+   --------------------------
    U_AxiVersion : entity surf.AxiVersion
       generic map (
          TPD_G           => TPD_G,
@@ -224,7 +224,7 @@ begin
          EN_DEVICE_DNA_G => true,
          CLK_PERIOD_G    => (1.0/AXI_CLK_FREQ_G)
       )
-      port map 
+      port map
       (
          -- AXI-Lite Register Interface
          axiReadMaster        => axilReadMasters(VERSION_INDEX_C),
@@ -240,10 +240,10 @@ begin
          userValues(2)        => ASIC_TYPE_G,
          userValues(3 to 63)  => (others => X"00000000")
       );
-      
+
    --------------------------
    -- System Registers Module
-   --------------------------    
+   --------------------------
    U_SystemRegs : entity work.SystemRegs
    generic map (
       TPD_G             => TPD_G,
@@ -288,7 +288,7 @@ begin
       -- ASIC mask output
       asicMask          => asicMask
    );
-   
+
    acqStart <= iAcqStart;
 
    --------------------------
@@ -311,12 +311,12 @@ begin
             axilClk         => sysClk,
             axilRst         => sysRst);
    end generate G_SYSMON;
-   
+
    G_NO_SYSMON : if SIMULATION_G = true generate
       axilReadSlaves(SYSMON_INDEX_C)   <= AXI_LITE_READ_SLAVE_INIT_C;
       axilWriteSlaves(SYSMON_INDEX_C)  <= AXI_LITE_WRITE_SLAVE_INIT_C;
    end generate G_NO_SYSMON;
-   
+
    ------------------------------
    -- AXI-Lite: Boot Flash Module
    ------------------------------
@@ -395,9 +395,9 @@ begin
          axiWriteSlave   => axiBistWriteSlave,
          axiReadMaster   => axiBistReadMaster,
          axiReadSlave    => axiBistReadSlave);
-   
+
    G_MIG_CORE : if MIG_CORE_EN = true generate
-   
+
       Sync_0 : entity surf.Synchronizer
          generic map (
             TPD_G => TPD_G)
@@ -405,9 +405,9 @@ begin
             clk     => axiClk,
             dataIn  => userRst,
             dataOut => memTestRstSync);
-      
+
       memTestRst <= axiRst or memTestRstSync;
-      
+
       ------------------------------------------------
       -- DDR memory controller
       ------------------------------------------------
@@ -443,7 +443,7 @@ begin
             calibComplete    => calibComplete,
             c0_ddr4_aresetn  => '1'
          );
-      
+
       ------------------------------------------------
       -- DDR memory AXI interconnect
       ------------------------------------------------
@@ -489,11 +489,11 @@ begin
             end if;
          end if;
       end process memRst;
-      
+
       ddrVttEn <= iDdrVttEn;
-      
+
    end generate;
-   
+
    G_NO_MIG_CORE : if MIG_CORE_EN = false generate
       memTestRst        <= '1';
       c0_ddr4_reset_n   <= '0';
@@ -505,7 +505,7 @@ begin
       calibComplete     <= '0';
       buffersRdy        <= '0';
    end generate;
-   
+
    ------------------------------------------------
    -- Power nad temperature monitoring sensors readout
    ------------------------------------------------
@@ -524,7 +524,7 @@ begin
       axiClk         => sysClk,
       axiRst         => sysRst
    );
-   
+
    ------------------------------------------------
    -- Humidity and temp sensors readout
    ------------------------------------------------
@@ -560,10 +560,10 @@ begin
       monitorTxSlave    => monitorTxSlave,
       monitorEn         => monitorEn
    );
-   
+
    -- humRstN and humAlert are currently not supported
    humRstN <= '1';
-   
+
    ------------------------------------------------
    -- Vguard DAC interface
    ------------------------------------------------
@@ -582,7 +582,7 @@ begin
       axiWriteSlave  => axilWriteSlaves(VDAC_INDEX_C),
       axiClk         => sysClk,
       axiRst         => sysRst
-   );   
-   
+   );
+
 
 end top_level;
