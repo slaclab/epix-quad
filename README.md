@@ -16,9 +16,3 @@
 ```
 $ git clone --recursive git@github.com:slaclab/epix-quad
 ```
-
-# Compile Rogue
-```
-$ cd epix/software/rogue
-```
-and follow the instructions in ```README.md```

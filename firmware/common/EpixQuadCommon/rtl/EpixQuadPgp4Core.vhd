@@ -32,7 +32,7 @@ entity EpixQuadPgp4Core is
       TPD_G             : time            := 1 ns;
       SIMULATION_G      : boolean         := false;
       SIM_SPEEDUP_G     : boolean         := false;
-      RATE_G            : string          := "10.3125Gbps");
+      RATE_G            : string          := "6.25Gbps");
    port (
       -- Clock and Reset
       sysClk            : out sl;
@@ -196,7 +196,6 @@ begin
             TPD_G             => TPD_G,
             RATE_G            => RATE_G,
             NUM_VC_G          => 4,
-            PGP_RX_ENABLE_G   => false,
             EN_DRP_G          => false,
             EN_PGP_MON_G      => true,
             AXIL_CLK_FREQ_G   => 100.0E+6
