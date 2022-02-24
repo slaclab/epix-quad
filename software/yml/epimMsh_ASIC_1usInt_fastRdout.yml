@@ -1,0 +1,224 @@
+ePixBoard:
+  enable: True
+  ForceWrite: False
+  InitAfterConfig: False
+  PollEn: False
+  dataWriter:
+    enable: True
+    dataFile: ''
+    open: False
+    bufferSize: 0
+    maxFileSize: 0
+  EpixMsh:
+    enable: True
+    AxiVersion:
+      enable: True
+      ScratchPad: 0x000000
+      FpgaReloadHalt: 0x0
+      FpgaReloadAddress: 0x0
+      UserReset: 0x0
+    EpixMshFpgaRegisters:
+      enable: True
+      DigPowerEn: True
+      AnaPowerEn: True
+      FpgaOutEn: True
+      DbgMux0: 0x0
+      DbgMux1: 0x0
+      AdcClkHalfPer: 0x1
+      StartupReq: False
+      StartupAck: True
+      StartupFail: False
+      CompOutThreshold: 0x2ee0
+      AdcPipelineDly: 0x0
+      AsicRstPol: True
+      AsicRstDly: 0x3e8
+      AsicRstDlyUs: 10.00000
+      AsicRstWidth: 0x258
+      AsicRstWidthUs: 6.00000
+      AsicCdsBlinePol: True
+      AsicCdsBlineDly: 0x44c
+      AsicCdsBlineDlyUs: 11.00000
+      AsicCdsBlineWidth: 0x190
+      AsicCdsBlineWidthUs: 4.00000
+      AsicRstCompPol: True
+      AsicRstCompDly: 0x3e8
+      AsicRstCompDlyUs: 10.00000
+      AsicRstCompWidth: 0x3d090
+      AsicRstCompWidthUs: 2500.00000
+      AsicSampleNPol: True
+      AsicSampleNDly: 0x3e8
+      AsicSampleNDlyUs: 10.00000
+      AsicSampleNWidth: 0xc8
+      AsicSampleNWidthUs: 2.00000
+      AsicGRPol: True
+      AsicGRDly: 0x456
+      AsicGRDlyUs: 11.10000
+      AsicGRWidth: 0x1f4
+      AsicGRWidthUs: 5.00000
+      AsicRdDly: 0x834
+      AsicRdDlyUs: 21.00000
+      AsicRdHalfPer: 0x32
+      AsicRdHalfPerUs: 0.50000
+      IRegEn: False
+      IRegDly: 0x3a980
+      IRegDlyUs: 2400.00000
+      IRegClkHalfPer: 0x5
+      IRegClkHalfPerUs: 0.05000
+      IRegDregLow: 0xffffffff
+      IRegDregHigh: 0xffff
+      OverSampleEn: True
+      OverSampleSize: 0x3
+      IDacEn: False
+      IDacStart: 0x0
+      IDacStop: 0x0
+      IDacStep: 0x0
+      IDacPoints: 0x0
+    EpixMshDACs[0]:
+      enable: True
+      ASIC_Vthr: 0xb8e
+      ASIC_Vthr_V: 1.30
+      ASIC_V_precharge: 0x71c
+      ASIC_V_precharge_V: 0.80
+    EpixMshDACs[1]:
+      enable: True
+      ASIC_V_Inj: 0x555
+      ASIC_V_Inj_V: 0.60
+      spare: 0x0
+      spare_V: 0.00
+    TriggerRegisters:
+      enable: True
+      RunTriggerEnable: False
+      RunTriggerDelay: 0
+      RunTriggerDelayUs: 0.00000
+      DaqTriggerEnable: False
+      DaqTriggerDelay: 0
+      DaqTriggerDelayUs: 0.00000
+      AutoRunEn: False
+      AutoDaqEn: False
+      AutoTrigPeriod: 0
+      AutoTrigPeriodMs: 0.00000
+      PgpTrigEn: False
+      AcqCountReset: False
+    SlowAdcRegisters:
+      enable: True
+      StreamEn: False
+      StreamPeriod: 100000000
+    Oscilloscope:
+      enable: True
+      ArmReg: False
+      TrigReg: False
+      ScopeEnable: False
+      TriggerEdge: Rising
+      TriggerChannel: AsicRst
+      TriggerMode: AcqStart
+      TriggerAdcThresh: 0
+      TriggerHoldoff: 0
+      TriggerOffset: 0
+      TraceLength: 8000
+      SkipSamples: 0
+      InputChannelA: ASIC_BUFOUT
+      InputChannelB: ASIC_COMPOUT
+      TriggerDelay: 0
+    Pgp2bAxi:
+      enable: False
+      Loopback: 'No'
+      LocData: 0x0
+      LocDataEn: False
+      AutoStatus: False
+    Ad9249RdoutAdc[0]:
+      enable: False
+      ChannelDelay[0]: 0x0
+      ChannelDelay[1]: 0x0
+      ChannelDelay[2]: 0x0
+      ChannelDelay[3]: 0x0
+      ChannelDelay[4]: 0x0
+      ChannelDelay[5]: 0x0
+      ChannelDelay[6]: 0x0
+      ChannelDelay[7]: 0x0
+      FrameDelay: 0x0
+      Invert: False
+    Ad9249RdoutAdc[1]:
+      enable: False
+      ChannelDelay[0]: 0x0
+      ChannelDelay[1]: 0x0
+      ChannelDelay[2]: 0x0
+      ChannelDelay[3]: 0x0
+      ChannelDelay[4]: 0x0
+      ChannelDelay[5]: 0x0
+      ChannelDelay[6]: 0x0
+      ChannelDelay[7]: 0x0
+      FrameDelay: 0x0
+      Invert: False
+    Ad9249RdoutAdc[2]:
+      enable: False
+      ChannelDelay[0]: 0x0
+      ChannelDelay[1]: 0x0
+      ChannelDelay[2]: 0x0
+      ChannelDelay[3]: 0x0
+      FrameDelay: 0x0
+      Invert: False
+    Ad9249ConfigAdc[0]:
+      enable: False
+      ExternalPdwnMode: Full Power Down
+      InternalPdwnMode: Chip Run
+      DutyCycleStabilizer: 'Off'
+      ClockDivide: Divide by 1
+      ChopMode: 'Off'
+      DevIndexMask[7:0]: 0b0
+      DevIndexMask[DCO:FCO]: 0b0
+      UserTestModeCfg: single
+      OutputTestMode: 'Off'
+      OffsetAdjust: 0x0
+      OutputInvert: False
+      OutputFormat: Offset Binary
+      UserPatt1Lsb: 0x0
+      UserPatt1Msb: 0x0
+      UserPatt2Lsb: 0x0
+      UserPatt2Msb: 0x0
+      LvdsLsbFirst: False
+    Ad9249ConfigAdc[1]:
+      enable: False
+      ExternalPdwnMode: Full Power Down
+      InternalPdwnMode: Chip Run
+      DutyCycleStabilizer: 'Off'
+      ClockDivide: Divide by 1
+      ChopMode: 'Off'
+      DevIndexMask[7:0]: 0b0
+      DevIndexMask[DCO:FCO]: 0b0
+      UserTestModeCfg: single
+      OutputTestMode: 'Off'
+      OffsetAdjust: 0x0
+      OutputInvert: False
+      OutputFormat: Offset Binary
+      UserPatt1Lsb: 0x0
+      UserPatt1Msb: 0x0
+      UserPatt2Lsb: 0x0
+      UserPatt2Msb: 0x0
+      LvdsLsbFirst: False
+    Ad9249ConfigAdc[2]:
+      enable: False
+      ExternalPdwnMode: Full Power Down
+      InternalPdwnMode: Chip Run
+      DutyCycleStabilizer: 'Off'
+      ClockDivide: Divide by 1
+      ChopMode: 'Off'
+      DevIndexMask[7:0]: 0b0
+      DevIndexMask[DCO:FCO]: 0b0
+      UserTestModeCfg: single
+      OutputTestMode: 'Off'
+      OffsetAdjust: 0x0
+      OutputInvert: False
+      OutputFormat: Offset Binary
+      UserPatt1Lsb: 0x0
+      UserPatt1Msb: 0x0
+      UserPatt2Lsb: 0x0
+      UserPatt2Msb: 0x0
+      LvdsLsbFirst: False
+    MicronN25Q:
+      enable: True
+    MicroblazeLog:
+      enable: False
+  runControl:
+    enable: True
+    runState: Stopped
+    runRate: 1 Hz

@@ -6,10 +6,6 @@
 	path = firmware/submodules/ruckus
 	url = git@github.com:slaclab/ruckus
 	branch = master
-[submodule "software/rogue"]
-	path = software/rogue
-	url = git@github.com:slaclab/rogue.git
-	branch = master
 [submodule "firmware/submodules/axi-pcie-core"]
 	path = firmware/submodules/axi-pcie-core
 	url = git@github.com:slaclab/axi-pcie-core
