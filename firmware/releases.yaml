@@ -1,0 +1,51 @@
+#-----------------------------------------------------------------------------
+# This file is part of the 'EPIX Development Firmware'. It is subject to
+# the license terms in the LICENSE.txt file found in the top-level directory
+# of this distribution and at:
+#    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+# No part of the 'EPIX Development Firmware', including this file, may be
+# copied, modified, propagated, or distributed except according to the terms
+# contained in the LICENSE.txt file.
+#-----------------------------------------------------------------------------
+
+GitBase: ..
+
+TopRoguePackage: epix_quad
+
+RoguePackages:
+  - submodules/surf/python
+  - ../software/python
+  - python     
+
+# RogueConfig:
+  # - ../software/yml
+
+# RogueScripts:
+  # - ../software/scripts/epixQuadDAQ
+
+Targets:
+  EpixQuadPgp3_6Gbps:
+    ImageDir: targets/EpixQuadPgp3_6Gbps/images
+    Extensions:
+      - bit
+      - mcs
+  EpixQuadPgp4_6Gbps:
+    ImageDir: targets/EpixQuadPgp4_6Gbps/images
+    Extensions:
+      - bit
+      - mcs
+  EpixQuadPgp4_10Gbps:
+    ImageDir: targets/EpixQuadPgp4_10Gbps/images
+    Extensions:
+      - bit
+      - mcs
+
+Releases:
+  all:
+    Primary: True
+    Targets:
+      - EpixQuadPgp3_6Gbps
+      - EpixQuadPgp4_6Gbps
+      - EpixQuadPgp4_10Gbps
+    Types:
+      - Rogue
