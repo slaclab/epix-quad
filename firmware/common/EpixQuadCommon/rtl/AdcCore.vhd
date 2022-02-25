@@ -5,11 +5,11 @@
 -- Description: EPIX Quad Target's Top Level
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Development Firmware'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Development Firmware', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'EPIX Development Firmware', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -97,17 +97,17 @@ architecture top_level of AdcCore is
    signal iAdcStreamValid  : slv(79 downto 0);
    signal iAdcStream       : AxiStreamMasterArray(79 downto 0);
    signal iAdcStreamReg    : AxiStreamMasterArray(79 downto 0);
-   
+
    signal adcBitClkIn      : sl;
    signal adcBitClkDiv4In  : sl;
    signal adcBitClkDiv7In  : sl;
    signal adcBitRstIn      : sl;
    signal adcBitRstDiv4In  : sl;
-   
+
    signal adcClk           : slv(4 downto 0);
 
 begin
-   
+
    ---------------------
    -- AXI-Lite: Crossbar
    ---------------------
@@ -128,7 +128,7 @@ begin
          mAxiWriteSlaves     => axilWriteSlaves,
          mAxiReadMasters     => axilReadMasters,
          mAxiReadSlaves      => axilReadSlaves);
-   
+
    ------------------------------------------------
    -- Generate ADC and deserializer clocks
    ------------------------------------------------
@@ -164,21 +164,21 @@ begin
       rstOut(1) => adcBitRstDiv4In,
       rstOut(2) => open
    );
-   
+
    ------------------------------------------------
    -- Generate ADC output clocks
    ------------------------------------------------
    GEN_VEC5 : for i in 4 downto 0 generate
-   
+
       U_ODDR : ODDRE1
       port map (
-         Q  => adcClk(i),      
+         Q  => adcClk(i),
          C  => adcBitClkDiv7In,
-         D1 => '1',            
-         D2 => '0',            
+         D1 => '1',
+         D2 => '0',
          SR => '0'
       );
-      
+
       U_OBUFDS : OBUFTDS
       port map (
          I  => adcClk(i),
@@ -186,21 +186,21 @@ begin
          O  => adcClkP(i),
          OB => adcClkN(i)
       );
-   
+
    end generate GEN_VEC5;
-   
+
    ------------------------------------------------
    -- ADC Readout Modules
    ------------------------------------------------
-   G_AdcReadout : for i in 0 to 9 generate 
-      
+   G_AdcReadout : for i in 0 to 9 generate
+
       asicAdc(i).fClkP <= adcFClkP(i);
       asicAdc(i).fClkN <= adcFClkN(i);
       asicAdc(i).dClkP <= adcDClkP(i);
       asicAdc(i).dClkN <= adcDClkN(i);
       asicAdc(i).chP   <= adcChP(i);
       asicAdc(i).chN   <= adcChN(i);
-      
+
       U_AdcReadout : entity surf.Ad9249ReadoutGroup
       generic map (
          SIM_SPEEDUP_G     => SIM_SPEEDUP_G,
@@ -231,10 +231,10 @@ begin
          adcReady(6)       => adcClkEn,
          adcReady(7)       => adcClkEn
       );
-      
+
    end generate;
-   
-   G_AdcRegisters : for i in 0 to 79 generate 
+
+   G_AdcRegisters : for i in 0 to 79 generate
       U_Reg0 : entity surf.RegisterVector
       generic map (
          TPD_G    => TPD_G,
@@ -247,9 +247,9 @@ begin
          sig_i    => iAdcStreamReg(i).tData(15 downto 0),
          reg_o    => iAdcStream(i).tData(15 downto 0)
       );
-      
+
       iAdcStreamValid(i) <= iAdcStreamReg(i).tValid and adcClkEn;
-      
+
       U_Reg1 : entity surf.RegisterVector
       generic map (
          TPD_G    => TPD_G,
@@ -263,8 +263,8 @@ begin
          reg_o(0) => iAdcStream(i).tValid
       );
    end generate;
-   
-   G_AdcConf : for i in 0 to 1 generate 
+
+   G_AdcConf : for i in 0 to 1 generate
       U_AdcConf : entity surf.Ad9249Config
          generic map (
             TPD_G             => TPD_G,
@@ -285,7 +285,7 @@ begin
             adcCsb            => adcCsb(3+i*4 downto i*4)
          );
    end generate;
-   
+
    U_MonConf : entity surf.Ad9249Config
       generic map (
          TPD_G             => TPD_G,
@@ -305,13 +305,13 @@ begin
          adcSdio           => adcSdio(2),
          adcCsb            => adcCsb(9 downto 8)
       );
-      
+
    U_AdcTester : entity surf.StreamPatternTester
    generic map (
       TPD_G             => TPD_G,
       NUM_CHANNELS_G    => 80
    )
-   port map ( 
+   port map (
       -- Master system clock
       clk               => sysClk,
       rst               => sysRst,
@@ -323,8 +323,8 @@ begin
       axilWriteMaster   => axilWriteMasters(ADC_TEST_INDEX_C),
       axilWriteSlave    => axilWriteSlaves(ADC_TEST_INDEX_C)
    );
-   
+
    adcStream <= iAdcStream;
-   
+
 
 end top_level;

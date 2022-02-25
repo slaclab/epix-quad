@@ -1,0 +1,118 @@
+ePixBoard:
+  enable: 'True'
+  dataWriter:
+    enable: 'True'
+    dataFile: ''
+    open: 'False'
+    bufferSize: '0'
+    maxFileSize: '0'
+  EpixM32Array:
+    enable: 'True'
+    EpixM32ArrayFpgaRegisters:
+      enable: 'True'
+      Version: '0xef020000'
+      AsicR1Tr1: '0'
+      AsicR2Tr1: '100'
+      AsicR3Tr1: '0'
+      AsicR1Tr2: '10600'
+      AsicR2Tr2: '10450'
+      AsicR3Tr2: '10500'
+      AsicR1Test: 'False'
+      AsicClkDly: '11000'
+      AsicClkPerHalf: '100'
+      AsicSampleDly: '112'
+      AsicDigitalPwrEnable: 'True'
+      AsicAnalogPwrEnable: 'True'
+      FpgaOutputEnable: 'True'
+      DebugSel1: '0'
+      DebugSel2: '0'
+      AdcClkHalfT: '1'
+      StartupReq: 'False'
+    TriggerRegisters:
+      enable: 'True'
+      RunTriggerEnable: 'False'
+      RunTriggerDelay: '0'
+      DaqTriggerEnable: 'False'
+      DaqTriggerDelay: '0'
+      AutoRunEn: 'False'
+      AutoDaqEn: 'False'
+      AutoTrigPeriod: '0'
+      PgpTrigEn: 'False'
+      AcqCountReset: 'False'
+    SlowAdcRegisters:
+      enable: 'True'
+      StreamEn: 'False'
+      StreamPeriod: '0'
+    Oscilloscope:
+      enable: 'False'
+      ArmReg: 'False'
+      TrigReg: 'False'
+      ScopeEnable: 'False'
+      TriggerEdge: Falling
+      TriggerChannel: TrigReg
+      TriggerMode: Never
+      TriggerAdcThresh: '0'
+      TriggerHoldoff: '0'
+      TriggerOffset: '0'
+      TraceLength: '0'
+      SkipSamples: '0'
+      InputChannelA: NONE00
+      InputChannelB: NONE00
+      TriggerDelay: '0'
+    Ad9249Rdout[0].Adc[0]:
+      enable: 'False'
+      ChannelDelay[0]: '0x0'
+      ChannelDelay[1]: '0x0'
+      ChannelDelay[2]: '0x0'
+      ChannelDelay[3]: '0x0'
+      ChannelDelay[4]: '0x0'
+      ChannelDelay[5]: '0x0'
+      ChannelDelay[6]: '0x0'
+      ChannelDelay[7]: '0x0'
+      FrameDelay: '0x0'
+    Ad9249Rdout[0].Adc[1]:
+      enable: 'False'
+      ChannelDelay[0]: '0x0'
+      ChannelDelay[1]: '0x0'
+      ChannelDelay[2]: '0x0'
+      ChannelDelay[3]: '0x0'
+      ChannelDelay[4]: '0x0'
+      ChannelDelay[5]: '0x0'
+      ChannelDelay[6]: '0x0'
+      ChannelDelay[7]: '0x0'
+      FrameDelay: '0x0'
+    Ad9249Config[0].Adc[0]:
+      enable: 'False'
+      ExternalPdwnMode: Full Power Down
+      InternalPdwnMode: Chip Run
+      DutyCycleStabilizer: 'Off'
+      ClockDivide: Divide by 1
+      ChopMode: 'Off'
+      DevIndexMask[7:0]: '0b0'
+      DevIndexMask[DCO:FCO]: '0b0'
+      UserTestModeCfg: single
+      OutputTestMode: 'Off'
+      OffsetAdjust: '0x0'
+      OutputInvert: 'False'
+      OutputFormat: Offset Binary
+    Ad9249Config[0].Adc[1]:
+      enable: 'False'
+      ExternalPdwnMode: Full Power Down
+      InternalPdwnMode: Chip Run
+      DutyCycleStabilizer: 'Off'
+      ClockDivide: Divide by 1
+      ChopMode: 'Off'
+      DevIndexMask[7:0]: '0b0'
+      DevIndexMask[DCO:FCO]: '0b0'
+      UserTestModeCfg: single
+      OutputTestMode: 'Off'
+      OffsetAdjust: '0x0'
+      OutputInvert: 'False'
+      OutputFormat: Offset Binary
+    MicroblazeLog:
+      enable: 'True'
+  runControl:
+    enable: 'True'
+    runState: Stopped
+    runRate: 1 Hz
+    runCount: '0'

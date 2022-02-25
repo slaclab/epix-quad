@@ -2,14 +2,14 @@
 -- File       : TrigControlAxi.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
--- Description: 
+-- Description:
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Development Firmware'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Development Firmware', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'EPIX Development Firmware', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -59,8 +59,8 @@ entity TrigControlAxi is
 end TrigControlAxi;
 
 architecture rtl of TrigControlAxi is
-   
-   
+
+
    type TriggerType is record
       runTriggerEnable  : sl;
       daqTriggerEnable  : sl;
@@ -74,7 +74,7 @@ architecture rtl of TrigControlAxi is
       runTrigPrescale   : slv(31 downto 0);
       daqTrigPrescale   : slv(31 downto 0);
    end record TriggerType;
-   
+
    constant TRIGGER_INIT_C : TriggerType := (
       runTriggerEnable  => '0',
       daqTriggerEnable  => '0',
@@ -88,7 +88,7 @@ architecture rtl of TrigControlAxi is
       runTrigPrescale   => (others=>'0'),
       daqTrigPrescale   => (others=>'0')
    );
-   
+
    type RegType is record
       trig              : TriggerType;
       sAxilWriteSlave   : AxiLiteWriteSlaveType;
@@ -103,12 +103,12 @@ architecture rtl of TrigControlAxi is
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
-   
+
    signal coreSidebandRun : sl;
    signal coreSidebandDaq : sl;
    signal combinedRunTrig : sl;
    signal combinedDaqTrig : sl;
-   
+
    signal runTriggerEdge  : std_logic;
    signal daqTriggerEdge  : std_logic;
    signal runTriggerCnt   : std_logic_vector(31 downto 0);
@@ -130,9 +130,9 @@ architecture rtl of TrigControlAxi is
    signal autoRunEn     : std_logic;
    signal autoDaqEn     : std_logic;
 
-   
+
    signal trigSync : TriggerType;
-   
+
 begin
 
    -----------------------------------
@@ -168,25 +168,25 @@ begin
          coreSidebandDaq <= coreSidebandRun;
       end if;
    end process;
-   
+
    --------------------------------------------------
    -- Combine with TTL triggers and look for edges --
    --------------------------------------------------
    combinedRunTrig <= (coreSidebandRun and r.trig.pgpTrigEn) or (runTrigger and not r.trig.pgpTrigEn);
    combinedDaqTrig <= (coreSidebandDaq and r.trig.pgpTrigEn) or (daqTrigger and not r.trig.pgpTrigEn);
-   
+
    --------------------------------
    -- Run Input
-   --------------------------------   
+   --------------------------------
    -- Edge Detect
-   U_RunEdge : entity surf.SynchronizerEdge 
+   U_RunEdge : entity surf.SynchronizerEdge
       port map (
          clk        => sysClk,
          rst        => sysRst,
          dataIn     => combinedRunTrig,
          risingEdge => runTriggerEdge
       );
-  
+
    -- Delay
    process ( sysClk, sysRst ) begin
       if ( sysRst = '1' ) then
@@ -232,14 +232,14 @@ begin
    --------------------------------
 
    -- Edge Detect
-   U_AcqEdge : entity surf.SynchronizerEdge 
+   U_AcqEdge : entity surf.SynchronizerEdge
       port map (
          clk        => sysClk,
          rst        => sysRst,
          dataIn     => combinedDaqTrig,
          risingEdge => daqTriggerEdge
       );
-   
+
    -- Delay
    process ( sysClk, sysRst ) begin
       if ( sysRst = '1' ) then
@@ -279,7 +279,7 @@ begin
          end if;
       end if;
    end process;
-   
+
    -- Run trigger optional prescaler
    process ( sysClk, sysRst ) begin
       if ( sysRst = '1' ) then
@@ -288,21 +288,21 @@ begin
       elsif rising_edge(sysClk) then
 
          if runTriggerOut = '1' then
-            
+
             if runTriggerPreCnt >= r.trig.runTrigPrescale then
                runTriggerPreCnt  <= (others=>'0') after TPD_G;
                runTriggerPreOut  <= '1'           after TPD_G;
             else
-               runTriggerPreCnt  <= runTriggerPreCnt + 1 after TPD_G;  
+               runTriggerPreCnt  <= runTriggerPreCnt + 1 after TPD_G;
             end if;
-         
+
          else
             runTriggerPreOut  <= '0'           after TPD_G;
-         
+
          end if;
       end if;
    end process;
-   
+
    -- Daq trigger optional prescaler
    process ( sysClk, sysRst ) begin
       if ( sysRst = '1' ) then
@@ -311,17 +311,17 @@ begin
       elsif rising_edge(sysClk) then
 
          if daqTriggerOut = '1' then
-            
+
             if daqTriggerPreCnt >= r.trig.daqTrigPrescale then
                daqTriggerPreCnt  <= (others=>'0') after TPD_G;
                daqTriggerPreOut  <= '1'           after TPD_G;
             else
-               daqTriggerPreCnt  <= daqTriggerPreCnt + 1 after TPD_G;  
+               daqTriggerPreCnt  <= daqTriggerPreCnt + 1 after TPD_G;
             end if;
-         
+
          else
             daqTriggerPreOut  <= '0'           after TPD_G;
-         
+
          end if;
       end if;
    end process;
@@ -341,7 +341,7 @@ begin
       -- Sync clock and reset
       sysClk        => sysClk,
       sysClkRst     => sysRst,
-      -- Inputs 
+      -- Inputs
       runTrigIn     => hwRunTrig,
       daqTrigIn     => hwDaqTrig,
       -- Number of clock cycles between triggers
@@ -353,7 +353,7 @@ begin
       runTrigOut    => iRunTrigOut,
       daqTrigOut    => iDaqTrigOut
    );
-   
+
    autoRunEn <= '1' when trigSync.autoRunEn = '1' and trigSync.runTriggerEnable = '1' and trigSync.autoTrigPeriod /= 0 else '0';
    autoDaqEn <= '1' when trigSync.autoDaqEn = '1' and trigSync.daqTriggerEnable = '1' and trigSync.autoTrigPeriod /= 0 else '0';
 
@@ -377,7 +377,7 @@ begin
          end if;
       end if;
    end process;
-   
+
    --------------------------------------------------
    -- AXI Lite register logic
    --------------------------------------------------
@@ -387,11 +387,11 @@ begin
       variable regCon   : AxiLiteEndPointType;
    begin
       v := r;
-      
+
       v.trig.acqCountReset := '0';
-      
+
       axiSlaveWaitTxn(regCon, sAxilWriteMaster, sAxilReadMaster, v.sAxilWriteSlave, v.sAxilReadSlave);
-      
+
       axiSlaveRegister (regCon, x"00", 0, v.trig.runTriggerEnable);
       axiSlaveRegister (regCon, x"04", 0, v.trig.runTriggerDelay);
       axiSlaveRegister (regCon, x"08", 0, v.trig.daqTriggerEnable);
@@ -404,9 +404,9 @@ begin
       axiSlaveRegisterR(regCon, x"24", 0, acqCountSync);
       axiSlaveRegister (regCon, x"30", 0, v.trig.runTrigPrescale);
       axiSlaveRegister (regCon, x"34", 0, v.trig.daqTrigPrescale);
-      
+
       axiSlaveDefault(regCon, v.sAxilWriteSlave, v.sAxilReadSlave, AXIL_ERR_RESP_G);
-      
+
       if (axilRst = '1') then
          v := REG_INIT_C;
       end if;
@@ -425,7 +425,7 @@ begin
          acqCountSync <= acqCount after TPD_G;
       end if;
    end process seq;
-   
+
    --sync registers to sysClk clock
    process(sysClk) begin
       if rising_edge(sysClk) then
@@ -436,7 +436,7 @@ begin
          end if;
       end if;
    end process;
-   
+
 
 end rtl;
 

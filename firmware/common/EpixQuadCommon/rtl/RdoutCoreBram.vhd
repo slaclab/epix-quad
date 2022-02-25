@@ -5,11 +5,11 @@
 -- Description:
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Development Firmware'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Development Firmware', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'EPIX Development Firmware', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -35,7 +35,7 @@ entity RdoutCoreBram is
       -- ADC interface
       sysClk               : in  sl;
       sysRst               : in  sl;
-      -- AXI-Lite Interface for local registers 
+      -- AXI-Lite Interface for local registers
       sAxilReadMaster      : in  AxiLiteReadMasterType;
       sAxilReadSlave       : out AxiLiteReadSlaveType;
       sAxilWriteMaster     : in  AxiLiteWriteMasterType;
@@ -68,38 +68,38 @@ entity RdoutCoreBram is
 end RdoutCoreBram;
 
 architecture rtl of RdoutCoreBram is
-   
+
    -- ASIC settings
    constant BANK_COLS_C    : natural := BANK_COLS_G/4 - 1;
    constant BANK_ROWS_C    : natural := BANK_ROWS_G - 1;
    constant COLS_BITS_C    : natural := log2(BANK_COLS_G/4);   -- div by 4 for 64 bit packed 4 pixels
    constant ROWS_BITS_C    : natural := log2(BANK_ROWS_G);
-   
+
    -- Buffer settings
    constant BUFF_BITS_C    : integer range 1 to 5 := 2;
    constant BUFF_MAX_C     : slv(2**BUFF_BITS_C-1 downto 0) := (others=>'1');
    constant TIMEOUT_C      : integer := 500000;  -- 5ms
-   
+
    -- Stream settings
    constant SLAVE_AXI_CONFIG_C   : AxiStreamConfigType := ssiAxiStreamConfig(8);
    constant MASTER_AXI_CONFIG_C  : AxiStreamConfigType := ssiAxiStreamConfig(8);
-   
+
    constant LANE_C         : slv( 1 downto 0) := "00";
    constant VC_C           : slv( 1 downto 0) := "00";
    constant QUAD_C         : slv( 1 downto 0) := "00";
-   
+
    type WrStateType is (
       IDLE_S,
       BUFFER_S,
       WRITE_S
    );
-   
+
    type RdStateType is (
       IDLE_S,
       WAIT_LINE_S,
       MOVE_LINE_S
    );
-   
+
    type StrStateType is (
       IDLE_S,
       HDR_S,
@@ -107,7 +107,7 @@ architecture rtl of RdoutCoreBram is
       FOOTER_S,
       TPS_DATA_S
    );
-   
+
    type RegType is record
       rdoutEn              : sl;
       rdoutEnReg           : sl;
@@ -204,31 +204,31 @@ architecture rtl of RdoutCoreBram is
 
    signal r                : RegType := REG_INIT_C;
    signal rin              : RegType;
-   
+
    signal acqBusyEdge      : std_logic             := '0';
    signal txSlave          : AxiStreamSlaveType;
-   
+
    signal memWrEn          : sl;
    signal memWrAddr        : slv(BUFF_BITS_C+COLS_BITS_C-1 downto 0);
    --signal memRdAddr        : slv(BUFF_BITS_C+COLS_BITS_C-1 downto 0);
    signal memRdAddr        : Slv16Array(63 downto 0);
    signal memRdData        : Slv64VectorArray(3 downto 0, 15 downto 0);
    signal memWrData        : Slv64Array(63 downto 0);
-   
+
    signal adcStreamOvs     : AxiStreamMasterArray(63 downto 0);
    signal muxStrMap        : AxiStreamMasterArray(63 downto 0);
    signal muxStream        : AxiStreamMasterArray(63 downto 0);
-   
+
    signal iRoClkTail       : Slv8Array(3 downto 0);
    signal doutOut          : Slv4VectorArray(3 downto 0, 15 downto 0);
    signal doutCount        : Slv8VectorArray(3 downto 0, 15 downto 0);
    signal doutValid        : Slv16Array(3 downto 0);
-   
+
    signal muxAsicDout      : slv(15 downto 0);
    signal muxDoutMap       : slv(15 downto 0);
-   
+
    signal doutRd           : Slv16Array(3 downto 0);
-   
+
    signal fifoDout         : Slv64Array(3 downto 0);
    signal fifoAfull        : slv(3 downto 0);
    signal fifoRdy          : slv(3 downto 0);
@@ -237,32 +237,32 @@ architecture rtl of RdoutCoreBram is
    signal fifrCascadeEn    : slv(3 downto 0);
    signal fifoCascadeValid : slv(3 downto 0);
    signal fifrCascadeAfull : slv(3 downto 0);
-   
+
    signal fifoRdEn         : slv(3 downto 0);
-   
+
 begin
    --r.rowCount(BUFF_BITS_C-1 downto 0)
    assert ROWS_BITS_C >= BUFF_BITS_C
       report "ROWS_BITS_C must be >= BUFF_BITS_C"
       severity failure;
-   
+
    assert BANK_COLS_G mod 4 = 0
       report "BANK_COLS_G must be multiple of 4"
       severity failure;
-   
-   muxStream   <= 
+
+   muxStream   <=
       testStream     when r.testData = '1' else
       adcStreamOvs   when r.overSampleEn = '1' else
       adcStream;
-   
-   muxAsicDout <= 
+
+   muxAsicDout <=
       asicDoutTest  when r.testData = '1' else
       asicDout;
-   
+
    --------------------------------------------------
    -- Map ADC/Test channels
    --------------------------------------------------
-   
+
    -- sRow 0 (bottom, bottom)
    -- ASIC 9, ASIC 10 (left)
    muxStrMap( 0) <= muxStream(40);
@@ -273,10 +273,10 @@ begin
    muxStrMap( 5) <= muxStream(45);
    muxStrMap( 6) <= muxStream(46);
    muxStrMap( 7) <= muxStream(47);
-   
+
    muxDoutMap( 0) <= muxAsicDout( 9);
    muxDoutMap( 1) <= muxAsicDout(10);
-   
+
    -- sRow 0 (bottom, bottom)
    -- ASIC 13, ASIC 14 (right)
    muxStrMap( 8) <= muxStream(56);
@@ -287,10 +287,10 @@ begin
    muxStrMap(13) <= muxStream(61);
    muxStrMap(14) <= muxStream(62);
    muxStrMap(15) <= muxStream(63);
-   
+
    muxDoutMap( 2) <= muxAsicDout(13);
    muxDoutMap( 3) <= muxAsicDout(14);
-   
+
    -- sRow 1 (bottom, top)
    -- ASIC 8, ASIC 11  (left)
    muxStrMap(16) <= muxStream(32);
@@ -301,10 +301,10 @@ begin
    muxStrMap(21) <= muxStream(37);
    muxStrMap(22) <= muxStream(38);
    muxStrMap(23) <= muxStream(39);
-   
+
    muxDoutMap( 4) <= muxAsicDout( 8);
    muxDoutMap( 5) <= muxAsicDout(11);
-   
+
    -- sRow 1 (bottom, top)
    -- ASIC 12, ASIC 15  (right)
    muxStrMap(24) <= muxStream(48);
@@ -315,10 +315,10 @@ begin
    muxStrMap(29) <= muxStream(53);
    muxStrMap(30) <= muxStream(54);
    muxStrMap(31) <= muxStream(55);
-   
+
    muxDoutMap( 6) <= muxAsicDout(12);
    muxDoutMap( 7) <= muxAsicDout(15);
-   
+
    -- sRow 2 (top, bottom)
    -- ASIC 1, ASIC 2 (left)
    muxStrMap(32) <= muxStream( 8);
@@ -329,10 +329,10 @@ begin
    muxStrMap(37) <= muxStream(13);
    muxStrMap(38) <= muxStream(14);
    muxStrMap(39) <= muxStream(15);
-   
+
    muxDoutMap( 8) <= muxAsicDout( 1);
    muxDoutMap( 9) <= muxAsicDout( 2);
-   
+
    -- sRow 2 (top, bottom)
    -- ASIC 5, ASIC 6 (right)
    muxStrMap(40) <= muxStream(24);
@@ -343,10 +343,10 @@ begin
    muxStrMap(45) <= muxStream(29);
    muxStrMap(46) <= muxStream(30);
    muxStrMap(47) <= muxStream(31);
-   
+
    muxDoutMap(10) <= muxAsicDout( 5);
    muxDoutMap(11) <= muxAsicDout( 6);
-   
+
    -- sRow 3 (top, top)
    -- ASIC 0, ASIC 3  (left)
    muxStrMap(48) <= muxStream(0);
@@ -357,10 +357,10 @@ begin
    muxStrMap(53) <= muxStream(5);
    muxStrMap(54) <= muxStream(6);
    muxStrMap(55) <= muxStream(7);
-   
+
    muxDoutMap(12) <= muxAsicDout( 0);
    muxDoutMap(13) <= muxAsicDout( 3);
-   
+
    -- sRow 3 (top, top)
    -- ASIC 4, ASIC 7  (right)
    muxStrMap(56) <= muxStream(16);
@@ -371,10 +371,10 @@ begin
    muxStrMap(61) <= muxStream(21);
    muxStrMap(62) <= muxStream(22);
    muxStrMap(63) <= muxStream(23);
-   
+
    muxDoutMap(14) <= muxAsicDout( 4);
    muxDoutMap(15) <= muxAsicDout( 7);
-   
+
    --------------------------------------------------
    -- Instantiate Moving Average cores for oversampling
    --------------------------------------------------
@@ -383,7 +383,7 @@ begin
       signal avgDataTmpValid  : slv(63 downto 0);
       signal avgDataMux       : Slv14Array(63 downto 0);
    begin
-      
+
       U_MovingAvg : entity surf.BoxcarIntegrator
          generic map (
             TPD_G        => TPD_G,
@@ -403,7 +403,7 @@ begin
             obData   => avgDataTmp(i)
          );
 
-      avgDataMux(i) <= 
+      avgDataMux(i) <=
          avgDataTmp(i)(20 downto 7) when r.overSampleSize = 7 else
          avgDataTmp(i)(19 downto 6) when r.overSampleSize = 6 else
          avgDataTmp(i)(18 downto 5) when r.overSampleSize = 5 else
@@ -412,7 +412,7 @@ begin
          avgDataTmp(i)(15 downto 2) when r.overSampleSize = 2 else
          avgDataTmp(i)(14 downto 1) when r.overSampleSize = 1 else
          avgDataTmp(i)(13 downto 0);
-      
+
       U_Reg : entity surf.RegisterVector
          generic map (
             TPD_G       => TPD_G,
@@ -426,13 +426,13 @@ begin
             reg_o(14)   => adcStreamOvs(i).tValid,
             reg_o(13 downto 0) => adcStreamOvs(i).tData(13 downto 0)
          );
-   
+
    end generate;
-   
+
    --------------------------------------------------
    -- Data storage and readout FSMs
    --------------------------------------------------
-   
+
    U_ReadStartEdge : entity surf.SynchronizerEdge
       port map (
          clk        => sysClk,
@@ -440,7 +440,7 @@ begin
          dataIn     => acqBusy,
          risingEdge => acqBusyEdge
       );
-   
+
    comb : process (sysRst, sAxilReadMaster, sAxilWriteMaster, txSlave, r,
       acqBusyEdge, acqBusy, acqCount, acqSmplEn, memRdData, opCode, muxStrMap, tpsStream,
       doutValid, doutOut, doutCount, monData, fifoRdy, fifoValid, fifoDout) is
@@ -451,25 +451,25 @@ begin
       variable sRowCountMod : integer range 0 to 3;
    begin
       v := r;
-      
+
       v.adcPipelineDlyReg := (others=>'0');
-      
+
       -- settings that chan change when no readout is pending
       if r.readPend = '0' and acqBusyEdge = '0' then
          v.rdoutEn         := r.rdoutEnReg;
       end if;
-      
+
       -- count readouts
       if r.seqCountReset = '1' then
          v.seqCount := (others=>'0');
       elsif acqBusyEdge = '1' and r.rdoutEn = '1' then
          v.seqCount := r.seqCount + 1;
       end if;
-      
+
       --------------------------------------------------
       -- AXI Lite register logic
       --------------------------------------------------
-      
+
       -- Determine the AXI-Lite transaction
       axiSlaveWaitTxn(regCon, sAxilWriteMaster, sAxilReadMaster, v.sAxilWriteSlave, v.sAxilReadSlave);
 
@@ -483,11 +483,11 @@ begin
       axiSlaveRegisterR(regCon, x"018", 0, r.lineBufErr(2)     );
       axiSlaveRegisterR(regCon, x"01C", 0, r.lineBufErr(3)     );
       axiSlaveRegister (regCon, x"020", 0, v.testData          );
-      
-      
+
+
       axiSlaveRegister (regCon, x"024", 0, v.overSampleEn      );
       axiSlaveRegister (regCon, x"028", 0, v.overSampleSize    );
-      
+
       if r.overSampleSize = 0 then
          v.overSampleSizePwr   := "0000000";
       elsif r.overSampleSize = 1 then
@@ -505,25 +505,25 @@ begin
       else
          v.overSampleSizePwr   := "1111111";
       end if;
-      
-      
+
+
       -- Close out the AXI-Lite transaction
       axiSlaveDefault(regCon, v.sAxilWriteSlave, v.sAxilReadSlave, AXI_RESP_DECERR_C);
-      
+
       -- ADC pipeline delay is preset by the Microblaze and should be changed only be an expert
       if r.adcPipelineDlyReg(31 downto 16) = x"AAAA" then
          v.adcPipelineDly := r.adcPipelineDlyReg(7 downto 0);
       end if;
-      
+
       --------------------------------------------------
       -- Line buffers write FSM (64 bank channels)
       -- one ADC pipeline delay to allow common DPRAM write control
       --------------------------------------------------
-      
+
       v.memWrEn   := '0';
-      
+
       case r.wrState is
-         
+
          -- write samples to RAM when readout is pending
          when IDLE_S =>
             if r.readPend = '1' then
@@ -533,7 +533,7 @@ begin
             v.lineWrBuff      := (others=>'0');
             v.lineBufValid    := (others=>'0');
             v.adcDataBufCnt   := 0;
-         
+
          -- buffer first sample for 32 bit write
          when BUFFER_S =>
             -- drive the buffer logic on delayed strobe
@@ -554,7 +554,7 @@ begin
             if r.readPend = '0' then
                v.wrState := IDLE_S;
             end if;
-            
+
          -- write to memory
          when WRITE_S =>
             v.memWrAddr := r.lineWrBuff & r.lineWrAddr;
@@ -576,19 +576,19 @@ begin
             if r.readPend = '0' then
                v.wrState   := IDLE_S;
             end if;
-            
+
          when others =>
             v.wrState := IDLE_S;
-            
+
       end case;
-      
+
       -- shift the sample strobe
       if r.readPend = '1' then
          v.acqSmplEn := r.acqSmplEn(254 downto 0) & acqSmplEn;
       else
          v.acqSmplEn := (others=>'0');
       end if;
-      
+
       -- check for buffer overflow
       for i in 3 downto 0 loop
          if r.acqSmplEn(conv_integer(r.adcPipelineDly)) = '1' and r.lineBufValid = BUFF_MAX_C then
@@ -596,17 +596,17 @@ begin
             v.buffErr         := '1';
          end if;
       end loop;
-      
+
       -- clear error counters when readout is starting
       if r.rdoutEnReg = '1' and r.rdoutEn = '0' then
          v.lineBufErr   := (others=>(others=>'0'));
       end if;
-      
+
       --------------------------------------------------
       -- FSM to assemble and stream 4 lines (16 banks per line)
       -- each line (super row) is written in parallel to 4 FIFOs
       --------------------------------------------------
-      
+
       doutValidVar(0) := doutValid(0)(r.bankCount);
       doutValidVar(1) := doutValid(1)(r.bankCount);
       doutValidVar(2) := doutValid(2)(r.bankCount);
@@ -631,12 +631,12 @@ begin
       else
          doutCountVar(3) := '0';
       end if;
-      
+
       v.fifoWrEn := '0';
       v.doutRd := (others=>(others=>'0'));
-      
+
       case r.rdState is
-         
+
          -- wait for trigger
          when IDLE_S =>
             v.lineRdAddrF  := (others=>'0');
@@ -649,8 +649,8 @@ begin
                v.readPend  := '1';
                v.rdState   := WAIT_LINE_S;
             end if;
-            
-            
+
+
          when WAIT_LINE_S =>
             if r.buffErr = '1' then
                v.timeCnt   := 0;
@@ -667,14 +667,14 @@ begin
             else
                v.timeCnt   := r.timeCnt + 1;
             end if;
-            
+
          when MOVE_LINE_S =>
             if r.buffErr = '1' then
                v.rdState   := IDLE_S;
             elsif fifoRdy = "1111" then
-               
+
                v.fifoWrEn := '1';
-               
+
                for i in 3 downto 0 loop
                   v.fifoDin(i)(63 downto 0) := memRdData(i, r.bankCount);  -- super row 0-3, bank 0-15 = 64 memory channels
                   -- insert (overwrite) dout bits
@@ -684,8 +684,8 @@ begin
                   v.fifoDin(i)(14) := doutOut(i, r.bankCount)(0);
                   v.doutRd(i)(r.bankCount) := '1';
                end loop;
-               
-               
+
+
                if r.colCount < BANK_COLS_C then    -- next column in bank
                   v.colCount := r.colCount + 1;
                elsif r.bankCount < 15 then         -- next bank (out of 16)
@@ -704,7 +704,7 @@ begin
                   v.rowCount     := (others=>'0');
                   v.rdState      := IDLE_S;
                end if;
-               
+
                -- move the read address 1 cycle ahead of the pixel counters
                if r.colCount = BANK_COLS_C and r.bankCount = 15 then
                   v.lineRdAddrF  := (others=>'0');
@@ -716,19 +716,19 @@ begin
                   v.lineRdAddrF := r.lineRdAddrF + 1;
                   v.lineRdAddrR := r.lineRdAddrR - 1;
                end if;
-               
+
             end if;
-         
+
          when others =>
             v.rdState := IDLE_S;
-            
+
       end case;
-      
-      
+
+
       --------------------------------------------------
       -- FSM to stream image data
       --------------------------------------------------
-      
+
       -- Reset strobing Signals
       if (txSlave.tReady = '1') then
          v.txMaster.tValid := '0';
@@ -737,11 +737,11 @@ begin
          v.txMaster.tKeep  := (others => '1');
          v.txMaster.tStrb  := (others => '1');
       end if;
-      
+
       v.fifoRdEn := "0000";
-      
+
       case r.strState is
-         
+
          -- wait for trigger
          when IDLE_S =>
             v.sRowCount    := 0;
@@ -753,7 +753,7 @@ begin
             if r.readPend = '1' then
                v.strState   := HDR_S;
             end if;
-      
+
          when HDR_S =>
             if v.txMaster.tValid = '0' then
                v.txMaster.tValid := '1';
@@ -775,25 +775,25 @@ begin
                   v.wordCnt   := r.wordCnt + 1;
                end if;
             end if;
-            
+
          when DATA_S =>
-            
+
             -- get the last 2 bits of row counter to address a fifo
             -- data from each super row is split into 4 fifos
             -- de-interleaving is easy to implement, but it would cost a few ms of latency
             -- due to waiting for 3 FIFOs be filled with ASIC readout data
             -- deinterleaving would not work at 1kFPS without DDR buffering
             sRowCountMod := conv_integer(toSlv(r.sRowCount, 2));
-         
+
             if r.buffErr = '1' or r.timeErr = '1' then
                v.strState   := FOOTER_S;
             elsif v.txMaster.tValid = '0' and fifoValid(sRowCountMod) = '1' then
-               
+
                v.txMaster.tValid             := '1';
                v.txMaster.tData(63 downto 0) := fifoDout(sRowCountMod);
                v.fifoRdEn(sRowCountMod)      := '1';
-               
-               -- move data from one super row 
+
+               -- move data from one super row
                -- 16 banks * 12 (64 byte packed) columns
                if r.wordCnt < BANK_COLS_G/4*16 - 1 then
                   v.wordCnt := r.wordCnt + 1;
@@ -807,16 +807,16 @@ begin
                   v.sRowCount := 0;
                   v.strState  := FOOTER_S;
                end if;
-               
+
             end if;
-         
+
          when FOOTER_S =>
             -- reserved footer space similar to small epix data frame
             -- length of 1 super row
             if v.txMaster.tValid = '0' then
-            
+
                v.txMaster.tValid := '1';
-               
+
                if r.wordCnt = 0 then
                   v.txMaster.tData(31 downto  0) := r.monData( 1) & r.monData( 0);
                   v.txMaster.tData(63 downto 32) := r.monData( 3) & r.monData( 2);
@@ -854,7 +854,7 @@ begin
                if (r.wordCnt < 10) then
                   v.wordCnt := r.wordCnt + 1;
                end if;
-               
+
                -- transmit total of 1 super row (mostly zeroed reserved data)
                if r.wordCnt < BANK_COLS_G/4*16 - 1 then
                   v.wordCnt  := r.wordCnt + 1;
@@ -862,9 +862,9 @@ begin
                   v.wordCnt  := 0;
                   v.strState := TPS_DATA_S;
                end if;
-               
+
             end if;
-         
+
          when TPS_DATA_S =>
             if v.txMaster.tValid = '0' then
                v.txMaster.tValid := '1';
@@ -881,7 +881,7 @@ begin
                   v.txMaster.tData(31 downto  0) := "00" & tpsStream(13).tData(13 downto 0) & "00" & tpsStream(12).tData(13 downto 0);
                   v.txMaster.tData(63 downto 32) := "00" & tpsStream(15).tData(13 downto 0) & "00" & tpsStream(14).tData(13 downto 0);
                end if;
-               
+
                if (r.wordCnt = 3) then
                   v.wordCnt   := 0;
                   v.txMaster.tLast  := '1';
@@ -895,29 +895,29 @@ begin
                else
                   v.wordCnt   := r.wordCnt + 1;
                end if;
-               
+
             end if;
-         
+
          when others =>
             v.strState := IDLE_S;
-            
+
       end case;
-      
-      
+
+
       if (sysRst = '1') then
          v := REG_INIT_C;
       end if;
 
       rin <= v;
-      
+
       sAxilWriteSlave   <= r.sAxilWriteSlave;
       sAxilReadSlave    <= r.sAxilReadSlave;
-      
+
       memWrEn     <= v.memWrEn;
       memWrAddr   <= r.memWrAddr;
-      
+
       fifoRdEn    <= v.fifoRdEn;
-      
+
       -- read strobe for the dout FIFOs
       -- swap ASIC banks in reversed super rows
       for i in 3 downto 0 loop
@@ -931,7 +931,7 @@ begin
             end loop;
          end if;
       end loop;
-      
+
       readDone    <= not r.readPend;
 
    end process comb;
@@ -942,32 +942,32 @@ begin
          r <= rin after TPD_G;
       end if;
    end process seq;
-   
+
    ----------------------------------------------------------------------
    -- Line DPRAM buffers (64 bank channels)
    ----------------------------------------------------------------------
    G_sRowBuf : for i in 3 downto 0 generate
       G_BankBuf : for j in 15 downto 0 generate
-         
+
          -- stage four 16 bit words for write into 64 bit memory
          -- swap words if line readout is reversed
-         memWrData(i*16+j) <= 
-            
+         memWrData(i*16+j) <=
+
             "00" & muxStrMap(i*16+j).tData(13 downto 0) &
             "00" & r.adcDataBuf0(i*16+j) &
             "00" & r.adcDataBuf1(i*16+j) &
             "00" & r.adcDataBuf2(i*16+j) when LINE_REVERSE_G(i) = '0' else
-            
+
             "00" & r.adcDataBuf2(i*16+j) &
             "00" & r.adcDataBuf1(i*16+j) &
             "00" & r.adcDataBuf0(i*16+j) &
             "00" & muxStrMap(i*16+j).tData(13 downto 0);
-         
-         memRdAddr(i*16+j)(BUFF_BITS_C+COLS_BITS_C-1 downto 0) <= 
+
+         memRdAddr(i*16+j)(BUFF_BITS_C+COLS_BITS_C-1 downto 0) <=
             r.rowCount(BUFF_BITS_C-1 downto 0) & r.lineRdAddrF when LINE_REVERSE_G(i) = '0' else
             r.rowCount(BUFF_BITS_C-1 downto 0) & r.lineRdAddrR;
-         
-         
+
+
          U_BankBufRam: entity surf.DualPortRam
          generic map (
             TPD_G          => TPD_G,
@@ -976,7 +976,7 @@ begin
             MEMORY_TYPE_G  => "distributed"
          )
          port map (
-            -- Port A     
+            -- Port A
             clka    => sysClk,
             wea     => memWrEn,
             rsta    => sysRst,
@@ -988,19 +988,19 @@ begin
             addrb   => memRdAddr(i*16+j)(BUFF_BITS_C+COLS_BITS_C-1 downto 0),
             doutb   => memRdData(i, j)
          );
-         
+
       end generate G_BankBuf;
    end generate G_sRowBuf;
-   
+
    ---------------------------------------------------------------
-   -- Digital output deserializer 
+   -- Digital output deserializer
    --------------------- ------------------------------------------
    G_DOUT_EPIX10KA : for i in 3 downto 0 generate
       signal iDoutOut   : Slv4Array(63 downto 0);
       signal iDoutCount : Slv8Array(63 downto 0);
       signal asicRoClkGated : sl;
    begin
-      
+
       U_DoutAsic : entity work.DoutDeserializer
       generic map (
          TPD_G             => TPD_G,
@@ -1008,7 +1008,7 @@ begin
          RD_ORDER_INIT_G   => (others=>LINE_REVERSE_G(i)),
          FOUR_BIT_OUT_G    => true
       )
-      port map ( 
+      port map (
          clk               => sysClk,
          rst               => sysRst,
          acqBusy           => acqBusy,
@@ -1024,18 +1024,18 @@ begin
          sAxilReadMaster   => AXI_LITE_READ_MASTER_INIT_C,
          sAxilReadSlave    => open
       );
-      
-      -- need gated clock to avoid out deserializing during 
+
+      -- need gated clock to avoid out deserializing during
       -- the dummy readout (see AcqCore.vhd)
       asicRoClkGated <= asicRoClk and r.readPend;
-      
+
       G_NORM : if LINE_REVERSE_G(i) = '0' generate
          G_VEC16 : for j in 15 downto 0 generate
             doutOut(i, j)     <= iDoutOut(j+i*16);
             doutCount(i, j)   <= iDoutCount(j+i*16);
          end generate;
       end generate;
-      
+
       -- swap ASIC banks in reversed super rows
       G_REV  : if LINE_REVERSE_G(i) = '1' generate
          G_VEC1_4 : for j in 3 downto 0 generate
@@ -1045,24 +1045,24 @@ begin
             end generate;
          end generate;
       end generate;
-   
+
    end generate;
-   
+
    roClkTail <= iRoClkTail(0);
-   
+
    ----------------------------------------------------------------------
    -- Use plain FIFOs to store the whole image
    -- Spilt into 4 paths for faster data movement from line buffers by the rdState FS
    -- Each path corresponds to 1 out of 4 super rows
    ----------------------------------------------------------------------
-   
+
    -- the cascade of 1 * 2^15 + 2^11 * 8 bytes                          = 278528 bytes
    -- the 0.25 frame size 48 cols * 178 rows * 64 banks * 2 bytes *0.25 = 273408 bytes
    -- the FIFO will fit whole image
-   
+
    G_sRowFifo: for i in 3 downto 0 generate
-   
-      U_sRowFifo0 : entity surf.FifoCascade 
+
+      U_sRowFifo0 : entity surf.FifoCascade
          generic map (
             DATA_WIDTH_G      => 64,
             CASCADE_SIZE_G    => 1,
@@ -1070,7 +1070,7 @@ begin
             FWFT_EN_G         => true,
             GEN_SYNC_FIFO_G   => true
          )
-         port map ( 
+         port map (
             rst               => sysRst,
             wr_clk            => sysClk,
             wr_en             => r.fifoWrEn,
@@ -1081,10 +1081,10 @@ begin
             dout              => fifoCascadeData(i),
             valid             => fifoCascadeValid(i)
          );
-      
+
       fifoRdy(i) <= not fifoAfull(i);
-      
-      U_sRowFifo1 : entity surf.FifoCascade 
+
+      U_sRowFifo1 : entity surf.FifoCascade
          generic map (
             DATA_WIDTH_G      => 64,
             CASCADE_SIZE_G    => 1,
@@ -1092,7 +1092,7 @@ begin
             FWFT_EN_G         => true,
             GEN_SYNC_FIFO_G   => true
          )
-         port map ( 
+         port map (
             rst               => sysRst,
             wr_clk            => sysClk,
             wr_en             => fifrCascadeEn(i),
@@ -1103,15 +1103,15 @@ begin
             dout              => fifoDout(i),
             valid             => fifoValid(i)
          );
-      
+
       fifrCascadeEn(i) <= not fifrCascadeAfull(i) and fifoCascadeValid(i);
-   
+
    end generate G_sRowFifo;
-   
+
    ----------------------------------------------------------------------
    -- Streaming out FIFO
    ----------------------------------------------------------------------
-   
+
    --U_AxisOut0 : entity surf.AxiStreamFifoV2
    --generic map (
    --   -- General Configurations
@@ -1139,8 +1139,8 @@ begin
    --   mAxisMaster => axisMaster,
    --   mAxisSlave  => axisSlave
    --);
-   
+
    axisMaster <= r.txMaster;
    txSlave    <= axisSlave;
-   
+
 end rtl;

@@ -5,11 +5,11 @@
 -- Description:
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Development Firmware'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Development Firmware', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'EPIX Development Firmware', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -37,7 +37,7 @@ entity RdoutCoreTop is
       -- ADC interface
       sysClk               : in  sl;
       sysRst               : in  sl;
-      -- AXI-Lite Interface for local registers 
+      -- AXI-Lite Interface for local registers
       sAxilReadMaster      : in  AxiLiteReadMasterType;
       sAxilReadSlave       : out AxiLiteReadSlaveType;
       sAxilWriteMaster     : in  AxiLiteWriteMasterType;
@@ -76,9 +76,9 @@ entity RdoutCoreTop is
 end RdoutCoreTop;
 
 architecture rtl of RdoutCoreTop is
-   
+
 begin
-   
+
    G_RdoutBram : if USE_DDR_BUFF_G = false generate
       U_RdoutCore : entity work.RdoutCoreBram
          generic map (
@@ -91,7 +91,7 @@ begin
             -- ADC interface
             sysClk               => sysClk,
             sysRst               => sysRst,
-            -- AXI-Lite Interface for local registers 
+            -- AXI-Lite Interface for local registers
             sAxilReadMaster      => sAxilReadMaster ,
             sAxilReadSlave       => sAxilReadSlave  ,
             sAxilWriteMaster     => sAxilWriteMaster,
@@ -119,12 +119,12 @@ begin
             axisClk              => axisClk   ,
             axisRst              => axisRst   ,
             axisMaster           => axisMaster,
-            axisSlave            => axisSlave 
+            axisSlave            => axisSlave
          );
          axiWriteMasters      <= (others=>AXI_WRITE_MASTER_INIT_C);
          axiReadMaster        <= AXI_READ_MASTER_INIT_C;
    end generate G_RdoutBram;
-   
+
    G_RdoutDdr : if USE_DDR_BUFF_G = true generate
       U_RdoutCore : entity work.RdoutCoreDdr
          generic map (
@@ -137,7 +137,7 @@ begin
             -- ADC interface
             sysClk               => sysClk,
             sysRst               => sysRst,
-            -- AXI-Lite Interface for local registers 
+            -- AXI-Lite Interface for local registers
             sAxilReadMaster      => sAxilReadMaster ,
             sAxilReadSlave       => sAxilReadSlave  ,
             sAxilWriteMaster     => sAxilWriteMaster,
@@ -171,8 +171,8 @@ begin
             axisClk              => axisClk   ,
             axisRst              => axisRst   ,
             axisMaster           => axisMaster,
-            axisSlave            => axisSlave 
+            axisSlave            => axisSlave
          );
    end generate G_RdoutDdr;
-   
+
 end rtl;

@@ -9,11 +9,11 @@
 --       Since we handle our clocks slightly differently.
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Development Firmware'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Development Firmware', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'EPIX Development Firmware', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -44,15 +44,15 @@ entity EpixPgp2bGtp7Wrapper is
       -- MGT Configurations (Defaults: gtClkP = 125 MHz Configuration)
       RXOUT_DIV_G          : natural                 := 2;
       TXOUT_DIV_G          : natural                 := 2;
-      RX_CLK25_DIV_G       : natural                 := 5;                        
-      TX_CLK25_DIV_G       : natural                 := 5;                      
-      RX_OS_CFG_G          : bit_vector              := "0000010000000";          
-      RXCDR_CFG_G          : bit_vector              := x"0001107FE206021081010"; 
-      RXLPM_INCM_CFG_G     : bit                     := '0';                      
-      RXLPM_IPCM_CFG_G     : bit                     := '1';                     
+      RX_CLK25_DIV_G       : natural                 := 5;
+      TX_CLK25_DIV_G       : natural                 := 5;
+      RX_OS_CFG_G          : bit_vector              := "0000010000000";
+      RXCDR_CFG_G          : bit_vector              := x"0001107FE206021081010";
+      RXLPM_INCM_CFG_G     : bit                     := '0';
+      RXLPM_IPCM_CFG_G     : bit                     := '1';
       -- Configure Number of VC Lanes
       NUM_VC_EN_G          : natural range 1 to 4    := 4;
-      -- Interleave frames 
+      -- Interleave frames
       VC_INTERLEAVE_G      : integer                 := 1);
    port (
       -- Manual Reset
@@ -79,7 +79,7 @@ entity EpixPgp2bGtp7Wrapper is
       gtTxP        : out sl;
       gtTxN        : out sl;
       gtRxP        : in  sl;
-      gtRxN        : in  sl);  
+      gtRxN        : in  sl);
 end EpixPgp2bGtp7Wrapper;
 
 architecture mapping of EpixPgp2bGtp7Wrapper is
@@ -101,7 +101,7 @@ architecture mapping of EpixPgp2bGtp7Wrapper is
    signal gtQPllLock       : slv(1 downto 0);
    signal gtQPllRefClkLost : slv(1 downto 0);
    signal gtQPllReset      : slv(1 downto 0);
-   
+
 begin
 
    pgpClk      <= pgpClock;
@@ -113,27 +113,27 @@ begin
          I     => gtClkP,
          IB    => gtClkN,
          CEB   => '0',
-         ODIV2 => refClkDiv2,  
-         O     => refClk);    
-   
+         ODIV2 => refClkDiv2,
+         O     => refClk);
+
    BUFG_Inst : BUFG
       port map (
          I => refClkDiv2,
-         O => stableClock);          
+         O => stableClock);
 
    RstSync_Inst : entity surf.RstSync
       generic map(
-         TPD_G => TPD_G)   
+         TPD_G => TPD_G)
       port map (
          clk      => stableClock,
          asyncRst => extRst,
-         syncRst  => extRstSync);          
+         syncRst  => extRstSync);
 
    U_BUFG_PGP : BUFG
       port map (
          I => pgpTxRecClock,
          O => pgpClock);
-         
+
    -- ClockManager7_Inst : entity surf.ClockManager7
       -- generic map(
          -- TPD_G              => TPD_G,
@@ -152,7 +152,7 @@ begin
          -- clkIn     => stableClock,
          -- rstIn     => extRstSync,
          -- clkOut(0) => pgpClock,
-         -- rstOut(0) => pgpReset);     
+         -- rstOut(0) => pgpReset);
 
    -- PLL0 Port Mapping
    pllRefClk(0)     <= refClk;
@@ -174,7 +174,7 @@ begin
          PLL1_REFCLK_SEL_G    => QPLL_REFCLK_SEL_G,
          PLL1_FBDIV_IN_G      => QPLL_FBDIV_IN_G,
          PLL1_FBDIV_45_IN_G   => QPLL_FBDIV_45_IN_G,
-         PLL1_REFCLK_DIV_IN_G => QPLL_REFCLK_DIV_IN_G)         
+         PLL1_REFCLK_DIV_IN_G => QPLL_REFCLK_DIV_IN_G)
       port map (
          qPllRefClk     => pllRefClk,
          qPllOutClk     => gtQPllOutClk,
@@ -182,7 +182,7 @@ begin
          qPllLock       => gtQPllLock,
          qPllLockDetClk => pllLockDetClk,
          qPllRefClkLost => gtQPllRefClkLost,
-         qPllReset      => qPllReset);            
+         qPllReset      => qPllReset);
 
    Pgp2bGtp7VarLat_Inst : entity surf.Pgp2bGtp7VarLat
       generic map (
@@ -239,6 +239,6 @@ begin
          pgpTxSlaves      => pgpTxSlaves,
          -- Frame RX Interface
          pgpRxMasters     => pgpRxMasters,
-         pgpRxCtrl        => pgpRxCtrl);      
+         pgpRxCtrl        => pgpRxCtrl);
 
 end mapping;

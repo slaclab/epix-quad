@@ -1,6 +1,6 @@
 -------------------------------------------------------------------------------
 -- Title      : Pseudo Oscilloscope Interface
--- Project    : EPIX 
+-- Project    : EPIX
 -------------------------------------------------------------------------------
 -- File       : PseudoScopeAxi.vhd
 -- Company    : SLAC National Accelerator Laboratory
@@ -9,11 +9,11 @@
 -- Pseudo-oscilloscope interface for ADC channels, similar to chipscope.
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Development Firmware'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Development Firmware', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'EPIX Development Firmware', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -35,7 +35,7 @@ entity PseudoScope2Axi is
       INPUTS_G                   : integer range 0 to 32 := 4;
       MASTER_AXI_STREAM_CONFIG_G : AxiStreamConfigType   := ssiAxiStreamConfig(4, TKEEP_COMP_C)
    );
-   port ( 
+   port (
       -- system clock
       clk               : in  sl;
       rst               : in  sl;
@@ -69,7 +69,7 @@ architecture rtl of PseudoScope2Axi is
    constant SLAVE_AXI_CONFIG_C   : AxiStreamConfigType := ssiAxiStreamConfig(2);
    constant MASTER_AXI_CONFIG_C  : AxiStreamConfigType := MASTER_AXI_STREAM_CONFIG_G;
    signal txSlave                : AxiStreamSlaveType;
-   
+
    type WrStateType is (
       IDLE_S,
       ARMED_S,
@@ -78,7 +78,7 @@ architecture rtl of PseudoScope2Axi is
       WRITE_S
    );
    type WrStateArray is array (natural range <>) of WrStateType;
-   
+
    type RdStateType is (
       IDLE_S,
       HDR_S,
@@ -87,7 +87,7 @@ architecture rtl of PseudoScope2Axi is
       DATA_B_S,
       FOOTER_S
    );
-   
+
    type RegType is record
       scopeEnable          : sl;
       arm                  : sl;
@@ -156,14 +156,14 @@ architecture rtl of PseudoScope2Axi is
 
    signal r                : RegType := REG_INIT_C;
    signal rin              : RegType;
-   
+
    signal sAxisCtrl        : AxiStreamCtrlType;
-   
+
    signal axilReadMaster   : AxiLiteReadMasterType;
    signal axilWriteMaster  : AxiLiteWriteMasterType;
-   
+
    signal rdData           : Slv16Array(1 downto 0);
-   
+
    signal triggerInput     : slv(15 downto 0);
    signal triggerInRise    : slv(15 downto 0);
    signal triggerInFall    : slv(15 downto 0);
@@ -172,16 +172,16 @@ architecture rtl of PseudoScope2Axi is
    constant cQuad     : slv( 1 downto 0) := "00";
    constant cOpCode   : slv( 7 downto 0) := x"00";
    constant cZeroWord : slv(31 downto 0) := x"00000000";
-   
+
    signal addra : Slv14Array(1 downto 0);
    signal addrb : Slv14Array(1 downto 0);
-   
+
    signal trigSel : sl;
    signal armSel  : sl;
    signal armSync : sl;
-   
+
 begin
-   
+
    --------------------------------------------------
    -- AXI lite synchronizer
    --------------------------------------------------
@@ -205,7 +205,7 @@ begin
       mAxiWriteMaster   => axilWriteMaster,
       mAxiWriteSlave    => r.axilWriteSlave
    );
-   
+
    U_Sync : entity surf.SynchronizerEdge
       generic map (
          TPD_G       => TPD_G
@@ -216,14 +216,14 @@ begin
          dataIn      => arm,
          risingEdge  => armSync
       );
-   
+
    -- Arming mode
-   armSel <= 
+   armSel <=
       '0'      when r.triggerMode = 0 else
       r.arm    when r.triggerMode = 1 else
       armSync  when r.triggerMode = 2 else
       '1';
-   
+
    --------------------------------------------------
    -- trigger synchronizers
    --------------------------------------------------
@@ -231,7 +231,7 @@ begin
    triggerInput(1) <= '1' when r.dataMux(0) > r.triggerAdcThresh else '0';
    triggerInput(2) <= '1' when r.dataMux(1) > r.triggerAdcThresh else '0';
    triggerInput(15 downto 3) <= triggerIn;
-   
+
    G_TrigIn: for i in 15 downto 0 generate
       U_Sync : entity surf.SynchronizerEdge
          generic map (
@@ -245,12 +245,12 @@ begin
             fallingEdge => triggerInFall(i)
          );
    end generate;
-   
+
    --------------------------------------------------
    -- Trigger selection
-   --------------------------------------------------   
+   --------------------------------------------------
    trigSel <= triggerInRise(conv_integer(r.triggerChannel)) when r.triggerEdge = '1' else triggerInFall(conv_integer(r.triggerChannel));
-   
+
    --------------------------------------------------
    -- Data processing and streaming FSM
    --------------------------------------------------
@@ -259,16 +259,16 @@ begin
       variable regCon  : AxiLiteEndPointType;
    begin
       v := r;
-      
+
       v.arm := '0';
-      
+
       --------------------------------------------------
       -- AXI Lite register logic
       --------------------------------------------------
-      
+
       -- Determine the AXI-Lite transaction
       axiSlaveWaitTxn(regCon, axilWriteMaster, axilReadMaster, v.axilWriteSlave, v.axilReadSlave);
-      
+
       axiSlaveRegister (regCon, x"000",  0, v.arm);
       axiSlaveRegister (regCon, x"004",  0, v.trig);
       axiSlaveRegister (regCon, x"008",  0, v.scopeEnable);
@@ -283,10 +283,10 @@ begin
       axiSlaveRegister (regCon, x"014",  0, v.inputChannelA);
       axiSlaveRegister (regCon, x"014",  5, v.inputChannelB);
       axiSlaveRegister (regCon, x"018",  0, v.triggerDelay);
-      
+
       -- Close out the AXI-Lite transaction
       axiSlaveDefault(regCon, v.axilWriteSlave, v.axilReadSlave, AXI_RESP_DECERR_C);
-      
+
       --------------------------------------------------
       -- Data selection
       --------------------------------------------------
@@ -294,24 +294,24 @@ begin
       v.dataMuxValid(0) := dataValid(conv_integer(r.inputChannelA));
       v.dataMux(1)   := dataIn(conv_integer(r.inputChannelB));
       v.dataMuxValid(1) := dataValid(conv_integer(r.inputChannelB));
-      
+
       --------------------------------------------------
       -- Data write FSM
       --------------------------------------------------
-      
+
       for i in 1 downto 0 loop
-      
+
          v.wrEn(i) := '0';
-      
+
          case r.wrState(i) is
-            
-            -- wait trigger   
+
+            -- wait trigger
             when IDLE_S =>
                if armSel = '1' and r.buffRd(i)(conv_integer(r.wrBuffCnt(i))) = '0' and r.scopeEnable = '1' then
                   v.wrState(i) := ARMED_S;
                end if;
-            
-            when ARMED_S => 
+
+            when ARMED_S =>
                if trigSel = '1' then
                   if r.triggerOffset = 0 then
                      v.wrState(i) := WRITE_1_S;
@@ -319,21 +319,21 @@ begin
                      v.wrState(i) := OFFSET_S;
                   end if;
                end if;
-            
-            -- offset trigger   
+
+            -- offset trigger
             when OFFSET_S =>
                v. triggerCnt(i) := r. triggerCnt(i) + 1;
                if r. triggerCnt(i) >= r.triggerOffset then
                   v. triggerCnt(i) := (others=>'0');
                   v.wrState(i) := WRITE_1_S;
                end if;
-            
+
             when WRITE_1_S =>
                if r.dataMuxValid(i) = '1' then
                   v.wrEn(i) := '1';
                   v.wrState(i) := WRITE_S;
                end if;
-            
+
             -- write samles to ram
             when WRITE_S =>
                if r.dataMuxValid(i) = '1' then
@@ -352,18 +352,18 @@ begin
                      v.wrState(i) := IDLE_S;
                   end if;
                end if;
-            
+
             when others =>
                v.wrState(i) := IDLE_S;
-               
+
          end case;
-         
+
       end loop;
-      
+
       --------------------------------------------------
       -- Data stream FSM
       --------------------------------------------------
-      
+
       -- Reset strobing Signals
       if (txSlave.tReady = '1') then
          v.txMaster.tValid := '0';
@@ -372,15 +372,15 @@ begin
          v.txMaster.tKeep  := (others => '1');
          v.txMaster.tStrb  := (others => '1');
       end if;
-      
+
       case r.rdState is
-         
-         -- wait trigger   
+
+         -- wait trigger
          when IDLE_S =>
             if r.buffRd(0)(conv_integer(r.rdBuffCnt(0))) = '1' then
                v.rdState := HDR_S;
             end if;
-         
+
          when HDR_S =>
             if v.txMaster.tValid = '0' then
                v.wordCnt := r.wordCnt + 1;
@@ -402,7 +402,7 @@ begin
                   end if;
                end if;
             end if;
-            
+
          when DATA_A_S =>
             if v.txMaster.tValid = '0' then
                v.rdAddr(0) := r.rdAddr(0) + 1;
@@ -415,13 +415,13 @@ begin
                   v.buffRd(0)(conv_integer(r.rdBuffCnt(0))) := '0';
                end if;
             end if;
-            
+
          when WAIT_S =>
             if r.buffRd(1)(conv_integer(r.rdBuffCnt(1))) = '1' then
                v.rdState := DATA_B_S;
             end if;
-            
-            
+
+
          when DATA_B_S =>
             if v.txMaster.tValid = '0' then
                v.rdAddr(1) := r.rdAddr(1) + 1;
@@ -434,7 +434,7 @@ begin
                   v.buffRd(1)(conv_integer(r.rdBuffCnt(1))) := '0';
                end if;
             end if;
-         
+
          when FOOTER_S =>
             if v.txMaster.tValid = '0' then
                v.wordCnt := r.wordCnt + 1;
@@ -447,17 +447,17 @@ begin
                   v.rdState := IDLE_S;
                end if;
             end if;
-         
+
          when others =>
             v.rdState := IDLE_S;
-            
+
       end case;
-      
+
       if (rst = '1') then
          v := REG_INIT_C;
       end if;
 
-      rin <= v;   
+      rin <= v;
 
    end process comb;
 
@@ -467,7 +467,7 @@ begin
          r <= rin after TPD_G;
       end if;
    end process seq;
-   
+
    ----------------------------------------------------------------------
    -- sample buffers
    ----------------------------------------------------------------------
@@ -479,7 +479,7 @@ begin
          ADDR_WIDTH_G   => 14
       )
       port map (
-         -- Port A     
+         -- Port A
          clka     => clk,
          rsta     => rst,
          wea      => r.wrEn(i),
@@ -491,16 +491,16 @@ begin
          addrb    => addrb(i),
          doutb    => rdData(i)
       );
-      
+
       addra(i) <= r.wrBuffCnt(i) & r.wrAddr(i);
       addrb(i) <= r.rdBuffCnt(i) & r.rdAddr(i);
-      
+
    end generate;
-   
+
    ----------------------------------------------------------------------
    -- Output Axis FIFO
    ----------------------------------------------------------------------
-   
+
    U_AxisBuf : entity surf.AxiStreamFifoV2
    generic map (
       -- General Configurations

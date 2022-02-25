@@ -5,11 +5,11 @@
 -- Description:
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Development Firmware'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Development Firmware', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'EPIX Development Firmware', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -72,7 +72,7 @@ end SystemRegs;
 
 -- Define architecture
 architecture RTL of SystemRegs is
-   
+
    constant LATCH_TEMP_DEF_C  : sl                 := ite(USE_TEMP_FAULT_G, '1', '0');
    constant DEBOUNCE_PERIOD_C : real               := ite(SIM_SPEEDUP_G, 5.0E-6, 500.0E-3);
    constant ASIC_GR_INDEX_C   : natural            := ite(SIM_SPEEDUP_G, 5, 25);
@@ -180,18 +180,18 @@ architecture RTL of SystemRegs is
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
-   
+
    signal idValues   : Slv64Array(3 downto 0);
    signal idValids   : slv(3 downto 0);
-   
+
    signal tempAlert  : sl;
-   
+
    signal extTrig    : slv(2 downto 0);
-   
+
    signal idRstSync  : sl;
 
 begin
-   
+
    --------------------------------------------------
    -- TempAlert Filter
    --------------------------------------------------
@@ -208,8 +208,8 @@ begin
          i   => tempAlertL,
          o   => tempAlert
       );
-   
-   
+
+
    --------------------------------------------------
    -- External Trigger Synchronizers
    --------------------------------------------------
@@ -220,7 +220,7 @@ begin
          dataIn     => trigPgp,
          risingEdge => extTrig(0)
       );
-   
+
    U_TrigTtlEdge : entity surf.SynchronizerEdge
       port map (
          clk        => sysClk,
@@ -228,7 +228,7 @@ begin
          dataIn     => trigTtl,
          risingEdge => extTrig(1)
       );
-   
+
    U_TrigCmdEdge : entity surf.SynchronizerEdge
       port map (
          clk        => sysClk,
@@ -257,7 +257,7 @@ begin
 
       -- sync inputs
       v.ddrVttPok := ddrVttPok;
-      
+
       for i in 3 downto 0 loop
          if idValids(i) = '1' then
             v.idValues(i) := idValues(i);
@@ -270,14 +270,14 @@ begin
       elsif tempAlert = '1' then
          v.tempFault := '1';
       end if;
-      
+
       -- enable DCDCs if tempFault inactive
       if r.tempFault = '0' then
          v.dcdcEn := r.dcdcEnReg;
       else
          v.dcdcEn := "0000";
       end if;
-      
+
       -- enable ASIC LDOs only after its DCDC is already turned on
       -- digital has to be enabled first or same time with analog (enforced)
       if r.asicDigEnReg = '1' and r.dcdcEn(3) = '1' then
@@ -291,14 +291,14 @@ begin
       else
          v.asicAnaEn := '0';
       end if;
-      
+
       -- ASIC Global Reset Counter
       if r.asicDigEn = '0' then
          v.asicGrCnt := (others=>'0');
       elsif r.asicGrCnt(ASIC_GR_INDEX_C) = '0' then
          v.asicGrCnt := r.asicGrCnt + 1;
       end if;
-      
+
       -- Auto Trigger Counter and Pulse
       v.autoTrig := '0';
       if r.autoTrigReg > 0 then
@@ -314,7 +314,7 @@ begin
          v.autoTrig     := '1';
          v.autoTrigCnt  := (others=>'0');
       end if;
-      
+
       -- trigger source select
       if r.trigEn = '1' then
          if r.trigSrcSel = 0 then
@@ -331,7 +331,7 @@ begin
       else
          v.acqStart := '0';
       end if;
-      
+
       -- trigger rate monitoring
       if r.trigPerRst = '1' then
          v.trigPerMin := (others=>'1');
@@ -373,11 +373,11 @@ begin
       axiSlaveRegisterR(regCon, x"018", 0, tempAlert);
       axiSlaveRegisterR(regCon, x"01C", 0, r.tempFault);
       axiSlaveRegister (regCon, x"020", 0, v.latchTempFault);
-      
+
       axiSlaveRegister (regCon, x"024", 0, v.idRst);
       axiSlaveRegister (regCon, x"028", 0, v.asicMaskReg);
       axiSlaveRegisterR(regCon, x"028", 0, r.asicMask);
-      
+
       for i in 3 downto 0 loop
          axiSlaveRegisterR(regCon, x"030"+toSlv(i*8, 12), 0, r.idValues(i)(31 downto  0)); --ASIC carrier ID low
          axiSlaveRegisterR(regCon, x"034"+toSlv(i*8, 12), 0, r.idValues(i)(63 downto 32)); --ASIC carrier ID high
@@ -389,7 +389,7 @@ begin
          axiSlaveRegister(regCon, x"200"+toSlv(i*4, 12), 0, v.syncHalfClk(i));
          axiSlaveRegister(regCon, x"300"+toSlv(i*4, 12), 0, v.syncPhase(i));
       end loop;
-      
+
       axiSlaveRegister (regCon, x"400", 0, v.trigEn);
       axiSlaveRegister (regCon, x"404", 0, v.trigSrcSel);
       axiSlaveRegister (regCon, x"408", 0, v.autoTrigEn);
@@ -398,7 +398,7 @@ begin
       axiSlaveRegisterR(regCon, x"414", 0, r.trigPer);
       axiSlaveRegisterR(regCon, x"418", 0, r.trigPerMin);
       axiSlaveRegisterR(regCon, x"41C", 0, r.trigPerMax);
-      
+
       -- group of Microblaze ADC startup registers
       axiSlaveRegister (regCon, x"500", 0, v.adcClkRst);
       axiSlaveRegister (regCon, x"504", 0, v.adcReqStart);
@@ -409,16 +409,16 @@ begin
          axiSlaveRegister(regCon, x"514"+toSlv(i*4, 12), 0, v.adcChanFailed(i));
       end loop;
       axiSlaveRegister (regCon, x"540", 0, v.adcBypass);
-      
+
 
       -- Close out the AXI-Lite transaction
       axiSlaveDefault(regCon, v.sAxilWriteSlave, v.sAxilReadSlave, AXI_RESP_DECERR_C);
-      
+
       -- ASIC mask with a key to only allow MB to write
       if r.asicMaskReg(31 downto 16) = x"AAAA" then
          v.asicMask := r.asicMaskReg(15 downto 0);
       end if;
-      
+
       -- DCDC sync logic
       for i in 10 downto 0 loop
          if USE_DCDC_SYNC_G = true then
@@ -470,7 +470,7 @@ begin
 
       sAxilWriteSlave <= r.sAxilWriteSlave;
       sAxilReadSlave <= r.sAxilReadSlave;
-      
+
       usrRst      <= r.usrRst;
       adcClkRst   <= r.adcClkRst;
       adcReqStart <= r.adcReqStart;
@@ -492,10 +492,10 @@ begin
          r <= rin after TPD_G;
       end if;
    end process seq;
-   
+
    -----------------------------------------------
    -- ASIC carrier serial IDs
-   ----------------------------------------------- 
+   -----------------------------------------------
    U_IdRstSync: entity surf.Synchronizer
    port map (
       clk     => sysClk,
@@ -503,7 +503,7 @@ begin
       dataIn  => r.idRst,
       dataOut => idRstSync
    );
-   
+
    G_DS2411 : for i in 0 to 3 generate
       U_DS2411 : entity surf.DS2411Core
       generic map (

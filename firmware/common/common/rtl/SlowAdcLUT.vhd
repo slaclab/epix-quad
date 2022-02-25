@@ -6,15 +6,15 @@
 -- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
 -- Description:
--- This block is responsible for the conversion of the voltages, currents  
+-- This block is responsible for the conversion of the voltages, currents
 -- temperatures from the ADS1217 to the human readable data
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Development Firmware'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Development Firmware', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'EPIX Development Firmware', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -30,12 +30,12 @@ use work.SlowAdcPkg.all;
 --
 -- The Unisim Library is used to define Xilinx primitives. It is also used during
 -- simulation. The source can be viewed at %XILINX%\vhdl\src\unisims\unisim_VCOMP.vhd
---  
+--
 library unisim;
 use unisim.vcomponents.all;
 
-entity SlowAdcLUT is 
-   port ( 
+entity SlowAdcLUT is
+   port (
       -- Master system clock
       sysClk          : in  std_logic;
       sysClkRst       : in  std_logic;
@@ -56,21 +56,21 @@ architecture RTL of SlowAdcLUT is
    signal th0_h_data_out_a :  std_logic_vector(35 downto 0);
    signal th0_l_data_out_a :  std_logic_vector(35 downto 0);
    signal th0_data_out_a :    std_logic_vector(15 downto 0);
-   
+
    signal th1_address_a :     std_logic_vector(15 downto 0);
    signal th1_h_data_out_a :  std_logic_vector(35 downto 0);
    signal th1_l_data_out_a :  std_logic_vector(35 downto 0);
    signal th1_data_out_a :    std_logic_vector(15 downto 0);
-   
+
    signal hum_address_a :     std_logic_vector(15 downto 0);
    signal hum_h_data_out_a :  std_logic_vector(35 downto 0);
    signal hum_l_data_out_a :  std_logic_vector(35 downto 0);
    signal hum_data_out_a :    std_logic_vector(15 downto 0);
-   
+
    signal iana_address_a :    std_logic_vector(15 downto 0);
    signal iana_h_data_out_a : std_logic_vector(35 downto 0);
    signal iana_l_data_out_a : std_logic_vector(35 downto 0);
-   
+
    signal idig_address_a :    std_logic_vector(15 downto 0);
    signal idig_h_data_out_a : std_logic_vector(35 downto 0);
    signal idig_l_data_out_a : std_logic_vector(35 downto 0);
@@ -78,15 +78,15 @@ architecture RTL of SlowAdcLUT is
    signal igua_address_a :    std_logic_vector(15 downto 0);
    signal igua_h_data_out_a : std_logic_vector(35 downto 0);
    signal igua_l_data_out_a : std_logic_vector(35 downto 0);
-   
+
    signal ibia_address_a :    std_logic_vector(15 downto 0);
    signal ibia_h_data_out_a : std_logic_vector(35 downto 0);
    signal ibia_l_data_out_a : std_logic_vector(35 downto 0);
-   
+
    signal avin_address_a :    std_logic_vector(15 downto 0);
    signal avin_h_data_out_a : std_logic_vector(35 downto 0);
    signal avin_l_data_out_a : std_logic_vector(35 downto 0);
-   
+
    signal dvin_address_a :    std_logic_vector(15 downto 0);
    signal dvin_h_data_out_a : std_logic_vector(35 downto 0);
    signal dvin_l_data_out_a : std_logic_vector(35 downto 0);
@@ -94,7 +94,7 @@ architecture RTL of SlowAdcLUT is
 begin
 
 
-   th0_h_rom: RAMB36E1 generic map ( 
+   th0_h_rom: RAMB36E1 generic map (
       READ_WIDTH_A => 9,
       WRITE_WIDTH_A => 9,
       DOA_REG => 0,
@@ -246,14 +246,14 @@ begin
       INIT_7D => INIT_H_TH0_7D,
       INIT_7E => INIT_H_TH0_7E,
       INIT_7F => INIT_H_TH0_7F
-   ) port map(   
+   ) port map(
       ADDRARDADDR    => th0_address_a,
       ENARDEN        => '1',
       CLKARDCLK      => sysClk,
       DOADO          => th0_h_data_out_a(31 downto 0),
-      DOPADOP        => th0_h_data_out_a(35 downto 32), 
+      DOPADOP        => th0_h_data_out_a(35 downto 32),
       DIADI          => x"00000000",
-      DIPADIP        => x"0", 
+      DIPADIP        => x"0",
       WEA            => "0000",
       REGCEAREGCE    => '0',
       RSTRAMARSTRAM  => '0',
@@ -262,9 +262,9 @@ begin
       ENBWREN        => '0',
       CLKBWRCLK      => sysClk,
       DOBDO          => open,
-      DOPBDOP        => open, 
+      DOPBDOP        => open,
       DIBDI          => x"00000000",
-      DIPBDIP        => x"0", 
+      DIPBDIP        => x"0",
       WEBWE          => x"00",
       REGCEB         => '0',
       RSTRAMB        => '0',
@@ -274,10 +274,10 @@ begin
       INJECTDBITERR  => '0',
       INJECTSBITERR  => '0'
    );
-   
-   
-   
-   th0_l_rom: RAMB36E1 generic map ( 
+
+
+
+   th0_l_rom: RAMB36E1 generic map (
       READ_WIDTH_A => 9,
       WRITE_WIDTH_A => 9,
       DOA_REG => 0,
@@ -429,14 +429,14 @@ begin
       INIT_7D => INIT_L_TH0_7D,
       INIT_7E => INIT_L_TH0_7E,
       INIT_7F => INIT_L_TH0_7F
-   ) port map(   
+   ) port map(
       ADDRARDADDR    => th0_address_a,
       ENARDEN        => '1',
       CLKARDCLK      => sysClk,
       DOADO          => th0_l_data_out_a(31 downto 0),
-      DOPADOP        => th0_l_data_out_a(35 downto 32), 
+      DOPADOP        => th0_l_data_out_a(35 downto 32),
       DIADI          => x"00000000",
-      DIPADIP        => x"0", 
+      DIPADIP        => x"0",
       WEA            => "0000",
       REGCEAREGCE    => '0',
       RSTRAMARSTRAM  => '0',
@@ -445,9 +445,9 @@ begin
       ENBWREN        => '0',
       CLKBWRCLK      => sysClk,
       DOBDO          => open,
-      DOPBDOP        => open, 
+      DOPBDOP        => open,
       DIBDI          => x"00000000",
-      DIPBDIP        => x"0", 
+      DIPBDIP        => x"0",
       WEBWE          => x"00",
       REGCEB         => '0',
       RSTRAMB        => '0',
@@ -457,14 +457,14 @@ begin
       INJECTDBITERR  => '0',
       INJECTSBITERR  => '0'
    );
-   
+
    th0_address_a <= '1' & adcData(0)(23 downto 12) & "111";
    th0_data_out_a <= th0_h_data_out_a(7 downto 0) & th0_l_data_out_a(7 downto 0);
    outEnvData(0) <= std_logic_vector(resize(signed(th0_data_out_a), 32));
-   
-   
-   
-   th1_h_rom: RAMB36E1 generic map ( 
+
+
+
+   th1_h_rom: RAMB36E1 generic map (
       READ_WIDTH_A => 9,
       WRITE_WIDTH_A => 9,
       DOA_REG => 0,
@@ -616,14 +616,14 @@ begin
       INIT_7D => INIT_H_TH1_7D,
       INIT_7E => INIT_H_TH1_7E,
       INIT_7F => INIT_H_TH1_7F
-   ) port map(   
+   ) port map(
       ADDRARDADDR    => th1_address_a,
       ENARDEN        => '1',
       CLKARDCLK      => sysClk,
       DOADO          => th1_h_data_out_a(31 downto 0),
-      DOPADOP        => th1_h_data_out_a(35 downto 32), 
+      DOPADOP        => th1_h_data_out_a(35 downto 32),
       DIADI          => x"00000000",
-      DIPADIP        => x"0", 
+      DIPADIP        => x"0",
       WEA            => "0000",
       REGCEAREGCE    => '0',
       RSTRAMARSTRAM  => '0',
@@ -632,9 +632,9 @@ begin
       ENBWREN        => '0',
       CLKBWRCLK      => sysClk,
       DOBDO          => open,
-      DOPBDOP        => open, 
+      DOPBDOP        => open,
       DIBDI          => x"00000000",
-      DIPBDIP        => x"0", 
+      DIPBDIP        => x"0",
       WEBWE          => x"00",
       REGCEB         => '0',
       RSTRAMB        => '0',
@@ -644,10 +644,10 @@ begin
       INJECTDBITERR  => '0',
       INJECTSBITERR  => '0'
    );
-   
-   
-   
-   th1_l_rom: RAMB36E1 generic map ( 
+
+
+
+   th1_l_rom: RAMB36E1 generic map (
       READ_WIDTH_A => 9,
       WRITE_WIDTH_A => 9,
       DOA_REG => 0,
@@ -799,14 +799,14 @@ begin
       INIT_7D => INIT_L_TH1_7D,
       INIT_7E => INIT_L_TH1_7E,
       INIT_7F => INIT_L_TH1_7F
-   ) port map(   
+   ) port map(
       ADDRARDADDR    => th1_address_a,
       ENARDEN        => '1',
       CLKARDCLK      => sysClk,
       DOADO          => th1_l_data_out_a(31 downto 0),
-      DOPADOP        => th1_l_data_out_a(35 downto 32), 
+      DOPADOP        => th1_l_data_out_a(35 downto 32),
       DIADI          => x"00000000",
-      DIPADIP        => x"0", 
+      DIPADIP        => x"0",
       WEA            => "0000",
       REGCEAREGCE    => '0',
       RSTRAMARSTRAM  => '0',
@@ -815,9 +815,9 @@ begin
       ENBWREN        => '0',
       CLKBWRCLK      => sysClk,
       DOBDO          => open,
-      DOPBDOP        => open, 
+      DOPBDOP        => open,
       DIBDI          => x"00000000",
-      DIPBDIP        => x"0", 
+      DIPBDIP        => x"0",
       WEBWE          => x"00",
       REGCEB         => '0',
       RSTRAMB        => '0',
@@ -827,13 +827,13 @@ begin
       INJECTDBITERR  => '0',
       INJECTSBITERR  => '0'
    );
-   
+
    th1_address_a <= '1' & adcData(1)(23 downto 12) & "111";
    th1_data_out_a <= th1_h_data_out_a(7 downto 0) & th1_l_data_out_a(7 downto 0);
    outEnvData(1) <= std_logic_vector(resize(signed(th1_data_out_a), 32));
-   
-   
-   hum_h_rom: RAMB36E1 generic map ( 
+
+
+   hum_h_rom: RAMB36E1 generic map (
       READ_WIDTH_A => 9,
       WRITE_WIDTH_A => 9,
       DOA_REG => 0,
@@ -985,14 +985,14 @@ begin
       INIT_7D => INIT_H_HUM_7D,
       INIT_7E => INIT_H_HUM_7E,
       INIT_7F => INIT_H_HUM_7F
-   ) port map(   
+   ) port map(
       ADDRARDADDR    => hum_address_a,
       ENARDEN        => '1',
       CLKARDCLK      => sysClk,
       DOADO          => hum_h_data_out_a(31 downto 0),
-      DOPADOP        => hum_h_data_out_a(35 downto 32), 
+      DOPADOP        => hum_h_data_out_a(35 downto 32),
       DIADI          => x"00000000",
-      DIPADIP        => x"0", 
+      DIPADIP        => x"0",
       WEA            => "0000",
       REGCEAREGCE    => '0',
       RSTRAMARSTRAM  => '0',
@@ -1001,9 +1001,9 @@ begin
       ENBWREN        => '0',
       CLKBWRCLK      => sysClk,
       DOBDO          => open,
-      DOPBDOP        => open, 
+      DOPBDOP        => open,
       DIBDI          => x"00000000",
-      DIPBDIP        => x"0", 
+      DIPBDIP        => x"0",
       WEBWE          => x"00",
       REGCEB         => '0',
       RSTRAMB        => '0',
@@ -1013,10 +1013,10 @@ begin
       INJECTDBITERR  => '0',
       INJECTSBITERR  => '0'
    );
-   
-   
-   
-   hum_l_rom: RAMB36E1 generic map ( 
+
+
+
+   hum_l_rom: RAMB36E1 generic map (
       READ_WIDTH_A => 9,
       WRITE_WIDTH_A => 9,
       DOA_REG => 0,
@@ -1168,14 +1168,14 @@ begin
       INIT_7D => INIT_L_HUM_7D,
       INIT_7E => INIT_L_HUM_7E,
       INIT_7F => INIT_L_HUM_7F
-   ) port map(   
+   ) port map(
       ADDRARDADDR    => hum_address_a,
       ENARDEN        => '1',
       CLKARDCLK      => sysClk,
       DOADO          => hum_l_data_out_a(31 downto 0),
-      DOPADOP        => hum_l_data_out_a(35 downto 32), 
+      DOPADOP        => hum_l_data_out_a(35 downto 32),
       DIADI          => x"00000000",
-      DIPADIP        => x"0", 
+      DIPADIP        => x"0",
       WEA            => "0000",
       REGCEAREGCE    => '0',
       RSTRAMARSTRAM  => '0',
@@ -1184,9 +1184,9 @@ begin
       ENBWREN        => '0',
       CLKBWRCLK      => sysClk,
       DOBDO          => open,
-      DOPBDOP        => open, 
+      DOPBDOP        => open,
       DIBDI          => x"00000000",
-      DIPBDIP        => x"0", 
+      DIPBDIP        => x"0",
       WEBWE          => x"00",
       REGCEB         => '0',
       RSTRAMB        => '0',
@@ -1196,12 +1196,12 @@ begin
       INJECTDBITERR  => '0',
       INJECTSBITERR  => '0'
    );
-   
+
    hum_address_a <= '1' & adcData(2)(23 downto 12) & "111";
    hum_data_out_a <= hum_h_data_out_a(7 downto 0) & hum_l_data_out_a(7 downto 0);
    outEnvData(2) <= std_logic_vector(resize(signed(hum_data_out_a), 32));
-   
-   iana_h_rom: RAMB36E1 generic map ( 
+
+   iana_h_rom: RAMB36E1 generic map (
       READ_WIDTH_A => 9,
       WRITE_WIDTH_A => 9,
       DOA_REG => 0,
@@ -1353,14 +1353,14 @@ begin
       INIT_7D => INIT_H_IANA_7D,
       INIT_7E => INIT_H_IANA_7E,
       INIT_7F => INIT_H_IANA_7F
-   ) port map(   
+   ) port map(
       ADDRARDADDR    => iana_address_a,
       ENARDEN        => '1',
       CLKARDCLK      => sysClk,
       DOADO          => iana_h_data_out_a(31 downto 0),
-      DOPADOP        => iana_h_data_out_a(35 downto 32), 
+      DOPADOP        => iana_h_data_out_a(35 downto 32),
       DIADI          => x"00000000",
-      DIPADIP        => x"0", 
+      DIPADIP        => x"0",
       WEA            => "0000",
       REGCEAREGCE    => '0',
       RSTRAMARSTRAM  => '0',
@@ -1369,9 +1369,9 @@ begin
       ENBWREN        => '0',
       CLKBWRCLK      => sysClk,
       DOBDO          => open,
-      DOPBDOP        => open, 
+      DOPBDOP        => open,
       DIBDI          => x"00000000",
-      DIPBDIP        => x"0", 
+      DIPBDIP        => x"0",
       WEBWE          => x"00",
       REGCEB         => '0',
       RSTRAMB        => '0',
@@ -1381,10 +1381,10 @@ begin
       INJECTDBITERR  => '0',
       INJECTSBITERR  => '0'
    );
-   
-   
-   
-   iana_l_rom: RAMB36E1 generic map ( 
+
+
+
+   iana_l_rom: RAMB36E1 generic map (
       READ_WIDTH_A => 9,
       WRITE_WIDTH_A => 9,
       DOA_REG => 0,
@@ -1536,14 +1536,14 @@ begin
       INIT_7D => INIT_L_IANA_7D,
       INIT_7E => INIT_L_IANA_7E,
       INIT_7F => INIT_L_IANA_7F
-   ) port map(   
+   ) port map(
       ADDRARDADDR    => iana_address_a,
       ENARDEN        => '1',
       CLKARDCLK      => sysClk,
       DOADO          => iana_l_data_out_a(31 downto 0),
-      DOPADOP        => iana_l_data_out_a(35 downto 32), 
+      DOPADOP        => iana_l_data_out_a(35 downto 32),
       DIADI          => x"00000000",
-      DIPADIP        => x"0", 
+      DIPADIP        => x"0",
       WEA            => "0000",
       REGCEAREGCE    => '0',
       RSTRAMARSTRAM  => '0',
@@ -1552,9 +1552,9 @@ begin
       ENBWREN        => '0',
       CLKBWRCLK      => sysClk,
       DOBDO          => open,
-      DOPBDOP        => open, 
+      DOPBDOP        => open,
       DIBDI          => x"00000000",
-      DIPBDIP        => x"0", 
+      DIPBDIP        => x"0",
       WEBWE          => x"00",
       REGCEB         => '0',
       RSTRAMB        => '0',
@@ -1564,12 +1564,12 @@ begin
       INJECTDBITERR  => '0',
       INJECTSBITERR  => '0'
    );
-   
+
    iana_address_a <= '1' & adcData(3)(23 downto 12) & "111";
    outEnvData(3) <= x"0000" & iana_h_data_out_a(7 downto 0) & iana_l_data_out_a(7 downto 0);
-   
-   
-   idig_h_rom: RAMB36E1 generic map ( 
+
+
+   idig_h_rom: RAMB36E1 generic map (
       READ_WIDTH_A => 9,
       WRITE_WIDTH_A => 9,
       DOA_REG => 0,
@@ -1721,14 +1721,14 @@ begin
       INIT_7D => INIT_H_IDIG_7D,
       INIT_7E => INIT_H_IDIG_7E,
       INIT_7F => INIT_H_IDIG_7F
-   ) port map(   
+   ) port map(
       ADDRARDADDR    => idig_address_a,
       ENARDEN        => '1',
       CLKARDCLK      => sysClk,
       DOADO          => idig_h_data_out_a(31 downto 0),
-      DOPADOP        => idig_h_data_out_a(35 downto 32), 
+      DOPADOP        => idig_h_data_out_a(35 downto 32),
       DIADI          => x"00000000",
-      DIPADIP        => x"0", 
+      DIPADIP        => x"0",
       WEA            => "0000",
       REGCEAREGCE    => '0',
       RSTRAMARSTRAM  => '0',
@@ -1737,9 +1737,9 @@ begin
       ENBWREN        => '0',
       CLKBWRCLK      => sysClk,
       DOBDO          => open,
-      DOPBDOP        => open, 
+      DOPBDOP        => open,
       DIBDI          => x"00000000",
-      DIPBDIP        => x"0", 
+      DIPBDIP        => x"0",
       WEBWE          => x"00",
       REGCEB         => '0',
       RSTRAMB        => '0',
@@ -1749,10 +1749,10 @@ begin
       INJECTDBITERR  => '0',
       INJECTSBITERR  => '0'
    );
-   
-   
-   
-   idig_l_rom: RAMB36E1 generic map ( 
+
+
+
+   idig_l_rom: RAMB36E1 generic map (
       READ_WIDTH_A => 9,
       WRITE_WIDTH_A => 9,
       DOA_REG => 0,
@@ -1904,14 +1904,14 @@ begin
       INIT_7D => INIT_L_IDIG_7D,
       INIT_7E => INIT_L_IDIG_7E,
       INIT_7F => INIT_L_IDIG_7F
-   ) port map(   
+   ) port map(
       ADDRARDADDR    => idig_address_a,
       ENARDEN        => '1',
       CLKARDCLK      => sysClk,
       DOADO          => idig_l_data_out_a(31 downto 0),
-      DOPADOP        => idig_l_data_out_a(35 downto 32), 
+      DOPADOP        => idig_l_data_out_a(35 downto 32),
       DIADI          => x"00000000",
-      DIPADIP        => x"0", 
+      DIPADIP        => x"0",
       WEA            => "0000",
       REGCEAREGCE    => '0',
       RSTRAMARSTRAM  => '0',
@@ -1920,9 +1920,9 @@ begin
       ENBWREN        => '0',
       CLKBWRCLK      => sysClk,
       DOBDO          => open,
-      DOPBDOP        => open, 
+      DOPBDOP        => open,
       DIBDI          => x"00000000",
-      DIPBDIP        => x"0", 
+      DIPBDIP        => x"0",
       WEBWE          => x"00",
       REGCEB         => '0',
       RSTRAMB        => '0',
@@ -1932,12 +1932,12 @@ begin
       INJECTDBITERR  => '0',
       INJECTSBITERR  => '0'
    );
-   
+
    idig_address_a <= '1' & adcData(4)(23 downto 12) & "111";
    outEnvData(4) <= x"0000" & idig_h_data_out_a(7 downto 0) & idig_l_data_out_a(7 downto 0);
-   
-   
-   igua_h_rom: RAMB36E1 generic map ( 
+
+
+   igua_h_rom: RAMB36E1 generic map (
       READ_WIDTH_A => 9,
       WRITE_WIDTH_A => 9,
       DOA_REG => 0,
@@ -2089,14 +2089,14 @@ begin
       INIT_7D => INIT_H_IGUA_7D,
       INIT_7E => INIT_H_IGUA_7E,
       INIT_7F => INIT_H_IGUA_7F
-   ) port map(   
+   ) port map(
       ADDRARDADDR    => igua_address_a,
       ENARDEN        => '1',
       CLKARDCLK      => sysClk,
       DOADO          => igua_h_data_out_a(31 downto 0),
-      DOPADOP        => igua_h_data_out_a(35 downto 32), 
+      DOPADOP        => igua_h_data_out_a(35 downto 32),
       DIADI          => x"00000000",
-      DIPADIP        => x"0", 
+      DIPADIP        => x"0",
       WEA            => "0000",
       REGCEAREGCE    => '0',
       RSTRAMARSTRAM  => '0',
@@ -2105,9 +2105,9 @@ begin
       ENBWREN        => '0',
       CLKBWRCLK      => sysClk,
       DOBDO          => open,
-      DOPBDOP        => open, 
+      DOPBDOP        => open,
       DIBDI          => x"00000000",
-      DIPBDIP        => x"0", 
+      DIPBDIP        => x"0",
       WEBWE          => x"00",
       REGCEB         => '0',
       RSTRAMB        => '0',
@@ -2117,10 +2117,10 @@ begin
       INJECTDBITERR  => '0',
       INJECTSBITERR  => '0'
    );
-   
-   
-   
-   igua_l_rom: RAMB36E1 generic map ( 
+
+
+
+   igua_l_rom: RAMB36E1 generic map (
       READ_WIDTH_A => 9,
       WRITE_WIDTH_A => 9,
       DOA_REG => 0,
@@ -2272,14 +2272,14 @@ begin
       INIT_7D => INIT_L_IGUA_7D,
       INIT_7E => INIT_L_IGUA_7E,
       INIT_7F => INIT_L_IGUA_7F
-   ) port map(   
+   ) port map(
       ADDRARDADDR    => igua_address_a,
       ENARDEN        => '1',
       CLKARDCLK      => sysClk,
       DOADO          => igua_l_data_out_a(31 downto 0),
-      DOPADOP        => igua_l_data_out_a(35 downto 32), 
+      DOPADOP        => igua_l_data_out_a(35 downto 32),
       DIADI          => x"00000000",
-      DIPADIP        => x"0", 
+      DIPADIP        => x"0",
       WEA            => "0000",
       REGCEAREGCE    => '0',
       RSTRAMARSTRAM  => '0',
@@ -2288,9 +2288,9 @@ begin
       ENBWREN        => '0',
       CLKBWRCLK      => sysClk,
       DOBDO          => open,
-      DOPBDOP        => open, 
+      DOPBDOP        => open,
       DIBDI          => x"00000000",
-      DIPBDIP        => x"0", 
+      DIPBDIP        => x"0",
       WEBWE          => x"00",
       REGCEB         => '0',
       RSTRAMB        => '0',
@@ -2300,12 +2300,12 @@ begin
       INJECTDBITERR  => '0',
       INJECTSBITERR  => '0'
    );
-   
+
    igua_address_a <= '1' & adcData(5)(23 downto 12) & "111";
    outEnvData(5) <= x"0000" & igua_h_data_out_a(7 downto 0) & igua_l_data_out_a(7 downto 0);
-   
-   
-   ibia_h_rom: RAMB36E1 generic map ( 
+
+
+   ibia_h_rom: RAMB36E1 generic map (
       READ_WIDTH_A => 9,
       WRITE_WIDTH_A => 9,
       DOA_REG => 0,
@@ -2457,14 +2457,14 @@ begin
       INIT_7D => INIT_H_IBIA_7D,
       INIT_7E => INIT_H_IBIA_7E,
       INIT_7F => INIT_H_IBIA_7F
-   ) port map(   
+   ) port map(
       ADDRARDADDR    => ibia_address_a,
       ENARDEN        => '1',
       CLKARDCLK      => sysClk,
       DOADO          => ibia_h_data_out_a(31 downto 0),
-      DOPADOP        => ibia_h_data_out_a(35 downto 32), 
+      DOPADOP        => ibia_h_data_out_a(35 downto 32),
       DIADI          => x"00000000",
-      DIPADIP        => x"0", 
+      DIPADIP        => x"0",
       WEA            => "0000",
       REGCEAREGCE    => '0',
       RSTRAMARSTRAM  => '0',
@@ -2473,9 +2473,9 @@ begin
       ENBWREN        => '0',
       CLKBWRCLK      => sysClk,
       DOBDO          => open,
-      DOPBDOP        => open, 
+      DOPBDOP        => open,
       DIBDI          => x"00000000",
-      DIPBDIP        => x"0", 
+      DIPBDIP        => x"0",
       WEBWE          => x"00",
       REGCEB         => '0',
       RSTRAMB        => '0',
@@ -2485,10 +2485,10 @@ begin
       INJECTDBITERR  => '0',
       INJECTSBITERR  => '0'
    );
-   
-   
-   
-   ibia_l_rom: RAMB36E1 generic map ( 
+
+
+
+   ibia_l_rom: RAMB36E1 generic map (
       READ_WIDTH_A => 9,
       WRITE_WIDTH_A => 9,
       DOA_REG => 0,
@@ -2640,14 +2640,14 @@ begin
       INIT_7D => INIT_L_IBIA_7D,
       INIT_7E => INIT_L_IBIA_7E,
       INIT_7F => INIT_L_IBIA_7F
-   ) port map(   
+   ) port map(
       ADDRARDADDR    => ibia_address_a,
       ENARDEN        => '1',
       CLKARDCLK      => sysClk,
       DOADO          => ibia_l_data_out_a(31 downto 0),
-      DOPADOP        => ibia_l_data_out_a(35 downto 32), 
+      DOPADOP        => ibia_l_data_out_a(35 downto 32),
       DIADI          => x"00000000",
-      DIPADIP        => x"0", 
+      DIPADIP        => x"0",
       WEA            => "0000",
       REGCEAREGCE    => '0',
       RSTRAMARSTRAM  => '0',
@@ -2656,9 +2656,9 @@ begin
       ENBWREN        => '0',
       CLKBWRCLK      => sysClk,
       DOBDO          => open,
-      DOPBDOP        => open, 
+      DOPBDOP        => open,
       DIBDI          => x"00000000",
-      DIPBDIP        => x"0", 
+      DIPBDIP        => x"0",
       WEBWE          => x"00",
       REGCEB         => '0',
       RSTRAMB        => '0',
@@ -2668,12 +2668,12 @@ begin
       INJECTDBITERR  => '0',
       INJECTSBITERR  => '0'
    );
-   
+
    ibia_address_a <= '1' & adcData(6)(23 downto 12) & "111";
    outEnvData(6) <= x"0000" & ibia_h_data_out_a(7 downto 0) & ibia_l_data_out_a(7 downto 0);
-   
-   
-   avin_h_rom: RAMB36E1 generic map ( 
+
+
+   avin_h_rom: RAMB36E1 generic map (
       READ_WIDTH_A => 9,
       WRITE_WIDTH_A => 9,
       DOA_REG => 0,
@@ -2825,14 +2825,14 @@ begin
       INIT_7D => INIT_H_AVIN_7D,
       INIT_7E => INIT_H_AVIN_7E,
       INIT_7F => INIT_H_AVIN_7F
-   ) port map(   
+   ) port map(
       ADDRARDADDR    => avin_address_a,
       ENARDEN        => '1',
       CLKARDCLK      => sysClk,
       DOADO          => avin_h_data_out_a(31 downto 0),
-      DOPADOP        => avin_h_data_out_a(35 downto 32), 
+      DOPADOP        => avin_h_data_out_a(35 downto 32),
       DIADI          => x"00000000",
-      DIPADIP        => x"0", 
+      DIPADIP        => x"0",
       WEA            => "0000",
       REGCEAREGCE    => '0',
       RSTRAMARSTRAM  => '0',
@@ -2841,9 +2841,9 @@ begin
       ENBWREN        => '0',
       CLKBWRCLK      => sysClk,
       DOBDO          => open,
-      DOPBDOP        => open, 
+      DOPBDOP        => open,
       DIBDI          => x"00000000",
-      DIPBDIP        => x"0", 
+      DIPBDIP        => x"0",
       WEBWE          => x"00",
       REGCEB         => '0',
       RSTRAMB        => '0',
@@ -2853,10 +2853,10 @@ begin
       INJECTDBITERR  => '0',
       INJECTSBITERR  => '0'
    );
-   
-   
-   
-   avin_l_rom: RAMB36E1 generic map ( 
+
+
+
+   avin_l_rom: RAMB36E1 generic map (
       READ_WIDTH_A => 9,
       WRITE_WIDTH_A => 9,
       DOA_REG => 0,
@@ -3008,14 +3008,14 @@ begin
       INIT_7D => INIT_L_AVIN_7D,
       INIT_7E => INIT_L_AVIN_7E,
       INIT_7F => INIT_L_AVIN_7F
-   ) port map(   
+   ) port map(
       ADDRARDADDR    => avin_address_a,
       ENARDEN        => '1',
       CLKARDCLK      => sysClk,
       DOADO          => avin_l_data_out_a(31 downto 0),
-      DOPADOP        => avin_l_data_out_a(35 downto 32), 
+      DOPADOP        => avin_l_data_out_a(35 downto 32),
       DIADI          => x"00000000",
-      DIPADIP        => x"0", 
+      DIPADIP        => x"0",
       WEA            => "0000",
       REGCEAREGCE    => '0',
       RSTRAMARSTRAM  => '0',
@@ -3024,9 +3024,9 @@ begin
       ENBWREN        => '0',
       CLKBWRCLK      => sysClk,
       DOBDO          => open,
-      DOPBDOP        => open, 
+      DOPBDOP        => open,
       DIBDI          => x"00000000",
-      DIPBDIP        => x"0", 
+      DIPBDIP        => x"0",
       WEBWE          => x"00",
       REGCEB         => '0',
       RSTRAMB        => '0',
@@ -3036,12 +3036,12 @@ begin
       INJECTDBITERR  => '0',
       INJECTSBITERR  => '0'
    );
-   
+
    avin_address_a <= '1' & adcData(7)(23 downto 12) & "111";
    outEnvData(7) <= x"0000" & avin_h_data_out_a(7 downto 0) & avin_l_data_out_a(7 downto 0);
-   
-   
-   dvin_h_rom: RAMB36E1 generic map ( 
+
+
+   dvin_h_rom: RAMB36E1 generic map (
       READ_WIDTH_A => 9,
       WRITE_WIDTH_A => 9,
       DOA_REG => 0,
@@ -3193,14 +3193,14 @@ begin
       INIT_7D => INIT_H_DVIN_7D,
       INIT_7E => INIT_H_DVIN_7E,
       INIT_7F => INIT_H_DVIN_7F
-   ) port map(   
+   ) port map(
       ADDRARDADDR    => dvin_address_a,
       ENARDEN        => '1',
       CLKARDCLK      => sysClk,
       DOADO          => dvin_h_data_out_a(31 downto 0),
-      DOPADOP        => dvin_h_data_out_a(35 downto 32), 
+      DOPADOP        => dvin_h_data_out_a(35 downto 32),
       DIADI          => x"00000000",
-      DIPADIP        => x"0", 
+      DIPADIP        => x"0",
       WEA            => "0000",
       REGCEAREGCE    => '0',
       RSTRAMARSTRAM  => '0',
@@ -3209,9 +3209,9 @@ begin
       ENBWREN        => '0',
       CLKBWRCLK      => sysClk,
       DOBDO          => open,
-      DOPBDOP        => open, 
+      DOPBDOP        => open,
       DIBDI          => x"00000000",
-      DIPBDIP        => x"0", 
+      DIPBDIP        => x"0",
       WEBWE          => x"00",
       REGCEB         => '0',
       RSTRAMB        => '0',
@@ -3221,10 +3221,10 @@ begin
       INJECTDBITERR  => '0',
       INJECTSBITERR  => '0'
    );
-   
-   
-   
-   dvin_l_rom: RAMB36E1 generic map ( 
+
+
+
+   dvin_l_rom: RAMB36E1 generic map (
       READ_WIDTH_A => 9,
       WRITE_WIDTH_A => 9,
       DOA_REG => 0,
@@ -3376,14 +3376,14 @@ begin
       INIT_7D => INIT_L_DVIN_7D,
       INIT_7E => INIT_L_DVIN_7E,
       INIT_7F => INIT_L_DVIN_7F
-   ) port map(   
+   ) port map(
       ADDRARDADDR    => dvin_address_a,
       ENARDEN        => '1',
       CLKARDCLK      => sysClk,
       DOADO          => dvin_l_data_out_a(31 downto 0),
-      DOPADOP        => dvin_l_data_out_a(35 downto 32), 
+      DOPADOP        => dvin_l_data_out_a(35 downto 32),
       DIADI          => x"00000000",
-      DIPADIP        => x"0", 
+      DIPADIP        => x"0",
       WEA            => "0000",
       REGCEAREGCE    => '0',
       RSTRAMARSTRAM  => '0',
@@ -3392,9 +3392,9 @@ begin
       ENBWREN        => '0',
       CLKBWRCLK      => sysClk,
       DOBDO          => open,
-      DOPBDOP        => open, 
+      DOPBDOP        => open,
       DIBDI          => x"00000000",
-      DIPBDIP        => x"0", 
+      DIPBDIP        => x"0",
       WEBWE          => x"00",
       REGCEB         => '0',
       RSTRAMB        => '0',
@@ -3404,7 +3404,7 @@ begin
       INJECTDBITERR  => '0',
       INJECTSBITERR  => '0'
    );
-   
+
    dvin_address_a <= '1' & adcData(8)(23 downto 12) & "111";
    outEnvData(8) <= x"0000" & dvin_h_data_out_a(7 downto 0) & dvin_l_data_out_a(7 downto 0);
 

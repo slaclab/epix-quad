@@ -5,11 +5,11 @@
 -- Description: Maps a number of I2C devices on an I2C bus onto an AXI Bus.
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Development Firmware'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Development Firmware', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'EPIX Development Firmware', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -49,7 +49,7 @@ entity AxiI2cMaster is
 end entity AxiI2cMaster;
 
 architecture rtl of AxiI2cMaster is
-   
+
    -- Note: PRESCALE_G = (clk_freq / (5 * i2c_freq)) - 1
    --       FILTER_G = (min_pulse_time / clk_period) + 1
    constant I2C_SCL_5xFREQ_C : real    := 5.0 * I2C_SCL_FREQ_G;
@@ -76,10 +76,10 @@ architecture rtl of AxiI2cMaster is
 
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
-   
+
    signal i2cRegMasterIn  : I2cRegMasterInType;
    signal i2cRegMasterOut : I2cRegMasterOutType;
-   
+
    signal i2ci : i2c_in_type;
    signal i2co : i2c_out_type;
 
@@ -93,7 +93,7 @@ begin
       variable regCon    : AxiLiteEndPointType;
    begin
       v := r;
-      
+
       -- clear request flag and store data if read op
       if (i2cRegMasterOut.regAck = '1' and r.i2cRegMasterIn.regReq = '1') then
          v.i2cRegMasterIn.regReq := '0';
@@ -108,11 +108,11 @@ begin
             v.regFail     := '0';
          end if;
       end if;
-      
+
       ------------------------------------------------------------------------------------------------
       -- Register access
       ------------------------------------------------------------------------------------------------
-      
+
       -- Determine the AXI-Lite transaction
       axiSlaveWaitTxn(regCon, axiWriteMaster, axiReadMaster, v.axiWriteSlave, v.axiReadSlave);
 
@@ -130,10 +130,10 @@ begin
       axiSlaveRegisterR(regCon, x"02C", 0, r.regRdData);
       axiSlaveRegisterR(regCon, x"030", 0, r.regFail);
       axiSlaveRegisterR(regCon, x"034", 0, r.regFailCode);
-      
+
       -- Close out the AXI-Lite transaction
       axiSlaveDefault(regCon, v.axiWriteSlave, v.axiReadSlave, AXI_RESP_DECERR_C);
-      
+
 
       ----------------------------------------------------------------------------------------------
       -- Reset
@@ -159,11 +159,11 @@ begin
          r <= rin after TPD_G;
       end if;
    end process seq;
-   
+
    -------------------------------------------------------------------------------------------------
    -- I2cRegMaster
    -------------------------------------------------------------------------------------------------
-   
+
    I2cRegMaster_Inst : entity surf.I2cRegMaster
       generic map(
          TPD_G                => TPD_G,
@@ -186,14 +186,14 @@ begin
          O  => i2ci.scl,                -- Buffer output
          IO => scl,                     -- Buffer inout port (connect directly to top-level port)
          I  => i2co.scl,                -- Buffer input
-         T  => i2co.scloen);            -- 3-state enable input, high=input, low=output  
+         T  => i2co.scloen);            -- 3-state enable input, high=input, low=output
 
    IOBUF_SDA : IOBUF
       port map (
          O  => i2ci.sda,                -- Buffer output
          IO => sda,                     -- Buffer inout port (connect directly to top-level port)
          I  => i2co.sda,                -- Buffer input
-         T  => i2co.sdaoen);            -- 3-state enable input, high=input, low=output  
+         T  => i2co.sdaoen);            -- 3-state enable input, high=input, low=output
 
 end architecture rtl;
 

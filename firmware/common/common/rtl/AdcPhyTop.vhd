@@ -2,14 +2,14 @@
 -- File       : AdcPhyTop.vhd
 -- Company    : SLAC National Accelerator Laboratory
 -------------------------------------------------------------------------------
--- Description: 
+-- Description:
 -------------------------------------------------------------------------------
 -- This file is part of 'EPIX Development Firmware'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'EPIX Development Firmware', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'EPIX Development Firmware', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -71,21 +71,21 @@ entity AdcPhyTop is
 end AdcPhyTop;
 
 architecture rtl of AdcPhyTop is
-   
+
    constant NUM_AXI_MASTER_SLOTS_C : natural := 5;
-   
+
    constant ADCTEST_AXI_INDEX_C     : natural := 0;
    constant ADC0_RD_AXI_INDEX_C     : natural := 1;
    constant ADC1_RD_AXI_INDEX_C     : natural := 2;
    constant ADC2_RD_AXI_INDEX_C     : natural := 3;
    constant ADC_CFG_AXI_INDEX_C     : natural := 4;
-   
+
    constant ADCTEST_AXI_BASE_ADDR_C   : slv(31 downto 0) := AXI_BASE_ADDR_G + X"00000000";
    constant ADC0_RD_AXI_BASE_ADDR_C   : slv(31 downto 0) := AXI_BASE_ADDR_G + X"00100000";
    constant ADC1_RD_AXI_BASE_ADDR_C   : slv(31 downto 0) := AXI_BASE_ADDR_G + X"00200000";
    constant ADC2_RD_AXI_BASE_ADDR_C   : slv(31 downto 0) := AXI_BASE_ADDR_G + X"00300000";
    constant ADC_CFG_AXI_BASE_ADDR_C   : slv(31 downto 0) := AXI_BASE_ADDR_G + X"00400000";
-   
+
    constant AXI_CROSSBAR_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0) := (
       ADCTEST_AXI_INDEX_C     => (
          baseAddr             => ADCTEST_AXI_BASE_ADDR_C,
@@ -108,41 +108,41 @@ architecture rtl of AdcPhyTop is
          addrBits             => 20,
          connectivity         => x"FFFF")
    );
-   
+
    -- AXI-Lite Signals
-   signal mAxiWriteMasters : AxiLiteWriteMasterArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
-   signal mAxiWriteSlaves  : AxiLiteWriteSlaveArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
-   signal mAxiReadMasters  : AxiLiteReadMasterArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
-   signal mAxiReadSlaves   : AxiLiteReadSlaveArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0); 
-   
+   signal mAxiWriteMasters : AxiLiteWriteMasterArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0);
+   signal mAxiWriteSlaves  : AxiLiteWriteSlaveArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0);
+   signal mAxiReadMasters  : AxiLiteReadMasterArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0);
+   signal mAxiReadSlaves   : AxiLiteReadSlaveArray(NUM_AXI_MASTER_SLOTS_C-1 downto 0);
+
    -- ADC signals
    signal iAdcStreams       : AxiStreamMasterArray(19 downto 0);
-   
+
    -- Power up reset to SERDES block
    signal adcCardPowerUpEdge : sl;
    signal serdesReset        : sl;
-   
+
    signal monAdc     : Ad9249SerialGroupType;
    signal asicAdc    : Ad9249SerialGroupArray(1 downto 0);
-   
+
    signal iAdcSpiCsb : slv(3 downto 0);
    signal iAdcPdwn   : slv(3 downto 0);
-   
-   
+
+
    constant ADC_INVERT_CH_C : Slv8Array(1 downto 0) := (
       0 => ADC0_INVERT_CH,
       1 => ADC1_INVERT_CH
    );
-   
+
    attribute IODELAY_GROUP : string;
    attribute IODELAY_GROUP of U_IDelayCtrl : label is IODELAY_GROUP_G;
-   
+
 begin
-   
+
    --------------------------------------------
-   -- AXI Lite Crossbar 
+   -- AXI Lite Crossbar
    --------------------------------------------
-   
+
    U_AxiLiteCrossbar : entity surf.AxiLiteCrossbar
    generic map (
       NUM_SLAVE_SLOTS_G  => 1,
@@ -160,28 +160,28 @@ begin
       axiClk              => coreClk,
       axiClkRst           => coreRst
    );
-   
+
    --------------------------------------------
    --     Fast ADC Readout                   --
    --------------------------------------------
-   
-   -- Tap delay calibration  
+
+   -- Tap delay calibration
    U_IDelayCtrl : IDELAYCTRL
    port map (
       REFCLK => delayCtrlClk,
       RST    => delayCtrlRst,
       RDY    => delayCtrlRdy
    );
-   
-   G_AdcReadout : for i in 0 to 1 generate 
-   
+
+   G_AdcReadout : for i in 0 to 1 generate
+
       asicAdc(i).fClkP <= adcFClkP(i);
       asicAdc(i).fClkN <= adcFClkN(i);
       asicAdc(i).dClkP <= adcDClkP(i);
       asicAdc(i).dClkN <= adcDClkN(i);
       asicAdc(i).chP   <= adcChP((i*8)+7 downto i*8);
       asicAdc(i).chN   <= adcChN((i*8)+7 downto i*8);
-      
+
       U_AdcReadout : entity surf.Ad9249ReadoutGroup
       generic map (
          TPD_G             => TPD_G,
@@ -194,7 +194,7 @@ begin
          -- Master system clock, 125Mhz
          axilClk           => coreClk,
          axilRst           => coreRst,
-         
+
          -- Axi Interface
          axilReadMaster    => mAxiReadMasters(ADC0_RD_AXI_INDEX_C+i),
          axilReadSlave     => mAxiReadSlaves(ADC0_RD_AXI_INDEX_C+i),
@@ -211,17 +211,17 @@ begin
          adcStreamClk      => coreClk,
          adcStreams        => iAdcStreams((i*8)+7 downto i*8)
       );
-      
+
    end generate;
-   
-   
+
+
    monAdc.fClkP <= adcFClkP(2);
    monAdc.fClkN <= adcFClkN(2);
    monAdc.dClkP <= adcDClkP(2);
    monAdc.dClkN <= adcDClkN(2);
    monAdc.chP(3 downto 0) <= adcChP(19 downto 16);
    monAdc.chN(3 downto 0) <= adcChN(19 downto 16);
-      
+
    U_MonAdcReadout : entity surf.Ad9249ReadoutGroup
    generic map (
       TPD_G             => TPD_G,
@@ -234,7 +234,7 @@ begin
       -- Master system clock, 125Mhz
       axilClk           => coreClk,
       axilRst           => coreRst,
-      
+
       -- Axi Interface
       axilReadMaster    => mAxiReadMasters(ADC2_RD_AXI_INDEX_C),
       axilReadSlave     => mAxiReadSlaves(ADC2_RD_AXI_INDEX_C),
@@ -272,17 +272,17 @@ begin
       asyncRst => adcCardPowerUpEdge,
       syncRst  => serdesReset
    );
-   
+
    --------------------------------------------
    -- ADC stream pattern tester              --
    --------------------------------------------
-   
+
    U_AdcTester : entity surf.StreamPatternTester
    generic map (
       TPD_G             => TPD_G,
       NUM_CHANNELS_G    => 20
    )
-   port map ( 
+   port map (
       -- Master system clock
       clk               => coreClk,
       rst               => coreRst,
@@ -294,11 +294,11 @@ begin
       axilWriteMaster => mAxiWriteMasters(ADCTEST_AXI_INDEX_C),
       axilWriteSlave  => mAxiWriteSlaves(ADCTEST_AXI_INDEX_C)
    );
-   
+
    --------------------------------------------
    --     Fast ADC Config                    --
    --------------------------------------------
-      
+
    U_AdcConf : entity surf.Ad9249ConfigNoPullup
    generic map (
       TPD_G             => TPD_G,
@@ -309,12 +309,12 @@ begin
    port map (
       axilClk           => coreClk,
       axilRst           => coreRst,
-      
+
       axilReadMaster    => mAxiReadMasters(ADC_CFG_AXI_INDEX_C),
       axilReadSlave     => mAxiReadSlaves(ADC_CFG_AXI_INDEX_C),
       axilWriteMaster   => mAxiWriteMasters(ADC_CFG_AXI_INDEX_C),
       axilWriteSlave    => mAxiWriteSlaves(ADC_CFG_AXI_INDEX_C),
-      
+
       adcSClk           => adcSpiClk,
       adcSDin           => adcSpiDataIn,
       adcSDout          => adcSpiDataOut,
@@ -322,11 +322,11 @@ begin
       adcCsb            => iAdcSpiCsb,
       adcPdwn           => iAdcPdwn(1 downto 0)
    );
-   
+
    adcSpiCsb <= iAdcSpiCsb(2 downto 0);
    adcPdwn <= iAdcPdwn(2 downto 0);
-   
+
    adcStreams <= iAdcStreams;
-   
-   
+
+
 end rtl;
