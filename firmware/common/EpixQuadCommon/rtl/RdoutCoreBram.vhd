@@ -29,7 +29,8 @@ entity RdoutCoreBram is
       TPD_G             : time            := 1 ns;
       BANK_COLS_G       : natural         := 48;
       BANK_ROWS_G       : natural         := 178;
-      LINE_REVERSE_G    : slv(3 downto 0) := "1010"
+      LINE_REVERSE_G    : slv(3 downto 0) := "1010";
+      AXISFIFO_G        : boolean         := true
    );
    port (
       -- ADC interface
@@ -1112,35 +1113,62 @@ begin
    -- Streaming out FIFO
    ----------------------------------------------------------------------
 
-   --U_AxisOut0 : entity surf.AxiStreamFifoV2
-   --generic map (
-   --   -- General Configurations
-   --   TPD_G               => TPD_G,
-   --   PIPE_STAGES_G       => 1,
-   --   SLAVE_READY_EN_G    => true,
-   --   VALID_THOLD_G       => 1,     -- =0 = only when frame ready
-   --   -- FIFO configurations
-   --   GEN_SYNC_FIFO_G     => false,
-   --   CASCADE_SIZE_G      => 1,
-   --   FIFO_ADDR_WIDTH_G   => 8,
-   --   -- AXI Stream Port Configurations
-   --   SLAVE_AXI_CONFIG_G  => SLAVE_AXI_CONFIG_C,
-   --   MASTER_AXI_CONFIG_G => MASTER_AXI_CONFIG_C
-   --)
-   --port map (
-   --   -- Slave Port
-   --   sAxisClk    => sysClk,
-   --   sAxisRst    => sysRst,
-   --   sAxisMaster => r.txMaster,
-   --   sAxisSlave  => txSlave,
-   --   -- Master Port
-   --   mAxisClk    => axisClk,
-   --   mAxisRst    => axisRst,
-   --   mAxisMaster => axisMaster,
-   --   mAxisSlave  => axisSlave
-   --);
-
-   axisMaster <= r.txMaster;
-   txSlave    <= axisSlave;
+   G_AXISFIFO : if AXISFIFO_G = true generate
+     begin
+       U_AxisOut0 : entity surf.SsiFifo 
+         generic map(
+           -- General Configurations
+           TPD_G                  => TPD_G,
+           INT_PIPE_STAGES_G      => 1,
+           PIPE_STAGES_G          => 1,
+           SLAVE_READY_EN_G       => false,
+           -- Valid threshold should always be 1 when using interleaved TDEST
+           --       =1 = normal operation
+           --       =0 = only when frame ready
+           --       >1 = only when frame ready or # entries
+           VALID_THOLD_G          => 1,
+           VALID_BURST_MODE_G     => false,  -- only used in VALID_THOLD_G>1
+           -- FIFO configurations
+           GEN_SYNC_FIFO_G        => false,
+           FIFO_ADDR_WIDTH_G      => 9,
+           FIFO_FIXED_THRESH_G    => true,
+           FIFO_PAUSE_THRESH_G    => 1,
+           SYNTH_MODE_G           => "inferred",
+           MEMORY_TYPE_G          => "block",
+           -- Internal FIFO width select, "WIDE", "NARROW" or "CUSTOM"
+           -- WIDE uses wider of slave / master. NARROW  uses narrower.
+           -- CUSOTM uses passed FIFO_DATA_WIDTH_G
+           INT_WIDTH_SELECT_G     => "WIDE",
+           INT_DATA_WIDTH_G       => 16,
+           -- If VALID_THOLD_G /=1, FIFO that stores on tLast transaction can be smaller.
+           --       Set to 0 for same size as primary FIFO (default)
+           --       Set >4 for custom size.
+           --       Use at own risk. Overflow of tLast FIFO is not checked
+           LAST_FIFO_ADDR_WIDTH_G => 0,
+           -- Index = 0 is output, index = n is input
+           CASCADE_PAUSE_SEL_G    => 0,
+           CASCADE_SIZE_G         => 1,
+           -- AXI Stream Port Configurations
+           SLAVE_AXI_CONFIG_G     => SLAVE_AXI_CONFIG_C,
+           MASTER_AXI_CONFIG_G    => MASTER_AXI_CONFIG_C)
+       port map(
+         -- Slave Interface (sAxisClk domain)
+         sAxisClk    => sysClk,
+         sAxisRst    => sysRst,
+         sAxisMaster => r.txMaster,
+         sAxisSlave  => txSlave,
+         -- Master Interface (mAxisClk domain)
+         mAxisClk    => axisClk,
+         mAxisRst    => axisRst,
+         mAxisMaster => axisMaster,
+         mAxisSlave  => axisSlave
+         );
+     end generate G_AXISFIFO;   
+   
+     G_NOT_AXISFIFO : if AXISFIFO_G = false generate
+     begin
+       axisMaster <= r.txMaster;
+       txSlave    <= axisSlave;
+     end generate G_NOT_AXISFIFO;
 
 end rtl;
