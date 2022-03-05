@@ -19,3 +19,4 @@ from ePixQuad.AxiI2cMaster import *
 from ePixQuad.VguardDac import *
 from ePixQuad.EpixVersion import *
 from ePixQuad.SaciConfigCore import *
+from ePixQuad._StreamRepeater import *

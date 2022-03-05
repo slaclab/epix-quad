@@ -327,6 +327,13 @@ class Top(pr.Root):
             hidden=False,
         ))
 
+        #this device enables us to force back pressure
+        self.repeater = ePixQuad.StreamRepeater(expand=False)
+        self.add(self.repeater)
+            
+        # Connect DMA stream --> repeater --> software processing
+        self.pgpVc0 >> self.repeater
+
         if (hwType != 'simulation'):
 
             self.add(cypress.CypressS25Fl(
