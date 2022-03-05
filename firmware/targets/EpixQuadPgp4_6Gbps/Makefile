@@ -2,7 +2,7 @@
 target: prom
 
 # Define Firmware Version Number
-export PRJ_VERSION = 0xEA050010
+export PRJ_VERSION = 0xEA050011
 
 # Use the PGPv4 6G core
 export INCLUDE_PGP4_6G = 1
