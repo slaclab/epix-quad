@@ -96,44 +96,27 @@ args = parser.parse_args()
 print(args)
 #################################################################
 
+appTop = pr.gui.application(sys.argv)
+
 # Set base
-base = quad.Top(
+with quad.Top(
     hwType=args.type,
     dev=args.dev,
     lane=args.l,
     promWrEn=args.adcCalib,
-)
+) as root:
 
-# Start the system
-base.start()
+    if args.viewer:
+        gui = vi.Window(cameraType='ePixQuad')
+        gui.eventReader.frameIndex = 0
+        # gui.eventReaderImage.VIEW_DATA_CHANNEL_ID = 0
+        gui.setReadDelay(0)
+        pyrogue.streamTap(root.pgpVc0, gui.eventReader)
+        pyrogue.streamTap(root.pgpVc2, gui.eventReaderScope)  # PseudoScope
+        pyrogue.streamTap(root.pgpVc3, gui.eventReaderMonitoring)  # Slow Monitoring
 
-
-# # Create GUI
-appTop = pr.gui.application(sys.argv)
-
-# Have to check if viewer is wanted before trying to load rogue pydm ui
-# Viewer gui
-if args.viewer:
-    gui = vi.Window(cameraType='ePixQuad')
-    gui.eventReader.frameIndex = 0
-    # gui.eventReaderImage.VIEW_DATA_CHANNEL_ID = 0
-    gui.setReadDelay(0)
-    pyrogue.streamTap(base.pgpVc0, gui.eventReader)
-    pyrogue.streamTap(base.pgpVc2, gui.eventReaderScope)  # PseudoScope
-    pyrogue.streamTap(base.pgpVc3, gui.eventReaderMonitoring)  # Slow Monitoring
-
-print("Starting GUI...\n")
-
-
-pyrogue.pydm.runPyDM(
-    root=base,
-    sizeX=900,
-    sizeY=800,
-)
-
-# Run GUI
-appTop.exec_()
-
-# Close
-base.stop()
-exit()
+    pyrogue.pydm.runPyDM(
+        root=root,
+        sizeX=900,
+        sizeY=800,
+    )
