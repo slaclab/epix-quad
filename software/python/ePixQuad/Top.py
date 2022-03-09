@@ -34,7 +34,7 @@ import ePixQuad
 
 import os.path
 from os import path
-
+import numpy as np
 import click
 
 
@@ -50,6 +50,9 @@ class Top(pr.Root):
                  enWriter=True,
                  enPrbs=True,
                  **kwargs):
+
+        kwargs['timeout'] = 5000000 # 5.0 seconds default
+
         super().__init__(name=name, description=description, **kwargs)
 
         self._promWrEn = promWrEn
@@ -211,7 +214,7 @@ class Top(pr.Root):
             expand=False,
         ))
 
-        self.add(axi.AxiStreamMonitoring(
+        self.add(axi.AxiStreamMonAxiL(
             name='RdoutStreamMonitoring',
             memBase=memMap,
             offset=0x01300000,
@@ -281,7 +284,7 @@ class Top(pr.Root):
                 offset=asicSaciAddr[i],
                 enabled=False,
                 expand=False,
-                size=0x3fffff,
+                # size=0x120,
             ))
 
         self.add(ePixQuad.SaciConfigCore(
@@ -397,6 +400,7 @@ class Top(pr.Root):
 
         @self.command()
         def AdcTrain():
+            error_count = 0
 
             if self._promWrEn == False:
                 click.secho(
@@ -458,6 +462,17 @@ class Top(pr.Root):
                     if result < 9:
                         print('ADC %d failed. Retrying forever.' % (adc))
                         result = 0
+                        error_count += 1
+                    elif error_count == 3:
+                        click.secho("\n\n\
+                        ***************************************************\n\
+                        ***************************************************\n\
+                        Writing ADC constants to PROM Failed\n\
+                        ***************************************************\n\
+                        ***************************************************\n\n",
+                        bg='red')
+                        break
+
                     else:
                         break
 
@@ -510,7 +525,7 @@ class Top(pr.Root):
                 # Get the data
                 readArray = self.CypressS25Fl.getDataReg()
 
-                if readArray != writeArray:
+                if not np.array_equal(readArray, writeArray):
                     click.secho(
                         "\n\n\
                   ***************************************************\n\
@@ -765,7 +780,7 @@ class Top(pr.Root):
         # Get the data
         readArray = self.CypressS25Fl.getDataReg()
 
-        if readArray != writeArray:
+        if not np.array_equal(readArray, writeArray):
             click.secho(
                 "\n\n\
             ***************************************************\n\

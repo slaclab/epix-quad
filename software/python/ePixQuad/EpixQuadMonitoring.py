@@ -379,13 +379,13 @@ class EpixQuadMonitor(pr.Device):
             ))
 
         LdoNames = [
-            'A0+2-5V-H-Temp', 'A0+2_5V-L-Temp',
-            'A1+2-5V-H-Temp', 'A1+2_5V-L-Temp',
-            'A2+2-5V-H-Temp', 'A2+2_5V-L-Temp',
-            'A3+2-5V-H-Temp', 'A3+2-5V-L-Temp',
-            'D0+2-5V-Temp', 'D1+2-5V-Temp',
-            'A0+1-8V-Temp', 'A1+1-8V-Temp',
-            'A2+1-8V-Temp'
+            'A0_2_5V_H_Temp', 'A0_2_5V_L_Temp',
+            'A1_2_5V_H_Temp', 'A1_2_5V_L_Temp',
+            'A2_2_5V_H_Temp', 'A2_2_5V_L_Temp',
+            'A3_2_5V_H_Temp', 'A3_2_5V_L_Temp',
+            'D0_2_5V_Temp', 'D1_2_5V_Temp',
+            'A0_1_8V_Temp', 'A1_1_8V_Temp',
+            'A2_1_8V_Temp'
         ]
 
         for i in range(13):

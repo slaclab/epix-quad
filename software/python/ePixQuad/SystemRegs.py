@@ -240,7 +240,7 @@ class SystemRegs(pr.Device):
             bitSize=1,
             bitOffset=0,
             base=pr.Bool,
-            mode='RW',
+            mode='RO',
         ))
 
         self.add(pr.RemoteVariable(
@@ -250,7 +250,7 @@ class SystemRegs(pr.Device):
             bitSize=1,
             bitOffset=0,
             base=pr.Bool,
-            mode='RW',
+            mode='RO',
         ))
 
         for i in range(10):
@@ -261,7 +261,7 @@ class SystemRegs(pr.Device):
                 bitSize=32,
                 bitOffset=0,
                 base=pr.UInt,
-                mode='RW',
+                mode='RO',
             ))
 
         self.add(pr.RemoteVariable(
