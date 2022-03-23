@@ -257,6 +257,11 @@ architecture rtl of RdoutCoreBram is
 
    signal fifoRdEn         : slv(3 downto 0);
 
+   signal sAxisDropWord    : sl;
+   signal sAxisDropFrame   : sl;
+   signal mAxisDropWord    : sl;
+   signal mAxisDropFrame   : sl;
+
 begin
    --r.rowCount(BUFF_BITS_C-1 downto 0)
    assert ROWS_BITS_C >= BUFF_BITS_C
@@ -460,7 +465,8 @@ begin
 
    comb : process (sysRst, sAxilReadMaster, sAxilWriteMaster, txSlave, r,
       acqBusyEdge, acqBusy, acqCount, acqSmplEn, memRdData, opCode, muxStrMap, tpsStream,
-      doutValid, doutOut, doutCount, monData, fifoRdy, fifoValid, fifoDout) is
+      doutValid, doutOut, doutCount, monData, fifoRdy, fifoValid, fifoDout, sAxisDropWord,
+      sAxisDropFrame, mAxisDropWord, mAxisDropFrame) is
       variable v      : RegType;
       variable regCon : AxiLiteEndPointType;
       variable doutValidVar : slv(3 downto 0);
@@ -483,19 +489,19 @@ begin
          v.seqCount := r.seqCount + 1;
       end if;
 
-      if r.sAxisDropWord = '1' then
+      if sAxisDropWord = '1' then
         v.sAxisDropWordCount := r.sAxisDropWordCount + 1;
       end if;
       
-      if r.sAxisDropFrame = '1' then
+      if sAxisDropFrame = '1' then
         v.sAxisDropFrameCount := r.sAxisDropFrameCount + 1;
       end if;
 
-      if r.mAxisDropWord = '1' then
+      if mAxisDropWord = '1' then
         v.mAxisDropWordCount := r.mAxisDropWordCount + 1;
       end if;
       
-      if r.mAxisDropFrame = '1' then
+      if mAxisDropFrame = '1' then
         v.mAxisDropFrameCount := r.mAxisDropFrameCount + 1;
       end if;
 
@@ -1200,10 +1206,10 @@ begin
          mAxisMaster => axisMaster,
          mAxisSlave  => axisSlave,
          -- FIFO status and config
-         sAxisDropWord   => r.sAxisDropWord,
-         sAxisDropFrame  => r.sAxisDropFrame,
-         mAxisDropWord   => r.mAxisDropWord,
-         mAxisDropFrame  => r.mAxisDropFrame
+         sAxisDropWord   => sAxisDropWord,
+         sAxisDropFrame  => sAxisDropFrame,
+         mAxisDropWord   => mAxisDropWord,
+         mAxisDropFrame  => mAxisDropFrame
          );
      end generate G_AXISFIFO;   
    

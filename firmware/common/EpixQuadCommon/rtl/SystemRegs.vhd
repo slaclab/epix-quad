@@ -249,7 +249,7 @@ begin
    --------------------------------------------------
 
    comb : process (sysRst, ddrVttPok, r, sAxilReadMaster, sAxilWriteMaster,
-                   tempAlert, idValids, idValues, extTrig) is
+                   tempAlert, idValids, idValues, extTrig, trigTtlEdge) is
       variable v      : RegType;
       variable regCon : AxiLiteEndPointType;
    begin
