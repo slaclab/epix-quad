@@ -60,7 +60,7 @@ entity SystemRegs is
       asicGr            : out sl;
       -- trigger inputs
       trigPgp           : in  sl := '0';
-      trigTtl           : in  sl := '0';
+      inputTtl          : in  slv(2 downto 0);
       trigCmd           : in  sl := '0';
       -- trigger output
       acqStart          : out sl;
@@ -112,6 +112,7 @@ architecture RTL of SystemRegs is
       asicGrCnt         : slv(25 downto 0);
       trigEn            : sl;
       trigSrcSel        : slv(1 downto 0);
+      inputTtlCtrl      : slv(1 downto 0);
       autoTrigEn        : sl;
       autoTrig          : sl;
       autoTrigReg       : slv(31 downto 0);
@@ -162,6 +163,7 @@ architecture RTL of SystemRegs is
       asicGrCnt         => (others=>'0'),
       trigEn            => '0',
       trigSrcSel        => (others=>'0'),
+      inputTtlCtrl      => (others=>'0'),
       autoTrigEn        => '0',
       autoTrig          => '0',
       autoTrigReg       => (others=>'0'),
@@ -181,14 +183,16 @@ architecture RTL of SystemRegs is
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
-   signal idValues   : Slv64Array(3 downto 0);
-   signal idValids   : slv(3 downto 0);
+   signal idValues    : Slv64Array(3 downto 0);
+   signal idValids    : slv(3 downto 0);
 
-   signal tempAlert  : sl;
+   signal tempAlert   : sl;
 
-   signal extTrig    : slv(2 downto 0);
+   signal extTrig     : slv(2 downto 0);
 
-   signal idRstSync  : sl;
+   signal idRstSync   : sl;
+
+   signal trigTtlEdge : slv(2 downto 0);
 
 begin
 
@@ -221,14 +225,6 @@ begin
          risingEdge => extTrig(0)
       );
 
-   U_TrigTtlEdge : entity surf.SynchronizerEdge
-      port map (
-         clk        => sysClk,
-         rst        => sysRst,
-         dataIn     => trigTtl,
-         risingEdge => extTrig(1)
-      );
-
    U_TrigCmdEdge : entity surf.SynchronizerEdge
       port map (
          clk        => sysClk,
@@ -236,6 +232,17 @@ begin
          dataIn     => trigCmd,
          risingEdge => extTrig(2)
       );
+
+    GEN_TtlEdge:  for i in 2 downto 0 generate 
+      U_TrigTtlEdge : entity surf.SynchronizerEdge
+        port map (
+           clk        => sysClk,
+           rst        => sysRst,
+           dataIn     => inputTtl(i),
+           risingEdge => trigTtlEdge(i)
+       );
+     end generate GEN_TtlEdge;
+
 
    --------------------------------------------------
    -- AXI Lite register logic
@@ -314,6 +321,17 @@ begin
          v.autoTrig     := '1';
          v.autoTrigCnt  := (others=>'0');
       end if;
+
+      case r.inputTtlCtrl is
+        when "00" => 
+                    extTrig(1) <= trigTtlEdge(0);
+        when "01" =>
+                    extTrig(1) <= trigTtlEdge(1);
+        when "10" =>
+                    extTrig(1) <= trigTtlEdge(2);
+        when others =>
+                    extTrig(1) <= '0';
+      end case;
 
       -- trigger source select
       if r.trigEn = '1' then
@@ -409,7 +427,7 @@ begin
          axiSlaveRegister(regCon, x"514"+toSlv(i*4, 12), 0, v.adcChanFailed(i));
       end loop;
       axiSlaveRegister (regCon, x"540", 0, v.adcBypass);
-
+      axiSlaveRegister (regCon, x"544", 0, v.inputTtlCtrl);
 
       -- Close out the AXI-Lite transaction
       axiSlaveDefault(regCon, v.sAxilWriteSlave, v.sAxilReadSlave, AXI_RESP_DECERR_C);

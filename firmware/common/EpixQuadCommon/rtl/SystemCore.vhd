@@ -113,7 +113,7 @@ entity SystemCore is
       asicMask             : out slv(15 downto 0);
       -- trigger inputs
       trigPgp              : in  sl := '0';
-      trigTtl              : in  sl := '0';
+      inputTtl             : in  slv(2 downto 0);
       trigCmd              : in  sl := '0';
       -- trigger output
       acqStart             : out sl;
@@ -281,7 +281,7 @@ begin
       asicGr            => asicGr,
       -- trigger inputs
       trigPgp           => trigPgp,
-      trigTtl           => trigTtl,
+      inputTtl          => inputTtl,
       trigCmd           => trigCmd,
       -- trigger output
       acqStart          => iAcqStart,
