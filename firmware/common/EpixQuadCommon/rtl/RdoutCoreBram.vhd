@@ -154,6 +154,10 @@ architecture rtl of RdoutCoreBram is
       overSampleEn         : sl;
       overSampleSize       : slv(2 downto 0);
       overSampleSizePwr    : slv(6 downto 0);
+      sAxisDropWord        : slv(6 downto 0);
+      sAxisDropFrame       : slv(6 downto 0);
+      mAxisDropWord        : slv(6 downto 0);
+      mAxisDropFrame       : slv(6 downto 0);
    end record RegType;
 
    constant REG_INIT_C : RegType := (
@@ -488,6 +492,11 @@ begin
 
       axiSlaveRegister (regCon, x"024", 0, v.overSampleEn      );
       axiSlaveRegister (regCon, x"028", 0, v.overSampleSize    );
+
+      axiSlaveRegister (regCon,       , 0, v.sAxisDropWord,    );
+      axiSlaveRegister (regCon,       , 0, v.sAxisDropFrame,   );
+      axiSlaveRegister (regCon,       , 0, v.mAxisDropWord,    );
+      axiSlaveRegister (regCon,       , 0, v.mAxisDropFrame    );
 
       if r.overSampleSize = 0 then
          v.overSampleSizePwr   := "0000000";
@@ -1161,7 +1170,12 @@ begin
          mAxisClk    => axisClk,
          mAxisRst    => axisRst,
          mAxisMaster => axisMaster,
-         mAxisSlave  => axisSlave
+         mAxisSlave  => axisSlave,
+         -- FIFO status and config
+         sAxisDropWord   => r.sAxisDropWord,
+         sAxisDropFrame  => r.sAxisDropFrame,
+         mAxisDropWord   => r.mAxisDropWord,
+         mAxisDropFrame  => r.mAxisDropFrame
          );
      end generate G_AXISFIFO;   
    
