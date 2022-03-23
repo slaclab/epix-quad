@@ -18,7 +18,7 @@ Top:
     AutoTrigEn: True
     AutoTrigPer: 0x7f2815
     AutoTrigPerMs: 83.33333
-    AutoTrigFreqHz: 1.0
+    AutoTrigFreqHz: 12.0
     DcDcEnable: 0xf
     AsicAnaEn: True
     AsicDigEn: True
@@ -47,9 +47,9 @@ Top:
     AsicR0Width: 0x1e
     AsicR0ToAsicAcq: 0x2710
     AsicAcqWidth: 0x2710
-    AsicAcqLToPPmatL: 0xc8
+    AsicAcqLToPPmatL: 0x3e8
     AsicPpmatToReadout: 0x0
-    AsicRoClkHalfT: 0x5
+    AsicRoClkHalfT: 0xaaaa0003
     AsicAcqForce: False
     AsicR0Force: False
     AsicPpmatForce: True
@@ -65,10 +65,10 @@ Top:
     enable: True
     RdoutEn: True
     SeqCountReset: False
-    AdcPipelineDelay: 0x5a
+    AdcPipelineDelay: 0xaaaa0044
     TestData: False
     OverSampleEn: False
-    OverSampleSize: 0x1
+    OverSampleSize: 0x0
   RdoutStreamMonitoring:
     enable: True
   PseudoScopeCore:
@@ -77,15 +77,15 @@ Top:
     Trig: False
     ScopeEn: False
     TrigEdge: False
-    TrigChannel: 0x0
-    TrigMode: 0x0
+    TrigChannel: 0x4
+    TrigMode: 0x2
     TrigAdcThreshold: 0x0
     TrigHoldoff: 0x0
-    TrigOffset: 0x0
-    TraceLength: 0x0
+    TrigOffset: 0x44c
+    TraceLength: 0x28
     SkipSamples: 0x0
-    InChannelA: 0x0
-    InChannelB: 0x0
+    InChannelA: 0x1c
+    InChannelB: 0x1d
     TrigDelay: 0x0
   VguardDac:
     enable: True
@@ -96,8 +96,76 @@ Top:
     MonitorEn: True
     TrigPrescaler: 0x0
   AxiMemTester:
+    enable: False
+  Epix10kaSaci[7]:
     enable: True
-  Epix10kaSaci[11]:
+    CompTH_DAC: 0x22
+    CompEn0: False
+    CompEn1: True
+    CompEn2: True
+    PulserSync: True
+    Pulser: 0x0
+    pbit: False
+    atest: False
+    test: False
+    sab_test: False
+    hrtest: False
+    PulserR: False
+    DigMon1: 0x0
+    DigMon2: 0x1
+    PulserDac: 0x3
+    MonostPulser: 0x0
+    Dm1En: False
+    Dm2En: False
+    emph_bd: 0x0
+    emph_bc: 0x0
+    VRef: 0x13
+    VRefLow: 0x3
+    TpsTComp: True
+    TpsMux: 0x0
+    RoMonost: 0x3
+    TpsGr: 0x3
+    S2d0Gr: 0x3
+    PpOcbS2d: True
+    Ocb: 0x3
+    Monost: 0x3
+    FastppEnable: False
+    Preamp: 0x4
+    PixelCb: 0x4
+    Vld1_b: 0x1
+    S2dTComp: False
+    FilterDac: 0x11
+    TestLVDTransmitter: False
+    TC: 0x0
+    S2d: 0x3
+    S2dDacBias: 0x3
+    TpsTcDac: 0x0
+    TpsDac: 0x10
+    S2d0TcDac: 0x1
+    S2d0Dac: 0x14
+    TestBe: False
+    IsEn: False
+    DelExec: False
+    DelCckRef: False
+    RO_rst_en: True
+    SlvdsBit: True
+    FELmode: True
+    CompEnOn: False
+    RowStartAddr: 0x0
+    RowStopAddr: 0xb1
+    ColStartAddr: 0x0
+    ColStopAddr: 0x2f
+    S2d1Gr: 0x3
+    S2d2Gr: 0x3
+    S2d3Gr: 0x3
+    trbit: False
+    S2d1TcDac: 0x1
+    S2d1Dac: 0x12
+    S2d2TcDac: 0x1
+    S2d2Dac: 0x12
+    S2d3TcDac: 0x1
+    S2d3Dac: 0x12
+  Epix10kaSaci[6]:
     enable: True
     CompTH_DAC: 0x22
     CompEn0: False
@@ -166,7 +234,7 @@ Top:
     S2d2Dac: 0x12
     S2d3TcDac: 0x1
     S2d3Dac: 0x12
-  Epix10kaSaci[10]:
+  Epix10kaSaci[5]:
     enable: True
     CompTH_DAC: 0x22
     CompEn0: False
@@ -235,76 +303,7 @@ Top:
     S2d2Dac: 0x12
     S2d3TcDac: 0x1
     S2d3Dac: 0x12
-  Epix10kaSaci[9]:
-    enable: True
-    CompTH_DAC: 0x22
-    CompEn0: False
-    CompEn1: True
-    CompEn2: True
-    PulserSync: False
-    PixelDummy: 0x22
-    Pulser: 0x0
-    pbit: False
-    atest: False
-    test: False
-    sab_test: False
-    hrtest: False
-    PulserR: False
-    DigMon1: 0x0
-    DigMon2: 0x1
-    PulserDac: 0x3
-    MonostPulser: 0x0
-    Dm1En: False
-    Dm2En: False
-    emph_bd: 0x0
-    emph_bc: 0x0
-    VRef: 0x13
-    VRefLow: 0x3
-    TpsTComp: True
-    TpsMux: 0x0
-    RoMonost: 0x3
-    TpsGr: 0x3
-    S2d0Gr: 0x3
-    PpOcbS2d: True
-    Ocb: 0x3
-    Monost: 0x3
-    FastppEnable: False
-    Preamp: 0x4
-    PixelCb: 0x4
-    Vld1_b: 0x1
-    S2dTComp: False
-    FilterDac: 0x11
-    TestLVDTransmitter: False
-    TC: 0x0
-    S2d: 0x3
-    S2dDacBias: 0x3
-    TpsTcDac: 0x0
-    TpsDac: 0x10
-    S2d0TcDac: 0x1
-    S2d0Dac: 0x14
-    TestBe: False
-    IsEn: False
-    DelExec: False
-    DelCckRef: False
-    RO_rst_en: True
-    SlvdsBit: True
-    FELmode: True
-    CompEnOn: False
-    RowStartAddr: 0x0
-    RowStopAddr: 0xb1
-    ColStartAddr: 0x0
-    ColStopAddr: 0x2f
-    S2d1Gr: 0x3
-    S2d2Gr: 0x3
-    S2d3Gr: 0x3
-    trbit: False
-    S2d1TcDac: 0x1
-    S2d1Dac: 0x12
-    S2d2TcDac: 0x1
-    S2d2Dac: 0x12
-    S2d3TcDac: 0x1
-    S2d3Dac: 0x12
-  Epix10kaSaci[8]:
+  Epix10kaSaci[4]:
     enable: True
     CompTH_DAC: 0x22
     CompEn0: False
@@ -374,7 +373,7 @@ Top:
     S2d3TcDac: 0x1
     S2d3Dac: 0x12
   SaciConfigCore:
-    enable: True
+    enable: False
     ConfWrReq: False
     ConfRdReq: False
     ConfSel: 0x0
@@ -500,11 +499,11 @@ Top:
     Invert: False
   Ad9249Tester:
     enable: False
-    TestChannel: 0x0
-    TestDataMask: 0x0
-    TestPattern: 0x0
-    TestSamples: 0x0
-    TestTimeout: 0x0
+    TestChannel: 0x4f
+    TestDataMask: 0x3fff
+    TestPattern: 0x2000
+    TestSamples: 0x2710
+    TestTimeout: 0x2710
     TestRequest: False
   CypressS25Fl:
     enable: True
