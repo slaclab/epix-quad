@@ -154,10 +154,10 @@ architecture rtl of RdoutCoreBram is
       overSampleEn         : sl;
       overSampleSize       : slv(2 downto 0);
       overSampleSizePwr    : slv(6 downto 0);
-      sAxisDropWord        : slv(6 downto 0);
-      sAxisDropFrame       : slv(6 downto 0);
-      mAxisDropWord        : slv(6 downto 0);
-      mAxisDropFrame       : slv(6 downto 0);
+      sAxisDropWord        : slv(8 downto 0);
+      sAxisDropFrame       : slv(8 downto 0);
+      mAxisDropWord        : slv(8 downto 0);
+      mAxisDropFrame       : slv(8 downto 0);
    end record RegType;
 
    constant REG_INIT_C : RegType := (
@@ -204,7 +204,15 @@ architecture rtl of RdoutCoreBram is
       monData              => (others=>(others=>'0')),
       overSampleEn         => '0',
       overSampleSize       => (others=>'0'),
-      overSampleSizePwr    => (others=>'0')
+      overSampleSizePwr    => (others=>'0'),
+      sAxisDropWord        => '0',
+      sAxisDropWordCount   => (others=>'0'),  
+      sAxisDropFrame       => '0',
+      sAxisDropFrameCount  => (others=>'0'),
+      mAxisDropWord        => '0',
+      mAxisDropWordCount   => (others=>'0'),
+      mAxisDropFrame       => '0',
+      mAxisDropFrameCount  => (others=>'0')
    );
 
    signal r                : RegType := REG_INIT_C;
@@ -471,6 +479,22 @@ begin
          v.seqCount := r.seqCount + 1;
       end if;
 
+      if r.sAxisDropWord = '1' then
+        v.sAxisDropWordCount := r.sAxisDropWordCount + 1;
+      end if;
+      
+      if r.sAxisDropFrame = '1' then
+        v.sAxisDropFrameCount := r.sAxisDropFrameCount + 1;
+      end if;
+
+      if r.mAxisDropWord = '1' then
+        v.mAxisDropWordCount := r.mAxisDropWordCount + 1;
+      end if;
+      
+      if r.mAxisDropFrame = '1' then
+        v.mAxisDropFrameCount := r.mAxisDropFrameCount + 1;
+      end if;
+
       --------------------------------------------------
       -- AXI Lite register logic
       --------------------------------------------------
@@ -493,10 +517,10 @@ begin
       axiSlaveRegister (regCon, x"024", 0, v.overSampleEn      );
       axiSlaveRegister (regCon, x"028", 0, v.overSampleSize    );
 
-      axiSlaveRegister (regCon,       , 0, v.sAxisDropWord,    );
-      axiSlaveRegister (regCon,       , 0, v.sAxisDropFrame,   );
-      axiSlaveRegister (regCon,       , 0, v.mAxisDropWord,    );
-      axiSlaveRegister (regCon,       , 0, v.mAxisDropFrame    );
+      axiSlaveRegister (regCon, x"02C", 0, v.sAxisDropWordCount );
+      axiSlaveRegister (regCon, x"030", 0, v.sAxisDropFrameCount);
+      axiSlaveRegister (regCon, x"034", 0, v.mAxisDropWordCount );
+      axiSlaveRegister (regCon, x"038", 0, v.mAxisDropFrameCount);
 
       if r.overSampleSize = 0 then
          v.overSampleSizePwr   := "0000000";
