@@ -154,10 +154,14 @@ architecture rtl of RdoutCoreBram is
       overSampleEn         : sl;
       overSampleSize       : slv(2 downto 0);
       overSampleSizePwr    : slv(6 downto 0);
-      sAxisDropWord        : slv(8 downto 0);
-      sAxisDropFrame       : slv(8 downto 0);
-      mAxisDropWord        : slv(8 downto 0);
-      mAxisDropFrame       : slv(8 downto 0);
+      sAxisDropWord        : sl;
+      sAxisDropWordCount   : slv(8 downto 0); 
+      sAxisDropFrame       : sl;
+      sAxisDropFrameCount  : slv(8 downto 0);
+      mAxisDropWord        : sl;
+      mAxisDropWordCount   : slv(8 downto 0);
+      mAxisDropFrame       : sl;
+      mAxisDropFrameCount  : slv(8 downto 0);
    end record RegType;
 
    constant REG_INIT_C : RegType := (
