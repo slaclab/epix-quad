@@ -331,7 +331,7 @@ class Top(pr.Root):
         self.repeater = ePixQuad.StreamRepeater(expand=False)
         self.add(self.repeater)
             
-        # Connect DMA stream --> repeater --> software processing
+        # Connect DMA stream --> repeater
         self.pgpVc0 >> self.repeater
 
         if (hwType != 'simulation'):
