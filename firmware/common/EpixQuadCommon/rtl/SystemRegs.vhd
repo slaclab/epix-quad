@@ -323,14 +323,14 @@ begin
       end if;
 
       case r.inputTtlCtrl is
-        when "00" => 
-                    extTrig(1) <= trigTtlEdge(0);
-        when "01" =>
-                    extTrig(1) <= trigTtlEdge(1);
-        when "10" =>
-                    extTrig(1) <= trigTtlEdge(2);
-        when others =>
-                    extTrig(1) <= '0';
+         when "00" =>
+            extTrig(1) <= trigTtlEdge(0);
+         when "01" =>
+            extTrig(1) <= trigTtlEdge(1);
+         when "10" =>
+            extTrig(1) <= trigTtlEdge(2);
+         when others =>
+           extTrig(1) <= '0'; -- External Triggers disabled when inputTtlCtrl == 4
       end case;
 
       -- trigger source select

@@ -367,7 +367,7 @@ class SystemRegs(pr.Device):
 
         self.add(pr.RemoteVariable(
             name='inputTtlCtrl',
-            description='Mux Control for ttl input',
+            description='Mux Control for ttl input, Setting 4 disables ttl input',
             offset=0x00000544,
             bitSize=2,
             bitOffset=0,

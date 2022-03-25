@@ -154,13 +154,9 @@ architecture rtl of RdoutCoreBram is
       overSampleEn         : sl;
       overSampleSize       : slv(2 downto 0);
       overSampleSizePwr    : slv(6 downto 0);
-      sAxisDropWord        : sl;
       sAxisDropWordCount   : slv(8 downto 0); 
-      sAxisDropFrame       : sl;
       sAxisDropFrameCount  : slv(8 downto 0);
-      mAxisDropWord        : sl;
       mAxisDropWordCount   : slv(8 downto 0);
-      mAxisDropFrame       : sl;
       mAxisDropFrameCount  : slv(8 downto 0);
    end record RegType;
 
@@ -209,13 +205,9 @@ architecture rtl of RdoutCoreBram is
       overSampleEn         => '0',
       overSampleSize       => (others=>'0'),
       overSampleSizePwr    => (others=>'0'),
-      sAxisDropWord        => '0',
       sAxisDropWordCount   => (others=>'0'),  
-      sAxisDropFrame       => '0',
       sAxisDropFrameCount  => (others=>'0'),
-      mAxisDropWord        => '0',
       mAxisDropWordCount   => (others=>'0'),
-      mAxisDropFrame       => '0',
       mAxisDropFrameCount  => (others=>'0')
    );
 
@@ -484,25 +476,29 @@ begin
 
       -- count readouts
       if r.seqCountReset = '1' then
-         v.seqCount := (others=>'0');
-      elsif acqBusyEdge = '1' and r.rdoutEn = '1' then
-         v.seqCount := r.seqCount + 1;
-      end if;
+         v.seqCount            := (others=>'0');
+         v.sAxisDropWordCount  := (others=>'0');
+         v.sAxisDropFrameCount := (others=>'0');
+         v.mAxisDropWordCount  := (others=>'0');
+         v.mAxisDropFrameCount := (others=>'0');
 
-      if sAxisDropWord = '1' then
-        v.sAxisDropWordCount := r.sAxisDropWordCount + 1;
-      end if;
-      
-      if sAxisDropFrame = '1' then
-        v.sAxisDropFrameCount := r.sAxisDropFrameCount + 1;
-      end if;
+      else
+         if acqBusyEdge = '1' and r.rdoutEn = '1' then
+            v.seqCount := r.seqCount + 1;
 
-      if mAxisDropWord = '1' then
-        v.mAxisDropWordCount := r.mAxisDropWordCount + 1;
-      end if;
+         elsif sAxisDropWord = '1' then
+            v.sAxisDropWordCount := r.sAxisDropWordCount + 1;
+
+         elsif sAxisDropFrame = '1' then
+            v.sAxisDropFrameCount := r.sAxisDropFrameCount + 1;
       
-      if mAxisDropFrame = '1' then
-        v.mAxisDropFrameCount := r.mAxisDropFrameCount + 1;
+         elsif mAxisDropWord = '1' then
+            v.mAxisDropWordCount := r.mAxisDropWordCount + 1;
+
+         elsif mAxisDropFrame = '1' then
+            v.mAxisDropFrameCount := r.mAxisDropFrameCount + 1;
+
+         end if;
       end if;
 
       --------------------------------------------------
@@ -527,10 +523,10 @@ begin
       axiSlaveRegister (regCon, x"024", 0, v.overSampleEn      );
       axiSlaveRegister (regCon, x"028", 0, v.overSampleSize    );
 
-      axiSlaveRegister (regCon, x"02C", 0, v.sAxisDropWordCount );
-      axiSlaveRegister (regCon, x"030", 0, v.sAxisDropFrameCount);
-      axiSlaveRegister (regCon, x"034", 0, v.mAxisDropWordCount );
-      axiSlaveRegister (regCon, x"038", 0, v.mAxisDropFrameCount);
+      axiSlaveRegisterR (regCon, x"02C", 0, v.sAxisDropWordCount );
+      axiSlaveRegisterR (regCon, x"030", 0, v.sAxisDropFrameCount);
+      axiSlaveRegisterR (regCon, x"034", 0, v.mAxisDropWordCount );
+      axiSlaveRegisterR (regCon, x"038", 0, v.mAxisDropFrameCount);
 
       if r.overSampleSize = 0 then
          v.overSampleSizePwr   := "0000000";
@@ -1205,7 +1201,7 @@ begin
          mAxisRst    => axisRst,
          mAxisMaster => axisMaster,
          mAxisSlave  => axisSlave,
-         -- FIFO status and config
+         -- FIFO status and config (sAxisClk domain) 
          sAxisDropWord   => sAxisDropWord,
          sAxisDropFrame  => sAxisDropFrame,
          mAxisDropWord   => mAxisDropWord,
