@@ -2,7 +2,7 @@
 export INCLUDE_PGP4_10G = 1
 
 # Define Firmware Version Number
-export PRJ_VERSION = 0xEA050010
+export PRJ_VERSION = 0xEA050011
 
 # Define the Microblaze source path
 export VITIS_SRC_PATH = $(PROJ_DIR)/../../common/EpixQuadCommon/src/
