@@ -120,6 +120,50 @@ class RdoutCore(pr.Device):
             verify=False,
         ))
 
+        self.add(pr.RemoteVariable(
+            name='sAxisDropWordCount',
+            description='Slave AXI drop word frame counter',
+            offset=0x0000_002C,
+            bitSize=8,
+            bitOffset=0,
+            base=pr.UInt,
+            mode='RO',
+            verify=False,
+        ))
+
+        self.add(pr.RemoteVariable(
+            name='sAxisDropFrameCount',
+            description='Slave AXI drop frame counter',
+            offset=0x0000_0030,
+            bitSize=8,
+            bitOffset=0,
+            base=pr.UInt,
+            mode='RO',
+            verify=False,
+        ))
+
+        self.add(pr.RemoteVariable(
+            name='mAxisDropWordCount',
+            description='Master AXI drop word counter',
+            offset=0x0000_0034,
+            bitSize=8,
+            bitOffset=0,
+            base=pr.UInt,
+            mode='RO',
+            verify=False,
+        ))
+
+        self.add(pr.RemoteVariable(
+            name='mAxisDropFrameCount',
+            description='Master AXI drop word counter',
+            offset=0x0000_0038,
+            bitSize=8,
+            bitOffset=0,
+            base=pr.UInt,
+            mode='RO',
+            verify=False,
+        ))
+
         #####################################
         # Create commands
         #####################################

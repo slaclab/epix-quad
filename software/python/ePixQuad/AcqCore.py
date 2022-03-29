@@ -44,6 +44,7 @@ class AcqCore(pr.Device):
             bitSize=32,
             bitOffset=0,
             base=pr.UInt,
+            disp = '{}',
             mode='RO',
         ))
 

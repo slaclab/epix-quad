@@ -118,7 +118,7 @@ entity EpixQuadPgp3_6Gbps is
       dbgOut            : out   slv(2 downto 0);
       spareIo2v5        : out   slv(4 downto 0);
       -- ttl trigger
-      trigTtl           : in    sl
+      inputTtl          : in    slv(2 downto 0)
    );
 end EpixQuadPgp3_6Gbps;
 
@@ -221,7 +221,7 @@ begin
          dbgOut            => dbgOut,
          spareIo2v5        => spareIo2v5,
          -- ttl trigger
-         trigTtl           => trigTtl
+         inputTtl           => inputTtl
       );
 
 end top_level;

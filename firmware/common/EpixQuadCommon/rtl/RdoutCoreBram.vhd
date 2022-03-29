@@ -29,7 +29,8 @@ entity RdoutCoreBram is
       TPD_G             : time            := 1 ns;
       BANK_COLS_G       : natural         := 48;
       BANK_ROWS_G       : natural         := 178;
-      LINE_REVERSE_G    : slv(3 downto 0) := "1010"
+      LINE_REVERSE_G    : slv(3 downto 0) := "1010";
+      AXISFIFO_G        : boolean         := true
    );
    port (
       -- ADC interface
@@ -153,6 +154,10 @@ architecture rtl of RdoutCoreBram is
       overSampleEn         : sl;
       overSampleSize       : slv(2 downto 0);
       overSampleSizePwr    : slv(6 downto 0);
+      sAxisDropWordCount   : slv(8 downto 0); 
+      sAxisDropFrameCount  : slv(8 downto 0);
+      mAxisDropWordCount   : slv(8 downto 0);
+      mAxisDropFrameCount  : slv(8 downto 0);
    end record RegType;
 
    constant REG_INIT_C : RegType := (
@@ -199,7 +204,11 @@ architecture rtl of RdoutCoreBram is
       monData              => (others=>(others=>'0')),
       overSampleEn         => '0',
       overSampleSize       => (others=>'0'),
-      overSampleSizePwr    => (others=>'0')
+      overSampleSizePwr    => (others=>'0'),
+      sAxisDropWordCount   => (others=>'0'),  
+      sAxisDropFrameCount  => (others=>'0'),
+      mAxisDropWordCount   => (others=>'0'),
+      mAxisDropFrameCount  => (others=>'0')
    );
 
    signal r                : RegType := REG_INIT_C;
@@ -239,6 +248,11 @@ architecture rtl of RdoutCoreBram is
    signal fifrCascadeAfull : slv(3 downto 0);
 
    signal fifoRdEn         : slv(3 downto 0);
+
+   signal sAxisDropWord    : sl;
+   signal sAxisDropFrame   : sl;
+   signal mAxisDropWord    : sl;
+   signal mAxisDropFrame   : sl;
 
 begin
    --r.rowCount(BUFF_BITS_C-1 downto 0)
@@ -443,7 +457,8 @@ begin
 
    comb : process (sysRst, sAxilReadMaster, sAxilWriteMaster, txSlave, r,
       acqBusyEdge, acqBusy, acqCount, acqSmplEn, memRdData, opCode, muxStrMap, tpsStream,
-      doutValid, doutOut, doutCount, monData, fifoRdy, fifoValid, fifoDout) is
+      doutValid, doutOut, doutCount, monData, fifoRdy, fifoValid, fifoDout, sAxisDropWord,
+      sAxisDropFrame, mAxisDropWord, mAxisDropFrame) is
       variable v      : RegType;
       variable regCon : AxiLiteEndPointType;
       variable doutValidVar : slv(3 downto 0);
@@ -461,9 +476,29 @@ begin
 
       -- count readouts
       if r.seqCountReset = '1' then
-         v.seqCount := (others=>'0');
-      elsif acqBusyEdge = '1' and r.rdoutEn = '1' then
-         v.seqCount := r.seqCount + 1;
+         v.seqCount            := (others=>'0');
+         v.sAxisDropWordCount  := (others=>'0');
+         v.sAxisDropFrameCount := (others=>'0');
+         v.mAxisDropWordCount  := (others=>'0');
+         v.mAxisDropFrameCount := (others=>'0');
+
+      else
+         if acqBusyEdge = '1' and r.rdoutEn = '1' then
+            v.seqCount := r.seqCount + 1;
+
+         elsif sAxisDropWord = '1' then
+            v.sAxisDropWordCount := r.sAxisDropWordCount + 1;
+
+         elsif sAxisDropFrame = '1' then
+            v.sAxisDropFrameCount := r.sAxisDropFrameCount + 1;
+      
+         elsif mAxisDropWord = '1' then
+            v.mAxisDropWordCount := r.mAxisDropWordCount + 1;
+
+         elsif mAxisDropFrame = '1' then
+            v.mAxisDropFrameCount := r.mAxisDropFrameCount + 1;
+
+         end if;
       end if;
 
       --------------------------------------------------
@@ -487,6 +522,11 @@ begin
 
       axiSlaveRegister (regCon, x"024", 0, v.overSampleEn      );
       axiSlaveRegister (regCon, x"028", 0, v.overSampleSize    );
+
+      axiSlaveRegisterR (regCon, x"02C", 0, v.sAxisDropWordCount );
+      axiSlaveRegisterR (regCon, x"030", 0, v.sAxisDropFrameCount);
+      axiSlaveRegisterR (regCon, x"034", 0, v.mAxisDropWordCount );
+      axiSlaveRegisterR (regCon, x"038", 0, v.mAxisDropFrameCount);
 
       if r.overSampleSize = 0 then
          v.overSampleSizePwr   := "0000000";
@@ -1112,35 +1152,67 @@ begin
    -- Streaming out FIFO
    ----------------------------------------------------------------------
 
-   --U_AxisOut0 : entity surf.AxiStreamFifoV2
-   --generic map (
-   --   -- General Configurations
-   --   TPD_G               => TPD_G,
-   --   PIPE_STAGES_G       => 1,
-   --   SLAVE_READY_EN_G    => true,
-   --   VALID_THOLD_G       => 1,     -- =0 = only when frame ready
-   --   -- FIFO configurations
-   --   GEN_SYNC_FIFO_G     => false,
-   --   CASCADE_SIZE_G      => 1,
-   --   FIFO_ADDR_WIDTH_G   => 8,
-   --   -- AXI Stream Port Configurations
-   --   SLAVE_AXI_CONFIG_G  => SLAVE_AXI_CONFIG_C,
-   --   MASTER_AXI_CONFIG_G => MASTER_AXI_CONFIG_C
-   --)
-   --port map (
-   --   -- Slave Port
-   --   sAxisClk    => sysClk,
-   --   sAxisRst    => sysRst,
-   --   sAxisMaster => r.txMaster,
-   --   sAxisSlave  => txSlave,
-   --   -- Master Port
-   --   mAxisClk    => axisClk,
-   --   mAxisRst    => axisRst,
-   --   mAxisMaster => axisMaster,
-   --   mAxisSlave  => axisSlave
-   --);
-
-   axisMaster <= r.txMaster;
-   txSlave    <= axisSlave;
+   G_AXISFIFO : if AXISFIFO_G = true generate
+     begin
+       U_AxisOut0 : entity surf.SsiFifo 
+         generic map(
+           -- General Configurations
+           TPD_G                  => TPD_G,
+           INT_PIPE_STAGES_G      => 1,
+           PIPE_STAGES_G          => 1,
+           SLAVE_READY_EN_G       => false,
+           -- Valid threshold should always be 1 when using interleaved TDEST
+           --       =1 = normal operation
+           --       =0 = only when frame ready
+           --       >1 = only when frame ready or # entries
+           VALID_THOLD_G          => 1,
+           VALID_BURST_MODE_G     => false,  -- only used in VALID_THOLD_G>1
+           -- FIFO configurations
+           GEN_SYNC_FIFO_G        => false,
+           FIFO_ADDR_WIDTH_G      => 9,
+           FIFO_FIXED_THRESH_G    => true,
+           FIFO_PAUSE_THRESH_G    => 1,
+           SYNTH_MODE_G           => "inferred",
+           MEMORY_TYPE_G          => "block",
+           -- Internal FIFO width select, "WIDE", "NARROW" or "CUSTOM"
+           -- WIDE uses wider of slave / master. NARROW  uses narrower.
+           -- CUSOTM uses passed FIFO_DATA_WIDTH_G
+           INT_WIDTH_SELECT_G     => "WIDE",
+           INT_DATA_WIDTH_G       => 16,
+           -- If VALID_THOLD_G /=1, FIFO that stores on tLast transaction can be smaller.
+           --       Set to 0 for same size as primary FIFO (default)
+           --       Set >4 for custom size.
+           --       Use at own risk. Overflow of tLast FIFO is not checked
+           LAST_FIFO_ADDR_WIDTH_G => 0,
+           -- Index = 0 is output, index = n is input
+           CASCADE_PAUSE_SEL_G    => 0,
+           CASCADE_SIZE_G         => 1,
+           -- AXI Stream Port Configurations
+           SLAVE_AXI_CONFIG_G     => SLAVE_AXI_CONFIG_C,
+           MASTER_AXI_CONFIG_G    => MASTER_AXI_CONFIG_C)
+       port map(
+         -- Slave Interface (sAxisClk domain)
+         sAxisClk    => sysClk,
+         sAxisRst    => sysRst,
+         sAxisMaster => r.txMaster,
+         sAxisSlave  => txSlave,
+         -- Master Interface (mAxisClk domain)
+         mAxisClk    => axisClk,
+         mAxisRst    => axisRst,
+         mAxisMaster => axisMaster,
+         mAxisSlave  => axisSlave,
+         -- FIFO status and config (sAxisClk domain) 
+         sAxisDropWord   => sAxisDropWord,
+         sAxisDropFrame  => sAxisDropFrame,
+         mAxisDropWord   => mAxisDropWord,
+         mAxisDropFrame  => mAxisDropFrame
+         );
+     end generate G_AXISFIFO;   
+   
+     G_NOT_AXISFIFO : if AXISFIFO_G = false generate
+     begin
+       axisMaster <= r.txMaster;
+       txSlave    <= axisSlave;
+     end generate G_NOT_AXISFIFO;
 
 end rtl;

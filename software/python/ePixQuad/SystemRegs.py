@@ -365,6 +365,16 @@ class SystemRegs(pr.Device):
             mode='RW',
         ))
 
+        self.add(pr.RemoteVariable(
+            name='inputTtlCtrl',
+            description='Mux Control for ttl input, Setting 4 disables ttl input',
+            offset=0x00000544,
+            bitSize=2,
+            bitOffset=0,
+            base=pr.UInt,
+            mode='RW',
+        ))
+
         #####################################
         # Create commands
         #####################################
