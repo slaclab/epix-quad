@@ -118,7 +118,7 @@ entity EpixQuadPgp4_10Gbps is
       dbgOut            : out   slv(2 downto 0);
       spareIo2v5        : out   slv(4 downto 0);
       -- ttl Trigger
-      inputTtl          : in    slv(2 downto 0);
+      inputTtl          : in    slv(2 downto 0)
   );
 end EpixQuadPgp4_10Gbps;
 
