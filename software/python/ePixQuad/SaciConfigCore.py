@@ -37,7 +37,7 @@ except ImportError:
 class SaciConfigCore(pr.Device):
     def __init__(self, simSpeedup=False, **kwargs):
         """Create SaciConfigCore"""
-        super().__init__(description='Readout Core Regsisters', size=0x800000, **kwargs)
+        super().__init__(description='Readout Core Regsisters', **kwargs)
 
         self.simSpeedup = simSpeedup
 

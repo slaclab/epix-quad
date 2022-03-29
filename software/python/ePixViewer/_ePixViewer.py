@@ -32,6 +32,7 @@ import ePixViewer.imgProcessing as imgPr
 import ePixViewer.Cameras as cameras
 import numpy as np
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 
 import pdb
@@ -96,6 +97,7 @@ class Window(QMainWindow, QObject):
         fileMenu = mainMenu.addMenu('&File')
         fileMenu.addAction(openFile)
         fileMenu.addAction(extractAction)
+
 
         # Create widget
         self.prepairWindow()
@@ -185,6 +187,9 @@ class Window(QMainWindow, QObject):
         vbox1.setAlignment(Qt.AlignTop)
         #vbox1.addWidget(self.label,  Qt.AlignTop)
         vbox1.addWidget(self.mainImageDisp, Qt.AlignTop)
+
+        self.toolbar = NavigationToolbar(self.mainImageDisp, self)
+        vbox1.addWidget(self.toolbar, Qt.AlignTop)
 
         # tabbed control box
         self.gridVbox2 = TabbedCtrlCanvas(self)
