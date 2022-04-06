@@ -49,7 +49,7 @@ setup(
         'epixQuad.ePixFpga',
     ],
     package_dir = {
-        'epixQuad': 'firmware/python/epixQuad',
+        'epixQuad': 'firmware/python/epix_quad',
         'epixQuad.surf': 'firmware/submodules/surf/python/surf',
         'epixQuad.ePixAsics': 'software/python/ePixAsics',
         'epixQuad.ePixFpga': 'software/python/ePixFpga',
