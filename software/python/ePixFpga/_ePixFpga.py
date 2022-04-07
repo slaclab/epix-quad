@@ -2853,16 +2853,10 @@ class Epix10ka(pr.Device):
             if asic_rev == 1:
                 self.add(
                     epix.Epix10kaAsic(
-                        name=(
-                            'Epix10kaAsic[%d]' %
-                            i),
-                        offset=(
-                            0x02000000 +
-                            i *
-                            0x400000),
+                        name=('Epix10kaAsic[%d]' % i),
+                        offset=(0x02000000 + i * 0x400000),
                         enabled=False,
-                        expand=False,
-                        size=0x3fffff))
+                        expand=False))
             else:
                 self.add(
                     epix.Epix10kaAsicRev2(
