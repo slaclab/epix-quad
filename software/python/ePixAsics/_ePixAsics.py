@@ -1997,8 +1997,8 @@ class Epix10kaAsic(pr.Device):
         self.add(
             pr.Command(name='SetMatrixLow', description='Set configuration bits of all pixels to 8', function=self.fnSetMatrixLow))
 
-        self.add(
-            pr.Command(name='SetPixelBitmap', description='Set pixel bitmap of the matrix', function=self.fnSetPixelBitmap))
+#        self.add(
+ #           pr.Command(name='SetPixelBitmap', description='Set pixel bitmap of the matrix', function=self.fnSetPixelBitmap))
 
         self.add(
             pr.Command(name='GetPixelBitmap', description='Get pixel bitmap of the matrix', function=self.fnGetPixelBitmap))
@@ -2008,52 +2008,51 @@ class Epix10kaAsic(pr.Device):
 #            self.readBlocks(recurse=True, variable=None)
 #            self.checkBlocks(recurse=True, variable=None)
 
-    def fnSetPixelBitmap(self, dev, cmd, arg):
-        """SetPixelBitmap command function"""
-        addrSize = 4
-        # set r0mode in order to have saci cmd to work properly on legacy firmware
-        # self.root.Epix10ka.EpixFpgaRegisters.AsicR0Mode.set(True)
+        @self.command(description='SetPixelBitmap command function', value='', retValue='')
+        def SetPixelBitmap(arg, dev, cmd):
+            """SetPixelBitmap command function"""
+            addrSize = 4
+            # set r0mode in order to have saci cmd to work properly on legacy firmware
+            # self.root.Epix10ka.EpixFpgaRegisters.AsicR0Mode.set(True)
 
-        if (self.enable.get()):
-            self.reportCmd(dev, cmd, arg)
-            if not isinstance(arg, str):
-                arg = ''
-            if len(arg) > 0:
-                self.filename = arg
-            else:
-                self.filename = QFileDialog.getOpenFileName(
-                    self.root.guiTop, 'Open File', '', 'csv file (*.csv);; Any (*.*)')
-            # in PyQt5 QFileDialog returns a tuple
-            if usingPyQt5:
-                self.filename = self.filename[0]
-            if os.path.splitext(self.filename)[1] == '.csv':
-                matrixCfg = np.genfromtxt(self.filename, delimiter=',')
-                if matrixCfg.shape == (178, 192):
-                    self._rawWrite(0x00000000 * addrSize, 0)
-                    self._rawWrite(0x00008000 * addrSize, 0)
-                    for x in range(0, 177):
-                        for y in range(0, 192):
-                            bankToWrite = int(y / 48)
-                            if (bankToWrite == 0):
-                                colToWrite = 0x700 + y % 48
-                            elif (bankToWrite == 1):
-                                colToWrite = 0x680 + y % 48
-                            elif (bankToWrite == 2):
-                                colToWrite = 0x580 + y % 48
-                            elif (bankToWrite == 3):
-                                colToWrite = 0x380 + y % 48
-                            else:
-                                print('unexpected bank number')
-                            self._rawWrite(0x00006011 * addrSize, x)
-                            self._rawWrite(0x00006013 * addrSize, colToWrite)
-                            self._rawWrite(0x00005000 * addrSize, (int(matrixCfg[x][y])))
-                    self._rawWrite(0x00000000 * addrSize, 0)
+            if (self.enable.get()):
+                self.reportCmd(dev, cmd, arg)
+                if not isinstance(arg, str):
+                    arg = ''
+                if len(arg) > 0:
+                    self.filename = arg
                 else:
-                    print('csv file must be 192x178 pixels')
+                    self.file = QFileDialog.getOpenFileName(root)
+                if os.path.splitext(self.filename)[1] == '.csv':
+                    matrixCfg = np.genfromtxt(self.filename, delimiter=',')
+                    if matrixCfg.shape == (178, 192):
+                        self._rawWrite(0x00000000 * addrSize, 0)
+                        self._rawWrite(0x00008000 * addrSize, 0)
+                        print('2030')
+                        for x in range(0, 177):
+                            for y in range(0, 192):
+                                print('2033')
+                                bankToWrite = int(y / 48)
+                                if (bankToWrite == 0):
+                                    colToWrite = 0x700 + y % 48
+                                elif (bankToWrite == 1):
+                                    colToWrite = 0x680 + y % 48
+                                elif (bankToWrite == 2):
+                                    colToWrite = 0x580 + y % 48
+                                elif (bankToWrite == 3):
+                                    colToWrite = 0x380 + y % 48
+                                else:
+                                    print('unexpected bank number')
+                                self._rawWrite(0x00006011 * addrSize, x)
+                                self._rawWrite(0x00006013 * addrSize, colToWrite)
+                                self._rawWrite(0x00005000 * addrSize, (int(matrixCfg[x][y])))
+                        self._rawWrite(0x00000000 * addrSize, 0)
+                    else:
+                        print('csv file must be 192x178 pixels')
+                else:
+                    print("Not csv file : ", self.filename)
             else:
-                print("Not csv file : ", self.filename)
-        else:
-            print("Warning: ASIC enable is set to False!")
+                print("Warning: ASIC enable is set to False!")
 
     def fnGetPixelBitmap(self, dev, cmd, arg):
         """GetPixelBitmap command function"""
