@@ -251,18 +251,6 @@ class Top(pr.Root):
             expand=False,
         ))
 
-        ##################################################
-        # DO NOT MAP. MICROBLAZE IS THE ONLY
-        # AXI LITE MASTER THAT SHOULD ACCESS THIS DEVICE
-        ##################################################
-        # self.add(ePixQuad.AxiI2cMaster(
-        #    name    = 'AxiI2cMaster',
-        #    memBase = memMap,
-        #    offset  = 0x00600000,
-        #    expand  = False,
-        #    hidden  = True,
-        # ))
-
         self.add(axi.AxiMemTester(
             name='AxiMemTester',
             memBase=memMap,
@@ -284,7 +272,6 @@ class Top(pr.Root):
                 offset=asicSaciAddr[i],
                 enabled=False,
                 expand=False,
-                # size=0x120,
             ))
 
         self.add(ePixQuad.SaciConfigCore(
