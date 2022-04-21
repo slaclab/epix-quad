@@ -17,7 +17,6 @@ import pyrogue.pydm
 import rogue
 import argparse
 import ePixQuad as quad
-import ePixViewer as vi
 
 
 rogue.Logging.setLevel(rogue.Logging.Error)
@@ -50,14 +49,6 @@ parser.add_argument(
     required=False,
     default=False,
     help="Enable read all variables at start",
-)
-
-parser.add_argument(
-    "--viewer",
-    type=argBool,
-    required=False,
-    default=False,
-    help="Start viewer",
 )
 
 parser.add_argument(
@@ -105,15 +96,6 @@ with quad.Top(
     lane=args.l,
     promWrEn=args.adcCalib,
 ) as root:
-
-    if args.viewer:
-        gui = vi.Window(cameraType='ePixQuad')
-        gui.eventReader.frameIndex = 0
-        # gui.eventReaderImage.VIEW_DATA_CHANNEL_ID = 0
-        gui.setReadDelay(0)
-        pyrogue.streamTap(root.pgpVc0, gui.eventReader)
-        pyrogue.streamTap(root.pgpVc2, gui.eventReaderScope)  # PseudoScope
-        pyrogue.streamTap(root.pgpVc3, gui.eventReaderMonitoring)  # Slow Monitoring
 
     pyrogue.pydm.runPyDM(
         root=root,

@@ -31,6 +31,7 @@ import surf.protocols.ssi as ssi
 import ePixAsics as epix
 
 import ePixQuad
+import ePixViewer as vi
 
 import os.path
 from os import path
@@ -182,6 +183,16 @@ class Top(pr.Root):
         @self.command()
         def MonStrDisable():
             cmdVc3.sendCmd(0, 0)
+
+        @self.command()
+        def Viewer():
+            gui = vi.Window(cameraType='ePixQuad')
+            gui.eventReader.frameIndex = 0
+            # gui.eventReaderImage.VIEW_DATA_CHANNEL_ID = 0
+            gui.setReadDelay(0)
+            pyrogue.streamTap(self.pgpVc0, gui.eventReader)
+            pyrogue.streamTap(self.pgpVc2, gui.eventReaderScope)  # PseudoScope
+            pyrogue.streamTap(self.pgpVc3, gui.eventReaderMonitoring)  # Slow Monitoring
 
         ######################################################################
 
