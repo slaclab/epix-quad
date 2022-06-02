@@ -18,9 +18,9 @@ Top:
     enable: True
     UsrRst: 0x0
     TrigEn: True
-    TrigSrcSel: 0x3
+    TrigSrcSel: 0x1
     TrigPeriodRst: False
-    AutoTrigEn: True
+    AutoTrigEn: False
     AutoTrigPer: 0x989680
     AutoTrigPerMs: 100.00000
     AutoTrigFreqHz: 10.0
@@ -173,7 +173,7 @@ Top:
     RO_rst_en: True
     SlvdsBit: True
     FELmode: True
-    CompEnOn: False
+    CompEnOn: True
     RowStartAddr: 0x0
     RowStopAddr: 0xb1
     ColStartAddr: 0x0
@@ -181,7 +181,7 @@ Top:
     S2d1Gr: 0x3
     S2d2Gr: 0x3
     S2d3Gr: 0x3
-    trbit: False
+    trbit: True
     S2d1TcDac: 0x1
     S2d1Dac: 0x12
     S2d2TcDac: 0x1
@@ -241,7 +241,7 @@ Top:
     RO_rst_en: True
     SlvdsBit: True
     FELmode: True
-    CompEnOn: False
+    CompEnOn: True
     RowStartAddr: 0x0
     RowStopAddr: 0xb1
     ColStartAddr: 0x0
@@ -249,7 +249,7 @@ Top:
     S2d1Gr: 0x3
     S2d2Gr: 0x3
     S2d3Gr: 0x3
-    trbit: False
+    trbit: True
     S2d1TcDac: 0x1
     S2d1Dac: 0x12
     S2d2TcDac: 0x1
@@ -309,7 +309,7 @@ Top:
     RO_rst_en: True
     SlvdsBit: True
     FELmode: True
-    CompEnOn: False
+    CompEnOn: True
     RowStartAddr: 0x0
     RowStopAddr: 0xb1
     ColStartAddr: 0x0
@@ -317,7 +317,7 @@ Top:
     S2d1Gr: 0x3
     S2d2Gr: 0x3
     S2d3Gr: 0x3
-    trbit: False
+    trbit: True
     S2d1TcDac: 0x1
     S2d1Dac: 0x12
     S2d2TcDac: 0x1
@@ -377,7 +377,7 @@ Top:
     RO_rst_en: True
     SlvdsBit: True
     FELmode: True
-    CompEnOn: False
+    CompEnOn: True
     RowStartAddr: 0x0
     RowStopAddr: 0xb1
     ColStartAddr: 0x0
@@ -385,7 +385,7 @@ Top:
     S2d1Gr: 0x3
     S2d2Gr: 0x3
     S2d3Gr: 0x3
-    trbit: False
+    trbit: True
     S2d1TcDac: 0x1
     S2d1Dac: 0x12
     S2d2TcDac: 0x1
@@ -445,7 +445,7 @@ Top:
     RO_rst_en: True
     SlvdsBit: True
     FELmode: True
-    CompEnOn: False
+    CompEnOn: True
     RowStartAddr: 0x0
     RowStopAddr: 0xb1
     ColStartAddr: 0x0
@@ -453,7 +453,7 @@ Top:
     S2d1Gr: 0x3
     S2d2Gr: 0x3
     S2d3Gr: 0x3
-    trbit: False
+    trbit: True
     S2d1TcDac: 0x1
     S2d1Dac: 0x12
     S2d2TcDac: 0x1
@@ -513,7 +513,7 @@ Top:
     RO_rst_en: True
     SlvdsBit: True
     FELmode: True
-    CompEnOn: False
+    CompEnOn: True
     RowStartAddr: 0x0
     RowStopAddr: 0xb1
     ColStartAddr: 0x0
@@ -521,7 +521,7 @@ Top:
     S2d1Gr: 0x3
     S2d2Gr: 0x3
     S2d3Gr: 0x3
-    trbit: False
+    trbit: True
     S2d1TcDac: 0x1
     S2d1Dac: 0x12
     S2d2TcDac: 0x1
@@ -581,7 +581,7 @@ Top:
     RO_rst_en: True
     SlvdsBit: True
     FELmode: True
-    CompEnOn: False
+    CompEnOn: True
     RowStartAddr: 0x0
     RowStopAddr: 0xb1
     ColStartAddr: 0x0
@@ -589,7 +589,7 @@ Top:
     S2d1Gr: 0x3
     S2d2Gr: 0x3
     S2d3Gr: 0x3
-    trbit: False
+    trbit: True
     S2d1TcDac: 0x1
     S2d1Dac: 0x12
     S2d2TcDac: 0x1
@@ -649,7 +649,7 @@ Top:
     RO_rst_en: True
     SlvdsBit: True
     FELmode: True
-    CompEnOn: False
+    CompEnOn: True
     RowStartAddr: 0x0
     RowStopAddr: 0xb1
     ColStartAddr: 0x0
@@ -657,7 +657,7 @@ Top:
     S2d1Gr: 0x3
     S2d2Gr: 0x3
     S2d3Gr: 0x3
-    trbit: False
+    trbit: True
     S2d1TcDac: 0x1
     S2d1Dac: 0x12
     S2d2TcDac: 0x1
@@ -717,7 +717,7 @@ Top:
     RO_rst_en: True
     SlvdsBit: True
     FELmode: True
-    CompEnOn: False
+    CompEnOn: True
     RowStartAddr: 0x0
     RowStopAddr: 0xb1
     ColStartAddr: 0x0
@@ -725,7 +725,7 @@ Top:
     S2d1Gr: 0x3
     S2d2Gr: 0x3
     S2d3Gr: 0x3
-    trbit: False
+    trbit: True
     S2d1TcDac: 0x1
     S2d1Dac: 0x12
     S2d2TcDac: 0x1
@@ -785,7 +785,7 @@ Top:
     RO_rst_en: True
     SlvdsBit: True
     FELmode: True
-    CompEnOn: False
+    CompEnOn: True
     RowStartAddr: 0x0
     RowStopAddr: 0xb1
     ColStartAddr: 0x0
@@ -793,7 +793,7 @@ Top:
     S2d1Gr: 0x3
     S2d2Gr: 0x3
     S2d3Gr: 0x3
-    trbit: False
+    trbit: True
     S2d1TcDac: 0x1
     S2d1Dac: 0x12
     S2d2TcDac: 0x1
@@ -853,7 +853,7 @@ Top:
     RO_rst_en: True
     SlvdsBit: True
     FELmode: True
-    CompEnOn: False
+    CompEnOn: True
     RowStartAddr: 0x0
     RowStopAddr: 0xb1
     ColStartAddr: 0x0
@@ -861,7 +861,7 @@ Top:
     S2d1Gr: 0x3
     S2d2Gr: 0x3
     S2d3Gr: 0x3
-    trbit: False
+    trbit: True
     S2d1TcDac: 0x1
     S2d1Dac: 0x12
     S2d2TcDac: 0x1
@@ -921,7 +921,7 @@ Top:
     RO_rst_en: True
     SlvdsBit: True
     FELmode: True
-    CompEnOn: False
+    CompEnOn: True
     RowStartAddr: 0x0
     RowStopAddr: 0xb1
     ColStartAddr: 0x0
@@ -929,7 +929,7 @@ Top:
     S2d1Gr: 0x3
     S2d2Gr: 0x3
     S2d3Gr: 0x3
-    trbit: False
+    trbit: True
     S2d1TcDac: 0x1
     S2d1Dac: 0x12
     S2d2TcDac: 0x1
@@ -989,7 +989,7 @@ Top:
     RO_rst_en: True
     SlvdsBit: True
     FELmode: True
-    CompEnOn: False
+    CompEnOn: True
     RowStartAddr: 0x0
     RowStopAddr: 0xb1
     ColStartAddr: 0x0
@@ -997,7 +997,7 @@ Top:
     S2d1Gr: 0x3
     S2d2Gr: 0x3
     S2d3Gr: 0x3
-    trbit: False
+    trbit: True
     S2d1TcDac: 0x1
     S2d1Dac: 0x12
     S2d2TcDac: 0x1
@@ -1057,7 +1057,7 @@ Top:
     RO_rst_en: True
     SlvdsBit: True
     FELmode: True
-    CompEnOn: False
+    CompEnOn: True
     RowStartAddr: 0x0
     RowStopAddr: 0xb1
     ColStartAddr: 0x0
@@ -1065,7 +1065,7 @@ Top:
     S2d1Gr: 0x3
     S2d2Gr: 0x3
     S2d3Gr: 0x3
-    trbit: False
+    trbit: True
     S2d1TcDac: 0x1
     S2d1Dac: 0x12
     S2d2TcDac: 0x1
@@ -1125,7 +1125,7 @@ Top:
     RO_rst_en: True
     SlvdsBit: True
     FELmode: True
-    CompEnOn: False
+    CompEnOn: True
     RowStartAddr: 0x0
     RowStopAddr: 0xb1
     ColStartAddr: 0x0
@@ -1133,7 +1133,7 @@ Top:
     S2d1Gr: 0x3
     S2d2Gr: 0x3
     S2d3Gr: 0x3
-    trbit: False
+    trbit: True
     S2d1TcDac: 0x1
     S2d1Dac: 0x12
     S2d2TcDac: 0x1
@@ -1193,7 +1193,7 @@ Top:
     RO_rst_en: True
     SlvdsBit: True
     FELmode: True
-    CompEnOn: False
+    CompEnOn: True
     RowStartAddr: 0x0
     RowStopAddr: 0xb1
     ColStartAddr: 0x0
@@ -1201,7 +1201,7 @@ Top:
     S2d1Gr: 0x3
     S2d2Gr: 0x3
     S2d3Gr: 0x3
-    trbit: False
+    trbit: True
     S2d1TcDac: 0x1
     S2d1Dac: 0x12
     S2d2TcDac: 0x1

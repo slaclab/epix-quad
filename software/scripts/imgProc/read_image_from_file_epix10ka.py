@@ -18,7 +18,7 @@
 # copied, modified, propagated, or distributed except according to the terms
 # contained in the LICENSE.txt file.
 # -----------------------------------------------------------------------------
-
+import setupLibPaths
 import h5py
 import matplotlib.pyplot as plt
 import os
@@ -29,7 +29,21 @@ import ePixViewer.Cameras as cameras
 import ePixViewer.imgProcessing as imgPr
 #
 import matplotlib
-matplotlib.use('QT4Agg')
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.figure import Figure
+
+import pdb
+
+try:
+    from PyQt5.QtWidgets import *
+    from PyQt5.QtCore import *
+    from PyQt5.QtGui import *
+except ImportError:
+    from PyQt4.QtCore import *
+    from PyQt4.QtGui import *
+
+#matplotlib.use('QT4Agg')
 # matplotlib.pyplot.ion()
 MAX_NUMBER_OF_FRAMES_PER_BATCH = 8000
 
@@ -72,6 +86,8 @@ while ((len(file_header) > 0) and (numberOfFrames < MAX_NUMBER_OF_FRAMES_PER_BAT
         numberOfFrames = numberOfFrames + 1
         #print ("Payload" , numberOfFrames, ":",  (newPayload[0:5]))
         previousSize = file_header
+        if ((numberOfFrames%100)==0)	:
+            print ("Payload" , numberOfFrames, ":",  (newPayload[0:5]))
     except Exception:
         #e = sys.exc_info()[0]
         #print ("Message\n", e)
