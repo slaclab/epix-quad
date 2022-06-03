@@ -20,7 +20,7 @@ import ePixQuad as quad
 import ePixViewer as vi
 
 
-rogue.Logging.setLevel(rogue.Logging.Error)
+#rogue.Logging.setLevel(rogue.Logging.Error)
 # rogue.Logging.setFilter("pyrogue.SrpV3",rogue.Logging.Debug)
 # rogue.Logging.setLevel(rogue.Logging.Debug)
 
@@ -105,7 +105,7 @@ with quad.Top(
     lane=args.l,
     promWrEn=args.adcCalib,
 ) as root:
-
+#     pyrogue.waitCntrlC()
     if args.viewer:
         gui = vi.Window(cameraType='ePixQuad')
         gui.eventReader.frameIndex = 0
@@ -114,9 +114,12 @@ with quad.Top(
         pyrogue.streamTap(root.pgpVc0, gui.eventReader)
         pyrogue.streamTap(root.pgpVc2, gui.eventReaderScope)  # PseudoScope
         pyrogue.streamTap(root.pgpVc3, gui.eventReaderMonitoring)  # Slow Monitoring
-
+    print("Starting PyDM")
     pyrogue.pydm.runPyDM(
         root=root,
-        sizeX=900,
-        sizeY=800,
+        #sizeX=900,
+        #sizeY=800,
     )
+    print("After PyDM")
+
+    pyrogue.waitCntrlC()

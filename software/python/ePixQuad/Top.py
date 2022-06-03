@@ -69,6 +69,7 @@ class Top(pr.Root):
                     setattr(self, f'pgpVc{i}', rogue.interfaces.stream.TcpClient('localhost', 8000 + i * 2))
                 elif (hwType == 'datadev'):
                     setattr(self, f'pgpVc{i}', rogue.hardware.axi.AxiStreamDma(dev, 256 * lane + i, True))
+                    print(f'pgpVc{i} open on {dev=} {lane=} {i=}')
                 else:
                     setattr(self, f'pgpVc{i}', rogue.hardware.pgp.PgpCard(dev, lane, i))
 

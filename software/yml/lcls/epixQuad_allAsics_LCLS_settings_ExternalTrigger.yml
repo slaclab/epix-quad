@@ -5,6 +5,10 @@ Top:
   PollEn: False
   StreamWriter:
     enable: True
+    dataFile: ''
+    open: False
+    bufferSize: 0
+    maxFileSize: 0
   PrbsRx:
     enable: True
     checkPayload: True
@@ -18,9 +22,9 @@ Top:
     enable: True
     UsrRst: 0x0
     TrigEn: True
-    TrigSrcSel: 0x3
+    TrigSrcSel: 0x1
     TrigPeriodRst: False
-    AutoTrigEn: True
+    AutoTrigEn: False
     AutoTrigPer: 0x989680
     AutoTrigPerMs: 100.00000
     AutoTrigFreqHz: 10.0
@@ -127,6 +131,7 @@ Top:
     CompEn1: True
     CompEn2: True
     PulserSync: True
+    PixelDummy: 0x22
     Pulser: 0x0
     pbit: False
     atest: False
@@ -195,6 +200,7 @@ Top:
     CompEn1: True
     CompEn2: True
     PulserSync: True
+    PixelDummy: 0x22
     Pulser: 0x0
     pbit: False
     atest: False
@@ -263,6 +269,7 @@ Top:
     CompEn1: True
     CompEn2: True
     PulserSync: True
+    PixelDummy: 0x22
     Pulser: 0x0
     pbit: False
     atest: False
@@ -331,6 +338,7 @@ Top:
     CompEn1: True
     CompEn2: True
     PulserSync: True
+    PixelDummy: 0x22
     Pulser: 0x0
     pbit: False
     atest: False
@@ -399,6 +407,7 @@ Top:
     CompEn1: True
     CompEn2: True
     PulserSync: True
+    PixelDummy: 0x22
     Pulser: 0x0
     pbit: False
     atest: False
@@ -467,6 +476,7 @@ Top:
     CompEn1: True
     CompEn2: True
     PulserSync: True
+    PixelDummy: 0x22
     Pulser: 0x0
     pbit: False
     atest: False
@@ -535,6 +545,7 @@ Top:
     CompEn1: True
     CompEn2: True
     PulserSync: True
+    PixelDummy: 0x22
     Pulser: 0x0
     pbit: False
     atest: False
@@ -603,6 +614,7 @@ Top:
     CompEn1: True
     CompEn2: True
     PulserSync: True
+    PixelDummy: 0x22
     Pulser: 0x0
     pbit: False
     atest: False
@@ -671,6 +683,7 @@ Top:
     CompEn1: True
     CompEn2: True
     PulserSync: True
+    PixelDummy: 0x22
     Pulser: 0x0
     pbit: False
     atest: False
@@ -739,6 +752,7 @@ Top:
     CompEn1: True
     CompEn2: True
     PulserSync: True
+    PixelDummy: 0x22
     Pulser: 0x0
     pbit: False
     atest: False
@@ -807,6 +821,7 @@ Top:
     CompEn1: True
     CompEn2: True
     PulserSync: True
+    PixelDummy: 0x22
     Pulser: 0x0
     pbit: False
     atest: False
@@ -875,6 +890,7 @@ Top:
     CompEn1: True
     CompEn2: True
     PulserSync: True
+    PixelDummy: 0x22
     Pulser: 0x0
     pbit: False
     atest: False
@@ -943,6 +959,7 @@ Top:
     CompEn1: True
     CompEn2: True
     PulserSync: True
+    PixelDummy: 0x22
     Pulser: 0x0
     pbit: False
     atest: False
@@ -1011,6 +1028,7 @@ Top:
     CompEn1: True
     CompEn2: True
     PulserSync: True
+    PixelDummy: 0x22
     Pulser: 0x0
     pbit: False
     atest: False
@@ -1079,6 +1097,7 @@ Top:
     CompEn1: True
     CompEn2: True
     PulserSync: True
+    PixelDummy: 0x22
     Pulser: 0x0
     pbit: False
     atest: False
@@ -1147,6 +1166,7 @@ Top:
     CompEn1: True
     CompEn2: True
     PulserSync: True
+    PixelDummy: 0x22
     Pulser: 0x0
     pbit: False
     atest: False
@@ -1220,6 +1240,8 @@ Top:
     DutyCycleStabilizer: 'Off'
     ClockDivide: Divide by 1
     ChopMode: 'Off'
+    DevIndexMask[7:0]: 0b0
+    DevIndexMask[DCO:FCO]: 0b0
     UserTestModeCfg: single
     OutputTestMode: 'Off'
     OffsetAdjust: 0x0
@@ -1237,6 +1259,8 @@ Top:
     DutyCycleStabilizer: 'Off'
     ClockDivide: Divide by 1
     ChopMode: 'Off'
+    DevIndexMask[7:0]: 0b0
+    DevIndexMask[DCO:FCO]: 0b0
     UserTestModeCfg: single
     OutputTestMode: 'Off'
     OffsetAdjust: 0x0
@@ -1254,6 +1278,8 @@ Top:
     DutyCycleStabilizer: 'Off'
     ClockDivide: Divide by 1
     ChopMode: 'Off'
+    DevIndexMask[7:0]: 0b0
+    DevIndexMask[DCO:FCO]: 0b0
     UserTestModeCfg: single
     OutputTestMode: 'Off'
     OffsetAdjust: 0x0
@@ -1271,6 +1297,8 @@ Top:
     DutyCycleStabilizer: 'Off'
     ClockDivide: Divide by 1
     ChopMode: 'Off'
+    DevIndexMask[7:0]: 0b0
+    DevIndexMask[DCO:FCO]: 0b0
     UserTestModeCfg: single
     OutputTestMode: 'Off'
     OffsetAdjust: 0x0
@@ -1288,6 +1316,8 @@ Top:
     DutyCycleStabilizer: 'Off'
     ClockDivide: Divide by 1
     ChopMode: 'Off'
+    DevIndexMask[7:0]: 0b0
+    DevIndexMask[DCO:FCO]: 0b0
     UserTestModeCfg: single
     OutputTestMode: 'Off'
     OffsetAdjust: 0x0
@@ -1305,6 +1335,8 @@ Top:
     DutyCycleStabilizer: 'Off'
     ClockDivide: Divide by 1
     ChopMode: 'Off'
+    DevIndexMask[7:0]: 0b0
+    DevIndexMask[DCO:FCO]: 0b0
     UserTestModeCfg: single
     OutputTestMode: 'Off'
     OffsetAdjust: 0x0
@@ -1322,6 +1354,8 @@ Top:
     DutyCycleStabilizer: 'Off'
     ClockDivide: Divide by 1
     ChopMode: 'Off'
+    DevIndexMask[7:0]: 0b0
+    DevIndexMask[DCO:FCO]: 0b0
     UserTestModeCfg: single
     OutputTestMode: 'Off'
     OffsetAdjust: 0x0
@@ -1339,6 +1373,8 @@ Top:
     DutyCycleStabilizer: 'Off'
     ClockDivide: Divide by 1
     ChopMode: 'Off'
+    DevIndexMask[7:0]: 0b0
+    DevIndexMask[DCO:FCO]: 0b0
     UserTestModeCfg: single
     OutputTestMode: 'Off'
     OffsetAdjust: 0x0
@@ -1356,6 +1392,8 @@ Top:
     DutyCycleStabilizer: 'Off'
     ClockDivide: Divide by 1
     ChopMode: 'Off'
+    DevIndexMask[7:0]: 0b0
+    DevIndexMask[DCO:FCO]: 0b0
     UserTestModeCfg: single
     OutputTestMode: 'Off'
     OffsetAdjust: 0x0
@@ -1373,6 +1411,8 @@ Top:
     DutyCycleStabilizer: 'Off'
     ClockDivide: Divide by 1
     ChopMode: 'Off'
+    DevIndexMask[7:0]: 0b0
+    DevIndexMask[DCO:FCO]: 0b0
     UserTestModeCfg: single
     OutputTestMode: 'Off'
     OffsetAdjust: 0x0
