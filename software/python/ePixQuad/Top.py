@@ -69,22 +69,25 @@ class Top(pr.Root):
                     setattr(self, f'pgpVc{i}', rogue.interfaces.stream.TcpClient('localhost', 8000 + i * 2))
                 elif (hwType == 'datadev'):
                     setattr(self, f'pgpVc{i}', rogue.hardware.axi.AxiStreamDma(dev, 256 * lane + i, True))
-                    print(f'pgpVc{i} open on {dev=} {lane=} {i=}')
                 else:
                     setattr(self, f'pgpVc{i}', rogue.hardware.pgp.PgpCard(dev, lane, i))
 
         ######################################################################
+
+        for i in range(4):
+            # Create a Fifo with maxDepth=100, trimSize=0, noCopy=True
+            self.fifo[i] = rogue.interfaces.stream.Fifo(100, 0, True)
 
         # File writer
         if enWriter:
             dataWriter = pr.utilities.fileio.StreamWriter()
             self.add(dataWriter)
             if enVcMask & 1:
-                pyrogue.streamConnect(self.pgpVc0, dataWriter.getChannel(0x1))
+                self.pgpVc0 >> self.fifo[0] >> dataWriter.getChannel(0x1)
             if enVcMask & 4:
-                pyrogue.streamConnect(self.pgpVc2, dataWriter.getChannel(0x2))
+                self.pgpVc2 >> self.fifo[2] >> dataWriter.getChannel(0x2)
             if enVcMask & 8:
-                pyrogue.streamConnect(self.pgpVc3, dataWriter.getChannel(0x3))
+                self.pgpVc3 >> self.fifo[3] >> dataWriter.getChannel(0x3)
 
         # PRBS
         if enPrbs:
@@ -98,9 +101,9 @@ class Top(pr.Root):
         # Connect the SRPv3 to PGPv3.VC[0]
         if enVcMask & 1:
             cmdVc1 = rogue.protocols.srp.Cmd()
-            pyrogue.streamConnect(cmdVc1, self.pgpVc0)
+            cmdVc1 >> self.pgpVc0
         if enVcMask & 2:
-            pr.streamConnectBiDir(self.pgpVc1, memMap)
+            self.pgpVc1 == memMap
         if enVcMask & 8:
             cmdVc3 = rogue.protocols.srp.Cmd()
             pyrogue.streamConnect(cmdVc3, self.pgpVc3)
@@ -146,47 +149,48 @@ class Top(pr.Root):
             # restore TrigEn state
             self.SystemRegs.TrigEn.set(trigEn)
 
-        @self.command()
-        def SetAsicMatrixHighOrMedium():
+#        @self.command()
+#        def SetAsicMatrixHighOrMedium():
+#            # save TrigEn state and stop
+#            self.SystemRegs.enable.set(True)
+#            trigEn = self.SystemRegs.TrigEn.get()
+#            self.SystemRegs.TrigEn.set(False)
+#            # clear matrix in all enabled ASICs
+#            for i in range(16):
+#                if self.Epix10kaSaci[i].enable.get() == True:
+#                    self.Epix10kaSaci[i].atest.set(False)
+#                    self.Epix10kaSaci[i].test.set(False)
+#                    self.Epix10kaSaci[i].SetMatrixHiMed()
+#            # restore TrigEn state
+#            self.SystemRegs.TrigEn.set(trigEn)
+#
+#        @self.command()
+#        def SetAsicMatrixLow():
+#            # save TrigEn state and stop
+#            self.SystemRegs.enable.set(True)
+#            trigEn = self.SystemRegs.TrigEn.get()
+#            self.SystemRegs.TrigEn.set(False)
+#            # clear matrix in all enabled ASICs
+#            for i in range(16):
+#                if self.Epix10kaSaci[i].enable.get() == True:
+#                    self.Epix10kaSaci[i].atest.set(False)
+#                    self.Epix10kaSaci[i].test.set(False)
+#                    self.Epix10kaSaci[i].SetMatrixLow()
+#            # restore TrigEn state
+#            self.SystemRegs.TrigEn.set(trigEn)
+
+        @self.command
+        def SetAsicMatrix():
             # save TrigEn state and stop
             self.SystemRegs.enable.set(True)
             trigEn = self.SystemRegs.TrigEn.get()
             self.SystemRegs.TrigEn.set(False)
-            # clear matrix in all enabled ASICs
+            # clear matrix in all enabled ASICs:q
             for i in range(16):
                 if self.Epix10kaSaci[i].enable.get() == True:
                     self.Epix10kaSaci[i].atest.set(False)
                     self.Epix10kaSaci[i].test.set(False)
-                    self.Epix10kaSaci[i].SetMatrixHiMed()
-            # restore TrigEn state
-            self.SystemRegs.TrigEn.set(trigEn)
-
-        @self.command()
-        def SetAsicMatrixLow():
-            # save TrigEn state and stop
-            self.SystemRegs.enable.set(True)
-            trigEn = self.SystemRegs.TrigEn.get()
-            self.SystemRegs.TrigEn.set(False)
-            # clear matrix in all enabled ASICs
-            for i in range(16):
-                if self.Epix10kaSaci[i].enable.get() == True:
-                    self.Epix10kaSaci[i].atest.set(False)
-                    self.Epix10kaSaci[i].test.set(False)
-                    self.Epix10kaSaci[i].SetMatrixLow()
-            # restore TrigEn state
-            self.SystemRegs.TrigEn.set(trigEn)
-
-        @self.command()
-        def MonStrEnable():
-            cmdVc3.sendCmd(1, 0)
-
-        @self.command()
-        def MonStrDisable():
-            cmdVc3.sendCmd(0, 0)
-
-        ######################################################################
-
-        # Add devices
+                    self.Epix10kaSaci[i].SetMatrix()
         self.add(ePixQuad.EpixVersion(
             name='AxiVersion',
             memBase=memMap,
@@ -321,7 +325,7 @@ class Top(pr.Root):
         #this device enables us to force back pressure
         self.repeater = ePixQuad.StreamRepeater(expand=False)
         self.add(self.repeater)
-            
+
         # Connect DMA stream --> repeater
         self.pgpVc0 >> self.repeater
 
@@ -774,6 +778,21 @@ class Top(pr.Root):
         self.CypressS25Fl.readCmd(0x3000000)
         # Get the data
         readArray = self.CypressS25Fl.getDataReg()
+
+        if not np.array_equal(readArray, writeArray):
+            click.secho(
+                "\n\n\
+            ***************************************************\n\
+            ***************************************************\n\
+            Writing ADC constants to PROM failed !!!!!!        \n\
+            ***************************************************\n\
+            ***************************************************\n\n", bg='red',
+            )
+        else:
+            click.secho(
+                "\n\n\
+            ***************************************************\n\
+            ***************************************************\n\
 
         if not np.array_equal(readArray, writeArray):
             click.secho(
