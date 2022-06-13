@@ -8,11 +8,13 @@
 # may be copied, modified, propagated, or distributed except according to
 # the terms contained in the LICENSE.txt file.
 ##############################################################################
+import setupLibPaths
 
 import rogue
 import rogue.hardware.pgp
 import rogue.hardware.axi
 import rogue.utilities.fileio
+import rogue.interfaces.stream
 
 import pyrogue
 import pyrogue as pr
@@ -28,6 +30,8 @@ import surf.devices.cypress as cypress
 import surf.xilinx as xil
 import surf.protocols.ssi as ssi
 
+import axipcie as pcie
+
 import ePixAsics as epix
 
 import ePixQuad
@@ -36,6 +40,8 @@ import os.path
 from os import path
 import numpy as np
 import click
+
+import sys
 
 
 class Top(pr.Root):
@@ -54,7 +60,6 @@ class Top(pr.Root):
         kwargs['timeout'] = 5000000 # 5.0 seconds default
 
         super().__init__(name=name, description=description, **kwargs)
-
         self._promWrEn = promWrEn
 
         ######################################################################
@@ -74,20 +79,24 @@ class Top(pr.Root):
 
         ######################################################################
 
-        for i in range(4):
-            # Create a Fifo with maxDepth=100, trimSize=0, noCopy=True
-            self.fifo[i] = rogue.interfaces.stream.Fifo(100, 0, True)
+        fifo_vc0 = rogue.interfaces.stream.Fifo(100, 0, True)
+        fifo_vc1 = rogue.interfaces.stream.Fifo(100, 0, True)
+        fifo_vc2 = rogue.interfaces.stream.Fifo(100, 0, True)
+        fifo_vc3 = rogue.interfaces.stream.Fifo(100, 0, True)
+        # for i in range(4):
+        #     # Create a Fifo with maxDepth=100, trimSize=0, noCopy=True
+        #     self.fifo[i] = rogue.interfaces.stream.Fifo(100, 0, True)
 
         # File writer
         if enWriter:
             dataWriter = pr.utilities.fileio.StreamWriter()
             self.add(dataWriter)
             if enVcMask & 1:
-                self.pgpVc0 >> self.fifo[0] >> dataWriter.getChannel(0x1)
+                self.pgpVc0 >> fifo_vc0 >> dataWriter.getChannel(0x1)
             if enVcMask & 4:
-                self.pgpVc2 >> self.fifo[2] >> dataWriter.getChannel(0x2)
+                self.pgpVc2 >> fifo_vc2 >> dataWriter.getChannel(0x2)
             if enVcMask & 8:
-                self.pgpVc3 >> self.fifo[3] >> dataWriter.getChannel(0x3)
+                self.pgpVc3 >> fifo_vc3 >> dataWriter.getChannel(0x3)
 
         # PRBS
         if enPrbs:
@@ -179,7 +188,7 @@ class Top(pr.Root):
 #            # restore TrigEn state
 #            self.SystemRegs.TrigEn.set(trigEn)
 
-        @self.command
+        @self.command()
         def SetAsicMatrix():
             # save TrigEn state and stop
             self.SystemRegs.enable.set(True)
@@ -191,6 +200,7 @@ class Top(pr.Root):
                     self.Epix10kaSaci[i].atest.set(False)
                     self.Epix10kaSaci[i].test.set(False)
                     self.Epix10kaSaci[i].SetMatrix()
+
         self.add(ePixQuad.EpixVersion(
             name='AxiVersion',
             memBase=memMap,
@@ -778,21 +788,6 @@ class Top(pr.Root):
         self.CypressS25Fl.readCmd(0x3000000)
         # Get the data
         readArray = self.CypressS25Fl.getDataReg()
-
-        if not np.array_equal(readArray, writeArray):
-            click.secho(
-                "\n\n\
-            ***************************************************\n\
-            ***************************************************\n\
-            Writing ADC constants to PROM failed !!!!!!        \n\
-            ***************************************************\n\
-            ***************************************************\n\n", bg='red',
-            )
-        else:
-            click.secho(
-                "\n\n\
-            ***************************************************\n\
-            ***************************************************\n\
 
         if not np.array_equal(readArray, writeArray):
             click.secho(
