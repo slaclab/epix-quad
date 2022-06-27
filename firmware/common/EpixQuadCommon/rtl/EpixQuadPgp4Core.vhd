@@ -245,7 +245,7 @@ begin
       U_Rogue : entity surf.RoguePgp4Sim
          generic map(
             TPD_G      => TPD_G,
-            PORT_NUM_G => 8000,
+            PORT_NUM_G => 10000,
             NUM_VC_G   => 4
          )
          port map(

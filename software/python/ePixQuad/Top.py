@@ -57,7 +57,6 @@ class Top(pr.Root):
                  enPrbs=True,
                  **kwargs):
 
-        kwargs['timeout'] = 5000000 # 5.0 seconds default
 
         super().__init__(name=name, description=description, **kwargs)
         self._promWrEn = promWrEn
@@ -70,12 +69,17 @@ class Top(pr.Root):
         # VC3: Monitoring (Slow ADC)
         for i in range(4):
             if enVcMask & (1 << i):
-                if (hwType == 'simulation'):
-                    setattr(self, f'pgpVc{i}', rogue.interfaces.stream.TcpClient('localhost', 8000 + i * 2))
-                elif (hwType == 'datadev'):
+                if (hwType == 'datadev'):
                     setattr(self, f'pgpVc{i}', rogue.hardware.axi.AxiStreamDma(dev, 256 * lane + i, True))
-                else:
+                    kwargs['timeout'] = 5000000 # 5.0 seconds default
+                elif (hwType == 'pgp3_cardG3'):
                     setattr(self, f'pgpVc{i}', rogue.hardware.pgp.PgpCard(dev, lane, i))
+                    kwargs['timeout'] = 5000000 # 5.0 seconds default
+                else:
+                    print('sim')
+                    setattr(self, f'pgpVc{i}', rogue.interfaces.stream.TcpClient('localhost', 10000 + i * 2))
+                    kwargs['timeout'] = 10000000 # 10.0 seconds
+                    self.sim = True
 
         ######################################################################
 
@@ -229,12 +233,14 @@ class Top(pr.Root):
             expand=False,
         ))
 
-        self.add(axi.AxiStreamMonAxiL(
-            name='RdoutStreamMonitoring',
-            memBase=memMap,
-            offset=0x01300000,
-            expand=False,
-        ))
+        if not self.sim:
+            print('HERERERERERE')
+            self.add(axi.AxiStreamMonAxiL(
+                name='RdoutStreamMonitoring',
+                memBase=memMap,
+                offset=0x01300000,
+                expand=False,
+            ))
 
         self.add(ssi.SsiPrbsTx(
             name='PrbsTx',
