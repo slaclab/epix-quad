@@ -234,7 +234,6 @@ class Top(pr.Root):
         ))
 
         if not self.sim:
-            print('HERERERERERE')
             self.add(axi.AxiStreamMonAxiL(
                 name='RdoutStreamMonitoring',
                 memBase=memMap,
@@ -257,7 +256,7 @@ class Top(pr.Root):
             expand=False,
         ))
 
-        if (hwType != 'simulation'):
+        if not self.sim:
             self.add(ePixQuad.VguardDac(
                 name='VguardDac',
                 memBase=memMap,
@@ -265,12 +264,13 @@ class Top(pr.Root):
                 expand=False,
             ))
 
-        self.add(ePixQuad.EpixQuadMonitor(
-            name='EpixQuadMonitor',
-            memBase=memMap,
-            offset=0x00700000,
-            expand=False,
-        ))
+        if not self.sim:
+            self.add(ePixQuad.EpixQuadMonitor(
+                name='EpixQuadMonitor',
+                memBase=memMap,
+                offset=0x00700000,
+                expand=False,
+            ))
 
         self.add(axi.AxiMemTester(
             name='AxiMemTester',

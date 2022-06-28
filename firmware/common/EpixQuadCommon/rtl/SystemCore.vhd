@@ -525,42 +525,43 @@ begin
       axiRst         => sysRst
    );
 
-   ------------------------------------------------
-   -- Humidity and temp sensors readout
-   ------------------------------------------------
-   U_HumI2C : entity work.EpixQuadMonitoring
-   generic map (
-      AXI_CLK_FREQ_G    => AXI_CLK_FREQ_G,
-      I2C_SCL_FREQ_G    => 50.0E+3,
-      SIM_SPEEDUP_G     => SIM_SPEEDUP_G
-   )
-   port map (
-      -- Clocks and Resets
-      sysClk            => sysClk,
-      sysRst            => sysRst,
-      -- Trigger inputs
-      acqStart          => iAcqStart,
-      ---- monitor ADC bus
-      envSck            => envSck,
-      envCnv            => envCnv,
-      envDin            => envDin,
-      envSdo            => envSdo,
-      -- humidity I2C bus (2 devices)
-      humScl            => humScl,
-      humSda            => humSda,
-      -- AXI-Lite Register Interface
-      axilReadMaster    => axilReadMasters(HUM_SNS_INDEX_C),
-      axilReadSlave     => axilReadSlaves(HUM_SNS_INDEX_C),
-      axilWriteMaster   => axilWriteMasters(HUM_SNS_INDEX_C),
-      axilWriteSlave    => axilWriteSlaves(HUM_SNS_INDEX_C),
-      -- Monitor data for the image stream
-      monData           => monData,
-      -- Monitor Data Interface
-      monitorTxMaster   => monitorTxMaster,
-      monitorTxSlave    => monitorTxSlave,
-      monitorEn         => monitorEn
-   );
-
+   G_HumI2C : if SIMULATION_G = true generate
+      ------------------------------------------------
+      -- Humidity and temp sensors readout
+      ------------------------------------------------
+      U_HumI2C : entity work.EpixQuadMonitoring
+      generic map (
+         AXI_CLK_FREQ_G    => AXI_CLK_FREQ_G,
+         I2C_SCL_FREQ_G    => 50.0E+3,
+         SIM_SPEEDUP_G     => SIM_SPEEDUP_G
+      )
+      port map (
+         -- Clocks and Resets
+         sysClk            => sysClk,
+         sysRst            => sysRst,
+         -- Trigger inputs
+         acqStart          => iAcqStart,
+         ---- monitor ADC bus
+         envSck            => envSck,
+         envCnv            => envCnv,
+         envDin            => envDin,
+         envSdo            => envSdo,
+         -- humidity I2C bus (2 devices)
+         humScl            => humScl,
+         humSda            => humSda,
+         -- AXI-Lite Register Interface
+         axilReadMaster    => axilReadMasters(HUM_SNS_INDEX_C),
+         axilReadSlave     => axilReadSlaves(HUM_SNS_INDEX_C),
+         axilWriteMaster   => axilWriteMasters(HUM_SNS_INDEX_C),
+         axilWriteSlave    => axilWriteSlaves(HUM_SNS_INDEX_C),
+         -- Monitor data for the image stream
+         monData           => monData,
+         -- Monitor Data Interface
+         monitorTxMaster   => monitorTxMaster,
+         monitorTxSlave    => monitorTxSlave,
+         monitorEn         => monitorEn
+      );
+   end generate;
    -- humRstN and humAlert are currently not supported
    humRstN <= '1';
 
