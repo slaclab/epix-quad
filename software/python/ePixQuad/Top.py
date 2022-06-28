@@ -76,7 +76,6 @@ class Top(pr.Root):
                     setattr(self, f'pgpVc{i}', rogue.hardware.pgp.PgpCard(dev, lane, i))
                     kwargs['timeout'] = 5000000 # 5.0 seconds default
                 else:
-                    print('sim')
                     setattr(self, f'pgpVc{i}', rogue.interfaces.stream.TcpClient('localhost', 10000 + i * 2))
                     kwargs['timeout'] = 10000000 # 10.0 seconds
                     self.sim = True

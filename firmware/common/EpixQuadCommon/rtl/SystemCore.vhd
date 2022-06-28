@@ -525,7 +525,7 @@ begin
       axiRst         => sysRst
    );
 
-   G_HumI2C : if SIMULATION_G = true generate
+   G_HumI2C : if SIMULATION_G = false generate
       ------------------------------------------------
       -- Humidity and temp sensors readout
       ------------------------------------------------
