@@ -72,9 +72,11 @@ class Top(pr.Root):
                 if (hwType == 'datadev'):
                     setattr(self, f'pgpVc{i}', rogue.hardware.axi.AxiStreamDma(dev, 256 * lane + i, True))
                     kwargs['timeout'] = 5000000 # 5.0 seconds default
+                    self.sim = False
                 elif (hwType == 'pgp3_cardG3'):
                     setattr(self, f'pgpVc{i}', rogue.hardware.pgp.PgpCard(dev, lane, i))
                     kwargs['timeout'] = 5000000 # 5.0 seconds default
+                    self.sim = False
                 else:
                     setattr(self, f'pgpVc{i}', rogue.interfaces.stream.TcpClient('localhost', 10000 + i * 2))
                     kwargs['timeout'] = 10000000 # 10.0 seconds
