@@ -12,13 +12,11 @@ Top:
   SystemRegs:
     enable: True
     UsrRst: 0x0
-    TrigEn: False
-    TrigSrcSel: 0x1
+    TrigEn: True
+    TrigSrcSel: 0x3
     TrigPeriodRst: False
-    AutoTrigEn: False
-    AutoTrigPer: 0x7f2815
-    AutoTrigPerMs: 83.33333
-    AutoTrigFreqHz: 12.0
+    AutoTrigEn: True
+    AutoTrigFreqHz: 1000.0
     DcDcEnable: 0xf
     AsicAnaEn: True
     AsicDigEn: True
@@ -49,7 +47,7 @@ Top:
     AsicAcqWidth: 0x2710
     AsicAcqLToPPmatL: 0x3e8
     AsicPpmatToReadout: 0x0
-    AsicRoClkHalfT: 0xaaaa0003
+    AsicRoClkHalfT: 0xaaaa0001
     AsicAcqForce: False
     AsicR0Force: False
     AsicPpmatForce: True
@@ -60,7 +58,7 @@ Top:
     AsicPpmatValue: True
     AsicSyncValue: False
     AsicRoClkValue: False
-    DummyAcqEn: True
+    DummyAcqEn: False
   RdoutCore:
     enable: True
     RdoutEn: True
