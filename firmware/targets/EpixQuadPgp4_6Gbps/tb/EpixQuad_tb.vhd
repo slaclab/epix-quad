@@ -111,6 +111,14 @@ architecture testbench of EpixQuad_tb is
    -- ttl trigger
    signal inputTtl          : slv(2 downto 0) := (others => '0');
 
+   signal iAasicSaciResp   : slv(15 downto 0);
+   
+   signal aInP     : real;
+   signal aInN     : real;
+   signal aInArrP  : RealArray(7 downto 0);
+   signal aInArrN  : RealArray(7 downto 0);
+   signal adcDoutClk       : sl;
+   
    constant ADC_BASELINE_C  : RealArray(79 downto 0)    := (
       0 =>0.5+0 *1.0/80, 1 =>0.5+1 *1.0/80, 2 =>0.5+2 *1.0/80, 3 =>0.5+3 *1.0/80, 4 =>0.5+4 *1.0/80, 5 =>0.5+5 *1.0/80, 6 =>0.5+6 *1.0/80, 7 =>0.5+7 *1.0/80,
       8 =>0.5+8 *1.0/80, 9 =>0.5+9 *1.0/80, 10=>0.5+10*1.0/80, 11=>0.5+11*1.0/80, 12=>0.5+12*1.0/80, 13=>0.5+13*1.0/80, 14=>0.5+14*1.0/80, 15=>0.5+15*1.0/80,
@@ -254,7 +262,7 @@ architecture testbench of EpixQuad_tb is
         U_ADC : entity work.ad9249_group
         generic map (
            --OUTPUT_TYPE_G     => (others=>COUNT_OUT),
-           OUTPUT_TYPE_G     => (others=>AIN_OUT),
+           OUTPUT_TYPE_G     => (others=>NOISE_OUT),
            NOISE_BASELINE_G  => ADC_BASELINE_C(7+i*8 downto 0+i*8),
            NOISE_VPP_G       => (others=> 5.0e-3),
            PATTERN_G         => (others=>x"2F7C"),
@@ -356,7 +364,7 @@ architecture testbench of EpixQuad_tb is
       
       U_SaciSlave : entity surf.SaciSlaveWrapper
          generic map (
-            TPD_G    => TPD_C
+            TPD_G    => TPD_G
          )
          port map (
             asicRstL => asicSaciSel(i),

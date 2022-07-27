@@ -8,43 +8,38 @@
 # may be copied, modified, propagated, or distributed except according to
 # the terms contained in the LICENSE.txt file.
 ##############################################################################
-import setupLibPaths
+import os.path
+import sys
+import time
+from os import path
 
-import rogue
-import rogue.hardware.pgp
-import rogue.hardware.axi
-import rogue.utilities.fileio
-import rogue.interfaces.stream
-
+import axipcie as pcie
+import click
+import ePixAsics as epix
+import numpy as np
 import pyrogue
 import pyrogue as pr
-import pyrogue.protocols
-import pyrogue.utilities.prbs
-import pyrogue.utilities.fileio
 import pyrogue.interfaces.simulation
-import time
-
+import pyrogue.protocols
+import pyrogue.utilities.fileio
+import pyrogue.utilities.prbs
+import rogue
+import rogue.hardware.axi
+import rogue.hardware.pgp
+import rogue.interfaces.stream
+import rogue.utilities.fileio
+import setupLibPaths
 import surf.axi as axi
 import surf.devices.analog_devices as analog_devices
 import surf.devices.cypress as cypress
-import surf.xilinx as xil
 import surf.protocols.ssi as ssi
-
-import axipcie as pcie
-
-import ePixAsics as epix
+import surf.xilinx as xil
 
 import ePixQuad
 
-import os.path
-from os import path
-import numpy as np
-import click
-
-import sys
-
 
 class Top(pr.Root):
+
     def __init__(self,
                  name="Top",
                  description="Container for EpixQuad",
@@ -56,7 +51,6 @@ class Top(pr.Root):
                  enWriter=True,
                  enPrbs=True,
                  **kwargs):
-
 
         super().__init__(name=name, description=description, **kwargs)
         self._promWrEn = promWrEn
@@ -70,16 +64,23 @@ class Top(pr.Root):
         for i in range(4):
             if enVcMask & (1 << i):
                 if (hwType == 'datadev'):
-                    setattr(self, f'pgpVc{i}', rogue.hardware.axi.AxiStreamDma(dev, 256 * lane + i, True))
-                    kwargs['timeout'] = 5000000 # 5.0 seconds default
+                    setattr(
+                        self, f'pgpVc{i}',
+                        rogue.hardware.axi.AxiStreamDma(
+                            dev, 256 * lane + i, True))
+                    kwargs['timeout'] = 5000000  # 5.0 seconds default
                     self.sim = False
                 elif (hwType == 'pgp3_cardG3'):
-                    setattr(self, f'pgpVc{i}', rogue.hardware.pgp.PgpCard(dev, lane, i))
-                    kwargs['timeout'] = 5000000 # 5.0 seconds default
+                    setattr(self, f'pgpVc{i}',
+                            rogue.hardware.pgp.PgpCard(dev, lane, i))
+                    kwargs['timeout'] = 5000000  # 5.0 seconds default
                     self.sim = False
                 else:
-                    setattr(self, f'pgpVc{i}', rogue.interfaces.stream.TcpClient('localhost', 10000 + i * 2))
-                    kwargs['timeout'] = 10000000 # 10.0 seconds
+                    setattr(
+                        self, f'pgpVc{i}',
+                        rogue.interfaces.stream.TcpClient(
+                            'localhost', 10000 + i * 2))
+                    kwargs['timeout'] = 10000000  # 10.0 seconds
                     self.sim = True
 
         ######################################################################
@@ -163,6 +164,7 @@ class Top(pr.Root):
             # restore TrigEn state
             self.SystemRegs.TrigEn.set(trigEn)
 
+
 #        @self.command()
 #        def SetAsicMatrixHighOrMedium():
 #            # save TrigEn state and stop
@@ -206,104 +208,116 @@ class Top(pr.Root):
                     self.Epix10kaSaci[i].test.set(False)
                     self.Epix10kaSaci[i].SetMatrix()
 
-        self.add(ePixQuad.EpixVersion(
-            name='AxiVersion',
-            memBase=memMap,
-            offset=0x00000000,
-            expand=False,
-        ))
-
-        self.add(ePixQuad.SystemRegs(
-            name='SystemRegs',
-            memBase=memMap,
-            offset=0x00100000,
-            expand=False,
-        ))
-
-        self.add(ePixQuad.AcqCore(
-            name='AcqCore',
-            memBase=memMap,
-            offset=0x01000000,
-            expand=False,
-        ))
-
-        self.add(ePixQuad.RdoutCore(
-            name='RdoutCore',
-            memBase=memMap,
-            offset=0x01100000,
-            expand=False,
-        ))
-
-        if not self.sim:
-            self.add(axi.AxiStreamMonAxiL(
-                name='RdoutStreamMonitoring',
+        self.add(
+            ePixQuad.EpixVersion(
+                name='AxiVersion',
                 memBase=memMap,
-                offset=0x01300000,
+                offset=0x00000000,
                 expand=False,
             ))
 
-        self.add(ssi.SsiPrbsTx(
-            name='PrbsTx',
-            memBase=memMap,
-            offset=0x01400000,
-            expand=False,
-            enabled=False,
-        ))
-
-        self.add(ePixQuad.PseudoScopeCore(
-            name='PseudoScopeCore',
-            memBase=memMap,
-            offset=0x01200000,
-            expand=False,
-        ))
-
-        if not self.sim:
-            self.add(ePixQuad.VguardDac(
-                name='VguardDac',
+        self.add(
+            ePixQuad.SystemRegs(
+                name='SystemRegs',
                 memBase=memMap,
-                offset=0x00500000,
+                offset=0x00100000,
+                expand=False,
+            ))
+
+        self.add(
+            ePixQuad.AcqCore(
+                name='AcqCore',
+                memBase=memMap,
+                offset=0x01000000,
+                expand=False,
+            ))
+
+        self.add(
+            ePixQuad.RdoutCore(
+                name='RdoutCore',
+                memBase=memMap,
+                offset=0x01100000,
                 expand=False,
             ))
 
         if not self.sim:
-            self.add(ePixQuad.EpixQuadMonitor(
-                name='EpixQuadMonitor',
+            self.add(
+                axi.AxiStreamMonAxiL(
+                    name='RdoutStreamMonitoring',
+                    memBase=memMap,
+                    offset=0x01300000,
+                    expand=False,
+                ))
+
+        self.add(
+            ssi.SsiPrbsTx(
+                name='PrbsTx',
                 memBase=memMap,
-                offset=0x00700000,
+                offset=0x01400000,
+                expand=False,
+                enabled=False,
+            ))
+
+        self.add(
+            ePixQuad.PseudoScopeCore(
+                name='PseudoScopeCore',
+                memBase=memMap,
+                offset=0x01200000,
                 expand=False,
             ))
 
-        self.add(axi.AxiMemTester(
-            name='AxiMemTester',
-            memBase=memMap,
-            offset=0x00400000,
-            expand=False,
-            enabled=False,
-        ))
+        if not self.sim:
+            self.add(
+                ePixQuad.VguardDac(
+                    name='VguardDac',
+                    memBase=memMap,
+                    offset=0x00500000,
+                    expand=False,
+                ))
+
+        if not self.sim:
+            self.add(
+                ePixQuad.EpixQuadMonitor(
+                    name='EpixQuadMonitor',
+                    memBase=memMap,
+                    offset=0x00700000,
+                    expand=False,
+                ))
+
+        self.add(
+            axi.AxiMemTester(
+                name='AxiMemTester',
+                memBase=memMap,
+                offset=0x00400000,
+                expand=False,
+                enabled=False,
+            ))
 
         for i in range(16):
             asicSaciAddr = [
-                0x04000000, 0x04400000, 0x04800000, 0x04C00000,
-                0x05000000, 0x05400000, 0x05800000, 0x05C00000,
-                0x06000000, 0x06400000, 0x06800000, 0x06C00000,
-                0x07000000, 0x07400000, 0x07800000, 0x07C00000
+                0x04000000, 0x04400000, 0x04800000, 0x04C00000, 0x05000000,
+                0x05400000, 0x05800000, 0x05C00000, 0x06000000, 0x06400000,
+                0x06800000, 0x06C00000, 0x07000000, 0x07400000, 0x07800000,
+                0x07C00000
             ]
-            self.add(epix.Epix10kaAsic(
-                name=('Epix10kaSaci[%d]' % i),
-                memBase=memMap,
-                offset=asicSaciAddr[i],
-                enabled=False,
-                expand=False,
-            ))
+            self.add(
+                epix.Epix10kaAsic(
+                    name=('Epix10kaSaci[%d]' % i),
+                    memBase=memMap,
+                    offset=asicSaciAddr[i],
+                    enabled=False,
+                    expand=False,
+                ))
 
-        self.add(ePixQuad.SaciConfigCore(
-            name='SaciConfigCore',
-            memBase=memMap,
-            offset=0x08000000,
-            expand=False,
-            enabled=False,
-            simSpeedup=(hwType == 'simulation'),
-        ))
+        self.add(
+            ePixQuad.SaciConfigCore(
+                name='SaciConfigCore',
+                memBase=memMap,
+                offset=0x08000000,
+                expand=False,
+                enabled=False,
+                simSpeedup=(hwType == 'simulation'),
+            ))
 
         if (hwType != 'simulation'):
 
@@ -312,32 +326,35 @@ class Top(pr.Root):
                 0x02B00800, 0x02B01000, 0x02B01800, 0x02C00000, 0x02C00800
             ]
             for i in range(10):
-                self.add(analog_devices.Ad9249ConfigGroup(
-                    name=('Ad9249Config[%d]' % i),
-                    memBase=memMap,
-                    offset=confAddr[i],
-                    enabled=False,
-                    expand=False,
-                ))
+                self.add(
+                    analog_devices.Ad9249ConfigGroup(
+                        name=('Ad9249Config[%d]' % i),
+                        memBase=memMap,
+                        offset=confAddr[i],
+                        enabled=False,
+                        expand=False,
+                    ))
 
         for i in range(10):
-            self.add(analog_devices.Ad9249ReadoutGroup(
-                name=('Ad9249Readout[%d]' % i),
+            self.add(
+                analog_devices.Ad9249ReadoutGroup(
+                    name=('Ad9249Readout[%d]' % i),
+                    memBase=memMap,
+                    offset=(0x02000000 + i * 0x00100000),
+                    enabled=False,
+                    expand=False,
+                    fpga='ultrascale',
+                ))
+
+        self.add(
+            ePixQuad.AdcTester(
+                name='Ad9249Tester',
                 memBase=memMap,
-                offset=(0x02000000 + i * 0x00100000),
+                offset=0x02D00000,
                 enabled=False,
                 expand=False,
-                fpga='ultrascale',
+                hidden=False,
             ))
-
-        self.add(ePixQuad.AdcTester(
-            name='Ad9249Tester',
-            memBase=memMap,
-            offset=0x02D00000,
-            enabled=False,
-            expand=False,
-            hidden=False,
-        ))
 
         #this device enables us to force back pressure
         self.repeater = ePixQuad.StreamRepeater(expand=False)
@@ -348,13 +365,14 @@ class Top(pr.Root):
 
         if (hwType != 'simulation'):
 
-            self.add(cypress.CypressS25Fl(
-                offset=0x00300000,
-                memBase=memMap,
-                expand=False,
-                addrMode=True,
-                hidden=True,
-            ))
+            self.add(
+                cypress.CypressS25Fl(
+                    offset=0x00300000,
+                    memBase=memMap,
+                    expand=False,
+                    addrMode=True,
+                    hidden=True,
+                ))
 
         # ADC startup parameters
         self.adcRstTime = 0.01
@@ -396,14 +414,16 @@ class Top(pr.Root):
                 for lane in range(8):
                     newDly = self.allDelays[adc * 9 + lane + 1]
                     if newDly >= 0:
-                        self.Ad9249Readout[adc].ChannelDelay[lane].set(0x200 + newDly)
+                        self.Ad9249Readout[adc].ChannelDelay[lane].set(0x200 +
+                                                                       newDly)
                     else:
                         print("Bad stored delay. Train ADCs!")
 
             # test ADCs and reset if needed
             for adc in range(10):
                 while True:
-                    if self.testAdc(self, adc, 0) < 0 or self.testAdc(self, adc, 1) < 0:
+                    if self.testAdc(self, adc, 0) < 0 or self.testAdc(
+                            self, adc, 1) < 0:
                         self.resetAdc(self, adc)
                     else:
                         break
@@ -425,7 +445,8 @@ class Top(pr.Root):
                ***************************************************\n\
                Writing ADC constants to PROM disabled         \n\
                ***************************************************\n\
-               ***************************************************\n\n", bg='red',
+               ***************************************************\n\n",
+                    bg='red',
                 )
             else:
                 click.secho(
@@ -434,7 +455,8 @@ class Top(pr.Root):
                ***************************************************\n\
                Writing ADC constants to PROM enabled        \n\
                ***************************************************\n\
-               ***************************************************\n\n", bg='green',
+               ***************************************************\n\n",
+                    bg='green',
                 )
 
             self.SystemRegs.enable.set(True)
@@ -467,27 +489,32 @@ class Top(pr.Root):
                         self.allDelays[adc * 9] = newDly
                         # otherwise train data lanes
                         for lane in range(8):
-                            prevDly = self.Ad9249Readout[adc].ChannelDelay[lane].get()
-                            newDly = self.trainDataLaneAdc(self, adc, lane, self.retries)
+                            prevDly = self.Ad9249Readout[adc].ChannelDelay[
+                                lane].get()
+                            newDly = self.trainDataLaneAdc(
+                                self, adc, lane, self.retries)
                             if newDly >= 0:
                                 result = result + 1
                                 print('Diff delay %d' % (prevDly - newDly))
-                                self.Ad9249Readout[adc].ChannelDelay[lane].set(0x200 + newDly)
+                                self.Ad9249Readout[adc].ChannelDelay[lane].set(
+                                    0x200 + newDly)
                                 self.allDelays[adc * 9 + lane + 1] = newDly
 
                     if result < 9:
-                        print('ADC %d failed. Retrying forever.' % (adc))
+                        print('ADC {} failed. Attempt: {}.'.format(
+                            adc, error_count))
                         result = 0
                         error_count += 1
-                    elif error_count == 3:
-                        click.secho("\n\n\
-                        ***************************************************\n\
-                        ***************************************************\n\
-                        Writing ADC constants to PROM Failed\n\
-                        ***************************************************\n\
-                        ***************************************************\n\n",
-                        bg='red')
-                        break
+
+                        if error_count > 3:
+                            click.secho("\n\n\
+                            ***************************************************\n\
+                            ***************************************************\n\
+                            Writing ADC {} training Failed\n\
+                            ***************************************************\n\
+                            ***************************************************\n\n".format(adc),
+                                        bg='red')
+                            break
 
                     else:
                         break
@@ -516,7 +543,8 @@ class Top(pr.Root):
                ***************************************************\n\
                Writing ADC constants to PROM disabled         \n\
                ***************************************************\n\
-               ***************************************************\n\n", bg='red',
+               ***************************************************\n\n",
+                    bg='red',
                 )
             else:
 
@@ -548,7 +576,8 @@ class Top(pr.Root):
                   ***************************************************\n\
                   Writing ADC constants to PROM failed !!!!!!        \n\
                   ***************************************************\n\
-                  ***************************************************\n\n", bg='red',
+                  ***************************************************\n\n",
+                        bg='red',
                     )
                 else:
                     click.secho(
@@ -557,7 +586,8 @@ class Top(pr.Root):
                   ***************************************************\n\
                   Writing ADC constants to PROM done       \n\
                   ***************************************************\n\
-                  ***************************************************\n\n", bg='green',
+                  ***************************************************\n\n",
+                        bg='green',
                     )
 
     @staticmethod
@@ -619,7 +649,8 @@ class Top(pr.Root):
                 # print(delayInd)
                 # print(delayLen)
                 delayIndMax = delayLen.index(max(delayLen))
-                delaySet = int(delayInd[delayIndMax] + delayLen[delayIndMax] / 2)
+                delaySet = int(delayInd[delayIndMax] +
+                               delayLen[delayIndMax] / 2)
                 print('Found delay %d' % (delaySet))
                 break
             else:
@@ -657,7 +688,8 @@ class Top(pr.Root):
                 self.Ad9249Tester.TestRequest.set(True)
                 self.Ad9249Tester.TestRequest.set(False)
 
-                while (self.Ad9249Tester.TestPassed.get() != True) and (self.Ad9249Tester.TestFailed.get() != True):
+                while (self.Ad9249Tester.TestPassed.get() !=
+                       True) and (self.Ad9249Tester.TestFailed.get() != True):
                     pass
                 testPassed = self.Ad9249Tester.TestPassed.get()
 
@@ -681,7 +713,8 @@ class Top(pr.Root):
                 # print(delayInd)
                 # print(delayLen)
                 delayIndMax = delayLen.index(max(delayLen))
-                delaySet = int(delayInd[delayIndMax] + delayLen[delayIndMax] / 2)
+                delaySet = int(delayInd[delayIndMax] +
+                               delayLen[delayIndMax] / 2)
                 print('Found delay %d' % (delaySet))
                 break
             else:
@@ -735,7 +768,8 @@ class Top(pr.Root):
             self.Ad9249Tester.TestRequest.set(True)
             self.Ad9249Tester.TestRequest.set(False)
 
-            while (self.Ad9249Tester.TestPassed.get() != True) and (self.Ad9249Tester.TestFailed.get() != True):
+            while (self.Ad9249Tester.TestPassed.get() !=
+                   True) and (self.Ad9249Tester.TestFailed.get() != True):
                 pass
             testPassed = self.Ad9249Tester.TestPassed.get()
 
@@ -774,13 +808,15 @@ class Top(pr.Root):
             shiftCnt = int((adc * 9) % 2) * 16
             #print('wordCnt  %d'%wordCnt)
             #print('shiftCnt %d'%shiftCnt)
-            writeArray[wordCnt] |= ((self.allDelays[adc * 9]) & 0xffff) << shiftCnt
+            writeArray[wordCnt] |= (
+                (self.allDelays[adc * 9]) & 0xffff) << shiftCnt
             for lane in range(8):
                 wordCnt = int((adc * 9 + lane + 1) / 2)  # 0 to 39
                 shiftCnt = int((adc * 9 + lane + 1) % 2) * 16
                 #print('wordCnt  %d'%wordCnt)
                 #print('shiftCnt %d'%shiftCnt)
-                writeArray[wordCnt] |= ((self.allDelays[adc * 9 + lane + 1]) & 0xffff) << shiftCnt
+                writeArray[wordCnt] |= (
+                    (self.allDelays[adc * 9 + lane + 1]) & 0xffff) << shiftCnt
 
         #print(", ".join("0x{:04x}".format(num) for num in writeArray))
         # print("-----------------------------------------------------------------------")
@@ -803,7 +839,8 @@ class Top(pr.Root):
             ***************************************************\n\
             Writing ADC constants to PROM failed !!!!!!        \n\
             ***************************************************\n\
-            ***************************************************\n\n", bg='red',
+            ***************************************************\n\n",
+                bg='red',
             )
         else:
             click.secho(
@@ -812,7 +849,8 @@ class Top(pr.Root):
             ***************************************************\n\
             Writing ADC constants to PROM done       \n\
             ***************************************************\n\
-            ***************************************************\n\n", bg='green',
+            ***************************************************\n\n",
+                bg='green',
             )
 
         #print(", ".join("0x{:04x}".format(num) for num in readArray))
