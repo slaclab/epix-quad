@@ -123,6 +123,18 @@ class Top(pr.Root):
             cmdVc3 = rogue.protocols.srp.Cmd()
             pyrogue.streamConnect(cmdVc3, self.pgpVc3)
 
+        # --------------------------------------
+        # 03/03/2023. Dbg epix-quad tb with Dan
+        # -------------------------------------
+
+        @self.command()
+        def Trigger():
+            cmdVc3.sendCmd(0, 0)
+
+        self.add(pyrogue.RunControl(
+            cmd=self.Trigger,
+            rates={1:'1 Hz', 2:'2 Hz', 4:'4 Hz', 8:'8 Hz', 10:'10 Hz', 30:'30 Hz', 60:'60 Hz', 120:'120 Hz'}))
+
         @self.command()
         def SetAsicMatrixTest():
             # save TrigEn state and stop

@@ -69,9 +69,9 @@ base = quad.Top(hwType='simulation')
 
 # Start the system
 base.start(
-    pollEn=args.pollEn,
-    initRead=args.initRead,
-    timeout=5.0,
+#    pollEn=args.pollEn,
+#    initRead=args.initRead,
+#    timeout=5.0,
 )
 
 # Create GUI
