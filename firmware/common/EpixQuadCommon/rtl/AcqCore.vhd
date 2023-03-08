@@ -53,6 +53,8 @@ entity AcqCore is
       asicRoClk         : out   sl;
       -- debug outputs
       dbgOut            : out   slv(2 downto 0);
+      -- Debug FIFO almost full input
+      fifoRdyDbg        : in    slv(3 downto 0);
       -- ADC Clock Output
       adcClk            : out   sl
    );
@@ -112,6 +114,7 @@ architecture RTL of AcqCore is
       asicSyncInj          : sl;
       asicSyncInjEn        : sl;
       asicSyncInjSt        : sl;
+      fifoRdyDbgAny        : sl;
       asicSyncInjDCnt      : slv(31 downto 0);
       asicSyncInjWCnt      : slv(31 downto 0);
       asicSyncInjDly       : slv(31 downto 0);
@@ -151,6 +154,7 @@ architecture RTL of AcqCore is
       asicSyncInj          => '0',
       asicSyncInjEn        => '1',
       asicSyncInjSt        => '0',
+      fifoRdyDbgAny        => '0',
       asicSyncInjDCnt      => (others=>'0'),
       asicSyncInjWCnt      => (others=>'0'),
       asicSyncInjDly       => toSlv(1000, 32),
@@ -160,7 +164,7 @@ architecture RTL of AcqCore is
    signal r   : RegType := REG_INIT_C;
    signal rin : RegType;
 
-   signal acqStartEdge       : std_logic             := '0';
+   signal acqStartEdge       : sl := '0';
 
    constant ROCLK_COUNT_C : natural := 4 * BANK_COLS_G * BANK_ROWS_G;   -- roClk is divided by 4, (data is read out from 64 banks simultaneously)
    constant DUMMY_ASIC_ROCLK_HALFT_C : natural := 2;
@@ -178,7 +182,7 @@ begin
       );
 
    comb : process (sysRst, r, sAxilReadMaster, sAxilWriteMaster,
-      acqStartEdge, readDone, roClkTail) is
+      acqStartEdge, readDone, roClkTail, fifoRdyDbg) is
       variable v                 : RegType;
       variable regCon            : AxiLiteEndPointType;
       variable asicRoClkTRegTmp  : slv(31 downto 0);
@@ -577,6 +581,8 @@ begin
       acqCount          <= r.acqCount;
       acqSmplEn         <= r.acqSmplEn;
 
+      v.fifoRdyDbgAny   := uOr(fifoRdyDbg);
+      
       -- debug outputs
       for i in 0 to 2 loop
          if r.dbgOutSel(i) = 0 then
@@ -595,6 +601,8 @@ begin
             dbgOut(i) <= r.acqBusy;
          elsif r.dbgOutSel(i) = 7 then
             dbgOut(i) <= r.adcClk;
+         elsif r.dbgOutSel(i) = 8 then
+            dbgOut(i) <= r.fifoRdyDbgAny;
          else
             dbgOut(i) <= r.acqSmplEn;
          end if;

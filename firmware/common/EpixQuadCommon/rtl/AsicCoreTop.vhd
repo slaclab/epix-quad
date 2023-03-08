@@ -119,6 +119,8 @@ architecture rtl of AsicCoreTop is
    signal axisMasterASIC   : AxiStreamMasterType;
    signal axisSlavePRBS    : AxiStreamSlaveType;
    signal axisSlaveASIC    : AxiStreamSlaveType;
+   
+   signal fifoRdyDbg       : slv(3 downto 0) := (others => '0');
 
    -- ADC signals
    signal adcValid         : slv(31 downto 0);
@@ -186,6 +188,8 @@ begin
       asicRoClk         => iAsicRoClk,
       -- debug outputs
       dbgOut            => dbgOut,
+      -- Debug FIFO almost full input
+      fifoRdyDbg        => fifoRdyDbg,
       -- ADC Clock Output
       adcClk            => adcClk
    );
@@ -229,6 +233,8 @@ begin
       readDone             => readDone,
       -- Monitor data for the image stream
       monData              => monData,
+      -- Debug FIFO almost full
+      fifoRdyDbg           => fifoRdyDbg,
       -- ADC stream input
       adcStream            => adcStream(63 downto 0),
       tpsStream            => adcStream(79 downto 64),

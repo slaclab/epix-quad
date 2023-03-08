@@ -55,6 +55,8 @@ entity RdoutCoreBram is
       tpsStream            : in  AxiStreamMasterArray(15 downto 0);
       -- Test stream input
       testStream           : in  AxiStreamMasterArray(63 downto 0);
+      -- Debug FIFO almost full
+      fifoRdyDbg           : out slv(3 downto 0);
       -- ASIC digital data signals to/from deserializer
       asicDout             : in  slv(15 downto 0);
       asicDoutTest         : in  slv(15 downto 0);
@@ -1123,6 +1125,7 @@ begin
          );
 
       fifoRdy(i) <= not fifoAfull(i);
+      fifoRdyDbg <= fifoRdy;
 
       U_sRowFifo1 : entity surf.FifoCascade
          generic map (
