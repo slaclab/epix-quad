@@ -134,7 +134,8 @@ begin
          SIM_SPEEDUP_G     => SIM_SPEEDUP_G,
          MIG_CORE_EN       => false,
          COM_TYPE_G        => "PGPv4",
-         RATE_G            => "10.3125Gbps"
+         RATE_G            => "10.3125Gbps",
+         AXI_CLK_FREQ_G    => 156.25E+6
       )
       port map (
          -- DRR Memory interface ports

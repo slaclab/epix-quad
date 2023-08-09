@@ -25,7 +25,7 @@ import pyrogue.utilities.fileio
 import pyrogue.utilities.prbs
 import rogue
 import rogue.hardware.axi
-import rogue.hardware.pgp
+#import rogue.hardware.pgp
 import rogue.interfaces.stream
 import rogue.utilities.fileio
 import setupLibPaths
@@ -71,8 +71,11 @@ class Top(pr.Root):
                     kwargs['timeout'] = 5000000  # 5.0 seconds default
                     self.sim = False
                 elif (hwType == 'pgp3_cardG3'):
+                    '''
                     setattr(self, f'pgpVc{i}',
                             rogue.hardware.pgp.PgpCard(dev, lane, i))
+                    '''
+                    raise Exception('rogue.hardware.pgp not supported in Rogue 5.18')
                     kwargs['timeout'] = 5000000  # 5.0 seconds default
                     self.sim = False
                 else:

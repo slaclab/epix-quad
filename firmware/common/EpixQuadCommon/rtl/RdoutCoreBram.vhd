@@ -30,7 +30,7 @@ entity RdoutCoreBram is
       BANK_COLS_G       : natural         := 48;
       BANK_ROWS_G       : natural         := 178;
       LINE_REVERSE_G    : slv(3 downto 0) := "1010";
-      AXISFIFO_G        : boolean         := true
+      AXISFIFO_G        : boolean         := false
    );
    port (
       -- ADC interface
@@ -79,7 +79,7 @@ architecture rtl of RdoutCoreBram is
    constant ROWS_BITS_C    : natural := log2(BANK_ROWS_G);
 
    -- Buffer settings
-   constant BUFF_BITS_C    : integer range 1 to 5 := 2;
+   constant BUFF_BITS_C    : integer range 1 to 5 := 4;
    constant BUFF_MAX_C     : slv(2**BUFF_BITS_C-1 downto 0) := (others=>'1');
    constant TIMEOUT_C      : integer := 500000;  -- 5ms
 
@@ -593,6 +593,7 @@ begin
                   v.wrState       := WRITE_S;
                end if;
             end if;
+            
             if r.readPend = '0' then
                v.wrState := IDLE_S;
             end if;
@@ -802,7 +803,8 @@ begin
                if r.wordCnt = 0 then
                   ssiSetUserSof(SLAVE_AXI_CONFIG_C, v.txMaster, '1');
                   v.txMaster.tData(31 downto  0) := x"000000" & "00" & LANE_C & "00" & VC_C;
-                  v.txMaster.tData(63 downto 32) := x"0" & "00" & QUAD_C & opCode & acqCount(15 downto 0);
+                  v.txMaster.tData(63 downto 32) := x"0" & "00" & QUAD_C & opCode & acqCount(15 downto 0); 
+                  
                elsif r.wordCnt = 1 then
                   v.txMaster.tData(31 downto  0) := r.seqCount;
                   v.txMaster.tData(63 downto 32) := x"00000000";
@@ -829,6 +831,7 @@ begin
 
             if r.buffErr = '1' or r.timeErr = '1' then
                v.strState   := FOOTER_S;
+               
             elsif v.txMaster.tValid = '0' and fifoValid(sRowCountMod) = '1' then
 
                v.txMaster.tValid             := '1';

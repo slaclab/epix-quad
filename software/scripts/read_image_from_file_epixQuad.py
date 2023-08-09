@@ -42,6 +42,8 @@ bitMask = 0x3fff
 PLOT_IMAGE = True
 PLOT_IMAGE_DARKSUB = True
 SAVEHDF5 = True
+FRAMETOANALYZE = 5 #-1 : all
+
 ##################################################
 # Dark images
 ##################################################
@@ -56,28 +58,36 @@ f_h5 = h5py.File(h5_filename, "w")
 
 file_header = [0]
 numberOfFrames = 0
+
 while ((len(file_header) > 0) and (numberOfFrames < MAX_NUMBER_OF_FRAMES_PER_BATCH)):
     try:
         # reads file header [the number of bytes to read, EVIO]
         file_header = np.fromfile(f, dtype='uint32', count=2)
-        # -1 is need because size info includes the second word from the header
         payloadSize = int(file_header[0] / 4) - 1
-        #print ('size',  file_header)
         newPayload = np.fromfile(f, dtype='uint32', count=payloadSize)  # (frame size splited by four to read 32 bit
+        
         if (numberOfFrames == 0):
             allFrames = [newPayload.copy()]
+            
         else:
             newFrame = [newPayload.copy()]
             allFrames = np.append(allFrames, newFrame, axis=0)
+            
         numberOfFrames = numberOfFrames + 1
-        #print ("Payload" , numberOfFrames, ":",  (newPayload[0:5]))
         previousSize = file_header
+        
+        print("[{}] Data analyzes                            \r".format(numberOfFrames), end="")
+        
     except Exception:
-        #e = sys.exc_info()[0]
+        e = sys.exc_info()[0]
         #print ("Message\n", e)
         print('size', file_header, 'previous size', previousSize)
         print("numberOfFrames read: ", numberOfFrames)
 
+if FRAMETOANALYZE == -1 or FRAMETOANALYZE > numberOfFrames:
+    FRAMETOANALYZE = numberOfFrames
+    
+print()
 
 ##################################################
 # image descrambling
@@ -85,14 +95,16 @@ while ((len(file_header) > 0) and (numberOfFrames < MAX_NUMBER_OF_FRAMES_PER_BAT
 currentCam = cameras.Camera(cameraType=cameraType)
 currentCam.bitMask = bitMask
 #numberOfFrames = allFrames.shape[0]
-print("numberOfFrames in the 3D array: ", numberOfFrames)
+print("numberOfFrames in the 3D array: ", FRAMETOANALYZE)
 
-if(numberOfFrames == 1):
+
+if(FRAMETOANALYZE == 1):
     [frameComplete, readyForDisplay, rawImgFrame] = currentCam.buildImageFrame(
         currentRawData=[], newRawData=allFrames[0])
+        
     imgDesc = np.array([currentCam.descrambleImage(bytearray(rawImgFrame.tobytes()))])
 else:
-    for i in range(0, numberOfFrames):
+    for i in range(0, FRAMETOANALYZE):
         # get an specific frame
         [frameComplete, readyForDisplay, rawImgFrame] = currentCam.buildImageFrame(
             currentRawData=[], newRawData=allFrames[i, :])
@@ -110,7 +122,7 @@ else:
 ##################################################
 # show first image
 if PLOT_IMAGE:
-    for i in range(0, 10):
+    for i in range(0, FRAMETOANALYZE):
         plt.imshow(imgDesc[i, :, :], interpolation='nearest')
         plt.gray()
         plt.colorbar()
