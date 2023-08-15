@@ -522,8 +522,8 @@ begin
       axiSlaveRegister (regCon, x"020", 0, v.testData          );
 
 
-      axiSlaveRegister (regCon, x"024", 0, v.overSampleEn      );
-      axiSlaveRegister (regCon, x"028", 0, v.overSampleSize    );
+      --axiSlaveRegister (regCon, x"024", 0, v.overSampleEn      );
+      --axiSlaveRegister (regCon, x"028", 0, v.overSampleSize    );
 
       axiSlaveRegisterR (regCon, x"02C", 0, v.sAxisDropWordCount );
       axiSlaveRegisterR (regCon, x"030", 0, v.sAxisDropFrameCount);

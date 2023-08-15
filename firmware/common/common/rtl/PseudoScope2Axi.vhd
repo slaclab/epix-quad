@@ -32,7 +32,7 @@ use surf.SsiPkg.all;
 entity PseudoScope2Axi is
    generic (
       TPD_G                      : time                  := 1 ns;
-      INPUTS_G                   : integer range 0 to 32 := 4;
+      INPUTS_G                   : integer range 0 to 64 := 4;
       MASTER_AXI_STREAM_CONFIG_G : AxiStreamConfigType   := ssiAxiStreamConfig(4, TKEEP_COMP_C)
    );
    port (
@@ -97,12 +97,12 @@ architecture rtl of PseudoScope2Axi is
       triggerMode          : slv(1 downto 0);
       triggerAdcThresh     : slv(15 downto 0);
       triggerHoldoff       : slv(12 downto 0);
-      triggerOffset        : slv(12 downto 0);
+      triggerOffset        : slv(31 downto 0);
       triggerDelay         : slv(12 downto 0);
       traceLength          : slv(12 downto 0);
       skipSamples          : slv(12 downto 0);
-      inputChannelA        : slv(4 downto 0);
-      inputChannelB        : slv(4 downto 0);
+      inputChannelA        : slv(5 downto 0);
+      inputChannelB        : slv(5 downto 0);
       rdState              : RdStateType;
       wrState              : WrStateArray(1 downto 0);
       dataMux              : Slv16Array(1 downto 0);
@@ -113,7 +113,7 @@ architecture rtl of PseudoScope2Axi is
       wrAddr               : Slv13Array(1 downto 0);
       rdAddr               : Slv13Array(1 downto 0);
       smplCnt              : Slv13Array(1 downto 0);
-      triggerCnt           : Slv13Array(1 downto 0);
+      triggerCnt           : Slv31Array(1 downto 0);
       buffRd               : Slv2Array(1 downto 0);
       wordCnt              : slv(3 downto 0);
       txMaster             : AxiStreamMasterType;
@@ -276,12 +276,11 @@ begin
       axiSlaveRegister (regCon, x"008",  2, v.triggerChannel);
       axiSlaveRegister (regCon, x"008",  6, v.triggerMode);
       axiSlaveRegister (regCon, x"008", 16, v.triggerAdcThresh);
-      axiSlaveRegister (regCon, x"00C",  0, v.triggerHoldoff);
-      axiSlaveRegister (regCon, x"00C", 13, v.triggerOffset);
+      axiSlaveRegister (regCon, x"00C",  0, v.triggerOffset);
       axiSlaveRegister (regCon, x"010",  0, v.traceLength);
       axiSlaveRegister (regCon, x"010", 13, v.skipSamples);
       axiSlaveRegister (regCon, x"014",  0, v.inputChannelA);
-      axiSlaveRegister (regCon, x"014",  5, v.inputChannelB);
+      axiSlaveRegister (regCon, x"014",  6, v.inputChannelB);
       axiSlaveRegister (regCon, x"018",  0, v.triggerDelay);
 
       -- Close out the AXI-Lite transaction

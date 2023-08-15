@@ -146,7 +146,7 @@ begin
       NUM_CLOCKS_G      => 3,
       -- MMCM attributes
       BANDWIDTH_G       => "OPTIMIZED",
-      CLKIN_PERIOD_G    => 10.0,
+      CLKIN_PERIOD_G    => 6.4,
       DIVCLK_DIVIDE_G   => 1,
       CLKFBOUT_MULT_G   => 7,
       CLKOUT0_DIVIDE_G  => 2,
