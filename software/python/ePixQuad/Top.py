@@ -132,7 +132,7 @@ class Top(pr.Root):
 
         @self.command()
         def Trigger():
-            cmdVc3.sendCmd(0, 0)
+            cmdVc1.sendCmd(0, 0)
 
         self.add(pyrogue.RunControl(
             cmd=self.Trigger,
