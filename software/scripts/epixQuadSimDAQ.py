@@ -13,7 +13,6 @@ import setupLibPaths
 
 import sys
 import pyrogue as pr
-import pyrogue.gui
 import rogue
 import argparse
 import ePixQuad as quad
@@ -75,13 +74,13 @@ base.start(
 )
 
 # Create GUI
-appTop = pr.gui.application(sys.argv)
-guiTop = pr.gui.GuiTop(group='rootMesh')
-appTop.setStyle('Fusion')
-guiTop.addTree(base)
-guiTop.resize(600, 800)
+#appTop = pr.gui.application(sys.argv)
+#guiTop = pr.gui.GuiTop(group='rootMesh')
+#appTop.setStyle('Fusion')
+#guiTop.addTree(base)
+#guiTop.resize(600, 800)
 
-base.guiTop = guiTop
+#base.guiTop = guiTop
 
 # Viewer gui
 if args.viewer:
@@ -89,9 +88,12 @@ if args.viewer:
     gui.eventReader.frameIndex = 0
     #gui.eventReaderImage.VIEW_DATA_CHANNEL_ID = 0
     gui.setReadDelay(0)
-    pyrogue.streamTap(base.pgpVc0, gui.eventReader)
-    pyrogue.streamTap(base.pgpVc2, gui.eventReaderScope)  # PseudoScope
-    pyrogue.streamTap(base.pgpVc3, gui.eventReaderMonitoring)  # Slow Monitoring
+    gui.eventReader << base.pgpVc0
+    gui.eventReaderScope << base.pgpVc2
+    gui.eventReaderMonitoring << base.pgpVc3
+    #pyrogue.streamTap(base.pgpVc0, gui.eventReader)
+    #pyrogue.streamTap(base.pgpVc2, gui.eventReaderScope)  # PseudoScope
+    #pyrogue.streamTap(base.pgpVc3, gui.eventReaderMonitoring)  # Slow Monitoring
 
 
 print("Starting GUI...\n")
