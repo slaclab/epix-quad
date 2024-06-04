@@ -53,6 +53,10 @@ class Top(pr.Root):
                  **kwargs):
 
         super().__init__(name=name, description=description, **kwargs)
+        
+        self.zmqServer = pr.interfaces.ZmqServer(root=self, addr='*', port=0)
+        self.addInterface(self.zmqServer)
+        
         self._promWrEn = promWrEn
 
         ######################################################################

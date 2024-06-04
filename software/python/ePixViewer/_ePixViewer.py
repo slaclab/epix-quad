@@ -54,7 +54,7 @@ PRINT_VERBOSE = 0
 #   Calls other classes defined in this file to properly read and process
 #   the images in a givel file
 ################################################################################
-
+app = QApplication([])
 
 class Window(QMainWindow, QObject):
     """Class that defines the main window for the viewer."""
@@ -70,6 +70,7 @@ class Window(QMainWindow, QObject):
     def __init__(self, cameraType='ePix100a'):
         super(Window, self).__init__()
         # window init
+        
         self.mainWdGeom = [50, 50, 1100, 600]  # x, y, width, height
         self.setGeometry(self.mainWdGeom[0], self.mainWdGeom[1], self.mainWdGeom[2], self.mainWdGeom[3])
         self.setWindowTitle("ePix image viewer")
@@ -631,7 +632,8 @@ class Window(QMainWindow, QObject):
                 qp.drawLine(x - 2, y + 2, x + 2, y - 2)
 
     def mouseClickedOnImage(self, event):
-        if (self.imgDesc != []):
+
+        if (len(self.imgDesc) > 0):
             #mouseX = event.pos().x()
             #mouseY = event.pos().y()
             self.mouseX, self.mouseY = int(event.xdata), int(event.ydata)
@@ -645,7 +647,7 @@ class Window(QMainWindow, QObject):
 
             if (self.imgTool.imgDark_isSet):
                 self.mousePixelValue = self.ImgDarkSub[self.mouseY, self.mouseX]
-            elif (self.imgDesc != []):
+            elif (len(self.imgDesc) > 0):
                 self.mousePixelValue = self.imgDesc[self.mouseY, self.mouseX]
 
             # clear the pixel time sereis every time the pixel of interest is changed
@@ -667,7 +669,7 @@ class Window(QMainWindow, QObject):
                                                                     10, self.mouseX -
                                                                     10:self.mouseX +
                                                                     10], contrast=[self.imageScaleMax, self.imageScaleMin], autoScale=False)
-                elif (self.imgDesc != []):
+                elif (len(self.imgDesc) > 0):
                     self.lineDisplay1.update_figure(self.imgDesc[self.mouseY -
                                                                  10:self.mouseY +
                                                                  10, self.mouseX -
