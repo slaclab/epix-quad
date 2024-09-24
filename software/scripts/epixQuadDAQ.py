@@ -109,7 +109,7 @@ with quad.Top(
     if args.viewer:
         gui = vi.Window(cameraType='ePixQuad')
         gui.eventReader.frameIndex = 0
-        # gui.eventReaderImage.VIEW_DATA_CHANNEL_ID = 0
+        #gui.eventReaderImage.VIEW_DATA_CHANNEL_ID = 0
         gui.setReadDelay(0)
         
         gui.eventReader << root.pgpVc0
