@@ -142,8 +142,8 @@ begin
          BANDWIDTH_G       => "OPTIMIZED",
          CLKIN_PERIOD_G    => 6.4,
          DIVCLK_DIVIDE_G   => 5,
-         CLKFBOUT_MULT_F_G => 32.0,
-         CLKOUT0_DIVIDE_G  => 10)
+         CLKFBOUT_MULT_F_G => 20.0, --32.0,
+         CLKOUT0_DIVIDE_G  => 4)
       port map(
          -- Clock Input
          clkIn     => fabClk,
@@ -245,7 +245,7 @@ begin
       U_Rogue : entity surf.RoguePgp4Sim
          generic map(
             TPD_G      => TPD_G,
-            PORT_NUM_G => 8000,
+            PORT_NUM_G => 10000,
             NUM_VC_G   => 4
          )
          port map(

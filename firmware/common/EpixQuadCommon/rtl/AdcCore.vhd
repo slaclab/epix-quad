@@ -132,10 +132,10 @@ begin
    ------------------------------------------------
    -- Generate ADC and deserializer clocks
    ------------------------------------------------
-   -- clkIn     - 100.00 MHz
-   -- clkOut(0) - 350.00 MHz
-   -- clkOut(1) -  87.50 MHz
-   -- clkOut(2) -  50.00 MHz
+   -- clkIn     - 156.25MHz  --- old: 100.00 MHz
+   -- clkOut(0) - 546.875MHz --- old: 350.00 MHz
+   -- clkOut(1) - 136.72MHz  --- old: 87.50 MHz
+   -- clkOut(2) - 78.125MHz  --- old: 50.00 MHz
    U_PLLAdc : entity surf.ClockManagerUltraScale
    generic map(
       TPD_G             => TPD_G,
@@ -146,7 +146,7 @@ begin
       NUM_CLOCKS_G      => 3,
       -- MMCM attributes
       BANDWIDTH_G       => "OPTIMIZED",
-      CLKIN_PERIOD_G    => 10.0,
+      CLKIN_PERIOD_G    => 6.4,
       DIVCLK_DIVIDE_G   => 1,
       CLKFBOUT_MULT_G   => 7,
       CLKOUT0_DIVIDE_G  => 2,

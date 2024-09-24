@@ -57,6 +57,8 @@ entity RdoutCoreTop is
       readDone             : out sl;
       -- Monitor data for the image stream
       monData              : in  Slv16Array(37 downto 0);
+      -- Debug FIFO almost full
+      fifoRdyDbg           : out slv(3 downto 0);
       -- ADC stream input
       adcStream            : in  AxiStreamMasterArray(63 downto 0);
       tpsStream            : in  AxiStreamMasterArray(15 downto 0);
@@ -110,6 +112,8 @@ begin
             tpsStream            => tpsStream,
             -- Test stream input
             testStream           => testStream,
+            -- Debug FIFO almost full
+            fifoRdyDbg           => fifoRdyDbg,
             -- ASIC digital data signals to/from deserializer
             asicDout             => asicDout,
             asicDoutTest         => asicDoutTest,

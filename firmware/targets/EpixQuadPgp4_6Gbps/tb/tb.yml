@@ -1,0 +1,70 @@
+Top:
+  enable: True
+  ForceWrite: False
+  InitAfterConfig: False
+  PollEn: False
+  AxiVersion:
+    enable: True
+    ScratchPad: 0x000000
+    FpgaReloadHalt: 0x0
+    FpgaReloadAddress: 0x0
+    UserReset: 0x0
+  SystemRegs:
+    enable: True
+    UsrRst: 0x0
+    TrigEn: True
+    TrigSrcSel: 0x3
+    TrigPeriodRst: False
+    AutoTrigEn: True
+    AutoTrigFreqHz: 1000.0
+    DcDcEnable: 0xf
+    AsicAnaEn: True
+    AsicDigEn: True
+    AdcClkRst: 0x0
+    AdcReqStart: False
+    AdcReqTest: False
+    AdcTestDone: True
+    AdcTestFailed: False
+    Adc[0]ChannelFail: 0x0
+    Adc[1]ChannelFail: 0x0
+    Adc[2]ChannelFail: 0x0
+    Adc[3]ChannelFail: 0x0
+    Adc[4]ChannelFail: 0x0
+    Adc[5]ChannelFail: 0x0
+    Adc[6]ChannelFail: 0x0
+    Adc[7]ChannelFail: 0x0
+    Adc[8]ChannelFail: 0x0
+    Adc[9]ChannelFail: 0x0
+    DdrVttEn: False
+    LatchTempFault: True
+    CarrierIdRst: False
+  AcqCore:
+    enable: True
+    AcqCountReset: False
+    AcqToAsicR0Delay: 0x0
+    AsicR0Width: 0x1e
+    AsicR0ToAsicAcq: 0x2710
+    AsicAcqWidth: 0x2710
+    AsicAcqLToPPmatL: 0x3e8
+    AsicPpmatToReadout: 0x0
+    AsicRoClkHalfT: 0xaaaa0001
+    AsicAcqForce: False
+    AsicR0Force: False
+    AsicPpmatForce: True
+    AsicSyncForce: False
+    AsicRoClkForce: False
+    AsicAcqValue: False
+    AsicR0Value: False
+    AsicPpmatValue: True
+    AsicSyncValue: False
+    AsicRoClkValue: False
+    DummyAcqEn: False
+  RdoutCore:
+    enable: True
+    RdoutEn: True
+    SeqCountReset: False
+    AdcPipelineDelay: 0xaaaa0044
+    TestData: False
+    OverSampleEn: False
+    OverSampleSize: 0x0
+  

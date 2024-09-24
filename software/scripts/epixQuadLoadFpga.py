@@ -24,7 +24,6 @@ import setupLibPaths
 
 import sys
 import pyrogue as pr
-import pyrogue.gui
 import argparse
 import time
 import rogue.hardware

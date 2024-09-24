@@ -34,24 +34,24 @@ class SystemRegs(pr.Device):
 
         def getPerMs(var):
             x = var.dependencies[0].value()
-            return x / 100000.0
+            return x / 156250
 
         def setPerMs(deps):
             def setMsValue(value):
-                rawVal = int(round(value * 100000))
+                rawVal = int(round(value * 156250))
                 deps[0].set(rawVal)
             return setMsValue
 
         def getFreqHz(var):
             x = var.dependencies[0].value()
             if x != 0:
-                return 100000000.0 / x
+                return 156250000.0 / x
             else:
                 return 0.0
 
         def setFreqHz(deps):
             def setHzValue(value):
-                rawVal = int(round((1.0 / value) * 100000000))
+                rawVal = int(round((1.0 / value) * 156250000))
                 deps[0].set(rawVal)
             return setHzValue
 

@@ -53,7 +53,7 @@ class VguardDac(pr.Device):
             bitSize=16,
             bitOffset=0,
             base=pr.UInt,
-            mode='RW',
+            mode='WO',
         ))
 
         self.add(pr.LinkVariable(

@@ -14,13 +14,11 @@ import setupLibPaths
 
 import sys
 import pyrogue as pr
-import pyrogue.gui
 import rogue
 import argparse
 import ePixQuad as quad
 import time
 from time import gmtime, strftime
-import pandas as pd
 import numpy as np
 
 
@@ -58,7 +56,7 @@ class EventReader(rogue.interfaces.stream.Slave):
         headerBytes = 8 * 4
         pixelOffset = headerBytes + self._superRowSizeInBytes * 3 * 4 + int(self._superRowSizeInBytes / 2)
 
-        # print(pixelOffset)
+        #print(pixelOffset)
 
         if (VcNum == 0 and self.accFrames < self.reqFrames):
             pixel = (((p[pixelOffset + 7] << 8) | p[pixelOffset + 6]) & 0x3FFF)
@@ -109,8 +107,8 @@ parser.add_argument(
     "--pgp",
     type=str,
     required=False,
-    default='/dev/pgpcard_0',
-    help="PGP devide (default /dev/pgpcard_0)",
+    default='/dev/datadev_0',
+    help="PGP devide (default /dev/datadev_0)",
 )
 
 # Get the arguments
@@ -119,16 +117,13 @@ args = parser.parse_args()
 #################################################################
 
 # Set base
-QuadTop = quad.Top(hwType='pgp3_cardG3', dev=args.pgp)
+QuadTop = quad.Top(hwType='datadev', dev=args.pgp)
 eventReader = EventReader(QuadTop)
-pyrogue.streamTap(QuadTop.pgpVc0, eventReader)
+eventReader << QuadTop.pgpVc0
+#pyrogue.streamTap(QuadTop.pgpVc0, eventReader)
 
 # Start the system
-QuadTop.start(
-    pollEn=args.pollEn,
-    initRead=args.initRead,
-    timeout=5.0,
-)
+QuadTop.start()
 
 # enable neeeded devices
 QuadTop.SystemRegs.enable.set(True)
@@ -137,10 +132,13 @@ QuadTop.AcqCore.enable.set(True)
 QuadTop.Epix10kaSaci[13].enable.set(True)
 
 # check ADC startup
-if (QuadTop.SystemRegs.AdcTestFailed.get() == True):
-    print('ADC Startup failed!')
-    QuadTop.stop()
-    exit()
+#if (QuadTop.SystemRegs.AdcTestFailed.get() == True):
+#    print('ADC Startup failed!')
+#    QuadTop.stop()
+#    exit()
+
+#Set R0
+QuadTop.AcqCore.AsicRoClkT.set(0xaaaa000a)
 
 # stop if running
 QuadTop.SystemRegs.TrigEn.set(False)
@@ -149,17 +147,17 @@ QuadTop.SystemRegs.TrigEn.set(False)
 QuadTop.Epix10kaSaci[13].ClearMatrix()
 QuadTop.Epix10kaSaci[13].RowCounter(3)
 QuadTop.Epix10kaSaci[13].ColCounter(3)
-QuadTop.Epix10kaSaci[13].WritePixelData(0xD)
+QuadTop.Epix10kaSaci[13].WritePixelData(0x1)
 
 # pulse one pixel
 QuadTop.Epix10kaSaci[13].Pulser.set(0x1)
-QuadTop.Epix10kaSaci[13].hrtest.set(True)
+#QuadTop.Epix10kaSaci[13].hrtest.set(True)
 QuadTop.Epix10kaSaci[13].test.set(True)
 
 # set autotrigger
 QuadTop.SystemRegs.TrigEn.set(True)
 QuadTop.SystemRegs.AutoTrigEn.set(False)  # stop and reset auto trigger counter
-QuadTop.SystemRegs.AutoTrigPer.set(2000000)  # 20ms = 50Hz
+QuadTop.SystemRegs.AutoTrigPer.set(1000000)  # 10ms = 100Hz
 QuadTop.SystemRegs.TrigSrcSel.set(0x3)
 
 # request 10 frames for average
@@ -169,17 +167,21 @@ QuadTop.RdoutCore.RdoutEn.set(True)
 adcPipDly = QuadTop.RdoutCore.AdcPipelineDelay.get()
 
 print(
-    'AsicRoClkHalfT is set to %d. AdcPipelineDelay should be re-adjusted for different AsicRoClkHalfT settings' %
-     (QuadTop.AcqCore.AsicRoClkHalfT.get()))
+    'AsicRoClkT is set to %d. AdcPipelineDelay should be re-adjusted for different AsicRoClkHalfT settings' %
+     (QuadTop.AcqCore.AsicRoClkT.get()))
 print('AdcPipelineDelay, PixelAvg, PixelRMS')
+
 # look for pulsed pixel (maximum)
 for i in range(256):
+
     QuadTop.RdoutCore.AdcPipelineDelay.set(0xAAAA0000 | i)
+    
     QuadTop.SystemRegs.AutoTrigEn.set(True)   # start auto trigger counter
     while(eventReader.accFrames < eventReader.reqFrames):
         pass
     QuadTop.SystemRegs.AutoTrigEn.set(False)  # stop and reset auto trigger counter
-    print('%d, %f, %f' % (i, eventReader.pixelSum / eventReader.reqFrames, eventReader.rms))
+    
+    print('%x, %f, %f' % (i, eventReader.pixelSum / eventReader.reqFrames, eventReader.rms))
     if (PRINT_VERBOSE):
         print(eventReader.rmsData)
     eventReader.pixelSum = 0

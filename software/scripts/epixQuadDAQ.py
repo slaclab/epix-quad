@@ -12,7 +12,7 @@ import setupLibPaths
 
 import sys
 import pyrogue as pr
-import pyrogue.gui
+#import pyrogue.gui
 import pyrogue.pydm
 import rogue
 import argparse
@@ -96,7 +96,7 @@ args = parser.parse_args()
 print(args)
 #################################################################
 
-appTop = pr.gui.application(sys.argv)
+#appTop = pr.gui.application(sys.argv)
 
 # Set base
 with quad.Top(
@@ -109,14 +109,19 @@ with quad.Top(
     if args.viewer:
         gui = vi.Window(cameraType='ePixQuad')
         gui.eventReader.frameIndex = 0
-        # gui.eventReaderImage.VIEW_DATA_CHANNEL_ID = 0
+        #gui.eventReaderImage.VIEW_DATA_CHANNEL_ID = 0
         gui.setReadDelay(0)
-        pyrogue.streamTap(root.pgpVc0, gui.eventReader)
-        pyrogue.streamTap(root.pgpVc2, gui.eventReaderScope)  # PseudoScope
-        pyrogue.streamTap(root.pgpVc3, gui.eventReaderMonitoring)  # Slow Monitoring
+        
+        gui.eventReader << root.pgpVc0
+        gui.eventReaderScope << root.pgpVc2
+        gui.eventReaderMonitoring << root.pgpVc3
+        #pyrogue.streamTap(root.pgpVc0, gui.eventReader)
+        #pyrogue.streamTap(root.pgpVc2, gui.eventReaderScope)  # PseudoScope
+        #pyrogue.streamTap(root.pgpVc3, gui.eventReaderMonitoring)  # Slow Monitoring
+    
     print("Starting PyDM")
     pyrogue.pydm.runPyDM(
-        root=root,
+        serverList  = root.zmqServer.address,
         #sizeX=900,
         #sizeY=800,
     )

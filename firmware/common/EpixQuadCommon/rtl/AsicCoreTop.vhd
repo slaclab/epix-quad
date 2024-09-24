@@ -119,10 +119,12 @@ architecture rtl of AsicCoreTop is
    signal axisMasterASIC   : AxiStreamMasterType;
    signal axisSlavePRBS    : AxiStreamSlaveType;
    signal axisSlaveASIC    : AxiStreamSlaveType;
+   
+   signal fifoRdyDbg       : slv(3 downto 0) := (others => '0');
 
    -- ADC signals
-   signal adcValid         : slv(31 downto 0);
-   signal adcData          : Slv16Array(31 downto 0);
+   signal adcValid         : slv(33 downto 0);
+   signal adcData          : Slv16Array(33 downto 0);
 
    constant MASTER_AXI_CONFIG_C  : AxiStreamConfigType := ssiAxiStreamConfig(8);
 
@@ -186,6 +188,8 @@ begin
       asicRoClk         => iAsicRoClk,
       -- debug outputs
       dbgOut            => dbgOut,
+      -- Debug FIFO almost full input
+      fifoRdyDbg        => fifoRdyDbg,
       -- ADC Clock Output
       adcClk            => adcClk
    );
@@ -229,6 +233,8 @@ begin
       readDone             => readDone,
       -- Monitor data for the image stream
       monData              => monData,
+      -- Debug FIFO almost full
+      fifoRdyDbg           => fifoRdyDbg,
       -- ADC stream input
       adcStream            => adcStream(63 downto 0),
       tpsStream            => adcStream(79 downto 64),
@@ -253,7 +259,7 @@ begin
    U_PseudoScopeCore : entity work.PseudoScope2Axi
    generic map (
       TPD_G                      => TPD_G,
-      INPUTS_G                   => 32,
+      INPUTS_G                   => 34,
       MASTER_AXI_STREAM_CONFIG_G => ssiAxiStreamConfig(4, TKEEP_COMP_C)
    )
    port map (
@@ -297,6 +303,11 @@ begin
       adcData(16+i*2+1)  <= adcStream(i*8+1).tData(15 downto 0);
       adcValid(16+i*2+1) <= adcStream(i*8+1).tValid;
    end generate;
+   
+  adcData(32)  <= iAsicRoClk & "000000000000000";
+  adcValid(32) <= '1';
+  adcData(33)  <= acqSmplEn & "000000000000000";
+  adcValid(33) <= '1';
 
    ---------------------------------------------------------------
    -- ASIC Analog Test Data Generator
