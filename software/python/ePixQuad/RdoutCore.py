@@ -90,14 +90,16 @@ class RdoutCore(pr.Device):
             ))
 
         self.add(pr.RemoteVariable(
-            name='TestData',
-            description='Enable Test Data',
+            name='BuffersRdy',
+            description='Get buffre rdy status',
             offset=0x0000_0020,
             bitSize=1,
             bitOffset=0,
             base=pr.Bool,
-            mode='RW',
+            mode='RO',
         ))
+        
+        '''
 
         self.add(pr.RemoteVariable(
             name='OverSampleEn',
@@ -163,6 +165,7 @@ class RdoutCore(pr.Device):
             mode='RO',
             verify=False,
         ))
+        '''
 
         #####################################
         # Create commands

@@ -14,13 +14,11 @@ import setupLibPaths
 
 import sys
 import pyrogue as pr
-import pyrogue.gui
 import rogue
 import argparse
 import ePixQuad as quad
 import time
 from time import gmtime, strftime
-import pandas as pd
 import numpy as np
 
 
@@ -109,8 +107,8 @@ parser.add_argument(
     "--pgp",
     type=str,
     required=False,
-    default='/dev/pgpcard_0',
-    help="PGP devide (default /dev/pgpcard_0)",
+    default='/dev/datadev_0',
+    help="PGP devide (default /dev/datadev_0)",
 )
 
 # Get the arguments
@@ -119,16 +117,13 @@ args = parser.parse_args()
 #################################################################
 
 # Set base
-QuadTop = quad.Top(hwType='pgp3_cardG3', dev=args.pgp)
+QuadTop = quad.Top(hwType='datadev', dev=args.pgp)
 eventReader = EventReader(QuadTop)
-pyrogue.streamTap(QuadTop.pgpVc0, eventReader)
+eventReader << QuadTop.pgpVc0
+#pyrogue.streamTap(QuadTop.pgpVc0, eventReader)
 
 # Start the system
-QuadTop.start(
-    pollEn=args.pollEn,
-    initRead=args.initRead,
-    timeout=5.0,
-)
+QuadTop.start()
 
 # enable neeeded devices
 QuadTop.SystemRegs.enable.set(True)

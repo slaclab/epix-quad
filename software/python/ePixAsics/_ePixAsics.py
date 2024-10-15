@@ -74,8 +74,7 @@ class Epix100aAsic(pr.Device):
             pr.RemoteVariable(
                 name='PixelDummy',
                 description='Pixel dummy, write data',
-                offset=0x00001002 *
-                addrSize,
+                offset=0x00001002 * addrSize,
                 bitSize=32,
                 bitOffset=0,
                 base=pr.UInt,
@@ -97,8 +96,7 @@ class Epix100aAsic(pr.Device):
             pr.RemoteVariable(
                 name='Pulser',
                 description='Config3',
-                offset=0x00001003 *
-                addrSize,
+                offset=0x00001003 * addrSize,
                 bitSize=10,
                 bitOffset=0,
                 base=pr.UInt,
@@ -107,8 +105,7 @@ class Epix100aAsic(pr.Device):
             pr.RemoteVariable(
                 name='pbit',
                 description='Config3',
-                offset=0x00001003 *
-                addrSize,
+                offset=0x00001003 * addrSize,
                 bitSize=1,
                 bitOffset=10,
                 base=pr.Bool,
@@ -117,8 +114,7 @@ class Epix100aAsic(pr.Device):
             pr.RemoteVariable(
                 name='atest',
                 description='Config3',
-                offset=0x00001003 *
-                addrSize,
+                offset=0x00001003 * addrSize,
                 bitSize=1,
                 bitOffset=11,
                 base=pr.Bool,
@@ -127,8 +123,7 @@ class Epix100aAsic(pr.Device):
             pr.RemoteVariable(
                 name='test',
                 description='Config3',
-                offset=0x00001003 *
-                addrSize,
+                offset=0x00001003 * addrSize,
                 bitSize=1,
                 bitOffset=12,
                 base=pr.Bool,
@@ -137,8 +132,7 @@ class Epix100aAsic(pr.Device):
             pr.RemoteVariable(
                 name='sba_test',
                 description='Config3',
-                offset=0x00001003 *
-                addrSize,
+                offset=0x00001003 * addrSize,
                 bitSize=1,
                 bitOffset=13,
                 base=pr.Bool,
@@ -147,8 +141,7 @@ class Epix100aAsic(pr.Device):
             pr.RemoteVariable(
                 name='hrtest',
                 description='Config3',
-                offset=0x00001003 *
-                addrSize,
+                offset=0x00001003 * addrSize,
                 bitSize=1,
                 bitOffset=14,
                 base=pr.Bool,
@@ -171,8 +164,7 @@ class Epix100aAsic(pr.Device):
             pr.RemoteVariable(
                 name='PulserDac',
                 description='Pulser Dac',
-                offset=0x00001005 *
-                addrSize,
+                offset=0x00001005 * addrSize,
                 bitSize=3,
                 bitOffset=0,
                 base=pr.UInt,
@@ -187,8 +179,7 @@ class Epix100aAsic(pr.Device):
             pr.RemoteVariable(
                 name='Dm1En',
                 description='Digital Monitor 1 Enable',
-                offset=0x00001006 *
-                addrSize,
+                offset=0x00001006 * addrSize,
                 bitSize=1,
                 bitOffset=0,
                 base=pr.Bool,
@@ -197,8 +188,7 @@ class Epix100aAsic(pr.Device):
             pr.RemoteVariable(
                 name='Dm2En',
                 description='Digital Monitor 1 Enable',
-                offset=0x00001006 *
-                addrSize,
+                offset=0x00001006 * addrSize,
                 bitSize=1,
                 bitOffset=1,
                 base=pr.Bool,
@@ -212,8 +202,7 @@ class Epix100aAsic(pr.Device):
             pr.RemoteVariable(
                 name='VRef',
                 description='Voltage Ref',
-                offset=0x00001007 *
-                addrSize,
+                offset=0x00001007 * addrSize,
                 bitSize=6,
                 bitOffset=0,
                 base=pr.UInt,
@@ -228,8 +217,7 @@ class Epix100aAsic(pr.Device):
             pr.RemoteVariable(
                 name='TPS_tcomp',
                 description='',
-                offset=0x00001008 *
-                addrSize,
+                offset=0x00001008 * addrSize,
                 bitSize=1,
                 bitOffset=0,
                 base=pr.Bool,
@@ -238,8 +226,7 @@ class Epix100aAsic(pr.Device):
             pr.RemoteVariable(
                 name='TPS_MUX',
                 description='',
-                offset=0x00001008 *
-                addrSize,
+                offset=0x00001008 * addrSize,
                 bitSize=4,
                 bitOffset=1,
                 base=pr.UInt,
@@ -253,8 +240,7 @@ class Epix100aAsic(pr.Device):
             pr.RemoteVariable(
                 name='S2d0Gr',
                 description='',
-                offset=0x00001009 *
-                addrSize,
+                offset=0x00001009 * addrSize,
                 bitSize=4,
                 bitOffset=0,
                 base=pr.UInt,
@@ -270,8 +256,7 @@ class Epix100aAsic(pr.Device):
             pr.RemoteVariable(
                 name='PpOcbS2d',
                 description='',
-                offset=0x0000100A *
-                addrSize,
+                offset=0x0000100A * addrSize,
                 bitSize=1,
                 bitOffset=0,
                 base=pr.Bool,
@@ -280,8 +265,7 @@ class Epix100aAsic(pr.Device):
             pr.RemoteVariable(
                 name='Ocb',
                 description='',
-                offset=0x0000100A *
-                addrSize,
+                offset=0x0000100A * addrSize,
                 bitSize=3,
                 bitOffset=1,
                 base=pr.UInt,
@@ -290,8 +274,7 @@ class Epix100aAsic(pr.Device):
             pr.RemoteVariable(
                 name='Monost',
                 description='',
-                offset=0x0000100A *
-                addrSize,
+                offset=0x0000100A * addrSize,
                 bitSize=3,
                 bitOffset=4,
                 base=pr.UInt,
@@ -590,7 +573,7 @@ class Epix100aAsic(pr.Device):
                 bitOffset=0,
                 function=pr.Command.touch,
                 hidden=False))
-
+                
         # CMD = 7, Addr = X  : Prepare to write chip ID
         # self.add((
         #    pr.RemoteVariable(name='PrepareWriteChipIdA', description='PrepareWriteChipIdA', offset=0x00007000*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RO'),
@@ -645,8 +628,8 @@ class Epix100aAsic(pr.Device):
             if os.path.splitext(self.filename)[1] == '.csv':
                 matrixCfg = np.genfromtxt(self.filename, delimiter=',')
                 if matrixCfg.shape == (354, 384):
-                    self._rawWrite(0x00000000 * addrSize, 0)
-                    self._rawWrite(0x00008000 * addrSize, 0)
+                    self.CmdPrepForRead(0)     #self._rawWrite(0x00000000 * addrSize, 0)
+                    self.PrepareMultiConfig(0) #self._rawWrite(0x00008000 * addrSize, 0)
                     for x in range(0, 354):
                         for y in range(0, 384):
                             bankToWrite = int(y / 96)
@@ -660,10 +643,10 @@ class Epix100aAsic(pr.Device):
                                 colToWrite = 0x380 + y % 96
                             else:
                                 print('unexpected bank number')
-                            self._rawWrite(0x00006011 * addrSize, x)
-                            self._rawWrite(0x00006013 * addrSize, colToWrite)
-                            self._rawWrite(0x00005000 * addrSize, (int(matrixCfg[x][y])))
-                    self._rawWrite(0x00000000 * addrSize, 0)
+                            self.RowCounter.set(x)                                #self._rawWrite(0x00006011 * addrSize, x)
+                            self.ColCounter.set(colToWrite)                       #self._rawWrite(0x00006013 * addrSize, colToWrite)
+                            self.WritePixelData.set((int(matrixCfg[x][y]))) #self._rawWrite(0x00005000 * addrSize, (int(matrixCfg[x][y])))
+                    self.CmdPrepForRead(0) #self._rawWrite(0x00000000 * addrSize, 0)
                 else:
                     print('csv file must be 384x354 pixels')
             else:
@@ -689,8 +672,8 @@ class Epix100aAsic(pr.Device):
                 self.filename = self.filename[0]
             if os.path.splitext(self.filename)[1] == '.csv':
                 readBack = np.zeros((354, 384), dtype='uint16')
-                self._rawWrite(0x00000000 * addrSize, 0)
-                self._rawWrite(0x00008000 * addrSize, 0)
+                self.CmdPrepForRead.set(0)     #self._rawWrite(0x00000000 * addrSize, 0)
+                self.PrepareMultiConfig.set(0) #self._rawWrite(0x00008000 * addrSize, 0)
                 for x in range(0, 354):
                     for y in range(0, 384):
                         bankToWrite = int(y / 96)
@@ -704,9 +687,9 @@ class Epix100aAsic(pr.Device):
                             colToWrite = 0x380 + y % 96
                         else:
                             print('unexpected bank number')
-                        self._rawWrite(0x00006011 * addrSize, x)
-                        self._rawWrite(0x00006013 * addrSize, colToWrite)
-                        readBack[x, y] = self._rawRead(0x00005000 * addrSize)
+                        self.RowCounter.set(x)         #self._rawWrite(0x00006011 * addrSize, x)
+                        self.ColCounter.set(x)         #self._rawWrite(0x00006013 * addrSize, colToWrite)
+                        readBack[x, y] = self.WritePixelData.get()  #self._rawRead(0x00005000 * addrSize)
                 np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
         else:
             print("Warning: ASIC enable is set to False!")
@@ -1211,7 +1194,7 @@ class EpixSAsic(pr.Device):
                 bitOffset=0,
                 function=pr.Command.touch,
                 hidden=False))
-
+                
         # CMD = 7, Addr = X  : Prepare to write chip ID
         # self.add((
         #    pr.RemoteVariable(name='PrepareWriteChipIdA', description='PrepareWriteChipIdA', offset=0x00007000*addrSize, bitSize=32, bitOffset=0, base=pr.UInt, mode='RO'),
@@ -1266,14 +1249,14 @@ class EpixSAsic(pr.Device):
             if os.path.splitext(self.filename)[1] == '.csv':
                 matrixCfg = np.genfromtxt(self.filename, delimiter=',')
                 if matrixCfg.shape == (12, 10):
-                    self._rawWrite(0x00000000 * addrSize, 0)
-                    self._rawWrite(0x00008000 * addrSize, 0)
+                    self.CmdPrepForRead.set(0)     #self._rawWrite(0x00000000 * addrSize, 0)
+                    self.PrepareMultiConfig.set(0) #self._rawWrite(0x00008000 * addrSize, 0)
                     for x in range(0, 12):
                         for y in range(0, 10):
-                            self._rawWrite(0x00006011 * addrSize, x)
-                            self._rawWrite(0x00006013 * addrSize, y)
-                            self._rawWrite(0x00005000 * addrSize, (int(matrixCfg[x][y])))
-                    self._rawWrite(0x00000000 * addrSize, 0)
+                            self.RowCounter.set(x)   #self._rawWrite(0x00006011 * addrSize, x)
+                            self.ColCounter.set(y)   #self._rawWrite(0x00006013 * addrSize, y)
+                            self.WritePixelData.set(int(matrixCfg[x][y]))  #self._rawWrite(0x00005000 * addrSize, (int(matrixCfg[x][y])))
+                    self.CmdPrepForRead.set(0)  #self._rawWrite(0x00000000 * addrSize, 0)
                 else:
                     print('csv file must be 384x354 pixels')
             else:
@@ -1300,13 +1283,13 @@ class EpixSAsic(pr.Device):
                 self.filename = self.filename[0]
             if os.path.splitext(self.filename)[1] == '.csv':
                 readBack = np.zeros((12, 10), dtype='uint16')
-                self._rawWrite(0x00000000 * addrSize, 0)
-                self._rawWrite(0x00008000 * addrSize, 0)
+                self.CmdPrepForRead.set(0)     #self._rawWrite(0x00000000 * addrSize, 0)
+                self.PrepareMultiConfig.set(0) #self._rawWrite(0x00008000 * addrSize, 0)
                 for x in range(0, 12):
                     for y in range(0, 10):
-                        self._rawWrite(0x00006011 * addrSize, x)
-                        self._rawWrite(0x00006013 * addrSize, y)
-                        readBack[x, y] = self._rawRead(0x00005000 * addrSize)
+                        self.RowCounter.set(x)    #self._rawWrite(0x00006011 * addrSize, x)
+                        self.ColCounter.set(y)    #self._rawWrite(0x00006013 * addrSize, y)
+                        readBack[x, y] = self.WritePixelData.get()   #self._rawRead(0x00005000 * addrSize)
                 np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
         else:
             print("Warning: ASIC enable is set to False!")
@@ -2182,6 +2165,8 @@ class Epix10kaAsic(pr.Device):
                 bitOffset=0,
                 function=pr.Command.touch,
                 hidden=False))
+                
+        
 
         # CMD = 7, Addr = X  : Prepare to write chip ID
         # self.add((
@@ -2231,8 +2216,8 @@ class Epix10kaAsic(pr.Device):
         @self.command(description='SetPixelBitmap command function', value='', retValue='')
         def SetPixelBitmap(arg, dev, cmd):
             """SetPixelBitmap command function"""
-            if self._size == 0:
-                self._size = 0xfffff
+            #if self._size == 0:
+            #    self._size = 0xfffff
 
             addrSize = 4
 
@@ -2245,8 +2230,8 @@ class Epix10kaAsic(pr.Device):
                 if os.path.splitext(self.filename)[1] == '.csv':
                     matrixCfg = np.genfromtxt(self.filename, delimiter=',')
                     if matrixCfg.shape == (178, 192):
-                        self._rawWrite(0x00000000 * addrSize, 0)
-                        self._rawWrite(0x00008000 * addrSize, 0)
+                        self.CmdPrepForRead.set(0)     #self._rawWrite(0x00000000 * addrSize, 0)
+                        self.PrepareMultiConfig.set(0) #self._rawWrite(0x00008000 * addrSize, 0)
                         for x in range(0, 177):
                             for y in range(0, 192):
                                 bankToWrite = int(y / 48)
@@ -2260,10 +2245,10 @@ class Epix10kaAsic(pr.Device):
                                     colToWrite = 0x380 + y % 48
                                 else:
                                     print('unexpected bank number')
-                                self._rawWrite(0x00006011 * addrSize, x)
-                                self._rawWrite(0x00006013 * addrSize, colToWrite)
-                                self._rawWrite(0x00005000 * addrSize, (int(matrixCfg[x][y])))
-                        self._rawWrite(0x00000000 * addrSize, 0)
+                                self.RowCounter.set(x)          #self._rawWrite(0x00006011 * addrSize, x)
+                                self.ColCounter.set(colToWrite) #self._rawWrite(0x00006013 * addrSize, colToWrite)
+                                self.WritePixelData.set(int(matrixCfg[x][y])) #self._rawWrite(0x00005000 * addrSize, (int(matrixCfg[x][y])))
+                        self.CmdPrepForRead.set(0)    #self._rawWrite(0x00000000 * addrSize, 0)
                     else:
                         print('csv file must be 192x178 pixels')
                 else:
@@ -2274,8 +2259,8 @@ class Epix10kaAsic(pr.Device):
         @self.command(description='GetPixelBitmap command function', value='', retValue='')
         def GetPixelBitmap(dev, cmd, arg):
             """GetPixelBitmap command function"""
-            if self._size == 0:
-                self._size = 0xfffff
+            #if self._size == 0:
+            #    self._size = 0xfffff
 
             addrSize = 4
 
@@ -2288,8 +2273,8 @@ class Epix10kaAsic(pr.Device):
 
                 if os.path.splitext(self.filename)[1] == '.csv':
                     readBack = np.zeros((178, 192), dtype='uint16')
-                    self._rawWrite(0x00000000 * addrSize, 0)
-                    self._rawWrite(0x00008000 * addrSize, 0)
+                    self.CmdPrepForRead.set(0)     #self._rawWrite(0x00000000 * addrSize, 0)
+                    self.PrepareMultiConfig.set(0) #self._rawWrite(0x00008000 * addrSize, 0)
                     for x in range(0, 177):
                         for y in range(0, 192):
                             bankToWrite = int(y / 48)
@@ -2303,9 +2288,9 @@ class Epix10kaAsic(pr.Device):
                                 colToWrite = 0x380 + y % 48
                             else:
                                 print('unexpected bank number')
-                            self._rawWrite(0x00006011 * addrSize, x)
-                            self._rawWrite(0x00006013 * addrSize, colToWrite)
-                            readBack[x, y] = self._rawRead(0x00005000 * addrSize)
+                            self.RowCounter.set(x)           #self._rawWrite(0x00006011 * addrSize, x)
+                            self.ColCounter.set(colToWrite)  #self._rawWrite(0x00006013 * addrSize, colToWrite)
+                            readBack[x, y] = self.WritePixelData.get()   #self._rawRead(0x00005000 * addrSize)
                     np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
             else:
                 print("Warning: ASIC enable is set to False!")
@@ -3025,14 +3010,14 @@ class TixelAsic(pr.Device):
             if os.path.splitext(self.filename)[1] == '.csv':
                 matrixCfg = np.genfromtxt(self.filename, delimiter=',')
                 if matrixCfg.shape == (48, 48):
-                    self._rawWrite(0x00000000 * addrSize, 0)
-                    self._rawWrite(0x00008000 * addrSize, 0)
+                    self.CmdPrepForRead.set(0)   #self._rawWrite(0x00000000 * addrSize, 0)
+                    self.PrepareMultiConf.set(0) #self._rawWrite(0x00008000 * addrSize, 0)
                     for x in range(0, 48):
                         for y in range(0, 48):
-                            self._rawWrite(0x00006001 * addrSize, x)
-                            self._rawWrite(0x00006003 * addrSize, y)
-                            self._rawWrite(0x00005000 * addrSize, (int(matrixCfg[x][y])))
-                    self._rawWrite(0x00000000 * addrSize, 0)
+                            self.RowCounter.set(x)   #self._rawWrite(0x00006001 * addrSize, x)
+                            self.ColCounter.set(y)   #self._rawWrite(0x00006003 * addrSize, y)
+                            self.WritePixelData.set(int(matrixCfg[x][y]))   #self._rawWrite(0x00005000 * addrSize, (int(matrixCfg[x][y])))
+                    self.CmdPrepForRead.set(0)   #self._rawWrite(0x00000000 * addrSize, 0)
                 else:
                     print('csv file must be 48x48 pixels')
             else:
@@ -3057,13 +3042,13 @@ class TixelAsic(pr.Device):
                 self.filename = self.filename[0]
             if os.path.splitext(self.filename)[1] == '.csv':
                 readBack = np.zeros((48, 48), dtype='uint16')
-                self._rawWrite(0x00000000 * addrSize, 0)
-                self._rawWrite(0x00008000 * addrSize, 0)
+                self.CmdPrepForRead.set(0)     #self._rawWrite(0x00000000 * addrSize, 0)
+                self.PrepareMultiConfig.set(0) #self._rawWrite(0x00008000 * addrSize, 0)
                 for x in range(0, 48):
                     for y in range(0, 48):
-                        self._rawWrite(0x00006001 * addrSize, x)
-                        self._rawWrite(0x00006003 * addrSize, y)
-                        readBack[x, y] = self._rawRead(0x00005000 * addrSize)
+                        self.RowCounter.set(x)   #self._rawWrite(0x00006001 * addrSize, x)
+                        self.ColCounter.set(y)   #self._rawWrite(0x00006003 * addrSize, y)
+                        readBack[x, y] = self.WritePixelData.get()   #self._rawRead(0x00005000 * addrSize)
                 np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
         else:
             print("Warning: ASIC enable is set to False!")
@@ -3992,14 +3977,14 @@ class Cpix2Asic(pr.Device):
             if os.path.splitext(self.filename)[1] == '.csv':
                 matrixCfg = np.genfromtxt(self.filename, delimiter=',')
                 if matrixCfg.shape == (48, 48):
-                    self._rawWrite(0x00000000 * addrSize, 0)
-                    self._rawWrite(0x00008000 * addrSize, 0)
+                    self.CmdPrepForRead.set(0)       #self._rawWrite(0x00000000 * addrSize, 0)
+                    self.PrepareMultiConfig.set(0)   #self._rawWrite(0x00008000 * addrSize, 0)
                     for x in range(0, 48):
                         for y in range(0, 48):
-                            self._rawWrite(0x00006011 * addrSize, x)
-                            self._rawWrite(0x00006013 * addrSize, y)
-                            self._rawWrite(0x00005000 * addrSize, (int(matrixCfg[x][y])))
-                    self._rawWrite(0x00000000 * addrSize, 0)
+                            self.RowCounter.set(x)   #self._rawWrite(0x00006011 * addrSize, x)
+                            self.ColCounter.set(y)   #self._rawWrite(0x00006013 * addrSize, y)
+                            self.WritePixelData.set(int(matrixCfg[x][y]))  #self._rawWrite(0x00005000 * addrSize, (int(matrixCfg[x][y])))
+                    self.CmdPrepForRead.set(0)    #self._rawWrite(0x00000000 * addrSize, 0)
                 else:
                     print('csv file must be 48x48 pixels')
             else:
@@ -4026,13 +4011,13 @@ class Cpix2Asic(pr.Device):
                 self.filename = self.filename[0]
             if os.path.splitext(self.filename)[1] == '.csv':
                 readBack = np.zeros((48, 48), dtype='uint16')
-                self._rawWrite(0x00000000 * addrSize, 0)
-                self._rawWrite(0x00008000 * addrSize, 0)
+                self.CmdPrepForRead.set(0)     #self._rawWrite(0x00000000 * addrSize, 0)
+                self.PrepareMultiConfig.set(0) #self._rawWrite(0x00008000 * addrSize, 0)
                 for x in range(0, 48):
                     for y in range(0, 48):
-                        self._rawWrite(0x00006011 * addrSize, x)
-                        self._rawWrite(0x00006013 * addrSize, y)
-                        readBack[x, y] = self._rawRead(0x00005000 * addrSize)
+                        self.RowCounter.set(x)   #self._rawWrite(0x00006011 * addrSize, x)
+                        self.ColCounter.set(y)   #self._rawWrite(0x00006013 * addrSize, y)
+                        readBack[x, y] = self.WritePixelData.get()  #self._rawRead(0x00005000 * addrSize)
                 np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
         else:
             print("Warning: ASIC enable is set to False!")
@@ -4733,8 +4718,8 @@ class EpixHrAdcAsic(pr.Device):
             if os.path.splitext(self.filename)[1] == '.csv':
                 matrixCfg = np.genfromtxt(self.filename, delimiter=',')
                 if matrixCfg.shape == (178, 192):
-                    self._rawWrite(0x00000000 * addrSize, 0)
-                    self._rawWrite(0x00008000 * addrSize, 0)
+                    self.CmdPrepForRead.set(0)     #self._rawWrite(0x00000000 * addrSize, 0)
+                    self.PrepareMultiConfig.set(0) #self._rawWrite(0x00008000 * addrSize, 0)
                     for x in range(0, 177):
                         for y in range(0, 192):
                             bankToWrite = int(y / 48)
@@ -4748,10 +4733,10 @@ class EpixHrAdcAsic(pr.Device):
                                 colToWrite = 0x380 + y % 48
                             else:
                                 print('unexpected bank number')
-                            self._rawWrite(0x00006011 * addrSize, x)
-                            self._rawWrite(0x00006013 * addrSize, colToWrite)
-                            self._rawWrite(0x00005000 * addrSize, (int(matrixCfg[x][y])))
-                    self._rawWrite(0x00000000 * addrSize, 0)
+                            self.RowCounter.set(x)   #self._rawWrite(0x00006011 * addrSize, x)
+                            self.ColCounter.set(colToWrite) #self._rawWrite(0x00006013 * addrSize, colToWrite)
+                            self.WritePixelData.set(int(matrixCfg[x][y])) #self._rawWrite(0x00005000 * addrSize, (int(matrixCfg[x][y])))
+                    self.CmdPrepForRead.set(0)   #self._rawWrite(0x00000000 * addrSize, 0)
                 else:
                     print('csv file must be 192x178 pixels')
             else:
@@ -4777,8 +4762,8 @@ class EpixHrAdcAsic(pr.Device):
                 self.filename = self.filename[0]
             if os.path.splitext(self.filename)[1] == '.csv':
                 readBack = np.zeros((178, 192), dtype='uint16')
-                self._rawWrite(0x00000000 * addrSize, 0)
-                self._rawWrite(0x00008000 * addrSize, 0)
+                self.CmdPrepForRead.set(0)       #self._rawWrite(0x00000000 * addrSize, 0)
+                self.PrepareMultiConfig.set(0)   #self._rawWrite(0x00008000 * addrSize, 0)
                 for x in range(0, 177):
                     for y in range(0, 192):
                         bankToWrite = int(y / 48)
@@ -4792,9 +4777,9 @@ class EpixHrAdcAsic(pr.Device):
                             colToWrite = 0x380 + y % 48
                         else:
                             print('unexpected bank number')
-                        self._rawWrite(0x00006011 * addrSize, x)
-                        self._rawWrite(0x00006013 * addrSize, colToWrite)
-                        readBack[x, y] = self._rawRead(0x00005000 * addrSize)
+                        self.RowCounter.set(x)            #self._rawWrite(0x00006011 * addrSize, x)
+                        self.ColCounter.set(colToWrite)   #self._rawWrite(0x00006013 * addrSize, colToWrite)
+                        readBack[x, y] = self.WritePixelData.get()    #self._rawRead(0x00005000 * addrSize)
                 np.savetxt(self.filename, readBack, fmt='%d', delimiter=',', newline='\n')
         else:
             print("Warning: ASIC enable is set to False!")
