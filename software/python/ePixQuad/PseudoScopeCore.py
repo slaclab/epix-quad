@@ -108,21 +108,11 @@ class PseudoScopeCore(pr.Device):
         ))
 
         self.add(pr.RemoteVariable(
-            name='TrigHoldoff',
-            description='Trigger Holdoff',
-            offset=0x0000000C,
-            bitSize=13,
-            bitOffset=0,
-            base=pr.UInt,
-            mode='RW',
-        ))
-
-        self.add(pr.RemoteVariable(
             name='TrigOffset',
             description='Trigger Offset',
             offset=0x0000000C,
-            bitSize=13,
-            bitOffset=13,
+            bitSize=32,
+            bitOffset=0,
             base=pr.UInt,
             mode='RW',
         ))
@@ -151,7 +141,7 @@ class PseudoScopeCore(pr.Device):
             name='InChannelA',
             description='Input Channel A Select',
             offset=0x00000014,
-            bitSize=5,
+            bitSize=6,
             bitOffset=0,
             base=pr.UInt,
             mode='RW',
@@ -161,8 +151,8 @@ class PseudoScopeCore(pr.Device):
             name='InChannelB',
             description='Input Channel B Select',
             offset=0x00000014,
-            bitSize=5,
-            bitOffset=5,
+            bitSize=6,
+            bitOffset=6,
             base=pr.UInt,
             mode='RW',
         ))

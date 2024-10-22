@@ -7,7 +7,7 @@
 # Created    : 2016-09-29
 # Last update: 2017-01-31
 # -----------------------------------------------------------------------------
-# Description:
+# Description: 
 # -----------------------------------------------------------------------------
 # This file is part of the rogue software platform. It is subject to
 # the license terms in the LICENSE.txt file found in the top-level directory
@@ -145,15 +145,18 @@ class SaciConfigCore(pr.Device):
                 #memArray = [0x22222120, 0x22222222, 0x22242223, 0x22222222]
                 memArray = [0x82888180, 0x88888888, 0x88848883, 0x88888888]
                 self._setError(0)
-                self._rawTxnChunker(
-                    offset=(
-                        asic * 0x80000),
-                    data=memArray,
-                    base=pr.UInt,
-                    stride=4,
-                    wordBitSize=32,
-                    txnType=rim.Write,
-                    numWords=len(memArray))
+#                self._rawTxnChunker(
+#                    offset=(
+#                        asic * 0x80000),
+#                    data=memArray,
+#                    base=pr.UInt,
+#                    stride=4,
+#                    wordBitSize=32,
+#                    txnType=rim.Write,
+#                    numWords=len(memArray))
+                ldata = np.array(memArray,dtype=np.uint32).tobytes()
+                self._reqTransaction( asic*0x80000, ldata, len(ldata), 0,
+                                      rim.Write)
                 self._waitTransaction(0)
             # request config write to ASICs and wait for completion
             self.ConfSel.set(0xffff)
@@ -207,15 +210,18 @@ class SaciConfigCore(pr.Device):
 
             # make sure to send a big chunk of data avoiding slow 32 bit transactions
             # self._setError(0)
-            self._rawTxnChunker(
-                offset=(
-                    asic * 0x80000),
-                data=memArray,
-                base=pr.UInt,
-                stride=4,
-                wordBitSize=32,
-                txnType=rim.Write,
-                numWords=len(memArray))
+#            self._rawTxnChunker(
+#                offset=(
+#                    asic * 0x80000),
+#                data=memArray,
+#                base=pr.UInt,
+#                stride=4,
+#                wordBitSize=32,
+#                txnType=rim.Write,
+#                numWords=len(memArray))
+            ldata = np.array(memArray,dtype=np.uint32).tobytes()
+            self._reqTransaction( asic*0x80000, ldata, len(ldata), 0,
+                                  rim.Write)
             self._waitTransaction(0)
 
         # request config write to ASICs and wait for completion
