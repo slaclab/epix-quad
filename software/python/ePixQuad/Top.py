@@ -28,7 +28,7 @@ import rogue.hardware.axi
 #import rogue.hardware.pgp
 import rogue.interfaces.stream
 import rogue.utilities.fileio
-import setupLibPaths
+#import setupLibPaths
 import surf.axi as axi
 import surf.devices.analog_devices as analog_devices
 import surf.devices.cypress as cypress
@@ -380,7 +380,8 @@ class Top(pr.Root):
         self.add(self.repeater)
 
         # Connect DMA stream --> repeater
-        self.pgpVc0 >> self.repeater
+        if enVcMask & 1:
+            self.pgpVc0 >> self.repeater
 
         if (hwType != 'simulation'):
 
