@@ -96,7 +96,7 @@ class ImageProcessing():
             self.imgDark_isSet = True
             self.imgDark_isRequested = False
             self.numSavedDarkImg = 0
-            print("Dark image set.")
+            #print("Dark image set.")
 
     def unsetDarkImg(self):
         """performs the ePix100A image descrambling"""

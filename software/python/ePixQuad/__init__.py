@@ -20,3 +20,4 @@ from ePixQuad.VguardDac import *
 from ePixQuad.EpixVersion import *
 from ePixQuad.SaciConfigCore import *
 from ePixQuad.StreamRepeater import *
+from ePixQuad.CameraReader import * 
