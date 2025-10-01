@@ -1344,12 +1344,13 @@ class Epix10kaAsic(pr.Device):
         # Setup registers & variables
 
         # CMD = 0, Addr = 0  : Prepare for readout
-        self.add(pr.RemoteCommand(name='CmdPrepForRead',
+        self.add(pr.RemoteVariable(name='CmdPrepForRead',
                                   description='ePix Prepare For Readout',
                                   offset=0x00000000 * addrSize,
                                   bitSize=1, bitOffset=0,
-                                  function=pr.Command.touchZero,
+                                  #function=pr.Command.touchZero,
                                   hidden=True,
+                                  mode='WO',
                                   overlapEn=True))
 
         # CMD = 1, Addr = 1
@@ -2102,68 +2103,79 @@ class Epix10kaAsic(pr.Device):
 
         # CMD = 6, Addr = 17 : Row counter[8:0]
         self.add((
-            pr.RemoteCommand(
+            pr.RemoteVariable(
                 name='RowCounter',
                 description='',
                 offset=0x00006011 * addrSize,
                 bitSize=9,
                 bitOffset=0,
-                function=pr.Command.touch,
+                mode='WO',
+                verify=False, # Do not verify
+                #function=pr.Command.touch,
                 hidden=False)))
 
         # CMD = 6, Addr = 19 : Bank select [3:0] & Col counter[6:0]
         self.add((
-            pr.RemoteCommand(
+            pr.RemoteVariable(
                 name='ColCounter',
                 description='',
                 offset=0x00006013 * addrSize,
                 bitSize=11,
                 bitOffset=0,
-                function=pr.Command.touch,
+                mode='WO',
+                verify=False, # Do not verify
+                #function=pr.Command.touch,
                 hidden=False)))
 
         # CMD = 2, Addr = X  : Write Row with data
         self.add((
-            pr.RemoteCommand(
+            pr.RemoteVariable(
                 name='WriteRowData',
                 description='',
                 offset=0x00002000 * addrSize,
                 bitSize=4,
                 bitOffset=0,
-                function=pr.Command.touch,
+                verify=False, # Do not verify
+                #function=pr.Command.touch,
                 hidden=False)))
 
         # CMD = 3, Addr = X  : Write Column with data
         self.add(
-            pr.RemoteCommand(
+            pr.RemoteVariable(
                 name='WriteColData',
                 description='',
                 offset=0x00003000 * addrSize,
                 bitSize=4,
                 bitOffset=0,
-                function=pr.Command.touch,
+                mode='WO',
+                verify=False, # Do not verify
+                #function=pr.Command.touch,
                 hidden=False))
 
         # CMD = 4, Addr = X  : Write Matrix with data
         self.add((
-            pr.RemoteCommand(
+            pr.RemoteVariable(
                 name='WriteMatrixData',
                 description='',
                 offset=0x00004000 * addrSize,
                 bitSize=4,
                 bitOffset=0,
-                function=pr.Command.touch,
+                verify=False, # Do not verify
+                mode='RW',
+                #function=pr.Command.touch,
                 hidden=False)))
 
         # CMD = 5, Addr = X  : Read/Write Pixel with data
         self.add(
-            pr.RemoteCommand(
+            pr.RemoteVariable(
                 name='WritePixelData',
                 description='WritePixelData',
                 offset=0x00005000 * addrSize,
                 bitSize=4,
                 bitOffset=0,
-                function=pr.Command.touch,
+                mode='RW',
+                verify=False, # Do not verify
+                #function=pr.Command.touch,
                 hidden=False))
                 
         
@@ -2189,13 +2201,15 @@ class Epix10kaAsic(pr.Device):
 
         # CMD = 8, Addr = X  : Prepare for row/column/matrix configuration
         self.add(
-            pr.RemoteCommand(
+            pr.RemoteVariable(
                 name='PrepareMultiConfig',
                 description='PrepareMultiConfig',
                 offset=0x00008000 * addrSize,
                 bitSize=32,
                 bitOffset=0,
-                function=pr.Command.touchZero,
+                mode='WO',
+                verify=False, # Do not verify
+                #function=pr.Command.touchZero,
                 hidden=False))
 
         #####################################
@@ -2219,6 +2233,8 @@ class Epix10kaAsic(pr.Device):
             #if self._size == 0:
             #    self._size = 0xfffff
 
+            print('[Warning] Be sure to disable trigger before writing the pixel bitmap')
+            
             addrSize = 4
 
             if (self.enable.get()):
@@ -2262,6 +2278,8 @@ class Epix10kaAsic(pr.Device):
             #if self._size == 0:
             #    self._size = 0xfffff
 
+            print('[Warning] Be sure to disable trigger before reading the pixel bitmap')
+
             addrSize = 4
 
             if (self.enable.get()):
@@ -2302,10 +2320,10 @@ class Epix10kaAsic(pr.Device):
             if (self.enable.get()):
                 self.reportCmd(dev, cmd, arg)
                 for i in range(0, 48):
-                    self.PrepareMultiConfig()
+                    self.PrepareMultiConfig.set(0)
                     self.ColCounter.set(i)
                     self.WriteColData.set(0)
-                self.CmdPrepForRead()
+                self.CmdPrepForRead.set(0)
             else:
                 print("Warning: ASIC enable is set to False!")
 
@@ -2316,10 +2334,10 @@ class Epix10kaAsic(pr.Device):
             if (self.enable.get()):
                 self.reportCmd(dev, cmd, arg)
                 for i in range(0, 48):
-                    self.PrepareMultiConfig()
+                    self.PrepareMultiConfig.set(0)
                     self.ColCounter.set(i)
                     self.WriteColData.set(12)
-                self.CmdPrepForRead()
+                self.CmdPrepForRead.set(0)
             else:
                 print("Warning: ASIC enable is set to False!")
 
@@ -2330,10 +2348,10 @@ class Epix10kaAsic(pr.Device):
             if (self.enable.get()):
                 self.reportCmd(dev, cmd, arg)
                 for i in range(0, 48):
-                    self.PrepareMultiConfig()
+                    self.PrepareMultiConfig.set(0)
                     self.ColCounter.set(i)
                     self.WriteColData.set(8)
-                self.CmdPrepForRead()
+                self.CmdPrepForRead.set(0)
             else:
                 print("Warning: ASIC enable is set to False!")
 
