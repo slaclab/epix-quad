@@ -1,5 +1,9 @@
 [DOE Code](https://www.osti.gov/doecode/biblio/77514)
 
+# This repository is obsolete and no longer developed or maintained.
+
+This repository is retained for legacy and historical reasons and is no longer the active project. Please use [epix-quad-1kfps](https://github.com/slaclab/epix-quad-1kfps) instead.
+
 # Before you clone the GIT repository
 
 1) Create a github account:
